@@ -10,6 +10,7 @@ import CourseDetailsPage from './pages/CourseDetails'
 import DashboardPage from "./pages/Dashboard";
 import ProfilePage from "./pages/Profile";
 import InstructorDashboard from "./pages/InstructorDashboard";
+import ForgotPassword from "./pages/ForgotPassword";
 
 const AppRoutes = () => {
     return (
@@ -26,6 +27,7 @@ const AppRoutes = () => {
                         <Route path="/profile" element={<ProfilePage />} />
                         <Route path="/instructor" element={<InstructorDashboard />} />
                         <Route path="/courses/:id" element={<CourseDetailsPage />} />
+                        <Route path="/forgot-password" element={<ForgotPassword />} />
                     </Routes>
                 </div>
                 <Footer />

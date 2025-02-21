@@ -21,6 +21,14 @@ api.interceptors.request.use(
     (error) => Promise.reject(error)
 );
 
+export const sendOtp = async (data) => {
+    return await api.post(`/auth/forgot-password`, data);
+};
+
+export const resetPassword = async (data) => {
+    return await api.post(`/auth/reset-password`, data);
+};
+
 export const fetchCourses = async () => {
     try {
         const response = await api.get("/courses");
