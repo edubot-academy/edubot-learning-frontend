@@ -1,20 +1,41 @@
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
+import { useNavigate } from "react-router-dom";
+import { loginUser } from "../services/api";
+import { AuthContext } from "../context/AuthContext";
 import { Link } from "react-router-dom";
 import { FaGoogle, FaFacebook } from "react-icons/fa";
 
 const LoginPage = () => {
+    const { login } = useContext(AuthContext);
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
+    const navigate = useNavigate();
 
-    const handleLogin = (e) => {
+    const handleLogin = async (e) => {
         e.preventDefault();
-        // Handle login logic here
+        setLoading(true);
+        setError(null);
+
+        try {
+            const response = await loginUser({ email, password });
+            const { access_token, user } = response.data;
+
+            login(user, access_token); // Save user session in context and localStorage
+            navigate("/");
+        } catch (err) {
+            setError("Invalid email or password. Please try again.");
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-gray-50">
             <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
                 <h2 className="text-3xl font-bold text-center mb-6">Sign In</h2>
+                {error && <p className="text-red-500 text-center mb-4">{error}</p>}
                 <form onSubmit={handleLogin}>
                     <div className="mb-4">
                         <label className="block text-gray-700">Email</label>
@@ -42,8 +63,9 @@ const LoginPage = () => {
                     <button
                         type="submit"
                         className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition"
+                        disabled={loading}
                     >
-                        Login
+                        {loading ? "Logging in..." : "Login"}
                     </button>
                 </form>
                 <div className="my-4 text-center text-gray-600">OR</div>

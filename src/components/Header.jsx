@@ -1,11 +1,27 @@
-import React, { useState } from "react";
+import React, { useState, useContext, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { FaShoppingCart, FaUserCircle, FaBars, FaTimes } from "react-icons/fa";
 import Logo from "../assets/images/edubot-logo.jpeg";
+import { AuthContext } from "../context/AuthContext";
 
-const Header = ({ user, cart = [] }) => {
+const Header = ({ cart = [] }) => {
     const [menuOpen, setMenuOpen] = useState(false);
     const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+    const { user, logout } = useContext(AuthContext);
+
+    // const getInitials = (name) => {
+    //     return name ? name.split(" ").map((n) => n[0]).join("").toUpperCase() : "U";
+    // };
+
+    useEffect(() => {
+        const closeDropdown = (e) => {
+            if (!e.target.closest(".profile-menu")) {
+                setProfileMenuOpen(false);
+            }
+        };
+        document.addEventListener("click", closeDropdown);
+        return () => document.removeEventListener("click", closeDropdown);
+    }, []);
 
     return (
         <header className="fixed w-full z-20 bg-white shadow-md">
@@ -25,7 +41,7 @@ const Header = ({ user, cart = [] }) => {
                     <Link to="/courses" className="text-gray-700 hover:text-blue-600 transition">Courses</Link>
                     <Link to="/about" className="text-gray-700 hover:text-blue-600 transition">About</Link>
                     <Link to="/contact" className="text-gray-700 hover:text-blue-600 transition">Contact</Link>
-                    {user && user.isInstructor && (
+                    {user && user.role === "instructor" && (
                         <Link to="/instructor" className="text-gray-700 hover:text-blue-600 transition">
                             Instructor Dashboard
                         </Link>
@@ -39,16 +55,15 @@ const Header = ({ user, cart = [] }) => {
                         )}
                     </Link>
                     {user ? (
-                        <div className="relative">
-                            <button onClick={() => setProfileMenuOpen(!profileMenuOpen)} className="flex items-center space-x-2 text-gray-700 hover:text-blue-600 transition">
+                        <div className="relative profile-menu">
+                            <button onClick={() => setProfileMenuOpen(!profileMenuOpen)} className="flex items-center justify-center w-10 h-10 bg-blue-600 text-white font-bold rounded-full text-lg hover:bg-blue-700 transition">
                                 <FaUserCircle className="text-2xl" />
-                                <span>{user.name}</span>
                             </button>
                             {profileMenuOpen && (
                                 <div className="absolute right-0 mt-2 w-48 bg-white border rounded-lg shadow-lg py-2">
                                     <Link to="/profile" className="block px-4 py-2 text-gray-700 hover:bg-gray-100">Profile</Link>
                                     <Link to="/dashboard" className="block px-4 py-2 text-gray-700 hover:bg-gray-100">Dashboard</Link>
-                                    <button className="block w-full text-left px-4 py-2 text-red-600 hover:bg-gray-100">Logout</button>
+                                    <button onClick={() => logout()} className="block w-full text-left px-4 py-2 text-red-600 hover:bg-gray-100">Logout</button>
                                 </div>
                             )}
                         </div>
