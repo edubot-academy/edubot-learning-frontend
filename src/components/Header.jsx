@@ -43,7 +43,7 @@ const Header = ({ cart = [] }) => {
                     <Link to="/contact" className="text-gray-700 hover:text-blue-600 transition">Contact</Link>
                     {user && user.role === "instructor" && (
                         <Link to="/instructor" className="text-gray-700 hover:text-blue-600 transition">
-                            Instructor Dashboard
+                            Instructor
                         </Link>
                     )}
                 </nav>

@@ -27,7 +27,7 @@ const InstructorDashboard = () => {
                 <div className="bg-white p-6 rounded-lg shadow-md text-center">
                     <h2 className="text-2xl font-semibold mb-4">Create New Course</h2>
                     <p className="text-gray-600 mb-4">Add a new course with sections and lessons.</p>
-                    <Link to="/instructor/courses/create" className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition">
+                    <Link to="/instructor/course/create" className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition">
                         Create Course
                     </Link>
                 </div>

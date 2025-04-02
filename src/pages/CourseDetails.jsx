@@ -1,133 +1,153 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
-import { FaStar } from "react-icons/fa";
+import { FaChevronDown, FaChevronUp } from "react-icons/fa";
+import VideoPlayer from "../components/VideoPlayer";
+import { fetchCourseDetails, fetchSections } from "../services/api";
 
-const coursesData = [
-    {
-        id: 1,
-        title: "Web Development Masterclass",
-        instructor: "John Doe",
-        duration: "10 hours",
-        level: "Beginner",
-        price: 19.99,
-        rating: 4.8,
-        videoPreview: "https://www.youtube.com/embed/dQw4w9WgXcQ",
-        curriculum: [
-            "Introduction to Web Development",
-            "HTML & CSS Basics",
-            "JavaScript Fundamentals",
-            "Building Responsive Websites",
-            "Introduction to React.js",
-            "Final Project",
-        ],
-        reviews: [
-            { user: "Alice", rating: 5, comment: "Amazing course! Learned so much." },
-            { user: "Bob", rating: 4, comment: "Great explanations, but could use more projects." },
-        ],
-    },
-    {
-        id: 2,
-        title: "Data Science Bootcamp",
-        instructor: "Jane Smith",
-        duration: "12 hours",
-        level: "Intermediate",
-        price: 29.99,
-        rating: 4.7,
-        videoPreview: "https://www.youtube.com/embed/dQw4w9WgXcQ",
-        curriculum: [
-            "Introduction to Data Science",
-            "Python for Data Analysis",
-            "Machine Learning Basics",
-            "Deep Learning Introduction",
-            "Data Visualization Techniques",
-            "Capstone Project",
-        ],
-        reviews: [
-            { user: "Charlie", rating: 5, comment: "Best course on Data Science!" },
-            { user: "David", rating: 4, comment: "Informative but needs more real-world projects." },
-        ],
-    },
-    {
-        id: 3,
-        title: "Machine Learning Fundamentals",
-        instructor: "Michael Lee",
-        duration: "15 hours",
-        level: "Advanced",
-        price: 39.99,
-        rating: 4.9,
-        videoPreview: "https://www.youtube.com/embed/dQw4w9WgXcQ",
-        curriculum: [
-            "Introduction to Machine Learning",
-            "Supervised vs Unsupervised Learning",
-            "Feature Engineering",
-            "Model Evaluation Techniques",
-            "Building Neural Networks",
-            "Final Project",
-        ],
-        reviews: [
-            { user: "Emma", rating: 5, comment: "Fantastic course with in-depth explanations!" },
-            { user: "Liam", rating: 4, comment: "Great course, but would love more coding examples." },
-        ],
-    }
-];
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 const CourseDetailsPage = () => {
-    const { id } = useParams();
-    const course = coursesData.find((c) => c.id === parseInt(id));
+    const { courseId } = useParams();
+    const [course, setCourse] = useState(null);
+    const [sections, setSections] = useState([]);
+    const [activeSectionId, setActiveSectionId] = useState(null);
+    const [activeLesson, setActiveLesson] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
 
-    if (!course) {
-        return <div className="text-center text-red-600 text-2xl mt-10">Course Not Found</div>;
-    }
+    useEffect(() => {
+        const fetchCourse = async () => {
+            try {
+                const data = await fetchCourseDetails(28);
+                setCourse(data);
+
+                const sectionData = await fetchSections(28);
+                setSections(sectionData);
+
+                if (sectionData.length > 0) {
+                    setActiveSectionId(sectionData[0].id);
+                    const firstLesson = sectionData[0].lessons?.[0];
+                    if (firstLesson) {
+                        setActiveLesson(firstLesson);
+                    }
+                }
+            } catch (err) {
+                setError(err.message || "Failed to load course.");
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchCourse();
+    }, [courseId]);
+
+    const toggleSection = (sectionId) => {
+        setActiveSectionId((prevId) => (prevId === sectionId ? null : sectionId));
+    };
+
+    if (loading) return <div>Loading...</div>;
+    if (error) return <div>Error: {error}</div>;
+    if (!course) return <div>Course not found</div>;
 
     return (
-        <div className="min-h-screen bg-gray-50 p-6 pt-24 max-w-5xl mx-auto">
-            <h1 className="text-4xl font-bold mb-6 text-center">{course.title}</h1>
-            <div className="flex flex-col md:flex-row gap-6">
-                <div className="md:w-2/3">
-                    <iframe
-                        className="w-full h-64 md:h-96 rounded-lg shadow-lg"
-                        src={course.videoPreview}
-                        title="Course Preview"
-                        allowFullScreen
-                    ></iframe>
-                </div>
-                <div className="md:w-1/3 bg-white p-6 rounded-lg shadow-md">
-                    <p className="text-gray-700 text-lg mb-2"><strong>Instructor:</strong> {course.instructor}</p>
-                    <p className="text-gray-700 text-lg mb-2"><strong>Duration:</strong> {course.duration}</p>
-                    <p className="text-gray-700 text-lg mb-2"><strong>Level:</strong> {course.level}</p>
-                    <div className="flex items-center text-yellow-500 my-2">
-                        {[...Array(5)].map((_, i) => (
-                            <FaStar key={i} className={i < Math.floor(course.rating) ? "text-lg" : "text-lg text-gray-300"} />
+        <div className="min-h-screen p-6 pt-24">
+            <div className="max-w-6xl mx-auto">
+                {course.coverImageUrl && (
+                    <img
+                        src={
+                            course.coverImageUrl.startsWith("http")
+                                ? course.coverImageUrl
+                                : `${API_BASE_URL}${course.coverImageUrl}`
+                        }
+                        alt="Course Cover"
+                        className="w-full max-h-72 object-cover rounded mb-6"
+                    />
+                )}
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {/* Main Content */}
+                    <div className="md:col-span-2">
+                        <h1 className="text-3xl font-bold mb-4">{course.title}</h1>
+
+                        {activeLesson?.videoUrl && (
+                            <div className="mb-6">
+                                <VideoPlayer videoUrl={activeLesson.videoUrl} />
+                            </div>
+                        )}
+
+                        {activeLesson && (
+                            <div className="bg-white p-6 rounded-lg shadow-md">
+                                <h2 className="text-2xl font-semibold mb-4">{activeLesson.title}</h2>
+                                <div className="prose max-w-none">{activeLesson.content}</div>
+                                {activeLesson.pdfUrl && (
+                                    <a
+                                        href={activeLesson.pdfUrl}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-block mt-4 text-blue-600 hover:text-blue-800"
+                                    >
+                                        Download PDF Materials
+                                    </a>
+                                )}
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Sidebar: Sections and Lessons */}
+                    <div className="bg-white p-6 rounded-lg shadow-md">
+                        <h2 className="text-xl font-semibold mb-4">Course Content</h2>
+
+                        {sections.map((section) => (
+                            <div key={section.id} className="mb-4 border-b pb-2">
+                                <div
+                                    className="flex justify-between items-center cursor-pointer hover:text-blue-600"
+                                    onClick={() => toggleSection(section.id)}
+                                >
+                                    <h3 className="font-medium text-lg">{section.title}</h3>
+                                    {activeSectionId === section.id ? <FaChevronUp /> : <FaChevronDown />}
+                                </div>
+
+                                <div
+                                    className={`overflow-hidden transition-all duration-300 ease-in-out ${activeSectionId === section.id ? "max-h-[1000px]" : "max-h-0"
+                                        }`}
+                                >
+                                    {activeSectionId === section.id &&
+                                        section.lessons?.map((lesson) => (
+                                            <div
+                                                key={lesson.id}
+                                                className={`pl-4 py-2 cursor-pointer flex items-center justify-between transition ${activeLesson?.id === lesson.id
+                                                    ? "bg-blue-50 text-blue-600"
+                                                    : "hover:bg-gray-50"
+                                                    }`}
+                                                onClick={() => {
+                                                    if (!lesson.locked) setActiveLesson(lesson);
+                                                }}
+                                            >
+                                                <div className="flex items-center gap-2">
+                                                    <span>{lesson.title}</span>
+                                                    {lesson.previewVideo && (
+                                                        <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">
+                                                            Preview
+                                                        </span>
+                                                    )}
+                                                    {lesson.completed && (
+                                                        <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                                                            Completed
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                {lesson.locked && (
+                                                    <span className="text-xs bg-red-100 text-red-800 px-2 py-1 rounded">
+                                                        Locked
+                                                    </span>
+                                                )}
+                                            </div>
+                                        ))}
+                                </div>
+                            </div>
                         ))}
-                        <span className="text-gray-600 text-sm ml-2">({course.rating})</span>
                     </div>
-                    <p className="text-2xl font-bold text-blue-600 mb-4">${course.price}</p>
-                    <button className="w-full bg-blue-600 text-white px-6 py-3 rounded-lg text-lg font-bold hover:bg-blue-700 transition">
-                        Enroll Now
-                    </button>
                 </div>
-            </div>
-            <div className="mt-10 bg-white p-6 rounded-lg shadow-md">
-                <h2 className="text-2xl font-bold mb-4">Curriculum</h2>
-                <ul className="list-disc pl-5 text-gray-700">
-                    {course.curriculum.map((lesson, index) => (
-                        <li key={index} className="mb-2">{lesson}</li>
-                    ))}
-                </ul>
-            </div>
-            <div className="mt-10 bg-white p-6 rounded-lg shadow-md">
-                <h2 className="text-2xl font-bold mb-4">Student Reviews</h2>
-                {course.reviews.map((review, index) => (
-                    <div key={index} className="bg-gray-100 p-4 rounded-lg shadow-md mb-3">
-                        <p className="font-semibold">{review.user}</p>
-                        <div className="flex text-yellow-500">
-                            {[...Array(5)].map((_, i) => (
-                                <FaStar key={i} className={i < review.rating ? "text-lg" : "text-lg text-gray-300"} />
-                            ))}
-                        </div>
-                        <p className="text-gray-700 mt-2">{review.comment}</p>
-                    </div>
-                ))}
             </div>
         </div>
     );

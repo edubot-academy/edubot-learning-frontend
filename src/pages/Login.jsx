@@ -21,7 +21,6 @@ const LoginPage = () => {
         try {
             const response = await loginUser({ email, password });
             const { access_token, user } = response.data;
-
             login(user, access_token); // Save user session in context and localStorage
             navigate("/");
         } catch (err) {
