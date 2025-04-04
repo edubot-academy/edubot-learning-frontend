@@ -4,10 +4,8 @@ import { FaChevronDown, FaChevronUp } from "react-icons/fa";
 import VideoPlayer from "../components/VideoPlayer";
 import { fetchCourseDetails, fetchSections } from "../services/api";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-
 const CourseDetailsPage = () => {
-    const { courseId } = useParams();
+    const { id } = useParams();
     const [course, setCourse] = useState(null);
     const [sections, setSections] = useState([]);
     const [activeSectionId, setActiveSectionId] = useState(null);
@@ -18,10 +16,10 @@ const CourseDetailsPage = () => {
     useEffect(() => {
         const fetchCourse = async () => {
             try {
-                const data = await fetchCourseDetails(28);
+                const data = await fetchCourseDetails(id);
                 setCourse(data);
 
-                const sectionData = await fetchSections(28);
+                const sectionData = await fetchSections(id);
                 setSections(sectionData);
 
                 if (sectionData.length > 0) {
@@ -39,7 +37,7 @@ const CourseDetailsPage = () => {
         };
 
         fetchCourse();
-    }, [courseId]);
+    }, [id]);
 
     const toggleSection = (sectionId) => {
         setActiveSectionId((prevId) => (prevId === sectionId ? null : sectionId));
@@ -50,25 +48,18 @@ const CourseDetailsPage = () => {
     if (!course) return <div>Course not found</div>;
 
     return (
-        <div className="min-h-screen p-6 pt-24">
-            <div className="max-w-6xl mx-auto">
-                {course.coverImageUrl && (
-                    <img
-                        src={
-                            course.coverImageUrl.startsWith("http")
-                                ? course.coverImageUrl
-                                : `${API_BASE_URL}${course.coverImageUrl}`
-                        }
-                        alt="Course Cover"
-                        className="w-full max-h-72 object-cover rounded mb-6"
-                    />
-                )}
+        <div className="min-h-screen pt-24">
+            <div className="w-full bg-gray-800 text-white min-h-[380px] py-12 px-6 md:px-12">
+                <div className="max-w-6xl mx-auto">
+                    <h1 className="text-3xl md:text-4xl font-bold mb-4">{course.title}</h1>
+                    <p className="text-md md:text-lg leading-relaxed whitespace-pre-line">{course.description}</p>
+                </div>
+            </div>
 
+            <div className="max-w-6xl mx-auto p-6">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     {/* Main Content */}
                     <div className="md:col-span-2">
-                        <h1 className="text-3xl font-bold mb-4">{course.title}</h1>
-
                         {activeLesson?.videoUrl && (
                             <div className="mb-6">
                                 <VideoPlayer videoUrl={activeLesson.videoUrl} />
