@@ -37,13 +37,23 @@ const Header = ({ cart = [] }) => {
                     {menuOpen ? <FaTimes className="text-2xl" /> : <FaBars className="text-2xl" />}
                 </button>
                 <nav className="hidden md:flex space-x-8">
-                    <Link to="/features" className="text-gray-700 hover:text-blue-600 transition">Features</Link>
+                    {/* <Link to="/features" className="text-gray-700 hover:text-blue-600 transition">Features</Link> */}
                     <Link to="/courses" className="text-gray-700 hover:text-blue-600 transition">Courses</Link>
                     <Link to="/about" className="text-gray-700 hover:text-blue-600 transition">About</Link>
                     <Link to="/contact" className="text-gray-700 hover:text-blue-600 transition">Contact</Link>
                     {user && user.role === "instructor" && (
                         <Link to="/instructor" className="text-gray-700 hover:text-blue-600 transition">
                             Instructor
+                        </Link>
+                    )}
+                    {user && user.role === "admin" && (
+                        <Link to="/admin" className="text-gray-700 hover:text-blue-600 transition">
+                            Admin
+                        </Link>
+                    )}
+                    {user && user.role === "sales" && (
+                        <Link to="/sales-manager" className="text-gray-700 hover:text-blue-600 transition">
+                            Sales
                         </Link>
                     )}
                 </nav>

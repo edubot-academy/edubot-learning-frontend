@@ -14,6 +14,8 @@ import ForgotPassword from "./pages/ForgotPassword";
 import CreateCourse from "./pages/CreateCourse";
 import InstructorCourses from "./pages/InstructorCourses";
 import EditInstructorCourse from "./pages/EditInstructorCourse";
+import AdminPanel from "./pages/Admin";
+import SalesManager from "./pages/SalesManager";
 
 const AppRoutes = () => {
     return (
@@ -34,6 +36,8 @@ const AppRoutes = () => {
                         <Route path="/courses/:id" element={<CourseDetailsPage />} />
                         <Route path="/instructor/courses/edit/:id" element={<EditInstructorCourse />} />
                         <Route path="/forgot-password" element={<ForgotPassword />} />
+                        <Route path="/admin" element={<AdminPanel />} />
+                        <Route path="/sales-manager" element={<SalesManager />} />
                     </Routes>
                 </div>
                 <Footer />
