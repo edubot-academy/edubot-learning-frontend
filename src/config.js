@@ -1,4 +1,4 @@
-const ENV = import.meta.env.VITE_REACT_APP_ENV || "staging";
+const ENV = import.meta.env.VITE_REACT_APP_ENV || "localhost";
 
 const API_BASE_URLS = {
     localhost: "http://localhost:3000",
