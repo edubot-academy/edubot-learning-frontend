@@ -95,9 +95,9 @@ export const deleteUser = async (userId) => {
     }
 };
 
-export const enrollUserInCourse = async (userId, courseId) => {
+export const enrollUserInCourse = async (userId, courseId, discountPercentage) => {
     try {
-        const response = await api.post(`/enrollments/manual`, { userId, courseId });
+        const response = await api.post(`/courses/${courseId}/enroll`, { userId, discountPercentage });
         return response.data;
     } catch (error) {
         console.error("Error enrolling user:", error);
