@@ -61,9 +61,9 @@ export const fetchUserProfile = async () => await api.get("/auth/profile");
 
 //Users
 
-export const fetchUsers = async () => {
+export const fetchUsers = async ({ page, limit, search, role, dateFrom, dateTo }) => {
     try {
-        const response = await api.get("/users");
+        const response = await api.get("/users", { params: { page, limit, search, role, dateFrom, dateTo } });
         return response.data;
     } catch (error) {
         console.error("Error fetching users:", error);

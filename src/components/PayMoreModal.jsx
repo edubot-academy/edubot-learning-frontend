@@ -61,8 +61,9 @@ const PayMoreModal = ({ student, onClose, onSuccess }) => {
                         className="w-full border p-2 rounded"
                         value={selectedCourseId}
                         onChange={(e) => {
-                            setSelectedCourseId(e.target.value);
-                            const selected = unpaidCourses.find(c => c.id === Number(e.target.value));
+                            const selectedId = Number(e.target.value);
+                            setSelectedCourseId(selectedId);
+                            const selected = unpaidCourses.find(c => c.id === selectedId);
                             if (selected) setAmount(selected.remaining);
                         }}
                     >
