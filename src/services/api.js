@@ -293,3 +293,51 @@ export const updateCategory = async (categoryId, data) => {
         throw error;
     }
 };
+
+//User Progress
+
+export const fetchUserProgress = async (courseId) => {
+    const response = await api.get(`/courses/${courseId}/progress`);
+    return response.data;
+};
+
+//Needs to be implemented
+export const updateUserProgress = async (courseId, lessonId) => {
+    const response = await api.post(`/courses/${courseId}/progress`, { lessonId });
+    return response.data;
+};
+
+//Mark lesson as complete
+export const markLessonComplete = async (courseId, sectionId, lessonId) => {
+    console.log(courseId, sectionId, lessonId);
+    const response = await api.post(`/courses/${courseId}/sections/${sectionId}/lessons/${lessonId}/complete`);
+    return response.data;
+};
+
+//Student Progress
+export const fetchStudentProgress = async () => {
+    const response = await api.get(`/student-progress`);
+    return response.data;
+};
+
+export const updateLastViewedLesson = async ({ courseId, lessonId }) => {
+    const res = await api.put(`/student-progress/last-viewed`, { courseId, lessonId });
+    return res.data;
+};
+
+export const getLastViewedLesson = async (courseId) => {
+    const res = await api.get(`/student-progress/last-viewed?courseId=${courseId}`);
+    return res.data;
+};
+
+export const getLastVideoTime = async (courseId) => {
+    const res = await api.get(`/student-progress/last-video-time?courseId=${courseId}`);
+    return res.data;
+};
+
+export const updateLastVideoTime = async ({ courseId, time }) => {
+    const res = await api.put(`/student-progress/last-video-time`, { courseId, time });
+    return res.data;
+};
+
+
