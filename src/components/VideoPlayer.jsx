@@ -25,7 +25,6 @@ const VideoPlayer = ({ videoUrl, resumeTime = 0, onProgress, onTimeUpdate }) => 
         };
 
         const handleTimeUpdate = () => {
-            console.log('Time update:', video.currentTime);
             const percentWatched = (video.currentTime / video.duration) * 100;
             if (onProgress) onProgress(percentWatched);
             if (onTimeUpdate) onTimeUpdate(video.currentTime);
