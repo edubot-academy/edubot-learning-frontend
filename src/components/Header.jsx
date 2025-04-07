@@ -37,13 +37,23 @@ const Header = ({ cart = [] }) => {
                     {menuOpen ? <FaTimes className="text-2xl" /> : <FaBars className="text-2xl" />}
                 </button>
                 <nav className="hidden md:flex space-x-8">
-                    <Link to="/features" className="text-gray-700 hover:text-blue-600 transition">Features</Link>
+                    {/* <Link to="/features" className="text-gray-700 hover:text-blue-600 transition">Features</Link> */}
                     <Link to="/courses" className="text-gray-700 hover:text-blue-600 transition">Courses</Link>
                     <Link to="/about" className="text-gray-700 hover:text-blue-600 transition">About</Link>
                     <Link to="/contact" className="text-gray-700 hover:text-blue-600 transition">Contact</Link>
                     {user && user.role === "instructor" && (
                         <Link to="/instructor" className="text-gray-700 hover:text-blue-600 transition">
                             Instructor
+                        </Link>
+                    )}
+                    {user && user.role === "admin" && (
+                        <Link to="/admin" className="text-gray-700 hover:text-blue-600 transition">
+                            Admin
+                        </Link>
+                    )}
+                    {user && user.role === "sales" && (
+                        <Link to="/sales-manager" className="text-gray-700 hover:text-blue-600 transition">
+                            Sales
                         </Link>
                     )}
                 </nav>
@@ -77,16 +87,37 @@ const Header = ({ cart = [] }) => {
             </div>
             {menuOpen && (
                 <div className="md:hidden bg-white shadow-md py-4 flex flex-col items-center space-y-4 w-full">
-                    <Link to="/features" className="text-gray-700 hover:text-blue-600 transition">Features</Link>
+                    <Link to="/profile" className="block px-4 py-2 text-gray-700 hover:bg-gray-100">Profile</Link>
                     <Link to="/courses" className="text-gray-700 hover:text-blue-600 transition">Courses</Link>
                     <Link to="/about" className="text-gray-700 hover:text-blue-600 transition">About</Link>
                     <Link to="/contact" className="text-gray-700 hover:text-blue-600 transition">Contact</Link>
+
+                    {user && user.role === "instructor" && (
+                        <Link to="/instructor" className="text-gray-700 hover:text-blue-600 transition">
+                            Instructor
+                        </Link>
+                    )}
+                    {user && user.role === "admin" && (
+                        <Link to="/admin" className="text-gray-700 hover:text-blue-600 transition">
+                            Admin
+                        </Link>
+                    )}
+                    {user && user.role === "sales" && (
+                        <Link to="/sales-manager" className="text-gray-700 hover:text-blue-600 transition">
+                            Sales
+                        </Link>
+                    )}
+                    {user && user.role === "student" && (
+                        <Link to="/dashboard" className="block px-4 py-2 text-gray-700 hover:bg-gray-100">Dashboard</Link>
+                    )}
                     <Link to="/cart" className="text-gray-700 hover:text-blue-600 transition font-semibold text-lg">Cart ({cart.length})</Link>
-                    {!user && (
+                    {!user ? (
                         <div className="flex flex-col space-y-2 w-full px-6">
                             <Link to="/login" className="text-gray-700 hover:text-blue-600 transition font-semibold text-lg text-center">Login</Link>
                             <Link to="/register" className="bg-blue-600 text-white px-4 py-2 rounded-lg text-center hover:bg-blue-700 transition">Sign Up</Link>
                         </div>
+                    ) : (
+                        <button onClick={() => logout()} className="block w-full text-left px-4 py-2 text-red-600 hover:bg-gray-100">Logout</button>
                     )}
                 </div>
             )}

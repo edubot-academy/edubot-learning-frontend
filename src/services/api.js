@@ -1,5 +1,6 @@
 import axios from "axios";
 import { API_BASE_URL } from "../config";
+import toast from "react-hot-toast";
 
 const api = axios.create({
     baseURL: API_BASE_URL,
@@ -58,10 +59,94 @@ export const registerUser = async (userData) => await api.post("/auth/register",
 export const loginUser = async (userData) => await api.post("/auth/login", userData);
 export const fetchUserProfile = async () => await api.get("/auth/profile");
 
+//Users
+
+export const fetchUsers = async ({ page, limit, search, role, dateFrom, dateTo }) => {
+    try {
+        const response = await api.get("/users", { params: { page, limit, search, role, dateFrom, dateTo } });
+        return response.data;
+    } catch (error) {
+        console.error("Error fetching users:", error);
+        throw error;
+    }
+};
+
+export const updateUserRole = async (userId, newRole) => {
+    try {
+        const response = await api.patch(`/users/${userId}/role`, { role: newRole });
+        toast.success("User role updated successfully");
+        return response.data;
+    } catch (error) {
+        console.error("Error updating user role:", error);
+        toast.error("Failed to update user role");
+        throw error;
+    }
+};
+
+export const deleteUser = async (userId) => {
+    try {
+        const response = await api.delete(`/users/${userId}`);
+        toast.success("User deleted successfully");
+        return response.data;
+    } catch (error) {
+        console.error("Error deleting user:", error);
+        toast.error("Failed to delete user");
+        throw error;
+    }
+};
+
+export const enrollUserInCourse = async (userId, courseId, discountPercentage) => {
+    try {
+        const response = await api.post(`/courses/${courseId}/enroll`, { userId, discountPercentage });
+        return response.data;
+    } catch (error) {
+        console.error("Error enrolling user:", error);
+        toast.error("Failed to enroll user in course");
+        throw error;
+    }
+};
+
+export const fetchMyStudents = async () => {
+    try {
+        const response = await api.get("/users/my-students");
+        return response.data;
+    } catch (error) {
+        console.error("Error fetching my students:", error);
+        throw error;
+    }
+};
+
+export const registerStudent = async (data) => {
+    try {
+        const response = await api.post("/users/register-by-sales", data);
+        return response.data;
+    } catch (error) {
+        console.error("Error registering student:", error);
+        throw error;
+    }
+};
+
+// Payments
+
+export const addPayment = async (data) => {
+    try {
+        const response = await api.post("/payments", data);
+        return response.data;
+    } catch (error) {
+        console.error("Error adding payment:", error);
+        throw error;
+    }
+};
+
 // Courses
-export const fetchCourses = async (page = 1) => {
-    const response = await api.get(`/courses?page=${page}`);
-    return response.data;
+export const fetchCourses = async () => {
+    try {
+        const response = await api.get("/courses");
+        return response.data;
+    } catch (error) {
+        console.error("Error fetching courses:", error);
+        throw error;
+    }
 };
 
 export const fetchCourseDetails = async (courseId) => {
@@ -80,7 +165,15 @@ export const updateCourse = async (courseId, courseData) => {
 };
 
 export const deleteCourse = async (courseId) => {
-    await api.delete(`/courses/${courseId}`);
+    try {
+        const response = await api.delete(`/courses/${courseId}`);
+        toast.success("Course deleted successfully");
+        return response.data;
+    } catch (error) {
+        console.error("Error deleting course:", error);
+        toast.error("Failed to delete course");
+        throw error;
+    }
 };
 
 export const publishCourse = async (courseId) => {
@@ -160,21 +253,91 @@ export const fetchLessons = async (courseId, sectionId) => {
 };
 
 // Categories
-export const fetchCategories = async () => {
-    const response = await api.get('/categories');
-    return response.data;
-};
 
 export const createCategory = async (categoryData) => {
     const response = await api.post('/categories', categoryData);
     return response.data;
 };
 
-export const updateCategory = async (categoryId, categoryData) => {
-    const response = await api.patch(`/categories/${categoryId}`, categoryData);
+export const fetchCategories = async () => {
+    try {
+        const response = await api.get("/categories");
+        return response.data;
+    } catch (error) {
+        console.error("Error fetching categories:", error);
+        throw error;
+    }
+};
+
+
+
+export const deleteCategory = async (categoryId) => {
+    try {
+        const response = await api.delete(`/categories/${categoryId}`);
+        toast.success("Category deleted successfully");
+        return response.data;
+    } catch (error) {
+        console.error("Error deleting category:", error);
+        toast.error("Failed to delete category");
+        throw error;
+    }
+};
+
+export const updateCategory = async (categoryId, data) => {
+    try {
+        const response = await api.patch(`/categories/${categoryId}`, data);
+        return response.data;
+    } catch (error) {
+        console.error("Error updating category:", error);
+        toast.error("Failed to update category");
+        throw error;
+    }
+};
+
+//User Progress
+
+export const fetchUserProgress = async (courseId) => {
+    const response = await api.get(`/courses/${courseId}/progress`);
     return response.data;
 };
 
-export const deleteCategory = async (categoryId) => {
-    await api.delete(`/categories/${categoryId}`);
+//Needs to be implemented
+export const updateUserProgress = async (courseId, lessonId) => {
+    const response = await api.post(`/courses/${courseId}/progress`, { lessonId });
+    return response.data;
 };
+
+//Mark lesson as complete
+export const markLessonComplete = async (courseId, sectionId, lessonId) => {
+    console.log(courseId, sectionId, lessonId);
+    const response = await api.post(`/courses/${courseId}/sections/${sectionId}/lessons/${lessonId}/complete`);
+    return response.data;
+};
+
+//Student Progress
+export const fetchStudentProgress = async () => {
+    const response = await api.get(`/student-progress`);
+    return response.data;
+};
+
+export const updateLastViewedLesson = async ({ courseId, lessonId }) => {
+    const res = await api.put(`/student-progress/last-viewed`, { courseId, lessonId });
+    return res.data;
+};
+
+export const getLastViewedLesson = async (courseId) => {
+    const res = await api.get(`/student-progress/last-viewed?courseId=${courseId}`);
+    return res.data;
+};
+
+export const getLastVideoTime = async (courseId) => {
+    const res = await api.get(`/student-progress/last-video-time?courseId=${courseId}`);
+    return res.data;
+};
+
+export const updateLastVideoTime = async ({ courseId, time }) => {
+    const res = await api.put(`/student-progress/last-video-time`, { courseId, time });
+    return res.data;
+};
+
+
