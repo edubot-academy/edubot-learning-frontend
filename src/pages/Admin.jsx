@@ -11,6 +11,7 @@ import {
     enrollUserInCourse,
     createCategory,
     updateCategory,
+    fetchContactMessages
 } from "../services/api";
 import { Link, useSearchParams } from "react-router-dom";
 import toast from "react-hot-toast";
@@ -19,6 +20,7 @@ const AdminPanel = () => {
     const [courses, setCourses] = useState([]);
     const [categories, setCategories] = useState([]);
     const [users, setUsers] = useState([]);
+    const [contacts, setContacts] = useState([]);
     const [newCategory, setNewCategory] = useState("");
     const [editingCategoryId, setEditingCategoryId] = useState(null);
     const [editingCategoryName, setEditingCategoryName] = useState("");
@@ -35,6 +37,7 @@ const AdminPanel = () => {
 
     useEffect(() => {
         loadCoursesAndCategories();
+        loadContacts();
     }, []);
 
     useEffect(() => {
@@ -67,6 +70,15 @@ const AdminPanel = () => {
             setCategories(categoriesRes);
         } catch (error) {
             console.error("Failed to fetch courses/categories:", error);
+        }
+    };
+
+    const loadContacts = async () => {
+        try {
+            const res = await fetchContactMessages();
+            setContacts(res);
+        } catch (error) {
+            toast.error("Failed to load contact messages");
         }
     };
 
@@ -183,29 +195,39 @@ const AdminPanel = () => {
             <div className="flex justify-center gap-4 mb-8">
                 <button className={`px-4 py-2 rounded ${activeTab === 'users' ? 'bg-blue-600 text-white' : 'bg-gray-100'}`} onClick={() => setActiveTab('users')}>Колдонуучулар</button>
                 <button className={`px-4 py-2 rounded ${activeTab === 'courses' ? 'bg-blue-600 text-white' : 'bg-gray-100'}`} onClick={() => setActiveTab('courses')}>Курстар жана Категориялар</button>
+                <button className={`px-4 py-2 rounded ${activeTab === 'contacts' ? 'bg-blue-600 text-white' : 'bg-gray-100'}`} onClick={() => setActiveTab('contacts')}>Байланыш Сообщениелери</button>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
-                <div className="bg-white shadow rounded p-4">
-                    <p className="text-sm text-gray-500">Колдонуучулардын жалпы саны</p>
-                    <p className="text-2xl font-bold">{users.length}</p>
+            {activeTab === 'contacts' && (
+                <div className="bg-white shadow rounded p-4 mt-6">
+                    <h2 className="text-2xl font-semibold mb-4">Байланыш Сообщениелери</h2>
+                    <table className="w-full text-left text-sm">
+                        <thead>
+                            <tr className="border-b">
+                                <th className="p-2">Аты</th>
+                                <th className="p-2">Email</th>
+                                <th className="p-2">Телефон</th>
+                                <th className="p-2">Сообщение</th>
+                                <th className="p-2">Келген күнү</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {contacts.map((c) => (
+                                <tr key={c.id} className="border-b">
+                                    <td className="p-2">{c.name}</td>
+                                    <td className="p-2">{c.email}</td>
+                                    <td className="p-2">{c.phone}</td>
+                                    <td className="p-2">{c.message}</td>
+                                    <td className="p-2">{new Date(c.createdAt).toLocaleString()}</td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
                 </div>
-                <div className="bg-white shadow rounded p-4">
-                    <p className="text-sm text-gray-500">Курстар жалпы</p>
-                    <p className="text-2xl font-bold">{courses.length}</p>
-                </div>
-                <div className="bg-white shadow rounded p-4">
-                    <p className="text-sm text-gray-500">Категориялар жалпы</p>
-                    <p className="text-2xl font-bold">{categories.length}</p>
-                </div>
-                <div className="bg-white shadow rounded p-4">
-                    <p className="text-sm text-gray-500">Учурдагы бет</p>
-                    <p className="text-2xl font-bold">Page {page}</p>
-                </div>
-            </div>
+            )}
 
             {activeTab === 'courses' && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="bg-white shadow rounded p-4">
                         <h2 className="text-2xl font-semibold mb-4">Курстар</h2>
                         <ul className="space-y-3">
@@ -270,7 +292,6 @@ const AdminPanel = () => {
                 <div className="mt-10 bg-white shadow rounded p-4">
                     <h2 className="text-2xl font-semibold mb-4">Колдонуучулар</h2>
                     <div className="flex flex-wrap gap-4 mb-4 items-end">
-                        {/* Search input */}
                         <input
                             type="text"
                             placeholder="Ат же Email боюнча издөө"
@@ -278,8 +299,6 @@ const AdminPanel = () => {
                             onChange={(e) => setSearch(e.target.value)}
                             className="border px-2 py-1 rounded"
                         />
-
-                        {/* Filters group */}
                         <div className="flex flex-wrap gap-2 items-end">
                             <select
                                 value={roleFilter}

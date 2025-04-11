@@ -106,6 +106,16 @@ export const enrollUserInCourse = async (userId, courseId, discountPercentage) =
     }
 };
 
+export const fetchEnrollment = async (courseId) => {
+    try {
+        const response = await api.get(`/courses/${courseId}/enrollment`);
+        return response.data;
+    } catch (error) {
+        console.error("Error fetching enrollment:", error);
+        throw error;
+    }
+};
+
 export const fetchMyStudents = async () => {
     try {
         const response = await api.get("/users/my-students");
@@ -338,6 +348,18 @@ export const getLastVideoTime = async (courseId) => {
 export const updateLastVideoTime = async ({ courseId, time }) => {
     const res = await api.put(`/student-progress/last-video-time`, { courseId, time });
     return res.data;
+};
+
+//Contact
+
+export const submitContactMessage = async (formData) => {
+    const response = await api.post('/contact', formData);
+    return response.data;
+};
+
+export const fetchContactMessages = async () => {
+    const response = await api.get('/contact');
+    return response.data;
 };
 
 

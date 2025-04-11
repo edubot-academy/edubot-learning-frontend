@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback, useContext } from "react";
 import { useParams } from "react-router-dom";
 import debounce from "lodash.debounce";
 import VideoPlayer from "../components/VideoPlayer";
@@ -11,10 +11,13 @@ import {
     getLastViewedLesson,
     getLastVideoTime,
     updateLastVideoTime,
+    fetchEnrollment,
 } from "../services/api";
+import { AuthContext } from "../context/AuthContext";
 
 const CourseDetailsPage = () => {
     const { id } = useParams();
+    const { user } = useContext(AuthContext);
     const [course, setCourse] = useState(null);
     const [sections, setSections] = useState([]);
     const [activeSectionId, setActiveSectionId] = useState(null);
@@ -24,6 +27,7 @@ const CourseDetailsPage = () => {
     const [resumeVideoTime, setResumeVideoTime] = useState(0);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [enrolled, setEnrolled] = useState(false);
     const lessonRefs = useRef({});
 
     const scrollToLesson = (lessonId) => {
@@ -36,13 +40,17 @@ const CourseDetailsPage = () => {
 
     const debouncedTimeUpdate = useCallback(
         debounce((time) => {
-            updateLastVideoTime({ courseId: Number(id), time });
+            if (user && enrolled) {
+                updateLastVideoTime({ courseId: Number(id), time });
+            }
         }, 3000),
-        [id]
+        [id, user, enrolled]
     );
 
     const handleTimeUpdate = (time) => {
-        debouncedTimeUpdate(time);
+        if (user && enrolled) {
+            debouncedTimeUpdate(time);
+        }
     };
 
     const toggleSection = (sectionId) => {
@@ -56,11 +64,11 @@ const CourseDetailsPage = () => {
     };
 
     const handleLessonClick = async (lesson) => {
-        if (!lesson.locked) {
-            setActiveLesson(lesson);
-            setActiveSectionId(lesson.sectionId);
-            localStorage.setItem(`active_section_${id}`, String(lesson.sectionId));
-            scrollToLesson(lesson.id);
+        setActiveLesson(lesson);
+        setActiveSectionId(lesson.sectionId);
+        localStorage.setItem(`active_section_${id}`, String(lesson.sectionId));
+        scrollToLesson(lesson.id);
+        if (user && enrolled && !lesson.locked) {
             await updateLastViewedLesson({ courseId: Number(id), lessonId: lesson.id });
             const videoTime = await getLastVideoTime(id);
             if (videoTime?.time) {
@@ -78,7 +86,7 @@ const CourseDetailsPage = () => {
     };
 
     const handleVideoProgress = async (progress, lesson) => {
-        if (progress >= 95 && !completedLessons.includes(lesson.id)) {
+        if (enrolled && progress >= 95 && !completedLessons.includes(lesson.id)) {
             const response = await markLessonComplete(id, lesson.sectionId, lesson.id);
             if (response.completed) {
                 setCompletedLessons((prev) => [...new Set([...prev, lesson.id])]);
@@ -87,6 +95,7 @@ const CourseDetailsPage = () => {
     };
 
     const handleCheckboxToggle = async (lesson) => {
+        if (!enrolled) return;
         const response = await markLessonComplete(id, lesson.sectionId, lesson.id);
         if (response.completed) {
             setCompletedLessons((prev) => [...new Set([...prev, lesson.id])]);
@@ -98,41 +107,60 @@ const CourseDetailsPage = () => {
     useEffect(() => {
         const fetchCourse = async () => {
             try {
+                let enrollment = { enrolled: false };
+                if (user) {
+                    enrollment = await fetchEnrollment(id);
+                }
+                setEnrolled(enrollment.enrolled);
+
                 const data = await fetchCourseDetails(id);
                 setCourse(data);
                 const sectionData = await fetchSections(id);
-                setSections(sectionData);
-                const progress = await fetchUserProgress(id);
-                const completed = progress.completedLessonIds || [];
-                setCompletedLessons(completed);
+
+                const updatedSections = sectionData.map((sec) => ({
+                    ...sec,
+                    lessons: sec.lessons.map((lesson) => ({
+                        ...lesson,
+                        locked: !enrollment.enrolled && !lesson.previewVideo,
+                    }))
+                }));
+                setSections(updatedSections);
+
+                if (enrollment.enrolled && user) {
+                    const progress = await fetchUserProgress(id);
+                    const completed = progress.completedLessonIds || [];
+                    setCompletedLessons(completed);
+                }
 
                 let lastLesson = null;
-                const lastViewed = await getLastViewedLesson(id);
-                if (lastViewed?.lessonId) {
-                    setLastViewedLessonId(lastViewed.lessonId);
-                    for (let sec of sectionData) {
-                        for (let lesson of sec.lessons || []) {
-                            if (lesson.id === lastViewed.lessonId) {
-                                lastLesson = lesson;
-                                break;
+                if (user && enrollment.enrolled) {
+                    const lastViewed = await getLastViewedLesson(id);
+                    if (lastViewed?.lessonId) {
+                        setLastViewedLessonId(lastViewed.lessonId);
+                        for (let sec of updatedSections) {
+                            for (let lesson of sec.lessons || []) {
+                                if (lesson.id === lastViewed.lessonId) {
+                                    lastLesson = lesson;
+                                    break;
+                                }
                             }
+                            if (lastLesson) break;
                         }
-                        if (lastLesson) break;
                     }
                 }
 
                 if (!lastLesson) {
-                    for (let sec of sectionData) {
+                    for (let sec of updatedSections) {
                         for (let lesson of sec.lessons || []) {
-                            if (completed.includes(lesson.id)) {
+                            if (completedLessons.includes(lesson.id)) {
                                 lastLesson = lesson;
                             }
                         }
                     }
                 }
 
-                if (!lastLesson && sectionData.length > 0) {
-                    lastLesson = sectionData[0].lessons?.[0];
+                if (!lastLesson && updatedSections.length > 0) {
+                    lastLesson = updatedSections[0].lessons?.[0];
                 }
 
                 if (lastLesson) {
@@ -140,28 +168,32 @@ const CourseDetailsPage = () => {
                     setActiveSectionId(lastLesson.sectionId);
                     localStorage.setItem(`active_section_${id}`, String(lastLesson.sectionId));
                     scrollToLesson(lastLesson.id);
-                    const videoTime = await getLastVideoTime(id);
-                    if (videoTime?.time) {
-                        setResumeVideoTime(videoTime.time);
+                    if (user && enrollment.enrolled && !lastLesson.locked) {
+                        const videoTime = await getLastVideoTime(id);
+                        if (videoTime?.time) {
+                            setResumeVideoTime(videoTime.time);
+                        }
                     }
                 } else {
                     const storedSection = localStorage.getItem(`active_section_${id}`);
                     if (storedSection) {
                         setActiveSectionId(Number(storedSection));
+                    } else if (updatedSections.length > 0) {
+                        setActiveSectionId(updatedSections[0].id);
                     }
                 }
             } catch (err) {
-                setError(err.message || "Failed to load course.");
+                setError(err.message || "Курс жүктөлбөй калды.");
             } finally {
                 setLoading(false);
             }
         };
         fetchCourse();
-    }, [id]);
+    }, [id, user]);
 
-    if (loading) return <div>Loading...</div>;
-    if (error) return <div>Error: {error}</div>;
-    if (!course) return <div>Course not found</div>;
+    if (loading) return <div>Жүктөлүүдө...</div>;
+    if (error) return <div>Ката: {error}</div>;
+    if (!course) return <div>Курс табылган жок</div>;
 
     const { prev: prevLesson, next: nextLesson } = findPrevNextLessons();
     const totalLessons = sections.reduce((count, sec) => count + (sec.lessons?.length || 0), 0);
@@ -175,17 +207,21 @@ const CourseDetailsPage = () => {
                     <p className="text-md md:text-lg leading-relaxed whitespace-pre-line mb-4">{course.description}</p>
                     {course.instructor && (
                         <div className="mt-4 flex items-center gap-4">
-                            <img src={course.instructor.avatar} alt={course.instructor.name} className="w-12 h-12 rounded-full" />
+                            <img src={course.instructor.avatar} alt={course.instructor.fullName} className="w-12 h-12 rounded-full" />
                             <div>
-                                <p className="font-semibold">{course.instructor.name}</p>
+                                <p className="font-semibold">{course.instructor.fullName}</p>
                                 <p className="text-sm text-gray-300">{course.instructor.bio}</p>
                             </div>
                         </div>
                     )}
-                    <div className="mt-6 bg-white h-4 rounded overflow-hidden">
-                        <div className="bg-green-500 h-full transition-all" style={{ width: `${progress}%` }}></div>
-                    </div>
-                    <p className="text-sm text-white mt-1">{progress}% Complete</p>
+                    {enrolled && (
+                        <div className="max-w-6xl mx-auto my-6">
+                            <div className="w-full bg-gray-300 h-4 rounded-full overflow-hidden">
+                                <div className="bg-green-500 h-full transition-all duration-300" style={{ width: `${progress}%` }}></div>
+                            </div>
+                            <p className="text-sm text-gray-700 mt-1">{progress}% бүткөн</p>
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -199,6 +235,8 @@ const CourseDetailsPage = () => {
                                     resumeTime={resumeVideoTime}
                                     onProgress={(percent) => handleVideoProgress(percent, activeLesson)}
                                     onTimeUpdate={handleTimeUpdate}
+                                    disabled={activeLesson.locked}
+                                    allowPlay={!activeLesson.locked}
                                 />
                                 <button
                                     onClick={() => handleLessonClick(prevLesson)}
@@ -219,7 +257,7 @@ const CourseDetailsPage = () => {
                     </div>
 
                     <div className="bg-white p-6 rounded-lg shadow-md sticky top-28 self-start">
-                        <h2 className="text-xl font-semibold mb-4">Course Content</h2>
+                        <h2 className="text-xl font-semibold mb-4">Курстун мазмуну</h2>
                         {sections.map((section) => {
                             const isOpen = activeSectionId === section.id;
                             return (
@@ -244,23 +282,24 @@ const CourseDetailsPage = () => {
                                                         type="checkbox"
                                                         checked={completedLessons.includes(lesson.id)}
                                                         onChange={() => handleCheckboxToggle(lesson)}
+                                                        disabled={!enrolled}
                                                     />
                                                     <div className="flex flex-col">
                                                         <span className="flex items-center gap-2">
                                                             {lesson.title}
                                                             {lesson.id === lastViewedLessonId && (
-                                                                <span className="text-[10px] bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded font-medium">Continue Watching</span>
+                                                                <span className="text-[10px] bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded font-medium">Улантуу</span>
                                                             )}
                                                         </span>
-                                                        {lesson.duration && <span className="text-xs text-gray-500">Duration: {lesson.duration}</span>}
+                                                        {lesson.duration && <span className="text-xs text-gray-500">Узактыгы: {lesson.duration}</span>}
                                                     </div>
                                                 </div>
                                                 <div className="flex items-center gap-2">
                                                     {lesson.previewVideo && (
-                                                        <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">Preview</span>
+                                                        <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">Превью</span>
                                                     )}
                                                     {lesson.locked && (
-                                                        <span className="text-xs bg-red-100 text-red-800 px-2 py-1 rounded">Locked</span>
+                                                        <span className="text-xs bg-red-100 text-red-800 px-2 py-1 rounded">Жабык</span>
                                                     )}
                                                 </div>
                                             </div>

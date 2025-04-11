@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useContext } from "react";
 import { Link } from "react-router-dom";
-import Logo from "../assets/images/edubot-logo.jpeg";
 import { FaStar } from "react-icons/fa";
 import { fetchCourses } from "../services/api";
 import { AuthContext } from "../context/AuthContext";
@@ -18,7 +17,8 @@ const HomePage = () => {
         const loadCourses = async () => {
             try {
                 const data = await fetchCourses();
-                setCoursesData(data.courses);
+                const filteredCourses = data.courses.filter((course) => course.isPublished);
+                setCoursesData(filteredCourses);
             } catch (err) {
                 console.error("Failed to fetch courses", err);
             }
@@ -40,6 +40,24 @@ const HomePage = () => {
                     <Link to="/courses" className="bg-white text-blue-600 font-bold px-8 py-3 rounded-full shadow-lg hover:bg-gray-100 transition transform hover:scale-105">
                         Курстарды караңыз
                     </Link>
+                </div>
+            </section>
+
+            {/* Feature Cards */}
+            <section className="py-16 px-6 bg-gray-50 text-center">
+                <div className="max-w-6xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div className="bg-white rounded-xl p-6 shadow-md">
+                        <h3 className="text-xl font-bold mb-2">100+ Курстар</h3>
+                        <p className="text-gray-600">Бардык деңгээлдеги үйрөнүүчүлөр үчүн темалар.</p>
+                    </div>
+                    <div className="bg-white rounded-xl p-6 shadow-md">
+                        <h3 className="text-xl font-bold mb-2">Интерактивдүү үйрөнүү</h3>
+                        <p className="text-gray-600">Тапшырмалар, тесттер жана активдүү практика.</p>
+                    </div>
+                    <div className="bg-white rounded-xl p-6 shadow-md">
+                        <h3 className="text-xl font-bold mb-2">Адистерден үйрөнүңүз</h3>
+                        <p className="text-gray-600">Опыттуу инструкторлордон түшүндүрмөлөр.</p>
+                    </div>
                 </div>
             </section>
 
