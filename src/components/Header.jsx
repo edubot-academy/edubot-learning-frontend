@@ -70,7 +70,7 @@ const Header = ({ cart = [] }) => {
                             {profileMenuOpen && (
                                 <div className="absolute right-0 mt-2 w-48 bg-white border rounded-lg shadow-lg py-2">
                                     <Link to="/profile" className="block px-4 py-2 text-gray-700 hover:bg-gray-100">Профиль</Link>
-                                    <Link to="/dashboard" className="block px-4 py-2 text-gray-700 hover:bg-gray-100">Башкаруу панели</Link>
+                                    {/* <Link to="/dashboard" className="block px-4 py-2 text-gray-700 hover:bg-gray-100">Башкаруу панели</Link> */}
                                     <button onClick={() => logout()} className="block w-full text-left px-4 py-2 text-red-600 hover:bg-gray-100">Чыгуу</button>
                                 </div>
                             )}
@@ -104,9 +104,9 @@ const Header = ({ cart = [] }) => {
                             Сатуу
                         </Link>
                     )}
-                    {user && user.role === "student" && (
+                    {/* {user && user.role === "student" && (
                         <Link to="/dashboard" className="block px-4 py-2 text-white hover:text-orange-400">Башкаруу панели</Link>
-                    )}
+                    )} */}
                     <Link to="/cart" className="text-white hover:text-orange-400 transition font-semibold text-lg">Себет ({cart.length})</Link>
                     {!user ? (
                         <div className="flex flex-col space-y-2 w-full px-6">

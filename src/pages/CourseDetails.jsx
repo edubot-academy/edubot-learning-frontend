@@ -119,11 +119,15 @@ const CourseDetailsPage = () => {
 
                 const updatedSections = sectionData.map((sec) => ({
                     ...sec,
-                    lessons: sec.lessons.map((lesson) => ({
-                        ...lesson,
-                        locked: !enrollment.enrolled && !lesson.previewVideo,
-                    }))
+                    lessons: sec.lessons
+                        .slice()
+                        .sort((a, b) => a.order - b.order) // sorting lessons by the `order` field
+                        .map((lesson) => ({
+                            ...lesson,
+                            locked: !enrollment.enrolled && !lesson.previewVideo,
+                        })),
                 }));
+
                 setSections(updatedSections);
 
                 if (enrollment.enrolled && user) {
@@ -207,7 +211,17 @@ const CourseDetailsPage = () => {
                     <p className="text-md md:text-lg leading-relaxed whitespace-pre-line mb-4">{course.description}</p>
                     {course.instructor && (
                         <div className="mt-4 flex items-center gap-4">
-                            <img src={course.instructor.avatar} alt={course.instructor.fullName} className="w-12 h-12 rounded-full" />
+                            {(course.instructor.avatar) ? (
+                                <img
+                                    src={course.instructor.avatar}
+                                    alt={course.instructor.fullName}
+                                    className="w-12 h-12 rounded-full"
+                                />
+                            ) : (
+                                <div className="w-12 h-12 rounded-full bg-gray-300 flex items-center justify-center text-xl font-bold text-white">
+                                    {course.instructor.fullName ? course.instructor.fullName.charAt(0) : course.instructor.fullName?.charAt(0)}
+                                </div>
+                            )}
                             <div>
                                 <p className="font-semibold">{course.instructor.fullName}</p>
                                 <p className="text-sm text-gray-300">{course.instructor.bio}</p>

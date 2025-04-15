@@ -1,4 +1,3 @@
-// Updated CourseBuilder with full step UI, preview toggle, brand styling, toasts, and delete confirmations
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -7,7 +6,8 @@ import {
     createSection,
     fetchCategories,
     publishCourse,
-    uploadCourseImage
+    uploadCourseImage,
+    markCoursePending
 } from '../services/api';
 import toast from 'react-hot-toast';
 
@@ -17,7 +17,6 @@ const CourseBuilder = () => {
     const [courseId, setCourseId] = useState(null);
     const [categories, setCategories] = useState([]);
     const [confirmDelete, setConfirmDelete] = useState({ type: null, sectionIndex: null, lessonIndex: null });
-    const [showConfirmModal, setShowConfirmModal] = useState(false);
 
     const [courseInfo, setCourseInfo] = useState({
         title: '',
@@ -138,7 +137,6 @@ const CourseBuilder = () => {
                         toast.error('Ар бир сабакта аталыш жана видео болушу керек.');
                         continue;
                     }
-
                     await createLesson(courseId, sec.id, {
                         title: lesson.title,
                         video: lesson.videoFile,
@@ -167,6 +165,88 @@ const CourseBuilder = () => {
         }
     };
 
+    const renderPreview = () => (
+        <div className="space-y-6">
+            <h3 className="text-xl font-semibold">Курс Превью</h3>
+            <div>
+                <p className="text-lg font-bold">{courseInfo.title}</p>
+                <p>{courseInfo.description}</p>
+                <p className="italic text-gray-500">Баасы: {courseInfo.price} сом</p>
+                {courseInfo.coverImageUrl && (
+                    <img
+                        src={courseInfo.coverImageUrl}
+                        alt="cover"
+                        className="max-h-48 mt-2 rounded"
+                    />
+                )}
+            </div>
+            <div>
+                {curriculum.map((section, sIdx) => (
+                    <div key={sIdx} className="mb-4">
+                        <p className="font-semibold">{section.sectionTitle}</p>
+                        <ul className="list-disc list-inside text-sm text-gray-700">
+                            {section.lessons.map((lesson, lIdx) => (
+                                <li key={lIdx}>
+                                    {lesson.title}
+                                    {lesson.previewVideo && (
+                                        <span className="text-xs text-green-600"> (Превью)</span>
+                                    )}
+                                    {lesson.videoFile && (
+                                        <span className="text-xs text-blue-500">
+                                            {" "}- Видео кошулган ({lesson.videoFile.name})
+                                        </span>
+                                    )}
+                                    {lesson.resourceFile && (
+                                        <span className="text-xs text-purple-500">
+                                            {" "}- Материал кошулган ({lesson.resourceFile.name})
+                                        </span>
+                                    )}
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                ))}
+            </div>
+            <div className="flex gap-4">
+                <button
+                    onClick={() => setStep(2)}
+                    className="px-4 py-2 bg-gray-200 rounded"
+                >
+                    Артка
+                </button>
+
+                <button
+                    onClick={() => {
+                        toast.success("Курс каралууга сакталды");
+                        localStorage.removeItem("draftCourse");
+                        navigate("/instructor/courses");
+                    }}
+                    className="px-6 py-2 bg-gray-800 text-white rounded"
+                >
+                    Сактап чыгуу
+                </button>
+
+                <button
+                    onClick={async () => {
+                        try {
+                            await markCoursePending(courseId); // <- You need this API in backend
+                            toast.success("Курс тастыктоого жөнөтүлдү");
+                            localStorage.removeItem("draftCourse");
+                            navigate("/instructor/courses");
+                        } catch (err) {
+                            toast.error("Жөнөтүүдө ката кетти");
+                        }
+                    }}
+                    className="px-6 py-2 bg-edubot-teal text-white rounded"
+                >
+                    Тастыктоого жөнөтүү
+                </button>
+            </div>
+
+        </div>
+    );
+
+
     return (
         <div className="pt-24 p-6 max-w-4xl mx-auto">
             <h2 className="text-2xl font-bold text-edubot-dark mb-6">Жаңы курс түзүү</h2>
@@ -174,7 +254,7 @@ const CourseBuilder = () => {
             <div className="flex gap-4 mb-6">
                 <button onClick={() => setStep(1)} className={step === 1 ? 'text-edubot-orange font-bold underline' : ''}>1. Маалымат</button>
                 <button onClick={() => setStep(2)} disabled={!courseId} className={step === 2 ? 'text-edubot-orange font-bold underline' : ''}>2. Мазмун</button>
-                <button onClick={() => setStep(3)} disabled={!courseId} className={step === 3 ? 'text-edubot-orange font-bold underline' : ''}>3. Жарыялоо</button>
+                <button onClick={() => setStep(3)} disabled={!courseId} className={step === 3 ? 'text-edubot-orange font-bold underline' : ''}>3. Превью</button>
             </div>
 
             {step === 1 && (
@@ -201,7 +281,7 @@ const CourseBuilder = () => {
                         <div key={sIdx} className="mb-6 border border-edubot-teal rounded p-4">
                             <div className="flex justify-between items-center mb-2">
                                 <input className="w-full p-2 border rounded" value={section.sectionTitle} onChange={(e) => updateSectionTitle(sIdx, e.target.value)} placeholder="Бөлүм аталышы" />
-                                <button onClick={() => setConfirmDelete({ type: 'section', sectionIndex: sIdx })} className="text-red-600">Өчүрүү</button>
+                                <button onClick={() => setConfirmDelete({ type: 'section', sectionIndex: sIdx })} className="px-3 py-1 bg-red-100 text-red-700 border border-red-300 rounded hover:bg-red-200 text-sm">Өчүрүү</button>
                             </div>
                             {section.lessons.map((lesson, lIdx) => (
                                 <div key={lIdx} className="mb-4 p-2 bg-gray-50 rounded">
@@ -212,7 +292,7 @@ const CourseBuilder = () => {
                                         <input type="checkbox" checked={lesson.previewVideo} onChange={(e) => updateLesson(sIdx, lIdx, 'previewVideo', e.target.checked)} />
                                         Превью видеосун белгилөө
                                     </label>
-                                    <button onClick={() => setConfirmDelete({ type: 'lesson', sectionIndex: sIdx, lessonIndex: lIdx })} className="text-sm text-red-500 mt-1">Сабакты өчүрүү</button>
+                                    <button onClick={() => setConfirmDelete({ type: 'lesson', sectionIndex: sIdx, lessonIndex: lIdx })} className="mt-2 px-3 py-1 bg-red-100 text-red-700 border border-red-300 rounded hover:bg-red-200 text-sm">Сабакты өчүрүү</button>
                                 </div>
                             ))}
                             <button onClick={() => addLesson(sIdx)} className="bg-edubot-orange text-white px-4 py-1 rounded mt-2">+ Сабак кошуу</button>
@@ -223,13 +303,7 @@ const CourseBuilder = () => {
                 </div>
             )}
 
-            {step === 3 && (
-                <div className="text-center">
-                    <h3 className="text-xl font-semibold mb-4">Курсту жарыялоого даярсызбы?</h3>
-                    <p className="mb-4">Курс сакталды. Жарыялоого же кийинчерээк өзгөртүүгө болот.</p>
-                    <button onClick={handlePublish} className="bg-edubot-teal text-white px-6 py-2 rounded">Курсту жарыялоо</button>
-                </div>
-            )}
+            {step === 3 && renderPreview()}
 
             {confirmDelete.type && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">

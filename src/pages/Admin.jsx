@@ -11,7 +11,9 @@ import {
     enrollUserInCourse,
     createCategory,
     updateCategory,
-    fetchContactMessages
+    fetchContactMessages,
+    getPendingCourses,
+    markCourseApproved
 } from "../services/api";
 import { Link, useSearchParams } from "react-router-dom";
 import toast from "react-hot-toast";
@@ -25,6 +27,7 @@ const AdminPanel = () => {
     const [editingCategoryId, setEditingCategoryId] = useState(null);
     const [editingCategoryName, setEditingCategoryName] = useState("");
     const [totalPages, setTotalPages] = useState(1);
+    const [pendingCourses, setPendingCourses] = useState([]);
 
     const [searchParams, setSearchParams] = useSearchParams();
     const page = Number(searchParams.get("page")) || 1;
@@ -36,13 +39,14 @@ const AdminPanel = () => {
     const [activeTab, setActiveTab] = useState("users");
 
     useEffect(() => {
-        loadCoursesAndCategories();
-        loadContacts();
-    }, []);
+        if (activeTab === 'courses') loadCoursesAndCategories();
+        if (activeTab === 'contacts') loadContacts();
+        if (activeTab === 'pending') loadPendingCourses();
+    }, [activeTab]);
 
     useEffect(() => {
-        loadUsers();
-    }, [searchParams]);
+        if (activeTab === 'users') loadUsers();
+    }, [searchParams, activeTab]);
 
     useEffect(() => {
         const delayDebounce = setTimeout(() => {
@@ -96,6 +100,17 @@ const AdminPanel = () => {
             setTotalPages(res.totalPages);
         } catch (err) {
             toast.error("Failed to load users.");
+        }
+    };
+
+
+    const loadPendingCourses = async () => {
+        try {
+            const data = await getPendingCourses();
+            setPendingCourses(data);
+            toast.success("Pending курстарды жүктөө үчүн үйрөнүлгү");
+        } catch (err) {
+            toast.error("Pending курстарды жүктөө катасы");
         }
     };
 
@@ -188,6 +203,16 @@ const AdminPanel = () => {
         updateSearchParams({ role: roleFilter, dateFrom, dateTo, page: 1 });
     };
 
+    const handleMarkCourseApproved = async (courseId) => {
+        try {
+            await markCourseApproved(courseId);
+            toast.success("Course marked as approved and published.");
+            setPendingCourses(prev => prev.filter(c => c.id !== courseId));
+        } catch (err) {
+            toast.error("Failed to mark course as approved and published.");
+        }
+    };
+
     return (
         <div className="min-h-screen p-6 pt-24 max-w-7xl mx-auto">
             <h1 className="text-4xl font-bold mb-8 text-center">Админ Панель</h1>
@@ -196,6 +221,7 @@ const AdminPanel = () => {
                 <button className={`px-4 py-2 rounded ${activeTab === 'users' ? 'bg-blue-600 text-white' : 'bg-gray-100'}`} onClick={() => setActiveTab('users')}>Колдонуучулар</button>
                 <button className={`px-4 py-2 rounded ${activeTab === 'courses' ? 'bg-blue-600 text-white' : 'bg-gray-100'}`} onClick={() => setActiveTab('courses')}>Курстар жана Категориялар</button>
                 <button className={`px-4 py-2 rounded ${activeTab === 'contacts' ? 'bg-blue-600 text-white' : 'bg-gray-100'}`} onClick={() => setActiveTab('contacts')}>Байланыш Сообщениелери</button>
+                <button onClick={() => setActiveTab('pending')} className={`px-4 py-2 rounded ${activeTab === 'pending' ? 'bg-blue-600 text-white' : 'bg-gray-100'}`}>Каралуудагы курстар</button>
             </div>
 
             {activeTab === 'contacts' && (
@@ -285,6 +311,32 @@ const AdminPanel = () => {
                             ))}
                         </ul>
                     </div>
+                </div>
+            )}
+
+            {activeTab === 'pending' && (
+                <div className="bg-white shadow rounded p-4">
+                    <h2 className="text-2xl font-semibold mb-4">Каралуудагы курстар</h2>
+                    {pendingCourses.length === 0 ? (
+                        <p>Азырынча курс жок.</p>
+                    ) : (
+                        <ul className="space-y-4">
+                            {pendingCourses.map((course) => (
+                                <li key={course.id} className="border p-4 rounded shadow flex justify-between items-center">
+                                    <div>
+                                        <h2 className="font-semibold text-lg">{course.title}</h2>
+                                        <p className="text-sm text-gray-600">Окутуучу: {course.instructor?.fullName}</p>
+                                    </div>
+                                    <button
+                                        onClick={() => handleMarkCourseApproved(course.id)}
+                                        className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+                                    >
+                                        Тастыктоо
+                                    </button>
+                                </li>
+                            ))}
+                        </ul>
+                    )}
                 </div>
             )}
 

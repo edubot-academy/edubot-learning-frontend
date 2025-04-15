@@ -1,6 +1,6 @@
-// Updated EditInstructorCourse with Kyrgyz translations, preview toggle, lesson order, and styling
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
 import {
     fetchCourseDetails,
     updateCourse,
@@ -12,7 +12,8 @@ import {
     updateSection,
     fetchCategories,
     fetchSections,
-    uploadCourseImage
+    uploadCourseImage,
+    markCoursePending
 } from "../services/api";
 
 const EditInstructorCourse = () => {
@@ -25,7 +26,6 @@ const EditInstructorCourse = () => {
     const [categories, setCategories] = useState([]);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
-    const [showSuccess, setShowSuccess] = useState(false);
     const [showCancelConfirm, setShowCancelConfirm] = useState(false);
 
     useEffect(() => {
@@ -60,6 +60,7 @@ const EditInstructorCourse = () => {
                 setOriginalSections(JSON.parse(JSON.stringify(allSections)));
             } catch (err) {
                 console.error("Маалыматты жүктөө катасы", err);
+                toast.error("Маалыматты жүктөө катасы");
             } finally {
                 setLoading(false);
             }
@@ -155,11 +156,10 @@ const EditInstructorCourse = () => {
                 }
             }
 
-            setShowSuccess(true);
-            setTimeout(() => setShowSuccess(false), 3000);
+            toast.success("Курс ийгиликтүү сакталды");
         } catch (err) {
             console.error("Курсту сактоо катасы", err);
-            alert("Сактоо ишке ашкан жок");
+            toast.error("Сактоо ишке ашкан жок");
         } finally {
             setSaving(false);
         }
@@ -168,11 +168,22 @@ const EditInstructorCourse = () => {
     const handlePublish = async () => {
         try {
             await publishCourse(id);
-            alert("Курс ийгиликтүү жарыяланды");
+            toast.success("Курс ийгиликтүү жарыяланды");
             navigate("/instructor/courses");
         } catch (err) {
             console.error("Курсту жарыялоо катасы", err);
-            alert("Курсту жарыялоо ишке ашкан жок");
+            toast.error("Курсту жарыялоо ишке ашкан жок");
+        }
+    };
+
+    const handleSubmitForApproval = async () => {
+        try {
+            await markCoursePending(id);
+            toast.success("Курс модераторго жөнөтүлдү");
+            navigate("/instructor/courses");
+        } catch (err) {
+            console.error("Жөнөтүү катасы", err);
+            toast.error("Курс жөнөтүлбөй калды");
         }
     };
 
@@ -182,8 +193,6 @@ const EditInstructorCourse = () => {
     return (
         <div className="pt-24 p-6 max-w-4xl mx-auto">
             <h1 className="text-3xl font-bold mb-6">Курсту өзгөртүү</h1>
-
-            {showSuccess && <div className="mb-4 p-3 bg-green-100 text-green-800 rounded">Курс ийгиликтүү сакталды!</div>}
 
             {course.coverImageUrl && !course.cover && (
                 <img src={course.coverImageUrl} alt="Course Cover" className="mb-4 rounded max-h-48 object-cover" />
@@ -226,7 +235,10 @@ const EditInstructorCourse = () => {
                     {saving ? "Сакталууда..." : "Бардыгын сактоо"}
                 </button>
                 {!course.isPublished && (
-                    <button onClick={handlePublish} className="px-6 py-2 bg-edubot-teal text-white rounded">Жарыялоо</button>
+                    <>
+                        {/* <button onClick={handlePublish} className="px-6 py-2 bg-edubot-teal text-white rounded">Жарыялоо</button> */}
+                        <button onClick={handleSubmitForApproval} className="px-6 py-2 bg-yellow-600 text-white rounded">Модераторго жөнөтүү</button>
+                    </>
                 )}
                 <button onClick={confirmCancel} className="px-6 py-2 bg-gray-500 text-white rounded">Артка кайтуу</button>
             </div>
