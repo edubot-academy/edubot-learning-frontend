@@ -207,6 +207,11 @@ export const markCourseApproved = async (courseId) => {
     return response.data;
 };
 
+export const markCourseRejected = async (courseId) => {
+    const response = await api.patch(`/courses/${courseId}/status`, { status: 'rejected' });
+    return response.data;
+};
+
 export const uploadCourseImage = async (courseId, coverFile) => {
     const formData = new FormData();
     formData.append('cover', coverFile);

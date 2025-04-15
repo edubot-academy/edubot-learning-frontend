@@ -13,7 +13,8 @@ import {
     updateCategory,
     fetchContactMessages,
     getPendingCourses,
-    markCourseApproved
+    markCourseApproved,
+    markCourseRejected
 } from "../services/api";
 import { Link, useSearchParams } from "react-router-dom";
 import toast from "react-hot-toast";
@@ -213,6 +214,16 @@ const AdminPanel = () => {
         }
     };
 
+    const handleMarkCourseRejected = async (courseId) => {
+        try {
+            await markCourseRejected(courseId);
+            toast.success("Course marked as rejected.");
+            setPendingCourses(prev => prev.filter(c => c.id !== courseId));
+        } catch (err) {
+            toast.error("Failed to mark course as rejected.");
+        }
+    };
+
     return (
         <div className="min-h-screen p-6 pt-24 max-w-7xl mx-auto">
             <h1 className="text-4xl font-bold mb-8 text-center">Админ Панель</h1>
@@ -332,6 +343,12 @@ const AdminPanel = () => {
                                         className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
                                     >
                                         Тастыктоо
+                                    </button>
+                                    <button
+                                        onClick={() => handleMarkCourseRejected(course.id)}
+                                        className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
+                                    >
+                                        Жокко чыгаруу
                                     </button>
                                 </li>
                             ))}
