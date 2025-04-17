@@ -342,7 +342,6 @@ export const updateUserProgress = async (courseId, lessonId) => {
 
 //Mark lesson as complete
 export const markLessonComplete = async (courseId, sectionId, lessonId) => {
-    console.log(courseId, sectionId, lessonId);
     const response = await api.post(`/courses/${courseId}/sections/${sectionId}/lessons/${lessonId}/complete`);
     return response.data;
 };

@@ -231,20 +231,20 @@ const AdminPanel = () => {
             <div className="flex justify-center gap-4 mb-8">
                 <button className={`px-4 py-2 rounded ${activeTab === 'users' ? 'bg-blue-600 text-white' : 'bg-gray-100'}`} onClick={() => setActiveTab('users')}>Колдонуучулар</button>
                 <button className={`px-4 py-2 rounded ${activeTab === 'courses' ? 'bg-blue-600 text-white' : 'bg-gray-100'}`} onClick={() => setActiveTab('courses')}>Курстар жана Категориялар</button>
-                <button className={`px-4 py-2 rounded ${activeTab === 'contacts' ? 'bg-blue-600 text-white' : 'bg-gray-100'}`} onClick={() => setActiveTab('contacts')}>Байланыш Сообщениелери</button>
+                <button className={`px-4 py-2 rounded ${activeTab === 'contacts' ? 'bg-blue-600 text-white' : 'bg-gray-100'}`} onClick={() => setActiveTab('contacts')}>Байланыш Каттары</button>
                 <button onClick={() => setActiveTab('pending')} className={`px-4 py-2 rounded ${activeTab === 'pending' ? 'bg-blue-600 text-white' : 'bg-gray-100'}`}>Каралуудагы курстар</button>
             </div>
 
             {activeTab === 'contacts' && (
                 <div className="bg-white shadow rounded p-4 mt-6">
-                    <h2 className="text-2xl font-semibold mb-4">Байланыш Сообщениелери</h2>
+                    <h2 className="text-2xl font-semibold mb-4">Байланыш Каттары</h2>
                     <table className="w-full text-left text-sm">
                         <thead>
                             <tr className="border-b">
                                 <th className="p-2">Аты</th>
                                 <th className="p-2">Email</th>
                                 <th className="p-2">Телефон</th>
-                                <th className="p-2">Сообщение</th>
+                                <th className="p-2">Каттар</th>
                                 <th className="p-2">Келген күнү</th>
                             </tr>
                         </thead>
@@ -379,6 +379,7 @@ const AdminPanel = () => {
                                 <option value="instructor">Окутуучу</option>
                                 <option value="sales">Сатуу</option>
                                 <option value="admin">Admin</option>
+                                <option value="assistant">Ассистент</option>
                             </select>
                             <input
                                 type="date"
@@ -435,6 +436,7 @@ const AdminPanel = () => {
                                             <option value="instructor">Instructor</option>
                                             <option value="sales">Sales</option>
                                             <option value="admin">Admin</option>
+                                            <option value="assistant">Assistant</option>
                                         </select>
                                         <button onClick={() => handleDeleteUser(user.id)} className="text-red-600 hover:underline">Delete</button>
                                     </td>

@@ -1,46 +1,63 @@
 import React, { useState, useEffect } from 'react';
+import { toast } from 'react-hot-toast';
 import { addPayment } from '../services/api';
 
 const PayMoreModal = ({ student, onClose, onSuccess }) => {
     const [selectedCourseId, setSelectedCourseId] = useState('');
     const [amount, setAmount] = useState('');
     const [unpaidCourses, setUnpaidCourses] = useState([]);
+    const [paymentType, setPaymentType] = useState('cash');
+
+    const formatCurrency = (value) => `${Number(value).toFixed(2)} сом`;
 
     useEffect(() => {
         const unpaid = student.enrollments?.map((enrollment) => {
             const course = enrollment.course;
             const discount = enrollment.discountPercentage || 0;
             const totalFee = course.price - (course.price * discount) / 100;
-            const paid = student.payments?.filter(p => p.courseId === course.id)
+            const paid = student.payments
+                ?.filter(p => p.courseId === course.id)
                 .reduce((sum, p) => sum + Number(p.amount), 0) || 0;
             const remaining = totalFee - paid;
-            return remaining > 0 ? {
+            return {
                 id: course.id,
                 title: course.title,
-                remaining,
                 totalFee,
-                paid
-            } : null;
-        }).filter(Boolean);
+                paid,
+                remaining,
+            };
+        }) || [];
 
-        setUnpaidCourses(unpaid);
-        if (unpaid.length === 1) {
-            setSelectedCourseId(unpaid[0].id);
-            setAmount(unpaid[0].remaining);
+        const filtered = unpaid.filter(c => c.remaining > 0);
+        setUnpaidCourses(filtered);
+
+        if (filtered.length === 1) {
+            setSelectedCourseId(filtered[0].id);
+            setAmount(filtered[0].remaining);
         }
     }, [student]);
 
     const handlePay = async () => {
         if (!selectedCourseId || !amount) return;
+
+        const selected = unpaidCourses.find(c => c.id === Number(selectedCourseId));
+        const maxAmount = selected?.remaining || 0;
+        if (Number(amount) > maxAmount) {
+            toast.error(`Кошумча сумма чектен ашып кетти. Калган сумма: ${formatCurrency(maxAmount)}`);
+            return;
+        }
+
         try {
             await addPayment({
                 userId: student.id,
                 courseId: selectedCourseId,
                 amount,
+                type: paymentType,
             });
+            toast.success('Төлөм ийгиликтүү кошулду!');
             onSuccess();
         } catch (err) {
-            console.error('Payment failed:', err);
+            toast.error('Төлөм кошууда ката кетти');
         }
     };
 
@@ -53,57 +70,70 @@ const PayMoreModal = ({ student, onClose, onSuccess }) => {
                 >
                     ×
                 </button>
-                <h2 className="text-xl font-semibold mb-4">Add Payment</h2>
+                <h2 className="text-xl font-semibold mb-4">Төлөм кошуу</h2>
 
                 <div className="mb-4">
-                    <label className="block mb-1 font-medium">Select Course</label>
+                    <label className="block mb-1 font-medium">Курсту тандаңыз</label>
                     <select
                         className="w-full border p-2 rounded"
                         value={selectedCourseId}
                         onChange={(e) => {
-                            const selectedId = Number(e.target.value);
-                            setSelectedCourseId(selectedId);
-                            const selected = unpaidCourses.find(c => c.id === selectedId);
-                            if (selected) setAmount(selected.remaining);
+                            const id = Number(e.target.value);
+                            setSelectedCourseId(id);
+                            const sel = unpaidCourses.find(c => c.id === id);
+                            setAmount(sel?.remaining || '');
                         }}
                     >
-                        <option value="">-- Choose a course --</option>
-                        {unpaidCourses.map((course) => (
-                            <option key={course.id} value={course.id}>
-                                {course.title} (Remaining: {course.remaining.toFixed(2)} сом)
+                        <option value="">-- Курсту тандаңыз --</option>
+                        {unpaidCourses.map(c => (
+                            <option key={c.id} value={c.id}>
+                                {c.title}
                             </option>
                         ))}
                     </select>
                 </div>
 
                 {selectedCourseId && (
-                    <div className="text-sm text-gray-600 mb-2">
-                        Total fee: {unpaidCourses.find(c => c.id === Number(selectedCourseId))?.totalFee.toFixed(2)} сом,
-                        Paid: {unpaidCourses.find(c => c.id === Number(selectedCourseId))?.paid.toFixed(2)} сом
+                    <div className="text-sm text-gray-600 mb-4">
+                        Жалпы баа: {formatCurrency(unpaidCourses.find(c => c.id === Number(selectedCourseId))?.totalFee)}<br />
+                        Төлөнгөнү: {formatCurrency(unpaidCourses.find(c => c.id === Number(selectedCourseId))?.paid)}<br />
+                        Калган сумма: {formatCurrency(unpaidCourses.find(c => c.id === Number(selectedCourseId))?.remaining)}
                     </div>
                 )}
 
                 <div className="mb-4">
-                    <label className="block mb-1 font-medium">Payment Amount (сом)</label>
+                    <label className="block mb-1 font-medium">Төлөм суммасы (сом)</label>
                     <input
                         type="number"
                         value={amount}
-                        onChange={(e) => setAmount(e.target.value)}
+                        onChange={e => setAmount(e.target.value)}
                         className="w-full border p-2 rounded"
-                        placeholder="Enter amount"
+                        placeholder="Сумманы жазыңыз"
                     />
+                </div>
+
+                <div className="mb-4">
+                    <label className="block mb-1 font-medium">Төлөм ыкмасы</label>
+                    <select
+                        className="w-full border p-2 rounded"
+                        value={paymentType}
+                        onChange={e => setPaymentType(e.target.value)}
+                    >
+                        <option value="cash">Накталай</option>
+                        <option value="card">Карта</option>
+                    </select>
                 </div>
 
                 <div className="flex justify-end space-x-2">
                     <button className="bg-gray-400 text-white px-4 py-2 rounded" onClick={onClose}>
-                        Cancel
+                        Жокко чыгаруу
                     </button>
                     <button
                         className="bg-blue-600 text-white px-4 py-2 rounded"
                         onClick={handlePay}
                         disabled={!selectedCourseId || !amount}
                     >
-                        Add Payment
+                        Төлөм кошуу
                     </button>
                 </div>
             </div>
