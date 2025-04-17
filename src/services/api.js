@@ -58,6 +58,7 @@ export const resetPassword = async (data) => await api.post(`/auth/reset-passwor
 export const registerUser = async (userData) => await api.post("/auth/register", userData);
 export const loginUser = async (userData) => await api.post("/auth/login", userData);
 export const fetchUserProfile = async () => await api.get("/auth/profile");
+export const updateUserProfile = async (userId, data) => await api.patch(`/auth/update/${userId}`, data);
 
 //Users
 
@@ -102,6 +103,16 @@ export const enrollUserInCourse = async (userId, courseId, discountPercentage) =
     } catch (error) {
         console.error("Error enrolling user:", error);
         toast.error("Failed to enroll user in course");
+        throw error;
+    }
+};
+
+export const fetchEnrollment = async (courseId) => {
+    try {
+        const response = await api.get(`/courses/${courseId}/enrollment`);
+        return response.data;
+    } catch (error) {
+        console.error("Error fetching enrollment:", error);
         throw error;
     }
 };
@@ -181,6 +192,26 @@ export const publishCourse = async (courseId) => {
     return response.data;
 };
 
+export const markCoursePending = async (courseId) => {
+    const response = await api.patch(`/courses/${courseId}/status`, { status: 'pending' });
+    return response.data;
+};
+
+export const getPendingCourses = async () => {
+    const response = await api.get('/courses/pending');
+    return response.data;
+};
+
+export const markCourseApproved = async (courseId) => {
+    const response = await api.patch(`/courses/${courseId}/status`, { status: 'approved' });
+    return response.data;
+};
+
+export const markCourseRejected = async (courseId) => {
+    const response = await api.patch(`/courses/${courseId}/status`, { status: 'rejected' });
+    return response.data;
+};
+
 export const uploadCourseImage = async (courseId, coverFile) => {
     const formData = new FormData();
     formData.append('cover', coverFile);
@@ -220,6 +251,7 @@ export const createLesson = async (courseId, sectionId, lessonData) => {
     if (lessonData.previewVideo !== undefined) formData.append('previewVideo', lessonData.previewVideo);
     if (lessonData.video) formData.append('video', lessonData.video);
     if (lessonData.resource) formData.append('resource', lessonData.resource);
+    if (lessonData.order) formData.append('order', lessonData.order);
 
     const response = await api.post(
         `/courses/${courseId}/sections/${sectionId}/lessons`,
@@ -235,6 +267,7 @@ export const updateLesson = async (courseId, sectionId, lessonId, lessonData) =>
     if (lessonData.previewVideo !== undefined) formData.append("previewVideo", lessonData.previewVideo);
     if (lessonData.videoFile) formData.append("video", lessonData.videoFile);
     if (lessonData.resourceFile) formData.append("resource", lessonData.resourceFile);
+    if (lessonData.order) formData.append("order", lessonData.order);
 
     const response = await api.patch(
         `/courses/${courseId}/sections/${sectionId}/lessons/${lessonId}`,
@@ -309,7 +342,6 @@ export const updateUserProgress = async (courseId, lessonId) => {
 
 //Mark lesson as complete
 export const markLessonComplete = async (courseId, sectionId, lessonId) => {
-    console.log(courseId, sectionId, lessonId);
     const response = await api.post(`/courses/${courseId}/sections/${sectionId}/lessons/${lessonId}/complete`);
     return response.data;
 };
@@ -338,6 +370,18 @@ export const getLastVideoTime = async (courseId) => {
 export const updateLastVideoTime = async ({ courseId, time }) => {
     const res = await api.put(`/student-progress/last-video-time`, { courseId, time });
     return res.data;
+};
+
+//Contact
+
+export const submitContactMessage = async (formData) => {
+    const response = await api.post('/contact', formData);
+    return response.data;
+};
+
+export const fetchContactMessages = async () => {
+    const response = await api.get('/contact');
+    return response.data;
 };
 
 

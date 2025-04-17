@@ -16,6 +16,9 @@ import InstructorCourses from "./pages/InstructorCourses";
 import EditInstructorCourse from "./pages/EditInstructorCourse";
 import AdminPanel from "./pages/Admin";
 import SalesManager from "./pages/SalesManager";
+import AboutPage from "./pages/About";
+import ContactPage from "./pages/Contact";
+import AssistantDashboard from "./pages/Assistant";
 
 const AppRoutes = () => {
     return (
@@ -38,6 +41,9 @@ const AppRoutes = () => {
                         <Route path="/forgot-password" element={<ForgotPassword />} />
                         <Route path="/admin" element={<AdminPanel />} />
                         <Route path="/sales-manager" element={<SalesManager />} />
+                        <Route path="/about" element={<AboutPage />} />
+                        <Route path="/contact" element={<ContactPage />} />
+                        <Route path="/assistant" element={<AssistantDashboard />} />
                     </Routes>
                 </div>
                 <Footer />

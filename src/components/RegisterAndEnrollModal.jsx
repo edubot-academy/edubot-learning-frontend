@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { fetchUsers, fetchCourses, registerStudent, enrollUserInCourse, addPayment } from '../services/api';
+import { toast } from 'react-hot-toast';
+import { FaEye, FaEyeSlash, FaRegCopy } from 'react-icons/fa';
 
-const UnifiedEnrollModal = ({ onClose, onSuccess }) => {
+const RegisterAndEnrollModal = ({ onClose, onSuccess }) => {
     const [users, setUsers] = useState([]);
     const [courses, setCourses] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
@@ -11,22 +13,27 @@ const UnifiedEnrollModal = ({ onClose, onSuccess }) => {
     const [discount, setDiscount] = useState(0);
     const [isDeposit, setIsDeposit] = useState(true);
     const [coursePrice, setCoursePrice] = useState(0);
-    const [newUserData, setNewUserData] = useState({ fullName: '', email: '', phoneNumber: '' });
+    const [newUserData, setNewUserData] = useState({ fullName: '', email: '', phoneNumber: '', password: '' });
     const [searchTriggered, setSearchTriggered] = useState(false);
-    const [showRegisterForm, setShowRegisterForm] = useState(false);
+    const [showRegisterForm, setShowRegisterForm] = useState(true);
+    const [showSearchBlock, setShowSearchBlock] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
     const coursesLoaded = useRef(false);
 
     const handleSearch = async () => {
         if (!searchTerm) return;
-        const allUsers = await fetchUsers();
-        setUsers(allUsers);
+        try {
+            const { data: allUsers = [] } = await fetchUsers({ search: searchTerm, role: 'student' });
+            setUsers(allUsers);
+        } catch (err) {
+            console.error('Failed to fetch users:', err);
+            toast.error('Колдонуучулар жүктөлгөн жок');
+        }
+        setSearchTriggered(true);
         setSearchTriggered(true);
     };
 
-    const filteredUsers = users.filter(user =>
-        user.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.email.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const filteredUsers = users;
 
     const handleRegister = async () => {
         try {
@@ -41,15 +48,7 @@ const UnifiedEnrollModal = ({ onClose, onSuccess }) => {
     const handleEnrollAndPay = async () => {
         try {
             await enrollUserInCourse(selectedUser.id, selectedCourseId, discount);
-
-            await addPayment({
-                userId: selectedUser.id,
-                courseId: selectedCourseId,
-                amount,
-                isDeposit,
-            });
-
-            console.log('Enrollment and payment successful');
+            await addPayment({ userId: selectedUser.id, courseId: selectedCourseId, amount, isDeposit });
             onClose();
             onSuccess();
         } catch (err) {
@@ -60,7 +59,6 @@ const UnifiedEnrollModal = ({ onClose, onSuccess }) => {
     useEffect(() => {
         if (coursesLoaded.current) return;
         coursesLoaded.current = true;
-
         const loadCourses = async () => {
             const res = await fetchCourses();
             setCourses(res.courses);
@@ -77,37 +75,43 @@ const UnifiedEnrollModal = ({ onClose, onSuccess }) => {
         }
     }, [selectedCourseId, discount]);
 
+    useEffect(() => {
+        if (newUserData.fullName.trim() && !newUserData.passwordManuallyChanged) {
+            const year = new Date().getFullYear();
+            const safeName = newUserData.fullName.trim().replace(/\s+/g, '').toLowerCase();
+            const generated = `${safeName}${year}`;
+            setNewUserData(prev => ({ ...prev, password: generated, passwordManuallyChanged: false }));
+        }
+    }, [newUserData.fullName]);
+
     return (
         <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
             <div className="bg-white rounded-lg p-6 w-full max-w-xl shadow-lg relative">
-                <button
-                    onClick={onClose}
-                    className="absolute top-2 right-2 text-gray-600 hover:text-red-500 text-xl"
-                >
-                    ×
-                </button>
-                <h2 className="text-xl font-semibold mb-4">Enroll Student</h2>
-
+                <button onClick={onClose} className="absolute top-2 right-2 text-gray-600 hover:text-red-500 text-xl">×</button>
                 {!selectedUser && !showRegisterForm && (
                     <>
-                        <div className="flex mb-4 space-x-2">
+                        <div className="flex mb-4 space-x-2 relative">
                             <input
                                 type="text"
-                                placeholder="Search by name or email"
+                                placeholder="Аты же email менен издөө"
                                 value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
+                                onChange={(e) => {
+                                    const value = e.target.value;
+                                    setSearchTerm(value);
+                                    if (value.length >= 3) {
+                                        handleSearch();
+                                    } else {
+                                        setUsers([]);
+                                        setSearchTriggered(false);
+                                    }
+                                }}
                                 className="w-full border p-2 rounded"
                             />
-                            <button
-                                className="bg-blue-600 text-white px-4 py-2 rounded"
-                                onClick={handleSearch}
-                            >
-                                Search
-                            </button>
+
                         </div>
 
                         {searchTriggered && filteredUsers.length > 0 && (
-                            <ul className="border rounded mb-4 max-h-40 overflow-y-auto">
+                            <ul className="absolute z-50 left-0 right-0 bg-white border rounded shadow max-h-40 overflow-y-auto mt-1">
                                 {filteredUsers.map(user => (
                                     <li
                                         key={user.id}
@@ -121,12 +125,12 @@ const UnifiedEnrollModal = ({ onClose, onSuccess }) => {
                         )}
 
                         <div className="text-center">
-                            <span className="text-gray-600">Can’t find the user?</span>
+                            <span className="text-gray-600">Колдонуучу табылган жокпу?</span>
                             <button
                                 className="ml-2 text-blue-600 underline"
                                 onClick={() => setShowRegisterForm(true)}
                             >
-                                Register New
+                                Жаңы каттоо
                             </button>
                         </div>
                     </>
@@ -134,10 +138,15 @@ const UnifiedEnrollModal = ({ onClose, onSuccess }) => {
 
                 {showRegisterForm && !selectedUser && (
                     <div className="mb-4">
-                        <h3 className="text-lg font-medium mb-2">Register New Student</h3>
+                        <div className="flex items-center justify-between mb-2">
+                            <h3 className="text-lg font-medium">Жаңы студентти каттоо</h3>
+                            <button className="text-sm text-blue-600 underline" onClick={() => setShowRegisterForm(false)}>
+                                Мурунку студентти тандоо
+                            </button>
+                        </div>
                         <input
                             type="text"
-                            placeholder="Full Name"
+                            placeholder="Толук аты"
                             value={newUserData.fullName}
                             onChange={(e) => setNewUserData({ ...newUserData, fullName: e.target.value })}
                             className="w-full border p-2 rounded mb-2"
@@ -151,21 +160,45 @@ const UnifiedEnrollModal = ({ onClose, onSuccess }) => {
                         />
                         <input
                             type="text"
-                            placeholder="Phone Number"
+                            placeholder="Телефон номери"
                             value={newUserData.phoneNumber}
                             onChange={(e) => setNewUserData({ ...newUserData, phoneNumber: e.target.value })}
-                            className="w-full border p-2 rounded mb-4"
+                            className="w-full border p-2 rounded mb-2"
                         />
+                        <div className="relative mb-4">
+                            <input
+                                type={showPassword ? 'text' : 'password'}
+                                value={newUserData.password}
+                                onChange={(e) => setNewUserData({ ...newUserData, password: e.target.value, passwordManuallyChanged: true })}
+                                placeholder="Сырсөз"
+                                className="w-full border p-2 rounded pr-20"
+                            />
+                            <button
+                                type="button"
+                                onClick={() => navigator.clipboard.writeText(newUserData.password) && toast.success('Сырсөз көчүрүлдү!')}
+                                className="absolute right-10 top-2 text-gray-600 hover:text-blue-600"
+                                title="Көчүрүү"
+                            >
+                                <FaRegCopy size={18} />
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setShowPassword(!showPassword)}
+                                className="absolute right-2 top-2 text-gray-600"
+                            >
+                                {showPassword ? <FaEyeSlash size={18} /> : <FaEye size={18} />}
+                            </button>
+                        </div>
                         <div className="flex justify-end space-x-2">
                             <button className="bg-gray-400 text-white px-4 py-2 rounded" onClick={onClose}>
-                                Cancel
+                                Жокко чыгаруу
                             </button>
                             <button
                                 className="bg-green-600 text-white px-4 py-2 rounded"
                                 onClick={handleRegister}
-                                disabled={!newUserData.fullName || !newUserData.email}
+                                disabled={!newUserData.fullName || !newUserData.email || !newUserData.password}
                             >
-                                Register
+                                Каттоо
                             </button>
                         </div>
                     </div>
@@ -173,21 +206,21 @@ const UnifiedEnrollModal = ({ onClose, onSuccess }) => {
 
                 {selectedUser && (
                     <div>
-                        <h3 className="text-lg font-medium mb-2">Selected Student</h3>
+                        <h3 className="text-lg font-medium mb-2">Тандалган студент</h3>
                         <div className="border p-3 rounded mb-4">
-                            <p><strong>Name:</strong> {selectedUser.fullName}</p>
+                            <p><strong>Аты:</strong> {selectedUser.fullName}</p>
                             <p><strong>Email:</strong> {selectedUser.email}</p>
-                            <p><strong>Phone:</strong> {selectedUser.phoneNumber || '—'}</p>
+                            <p><strong>Телефон:</strong> {selectedUser.phoneNumber || '—'}</p>
                         </div>
 
                         <div className="mb-4">
-                            <label className="block mb-1 font-medium">Select Course</label>
+                            <label className="block mb-1 font-medium">Курсту тандаңыз</label>
                             <select
                                 className="w-full border p-2 rounded"
                                 value={selectedCourseId || ''}
                                 onChange={(e) => setSelectedCourseId(e.target.value)}
                             >
-                                <option value="">-- Choose a course --</option>
+                                <option value="">-- Курсту тандоо --</option>
                                 {courses.map(course => (
                                     <option key={course.id} value={course.id}>{course.title}</option>
                                 ))}
@@ -195,27 +228,30 @@ const UnifiedEnrollModal = ({ onClose, onSuccess }) => {
                         </div>
 
                         <div className="mb-4">
-                            <label className="block mb-1 font-medium">Discount (%)</label>
+                            <label className="block mb-1 font-medium">Жеңилдик (%)</label>
                             <input
                                 type="number"
-                                value={discount}
-                                onChange={(e) => setDiscount(Number(e.target.value))}
+                                value={discount === 0 ? '' : discount}
+                                onChange={(e) => {
+                                    const val = e.target.value;
+                                    setDiscount(val === '' ? 0 : Number(val));
+                                }}
                                 className="w-full border p-2 rounded"
-                                placeholder="Enter discount percentage"
+                                placeholder="Жеңилдик пайызын жазыңыз"
                             />
                         </div>
 
                         <div className="mb-4">
-                            <label className="block mb-1 font-medium">Payment Amount (сом)</label>
+                            <label className="block mb-1 font-medium">Төлөм суммасы (сом)</label>
                             <input
                                 type="number"
                                 value={amount}
                                 onChange={(e) => setAmount(e.target.value)}
                                 className="w-full border p-2 rounded"
-                                placeholder="Enter amount"
+                                placeholder="Сумманы жазыңыз"
                             />
                             <p className="text-sm text-gray-500 mt-1">
-                                Course price: {coursePrice} сом. Discounted: {coursePrice - (coursePrice * discount / 100)} сом
+                                Курстун баасы: {coursePrice} сом. Жеңилдик менен: {coursePrice - (coursePrice * discount / 100)} сом
                             </p>
                         </div>
 
@@ -227,20 +263,20 @@ const UnifiedEnrollModal = ({ onClose, onSuccess }) => {
                                     onChange={(e) => setIsDeposit(e.target.checked)}
                                     className="mr-2"
                                 />
-                                Mark this payment as deposit
+                                Бул төлөмдү депозит деп белгилөө
                             </label>
                         </div>
 
                         <div className="flex justify-end space-x-2">
                             <button className="bg-gray-400 text-white px-4 py-2 rounded" onClick={onClose}>
-                                Cancel
+                                Жокко чыгаруу
                             </button>
                             <button
                                 className="bg-blue-600 text-white px-4 py-2 rounded"
                                 onClick={handleEnrollAndPay}
                                 disabled={!selectedCourseId || !amount}
                             >
-                                Enroll & Pay
+                                Жазуу жана Төлөө
                             </button>
                         </div>
                     </div>
@@ -250,4 +286,4 @@ const UnifiedEnrollModal = ({ onClose, onSuccess }) => {
     );
 };
 
-export default UnifiedEnrollModal;
+export default RegisterAndEnrollModal;

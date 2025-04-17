@@ -1,7 +1,22 @@
 module.exports = {
-  content: ["./src/**/*.{js,jsx,ts,tsx}"],
+  content: [
+    "./src/**/*.{js,ts,jsx,tsx}",
+  ],
   theme: {
-    extend: {},
+    extend: {
+      colors: {
+        edubot: {
+          dark: '#122144',
+          orange: '#f17e22',
+          green: '#0ea78b',
+          soft: '#f39647',
+          teal: '#1e605e',
+        },
+      },
+      fontFamily: {
+        sans: ['Inter', 'sans-serif'], // or Poppins if you prefer
+      },
+    },
   },
   plugins: [],
-};
+}
