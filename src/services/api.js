@@ -244,46 +244,85 @@ export const deleteSection = async (courseId, sectionId) => {
 };
 
 // Lessons
-export const createLesson = async (courseId, sectionId, lessonData) => {
-    const formData = new FormData();
-    formData.append('title', lessonData.title);
-    if (lessonData.content) formData.append('content', lessonData.content);
-    if (lessonData.previewVideo !== undefined) formData.append('previewVideo', lessonData.previewVideo);
-    if (lessonData.video) formData.append('video', lessonData.video);
-    if (lessonData.resource) formData.append('resource', lessonData.resource);
-    if (lessonData.order) formData.append('order', lessonData.order);
+export async function createLesson(courseId, sectionId, lessonData) {
 
     const response = await api.post(
         `/courses/${courseId}/sections/${sectionId}/lessons`,
-        formData
+        lessonData
     );
     return response.data;
-};
+}
 
-export const updateLesson = async (courseId, sectionId, lessonId, lessonData) => {
-    const formData = new FormData();
-    formData.append("title", lessonData.title || "");
-    if (lessonData.content) formData.append("content", lessonData.content);
-    if (lessonData.previewVideo !== undefined) formData.append("previewVideo", lessonData.previewVideo);
-    if (lessonData.videoFile) formData.append("video", lessonData.videoFile);
-    if (lessonData.resourceFile) formData.append("resource", lessonData.resourceFile);
-    if (lessonData.order) formData.append("order", lessonData.order);
+export async function updateLesson(courseId, sectionId, lessonId, lessonData) {
 
     const response = await api.patch(
         `/courses/${courseId}/sections/${sectionId}/lessons/${lessonId}`,
-        formData
+        lessonData
     );
     return response.data;
-};
+}
 
-export const deleteLesson = async (courseId, sectionId, lessonId) => {
+export async function deleteLesson(courseId, sectionId, lessonId) {
     await api.delete(`/courses/${courseId}/sections/${sectionId}/lessons/${lessonId}`);
-};
+}
 
-export const fetchLessons = async (courseId, sectionId) => {
+export async function fetchLessons(courseId, sectionId) {
     const response = await api.get(`/courses/${courseId}/sections/${sectionId}/lessons`);
     return response.data;
-};
+}
+
+
+export async function uploadLessonFile(courseId, sectionId, type, file, onProgress) {
+    if (!file || typeof file.name !== 'string') {
+        throw new Error('No file provided for upload');
+    }
+
+    const parts = file.name.split('.');
+    if (parts.length < 2) {
+        throw new Error('File name does not contain an extension');
+    }
+
+    const extension = parts.pop().toLowerCase();
+    const allowed = ['mp4', 'webm', 'avi', 'mov', 'mkv', 'pdf', 'zip'];
+    if (!allowed.includes(extension)) {
+        throw new Error(`Unsupported file type: .${extension}`);
+    }
+
+    let presign;
+    try {
+        presign = await api.get(
+            `/courses/${courseId}/sections/${sectionId}/lessons/upload-url`,
+            { params: { type, extension } }
+        );
+    } catch (err) {
+        const msg = err.response?.data?.message || err.message;
+        throw new Error(Array.isArray(msg) ? msg.join(', ') : msg);
+    }
+
+    const { key, url, maxFileSize } = presign.data;
+    if (file.size > maxFileSize) {
+        throw new Error(`File size (${file.size}) exceeds maximum of ${maxFileSize} bytes`);
+    }
+
+    try {
+        await axios.put(url, file, {
+            headers: { 'Content-Type': file.type },
+            maxBodyLength: Infinity,
+            onUploadProgress: (progressEvent) => {
+                if (onProgress) {
+                    const percent = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+                    onProgress(percent);
+                }
+            }
+        });
+    } catch (err) {
+        const msg = err.response?.statusText || err.message;
+        throw new Error(msg);
+    }
+
+    return key;
+}
+
 
 // Categories
 

@@ -30,7 +30,7 @@ const InstructorCourses = () => {
                         <img src={course.coverImageUrl} alt={course.title} className="w-full h-48 object-cover mb-4" />
                         <h2 className="text-xl font-semibold mb-2">{course.title}</h2>
                         <p className="text-gray-700 mb-2">{course.instructor.fullName}</p>
-                        <p className="text-sm text-gray-500 mb-2">Баасы: ${course.price}</p>
+                        <p className="text-sm text-gray-500 mb-2">Баасы: {course.price} с</p>
                         <span
                             className={`absolute top-2 right-2 px-2 py-1 text-xs rounded ${course.isPublished ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"
                                 }`}
