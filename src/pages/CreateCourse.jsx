@@ -5,9 +5,9 @@ import {
     createLesson,
     createSection,
     fetchCategories,
-    publishCourse,
     uploadCourseImage,
-    markCoursePending
+    markCoursePending,
+    uploadLessonFile
 } from '../services/api';
 import toast from 'react-hot-toast';
 
@@ -30,7 +30,16 @@ const CourseBuilder = () => {
     const [curriculum, setCurriculum] = useState([
         {
             sectionTitle: 'Бөлүм 1',
-            lessons: [{ title: 'Сабак 1', videoFile: null, resourceFile: null, previewVideo: false }],
+            lessons: [
+                {
+                    title: 'Сабак 1',
+                    videoKey: '',
+                    resourceKey: '',
+                    previewVideo: false,
+                    uploadProgress: { video: 0, resource: 0 },
+                    uploading: { video: false, resource: false },
+                },
+            ],
         },
     ]);
 
@@ -76,7 +85,14 @@ const CourseBuilder = () => {
 
     const addLesson = (sectionIndex) => {
         const updated = [...curriculum];
-        updated[sectionIndex].lessons.push({ title: '', videoFile: null, resourceFile: null, previewVideo: false });
+        updated[sectionIndex].lessons.push({
+            title: '',
+            videoKey: '',
+            resourceKey: '',
+            previewVideo: false,
+            uploadProgress: { video: 0, resource: 0 },
+            uploading: { video: false, resource: false },
+        });
         setCurriculum(updated);
     };
 
@@ -87,12 +103,25 @@ const CourseBuilder = () => {
     };
 
     const updateLesson = (sectionIndex, lessonIndex, field, value) => {
-        const updated = [...curriculum];
-        updated[sectionIndex].lessons[lessonIndex][field] = value;
-        setCurriculum(updated);
+        setCurriculum(prev => {
+            const updated = [...prev];
+            updated[sectionIndex].lessons[lessonIndex][field] = value;
+            return updated;
+        });
     };
 
     const handleDelete = () => {
+        if (confirmDelete.type === 'section' && curriculum.length === 1) {
+            toast.error('Кеминде бир бөлүм болушу керек.');
+            return;
+        }
+        if (confirmDelete.type === 'lesson') {
+            const lessons = curriculum[confirmDelete.sectionIndex].lessons;
+            if (lessons.length === 1) {
+                toast.error('Кеминде бир сабак болушу керек.');
+                return;
+            }
+        }
         if (confirmDelete.type === 'section') {
             const updated = curriculum.filter((_, i) => i !== confirmDelete.sectionIndex);
             setCurriculum(updated);
@@ -103,6 +132,43 @@ const CourseBuilder = () => {
         }
         setConfirmDelete({ type: null, sectionIndex: null, lessonIndex: null });
     };
+
+
+    const handleFileUpload = async (courseId, sectionIndex, lessonIndex, type, file) => {
+        if (!file) return;
+        const existingKey = curriculum[sectionIndex].lessons[lessonIndex][type === 'video' ? 'videoKey' : 'resourceKey'];
+        if (existingKey) return;
+        setCurriculum(prev => {
+            const updated = [...prev];
+            updated[sectionIndex].lessons[lessonIndex].uploading[type] = true;
+            return updated;
+        });
+
+        try {
+            const key = await uploadLessonFile(courseId, sectionIndex, type, file, (percent) => {
+                setCurriculum(prev => {
+                    const updated = [...prev];
+                    updated[sectionIndex].lessons[lessonIndex].uploadProgress[type] = percent;
+                    return updated;
+                });
+            });
+
+            updateLesson(sectionIndex, lessonIndex, type === 'video' ? 'videoKey' : 'resourceKey', key);
+        } catch (err) {
+            toast.error(err.message);
+        } finally {
+            setCurriculum(prev => {
+                const updated = [...prev];
+                updated[sectionIndex].lessons[lessonIndex].uploading[type] = false;
+                return updated;
+            });
+        }
+    };
+
+    const isUploading = curriculum.some(section =>
+        section.lessons.some(lesson => lesson.uploading?.video || lesson.uploading?.resource)
+    );
+
 
     const handleCourseSubmit = async () => {
         if (!courseInfo.title || !courseInfo.description || !courseInfo.categoryId || !courseInfo.price) {
@@ -129,39 +195,27 @@ const CourseBuilder = () => {
 
     const handleCurriculumSubmit = async () => {
         try {
-            for (const section of curriculum) {
+            for (const [sIdx, section] of curriculum.entries()) {
                 const sec = await createSection(courseId, { title: section.sectionTitle });
-
-                for (const [lessonIndex, lesson] of section.lessons.entries()) {
-                    if (!lesson.title || !lesson.videoFile) {
+                for (const [lIdx, lesson] of section.lessons.entries()) {
+                    if (!lesson.title || !lesson.videoKey) {
                         toast.error('Ар бир сабакта аталыш жана видео болушу керек.');
                         continue;
                     }
                     await createLesson(courseId, sec.id, {
                         title: lesson.title,
-                        video: lesson.videoFile,
-                        resource: lesson.resourceFile,
+                        videoKey: lesson.videoKey,
+                        resourceKey: lesson.resourceKey,
                         previewVideo: lesson.previewVideo,
-                        order: lessonIndex
+                        order: lIdx,
                     });
                 }
             }
-
-            toast.success('Окуу мазмуну сакталды!');
+            toast.success('Мазмун сакталды!');
             setStep(3);
         } catch (err) {
+            console.error(err);
             toast.error('Мазмунду сактоодо ката кетти.');
-        }
-    };
-
-    const handlePublish = async () => {
-        if (!courseId) return;
-        try {
-            await publishCourse(courseId);
-            toast.success('Курс жарыяланды!');
-            navigate(`/courses/${courseId}`);
-        } catch (err) {
-            toast.error('Курсту жарыялоо ката кетти.');
         }
     };
 
@@ -286,8 +340,22 @@ const CourseBuilder = () => {
                             {section.lessons.map((lesson, lIdx) => (
                                 <div key={lIdx} className="mb-4 p-2 bg-gray-50 rounded">
                                     <input className="w-full p-2 mb-2 border rounded" value={lesson.title} onChange={(e) => updateLesson(sIdx, lIdx, 'title', e.target.value)} placeholder="Сабак аталышы" />
-                                    <input type="file" accept="video/*" className="w-full mb-2" onChange={(e) => updateLesson(sIdx, lIdx, 'videoFile', e.target.files[0])} />
-                                    <input type="file" accept=".pdf,.zip,.doc,.docx" className="w-full mb-2" onChange={(e) => updateLesson(sIdx, lIdx, 'resourceFile', e.target.files[0])} />
+                                    <label className="block mb-1 font-medium">Видео жүктөө</label>
+                                    <input type="file" accept="video/*" className="w-full mb-2" onChange={(e) => handleFileUpload(courseId, sIdx, lIdx, 'video', e.target.files[0])} />
+                                    {lesson.uploadProgress.video > 0 && (
+                                        <div className="w-full bg-gray-200 rounded h-2 mb-4">
+                                            <div className="bg-blue-600 h-full rounded transition-all duration-200" style={{ width: `${lesson.uploadProgress.video}%` }} />
+                                            <p className="text-xs text-gray-500 mt-1">{lesson.uploadProgress.video}% жүктөлдү</p>
+                                        </div>
+                                    )}
+                                    <label className="block mt-4 mb-1 font-medium">Материал жүктөө (PDF, ZIP)</label>
+                                    <input type="file" accept=".pdf,.zip" onChange={(e) => handleFileUpload(courseId, sIdx, lIdx, 'resource', e.target.files[0])} className="w-full mb-2" />
+                                    {lesson.uploadProgress.resource > 0 && (
+                                        <div className="w-full bg-gray-100 rounded h-2 mb-4">
+                                            <div className="bg-purple-500 h-full rounded transition-all duration-200" style={{ width: `${lesson.uploadProgress.resource}%` }} />
+                                            <p className="text-xs text-gray-500 mt-1">{lesson.uploadProgress.resource}% жүктөлдү</p>
+                                        </div>
+                                    )}
                                     <label className="flex items-center gap-2">
                                         <input type="checkbox" checked={lesson.previewVideo} onChange={(e) => updateLesson(sIdx, lIdx, 'previewVideo', e.target.checked)} />
                                         Превью видеосун белгилөө
@@ -299,7 +367,7 @@ const CourseBuilder = () => {
                         </div>
                     ))}
                     <button onClick={addSection} className="bg-edubot-green text-white px-4 py-2 rounded">+ Бөлүм кошуу</button>
-                    <button onClick={handleCurriculumSubmit} className="bg-edubot-dark text-white px-6 py-2 rounded ml-4">Сактоо жана улантуу</button>
+                    <button onClick={handleCurriculumSubmit} disabled={isUploading} className="bg-edubot-dark text-white px-6 py-2 rounded ml-4">Сактоо жана улантуу</button>
                 </div>
             )}
 

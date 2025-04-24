@@ -308,6 +308,19 @@ const CourseDetailsPage = () => {
                                                         {lesson.duration && <span className="text-xs text-gray-500">Узактыгы: {lesson.duration}</span>}
                                                     </div>
                                                 </div>
+                                                {lesson.resourceUrl && (
+                                                    <a
+                                                        href={lesson.resourceUrl}
+                                                        // target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="text-xs text-purple-600 hover:underline ml-2 flex items-center gap-1"
+                                                    >
+                                                        <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 3v4m0 0H6a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V9a2 2 0 00-2-2h-6z" />
+                                                        </svg>
+                                                        Resource
+                                                    </a>
+                                                )}
                                                 <div className="flex items-center gap-2">
                                                     {lesson.previewVideo && (
                                                         <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">Превью</span>
