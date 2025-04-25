@@ -1,58 +1,88 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { FaStar } from "react-icons/fa";
-
-const coursesData = [
-    { id: 1, title: "Web Development", instructor: "John Doe", level: "Beginner", price: 19.99, rating: 4.8, image: "https://source.unsplash.com/400x250/?coding" },
-    { id: 2, title: "Data Science", instructor: "Jane Smith", level: "Intermediate", price: 29.99, rating: 4.7, image: "https://source.unsplash.com/400x250/?data" },
-    { id: 3, title: "Artificial Intelligence", instructor: "Alice Johnson", level: "Advanced", price: 39.99, rating: 4.9, image: "https://source.unsplash.com/400x250/?ai" },
-];
+import { fetchCourses } from "../services/api";
 
 const CoursesPage = () => {
+    const [courses, setCourses] = useState([]);
     const [filter, setFilter] = useState("All");
+    const [loading, setLoading] = useState(true);
 
-    const filteredCourses = coursesData.filter((course) =>
-        filter === "All" || course.level === filter
+    useEffect(() => {
+        const loadCourses = async () => {
+            try {
+                const data = await fetchCourses();
+                setCourses(data.courses);
+            } catch (err) {
+                console.error("Курстар жүктөлбөй калды", err);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        loadCourses();
+    }, []);
+
+    const filteredCourses = courses.filter(
+        (course) => course.isPublished && (filter === "All" || course.level === filter)
     );
+
+    if (loading) return <div className="pt-24 p-6">Курстар жүктөлүүдө...</div>;
 
     return (
         <div className="min-h-screen bg-gray-50 p-6 pt-24">
-            <h1 className="text-4xl font-bold text-center mb-6">Explore Our Courses</h1>
+            <h1 className="text-4xl font-bold text-center mb-6">Курстарыбыз менен таанышуу</h1>
             <div className="flex justify-end mb-6">
                 <select
                     className="p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     value={filter}
                     onChange={(e) => setFilter(e.target.value)}
                 >
-                    <option value="All">All Levels</option>
-                    <option value="Beginner">Beginner</option>
-                    <option value="Intermediate">Intermediate</option>
-                    <option value="Advanced">Advanced</option>
+                    <option value="All">Бардык деңгээлдер</option>
+                    <option value="Beginner">Башталгыч</option>
+                    <option value="Intermediate">Орто</option>
+                    <option value="Advanced">Жогорку</option>
                 </select>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredCourses.map((course) => (
-                    <div key={course.id} className="block bg-white border rounded-lg overflow-hidden shadow-md hover:shadow-xl transition">
-                        <Link to={`/courses/${course.id}`}>
-                            <img src={course.image} alt={course.title} className="w-full h-40 object-cover" />
-                        </Link>
-                        <div className="p-6">
-                            <h3 className="text-xl font-semibold">{course.title}</h3>
-                            <p className="text-gray-600">Instructor: {course.instructor}</p>
-                            <div className="flex items-center text-yellow-500 my-2">
-                                {[...Array(5)].map((_, i) => (
-                                    <FaStar key={i} className={i < Math.floor(course.rating) ? "text-lg" : "text-lg text-gray-300"} />
-                                ))}
-                                <span className="text-gray-600 text-sm ml-2">({course.rating})</span>
+
+            {filteredCourses.length === 0 ? (
+                <div className="text-center text-gray-500 text-lg">
+                    Тандалган категория боюнча курстар табылган жок.
+                </div>
+            ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {filteredCourses.map((course) => (
+                        <div
+                            key={course.id}
+                            className="block bg-white border rounded-lg overflow-hidden shadow-md hover:shadow-xl transition"
+                        >
+                            <Link to={`/courses/${course.id}`}>
+                                <img
+                                    src={course.coverImageUrl || "https://source.unsplash.com/400x250/?education"}
+                                    alt={course.title}
+                                    className="w-full h-40 object-cover"
+                                />
+                            </Link>
+                            <div className="p-6">
+                                <Link to={`/courses/${course.id}`} className="block">
+                                    <h3 className="text-xl font-semibold">{course.title}</h3>
+                                    <p className="text-gray-600">Окутуучу: {course.instructor?.fullName || 'Белгисиз'}</p>
+                                    <div className="flex items-center text-yellow-500 my-2">
+                                        {[...Array(5)].map((_, i) => (
+                                            <FaStar
+                                                key={i}
+                                                className={i < Math.floor(course.rating || 0) ? "text-lg" : "text-lg text-gray-300"}
+                                            />
+                                        ))}
+                                        <span className="text-gray-600 text-sm ml-2">({course.rating || 0})</span>
+                                    </div>
+                                    <p className="text-lg font-bold text-blue-600">{course.price} с</p>
+                                </Link>
                             </div>
-                            <p className="text-lg font-bold text-blue-600">${course.price}</p>
-                            <button className="mt-4 w-full bg-blue-600 text-white py-2 rounded-lg text-center hover:bg-blue-700 transition">
-                                Add to Cart
-                            </button>
                         </div>
-                    </div>
-                ))}
-            </div>
+                    ))}
+                </div>
+            )}
         </div>
     );
 };

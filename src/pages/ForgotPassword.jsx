@@ -32,7 +32,7 @@ const ForgotPassword = () => {
         setError("");
 
         if (newPassword !== confirmPassword) {
-            setError("Passwords do not match.");
+            setError("Сырсөздөр дал келген жок.");
             setLoading(false);
             return;
         }
@@ -49,25 +49,25 @@ const ForgotPassword = () => {
     return (
         <div className="min-h-screen flex items-center justify-center bg-gray-50">
             <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
-                <h2 className="text-3xl font-bold text-center mb-6">Forgot Password</h2>
+                <h2 className="text-3xl font-bold text-center mb-6">Сырсөздү унуттуңузбу?</h2>
                 {!otpSent ? (
                     <form onSubmit={handleSendOtp}>
                         <div className="mb-4">
-                            <label className="block text-gray-700">Enter Email or WhatsApp Number</label>
+                            <label className="block text-gray-700">Email же WhatsApp номер киргизиңиз</label>
                             <input
                                 type="text"
                                 value={identifier}
                                 onChange={(e) => setIdentifier(e.target.value)}
-                                className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
                                 required
                             />
                         </div>
                         <div className="mb-4">
-                            <label className="block text-gray-700">Select Method</label>
+                            <label className="block text-gray-700">Методду тандаңыз</label>
                             <select
                                 value={method}
                                 onChange={(e) => setMethod(e.target.value)}
-                                className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
                             >
                                 <option value="email">Email</option>
                                 <option value="whatsapp">WhatsApp</option>
@@ -76,55 +76,55 @@ const ForgotPassword = () => {
                         {error && <p className="text-red-600 text-center">{error}</p>}
                         <button
                             type="submit"
-                            className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition"
+                            className="w-full bg-orange-500 text-white py-2 rounded-lg hover:bg-orange-600 transition"
                             disabled={loading}
                         >
-                            {loading ? "Sending..." : "Send OTP"}
+                            {loading ? "Жөнөтүлүүдө..." : "OTP жөнөтүү"}
                         </button>
                     </form>
                 ) : !passwordReset ? (
                     <form onSubmit={handleResetPassword}>
                         <div className="mb-4">
-                            <label className="block text-gray-700">Enter OTP</label>
+                            <label className="block text-gray-700">OTP кодду киргизиңиз</label>
                             <input
                                 type="text"
                                 value={otp}
                                 onChange={(e) => setOtp(e.target.value)}
-                                className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
                                 required
                             />
                         </div>
                         <div className="mb-4">
-                            <label className="block text-gray-700">New Password</label>
+                            <label className="block text-gray-700">Жаңы сырсөз</label>
                             <input
                                 type="password"
                                 value={newPassword}
                                 onChange={(e) => setNewPassword(e.target.value)}
-                                className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
                                 required
                             />
                         </div>
                         <div className="mb-4">
-                            <label className="block text-gray-700">Confirm New Password</label>
+                            <label className="block text-gray-700">Сырсөздү кайталаңыз</label>
                             <input
                                 type="password"
                                 value={confirmPassword}
                                 onChange={(e) => setConfirmPassword(e.target.value)}
-                                className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
                                 required
                             />
                         </div>
                         {error && <p className="text-red-600 text-center">{error}</p>}
                         <button
                             type="submit"
-                            className="w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 transition"
+                            className="w-full bg-orange-500 text-white py-2 rounded-lg hover:bg-orange-600 transition"
                             disabled={loading}
                         >
-                            {loading ? "Resetting..." : "Reset Password"}
+                            {loading ? "Кайра орнотууда..." : "Сырсөздү кайра орнотуу"}
                         </button>
                     </form>
                 ) : (
-                    <p className="text-green-600 text-center">Password reset successfully! You can now log in.</p>
+                    <p className="text-green-600 text-center">Сырсөз ийгиликтүү жаңыртылды! Эми логин кылыңыз.</p>
                 )}
             </div>
         </div>

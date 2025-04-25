@@ -4,6 +4,11 @@
 
 :root {
   @apply font-sans text-gray-900 bg-white;
+  --edubot-dark: #122144;
+  --edubot-orange: #f17e22;
+  --edubot-green: #0ea78b;
+  --edubot-soft: #f39647;
+  --edubot-teal: #1e605e;
 }
 
 body {
