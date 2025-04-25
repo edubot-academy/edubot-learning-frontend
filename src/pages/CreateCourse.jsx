@@ -71,7 +71,7 @@ const CourseBuilder = () => {
         if (name === 'cover' && files && files[0]) {
             setCourseInfo(prev => ({ ...prev, cover: files[0], coverImageUrl: URL.createObjectURL(files[0]) }));
         } else {
-            if ((name === 'title' || name === 'description') && value.length > 200) {
+            if (name === 'title' && value.length > 200) {
                 toast.error(`${name} өтө узун. Максимум 200 символ.`);
                 return;
             }
