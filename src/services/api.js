@@ -271,10 +271,9 @@ export async function fetchLessons(courseId, sectionId) {
     return response.data;
 }
 
-
-export async function uploadLessonFile(courseId, sectionId, type, file, onProgress) {
+export async function uploadLessonFile(courseId, sectionId, type, file, lessonOrder, onProgress) {
     if (!file || typeof file.name !== 'string') {
-        throw new Error('No file provided for upload');
+        throw new Error('No file provided');
     }
 
     const parts = file.name.split('.');
@@ -292,7 +291,7 @@ export async function uploadLessonFile(courseId, sectionId, type, file, onProgre
     try {
         presign = await api.get(
             `/courses/${courseId}/sections/${sectionId}/lessons/upload-url`,
-            { params: { type, extension } }
+            { params: { type, extension, lessonOrder } }
         );
     } catch (err) {
         const msg = err.response?.data?.message || err.message;
@@ -300,8 +299,9 @@ export async function uploadLessonFile(courseId, sectionId, type, file, onProgre
     }
 
     const { key, url, maxFileSize } = presign.data;
+
     if (file.size > maxFileSize) {
-        throw new Error(`File size (${file.size}) exceeds maximum of ${maxFileSize} bytes`);
+        throw new Error(`File too large: ${file.size} > ${maxFileSize}`);
     }
 
     try {

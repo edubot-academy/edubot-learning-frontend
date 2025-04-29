@@ -3,8 +3,8 @@ import React, { useRef, useEffect, useState } from 'react';
 import { FaPlayCircle, FaPauseCircle } from 'react-icons/fa';
 import { Link } from 'react-router-dom';
 
-const VideoPlayer = ({ videoUrl, resumeTime = 0, onProgress, onTimeUpdate, allowPlay = true }) => {
-    const videoRef = useRef(null);
+const VideoPlayer = ({ videoUrl, resumeTime = 0, onProgress, onTimeUpdate, allowPlay = true, videoRef }) => {
+
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [isPlaying, setIsPlaying] = useState(false);
