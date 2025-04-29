@@ -145,7 +145,7 @@ const CourseBuilder = () => {
         });
 
         try {
-            const key = await uploadLessonFile(courseId, sectionIndex, type, file, (percent) => {
+            const key = await uploadLessonFile(courseId, sectionIndex, type, file, lessonIndex, (percent) => {
                 setCurriculum(prev => {
                     const updated = [...prev];
                     updated[sectionIndex].lessons[lessonIndex].uploadProgress[type] = percent;

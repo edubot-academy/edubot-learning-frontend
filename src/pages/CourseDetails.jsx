@@ -29,6 +29,12 @@ const CourseDetailsPage = () => {
     const [error, setError] = useState(null);
     const [enrolled, setEnrolled] = useState(false);
     const lessonRefs = useRef({});
+    const [countdown, setCountdown] = useState(0);
+    const countdownRef = useRef(null);
+    const [progressPercent, setProgressPercent] = useState(0);
+    const [countdownStarted, setCountdownStarted] = useState(false);
+    const videoRef = useRef(null);
+    const [shouldAutoPlayNext, setShouldAutoPlayNext] = useState(false);
 
     const scrollToLesson = (lessonId) => {
         setTimeout(() => {
@@ -51,7 +57,40 @@ const CourseDetailsPage = () => {
         if (user && enrolled) {
             debouncedTimeUpdate(time);
         }
+
+        const video = videoRef.current;
+        if (!video || countdownStarted) return;
+        if (video.duration - time <= 5) {
+            if (nextLesson) {
+                setCountdownStarted(true);
+                setCountdown(5);
+                setProgressPercent(0);
+                const totalSeconds = 5;
+                const intervalTime = 100;
+                const totalIntervals = (totalSeconds * 1000) / intervalTime;
+                let currentInterval = 0;
+
+                countdownRef.current = setInterval(() => {
+                    currentInterval++;
+                    setProgressPercent((currentInterval / totalIntervals) * 100);
+
+                    if (currentInterval % 10 === 0) { // every 1 second
+                        setCountdown(prev => {
+                            if (prev === 1) {
+                                clearInterval(countdownRef.current);
+                                setShouldAutoPlayNext(true);
+                                handleLessonClick(nextLesson);
+                                setCountdownStarted(false);
+                                return 0;
+                            }
+                            return prev - 1;
+                        });
+                    }
+                }, intervalTime);
+            }
+        }
     };
+
 
     const toggleSection = (sectionId) => {
         const newId = activeSectionId === sectionId ? null : sectionId;
@@ -64,10 +103,28 @@ const CourseDetailsPage = () => {
     };
 
     const handleLessonClick = async (lesson) => {
+        if (countdownRef.current) {
+            clearInterval(countdownRef.current);
+            setCountdown(0);
+            setProgressPercent(0);
+            setCountdownStarted(false);
+        }
         setActiveLesson(lesson);
         setActiveSectionId(lesson.sectionId);
         localStorage.setItem(`active_section_${id}`, String(lesson.sectionId));
         scrollToLesson(lesson.id);
+
+        if (shouldAutoPlayNext) {
+            // Try to auto-play after video loads
+            setTimeout(() => {
+                if (videoRef.current) {
+                    videoRef.current.play().catch((err) => {
+                        console.warn('Auto-play failed:', err);
+                    });
+                }
+            }, 500); // Wait a bit for video to load
+        }
+        setShouldAutoPlayNext(false);
         if (user && enrolled && !lesson.locked) {
             await updateLastViewedLesson({ courseId: Number(id), lessonId: lesson.id });
             const videoTime = await getLastVideoTime(id);
@@ -251,7 +308,54 @@ const CourseDetailsPage = () => {
                                     onTimeUpdate={handleTimeUpdate}
                                     disabled={activeLesson.locked}
                                     allowPlay={!activeLesson.locked}
+                                    videoRef={videoRef}
                                 />
+                                {countdown > 0 && (
+                                    <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center text-white rounded-lg">
+                                        <div className="relative w-32 h-32 mb-4">
+                                            <svg className="absolute top-0 left-0 w-full h-full">
+                                                <circle
+                                                    className="text-gray-500"
+                                                    strokeWidth="8"
+                                                    stroke="currentColor"
+                                                    fill="transparent"
+                                                    r="50"
+                                                    cx="64"
+                                                    cy="64"
+                                                />
+                                                <circle
+                                                    className="text-orange-500"
+                                                    strokeWidth="8"
+                                                    strokeDasharray="314"
+                                                    strokeDashoffset={`${314 - (314 * progressPercent) / 100}`}
+                                                    strokeLinecap="round"
+                                                    stroke="currentColor"
+                                                    fill="transparent"
+                                                    r="50"
+                                                    cx="64"
+                                                    cy="64"
+                                                />
+                                            </svg>
+                                            <div className="absolute inset-0 flex items-center justify-center text-3xl font-bold">
+                                                {countdown}
+                                            </div>
+                                        </div>
+                                        <p className="text-lg font-semibold">Кийинки сабак башталат...</p>
+                                        <button
+                                            onClick={() => {
+                                                if (countdownRef.current) clearInterval(countdownRef.current);
+                                                setCountdown(0);
+                                                setProgressPercent(0);
+                                                setCountdownStarted(false);
+                                                if (nextLesson) handleLessonClick(nextLesson);
+                                            }}
+                                            className="mt-2 px-4 py-2 bg-orange-500 hover:bg-orange-600 rounded-full text-white font-semibold"
+                                        >
+                                            Дароо өтүү
+                                        </button>
+                                    </div>
+                                )}
+
                                 <button
                                     onClick={() => handleLessonClick(prevLesson)}
                                     disabled={!prevLesson}
