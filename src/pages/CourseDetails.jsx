@@ -61,7 +61,8 @@ const CourseDetailsPage = () => {
         const video = videoRef.current;
         if (!video || countdownStarted) return;
         if (video.duration - time <= 5) {
-            if (nextLesson) {
+            const { next } = findPrevNextLessons();
+            if (next) {
                 setCountdownStarted(true);
                 setCountdown(5);
                 setProgressPercent(0);
@@ -74,12 +75,12 @@ const CourseDetailsPage = () => {
                     currentInterval++;
                     setProgressPercent((currentInterval / totalIntervals) * 100);
 
-                    if (currentInterval % 10 === 0) { // every 1 second
-                        setCountdown(prev => {
+                    if (currentInterval % 10 === 0) {
+                        setCountdown((prev) => {
                             if (prev === 1) {
                                 clearInterval(countdownRef.current);
                                 setShouldAutoPlayNext(true);
-                                handleLessonClick(nextLesson);
+                                handleLessonClick(next);
                                 setCountdownStarted(false);
                                 return 0;
                             }
@@ -89,6 +90,7 @@ const CourseDetailsPage = () => {
                 }, intervalTime);
             }
         }
+
     };
 
 
@@ -110,7 +112,7 @@ const CourseDetailsPage = () => {
             setCountdownStarted(false);
         }
         setActiveLesson(lesson);
-        setActiveSectionId(lesson.sectionId);
+        // setActiveSectionId(lesson.sectionId);
         localStorage.setItem(`active_section_${id}`, String(lesson.sectionId));
         scrollToLesson(lesson.id);
 
@@ -241,6 +243,12 @@ const CourseDetailsPage = () => {
                         setActiveSectionId(Number(storedSection));
                     } else if (updatedSections.length > 0) {
                         setActiveSectionId(updatedSections[0].id);
+                        if (!lastLesson) {
+                            const storedSection = localStorage.getItem(`active_section_${id}`);
+                            const sectionIdToOpen = storedSection ? Number(storedSection) : updatedSections[0]?.id;
+                            setActiveSectionId(sectionIdToOpen);
+                        }
+
                     }
                 }
             } catch (err) {
@@ -412,7 +420,7 @@ const CourseDetailsPage = () => {
                                                         {lesson.duration && <span className="text-xs text-gray-500">Узактыгы: {lesson.duration}</span>}
                                                     </div>
                                                 </div>
-                                                {lesson.resourceUrl && (
+                                                {/* {lesson.resourceUrl && (
                                                     <a
                                                         href={lesson.resourceUrl}
                                                         // target="_blank"
@@ -424,9 +432,9 @@ const CourseDetailsPage = () => {
                                                         </svg>
                                                         Resource
                                                     </a>
-                                                )}
+                                                )} */}
                                                 <div className="flex items-center gap-2">
-                                                    {lesson.previewVideo && (
+                                                    {lesson.previewVideo && !enrolled && (
                                                         <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">Превью</span>
                                                     )}
                                                     {lesson.locked && (
