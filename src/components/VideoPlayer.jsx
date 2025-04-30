@@ -1,18 +1,18 @@
-// Secure VideoPlayer with resume support and progress tracking
 import React, { useRef, useEffect, useState } from 'react';
 import { FaPlayCircle, FaPauseCircle } from 'react-icons/fa';
-import { Link } from 'react-router-dom';
+
 
 const VideoPlayer = ({ videoUrl, resumeTime = 0, onProgress, onTimeUpdate, allowPlay = true, videoRef }) => {
-
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [isPlaying, setIsPlaying] = useState(false);
-    const [showPauseIcon, setShowPauseIcon] = useState(false);
-    const [initialPlayIcon, setInitialPlayIcon] = useState(true);
+    const [showControls, setShowControls] = useState(true);
     const pauseTimeoutRef = useRef(null);
 
     useEffect(() => {
+        setIsPlaying(false);
+        setLoading(true);
+        setShowControls(true);
         if (videoRef.current) {
             videoRef.current.load();
         }
@@ -25,7 +25,7 @@ const VideoPlayer = ({ videoUrl, resumeTime = 0, onProgress, onTimeUpdate, allow
         const handleLoadedData = () => {
             setLoading(false);
             setError(null);
-            if (resumeTime > 0 && resumeTime < video.duration) {
+            if (resumeTime > 0) {
                 video.currentTime = resumeTime;
             }
             if (!allowPlay) {
@@ -42,18 +42,13 @@ const VideoPlayer = ({ videoUrl, resumeTime = 0, onProgress, onTimeUpdate, allow
 
         const handlePlay = () => {
             setIsPlaying(true);
-            setInitialPlayIcon(false);
-            setShowPauseIcon(true);
             if (pauseTimeoutRef.current) clearTimeout(pauseTimeoutRef.current);
-            pauseTimeoutRef.current = setTimeout(() => {
-                setShowPauseIcon(false);
-            }, 2000);
+            pauseTimeoutRef.current = setTimeout(() => setShowControls(false), 2000);
         };
 
         const handlePause = () => {
             setIsPlaying(false);
-            if (pauseTimeoutRef.current) clearTimeout(pauseTimeoutRef.current);
-            setShowPauseIcon(true);
+            setShowControls(true);
         };
 
         const handleError = (e) => {
@@ -81,33 +76,39 @@ const VideoPlayer = ({ videoUrl, resumeTime = 0, onProgress, onTimeUpdate, allow
     return (
         <div className="video-player relative">
             {loading && (
-                <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
+                <div className="absolute inset-0 flex items-center justify-center bg-gray-100 z-10">
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
                 </div>
             )}
-            {error && <div className="text-red-500 text-center p-4">{error}</div>}
-            <video
-                ref={videoRef}
-                className="w-full rounded-lg shadow-lg"
-                controls={allowPlay}
-                playsInline
-                preload="metadata"
-                disablePictureInPicture
-                controlsList="nodownload"
-                onPlay={(e) => {
-                    if (!allowPlay) {
-                        e.preventDefault();
-                        e.target.pause();
-                    }
-                }}
-            >
-                <source src={videoUrl} type="video/mp4" />
-                Your browser does not support the video tag.
-            </video>
+            {error && <div className="text-red-500 text-center p-4 z-20">{error}</div>}
 
-            {/* Play/Pause icon overlay in the center */}
-            {allowPlay && !loading && (showPauseIcon || initialPlayIcon) && (
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <div className="relative w-full pt-[56.25%] bg-black rounded-lg shadow-lg overflow-hidden">
+                {loading && <div className="absolute inset-0 bg-gray-900/70 blur-sm" />}
+
+                <video
+                    ref={videoRef}
+                    className="absolute top-0 left-0 w-full h-full object-cover"
+                    controls
+                    playsInline
+                    preload="metadata"
+                    disablePictureInPicture
+                    controlsList="nodownload"
+                    onClick={() => setShowControls(true)}
+                    onPlay={(e) => {
+                        if (!allowPlay) {
+                            e.preventDefault();
+                            e.target.pause();
+                        }
+                    }}
+                >
+                    <source src={videoUrl} type="video/mp4" />
+                    Your browser does not support the video tag.
+                </video>
+            </div>
+
+            {/* Center icon overlay */}
+            {allowPlay && !loading && showControls && (
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
                     {isPlaying ? (
                         <FaPauseCircle className="text-6xl text-white drop-shadow-lg opacity-80" />
                     ) : (
