@@ -196,7 +196,7 @@ const CourseBuilder = () => {
     const handleCurriculumSubmit = async () => {
         try {
             for (const [sIdx, section] of curriculum.entries()) {
-                const sec = await createSection(courseId, { title: section.sectionTitle });
+                const sec = await createSection(courseId, { title: section.sectionTitle, order: sIdx });
                 for (const [lIdx, lesson] of section.lessons.entries()) {
                     if (!lesson.title || !lesson.videoKey) {
                         toast.error('Ар бир сабакта аталыш жана видео болушу керек.');

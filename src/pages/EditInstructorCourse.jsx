@@ -45,18 +45,19 @@ const EditInstructorCourse = () => {
                         return {
                             id: sec.id,
                             title: sec.title,
-                            lessons: lessons.map((l) => ({
-                                ...l,
-                                uploadProgress: { video: 0, resource: 0 },
-                                uploading: { video: false, resource: false },
-                            })),
+                            order: sec.order, // assuming backend returns order
+                            lessons: lessons
+                                .sort((a, b) => a.order - b.order)
+                                .map((l) => ({
+                                    ...l,
+                                    uploadProgress: { video: 0, resource: 0 },
+                                    uploading: { video: false, resource: false },
+                                })),
                         };
                     })
                 );
 
-                if (!courseData.categoryId && categoryData.length > 0) {
-                    courseData.categoryId = categoryData[0].id;
-                }
+                allSections.sort((a, b) => a.order - b.order); // explicitly sort sections
 
                 setCourse(courseData);
                 setOriginalCourse(courseData);
@@ -71,6 +72,7 @@ const EditInstructorCourse = () => {
         };
         loadData();
     }, [id]);
+
 
     const handleCourseChange = (e) => {
         const { name, value, files } = e.target;
@@ -180,23 +182,37 @@ const EditInstructorCourse = () => {
     const handleSaveAll = async () => {
         setSaving(true);
         try {
-            for (const section of sections) {
-                if (!section.id) section.id = (await createSection(id, { title: section.title })).id;
-                else await updateSection(id, section.id, { title: section.title });
+            for (const [sectionIdx, section] of sections.entries()) {
+                const sectionPayload = {
+                    title: section.title,
+                    order: sectionIdx, // explicitly set section order
+                };
 
-                for (const [i, lesson] of section.lessons.entries()) {
-                    const payload = {
+                if (!section.id) {
+                    const createdSection = await createSection(id, sectionPayload);
+                    section.id = createdSection.id;
+                } else {
+                    await updateSection(id, section.id, sectionPayload);
+                }
+
+                for (const [lessonIdx, lesson] of section.lessons.entries()) {
+
+                    const lessonPayload = {
                         title: lesson.title,
                         videoKey: lesson.videoKey,
                         resourceKey: lesson.resourceKey,
                         previewVideo: lesson.previewVideo,
-                        order: i
+                        order: lessonIdx,
                     };
 
-                    if (!lesson.id && lesson.title) await createLesson(id, section.id, payload);
-                    else if (lesson.id) await updateLesson(id, section.id, lesson.id, payload);
+                    if (!lesson.id && lesson.title) {
+                        await createLesson(id, section.id, lessonPayload);
+                    } else if (lesson.id) {
+                        await updateLesson(id, section.id, lesson.id, lessonPayload);
+                    }
                 }
             }
+
             toast.success("Мазмун сакталды!");
             setStep(3);
         } catch (err) {
@@ -205,6 +221,7 @@ const EditInstructorCourse = () => {
             setSaving(false);
         }
     };
+
 
     const handleSubmitForApproval = async () => {
         try {

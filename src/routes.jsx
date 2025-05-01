@@ -19,6 +19,8 @@ import SalesManager from "./pages/SalesManager";
 import AboutPage from "./pages/About";
 import ContactPage from "./pages/Contact";
 import AssistantDashboard from "./pages/Assistant";
+import Unauthorized from "./pages/Unauthorized";
+import PrivateRoute from "./components/PrivateRoute";
 
 const AppRoutes = () => {
     return (
@@ -33,17 +35,26 @@ const AppRoutes = () => {
                         <Route path="/courses" element={<CoursesPage />} />
                         <Route path="/dashboard" element={<DashboardPage />} />
                         <Route path="/profile" element={<ProfilePage />} />
-                        <Route path="/instructor" element={<InstructorDashboard />} />
-                        <Route path="/instructor/course/create" element={<CreateCourse />} />
-                        <Route path="/instructor/courses" element={<InstructorCourses />} />
+                        <Route path="/unauthorized" element={<Unauthorized />} />
+                        <Route element={<PrivateRoute allowedRoles={['instructor']} />}>
+                            <Route path="/instructor" element={<InstructorDashboard />} />
+                            <Route path="/instructor/course/create" element={<CreateCourse />} />
+                            <Route path="/instructor/courses" element={<InstructorCourses />} />
+                            <Route path="/instructor/courses/edit/:id" element={<EditInstructorCourse />} />
+                        </Route>
                         <Route path="/courses/:id" element={<CourseDetailsPage />} />
-                        <Route path="/instructor/courses/edit/:id" element={<EditInstructorCourse />} />
                         <Route path="/forgot-password" element={<ForgotPassword />} />
-                        <Route path="/admin" element={<AdminPanel />} />
-                        <Route path="/sales-manager" element={<SalesManager />} />
+                        <Route element={<PrivateRoute allowedRoles={['admin']} />}>
+                            <Route path="/admin" element={<AdminPanel />} />
+                        </Route>
+                        <Route element={<PrivateRoute allowedRoles={['sales']} />}>
+                            <Route path="/sales-manager" element={<SalesManager />} />
+                        </Route>
                         <Route path="/about" element={<AboutPage />} />
                         <Route path="/contact" element={<ContactPage />} />
-                        <Route path="/assistant" element={<AssistantDashboard />} />
+                        <Route element={<PrivateRoute allowedRoles={['assistant']} />}>
+                            <Route path="/assistant" element={<AssistantDashboard />} />
+                        </Route>
                     </Routes>
                 </div>
                 <Footer />

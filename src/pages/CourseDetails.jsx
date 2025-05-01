@@ -112,21 +112,21 @@ const CourseDetailsPage = () => {
             setCountdownStarted(false);
         }
         setActiveLesson(lesson);
-        // setActiveSectionId(lesson.sectionId);
         localStorage.setItem(`active_section_${id}`, String(lesson.sectionId));
         scrollToLesson(lesson.id);
 
         if (shouldAutoPlayNext) {
-            // Try to auto-play after video loads
             setTimeout(() => {
                 if (videoRef.current) {
+                    videoRef.current.muted = true; // ensure autoplay
                     videoRef.current.play().catch((err) => {
                         console.warn('Auto-play failed:', err);
                     });
                 }
-            }, 500); // Wait a bit for video to load
+            }, 500);
         }
         setShouldAutoPlayNext(false);
+
         if (user && enrolled && !lesson.locked) {
             await updateLastViewedLesson({ courseId: Number(id), lessonId: lesson.id });
             const videoTime = await getLastVideoTime(id);
@@ -135,6 +135,7 @@ const CourseDetailsPage = () => {
             }
         }
     };
+
 
     const findPrevNextLessons = () => {
         const flatLessons = sections.flatMap((sec) => sec.lessons || []);
@@ -164,6 +165,14 @@ const CourseDetailsPage = () => {
     };
 
     useEffect(() => {
+        return () => {
+            if (countdownRef.current) {
+                clearInterval(countdownRef.current);
+            }
+        };
+    }, []);
+
+    useEffect(() => {
         const fetchCourse = async () => {
             try {
                 let enrollment = { enrolled: false };
@@ -187,7 +196,7 @@ const CourseDetailsPage = () => {
                         })),
                 }));
 
-                setSections(updatedSections);
+                setSections(updatedSections.sort((a, b) => a.order - b.order));
 
                 if (enrollment.enrolled && user) {
                     const progress = await fetchUserProgress(id);
