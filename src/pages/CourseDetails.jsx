@@ -9,8 +9,8 @@ import {
     fetchUserProgress,
     updateLastViewedLesson,
     getLastViewedLesson,
-    getLastVideoTime,
-    updateLastVideoTime,
+    getVideoTime,
+    updateVideoTime,
     fetchEnrollment,
 } from "../services/api";
 import { AuthContext } from "../context/AuthContext";
@@ -47,10 +47,10 @@ const CourseDetailsPage = () => {
     const debouncedTimeUpdate = useCallback(
         debounce((time) => {
             if (user && enrolled) {
-                updateLastVideoTime({ courseId: Number(id), time });
+                updateVideoTime({ courseId: Number(id), lessonId: activeLesson?.id, time });
             }
         }, 3000),
-        [id, user, enrolled]
+        [id, user, enrolled, activeLesson?.id]
     );
 
     const handleTimeUpdate = (time) => {
@@ -129,7 +129,7 @@ const CourseDetailsPage = () => {
 
         if (user && enrolled && !lesson.locked) {
             await updateLastViewedLesson({ courseId: Number(id), lessonId: lesson.id });
-            const videoTime = await getLastVideoTime(id);
+            const videoTime = await getVideoTime(id, lesson.id);
             if (videoTime?.time) {
                 setResumeVideoTime(videoTime.time);
             }
@@ -241,7 +241,7 @@ const CourseDetailsPage = () => {
                     localStorage.setItem(`active_section_${id}`, String(lastLesson.sectionId));
                     scrollToLesson(lastLesson.id);
                     if (user && enrollment.enrolled && !lastLesson.locked) {
-                        const videoTime = await getLastVideoTime(id);
+                        const videoTime = await getVideoTime(id, lastLesson.id);
                         if (videoTime?.time) {
                             setResumeVideoTime(videoTime.time);
                         }
@@ -307,7 +307,7 @@ const CourseDetailsPage = () => {
                             <div className="w-full bg-gray-300 h-4 rounded-full overflow-hidden">
                                 <div className="bg-green-500 h-full transition-all duration-300" style={{ width: `${progress}%` }}></div>
                             </div>
-                            <p className="text-sm text-gray-700 mt-1">{progress}% бүткөн</p>
+                            <p className="text-sm text-white mt-1 text-right">{progress}% бүткөн</p>
                         </div>
                     )}
                 </div>
@@ -391,7 +391,7 @@ const CourseDetailsPage = () => {
                         )}
                     </div>
 
-                    <div className="bg-white p-6 rounded-lg shadow-md sticky top-28 self-start">
+                    <div className="bg-white p-6 rounded-lg shadow-md sticky top-28 self-start max-h-[calc(100vh-7rem)] overflow-y-auto">
                         <h2 className="text-xl font-semibold mb-4">Курстун мазмуну</h2>
                         {sections.map((section) => {
                             const isOpen = activeSectionId === section.id;

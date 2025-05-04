@@ -16,7 +16,7 @@ const CourseBuilder = () => {
     const [step, setStep] = useState(1);
     const [courseId, setCourseId] = useState(null);
     const [categories, setCategories] = useState([]);
-    const [confirmDelete, setConfirmDelete] = useState({ type: null, sectionIndex: null, lessonIndex: null });
+    const [confirmDelete, setConfirmDelete] = useState({ type: null, sectionIndex: null, lessonIndex: null, title: '' });
 
     const [courseInfo, setCourseInfo] = useState({
         title: '',
@@ -117,7 +117,7 @@ const CourseBuilder = () => {
         }
         if (confirmDelete.type === 'lesson') {
             const lessons = curriculum[confirmDelete.sectionIndex].lessons;
-            if (lessons.length === 1) {
+            if (confirmDelete.sectionIndex === 0 && lessons.length === 1) {
                 toast.error('Кеминде бир сабак болушу керек.');
                 return;
             }
@@ -130,7 +130,7 @@ const CourseBuilder = () => {
             updated[confirmDelete.sectionIndex].lessons = updated[confirmDelete.sectionIndex].lessons.filter((_, i) => i !== confirmDelete.lessonIndex);
             setCurriculum(updated);
         }
-        setConfirmDelete({ type: null, sectionIndex: null, lessonIndex: null });
+        setConfirmDelete({ type: null, sectionIndex: null, lessonIndex: null, title: '' });
     };
 
 
@@ -335,7 +335,7 @@ const CourseBuilder = () => {
                         <div key={sIdx} className="mb-6 border border-edubot-teal rounded p-4">
                             <div className="flex justify-between items-center mb-2">
                                 <input className="w-full p-2 border rounded" value={section.sectionTitle} onChange={(e) => updateSectionTitle(sIdx, e.target.value)} placeholder="Бөлүм аталышы" />
-                                <button onClick={() => setConfirmDelete({ type: 'section', sectionIndex: sIdx })} className="px-3 py-1 bg-red-100 text-red-700 border border-red-300 rounded hover:bg-red-200 text-sm">Өчүрүү</button>
+                                <button onClick={() => setConfirmDelete({ type: 'section', sectionIndex: sIdx, title: section.sectionTitle })} className="px-3 py-1 bg-red-100 text-red-700 border border-red-300 rounded hover:bg-red-200 text-sm">Өчүрүү</button>
                             </div>
                             {section.lessons.map((lesson, lIdx) => (
                                 <div key={lIdx} className="mb-4 p-2 bg-gray-50 rounded">
@@ -360,7 +360,7 @@ const CourseBuilder = () => {
                                         <input type="checkbox" checked={lesson.previewVideo} onChange={(e) => updateLesson(sIdx, lIdx, 'previewVideo', e.target.checked)} />
                                         Превью видеосун белгилөө
                                     </label>
-                                    <button onClick={() => setConfirmDelete({ type: 'lesson', sectionIndex: sIdx, lessonIndex: lIdx })} className="mt-2 px-3 py-1 bg-red-100 text-red-700 border border-red-300 rounded hover:bg-red-200 text-sm">Сабакты өчүрүү</button>
+                                    <button onClick={() => setConfirmDelete({ type: 'lesson', sectionIndex: sIdx, lessonIndex: lIdx, title: lesson.title })} className="mt-2 px-3 py-1 bg-red-100 text-red-700 border border-red-300 rounded hover:bg-red-200 text-sm">Сабакты өчүрүү</button>
                                 </div>
                             ))}
                             <button onClick={() => addLesson(sIdx)} className="bg-edubot-orange text-white px-4 py-1 rounded mt-2">+ Сабак кошуу</button>
@@ -379,11 +379,11 @@ const CourseBuilder = () => {
                         <h4 className="text-lg font-semibold mb-4">Ырастоо</h4>
                         <p className="mb-6">
                             {confirmDelete.type === 'section'
-                                ? 'Бул бөлүмдү өчүрүүнү каалайсызбы?'
-                                : 'Бул сабакты өчүрүүнү каалайсызбы?'}
+                                ? <span><strong>{confirmDelete.title}</strong> {`бөлүмүн өчүрүүнү каалайсызбы?`}</span>
+                                : <span><strong>{confirmDelete.title}</strong> {`сабагын өчүрүүнү каалайсызбы?`}</span>}
                         </p>
                         <div className="flex justify-end gap-4">
-                            <button onClick={() => setConfirmDelete({ type: null, sectionIndex: null, lessonIndex: null })} className="px-4 py-2 bg-gray-200 rounded">Жок</button>
+                            <button onClick={() => setConfirmDelete({ type: null, sectionIndex: null, lessonIndex: null, title: '' })} className="px-4 py-2 bg-gray-200 rounded">Жок</button>
                             <button onClick={handleDelete} className="px-4 py-2 bg-red-600 text-white rounded">Ооба, өчүрүү</button>
                         </div>
                     </div>

@@ -1,4 +1,3 @@
-// Full working EditInstructorCourse.jsx
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
@@ -14,7 +13,8 @@ import {
     fetchSections,
     uploadCourseImage,
     markCoursePending,
-    uploadLessonFile
+    uploadLessonFile,
+    deleteLesson as deleteLessonApi
 } from "../services/api";
 
 const EditInstructorCourse = () => {
@@ -29,6 +29,9 @@ const EditInstructorCourse = () => {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+    const [deletedLessons, setDeletedLessons] = useState([]);
+    const [confirmDelete, setConfirmDelete] = useState({ type: null, sectionIndex: null, lessonIndex: null, lessonTitle: '' });
+
 
     useEffect(() => {
         const loadData = async () => {
@@ -45,7 +48,7 @@ const EditInstructorCourse = () => {
                         return {
                             id: sec.id,
                             title: sec.title,
-                            order: sec.order, // assuming backend returns order
+                            order: sec.order,
                             lessons: lessons
                                 .sort((a, b) => a.order - b.order)
                                 .map((l) => ({
@@ -57,7 +60,7 @@ const EditInstructorCourse = () => {
                     })
                 );
 
-                allSections.sort((a, b) => a.order - b.order); // explicitly sort sections
+                allSections.sort((a, b) => a.order - b.order);
 
                 setCourse(courseData);
                 setOriginalCourse(courseData);
@@ -72,7 +75,6 @@ const EditInstructorCourse = () => {
         };
         loadData();
     }, [id]);
-
 
     const handleCourseChange = (e) => {
         const { name, value, files } = e.target;
@@ -120,7 +122,11 @@ const EditInstructorCourse = () => {
     const deleteLesson = (sectionIndex, lessonIndex) => {
         setSections(prev => {
             const updated = [...prev];
-            updated[sectionIndex].lessons = updated[sectionIndex].lessons.filter((_, idx) => idx !== lessonIndex);
+            const lesson = updated[sectionIndex].lessons[lessonIndex];
+            if (lesson?.id) {
+                setDeletedLessons(prev => [...prev, { sectionId: updated[sectionIndex].id, lessonId: lesson.id }]);
+            }
+            updated[sectionIndex].lessons.splice(lessonIndex, 1);
             return updated;
         });
     };
@@ -134,7 +140,6 @@ const EditInstructorCourse = () => {
     };
 
     const handleFileUpload = async (sectionIndex, lessonIndex, type, file) => {
-
         setSections(prev => {
             const updated = [...prev];
             updated[sectionIndex].lessons[lessonIndex].uploading[type] = true;
@@ -182,10 +187,15 @@ const EditInstructorCourse = () => {
     const handleSaveAll = async () => {
         setSaving(true);
         try {
+            for (const { sectionId, lessonId } of deletedLessons) {
+                await deleteLessonApi(id, sectionId, lessonId);
+            }
+            setDeletedLessons([]);
+
             for (const [sectionIdx, section] of sections.entries()) {
                 const sectionPayload = {
                     title: section.title,
-                    order: sectionIdx, // explicitly set section order
+                    order: sectionIdx,
                 };
 
                 if (!section.id) {
@@ -196,7 +206,6 @@ const EditInstructorCourse = () => {
                 }
 
                 for (const [lessonIdx, lesson] of section.lessons.entries()) {
-
                     const lessonPayload = {
                         title: lesson.title,
                         videoKey: lesson.videoKey,
@@ -222,7 +231,6 @@ const EditInstructorCourse = () => {
         }
     };
 
-
     const handleSubmitForApproval = async () => {
         try {
             await markCoursePending(id);
@@ -231,6 +239,12 @@ const EditInstructorCourse = () => {
         } catch (err) {
             toast.error("Курс жөнөтүлбөй калды");
         }
+    };
+
+    const handleConfirmedDelete = () => {
+        const { sectionIndex, lessonIndex } = confirmDelete;
+        deleteLesson(sectionIndex, lessonIndex);
+        setConfirmDelete({ type: null, sectionIndex: null, lessonIndex: null, lessonTitle: '' });
     };
 
     const isChanged = () => JSON.stringify(course) !== JSON.stringify(originalCourse) || JSON.stringify(sections) !== JSON.stringify(originalSections);
@@ -319,7 +333,13 @@ const EditInstructorCourse = () => {
                                         Превью видео катары белгилөө
                                     </label>
 
-                                    <button onClick={() => deleteLesson(sIdx, lIdx)} className="mt-2 px-3 py-1 bg-red-100 text-red-700 border border-red-300 rounded hover:bg-red-200 text-sm">Сабакты өчүрүү</button>
+                                    <button onClick={() => {
+                                        if (sIdx === 0 && sections[sIdx].lessons.length === 1) {
+                                            toast.error('Кеминде бир сабак болушу керек.');
+                                            return;
+                                        }
+                                        setConfirmDelete({ type: 'lesson', sectionIndex: sIdx, lessonIndex: lIdx, lessonTitle: lesson?.title });
+                                    }} className="mt-2 px-3 py-1 bg-red-100 text-red-700 border border-red-300 rounded hover:bg-red-200 text-sm">Сабакты өчүрүү</button>
                                 </div>
                             ))}
                             <button onClick={() => addLesson(sIdx)} className="bg-edubot-orange text-white px-4 py-1 rounded mt-2">+ Сабак кошуу</button>
@@ -372,6 +392,22 @@ const EditInstructorCourse = () => {
                     </div>
                 </div>
             )}
+
+            {confirmDelete.type && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-white p-6 rounded shadow max-w-sm w-full">
+                        <h4 className="text-lg font-semibold mb-4">Ырастоо</h4>
+                        <p className="mb-6">
+                            <strong>{confirmDelete.lessonTitle}</strong> сабагын өчүрүүнү каалайсызбы?
+                        </p>
+                        <div className="flex justify-end gap-4">
+                            <button onClick={() => setConfirmDelete({ type: null, sectionIndex: null, lessonIndex: null, lessonTitle: '' })} className="px-4 py-2 bg-gray-200 rounded">Жок</button>
+                            <button onClick={handleConfirmedDelete} className="px-4 py-2 bg-red-600 text-white rounded">Ооба, өчүрүү</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
         </div>
     );
 };
