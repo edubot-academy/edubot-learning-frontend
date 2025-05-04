@@ -401,13 +401,13 @@ export const getLastViewedLesson = async (courseId) => {
     return res.data;
 };
 
-export const getLastVideoTime = async (courseId) => {
-    const res = await api.get(`/student-progress/last-video-time?courseId=${courseId}`);
+export const getVideoTime = async (courseId, lessonId) => {
+    const res = await api.get(`courses/${courseId}/progress/lessons/${lessonId}/video-time`);
     return res.data;
 };
 
-export const updateLastVideoTime = async ({ courseId, time }) => {
-    const res = await api.put(`/student-progress/last-video-time`, { courseId, time });
+export const updateVideoTime = async ({ courseId, lessonId, time }) => {
+    const res = await api.put(`courses/${courseId}/progress/lessons/${lessonId}/video-time`, { time });
     return res.data;
 };
 

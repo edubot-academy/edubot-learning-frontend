@@ -63,9 +63,14 @@ const HomePage = () => {
 
             {/* Курстар Секциясы */}
             <section className="py-16 bg-white text-center">
-                <div className="relative px-6 mb-8">
-                    <h2 className="text-4xl font-bold text-center">Биздин курстарды изилдеңиз</h2>
-                    <Link to="/courses" className="absolute right-6 top-1/2 transform -translate-y-1/2 text-blue-600 font-medium hover:underline">
+                <div className="flex justify-between items-center px-4 sm:px-6 py-2 mb-4">
+                    <h2 className="text-2xl sm:text-4xl font-bold leading-tight">
+                        Биздин курстарды изилдеңиз
+                    </h2>
+                    <Link
+                        to="/courses"
+                        className="text-blue-600 text-sm font-medium hover:underline whitespace-nowrap"
+                    >
                         Баарын көрүү
                     </Link>
                 </div>
@@ -97,11 +102,11 @@ const HomePage = () => {
                 <h2 className="text-4xl font-bold mb-8">Биздин үйрөнүүчүлөр эмне дешет?</h2>
                 <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="p-6 bg-white shadow-lg rounded-lg">
-                        <p className="text-gray-600">\"Edubot Learning менин карьерамды толугу менен өзгөрттү. Интерактивдүү курстар жана AI сунуштары мага кыялымдагы жумушту табууга жардам берди!\"</p>
+                        <p className="text-gray-600">"Edubot Learning менин карьерамды толугу менен өзгөрттү. Интерактивдүү курстар жана AI сунуштары мага кыялымдагы жумушту табууга жардам берди!"</p>
                         <h3 className="text-xl font-semibold mt-4">- Жейн Доэ</h3>
                     </div>
                     <div className="p-6 bg-white shadow-lg rounded-lg">
-                        <p className="text-gray-600">\"Окутуучулар мыкты, жана өз ыргагым менен үйрөнүү мүмкүнчүлүгү чоң айырма жаратты. Сунуштайм!\"</p>
+                        <p className="text-gray-600">"Окутуучулар мыкты, жана өз ыргагым менен үйрөнүү мүмкүнчүлүгү чоң айырма жаратты. Сунуштайм!"</p>
                         <h3 className="text-xl font-semibold mt-4">- Марк Жонсон</h3>
                     </div>
                 </div>
