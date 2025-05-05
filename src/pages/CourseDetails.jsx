@@ -32,12 +32,12 @@ const CourseDetailsPage = () => {
     const [error, setError] = useState(null);
     const [enrolled, setEnrolled] = useState(false);
     const lessonRefs = useRef({});
-    const [countdown, setCountdown] = useState(0);
-    const countdownRef = useRef(null);
-    const [progressPercent, setProgressPercent] = useState(0);
-    const [countdownStarted, setCountdownStarted] = useState(false);
     const videoRef = useRef(null);
-    const [shouldAutoPlayNext, setShouldAutoPlayNext] = useState(false);
+    const hasPlayedRef = useRef(false);
+
+    useEffect(() => {
+        hasPlayedRef.current = false;
+    }, [activeLesson]);
 
     useEffect(() => {
         activeLessonRef.current = activeLesson;
@@ -64,39 +64,6 @@ const CourseDetailsPage = () => {
         if (user && enrolled) {
             debouncedTimeUpdate(time);
         }
-
-        const video = videoRef.current;
-        if (!video || countdownStarted) return;
-        if (video.duration - time <= 5) {
-            const { next } = findPrevNextLessons();
-            if (next) {
-                setCountdownStarted(true);
-                setCountdown(5);
-                setProgressPercent(0);
-                const totalSeconds = 5;
-                const intervalTime = 100;
-                const totalIntervals = (totalSeconds * 1000) / intervalTime;
-                let currentInterval = 0;
-
-                countdownRef.current = setInterval(() => {
-                    currentInterval++;
-                    setProgressPercent((currentInterval / totalIntervals) * 100);
-
-                    if (currentInterval % 10 === 0) {
-                        setCountdown((prev) => {
-                            if (prev === 1) {
-                                clearInterval(countdownRef.current);
-                                setShouldAutoPlayNext(true);
-                                handleLessonClick(next);
-                                setCountdownStarted(false);
-                                return 0;
-                            }
-                            return prev - 1;
-                        });
-                    }
-                }, intervalTime);
-            }
-        }
     };
 
     const handlePause = () => {
@@ -119,33 +86,25 @@ const CourseDetailsPage = () => {
     };
 
     const handleLessonClick = async (lesson) => {
-        if (countdownRef.current) {
-            clearInterval(countdownRef.current);
-            setCountdown(0);
-            setProgressPercent(0);
-            setCountdownStarted(false);
-        }
         setActiveLesson(lesson);
         localStorage.setItem(`active_section_${id}`, String(lesson.sectionId));
         setActiveSectionId(lesson.sectionId);
         scrollToLesson(lesson.id);
 
-        if (shouldAutoPlayNext) {
-            setTimeout(() => {
-                if (videoRef.current) {
-                    videoRef.current.muted = true;
-                    videoRef.current.play().catch((err) => {
-                        console.warn('Auto-play failed:', err);
-                    });
-                }
-            }, 500);
-        }
-        setShouldAutoPlayNext(false);
+        setTimeout(() => {
+            if (videoRef.current) {
+                videoRef.current.load();
+                videoRef.current.play().catch(err =>
+                    console.warn('Autoplay failed:', err)
+                );
+            }
+        }, 0);
 
         if (user && enrolled && !lesson.locked) {
             await updateLastViewedLesson({ courseId: Number(id), lessonId: lesson.id });
             const videoTime = await getVideoTime(id, lesson.id);
-            if (videoTime?.time && videoTime.time < 0.95 * (lesson.duration || 9999)) {
+
+            if (videoTime?.time && videoTime.time < (lesson.duration || 9999) * 0.95 && !completedLessons.includes(lesson.id)) {
                 setResumeVideoTime(videoTime.time);
             } else {
                 setResumeVideoTime(0);
@@ -161,14 +120,48 @@ const CourseDetailsPage = () => {
         return { prev, next };
     };
 
+    const handleEnded = async () => {
+        if (user && enrolled && activeLesson) {
+            const resp = await markLessonComplete(
+                Number(id),
+                activeLesson.sectionId,
+                activeLesson.id
+            );
+            if (resp.completed) {
+                setCompletedLessons(prev => [...new Set([...prev, activeLesson.id])]);
+            }
+        }
+        const { next } = findPrevNextLessons();
+        if (next) {
+            handleLessonClick(next);
+        }
+    };
+
     const handleVideoProgress = useCallback(
         async (progress, lessonParam) => {
-            if (!enrolled || lessonParam.id !== activeLessonRef.current?.id) return;
+            // 1) ignore any progress events until we see >0
+            if (!hasPlayedRef.current) {
+                if (progress > 0) {
+                    hasPlayedRef.current = true;
+                } else {
+                    return;
+                }
+            }
 
-            if (progress >= 95 && !completedLessons.includes(lessonParam.id)) {
-                const response = await markLessonComplete(id, lessonParam.sectionId, lessonParam.id);
-                if (response.completed) {
-                    setCompletedLessons((prev) => [...new Set([...prev, lessonParam.id])]);
+            // 2) only mark if you’re truly in the “active” lesson
+            if (
+                enrolled &&
+                lessonParam.id === activeLessonRef.current?.id &&
+                progress >= 95 &&
+                !completedLessons.includes(lessonParam.id)
+            ) {
+                const resp = await markLessonComplete(
+                    Number(id),
+                    lessonParam.sectionId,
+                    lessonParam.id
+                );
+                if (resp.completed) {
+                    setCompletedLessons(prev => [...new Set([...prev, lessonParam.id])]);
                 }
             }
         },
@@ -181,17 +174,17 @@ const CourseDetailsPage = () => {
         if (response.completed) {
             setCompletedLessons((prev) => [...new Set([...prev, lesson.id])]);
         } else {
+            await updateVideoTime({
+                courseId: Number(id),
+                lessonId: lesson.id,
+                time: 0
+            });
+            if (activeLesson?.id === lesson.id) {
+                setResumeVideoTime(0);
+            }
             setCompletedLessons((prev) => prev.filter((lId) => lId !== lesson.id));
         }
     };
-
-    useEffect(() => {
-        return () => {
-            if (countdownRef.current) {
-                clearInterval(countdownRef.current);
-            }
-        };
-    }, []);
 
     useEffect(() => {
         const fetchCourse = async () => {
@@ -313,15 +306,10 @@ const CourseDetailsPage = () => {
                                 handleTimeUpdate={handleTimeUpdate}
                                 handlePause={handlePause}
                                 videoRef={videoRef}
-                                countdown={countdown}
-                                progressPercent={progressPercent}
                                 nextLesson={nextLesson}
                                 prevLesson={prevLesson}
+                                onEnded={handleEnded}
                                 handleLessonClick={handleLessonClick}
-                                countdownRef={countdownRef}
-                                setCountdown={setCountdown}
-                                setProgressPercent={setProgressPercent}
-                                setCountdownStarted={setCountdownStarted}
                             />
                         )}
                     </div>

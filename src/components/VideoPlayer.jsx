@@ -2,8 +2,7 @@ import React, { useRef, useEffect, useState } from 'react';
 import { FaPlayCircle, FaPauseCircle } from 'react-icons/fa';
 import { Link } from 'react-router-dom';
 
-
-const VideoPlayer = ({ videoUrl, resumeTime = 0, onProgress, onTimeUpdate, allowPlay = true, videoRef }) => {
+const VideoPlayer = ({ videoUrl, resumeTime = 0, onProgress, onTimeUpdate, onPause, allowPlay = true, videoRef, onEnded }) => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [isPlaying, setIsPlaying] = useState(false);
@@ -50,6 +49,7 @@ const VideoPlayer = ({ videoUrl, resumeTime = 0, onProgress, onTimeUpdate, allow
         const handlePause = () => {
             setIsPlaying(false);
             setShowControls(true);
+            if (onPause) onPause(video.currentTime);
         };
 
         const handleError = (e) => {
@@ -95,6 +95,7 @@ const VideoPlayer = ({ videoUrl, resumeTime = 0, onProgress, onTimeUpdate, allow
                     disablePictureInPicture
                     controlsList="nodownload"
                     onClick={() => setShowControls(true)}
+                    onEnded={onEnded}
                     onPlay={(e) => {
                         if (!allowPlay) {
                             e.preventDefault();
@@ -107,7 +108,6 @@ const VideoPlayer = ({ videoUrl, resumeTime = 0, onProgress, onTimeUpdate, allow
                 </video>
             </div>
 
-            {/* Center icon overlay */}
             {allowPlay && !loading && showControls && (
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
                     {isPlaying ? (
