@@ -187,7 +187,11 @@ const CourseDetailsPage = () => {
             try {
                 let enrollment = { enrolled: false };
                 if (user) {
-                    enrollment = await fetchEnrollment(id, user.id);
+                    if (user.role === 'student') {
+                        enrollment = await fetchEnrollment(id, user.id);
+                    } else {
+                        enrollment = { enrolled: true }; // allow access for admin, assistant, sales
+                    }
                 }
                 setEnrolled(enrollment.enrolled);
 
