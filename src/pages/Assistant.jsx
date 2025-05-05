@@ -13,7 +13,9 @@ const AssistantDashboard = () => {
 
     const [search, setSearch] = useState('');
     const [students, setStudents] = useState([]);
+    const [totalStudents, setTotalStudents] = useState(0);
     const [courses, setCourses] = useState([]);
+    const [courseCounts, setCourseCounts] = useState({});
     const [enrollmentsMap, setEnrollmentsMap] = useState({});
     const [courseSelections, setCourseSelections] = useState({});
     const [discounts, setDiscounts] = useState({});
@@ -32,6 +34,7 @@ const AssistantDashboard = () => {
 
             const studentsData = usersRes.data || [];
             setStudents(studentsData);
+            setTotalStudents(usersRes.total || studentsData.length);
             setTotalPages(usersRes.totalPages || 1);
 
             const published = coursesRes.courses.filter(c => c.isPublished);
@@ -41,6 +44,12 @@ const AssistantDashboard = () => {
             const userIds = studentsData.map(s => s.id);
             const map = await checkEnrollments(courseIds, userIds);
             setEnrollmentsMap(map);
+
+            const counts = {};
+            courseIds.forEach(courseId => {
+                counts[courseId] = Object.values(map).filter(list => list.includes(courseId)).length;
+            });
+            setCourseCounts(counts);
         } catch {
             toast.error('Маалыматтарды жүктөөдө ката кетти');
         } finally {
@@ -58,9 +67,25 @@ const AssistantDashboard = () => {
         return () => clearTimeout(debounceRef.current);
     }, [search, currentPage, loadStudentsAndCourses]);
 
+    const filteredStudents = students;
+
     return (
         <div className="pt-20 p-6 relative">
             <h2 className="text-2xl font-bold mb-4">📘 Assistant Dashboard</h2>
+
+            <div className="flex gap-6 mb-4 text-sm font-medium flex-wrap">
+                <div>👥 Жалпы студенттер: {totalStudents}</div>
+                <div>✅ Катталган студенттер: {students.filter(s => enrollmentsMap[s.id]?.length).length}</div>
+                <div>🎓 Курстар: {courses.length}</div>
+            </div>
+
+            <div className="mb-4 flex flex-wrap gap-4 text-sm text-gray-700">
+                {courses.map(course => (
+                    <div key={course.id} className="bg-gray-100 px-3 py-1 rounded">
+                        {course.title}: {courseCounts[course.id] || 0} студент
+                    </div>
+                ))}
+            </div>
 
             <div className="mb-4 max-w-md">
                 <input
@@ -84,15 +109,14 @@ const AssistantDashboard = () => {
                         </tr>
                     </thead>
                     <tbody>
-                        {/** Show “no results” when empty */}
-                        {students.length === 0 && !loading ? (
+                        {filteredStudents.length === 0 && !loading ? (
                             <tr>
                                 <td colSpan="4" className="p-4 text-center text-gray-500 italic">
                                     Студент табылган жок
                                 </td>
                             </tr>
                         ) : (
-                            students.map(student => {
+                            filteredStudents.map(student => {
                                 const selectedCourseId = courseSelections[student.id] || '';
                                 const enrolledCourseIds = enrollmentsMap[student.id] || [];
                                 const availableCourses = courses.filter(c => !enrolledCourseIds.includes(c.id));
@@ -136,9 +160,8 @@ const AssistantDashboard = () => {
                                         <td className="p-2 border">
                                             <button
                                                 className={`px-3 py-1 rounded text-white ${isDisabled
-                                                    ? 'bg-gray-400 cursor-not-allowed'
-                                                    : 'bg-blue-600 hover:bg-blue-700'
-                                                    }`}
+                                                    ? 'bg-gray-400 cursor-not-allowed hover:bg-gray-400'
+                                                    : 'bg-blue-600 hover:bg-blue-700'}`}
                                                 disabled={isDisabled || loading}
                                                 onClick={() => {
                                                     if (isDisabled) return;
@@ -181,7 +204,7 @@ const AssistantDashboard = () => {
                                                                 </button>
                                                                 <button
                                                                     onClick={() => toast.dismiss(t.id)}
-                                                                    className="px-2 py-1 border rounded"
+                                                                    className="px-2 py-1 border rounded hover:text-white"
                                                                 >
                                                                     Жок
                                                                 </button>
@@ -210,19 +233,24 @@ const AssistantDashboard = () => {
                     >
                         ⟨ Мурунку
                     </button>
-                    {Array.from({ length: totalPages }, (_, i) => (
-                        <button
-                            key={i}
-                            onClick={() => setCurrentPage(i + 1)}
-                            disabled={loading}
-                            className={`px-3 py-1 rounded border ${currentPage === i + 1
-                                ? 'bg-blue-600 text-white'
-                                : 'bg-white text-gray-700'
-                                }`}
-                        >
-                            {i + 1}
-                        </button>
-                    ))}
+                    {[...Array(totalPages).keys()]
+                        .filter(i => i + 1 === 1 || i + 1 === totalPages || Math.abs(i + 1 - currentPage) <= 2)
+                        .map((p, idx, arr) => (
+                            <React.Fragment key={p}>
+                                {idx > 0 && p - arr[idx - 1] > 1 && (
+                                    <span className="px-2 text-gray-400">...</span>
+                                )}
+                                <button
+                                    onClick={() => setCurrentPage(p + 1)}
+                                    disabled={loading}
+                                    className={`px-3 py-1 rounded border ${currentPage === p + 1
+                                        ? 'bg-blue-600 text-white'
+                                        : 'bg-white text-gray-700'}`}
+                                >
+                                    {p + 1}
+                                </button>
+                            </React.Fragment>
+                        ))}
                     <button
                         onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                         disabled={currentPage === totalPages || loading}

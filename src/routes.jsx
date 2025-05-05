@@ -1,5 +1,5 @@
 import React from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
 import LoginPage from "./pages/Login";
 import SignupPage from "./pages/Signup";
 import Header from "./components/Header";
@@ -24,42 +24,40 @@ import PrivateRoute from "./components/PrivateRoute";
 
 const AppRoutes = () => {
     return (
-        <Router>
-            <div className="flex flex-col min-h-screen">
-                <Header />
-                <div className="flex-grow">
-                    <Routes>
-                        <Route path="/" element={<HomePage />} />
-                        <Route path="/login" element={<LoginPage />} />
-                        <Route path="/register" element={<SignupPage />} />
-                        <Route path="/courses" element={<CoursesPage />} />
-                        <Route path="/dashboard" element={<DashboardPage />} />
-                        <Route path="/profile" element={<ProfilePage />} />
-                        <Route path="/unauthorized" element={<Unauthorized />} />
-                        <Route element={<PrivateRoute allowedRoles={['instructor']} />}>
-                            <Route path="/instructor" element={<InstructorDashboard />} />
-                            <Route path="/instructor/course/create" element={<CreateCourse />} />
-                            <Route path="/instructor/courses" element={<InstructorCourses />} />
-                            <Route path="/instructor/courses/edit/:id" element={<EditInstructorCourse />} />
-                        </Route>
-                        <Route path="/courses/:id" element={<CourseDetailsPage />} />
-                        <Route path="/forgot-password" element={<ForgotPassword />} />
-                        <Route element={<PrivateRoute allowedRoles={['admin']} />}>
-                            <Route path="/admin" element={<AdminPanel />} />
-                        </Route>
-                        <Route element={<PrivateRoute allowedRoles={['sales']} />}>
-                            <Route path="/sales-manager" element={<SalesManager />} />
-                        </Route>
-                        <Route path="/about" element={<AboutPage />} />
-                        <Route path="/contact" element={<ContactPage />} />
-                        <Route element={<PrivateRoute allowedRoles={['assistant']} />}>
-                            <Route path="/assistant" element={<AssistantDashboard />} />
-                        </Route>
-                    </Routes>
-                </div>
-                <Footer />
+        <div className="flex flex-col min-h-screen">
+            <Header />
+            <div className="flex-grow">
+                <Routes>
+                    <Route path="/" element={<HomePage />} />
+                    <Route path="/login" element={<LoginPage />} />
+                    <Route path="/register" element={<SignupPage />} />
+                    <Route path="/courses" element={<CoursesPage />} />
+                    <Route path="/dashboard" element={<DashboardPage />} />
+                    <Route path="/profile" element={<ProfilePage />} />
+                    <Route path="/unauthorized" element={<Unauthorized />} />
+                    <Route element={<PrivateRoute allowedRoles={['instructor']} />}>
+                        <Route path="/instructor" element={<InstructorDashboard />} />
+                        <Route path="/instructor/course/create" element={<CreateCourse />} />
+                        <Route path="/instructor/courses" element={<InstructorCourses />} />
+                        <Route path="/instructor/courses/edit/:id" element={<EditInstructorCourse />} />
+                    </Route>
+                    <Route path="/courses/:id" element={<CourseDetailsPage />} />
+                    <Route path="/forgot-password" element={<ForgotPassword />} />
+                    <Route element={<PrivateRoute allowedRoles={['admin']} />}>
+                        <Route path="/admin" element={<AdminPanel />} />
+                    </Route>
+                    <Route element={<PrivateRoute allowedRoles={['sales']} />}>
+                        <Route path="/sales-manager" element={<SalesManager />} />
+                    </Route>
+                    <Route path="/about" element={<AboutPage />} />
+                    <Route path="/contact" element={<ContactPage />} />
+                    <Route element={<PrivateRoute allowedRoles={['assistant']} />}>
+                        <Route path="/assistant" element={<AssistantDashboard />} />
+                    </Route>
+                </Routes>
             </div>
-        </Router>
+            <Footer />
+        </div>
     );
 };
 
