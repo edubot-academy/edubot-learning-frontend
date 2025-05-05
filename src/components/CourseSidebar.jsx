@@ -71,11 +71,6 @@ const CourseSidebar = ({
                                             <div className="flex flex-col">
                                                 <span className="flex items-center gap-2">
                                                     {lesson.title}
-                                                    {lesson.id === lastViewedLessonId && (
-                                                        <span className="text-[10px] bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded font-medium">
-                                                            Улантуу
-                                                        </span>
-                                                    )}
                                                 </span>
                                                 {lesson.duration && (
                                                     <span className="text-xs text-gray-500">Узактыгы: {lesson.duration}</span>

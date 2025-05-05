@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback, useContext } from "react";
 import { useParams } from "react-router-dom";
 import debounce from "lodash.debounce";
-import VideoPlayer from "../components/VideoPlayer";
 import {
     fetchCourseDetails,
     fetchSections,
@@ -149,14 +148,21 @@ const CourseDetailsPage = () => {
         return { prev, next };
     };
 
-    const handleVideoProgress = async (progress, lesson) => {
-        if (enrolled && progress >= 95 && !completedLessons.includes(lesson.id)) {
-            const response = await markLessonComplete(id, lesson.sectionId, lesson.id);
-            if (response.completed) {
-                setCompletedLessons((prev) => [...new Set([...prev, lesson.id])]);
+    const handleVideoProgress = useCallback(
+        async (progress, lessonParam) => {
+            // only mark complete on the lesson that’s still active
+            if (!enrolled || lessonParam.id !== activeLesson?.id) return;
+
+            if (progress >= 95 && !completedLessons.includes(lessonParam.id)) {
+                const response = await markLessonComplete(id, lessonParam.sectionId, lessonParam.id);
+                if (response.completed) {
+                    setCompletedLessons((prev) => [...new Set([...prev, lessonParam.id])]);
+                }
             }
-        }
-    };
+        },
+        [id, enrolled, activeLesson?.id, completedLessons]
+    );
+
 
     const handleCheckboxToggle = async (lesson) => {
         if (!enrolled) return;
@@ -290,6 +296,7 @@ const CourseDetailsPage = () => {
                     <div className="md:col-span-2">
                         {activeLesson?.videoUrl && (
                             <CourseVideoPlayer
+                                key={activeLesson.id}
                                 activeLesson={activeLesson}
                                 resumeVideoTime={resumeVideoTime}
                                 handleVideoProgress={handleVideoProgress}
