@@ -24,6 +24,7 @@ const CourseDetailsPage = () => {
     const [sections, setSections] = useState([]);
     const [activeSectionId, setActiveSectionId] = useState(null);
     const [activeLesson, setActiveLesson] = useState(null);
+    const activeLessonRef = useRef(null);
     const [lastViewedLessonId, setLastViewedLessonId] = useState(null);
     const [completedLessons, setCompletedLessons] = useState([]);
     const [resumeVideoTime, setResumeVideoTime] = useState(0);
@@ -38,6 +39,10 @@ const CourseDetailsPage = () => {
     const videoRef = useRef(null);
     const [shouldAutoPlayNext, setShouldAutoPlayNext] = useState(false);
 
+    useEffect(() => {
+        activeLessonRef.current = activeLesson;
+    }, [activeLesson]);
+
     const scrollToLesson = (lessonId) => {
         setTimeout(() => {
             if (lessonRefs.current[lessonId]) {
@@ -48,11 +53,11 @@ const CourseDetailsPage = () => {
 
     const debouncedTimeUpdate = useCallback(
         debounce((time) => {
-            if (user && enrolled) {
-                updateVideoTime({ courseId: Number(id), lessonId: activeLesson?.id, time });
+            if (user && enrolled && activeLessonRef.current?.id) {
+                updateVideoTime({ courseId: Number(id), lessonId: activeLessonRef.current.id, time });
             }
         }, 3000),
-        [id, user, enrolled, activeLesson?.id]
+        [id, user, enrolled]
     );
 
     const handleTimeUpdate = (time) => {
@@ -92,9 +97,16 @@ const CourseDetailsPage = () => {
                 }, intervalTime);
             }
         }
-
     };
 
+    const handlePause = () => {
+        if (user && enrolled && videoRef.current) {
+            const currentTime = videoRef.current.currentTime;
+            if (activeLessonRef.current?.id) {
+                updateVideoTime({ courseId: Number(id), lessonId: activeLessonRef.current.id, time: currentTime });
+            }
+        }
+    };
 
     const toggleSection = (sectionId) => {
         const newId = activeSectionId === sectionId ? null : sectionId;
@@ -121,7 +133,7 @@ const CourseDetailsPage = () => {
         if (shouldAutoPlayNext) {
             setTimeout(() => {
                 if (videoRef.current) {
-                    videoRef.current.muted = true; // ensure autoplay
+                    videoRef.current.muted = true;
                     videoRef.current.play().catch((err) => {
                         console.warn('Auto-play failed:', err);
                     });
@@ -133,12 +145,13 @@ const CourseDetailsPage = () => {
         if (user && enrolled && !lesson.locked) {
             await updateLastViewedLesson({ courseId: Number(id), lessonId: lesson.id });
             const videoTime = await getVideoTime(id, lesson.id);
-            if (videoTime?.time) {
+            if (videoTime?.time && videoTime.time < 0.95 * (lesson.duration || 9999)) {
                 setResumeVideoTime(videoTime.time);
+            } else {
+                setResumeVideoTime(0);
             }
         }
     };
-
 
     const findPrevNextLessons = () => {
         const flatLessons = sections.flatMap((sec) => sec.lessons || []);
@@ -150,8 +163,7 @@ const CourseDetailsPage = () => {
 
     const handleVideoProgress = useCallback(
         async (progress, lessonParam) => {
-            // only mark complete on the lesson that’s still active
-            if (!enrolled || lessonParam.id !== activeLesson?.id) return;
+            if (!enrolled || lessonParam.id !== activeLessonRef.current?.id) return;
 
             if (progress >= 95 && !completedLessons.includes(lessonParam.id)) {
                 const response = await markLessonComplete(id, lessonParam.sectionId, lessonParam.id);
@@ -160,9 +172,8 @@ const CourseDetailsPage = () => {
                 }
             }
         },
-        [id, enrolled, activeLesson?.id, completedLessons]
+        [id, enrolled, completedLessons]
     );
-
 
     const handleCheckboxToggle = async (lesson) => {
         if (!enrolled) return;
@@ -190,7 +201,7 @@ const CourseDetailsPage = () => {
                     if (user.role === 'student') {
                         enrollment = await fetchEnrollment(id, user.id);
                     } else {
-                        enrollment = { enrolled: true }; // allow access for admin, assistant, sales
+                        enrollment = { enrolled: true };
                     }
                 }
                 setEnrolled(enrollment.enrolled);
@@ -203,7 +214,7 @@ const CourseDetailsPage = () => {
                     ...sec,
                     lessons: sec.lessons
                         .slice()
-                        .sort((a, b) => a.order - b.order) // sorting lessons by the `order` field
+                        .sort((a, b) => a.order - b.order)
                         .map((lesson) => ({
                             ...lesson,
                             sectionId: sec.id,
@@ -257,23 +268,18 @@ const CourseDetailsPage = () => {
                     scrollToLesson(lastLesson.id);
                     if (user && enrollment.enrolled && !lastLesson.locked) {
                         const videoTime = await getVideoTime(id, lastLesson.id);
-                        if (videoTime?.time) {
+                        if (videoTime?.time && videoTime.time < 0.95 * (lastLesson.duration || 9999)) {
                             setResumeVideoTime(videoTime.time);
+                        } else {
+                            setResumeVideoTime(0);
                         }
                     }
-                } else {
-                    const storedSection = localStorage.getItem(`active_section_${id}`);
-                    if (storedSection) {
-                        setActiveSectionId(Number(storedSection));
-                    } else if (updatedSections.length > 0) {
-                        setActiveSectionId(updatedSections[0].id);
-                        if (!lastLesson) {
-                            const storedSection = localStorage.getItem(`active_section_${id}`);
-                            const sectionIdToOpen = storedSection ? Number(storedSection) : updatedSections[0]?.id;
-                            setActiveSectionId(sectionIdToOpen);
-                        }
+                }
 
-                    }
+                if (!lastLesson) {
+                    const storedSection = localStorage.getItem(`active_section_${id}`);
+                    const sectionIdToOpen = storedSection ? Number(storedSection) : updatedSections[0]?.id;
+                    setActiveSectionId(sectionIdToOpen);
                 }
             } catch (err) {
                 setError(err.message || "Курс жүктөлбөй калды.");
@@ -303,8 +309,9 @@ const CourseDetailsPage = () => {
                                 key={activeLesson.id}
                                 activeLesson={activeLesson}
                                 resumeVideoTime={resumeVideoTime}
-                                handleVideoProgress={handleVideoProgress}
+                                handleVideoProgress={(progress) => handleVideoProgress(progress, activeLesson)}
                                 handleTimeUpdate={handleTimeUpdate}
+                                handlePause={handlePause}
                                 videoRef={videoRef}
                                 countdown={countdown}
                                 progressPercent={progressPercent}
