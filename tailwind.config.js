@@ -14,7 +14,11 @@ module.exports = {
         },
       },
       fontFamily: {
-        sans: ['Inter', 'sans-serif'], // or Poppins if you prefer
+        sans: [
+          'Inter',
+          'system-ui',
+          'sans-serif',
+        ],
       },
     },
   },

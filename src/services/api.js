@@ -98,7 +98,11 @@ export const deleteUser = async (userId) => {
 
 export const enrollUserInCourse = async (userId, courseId, discountPercentage) => {
     try {
-        const response = await api.post(`/courses/${courseId}/enroll`, { userId, discountPercentage });
+        const response = await api.post(`/enrollments/enroll`, {
+            userId,
+            courseId,
+            discountPercentage,
+        });
         return response.data;
     } catch (error) {
         console.error("Error enrolling user:", error);
@@ -107,15 +111,34 @@ export const enrollUserInCourse = async (userId, courseId, discountPercentage) =
     }
 };
 
-export const fetchEnrollment = async (courseId) => {
+
+export const fetchEnrollment = async (courseId, userId) => {
     try {
-        const response = await api.get(`/courses/${courseId}/enrollment`);
+        const params = { courseId };
+        if (userId) params.userId = userId;
+
+        const response = await api.get(`/enrollments/check`, { params });
         return response.data;
     } catch (error) {
         console.error("Error fetching enrollment:", error);
         throw error;
     }
 };
+
+export const checkEnrollments = async (courseIds, userIds = []) => {
+    try {
+        const response = await api.post('/enrollments/bulk-check', {
+            courseIds,
+            userIds,
+        });
+        return response.data;
+    } catch (error) {
+        console.error("Error in bulk enrollment check:", error);
+        throw error;
+    }
+};
+
+
 
 export const fetchMyStudents = async () => {
     try {
