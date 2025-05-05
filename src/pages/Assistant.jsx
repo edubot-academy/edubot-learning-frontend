@@ -14,6 +14,7 @@ const AssistantDashboard = () => {
     const [search, setSearch] = useState('');
     const [students, setStudents] = useState([]);
     const [totalStudents, setTotalStudents] = useState(0);
+    const [enrolledStudents, setEnrolledStudents] = useState([]);
     const [courses, setCourses] = useState([]);
     const [courseCounts, setCourseCounts] = useState({});
     const [enrollmentsMap, setEnrollmentsMap] = useState({});
@@ -46,10 +47,18 @@ const AssistantDashboard = () => {
             setEnrollmentsMap(map);
 
             const counts = {};
+            const enrolledSet = new Set();
             courseIds.forEach(courseId => {
-                counts[courseId] = Object.values(map).filter(list => list.includes(courseId)).length;
+                counts[courseId] = 0;
+                for (const studentId in map) {
+                    if (map[studentId].includes(courseId)) {
+                        counts[courseId]++;
+                        enrolledSet.add(Number(studentId));
+                    }
+                }
             });
             setCourseCounts(counts);
+            setEnrolledStudents(studentsData.filter(s => enrolledSet.has(s.id)));
         } catch {
             toast.error('Маалыматтарды жүктөөдө ката кетти');
         } finally {
@@ -75,14 +84,14 @@ const AssistantDashboard = () => {
 
             <div className="flex gap-6 mb-4 text-sm font-medium flex-wrap">
                 <div>👥 Жалпы студенттер: {totalStudents}</div>
-                <div>✅ Катталган студенттер: {students.filter(s => enrollmentsMap[s.id]?.length).length}</div>
+                <div>✅ Катталган студенттер: {enrolledStudents.length}</div>
                 <div>🎓 Курстар: {courses.length}</div>
             </div>
 
             <div className="mb-4 flex flex-wrap gap-4 text-sm text-gray-700">
                 {courses.map(course => (
                     <div key={course.id} className="bg-gray-100 px-3 py-1 rounded">
-                        {course.title}: {courseCounts[course.id] || 0} студент
+                        {course.title}: {course.enrolledStudents || 0} студент
                     </div>
                 ))}
             </div>
