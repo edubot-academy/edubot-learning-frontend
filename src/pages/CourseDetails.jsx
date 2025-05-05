@@ -391,7 +391,7 @@ const CourseDetailsPage = () => {
                         )}
                     </div>
 
-                    <div className="bg-white p-6 rounded-lg shadow-md sticky top-28 self-start max-h-[calc(100vh-7rem)] overflow-y-auto">
+                    <div className="bg-white p-6 rounded-lg shadow-md sticky top-28 self-start max-h-[calc(100vh-7rem)] overflow-y-auto hidden-scrollbar md:overflow-y-auto md:max-h-[calc(100vh-7rem)]">
                         <h2 className="text-xl font-semibold mb-4">Курстун мазмуну</h2>
                         {sections.map((section) => {
                             const isOpen = activeSectionId === section.id;
