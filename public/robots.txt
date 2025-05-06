@@ -1,0 +1,16 @@
+# Allow all bots to index and follow public content
+User-agent: *
+
+# Disallow admin and internal routes
+Disallow: /admin
+Disallow: /sales-manager
+Disallow: /dashboard
+Disallow: /profile
+Disallow: /courses/create
+Disallow: /courses/edit
+
+# Allow everything else
+Allow: /
+
+# Optional: Sitemap link for better crawling
+Sitemap: https://learning.edubot.it.com/sitemap.xml
