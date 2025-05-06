@@ -1,8 +1,33 @@
 {
     "rewrites": [
         {
+            "source": "/sitemap.xml",
+            "has": [
+                {
+                    "type": "host",
+                    "value": "staging.learning.edubot.it.com"
+                }
+            ],
+            "destination": "https://api.staging.learning.edubot.it.com/sitemap.xml"
+        },
+        {
+            "source": "/sitemap.xml",
+            "destination": "https://api.learning.edubot.it.com/sitemap.xml"
+        },
+        {
             "source": "/(.*)",
             "destination": "/"
+        }
+    ],
+    "headers": [
+        {
+            "source": "/sitemap.xml",
+            "headers": [
+                {
+                    "key": "Content-Type",
+                    "value": "application/xml"
+                }
+            ]
         }
     ]
 }
