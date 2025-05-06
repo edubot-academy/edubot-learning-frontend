@@ -45,8 +45,14 @@ const CourseDetailsPage = () => {
 
     const scrollToLesson = (lessonId) => {
         setTimeout(() => {
-            if (lessonRefs.current[lessonId]) {
-                lessonRefs.current[lessonId].scrollIntoView({ behavior: "smooth", block: "center" });
+            const el = lessonRefs.current[lessonId];
+            if (el) {
+                const rect = el.getBoundingClientRect();
+                const isVisible = rect.top >= 0 && rect.bottom <= window.innerHeight;
+
+                if (!isVisible) {
+                    el.scrollIntoView({ behavior: "smooth", block: "center" });
+                }
             }
         }, 100);
     };
@@ -86,6 +92,7 @@ const CourseDetailsPage = () => {
     };
 
     const handleLessonClick = async (lesson) => {
+        console.log('handleLessonClick');
         setActiveLesson(lesson);
         localStorage.setItem(`active_section_${id}`, String(lesson.sectionId));
         setActiveSectionId(lesson.sectionId);
@@ -94,9 +101,9 @@ const CourseDetailsPage = () => {
         setTimeout(() => {
             if (videoRef.current) {
                 videoRef.current.load();
-                videoRef.current.play().catch(err =>
-                    console.warn('Autoplay failed:', err)
-                );
+                if (!hasPlayedRef.current) {
+                    videoRef.current.play().catch(err => console.warn('Autoplay failed:', err));
+                }
             }
         }, 0);
 
@@ -121,7 +128,9 @@ const CourseDetailsPage = () => {
     };
 
     const handleEnded = async () => {
+        if (!hasPlayedRef.current) return;
         if (user && enrolled && activeLesson) {
+            console.log('Marking lesson as complete handleEnded');
             const resp = await markLessonComplete(
                 Number(id),
                 activeLesson.sectionId,
@@ -152,9 +161,11 @@ const CourseDetailsPage = () => {
             if (
                 enrolled &&
                 lessonParam.id === activeLessonRef.current?.id &&
+                hasPlayedRef.current &&
                 progress >= 95 &&
                 !completedLessons.includes(lessonParam.id)
             ) {
+                console.log('Marking lesson as complete handleVideoProgress');
                 const resp = await markLessonComplete(
                     Number(id),
                     lessonParam.sectionId,
@@ -170,6 +181,7 @@ const CourseDetailsPage = () => {
 
     const handleCheckboxToggle = async (lesson) => {
         if (!enrolled) return;
+        console.log('Marking lesson as complete handleCheckboxToggle');
         const response = await markLessonComplete(id, lesson.sectionId, lesson.id);
         if (response.completed) {
             setCompletedLessons((prev) => [...new Set([...prev, lesson.id])]);

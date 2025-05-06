@@ -49,8 +49,15 @@ const CourseSidebar = ({
                                     <button
                                         type="button"
                                         key={lesson.id}
-                                        ref={(el) => (lessonRefs.current[lesson.id] = el)}
-                                        onClick={() => handleLessonClick(lesson)}
+                                        ref={(el) => {
+                                            if (lesson.id === activeLesson?.id) {
+                                                lessonRefs.current[lesson.id] = el;
+                                            }
+                                        }}
+                                        onClick={() => {
+                                            console.log('handleLessonClick sidebar');
+                                            handleLessonClick(lesson)
+                                        }}
                                         className={`flex items-center justify-between pl-2 pr-2 py-3 mt-1 rounded-md cursor-pointer transition-all w-full text-left
                                       ${isActive
                                                 ? "bg-blue-50 text-blue-600 border-l-4 border-blue-500"
@@ -62,12 +69,16 @@ const CourseSidebar = ({
                                             <input
                                                 type="checkbox"
                                                 checked={completedLessons.includes(lesson.id)}
+                                                onClick={(e) => e.stopPropagation()}
                                                 onChange={(e) => {
                                                     e.stopPropagation();
-                                                    handleCheckboxToggle(lesson);
+                                                    if (e.nativeEvent.isTrusted) {
+                                                        handleCheckboxToggle(lesson);
+                                                    }
                                                 }}
                                                 disabled={!enrolled}
                                             />
+
                                             <div className="flex flex-col">
                                                 <span className="flex items-center gap-2">
                                                     {lesson.title}
