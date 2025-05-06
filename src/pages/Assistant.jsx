@@ -137,6 +137,8 @@ const AssistantDashboard = () => {
                                             {student.fullName}
                                             <br />
                                             <span className="text-xs text-gray-500">{student.email}</span>
+                                            <br />
+                                            <span className="text-xs text-gray-500">{student.phoneNumber || '—'}</span>
                                         </td>
                                         <td className="p-2 border">
                                             {enrolledCourseIds

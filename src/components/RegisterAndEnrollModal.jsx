@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { fetchUsers, fetchCourses, registerStudent, enrollUserInCourse, addPayment } from '../services/api';
 import { toast } from 'react-hot-toast';
 import { FaEye, FaEyeSlash, FaRegCopy } from 'react-icons/fa';
+import PhoneInput from './PhoneInput';
 
 const RegisterAndEnrollModal = ({ onClose, onSuccess }) => {
     const [users, setUsers] = useState([]);
@@ -16,7 +17,6 @@ const RegisterAndEnrollModal = ({ onClose, onSuccess }) => {
     const [newUserData, setNewUserData] = useState({ fullName: '', email: '', phoneNumber: '', password: '' });
     const [searchTriggered, setSearchTriggered] = useState(false);
     const [showRegisterForm, setShowRegisterForm] = useState(true);
-    const [showSearchBlock, setShowSearchBlock] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
     const coursesLoaded = useRef(false);
 
@@ -26,22 +26,36 @@ const RegisterAndEnrollModal = ({ onClose, onSuccess }) => {
             const { data: allUsers = [] } = await fetchUsers({ search: searchTerm, role: 'student' });
             setUsers(allUsers);
         } catch (err) {
-            console.error('Failed to fetch users:', err);
             toast.error('Колдонуучулар жүктөлгөн жок');
         }
         setSearchTriggered(true);
-        setSearchTriggered(true);
     };
 
-    const filteredUsers = users;
-
     const handleRegister = async () => {
+        const phone = newUserData.phoneNumber;
+
+        if (phone) {
+            const digitsOnly = phone.replace(/\D/g, '');
+            if (digitsOnly.length < 10) {
+                toast.error("Телефон номери кеминде 10 цифра болушу керек.");
+                return;
+            }
+
+            if (!/^\+\d{10,15}$/.test(phone)) {
+                toast.error("Телефон номери эл аралык форматта болсун. Мисалы: +996700123456 же +14155552671");
+                return;
+            }
+        }
+
         try {
             const registeredUser = await registerStudent(newUserData);
             setSelectedUser(registeredUser);
             setShowRegisterForm(false);
         } catch (err) {
-            console.error('Registration failed:', err);
+            const message =
+                err.response?.data?.message ||
+                (typeof err === 'string' ? err : 'Каттоо ишке ашкан жок');
+            toast.error(message);
         }
     };
 
@@ -52,18 +66,14 @@ const RegisterAndEnrollModal = ({ onClose, onSuccess }) => {
             onClose();
             onSuccess();
         } catch (err) {
-            console.error('Enrollment or payment failed:', err);
+            toast.error('Жазуу же төлөм ишке ашкан жок');
         }
     };
 
     useEffect(() => {
         if (coursesLoaded.current) return;
         coursesLoaded.current = true;
-        const loadCourses = async () => {
-            const res = await fetchCourses();
-            setCourses(res.courses);
-        };
-        loadCourses();
+        fetchCourses().then(res => setCourses(res.courses));
     }, []);
 
     useEffect(() => {
@@ -88,6 +98,8 @@ const RegisterAndEnrollModal = ({ onClose, onSuccess }) => {
         <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
             <div className="bg-white rounded-lg p-6 w-full max-w-xl shadow-lg relative">
                 <button onClick={onClose} className="absolute top-2 right-2 text-gray-600 hover:text-red-500 text-xl">×</button>
+
+                {/* Search Block */}
                 {!selectedUser && !showRegisterForm && (
                     <>
                         <div className="flex mb-4 space-x-2 relative">
@@ -107,12 +119,11 @@ const RegisterAndEnrollModal = ({ onClose, onSuccess }) => {
                                 }}
                                 className="w-full border p-2 rounded"
                             />
-
                         </div>
 
-                        {searchTriggered && filteredUsers.length > 0 && (
+                        {searchTriggered && users.length > 0 && (
                             <ul className="absolute z-50 left-0 right-0 bg-white border rounded shadow max-h-40 overflow-y-auto mt-1">
-                                {filteredUsers.map(user => (
+                                {users.map(user => (
                                     <li
                                         key={user.id}
                                         className="p-2 cursor-pointer hover:bg-blue-100"
@@ -126,16 +137,14 @@ const RegisterAndEnrollModal = ({ onClose, onSuccess }) => {
 
                         <div className="text-center">
                             <span className="text-gray-600">Колдонуучу табылган жокпу?</span>
-                            <button
-                                className="ml-2 text-blue-600 underline"
-                                onClick={() => setShowRegisterForm(true)}
-                            >
+                            <button className="ml-2 text-blue-600 underline" onClick={() => setShowRegisterForm(true)}>
                                 Жаңы каттоо
                             </button>
                         </div>
                     </>
                 )}
 
+                {/* Register New User */}
                 {showRegisterForm && !selectedUser && (
                     <div className="mb-4">
                         <div className="flex items-center justify-between mb-2">
@@ -158,12 +167,10 @@ const RegisterAndEnrollModal = ({ onClose, onSuccess }) => {
                             onChange={(e) => setNewUserData({ ...newUserData, email: e.target.value })}
                             className="w-full border p-2 rounded mb-2"
                         />
-                        <input
-                            type="text"
-                            placeholder="Телефон номери"
+                        <PhoneInput
                             value={newUserData.phoneNumber}
-                            onChange={(e) => setNewUserData({ ...newUserData, phoneNumber: e.target.value })}
-                            className="w-full border p-2 rounded mb-2"
+                            onChange={(val) => setNewUserData((prev) => ({ ...prev, phoneNumber: val }))}
+                            className="mb-2"
                         />
                         <div className="relative mb-4">
                             <input
@@ -204,6 +211,7 @@ const RegisterAndEnrollModal = ({ onClose, onSuccess }) => {
                     </div>
                 )}
 
+                {/* Selected User + Enroll */}
                 {selectedUser && (
                     <div>
                         <h3 className="text-lg font-medium mb-2">Тандалган студент</h3>

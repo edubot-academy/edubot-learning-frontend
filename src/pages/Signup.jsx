@@ -2,14 +2,16 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { registerUser } from "../services/api";
 import { Link } from "react-router-dom";
-// import { FaGoogle, FaFacebook } from "react-icons/fa";
+import PhoneInput from "../components/PhoneInput";
 
 const SignupPage = () => {
     const [formData, setFormData] = useState({
         fullName: "",
         email: "",
         password: "",
+        phoneNumber: "",
     });
+
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const navigate = useNavigate();
@@ -18,13 +20,38 @@ const SignupPage = () => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
+    const handlePhoneChange = (value) => {
+        setFormData((prev) => ({ ...prev, phoneNumber: value }));
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
         setError(null);
 
+        const phone = formData.phoneNumber;
+        if (phone) {
+            const digitsOnly = phone.replace(/\D/g, '');
+            if (digitsOnly.length < 10) {
+                toast.error("Телефон номери кеминде 10 цифра болушу керек.");
+                setLoading(false);
+                return;
+            }
+
+            if (!/^\+\d{10,15}$/.test(phone)) {
+                toast.error("Телефон номери эл аралык форматта болсун. Мисалы: +996700123456 же +14155552671");
+                setLoading(false);
+                return;
+            }
+        }
+
         try {
-            await registerUser(formData);
+            await registerUser({
+                fullName: formData.fullName,
+                email: formData.email,
+                password: formData.password,
+                phoneNumber: phone || undefined,
+            });
             navigate("/login");
         } catch (err) {
             setError(err.response?.data?.message || "Ката чыкты. Кайра аракет кылыңыз.");
@@ -72,6 +99,16 @@ const SignupPage = () => {
                             required
                         />
                     </div>
+                    <div className="mb-4">
+                        <label className="block text-gray-700">
+                            Телефон номери <span className="text-sm text-gray-500">(милдеттүү эмес)</span>
+                        </label>
+                        <PhoneInput
+                            value={formData.phoneNumber}
+                            onChange={handlePhoneChange}
+                            className="focus:outline-none focus:ring-2 focus:ring-orange-500"
+                        />
+                    </div>
                     <button
                         type="submit"
                         className="w-full bg-orange-500 text-white py-2 rounded-lg hover:bg-orange-600 transition"
@@ -80,13 +117,6 @@ const SignupPage = () => {
                         {loading ? "Катталууда..." : "Катталуу"}
                     </button>
                 </form>
-                {/* <div className="my-4 text-center text-gray-600">ЖЕ</div> */}
-                {/* <button className="w-full flex items-center justify-center bg-red-500 text-white py-2 rounded-lg hover:bg-red-600 transition mb-2">
-                    <FaGoogle className="mr-2" /> Google менен катталуу
-                </button>
-                <button className="w-full flex items-center justify-center bg-blue-700 text-white py-2 rounded-lg hover:bg-blue-800 transition">
-                    <FaFacebook className="mr-2" /> Facebook менен катталуу
-                </button> */}
                 <p className="mt-4 text-center">
                     Аккаунтуңуз барбы?
                     <Link to="/login" className="text-[#1e605e] hover:underline inline-flex items-center gap-1 ml-1">

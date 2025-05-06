@@ -3,13 +3,14 @@ import { AuthContext } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { updateUserProfile, fetchUserProfile } from '../services/api';
+import PhoneInput from '../components/PhoneInput';
 
 const ProfilePage = () => {
     const { user, setUser } = useContext(AuthContext);
     const navigate = useNavigate();
     const errorShown = useRef(false);
 
-    const [formData, setFormData] = useState({ fullName: '', avatar: null });
+    const [formData, setFormData] = useState({ fullName: '', avatar: null, email: '', phoneNumber: '' });
     const [preview, setPreview] = useState(null);
     const [initialData, setInitialData] = useState(null);
     const [isEditing, setIsEditing] = useState(false);
@@ -25,10 +26,14 @@ const ProfilePage = () => {
                 setFormData({
                     fullName: data.fullName || '',
                     avatar: null,
+                    email: data.email || '',
+                    phoneNumber: data.phoneNumber || '',
                 });
                 setInitialData({
                     fullName: data.fullName || '',
                     avatar: null,
+                    email: data.email || '',
+                    phoneNumber: data.phoneNumber || '',
                 });
                 if (data.avatar) setPreview(data.avatar);
                 setUser(data);
@@ -60,6 +65,10 @@ const ProfilePage = () => {
         }
     };
 
+    const handlePhoneChange = (value) => {
+        setFormData((prev) => ({ ...prev, phoneNumber: value }));
+    };
+
     const handlePasswordChange = (e) => {
         const { name, value } = e.target;
         setPasswordData(prev => ({ ...prev, [name]: value }));
@@ -74,12 +83,26 @@ const ProfilePage = () => {
         try {
             const form = new FormData();
             form.append('fullName', formData.fullName);
+            if (formData.phoneNumber) form.append('phoneNumber', formData.phoneNumber);
             if (formData.avatar) form.append('avatar', formData.avatar);
             if (passwordData.newPassword.length >= 6) {
                 form.append('password', passwordData.newPassword);
             } else if (passwordData.newPassword.length > 0) {
                 toast.error("Купуя сөз эң аз дегенде 6 белгиден турушу керек");
                 return;
+            }
+
+            if (formData.phoneNumber) {
+                const digitsOnly = formData.phoneNumber.replace(/\D/g, '');
+                if (digitsOnly.length < 10) {
+                    toast.error("Тел номер кеминде 10 цифра болушу керек.");
+                    return;
+                }
+
+                if (!/^\+\d{10,15}$/.test(formData.phoneNumber)) {
+                    toast.error("Телефон номери эл аралык форматта болсун. Мисалы: +996700123456 же +14155552671");
+                    return;
+                }
             }
 
             const updated = await updateUserProfile(user.id, form);
@@ -94,6 +117,7 @@ const ProfilePage = () => {
 
     const isFormChanged = initialData && (
         initialData.fullName !== formData.fullName.trim() ||
+        initialData.phoneNumber !== formData.phoneNumber.trim() ||
         (formData.avatar && formData.avatar instanceof File) ||
         (passwordData.newPassword.length >= 6 && passwordData.newPassword === passwordData.confirmPassword)
     );
@@ -128,7 +152,8 @@ const ProfilePage = () => {
                     {!isEditing ? (
                         <>
                             <p><strong>Толук аты:</strong> {formData.fullName}</p>
-                            <p><strong>Email:</strong> {user?.email}</p>
+                            <p><strong>Email:</strong> {formData.email}</p>
+                            <p><strong>Телефон:</strong> {formData.phoneNumber || '—'}</p>
                         </>
                     ) : (
                         <>
@@ -146,9 +171,17 @@ const ProfilePage = () => {
                                 <label className="text-gray-600">Email</label>
                                 <input
                                     type="email"
-                                    value={user?.email || ''}
+                                    value={formData.email || ''}
                                     disabled
                                     className="w-full border border-blue-600 p-2 rounded bg-gray-100"
+                                />
+                            </div>
+                            <div>
+                                <label className="text-gray-600">Телефон номери <span className="text-sm text-gray-500">(милдеттүү эмес)</span></label>
+                                <PhoneInput
+                                    value={formData.phoneNumber}
+                                    onChange={handlePhoneChange}
+                                    className="border-blue-600"
                                 />
                             </div>
                             <div>
