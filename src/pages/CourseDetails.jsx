@@ -34,6 +34,7 @@ const CourseDetailsPage = () => {
     const lessonRefs = useRef({});
     const videoRef = useRef(null);
     const hasPlayedRef = useRef(false);
+    const [shouldScrollToLesson, setShouldScrollToLesson] = useState(true);
 
     useEffect(() => {
         hasPlayedRef.current = false;
@@ -44,6 +45,8 @@ const CourseDetailsPage = () => {
     }, [activeLesson]);
 
     const scrollToLesson = (lessonId) => {
+        if (!shouldScrollToLesson) return;
+
         setTimeout(() => {
             const el = lessonRefs.current[lessonId];
             if (el) {
@@ -82,13 +85,21 @@ const CourseDetailsPage = () => {
     };
 
     const toggleSection = (sectionId) => {
+        setShouldScrollToLesson(false); // 🔒 Disable scroll for this interaction
+
         const newId = activeSectionId === sectionId ? null : sectionId;
         setActiveSectionId(newId);
+
         if (newId) {
             localStorage.setItem(`active_section_${id}`, String(newId));
         } else {
             localStorage.removeItem(`active_section_${id}`);
         }
+
+        // Optionally reset scroll flag after short delay
+        setTimeout(() => {
+            setShouldScrollToLesson(true);
+        }, 300); // adjust timing as needed
     };
 
     const handleLessonClick = async (lesson) => {

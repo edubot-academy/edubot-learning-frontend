@@ -119,7 +119,7 @@ const VideoPlayer = ({ videoUrl, resumeTime = 0, onProgress, onTimeUpdate, onPau
             )}
 
             {!allowPlay && (
-                <div className="absolute inset-0 bg-white/80 flex flex-col items-center justify-center text-center px-4">
+                <div className="absolute inset-0 bg-white/80 flex flex-col items-center justify-center text-center px-4 z-[5]">
                     <FaPlayCircle className="text-5xl text-gray-400 mb-4" />
                     <p className="text-gray-700 font-medium mb-2">Бул видеону көрүү үчүн курска катталыңыз.</p>
                     <Link to="/contact" className="px-4 py-2 bg-edubot-orange text-white rounded hover:bg-orange-600">Байланышуу</Link>

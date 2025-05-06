@@ -53,7 +53,7 @@ const Header = ({ cart = [] }) => {
     };
 
     return (
-        <header className="fixed w-full z-20 bg-[#1c3a3e] shadow-md">
+        <header className="fixed w-full z-30 bg-[#1c3a3e] shadow-md">
             <div className="w-full px-6 py-4 flex items-center justify-between">
                 <Link to="/" className="flex items-center space-x-3">
                     <img src={Logo} alt="Edubot Learning Logo" className="h-10" />

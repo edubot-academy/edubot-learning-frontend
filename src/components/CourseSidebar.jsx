@@ -9,7 +9,6 @@ const CourseSidebar = ({
     handleLessonClick,
     handleCheckboxToggle,
     completedLessons = [],
-    lastViewedLessonId,
     enrolled,
     lessonRefs,
 }) => {
@@ -21,7 +20,6 @@ const CourseSidebar = ({
 
             {sections.map((section) => {
                 const isOpen = activeSectionId === section.id;
-                const completedCount = section.lessons.filter(l => completedLessons.includes(l.id)).length;
 
                 return (
                     <div key={section.id} className="mb-4 border-b pb-2">
@@ -54,10 +52,22 @@ const CourseSidebar = ({
                                                 lessonRefs.current[lesson.id] = el;
                                             }
                                         }}
-                                        onClick={() => {
-                                            console.log('handleLessonClick sidebar');
-                                            handleLessonClick(lesson)
+                                        onMouseDown={(e) => {
+                                            if (!e.nativeEvent.isTrusted) return;
+                                            e.preventDefault();
+                                            handleLessonClick(lesson);
                                         }}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter') {
+                                                handleLessonClick(lesson);
+                                            }
+                                        }}
+                                        onPointerDown={(e) => {
+                                            if (!e.nativeEvent.isTrusted) return;
+                                            e.preventDefault();
+                                            handleLessonClick(lesson);
+                                        }}
+
                                         className={`flex items-center justify-between pl-2 pr-2 py-3 mt-1 rounded-md cursor-pointer transition-all w-full text-left
                                       ${isActive
                                                 ? "bg-blue-50 text-blue-600 border-l-4 border-blue-500"
@@ -69,8 +79,12 @@ const CourseSidebar = ({
                                             <input
                                                 type="checkbox"
                                                 checked={completedLessons.includes(lesson.id)}
-                                                onClick={(e) => e.stopPropagation()}
+                                                onClick={(e) => {
+                                                    console.log('checkbox click sidebar');
+                                                    e.stopPropagation()
+                                                }}
                                                 onChange={(e) => {
+                                                    console.log('checkbox change sidebar');
                                                     e.stopPropagation();
                                                     if (e.nativeEvent.isTrusted) {
                                                         handleCheckboxToggle(lesson);
