@@ -70,16 +70,23 @@ const CourseDetailsPage = () => {
     );
 
     const handleTimeUpdate = (time) => {
+        if (!hasPlayedRef.current) return;
         if (user && enrolled) {
             debouncedTimeUpdate(time);
         }
     };
 
     const handlePause = () => {
+        if (!hasPlayedRef.current) return;
+
         if (user && enrolled && videoRef.current) {
             const currentTime = videoRef.current.currentTime;
             if (activeLessonRef.current?.id) {
-                updateVideoTime({ courseId: Number(id), lessonId: activeLessonRef.current.id, time: currentTime });
+                updateVideoTime({
+                    courseId: Number(id),
+                    lessonId: activeLessonRef.current.id,
+                    time: currentTime,
+                });
             }
         }
     };
@@ -332,6 +339,9 @@ const CourseDetailsPage = () => {
                                 nextLesson={nextLesson}
                                 prevLesson={prevLesson}
                                 onEnded={handleEnded}
+                                onPlay={() => {
+                                    hasPlayedRef.current = true;
+                                }}
                                 handleLessonClick={handleLessonClick}
                             />
                         )}

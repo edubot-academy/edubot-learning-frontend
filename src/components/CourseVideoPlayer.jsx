@@ -11,7 +11,8 @@ const CourseVideoPlayer = ({
     nextLesson,
     prevLesson,
     handleLessonClick,
-    onEnded
+    onEnded,
+    onPlay
 }) => {
 
     // restore where the learner left off
@@ -34,6 +35,7 @@ const CourseVideoPlayer = ({
                 allowPlay={!activeLesson.locked}
                 videoRef={videoRef}
                 onEnded={onEnded}
+                onPlay={onPlay}
             />
 
             <button
