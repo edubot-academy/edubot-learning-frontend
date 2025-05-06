@@ -57,7 +57,7 @@ const Header = ({ cart = [] }) => {
             <div className="w-full px-6 py-4 flex items-center justify-between">
                 <Link to="/" className="flex items-center space-x-3">
                     <img src={Logo} alt="Edubot Learning Logo" className="h-10" />
-                    <div className="flex flex-col">
+                    <div translate="no" className="flex flex-col">
                         <span className="text-2xl font-extrabold text-orange-500 leading-none">EDUBOT</span>
                         <span className="text-sm font-bold tracking-widest text-white">LEARNING</span>
                     </div>
