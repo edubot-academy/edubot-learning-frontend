@@ -106,7 +106,7 @@ const ProfilePage = () => {
             }
 
             const updated = await updateUserProfile(user.id, form);
-            setUser(updated);
+            setUser(updated.data.user);
             toast.success("Профиль ийгиликтүү жаңыртылды");
             setIsEditing(false);
             setPasswordData({ newPassword: '', confirmPassword: '' });
