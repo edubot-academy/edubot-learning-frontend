@@ -1,5 +1,7 @@
 import React from "react";
-import { FiChevronDown } from 'react-icons/fi';
+import { FiChevronDown, FiVideo } from 'react-icons/fi';
+import { formatDuration } from '../utils/timeUtils';
+
 
 const CourseSidebar = ({
     sections = [],
@@ -98,7 +100,10 @@ const CourseSidebar = ({
                                                     {lesson.title}
                                                 </span>
                                                 {lesson.duration && (
-                                                    <span className="text-xs text-gray-500">Узактыгы: {lesson.duration}</span>
+                                                    <span className="text-xs text-gray-500 flex items-center gap-1">
+                                                        <FiVideo className="w-4 h-4" />
+                                                        {formatDuration(lesson.duration)}
+                                                    </span>
                                                 )}
                                             </div>
                                         </div>

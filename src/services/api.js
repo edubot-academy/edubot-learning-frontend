@@ -346,6 +346,18 @@ export async function uploadLessonFile(courseId, sectionId, type, file, lessonOr
     return key;
 }
 
+export const updateLessonDuration = async (courseId, sectionId, lessonId, duration) => {
+    try {
+        const response = await api.patch(`/courses/${courseId}/sections/${sectionId}/lessons/${lessonId}/set-duration`, {
+            duration,
+        });
+        return response.data;
+    } catch (error) {
+        console.error('Failed to update lesson duration:', error);
+        throw error;
+    }
+};
+
 
 // Categories
 

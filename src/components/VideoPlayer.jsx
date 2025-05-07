@@ -2,7 +2,7 @@ import React, { useRef, useEffect, useState } from 'react';
 import { FaPlayCircle, FaPauseCircle } from 'react-icons/fa';
 import { Link } from 'react-router-dom';
 
-const VideoPlayer = ({ videoUrl, resumeTime = 0, onProgress, onTimeUpdate, onPause, allowPlay = true, videoRef, onEnded, onPlay }) => {
+const VideoPlayer = ({ videoUrl, resumeTime = 0, onProgress, onTimeUpdate, onPause, allowPlay = true, videoRef, onEnded }) => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [isPlaying, setIsPlaying] = useState(false);
@@ -41,7 +41,6 @@ const VideoPlayer = ({ videoUrl, resumeTime = 0, onProgress, onTimeUpdate, onPau
         };
 
         const handlePlay = () => {
-            if (onPlay) onPlay();
             setIsPlaying(true);
             if (pauseTimeoutRef.current) clearTimeout(pauseTimeoutRef.current);
             pauseTimeoutRef.current = setTimeout(() => setShowControls(false), 2000);

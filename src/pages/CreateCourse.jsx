@@ -10,6 +10,7 @@ import {
     uploadLessonFile
 } from '../services/api';
 import toast from 'react-hot-toast';
+import { getVideoDuration } from '../utils/videoUtils';
 
 const CourseBuilder = () => {
     const navigate = useNavigate();
@@ -136,8 +137,11 @@ const CourseBuilder = () => {
 
     const handleFileUpload = async (courseId, sectionIndex, lessonIndex, type, file) => {
         if (!file) return;
-        const existingKey = curriculum[sectionIndex].lessons[lessonIndex][type === 'video' ? 'videoKey' : 'resourceKey'];
+
+        const keyProp = type === 'video' ? 'videoKey' : 'resourceKey';
+        const existingKey = curriculum[sectionIndex].lessons[lessonIndex][keyProp];
         if (existingKey) return;
+
         setCurriculum(prev => {
             const updated = [...prev];
             updated[sectionIndex].lessons[lessonIndex].uploading[type] = true;
@@ -145,15 +149,33 @@ const CourseBuilder = () => {
         });
 
         try {
-            const key = await uploadLessonFile(courseId, sectionIndex, type, file, lessonIndex, (percent) => {
-                setCurriculum(prev => {
-                    const updated = [...prev];
-                    updated[sectionIndex].lessons[lessonIndex].uploadProgress[type] = percent;
-                    return updated;
-                });
-            });
+            const key = await uploadLessonFile(
+                courseId,
+                sectionIndex,
+                type,
+                file,
+                lessonIndex,
+                (percent) => {
+                    setCurriculum(prev => {
+                        const updated = [...prev];
+                        updated[sectionIndex].lessons[lessonIndex].uploadProgress[type] = percent;
+                        return updated;
+                    });
+                }
+            );
 
-            updateLesson(sectionIndex, lessonIndex, type === 'video' ? 'videoKey' : 'resourceKey', key);
+            // ✅ Extract duration if it's a video
+            let duration;
+            if (type === "video") {
+                try {
+                    duration = await getVideoDuration(file);
+                    updateLesson(sectionIndex, lessonIndex, "duration", duration);
+                } catch (err) {
+                    console.warn("Failed to extract video duration", err);
+                }
+            }
+
+            updateLesson(sectionIndex, lessonIndex, keyProp, key);
         } catch (err) {
             toast.error(err.message);
         } finally {
@@ -164,6 +186,7 @@ const CourseBuilder = () => {
             });
         }
     };
+
 
     const isUploading = curriculum.some(section =>
         section.lessons.some(lesson => lesson.uploading?.video || lesson.uploading?.resource)
@@ -196,21 +219,28 @@ const CourseBuilder = () => {
     const handleCurriculumSubmit = async () => {
         try {
             for (const [sIdx, section] of curriculum.entries()) {
-                const sec = await createSection(courseId, { title: section.sectionTitle, order: sIdx });
+                const sec = await createSection(courseId, {
+                    title: section.sectionTitle,
+                    order: sIdx,
+                });
+
                 for (const [lIdx, lesson] of section.lessons.entries()) {
                     if (!lesson.title || !lesson.videoKey) {
                         toast.error('Ар бир сабакта аталыш жана видео болушу керек.');
                         continue;
                     }
+
                     await createLesson(courseId, sec.id, {
                         title: lesson.title,
                         videoKey: lesson.videoKey,
                         resourceKey: lesson.resourceKey,
                         previewVideo: lesson.previewVideo,
                         order: lIdx,
+                        duration: lesson.duration, // ✅ Include it here
                     });
                 }
             }
+
             toast.success('Мазмун сакталды!');
             setStep(3);
         } catch (err) {

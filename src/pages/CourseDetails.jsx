@@ -70,24 +70,18 @@ const CourseDetailsPage = () => {
     );
 
     const handleTimeUpdate = (time) => {
-        if (!hasPlayedRef.current) return;
         if (user && enrolled) {
             debouncedTimeUpdate(time);
         }
     };
 
     const handlePause = () => {
-        if (!hasPlayedRef.current) return;
-
-        if (user && enrolled && videoRef.current) {
-            const currentTime = videoRef.current.currentTime;
-            if (activeLessonRef.current?.id) {
-                updateVideoTime({
-                    courseId: Number(id),
-                    lessonId: activeLessonRef.current.id,
-                    time: currentTime,
-                });
-            }
+        if (!videoRef.current) return;
+        const currentTime = videoRef.current.currentTime;
+        if (currentTime < (activeLessonRef.current?.duration ?? 9999) * 0.9) return;
+        if (user && enrolled) {
+            console.log('updateVideoTime');
+            updateVideoTime(user.id, activeLessonRef.current.id, currentTime);
         }
     };
 
@@ -166,7 +160,6 @@ const CourseDetailsPage = () => {
 
     const handleVideoProgress = useCallback(
         async (progress, lessonParam) => {
-            // 1) ignore any progress events until we see >0
             if (!hasPlayedRef.current) {
                 if (progress > 0) {
                     hasPlayedRef.current = true;
@@ -175,22 +168,23 @@ const CourseDetailsPage = () => {
                 }
             }
 
-            // 2) only mark if you’re truly in the “active” lesson
             if (
                 enrolled &&
                 lessonParam.id === activeLessonRef.current?.id &&
                 hasPlayedRef.current &&
                 progress >= 95 &&
+                lessonParam.duration &&
+                lessonParam.duration > 0 &&
                 !completedLessons.includes(lessonParam.id)
             ) {
-                console.log('Marking lesson as complete handleVideoProgress');
+                console.log(`✅ Marking complete: ${lessonParam.title}, progress: ${progress}%`);
                 const resp = await markLessonComplete(
                     Number(id),
                     lessonParam.sectionId,
                     lessonParam.id
                 );
                 if (resp.completed) {
-                    setCompletedLessons(prev => [...new Set([...prev, lessonParam.id])]);
+                    setCompletedLessons((prev) => [...new Set([...prev, lessonParam.id])]);
                 }
             }
         },
@@ -250,6 +244,7 @@ const CourseDetailsPage = () => {
                 if (enrollment.enrolled && user) {
                     const progress = await fetchUserProgress(id);
                     const completed = progress.completedLessonIds || [];
+                    console.log('Setting completedLessons from progress:', completed);
                     setCompletedLessons(completed);
                 }
 
@@ -339,9 +334,6 @@ const CourseDetailsPage = () => {
                                 nextLesson={nextLesson}
                                 prevLesson={prevLesson}
                                 onEnded={handleEnded}
-                                onPlay={() => {
-                                    hasPlayedRef.current = true;
-                                }}
                                 handleLessonClick={handleLessonClick}
                             />
                         )}

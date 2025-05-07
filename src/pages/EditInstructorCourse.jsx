@@ -16,6 +16,7 @@ import {
     uploadLessonFile,
     deleteLesson as deleteLessonApi
 } from "../services/api";
+import { getVideoDuration } from "../utils/videoUtils";
 
 const EditInstructorCourse = () => {
     const { id } = useParams();
@@ -155,6 +156,16 @@ const EditInstructorCourse = () => {
                 });
             });
 
+            // ✅ Extract duration if type is video
+            if (type === 'video') {
+                try {
+                    const duration = await getVideoDuration(file);
+                    handleLessonFieldChange(sectionIndex, lessonIndex, 'duration', duration);
+                } catch (err) {
+                    console.warn('Failed to extract video duration:', err);
+                }
+            }
+
             handleLessonFieldChange(sectionIndex, lessonIndex, type === 'video' ? 'videoKey' : 'resourceKey', key);
         } catch (err) {
             toast.error(err.message);
@@ -212,6 +223,7 @@ const EditInstructorCourse = () => {
                         resourceKey: lesson.resourceKey,
                         previewVideo: lesson.previewVideo,
                         order: lessonIdx,
+                        duration: lesson.duration, // ✅ include duration here
                     };
 
                     if (!lesson.id && lesson.title) {

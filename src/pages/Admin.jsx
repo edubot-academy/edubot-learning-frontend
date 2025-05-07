@@ -18,6 +18,7 @@ import {
 } from "../services/api";
 import { Link, useSearchParams } from "react-router-dom";
 import toast from "react-hot-toast";
+import AdminBackfillLessonDurations from "../components/AdminBackfillLessonDurations";
 
 const AdminPanel = () => {
     const [courses, setCourses] = useState([]);
@@ -233,6 +234,7 @@ const AdminPanel = () => {
                 <button className={`px-4 py-2 rounded ${activeTab === 'courses' ? 'bg-blue-600 text-white' : 'bg-gray-100'}`} onClick={() => setActiveTab('courses')}>Курстар жана Категориялар</button>
                 <button className={`px-4 py-2 rounded ${activeTab === 'contacts' ? 'bg-blue-600 text-white' : 'bg-gray-100'}`} onClick={() => setActiveTab('contacts')}>Байланыш Каттары</button>
                 <button onClick={() => setActiveTab('pending')} className={`px-4 py-2 rounded ${activeTab === 'pending' ? 'bg-blue-600 text-white' : 'bg-gray-100'}`}>Каралуудагы курстар</button>
+                <button onClick={() => setActiveTab('backfill')} className={`px-4 py-2 rounded ${activeTab === 'backfill' ? 'bg-blue-600 text-white' : 'bg-gray-100'}`}>Backfill Lesson Durations</button>
             </div>
 
             {activeTab === 'contacts' && (
@@ -451,6 +453,9 @@ const AdminPanel = () => {
                         ))}
                     </div>
                 </div>
+            )}
+            {activeTab === 'backfill' && (
+                <AdminBackfillLessonDurations />
             )}
         </div>
     );
