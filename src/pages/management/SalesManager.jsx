@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { toast } from 'react-hot-toast';
-import RegisterAndEnrollModal from '../../components/RegisterAndEnrollModal';
+import RegisterAndPayModal from '../../components/RegisterAndPayModal';
 import PayMoreModal from '../../components/PayMoreModal';
 import { fetchMyStudents } from '../../services/api';
 
@@ -101,7 +101,7 @@ const SalesDashboard = () => {
             </div>
 
             {showUnifiedModal && (
-                <RegisterAndEnrollModal
+                <RegisterAndPayModal
                     onClose={() => setShowUnifiedModal(false)}
                     onSuccess={() => {
                         setShowUnifiedModal(false);

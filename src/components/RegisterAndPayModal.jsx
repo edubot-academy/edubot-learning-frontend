@@ -1,10 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { fetchUsers, fetchCourses, registerStudent, enrollUserInCourse, addPayment } from '../services/api';
+import { fetchUsers, fetchCourses, addPayment } from '../services/api';
 import { toast } from 'react-hot-toast';
-import { FaEye, FaEyeSlash, FaRegCopy } from 'react-icons/fa';
-import PhoneInput from './PhoneInput';
+import RegisterUserForm from './RegisterUserForm'
 
-const RegisterAndEnrollModal = ({ onClose, onSuccess }) => {
+const RegisterAndPayModal = ({ onClose, onSuccess }) => {
     const [users, setUsers] = useState([]);
     const [courses, setCourses] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
@@ -14,10 +13,8 @@ const RegisterAndEnrollModal = ({ onClose, onSuccess }) => {
     const [discount, setDiscount] = useState(0);
     const [isDeposit, setIsDeposit] = useState(true);
     const [coursePrice, setCoursePrice] = useState(0);
-    const [newUserData, setNewUserData] = useState({ fullName: '', email: '', phoneNumber: '', password: '' });
     const [searchTriggered, setSearchTriggered] = useState(false);
     const [showRegisterForm, setShowRegisterForm] = useState(true);
-    const [showPassword, setShowPassword] = useState(false);
     const coursesLoaded = useRef(false);
 
     const handleSearch = async () => {
@@ -31,42 +28,30 @@ const RegisterAndEnrollModal = ({ onClose, onSuccess }) => {
         setSearchTriggered(true);
     };
 
-    const handleRegister = async () => {
-        const phone = newUserData.phoneNumber;
-
-        if (phone) {
-            const digitsOnly = phone.replace(/\D/g, '');
-            if (digitsOnly.length < 10) {
-                toast.error("Телефон номери кеминде 10 цифра болушу керек.");
-                return;
-            }
-
-            if (!/^\+\d{10,15}$/.test(phone)) {
-                toast.error("Телефон номери эл аралык форматта болсун. Мисалы: +996700123456 же +14155552671");
-                return;
-            }
-        }
-
+    const handleRegister = async (formData) => {
         try {
-            const registeredUser = await registerStudent(newUserData);
+            const response = await fetch('/api/users/register-student', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formData),
+            });
+            if (!response.ok) throw await response.json();
+            const registeredUser = await response.json();
             setSelectedUser(registeredUser);
             setShowRegisterForm(false);
         } catch (err) {
-            const message =
-                err.response?.data?.message ||
-                (typeof err === 'string' ? err : 'Каттоо ишке ашкан жок');
+            const message = err?.message || 'Каттоо ишке ашкан жок';
             toast.error(message);
         }
     };
 
-    const handleEnrollAndPay = async () => {
+    const handlePaymentOnly = async () => {
         try {
-            await enrollUserInCourse(selectedUser.id, selectedCourseId, discount);
             await addPayment({ userId: selectedUser.id, courseId: selectedCourseId, amount, isDeposit });
             onClose();
             onSuccess();
-        } catch (err) {
-            toast.error('Жазуу же төлөм ишке ашкан жок');
+        } catch {
+            toast.error('Төлөм ишке ашкан жок');
         }
     };
 
@@ -85,21 +70,15 @@ const RegisterAndEnrollModal = ({ onClose, onSuccess }) => {
         }
     }, [selectedCourseId, discount]);
 
-    useEffect(() => {
-        if (newUserData.fullName.trim() && !newUserData.passwordManuallyChanged) {
-            const year = new Date().getFullYear();
-            const safeName = newUserData.fullName.trim().replace(/\s+/g, '').toLowerCase();
-            const generated = `${safeName}${year}`;
-            setNewUserData(prev => ({ ...prev, password: generated, passwordManuallyChanged: false }));
-        }
-    }, [newUserData.fullName]);
-
     return (
         <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
             <div className="bg-white rounded-lg p-6 w-full max-w-xl shadow-lg relative">
                 <button onClick={onClose} className="absolute top-2 right-2 text-gray-600 hover:text-red-500 text-xl">×</button>
 
-                {/* Search Block */}
+                {!selectedUser && showRegisterForm && (
+                    <RegisterUserForm onRegister={handleRegister} onCancel={() => setShowRegisterForm(false)} />
+                )}
+
                 {!selectedUser && !showRegisterForm && (
                     <>
                         <div className="flex mb-4 space-x-2 relative">
@@ -120,7 +99,6 @@ const RegisterAndEnrollModal = ({ onClose, onSuccess }) => {
                                 className="w-full border p-2 rounded"
                             />
                         </div>
-
                         {searchTriggered && users.length > 0 && (
                             <ul className="absolute z-50 left-0 right-0 bg-white border rounded shadow max-h-40 overflow-y-auto mt-1">
                                 {users.map(user => (
@@ -134,7 +112,6 @@ const RegisterAndEnrollModal = ({ onClose, onSuccess }) => {
                                 ))}
                             </ul>
                         )}
-
                         <div className="text-center">
                             <span className="text-gray-600">Колдонуучу табылган жокпу?</span>
                             <button className="ml-2 text-blue-600 underline" onClick={() => setShowRegisterForm(true)}>
@@ -144,74 +121,6 @@ const RegisterAndEnrollModal = ({ onClose, onSuccess }) => {
                     </>
                 )}
 
-                {/* Register New User */}
-                {showRegisterForm && !selectedUser && (
-                    <div className="mb-4">
-                        <div className="flex items-center justify-between mb-2">
-                            <h3 className="text-lg font-medium">Жаңы студентти каттоо</h3>
-                            <button className="text-sm text-blue-600 underline" onClick={() => setShowRegisterForm(false)}>
-                                Мурунку студентти тандоо
-                            </button>
-                        </div>
-                        <input
-                            type="text"
-                            placeholder="Толук аты"
-                            value={newUserData.fullName}
-                            onChange={(e) => setNewUserData({ ...newUserData, fullName: e.target.value })}
-                            className="w-full border p-2 rounded mb-2"
-                        />
-                        <input
-                            type="email"
-                            placeholder="Email"
-                            value={newUserData.email}
-                            onChange={(e) => setNewUserData({ ...newUserData, email: e.target.value })}
-                            className="w-full border p-2 rounded mb-2"
-                        />
-                        <PhoneInput
-                            value={newUserData.phoneNumber}
-                            onChange={(val) => setNewUserData((prev) => ({ ...prev, phoneNumber: val }))}
-                            className="mb-2"
-                        />
-                        <div className="relative mb-4">
-                            <input
-                                type={showPassword ? 'text' : 'password'}
-                                value={newUserData.password}
-                                onChange={(e) => setNewUserData({ ...newUserData, password: e.target.value, passwordManuallyChanged: true })}
-                                placeholder="Сырсөз"
-                                className="w-full border p-2 rounded pr-20"
-                            />
-                            <button
-                                type="button"
-                                onClick={() => navigator.clipboard.writeText(newUserData.password) && toast.success('Сырсөз көчүрүлдү!')}
-                                className="absolute right-10 top-2 text-gray-600 hover:text-blue-600"
-                                title="Көчүрүү"
-                            >
-                                <FaRegCopy size={18} />
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => setShowPassword(!showPassword)}
-                                className="absolute right-2 top-2 text-gray-600"
-                            >
-                                {showPassword ? <FaEyeSlash size={18} /> : <FaEye size={18} />}
-                            </button>
-                        </div>
-                        <div className="flex justify-end space-x-2">
-                            <button className="bg-gray-400 text-white px-4 py-2 rounded" onClick={onClose}>
-                                Жокко чыгаруу
-                            </button>
-                            <button
-                                className="bg-green-600 text-white px-4 py-2 rounded"
-                                onClick={handleRegister}
-                                disabled={!newUserData.fullName || !newUserData.email || !newUserData.password}
-                            >
-                                Каттоо
-                            </button>
-                        </div>
-                    </div>
-                )}
-
-                {/* Selected User + Enroll */}
                 {selectedUser && (
                     <div>
                         <h3 className="text-lg font-medium mb-2">Тандалган студент</h3>
@@ -281,10 +190,10 @@ const RegisterAndEnrollModal = ({ onClose, onSuccess }) => {
                             </button>
                             <button
                                 className="bg-blue-600 text-white px-4 py-2 rounded"
-                                onClick={handleEnrollAndPay}
+                                onClick={handlePaymentOnly}
                                 disabled={!selectedCourseId || !amount}
                             >
-                                Жазуу жана Төлөө
+                                Төлөм кабыл алуу
                             </button>
                         </div>
                     </div>
@@ -294,4 +203,4 @@ const RegisterAndEnrollModal = ({ onClose, onSuccess }) => {
     );
 };
 
-export default RegisterAndEnrollModal;
+export default RegisterAndPayModal;

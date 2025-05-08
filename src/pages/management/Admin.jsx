@@ -1,4 +1,3 @@
-// AdminPanel.jsx
 import React, { useEffect, useState } from "react";
 import {
     fetchCourses,
@@ -65,6 +64,16 @@ const AdminPanel = () => {
         }
     }, [searchParams, activeTab]);
 
+    useEffect(() => {
+        const delayDebounce = setTimeout(() => {
+            if (search.length >= 3 || search.length === 0) {
+                updateSearchParams({ search, page: 1 });
+            }
+        }, 500);
+
+        return () => clearTimeout(delayDebounce);
+    }, [search]);
+
     const loadCoursesAndCategories = async () => {
         try {
             const coursesRes = await fetchCourses();
@@ -119,6 +128,7 @@ const AdminPanel = () => {
             toast.error("Каралуудагы курстарды жүктөө катасы");
         }
     };
+
     return (
         <div className="min-h-screen p-6 pt-24 max-w-7xl mx-auto">
             <h1 className="text-4xl font-bold mb-8 text-center">Админ Панель</h1>

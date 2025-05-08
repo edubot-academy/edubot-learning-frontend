@@ -57,13 +57,13 @@ const AppRoutes = () => {
                     <Route element={<PrivateRoute allowedRoles={['assistant']} />}>
                         <Route path="/assistant" element={<AssistantDashboard />} />
                     </Route>
-                    <Route element={<PrivateRoute allowedRoles={['director']} />}>
+                    <Route element={<PrivateRoute allowedRoles={['sales.director']} />}>
                         <Route path="/director" element={<DirectorDashboard />} />
                     </Route>
-                    <Route element={<PrivateRoute allowedRoles={['companyOwner']} />}>
+                    <Route element={<PrivateRoute allowedRoles={['company_owner']} />}>
                         <Route path="/company-owner" element={<CompanyOwnerDashboard />} />
                     </Route>
-                    <Route element={<PrivateRoute allowedRoles={['manager']} />}>
+                    <Route element={<PrivateRoute allowedRoles={['sales.manager']} />}>
                         <Route path="/manager" element={<ManagerDashboard />} />
                     </Route>
                 </Routes>

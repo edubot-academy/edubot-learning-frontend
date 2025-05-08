@@ -28,6 +28,9 @@ const NavLinks = ({ user, onClick }) => {
             {user?.role === "admin" && <Link to="/admin" onClick={onClick} className={`${isActive("/admin")} hover:text-orange-400 transition`}>Админ</Link>}
             {user?.role === "sales" && <Link to="/sales-manager" onClick={onClick} className={`${isActive("/sales-manager")} hover:text-orange-400 transition`}>Сатуу</Link>}
             {user?.role === "assistant" && <Link to="/assistant" onClick={onClick} className={`${isActive("/assistant")} hover:text-orange-400 transition`}>Ассистент</Link>}
+            {user?.role === "sales.director" && <Link to="/director" onClick={onClick} className={`${isActive("/director")} hover:text-orange-400 transition`}>Директор</Link>}
+            {user?.role === "company_owner" && <Link to="/company-owner" onClick={onClick} className={`${isActive("/company-owner")} hover:text-orange-400 transition`}>Компания</Link>}
+            {user?.role === "sales.manager" && <Link to="/manager" onClick={onClick} className={`${isActive("/manager")} hover:text-orange-400 transition`}>Менеджер</Link>}
         </>
     );
 };
