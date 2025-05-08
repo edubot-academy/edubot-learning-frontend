@@ -14,13 +14,16 @@ import ForgotPassword from "./pages/ForgotPassword";
 import CreateCourse from "./pages/CreateCourse";
 import InstructorCourses from "./pages/InstructorCourses";
 import EditInstructorCourse from "./pages/EditInstructorCourse";
-import AdminPanel from "./pages/Admin";
-import SalesManager from "./pages/SalesManager";
+import AdminPanel from "./pages/management/Admin";
+import SalesManager from "./pages/management/SalesManager";
 import AboutPage from "./pages/About";
 import ContactPage from "./pages/Contact";
-import AssistantDashboard from "./pages/Assistant";
+import AssistantDashboard from "./pages/management/Assistant";
 import Unauthorized from "./pages/Unauthorized";
 import PrivateRoute from "./components/PrivateRoute";
+import DirectorDashboard from "./pages/management/DirectorDashboard";
+import CompanyOwnerDashboard from "./pages/management/CompanyOwnerDashboard";
+import ManagerDashboard from "./pages/management/ManagerDashboard";
 
 const AppRoutes = () => {
     return (
@@ -53,6 +56,15 @@ const AppRoutes = () => {
                     <Route path="/contact" element={<ContactPage />} />
                     <Route element={<PrivateRoute allowedRoles={['assistant']} />}>
                         <Route path="/assistant" element={<AssistantDashboard />} />
+                    </Route>
+                    <Route element={<PrivateRoute allowedRoles={['director']} />}>
+                        <Route path="/director" element={<DirectorDashboard />} />
+                    </Route>
+                    <Route element={<PrivateRoute allowedRoles={['companyOwner']} />}>
+                        <Route path="/company-owner" element={<CompanyOwnerDashboard />} />
+                    </Route>
+                    <Route element={<PrivateRoute allowedRoles={['manager']} />}>
+                        <Route path="/manager" element={<ManagerDashboard />} />
                     </Route>
                 </Routes>
             </div>

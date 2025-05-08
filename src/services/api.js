@@ -458,4 +458,47 @@ export const fetchContactMessages = async () => {
     return response.data;
 };
 
+// Enrollment
+export const unenrollUser = (data) => api.patch('/enrollments/unenroll', data);
+export const getCompanyEnrollments = () => api.get('/enrollments');
+
+// Payments
+export const getMyPayments = () => api.get('/payments/my-payments');
+export const getCompanyPayments = () => api.get('/payments/company');
+export const getCompanyPaymentSummary = () => api.get('/payments/company/summary');
+
+// Sales
+export const salesRegisterStudent = (data) => api.post('/sales/register-student', data);
+export const salesGetMyStudents = () => api.get('/sales/students');
+export const salesGetSalesPayments = () => api.get('/sales/payments');
+
+// Manager
+export const getSalesUsers = () => api.get('/manager/sales');
+export const createSalesUser = (data) => api.post('/manager/sales', data);
+export const updateSalesUser = (id, data) => api.patch(`/manager/sales/${id}`, data);
+export const deleteSalesUser = (id) => api.delete(`/manager/sales/${id}`);
+export const getSalesStudents = () => api.get('/manager/sales/students');
+
+// Director
+export const getManagers = () => api.get('/director/managers');
+export const createManager = (data) => api.post('/director/managers', data);
+export const updateManager = (id, data) => api.patch(`/director/managers/${id}`, data);
+export const deleteManager = (id) => api.delete(`/director/managers/${id}`);
+export const getDirectorStudents = () => api.get('/director/students');
+
+// Company Owner
+export const getCompanyTeam = () => api.get('/company-owner/team');
+export const getCompanyStudents = () => api.get('/company-owner/students');
+export const getDirectors = () => api.get('/company-owner/directors');
+export const createDirector = (data) => api.post('/company-owner/directors', data);
+export const updateDirector = (id, data) => api.patch(`/company-owner/directors/${id}`, data);
+export const deleteDirector = (id) => api.delete(`/company-owner/directors/${id}`);
+
+// Company
+export const fetchCompanies = () => api.get('/companies');
+export const updateCompany = (id, data) => api.patch(`/companies/${id}`, data);
+export const deleteCompany = (id) => api.delete(`/companies/${id}`);
+export const updateUserCompany = (userId, companyId) =>
+    api.patch(`/users/${userId}/company`, { companyId });
+
 

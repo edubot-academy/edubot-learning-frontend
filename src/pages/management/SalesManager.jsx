@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { toast } from 'react-hot-toast';
-import RegisterAndEnrollModal from '../components/RegisterAndEnrollModal';
-import PayMoreModal from '../components/PayMoreModal';
-import { fetchMyStudents } from '../services/api';
+import RegisterAndEnrollModal from '../../components/RegisterAndEnrollModal';
+import PayMoreModal from '../../components/PayMoreModal';
+import { fetchMyStudents } from '../../services/api';
 
 const SalesDashboard = () => {
     const [students, setStudents] = useState([]);

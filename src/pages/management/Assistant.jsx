@@ -4,7 +4,7 @@ import {
     fetchCourses,
     enrollUserInCourse,
     checkEnrollments
-} from '../services/api';
+} from '../../services/api';
 import toast from 'react-hot-toast';
 
 const AssistantDashboard = () => {

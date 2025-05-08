@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { getVideoDuration } from "../utils/videoUtils";
-import { fetchCourses, fetchSections, updateLessonDuration } from "../services/api";
+import { getVideoDuration } from "../../utils/videoUtils";
+import { fetchCourses, fetchSections, updateLessonDuration } from "../../services/api";
 import toast from "react-hot-toast";
 
 const AdminBackfillLessonDurations = () => {
