@@ -11,9 +11,9 @@ const PayMoreModal = ({ student, onClose, onSuccess }) => {
     const formatCurrency = (value) => `${Number(value).toFixed(2)} сом`;
 
     useEffect(() => {
-        const unpaid = student.enrollments?.map((enrollment) => {
-            const course = enrollment.course;
-            const discount = enrollment.discountPercentage || 0;
+        const unpaid = student.payments?.map((payment) => {
+            const course = payment.course;
+            const discount = payment.discountPercentage || 0;
             const totalFee = course.price - (course.price * discount) / 100;
             const paid = student.payments
                 ?.filter(p => p.courseId === course.id)
@@ -52,7 +52,7 @@ const PayMoreModal = ({ student, onClose, onSuccess }) => {
                 userId: student.id,
                 courseId: selectedCourseId,
                 amount,
-                type: paymentType,
+                method: paymentType,
             });
             toast.success('Төлөм ийгиликтүү кошулду!');
             onSuccess();
@@ -121,6 +121,9 @@ const PayMoreModal = ({ student, onClose, onSuccess }) => {
                     >
                         <option value="cash">Накталай</option>
                         <option value="card">Карта</option>
+                        <option value="bank">Банк</option>
+                        <option value="qr">QR</option>
+                        <option value="manual">Кол менен</option>
                     </select>
                 </div>
 

@@ -26,19 +26,6 @@ const SalesDashboard = () => {
         setLoading(false);
     };
 
-    const getTotalPaid = (student) => {
-        return student.payments?.reduce((sum, p) => sum + Number(p.amount), 0) || 0;
-    };
-
-    const getRemainingBalance = (student) => {
-        const totalFee = student.enrollments?.reduce((sum, e) => {
-            const price = e.course?.price || 0;
-            const discount = e.discountPercentage || 0;
-            return sum + (price - (price * discount / 100));
-        }, 0) || 0;
-        return totalFee - getTotalPaid(student);
-    };
-
     const formatCurrency = (value) => `${Number(value).toFixed(2)} сом`;
 
     if (loading) return <div className="p-6">Loading students...</div>;
@@ -68,34 +55,49 @@ const SalesDashboard = () => {
                         </tr>
                     </thead>
                     <tbody>
-                        {students.map((student) => (
-                            <tr key={student.id}>
-                                <td className="p-2 border">{student.fullName}</td>
-                                <td className="p-2 border">{student.phoneNumber || '—'}</td>
-                                <td className="p-2 border">
-                                    {student.enrollments?.map(e => e.course?.title).join(', ') || '—'}
-                                </td>
-                                <td className="p-2 border">{formatCurrency(getTotalPaid(student))}</td>
-                                <td className="p-2 border">
-                                    {getRemainingBalance(student) > 0
-                                        ? formatCurrency(getRemainingBalance(student))
-                                        : 'Толугу менен төлөндү'}
-                                </td>
-                                <td className="p-2 border">
-                                    {getRemainingBalance(student) > 0 && (
-                                        <button
-                                            className="bg-green-600 text-white px-2 py-1 rounded"
-                                            onClick={() => {
-                                                setSelectedStudent(student);
-                                                setShowPayMoreModal(true);
-                                            }}
-                                        >
-                                            Төлөм алуу
-                                        </button>
-                                    )}
-                                </td>
-                            </tr>
-                        ))}
+                        {students.map((student) => {
+                            const courseMap = new Map();
+                            student.payments?.forEach(payment => {
+                                const courseId = payment.course?.id;
+                                const courseTitle = payment.course?.title;
+                                const coursePrice = payment.course?.price || 0;
+                                if (!courseId || !courseTitle) return;
+                                const current = courseMap.get(courseId) || { title: courseTitle, paid: 0, fee: coursePrice };
+                                current.paid += Number(payment.amount);
+                                courseMap.set(courseId, current);
+                            });
+
+                            const totalPaid = Array.from(courseMap.values()).reduce((sum, c) => sum + c.paid, 0);
+                            const totalFee = Array.from(courseMap.values()).reduce((sum, c) => sum + c.fee, 0);
+                            const remaining = totalFee - totalPaid;
+
+                            return (
+                                <tr key={student.id}>
+                                    <td className="p-2 border">{student.fullName}</td>
+                                    <td className="p-2 border">{student.phoneNumber || '—'}</td>
+                                    <td className="p-2 border">
+                                        {Array.from(courseMap.values()).map(c => c.title).join(', ') || '—'}
+                                    </td>
+                                    <td className="p-2 border">{formatCurrency(totalPaid)}</td>
+                                    <td className="p-2 border">
+                                        {remaining > 0 ? formatCurrency(remaining) : 'Толугу менен төлөндү'}
+                                    </td>
+                                    <td className="p-2 border">
+                                        {remaining > 0 && (
+                                            <button
+                                                className="bg-green-600 text-white px-2 py-1 rounded"
+                                                onClick={() => {
+                                                    setSelectedStudent(student);
+                                                    setShowPayMoreModal(true);
+                                                }}
+                                            >
+                                                Төлөм алуу
+                                            </button>
+                                        )}
+                                    </td>
+                                </tr>
+                            );
+                        })}
                     </tbody>
                 </table>
             </div>

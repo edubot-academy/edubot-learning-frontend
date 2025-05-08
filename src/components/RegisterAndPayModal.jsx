@@ -32,7 +32,7 @@ const RegisterAndPayModal = ({ onClose, onSuccess }) => {
     const handleRegister = async (formData) => {
         try {
             const registeredUser = await salesRegisterStudent(formData);
-            setSelectedUser(registeredUser);
+            setSelectedUser(registeredUser.data);
             setShowRegisterForm(false);
         } catch (err) {
             const message = err?.response?.data?.message || 'Каттоо ишке ашкан жок';
