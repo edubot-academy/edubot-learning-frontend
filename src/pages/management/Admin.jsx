@@ -16,11 +16,10 @@ import {
     markCourseApproved,
     markCourseRejected,
     fetchCompanies,
-    updateUserCompany
 } from "../../services/api";
 import { useSearchParams } from "react-router-dom";
 import toast from "react-hot-toast";
-import AdminTabRenderer from "../../components/admin/AdminUsersTab";
+import AdminTabRenderer from "../../components/admin/AdminTabRenderer";
 import AdminTabSwitcher from "../../components/admin/AdminTabSwitcher";
 
 const AdminPanel = () => {
@@ -120,7 +119,6 @@ const AdminPanel = () => {
             toast.error("Каралуудагы курстарды жүктөө катасы");
         }
     };
-
     return (
         <div className="min-h-screen p-6 pt-24 max-w-7xl mx-auto">
             <h1 className="text-4xl font-bold mb-8 text-center">Админ Панель</h1>
@@ -167,15 +165,6 @@ const AdminPanel = () => {
                     },
                     handleApplyFilters: () => {
                         updateSearchParams({ role: roleFilter, dateFrom, dateTo, page: 1 });
-                    },
-                    handleAssignCompany: async (userId, companyId) => {
-                        try {
-                            await updateUserCompany(userId, companyId);
-                            setUsers((prev) => prev.map((u) => u.id === userId ? { ...u, company: { id: Number(companyId) } } : u));
-                            toast.success("Компания дайындалды");
-                        } catch {
-                            toast.error("Компания дайындоо катасы");
-                        }
                     },
                 }}
                 coursesProps={{

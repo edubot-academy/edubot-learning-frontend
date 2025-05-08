@@ -496,9 +496,10 @@ export const deleteDirector = (id) => api.delete(`/company-owner/directors/${id}
 
 // Company
 export const fetchCompanies = () => api.get('/companies');
+export const createCompany = (data) => api.post('/companies', data);
 export const updateCompany = (id, data) => api.patch(`/companies/${id}`, data);
 export const deleteCompany = (id) => api.delete(`/companies/${id}`);
-export const updateUserCompany = (userId, companyId) =>
-    api.patch(`/users/${userId}/company`, { companyId });
+export const assignCompanyAndRole = (userId, companyId, role) =>
+    api.patch(`/users/${userId}/assign-company-role`, { companyId, role });
 
 

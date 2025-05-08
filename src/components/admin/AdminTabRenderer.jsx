@@ -20,7 +20,7 @@ const AdminTabRenderer = ({
     companies,
     companiesProps,
 }) => {
-    if (activeTab === 'users') return <AdminUsersTab {...usersProps} users={users} />;
+    if (activeTab === 'users') return <AdminUsersTab {...usersProps} users={users} companies={companies} />;
     if (activeTab === 'courses') return <AdminCoursesTab {...coursesProps} users={users} courses={courses} categories={categories} />;
     if (activeTab === 'contacts') return <AdminContactsTab contacts={contacts} {...contactsProps} />;
     if (activeTab === 'pending') return <AdminPendingCoursesTab pendingCourses={pendingCourses} {...pendingProps} />;

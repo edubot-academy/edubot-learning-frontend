@@ -1,5 +1,5 @@
-import React from 'react';
-import { updateUserCompany } from '../../services/api';
+import React, { useState } from 'react';
+import { assignCompanyAndRole, updateUserRole } from '../../services/api';
 import toast from 'react-hot-toast';
 
 const AdminUsersTab = ({
@@ -16,24 +16,55 @@ const AdminUsersTab = ({
     page,
     totalPages,
     updateSearchParams,
-    handleRoleChange,
     handleDeleteUser,
     handleApplyFilters,
 }) => {
-    const handleAssignCompany = async (userId, companyId) => {
+    const [pendingChanges, setPendingChanges] = useState({});
+
+    const handlePendingChange = (userId, key, value) => {
+        setPendingChanges((prev) => ({
+            ...prev,
+            [userId]: {
+                ...prev[userId],
+                [key]: value,
+            },
+        }));
+    };
+
+    const handleSubmitChanges = async (userId) => {
+        const { role, companyId } = pendingChanges[userId] || {};
+        if (!role) return;
+
+        const companyRequiredRoles = ['sales', 'sales.manager', 'sales.director', 'assistant', 'company_owner'];
+        const standaloneRoles = ['student', 'instructor', 'admin'];
+
         try {
-            await updateUserCompany(userId, companyId);
-            toast.success('Компания дайындалды');
+            if (standaloneRoles.includes(role)) {
+                await updateUserRole(userId, role);
+            } else {
+                if (!companyId) {
+                    toast.error('Сураныч, компанияны тандаңыз');
+                    return;
+                }
+                await assignCompanyAndRole(userId, companyId, role);
+            }
+
+            toast.success('Колдонуучу жаңыртылды');
+            setPendingChanges((prev) => {
+                const updated = { ...prev };
+                delete updated[userId];
+                return updated;
+            });
         } catch {
-            toast.error('Компания дайындоо катасы');
+            toast.error('Жаңыртуу катасы');
         }
     };
-    console.log(users);
-    console.log(companies);
+
     return (
         <div className="bg-white shadow rounded p-4">
             <h2 className="text-2xl font-semibold mb-4">Колдонуучулар</h2>
 
+            {/* Filters */}
             <div className="flex flex-wrap gap-4 mb-4 items-end">
                 <input
                     type="text"
@@ -78,10 +109,10 @@ const AdminUsersTab = ({
                     </button>
                     <button
                         onClick={() => {
-                            setRoleFilter("");
-                            setDateFrom("");
-                            setDateTo("");
-                            updateSearchParams({ role: "", dateFrom: "", dateTo: "", page: 1 });
+                            setRoleFilter('');
+                            setDateFrom('');
+                            setDateTo('');
+                            updateSearchParams({ role: '', dateFrom: '', dateTo: '', page: 1 });
                         }}
                         className="bg-gray-300 text-black px-4 py-1 rounded"
                     >
@@ -90,6 +121,7 @@ const AdminUsersTab = ({
                 </div>
             </div>
 
+            {/* Table */}
             <table className="w-full text-left text-sm">
                 <thead>
                     <tr className="border-b">
@@ -102,52 +134,69 @@ const AdminUsersTab = ({
                     </tr>
                 </thead>
                 <tbody>
-                    {users.map((user) => (
-                        <tr key={user.id} className="border-b">
-                            <td className="p-2">{user.fullName}</td>
-                            <td className="p-2">{user.email}</td>
-                            <td className="p-2 capitalize">
-                                <select
-                                    value={user.role}
-                                    onChange={(e) => handleRoleChange(user.id, e.target.value)}
-                                    className="border rounded px-2 py-1"
-                                >
-                                    <option value="student">Student</option>
-                                    <option value="instructor">Instructor</option>
-                                    <option value="sales">Sales</option>
-                                    <option value="sales.manager">Sales Manager</option>
-                                    <option value="sales.director">Sales Director</option>
-                                    <option value="assistant">Assistant</option>
-                                    <option value="company_owner">Company Owner</option>
-                                    <option value="admin">Admin</option>
-                                </select>
-                            </td>
-                            <td className="p-2">
-                                <select
-                                    value={user.company?.name || ''}
-                                    onChange={(e) => handleAssignCompany(user.id, e.target.value)}
-                                    className="border rounded px-2 py-1"
-                                >
-                                    <option value="">Компания тандаңыз</option>
-                                    {companies.map((c) => (
-                                        <option key={c.id} value={c.id}>{c.name}</option>
-                                    ))}
-                                </select>
-                            </td>
-                            <td className="p-2">{new Date(user.createdAt).toLocaleDateString()}</td>
-                            <td className="p-2">
-                                <button
-                                    onClick={() => handleDeleteUser(user.id)}
-                                    className="text-red-600 hover:underline"
-                                >
-                                    Өчүрүү
-                                </button>
-                            </td>
-                        </tr>
-                    ))}
+                    {users.map((user) => {
+                        const selectedRole = pendingChanges[user.id]?.role || user.role;
+                        const selectedCompanyId = pendingChanges[user.id]?.companyId || user.company?.id || '';
+                        const showCompany = ['sales', 'sales.manager', 'sales.director', 'assistant', 'company_owner'].includes(selectedRole);
+
+                        return (
+                            <tr key={user.id} className="border-b">
+                                <td className="p-2">{user.fullName}</td>
+                                <td className="p-2">{user.email}</td>
+                                <td className="p-2 capitalize">
+                                    <select
+                                        value={selectedRole}
+                                        onChange={(e) => handlePendingChange(user.id, 'role', e.target.value)}
+                                        className="border rounded px-2 py-1"
+                                    >
+                                        <option value="student">Student</option>
+                                        <option value="instructor">Instructor</option>
+                                        <option value="sales">Sales</option>
+                                        <option value="sales.manager">Sales Manager</option>
+                                        <option value="sales.director">Sales Director</option>
+                                        <option value="assistant">Assistant</option>
+                                        <option value="company_owner">Company Owner</option>
+                                        <option value="admin">Admin</option>
+                                    </select>
+                                </td>
+                                <td className="p-2">
+                                    {showCompany ? (
+                                        <select
+                                            value={selectedCompanyId}
+                                            onChange={(e) => handlePendingChange(user.id, 'companyId', parseInt(e.target.value))}
+                                            className="border rounded px-2 py-1"
+                                        >
+                                            <option value="">Компания тандаңыз</option>
+                                            {companies.map((c) => (
+                                                <option key={c.id} value={c.id}>{c.name}</option>
+                                            ))}
+                                        </select>
+                                    ) : (
+                                        user.company?.name || '—'
+                                    )}
+                                </td>
+                                <td className="p-2">{new Date(user.createdAt).toLocaleDateString()}</td>
+                                <td className="p-2 flex gap-2 items-center">
+                                    <button
+                                        onClick={() => handleSubmitChanges(user.id)}
+                                        className="text-blue-600 hover:underline text-sm"
+                                    >
+                                        Жаңыртуу
+                                    </button>
+                                    <button
+                                        onClick={() => handleDeleteUser(user.id)}
+                                        className="text-red-600 hover:underline text-sm"
+                                    >
+                                        Өчүрүү
+                                    </button>
+                                </td>
+                            </tr>
+                        );
+                    })}
                 </tbody>
             </table>
 
+            {/* Pagination */}
             <div className="mt-4 flex justify-center gap-2">
                 {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
                     <button

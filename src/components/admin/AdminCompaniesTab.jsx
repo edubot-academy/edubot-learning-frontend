@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import {
     fetchCompanies,
+    fetchUsers,
     createCompany,
     updateCompany,
     deleteCompany
@@ -9,32 +10,50 @@ import {
 
 const AdminCompaniesTab = () => {
     const [companies, setCompanies] = useState([]);
-    const [form, setForm] = useState({ name: '', email: '' });
+    const [users, setUsers] = useState([]);
+    const [form, setForm] = useState({ name: '', description: '', ownerId: '' });
     const [editingId, setEditingId] = useState(null);
 
     const loadCompanies = async () => {
         try {
-            const data = await fetchCompanies();
-            setCompanies(data);
+            const res = await fetchCompanies();
+            setCompanies(res.data);
         } catch {
             toast.error('Компанияларды жүктөөдө ката кетти');
         }
     };
 
+    const loadUsers = async () => {
+        try {
+            const res = await fetchUsers({});
+            setUsers(res.data);
+        } catch {
+            toast.error('Колдонуучуларды жүктөө катасы');
+        }
+    };
+
     useEffect(() => {
         loadCompanies();
+        loadUsers();
     }, []);
 
     const handleSubmit = async () => {
         try {
+            const payload = {
+                name: form.name,
+                description: form.description,
+                ownerId: form.ownerId ? parseInt(form.ownerId) : undefined,
+            };
+
             if (editingId) {
-                await updateCompany(editingId, form);
+                await updateCompany(editingId, payload);
                 toast.success('Компания жаңыртылды');
             } else {
-                await createCompany(form);
+                await createCompany(payload);
                 toast.success('Жаңы компания кошулду');
             }
-            setForm({ name: '', email: '' });
+
+            setForm({ name: '', description: '', ownerId: '' });
             setEditingId(null);
             loadCompanies();
         } catch {
@@ -64,12 +83,24 @@ const AdminCompaniesTab = () => {
                     value={form.name}
                     onChange={e => setForm({ ...form, name: e.target.value })}
                 />
-                <input
+                <textarea
                     className="border p-2"
-                    placeholder="Email (башкы байланыш)"
-                    value={form.email}
-                    onChange={e => setForm({ ...form, email: e.target.value })}
+                    placeholder="Компаниянын толук маалыматы"
+                    value={form.description}
+                    onChange={e => setForm({ ...form, description: e.target.value })}
                 />
+                <select
+                    className="border p-2 col-span-2"
+                    value={form.ownerId}
+                    onChange={e => setForm({ ...form, ownerId: e.target.value })}
+                >
+                    <option value="">Компания ээси (тандаңыз)</option>
+                    {users.map((u) => (
+                        <option key={u.id} value={u.id}>
+                            {u.fullName} ({u.email})
+                        </option>
+                    ))}
+                </select>
                 <button
                     className="col-span-2 bg-blue-600 text-white py-2 rounded"
                     onClick={handleSubmit}
@@ -83,20 +114,33 @@ const AdminCompaniesTab = () => {
                     <li key={company.id} className="border p-3 flex justify-between items-center">
                         <div>
                             <p className="font-medium">{company.name}</p>
-                            <p className="text-sm text-gray-500">{company.email}</p>
+                            <p className="text-sm text-gray-500">{company.description}</p>
+                            {company.owners && company.owners.length > 0 && (
+                                <p className="text-sm text-green-700 mt-1">
+                                    Ээлери: {company.owners.map(o => o.fullName).join(', ')}
+                                </p>
+                            )}
                         </div>
                         <div className="space-x-2">
                             <button
                                 className="text-yellow-600 hover:underline"
                                 onClick={() => {
-                                    setForm({ name: company.name, email: company.email });
+                                    setForm({
+                                        name: company.name,
+                                        description: company.description,
+                                        ownerId: company.owners?.[0]?.id || '',
+                                    });
                                     setEditingId(company.id);
                                 }}
-                            >Түзөтүү</button>
+                            >
+                                Түзөтүү
+                            </button>
                             <button
                                 className="text-red-600 hover:underline"
                                 onClick={() => handleDelete(company.id)}
-                            >Өчүрүү</button>
+                            >
+                                Өчүрүү
+                            </button>
                         </div>
                     </li>
                 ))}
