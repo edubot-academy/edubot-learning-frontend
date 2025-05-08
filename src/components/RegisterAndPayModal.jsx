@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { fetchUsers, fetchCourses, addPayment } from '../services/api';
+import { fetchUsers, fetchCourses, addPayment, salesRegisterStudent } from '../services/api';
 import { toast } from 'react-hot-toast';
-import RegisterUserForm from './RegisterUserForm'
+import RegisterUserForm from './RegisterUserForm';
 
 const RegisterAndPayModal = ({ onClose, onSuccess }) => {
     const [users, setUsers] = useState([]);
@@ -12,9 +12,10 @@ const RegisterAndPayModal = ({ onClose, onSuccess }) => {
     const [amount, setAmount] = useState('');
     const [discount, setDiscount] = useState(0);
     const [isDeposit, setIsDeposit] = useState(true);
+    const [paymentMethod, setPaymentMethod] = useState('cash');
     const [coursePrice, setCoursePrice] = useState(0);
     const [searchTriggered, setSearchTriggered] = useState(false);
-    const [showRegisterForm, setShowRegisterForm] = useState(true);
+    const [showRegisterForm, setShowRegisterForm] = useState(false);
     const coursesLoaded = useRef(false);
 
     const handleSearch = async () => {
@@ -30,24 +31,18 @@ const RegisterAndPayModal = ({ onClose, onSuccess }) => {
 
     const handleRegister = async (formData) => {
         try {
-            const response = await fetch('/api/users/register-student', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(formData),
-            });
-            if (!response.ok) throw await response.json();
-            const registeredUser = await response.json();
+            const registeredUser = await salesRegisterStudent(formData);
             setSelectedUser(registeredUser);
             setShowRegisterForm(false);
         } catch (err) {
-            const message = err?.message || 'Каттоо ишке ашкан жок';
+            const message = err?.response?.data?.message || 'Каттоо ишке ашкан жок';
             toast.error(message);
         }
     };
 
     const handlePaymentOnly = async () => {
         try {
-            await addPayment({ userId: selectedUser.id, courseId: selectedCourseId, amount, isDeposit });
+            await addPayment({ userId: selectedUser.id, courseId: selectedCourseId, amount, isDeposit, method: paymentMethod });
             onClose();
             onSuccess();
         } catch {
@@ -74,6 +69,17 @@ const RegisterAndPayModal = ({ onClose, onSuccess }) => {
         <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
             <div className="bg-white rounded-lg p-6 w-full max-w-xl shadow-lg relative">
                 <button onClick={onClose} className="absolute top-2 right-2 text-gray-600 hover:text-red-500 text-xl">×</button>
+
+                {!selectedUser && (
+                    <div className="mb-4 flex justify-center">
+                        <button
+                            onClick={() => setShowRegisterForm(!showRegisterForm)}
+                            className="text-blue-600 underline"
+                        >
+                            {showRegisterForm ? 'Бар колдонуучуну издөө' : 'Жаңы каттоо'}
+                        </button>
+                    </div>
+                )}
 
                 {!selectedUser && showRegisterForm && (
                     <RegisterUserForm onRegister={handleRegister} onCancel={() => setShowRegisterForm(false)} />
@@ -112,18 +118,24 @@ const RegisterAndPayModal = ({ onClose, onSuccess }) => {
                                 ))}
                             </ul>
                         )}
-                        <div className="text-center">
-                            <span className="text-gray-600">Колдонуучу табылган жокпу?</span>
-                            <button className="ml-2 text-blue-600 underline" onClick={() => setShowRegisterForm(true)}>
-                                Жаңы каттоо
-                            </button>
-                        </div>
                     </>
                 )}
 
                 {selectedUser && (
                     <div>
-                        <h3 className="text-lg font-medium mb-2">Тандалган студент</h3>
+                        <div className="flex justify-between items-center mb-2">
+                            <h3 className="text-lg font-medium">Тандалган студент</h3>
+                            <button
+                                className="text-sm text-blue-600 underline"
+                                onClick={() => {
+                                    setSelectedUser(null);
+                                    setShowRegisterForm(false);
+                                }}
+                            >
+                                Башка студентти тандоо
+                            </button>
+                        </div>
+
                         <div className="border p-3 rounded mb-4">
                             <p><strong>Аты:</strong> {selectedUser.fullName}</p>
                             <p><strong>Email:</strong> {selectedUser.email}</p>
@@ -170,6 +182,21 @@ const RegisterAndPayModal = ({ onClose, onSuccess }) => {
                             <p className="text-sm text-gray-500 mt-1">
                                 Курстун баасы: {coursePrice} сом. Жеңилдик менен: {coursePrice - (coursePrice * discount / 100)} сом
                             </p>
+                        </div>
+
+                        <div className="mb-4">
+                            <label className="block mb-1 font-medium">Төлөм ыкмасы</label>
+                            <select
+                                className="w-full border p-2 rounded"
+                                value={paymentMethod}
+                                onChange={(e) => setPaymentMethod(e.target.value)}
+                            >
+                                <option value="cash">Накталай</option>
+                                <option value="card">Карта</option>
+                                <option value="bank">Банк</option>
+                                <option value="qr">QR</option>
+                                <option value="manual">Кол менен</option>
+                            </select>
                         </div>
 
                         <div className="mb-4">

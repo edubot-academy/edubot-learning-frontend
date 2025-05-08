@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { toast } from 'react-hot-toast';
 import RegisterAndPayModal from '../../components/RegisterAndPayModal';
 import PayMoreModal from '../../components/PayMoreModal';
-import { fetchMyStudents } from '../../services/api';
+import { salesGetMyStudents } from '../../services/api';
 
 const SalesDashboard = () => {
     const [students, setStudents] = useState([]);
@@ -18,8 +18,8 @@ const SalesDashboard = () => {
     const fetchStudents = async () => {
         setLoading(true);
         try {
-            const res = await fetchMyStudents();
-            setStudents(res);
+            const res = await salesGetMyStudents();
+            setStudents(res.data);
         } catch (err) {
             toast.error('Студенттерди жүктөөдө ката кетти');
         }
