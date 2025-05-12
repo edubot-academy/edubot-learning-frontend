@@ -157,7 +157,7 @@ const AssistantDashboard = () => {
                                                     }))}
                                                     disabled={loading}
                                                 >
-                                                    <option value="">-- Тандоо --</option>
+                                                    <option value="">-- Курс тандаңыз--</option>
                                                     {availableCourses.map(c => (
                                                         <option key={c.id} value={c.id}>{c.title}</option>
                                                     ))}
