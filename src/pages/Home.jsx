@@ -5,6 +5,7 @@ import { fetchCourses } from "../services/api";
 import { AuthContext } from "../context/AuthContext";
 import Benefits from "../components/Benefits";
 import Feedback from "../components/Feedback";
+import Evaluate from '../components/Evaluate';
 import HeroStart from "../components/HeroStart";
 import Apply from "../components/Apply";
 import Contact from "../components/Contacts";
@@ -76,8 +77,9 @@ const HomePage = () => {
             </section>
             <Feedback />
             <div className="m-auto h-0.5 w-[1240px] bg-gray-400"></div>
-            <Apply/>
-            <Contact/>
+            <Apply />
+            <Evaluate />
+            <Contact />
         </div>
     );
 };
