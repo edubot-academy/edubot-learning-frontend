@@ -5,6 +5,7 @@ import { fetchCourses } from "../services/api";
 import { AuthContext } from "../context/AuthContext";
 import Benefits from "../components/Benefits";
 import Feedback from "../components/Feedback";
+import HeroStart from "../components/HeroStart";
 
 const HomePage = () => {
     const { user } = useContext(AuthContext);
@@ -31,19 +32,8 @@ const HomePage = () => {
     return (
         <div className="min-h-screen bg-gray-50 font-sans flex flex-col">
             {/* Каармандардын Секциясы */}
-            <section className="relative bg-gradient-to-r from-blue-600 to-purple-600 text-white py-32 text-center">
-                <div className="w-full px-6">
-                    <h1 className="text-5xl md:text-6xl font-extrabold mb-6 animate-fade-in">
-                        Edubot Learning менен үйрөнүңүз, өсүңүз жана ийгиликке жетиңиз
-                    </h1>
-                    <p className="text-lg md:text-xl max-w-2xl mx-auto mb-10">
-                        Каалаган убакта, каалаган жерде жаңы көндүмдөрдү үйрөнүңүз.
-                    </p>
-                    <Link to="/courses" className="bg-white text-blue-600 font-bold px-8 py-3 rounded-full shadow-lg hover:bg-gray-100 transition transform hover:scale-105">
-                        Курстарды караңыз
-                    </Link>
-                </div>
-            </section>
+          
+            <HeroStart />
 
             <Benefits />
 
