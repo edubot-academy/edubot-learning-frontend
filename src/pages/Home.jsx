@@ -6,6 +6,7 @@ import { AuthContext } from "../context/AuthContext";
 import Benefits from "../components/Benefits";
 import Tops from "../components/Tops";
 import Feedback from "../components/Feedback";
+import Evaluate from '../components/Evaluate';
 import HeroStart from "../components/HeroStart";
 import Apply from "../components/Apply";
 import Contact from "../components/Contacts";
@@ -77,8 +78,10 @@ const HomePage = () => {
             </section> */}
             <Tops />
             <Feedback />
-            <div className="w-full max-w-screen-xl h-0.5 bg-gray-400 mx-auto my-8"></div>
-            <Apply />
+          <div className="w-full max-w-screen-xl h-0.5 bg-gray-400 mx-auto my-8"></div>
+              <Apply/>
+            <Evaluate />
+ 
             <Contact />
         </div>
     );
