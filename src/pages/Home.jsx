@@ -3,11 +3,14 @@ import { Link } from "react-router-dom";
 import { FaStar } from "react-icons/fa";
 import { fetchCourses } from "../services/api";
 import { AuthContext } from "../context/AuthContext";
+import Button from "../components/UI/Button";
 
 const HomePage = () => {
     const { user } = useContext(AuthContext);
     const [cart, setCart] = useState([]);
     const [coursesData, setCoursesData] = useState([]);
+
+
 
     const addToCart = (course) => {
         setCart([...cart, course]);
@@ -41,7 +44,9 @@ const HomePage = () => {
                         Курстарды караңыз
                     </Link>
                 </div>
+                <Button > Катталуу</Button>
             </section>
+          
 
             {/* Feature Cards */}
             <section className="py-16 px-6 bg-gray-50 text-center">
