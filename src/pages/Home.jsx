@@ -3,6 +3,8 @@ import { Link } from "react-router-dom";
 import { FaStar } from "react-icons/fa";
 import { fetchCourses } from "../services/api";
 import { AuthContext } from "../context/AuthContext";
+import Benefits from "../components/Benefits";
+import Feedback from "../components/Feedback";
 import HeroStart from "../components/HeroStart";
 
 const HomePage = () => {
@@ -33,7 +35,7 @@ const HomePage = () => {
           
             <HeroStart />
 
-           <Benefits/>
+            <Benefits />
 
             {/* Курстар Секциясы */}
             <section className="py-16 bg-white text-center">
@@ -70,22 +72,7 @@ const HomePage = () => {
                     ))}
                 </div>
             </section>
-
-            {/* Testimonials */}
-            <section className="py-16 bg-gray-100 text-center">
-                <h2 className="text-4xl font-bold mb-8">Биздин үйрөнүүчүлөр эмне дешет?</h2>
-                <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="p-6 bg-white shadow-lg rounded-lg">
-                        <p className="text-gray-600">"Edubot Learning менин карьерамды толугу менен өзгөрттү. Интерактивдүү курстар жана AI сунуштары мага кыялымдагы жумушту табууга жардам берди!"</p>
-                        <h3 className="text-xl font-semibold mt-4">- Жейн Доэ</h3>
-                    </div>
-                    <div className="p-6 bg-white shadow-lg rounded-lg">
-                        <p className="text-gray-600">"Окутуучулар мыкты, жана өз ыргагым менен үйрөнүү мүмкүнчүлүгү чоң айырма жаратты. Сунуштайм!"</p>
-                        <h3 className="text-xl font-semibold mt-4">- Марк Жонсон</h3>
-                    </div>
-                </div>
-            </section>
-
+            <Feedback/>
             {/* Sign-Up Section - Only for Unauthenticated Users */}
             {!user && (
                 <section className="py-20 bg-blue-600 text-white text-center">
