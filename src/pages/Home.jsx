@@ -4,6 +4,8 @@ import { FaStar } from "react-icons/fa";
 import { fetchCourses } from "../services/api";
 import { AuthContext } from "../context/AuthContext";
 import Benefits from "../components/Benefits";
+import Tops from "../components/Tops";
+import TopCards from "../components/TopCards";
 
 const HomePage = () => {
     const { user } = useContext(AuthContext);
@@ -114,6 +116,7 @@ const HomePage = () => {
                 <p className="text-lg max-w-2xl mx-auto mb-6">Биздин колдоо командасы 24/7 сиздин суроолоруңузга жооп берет.</p>
                 <Link to="/contact" className="bg-blue-600 text-white px-8 py-3 rounded-full shadow-lg hover:bg-blue-700 transition">Байланышуу</Link>
             </section>
+            <Tops/>
         </div>
     );
 };
