@@ -7,6 +7,7 @@ import Benefits from "../components/Benefits";
 import Feedback from "../components/Feedback";
 import HeroStart from "../components/HeroStart";
 import Apply from "../components/Apply";
+import Contact from "../components/Contacts";
 
 const HomePage = () => {
     const { user } = useContext(AuthContext);
@@ -76,12 +77,7 @@ const HomePage = () => {
             <Feedback />
             <div className="m-auto h-0.5 w-[1240px] bg-gray-400"></div>
             <Apply/>
-            {/* Contact & Support */}
-            <section className="py-16 bg-white text-center">
-                <h2 className="text-4xl font-bold mb-8">Жардам керекпи? Биз менен байланышыңыз</h2>
-                <p className="text-lg max-w-2xl mx-auto mb-6">Биздин колдоо командасы 24/7 сиздин суроолоруңузга жооп берет.</p>
-                <Link to="/contact" className="bg-blue-600 text-white px-8 py-3 rounded-full shadow-lg hover:bg-blue-700 transition">Байланышуу</Link>
-            </section>
+            <Contact/>
         </div>
     );
 };
