@@ -75,9 +75,9 @@ const HomePage = () => {
                 </div>
             </section>
             <Feedback />
-            <div className="m-auto h-0.5 w-[1240px] bg-gray-400"></div>
-            <Apply/>
-            <Contact/>
+            <div className="w-full max-w-screen-xl h-0.5 bg-gray-400 mx-auto my-8"></div>
+            <Apply />
+            <Contact />
         </div>
     );
 };
