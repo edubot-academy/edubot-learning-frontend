@@ -4,6 +4,7 @@ import { FaStar } from "react-icons/fa";
 import { fetchCourses } from "../services/api";
 import { AuthContext } from "../context/AuthContext";
 import Benefits from "../components/Benefits";
+import Tops from "../components/Tops";
 import Feedback from "../components/Feedback";
 import HeroStart from "../components/HeroStart";
 import Apply from "../components/Apply";
@@ -74,6 +75,40 @@ const HomePage = () => {
                     ))}
                 </div>
             </section>
+
+            {/* Testimonials */}
+            <section className="py-16 bg-gray-100 text-center">
+                <h2 className="text-4xl font-bold mb-8">Биздин үйрөнүүчүлөр эмне дешет?</h2>
+                <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="p-6 bg-white shadow-lg rounded-lg">
+                        <p className="text-gray-600">"Edubot Learning менин карьерамды толугу менен өзгөрттү. Интерактивдүү курстар жана AI сунуштары мага кыялымдагы жумушту табууга жардам берди!"</p>
+                        <h3 className="text-xl font-semibold mt-4">- Жейн Доэ</h3>
+                    </div>
+                    <div className="p-6 bg-white shadow-lg rounded-lg">
+                        <p className="text-gray-600">"Окутуучулар мыкты, жана өз ыргагым менен үйрөнүү мүмкүнчүлүгү чоң айырма жаратты. Сунуштайм!"</p>
+                        <h3 className="text-xl font-semibold mt-4">- Марк Жонсон</h3>
+                    </div>
+                </div>
+            </section>
+
+            {/* Sign-Up Section - Only for Unauthenticated Users */}
+            {!user && (
+                <section className="py-20 bg-blue-600 text-white text-center">
+                    <h2 className="text-4xl font-bold mb-6">Бүгүн миңдеген үйрөнүүчүлөргө кошулуңуз!</h2>
+                    <p className="text-lg max-w-2xl mx-auto mb-6">Премиум курстарга мүмкүнчүлүк алыңыз, AI сунуштарын алыңыз жана сертификаттарга ээ болуңуз.</p>
+                    <Link to="/register" className="bg-white text-blue-600 font-bold px-8 py-3 rounded-full shadow-lg hover:bg-gray-100 transition transform hover:scale-105">
+                        Катталуу
+                    </Link>
+                </section>
+            )}
+
+            {/* Contact & Support */}
+            <section className="py-16 bg-white text-center">
+                <h2 className="text-4xl font-bold mb-8">Жардам керекпи? Биз менен байланышыңыз</h2>
+                <p className="text-lg max-w-2xl mx-auto mb-6">Биздин колдоо командасы 24/7 сиздин суроолоруңузга жооп берет.</p>
+                <Link to="/contact" className="bg-blue-600 text-white px-8 py-3 rounded-full shadow-lg hover:bg-blue-700 transition">Байланышуу</Link>
+            </section>
+            <Tops/>
             <Feedback />
             <div className="w-full max-w-screen-xl h-0.5 bg-gray-400 mx-auto my-8"></div>
             <Apply />
