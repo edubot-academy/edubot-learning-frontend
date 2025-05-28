@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { FaStar } from "react-icons/fa";
 import { fetchCourses } from "../services/api";
 import { AuthContext } from "../context/AuthContext";
+import Benefits from "../components/Benefits";
 
 const HomePage = () => {
     const { user } = useContext(AuthContext);
@@ -43,23 +44,7 @@ const HomePage = () => {
                 </div>
             </section>
 
-            {/* Feature Cards */}
-            <section className="py-16 px-6 bg-gray-50 text-center">
-                <div className="max-w-6xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                    <div className="bg-white rounded-xl p-6 shadow-md">
-                        <h3 className="text-xl font-bold mb-2">100+ Курстар</h3>
-                        <p className="text-gray-600">Бардык деңгээлдеги үйрөнүүчүлөр үчүн темалар.</p>
-                    </div>
-                    <div className="bg-white rounded-xl p-6 shadow-md">
-                        <h3 className="text-xl font-bold mb-2">Интерактивдүү үйрөнүү</h3>
-                        <p className="text-gray-600">Тапшырмалар, тесттер жана активдүү практика.</p>
-                    </div>
-                    <div className="bg-white rounded-xl p-6 shadow-md">
-                        <h3 className="text-xl font-bold mb-2">Адистерден үйрөнүңүз</h3>
-                        <p className="text-gray-600">Опыттуу инструкторлордон түшүндүрмөлөр.</p>
-                    </div>
-                </div>
-            </section>
+           <Benefits/>
 
             {/* Курстар Секциясы */}
             <section className="py-16 bg-white text-center">
