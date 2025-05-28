@@ -4,6 +4,7 @@ import { FaStar } from "react-icons/fa";
 import { fetchCourses } from "../services/api";
 import { AuthContext } from "../context/AuthContext";
 import Benefits from "../components/Benefits";
+import Tops from "../components/Tops";
 import Feedback from "../components/Feedback";
 import Evaluate from '../components/Evaluate';
 import HeroStart from "../components/HeroStart";
@@ -40,7 +41,7 @@ const HomePage = () => {
 
             <Benefits />
 
-            {/* Курстар Секциясы */}
+            {/* Курстар Секциясы
             <section className="py-16 bg-white text-center">
                 <div className="flex justify-between items-center px-4 sm:px-6 py-2 mb-4">
                     <h2 className="text-2xl sm:text-4xl font-bold leading-tight">
@@ -74,11 +75,13 @@ const HomePage = () => {
                         </div>
                     ))}
                 </div>
-            </section>
+            </section> */}
+            <Tops />
             <Feedback />
-            <div className="m-auto h-0.5 w-[1240px] bg-gray-400"></div>
-            <Apply />
+          <div className="w-full max-w-screen-xl h-0.5 bg-gray-400 mx-auto my-8"></div>
+              <Apply/>
             <Evaluate />
+ 
             <Contact />
         </div>
     );
