@@ -6,6 +6,7 @@ import { AuthContext } from "../context/AuthContext";
 import Benefits from "../components/Benefits";
 import Feedback from "../components/Feedback";
 import HeroStart from "../components/HeroStart";
+import Apply from "../components/Apply";
 
 const HomePage = () => {
     const { user } = useContext(AuthContext);
@@ -32,7 +33,7 @@ const HomePage = () => {
     return (
         <div className="min-h-screen bg-gray-50 font-sans flex flex-col">
             {/* Каармандардын Секциясы */}
-          
+
             <HeroStart />
 
             <Benefits />
@@ -72,18 +73,9 @@ const HomePage = () => {
                     ))}
                 </div>
             </section>
-            <Feedback/>
-            {/* Sign-Up Section - Only for Unauthenticated Users */}
-            {!user && (
-                <section className="py-20 bg-blue-600 text-white text-center">
-                    <h2 className="text-4xl font-bold mb-6">Бүгүн миңдеген үйрөнүүчүлөргө кошулуңуз!</h2>
-                    <p className="text-lg max-w-2xl mx-auto mb-6">Премиум курстарга мүмкүнчүлүк алыңыз, AI сунуштарын алыңыз жана сертификаттарга ээ болуңуз.</p>
-                    <Link to="/register" className="bg-white text-blue-600 font-bold px-8 py-3 rounded-full shadow-lg hover:bg-gray-100 transition transform hover:scale-105">
-                        Катталуу
-                    </Link>
-                </section>
-            )}
-
+            <Feedback />
+            <div className="m-auto h-0.5 w-[1240px] bg-gray-400"></div>
+            <Apply/>
             {/* Contact & Support */}
             <section className="py-16 bg-white text-center">
                 <h2 className="text-4xl font-bold mb-8">Жардам керекпи? Биз менен байланышыңыз</h2>
