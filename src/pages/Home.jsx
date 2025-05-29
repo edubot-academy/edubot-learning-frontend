@@ -3,7 +3,13 @@ import { Link } from "react-router-dom";
 import { FaStar } from "react-icons/fa";
 import { fetchCourses } from "../services/api";
 import { AuthContext } from "../context/AuthContext";
-import Button from "../components/UI/Button";
+import Benefits from "../components/Benefits";
+import Tops from "../components/Tops";
+import Feedback from "../components/Feedback";
+import Evaluate from '../components/Evaluate';
+import HeroStart from "../components/HeroStart";
+import Apply from "../components/Apply";
+import Contact from "../components/Contacts";
 
 const HomePage = () => {
     const { user } = useContext(AuthContext);
@@ -32,41 +38,12 @@ const HomePage = () => {
     return (
         <div className="min-h-screen bg-gray-50 font-sans flex flex-col">
             {/* Каармандардын Секциясы */}
-            <section className="relative bg-gradient-to-r from-blue-600 to-purple-600 text-white py-32 text-center">
-                <div className="w-full px-6">
-                    <h1 className="text-5xl md:text-6xl font-extrabold mb-6 animate-fade-in">
-                        Edubot Learning менен үйрөнүңүз, өсүңүз жана ийгиликке жетиңиз
-                    </h1>
-                    <p className="text-lg md:text-xl max-w-2xl mx-auto mb-10">
-                        Каалаган убакта, каалаган жерде жаңы көндүмдөрдү үйрөнүңүз.
-                    </p>
-                    <Link to="/courses" className="bg-white text-blue-600 font-bold px-8 py-3 rounded-full shadow-lg hover:bg-gray-100 transition transform hover:scale-105">
-                        Курстарды караңыз
-                    </Link>
-                </div>
-                <Button > Катталуу</Button>
-            </section>
-          
 
-            {/* Feature Cards */}
-            <section className="py-16 px-6 bg-gray-50 text-center">
-                <div className="max-w-6xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                    <div className="bg-white rounded-xl p-6 shadow-md">
-                        <h3 className="text-xl font-bold mb-2">100+ Курстар</h3>
-                        <p className="text-gray-600">Бардык деңгээлдеги үйрөнүүчүлөр үчүн темалар.</p>
-                    </div>
-                    <div className="bg-white rounded-xl p-6 shadow-md">
-                        <h3 className="text-xl font-bold mb-2">Интерактивдүү үйрөнүү</h3>
-                        <p className="text-gray-600">Тапшырмалар, тесттер жана активдүү практика.</p>
-                    </div>
-                    <div className="bg-white rounded-xl p-6 shadow-md">
-                        <h3 className="text-xl font-bold mb-2">Адистерден үйрөнүңүз</h3>
-                        <p className="text-gray-600">Опыттуу инструкторлордон түшүндүрмөлөр.</p>
-                    </div>
-                </div>
-            </section>
+            <HeroStart />
 
-            {/* Курстар Секциясы */}
+            <Benefits />
+
+            {/* Курстар Секциясы
             <section className="py-16 bg-white text-center">
                 <div className="flex justify-between items-center px-4 sm:px-6 py-2 mb-4">
                     <h2 className="text-2xl sm:text-4xl font-bold leading-tight">
@@ -100,40 +77,14 @@ const HomePage = () => {
                         </div>
                     ))}
                 </div>
-            </section>
-
-            {/* Testimonials */}
-            <section className="py-16 bg-gray-100 text-center">
-                <h2 className="text-4xl font-bold mb-8">Биздин үйрөнүүчүлөр эмне дешет?</h2>
-                <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="p-6 bg-white shadow-lg rounded-lg">
-                        <p className="text-gray-600">"Edubot Learning менин карьерамды толугу менен өзгөрттү. Интерактивдүү курстар жана AI сунуштары мага кыялымдагы жумушту табууга жардам берди!"</p>
-                        <h3 className="text-xl font-semibold mt-4">- Жейн Доэ</h3>
-                    </div>
-                    <div className="p-6 bg-white shadow-lg rounded-lg">
-                        <p className="text-gray-600">"Окутуучулар мыкты, жана өз ыргагым менен үйрөнүү мүмкүнчүлүгү чоң айырма жаратты. Сунуштайм!"</p>
-                        <h3 className="text-xl font-semibold mt-4">- Марк Жонсон</h3>
-                    </div>
-                </div>
-            </section>
-
-            {/* Sign-Up Section - Only for Unauthenticated Users */}
-            {!user && (
-                <section className="py-20 bg-blue-600 text-white text-center">
-                    <h2 className="text-4xl font-bold mb-6">Бүгүн миңдеген үйрөнүүчүлөргө кошулуңуз!</h2>
-                    <p className="text-lg max-w-2xl mx-auto mb-6">Премиум курстарга мүмкүнчүлүк алыңыз, AI сунуштарын алыңыз жана сертификаттарга ээ болуңуз.</p>
-                    <Link to="/register" className="bg-white text-blue-600 font-bold px-8 py-3 rounded-full shadow-lg hover:bg-gray-100 transition transform hover:scale-105">
-                        Катталуу
-                    </Link>
-                </section>
-            )}
-
-            {/* Contact & Support */}
-            <section className="py-16 bg-white text-center">
-                <h2 className="text-4xl font-bold mb-8">Жардам керекпи? Биз менен байланышыңыз</h2>
-                <p className="text-lg max-w-2xl mx-auto mb-6">Биздин колдоо командасы 24/7 сиздин суроолоруңузга жооп берет.</p>
-                <Link to="/contact" className="bg-blue-600 text-white px-8 py-3 rounded-full shadow-lg hover:bg-blue-700 transition">Байланышуу</Link>
-            </section>
+            </section> */}
+            <Tops />
+            <Feedback />
+          <div className="w-full max-w-screen-xl h-0.5 bg-gray-400 mx-auto my-8"></div>
+              <Apply/>
+            <Evaluate />
+ 
+            <Contact />
         </div>
     );
 };
