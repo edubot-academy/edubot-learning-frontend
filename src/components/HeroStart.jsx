@@ -1,5 +1,6 @@
 
-import Logotip from "../assets/images/logotip.png"
+import Logotip from "../assets/images/logotip-hero.png"
+
 import { Link } from 'react-router-dom'
 
 const HeroStart = () => {
@@ -18,13 +19,13 @@ const HeroStart = () => {
                         </p>
                         <Link
                             to="/courses"
-                            className=" absolute  w-[190px] h-[72px] bg-[#F78B31] text-white   font-inter px-8 py-3 rounded-full shadow-lg hover:bg-[#e57a28] transition transform hover:scale-105 flex items-center justify-center"
+                            className=" absolute  w-[190px] h-[72px] bg-[#F78B31] text-white font-inter text-[20px] px-8 py-3 rounded-[20px] shadow-lg hover:bg-[#e57a28] transition transform hover:scale-105 flex items-center justify-center"
                         >
                             Баштоо
                         </Link>
                     </div>
                     <div className="w-full lg:w-1/2 flex justify-center lg:justify-end mb-10 lg:mb-0">
-                        <img src={Logotip} alt="Edubot Logo" className="w-[500px] h-[450px]" />
+                        <img src={Logotip} alt="Edubot Logo" className="w-[500px] h-[430px]" />
                     </div>
                 </div>
 
