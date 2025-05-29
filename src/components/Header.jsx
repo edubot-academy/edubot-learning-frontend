@@ -1,7 +1,7 @@
 import React, { useState, useContext, useEffect, useRef } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { FaUserCircle, FaBars, FaTimes } from "react-icons/fa";
-import Logo from "../assets/images/Logo.svg";
+import Logo from "../assets/icons/Logo.svg";
 import { AuthContext } from "../context/AuthContext";
 import { IoSearchOutline } from "react-icons/io5";
 import { MdOutlineShoppingCart } from "react-icons/md";
@@ -128,7 +128,7 @@ const Header = ({ cart = [] }) => {
                                 <IoSearchOutline className="text-white w-[40px] h-[40px] bg-[#122144] p-2.5 rounded-full cursor-pointer hover:text-orange-600" />
                                 <MdOutlineShoppingCart className="w-[23px] h-[23px] text-[#F97316] cursor-pointer hover:text-[#0EA78B]" />
                                 <div className="lg:space-x-4 space-x-1">
-                                    <Link to="/login" className={` hover:text-orange-400 transition`}>Логин</Link>
+                                    <Link to="/login" className={`${textColor} hover:text-orange-400 transition`}>Логин</Link>
                                     <Link to="/register" className="bg-orange-500 text-white px-6 py-3.5 rounded-full hover:bg-orange-600 transition">Катталуу</Link>
                                 </div>
                             </div>
