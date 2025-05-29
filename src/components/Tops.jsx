@@ -1,6 +1,6 @@
 import TopCards from "./TopCards"
 import programmerImg from "../assets/images/photoprogrammer.png"
-import StarImg from "../assets/icons/star.svg"
+import StarImg from "../assets/icons/stars.svg"
 
 const Tops = () => {
   const courses = [
