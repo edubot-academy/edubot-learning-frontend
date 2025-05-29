@@ -2,50 +2,66 @@ import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { FaStar } from "react-icons/fa";
 import { fetchCourses } from "../services/api";
+import Tops from "../components/Tops";
+import CoursesSection from "../components/CoursesSection";
+import { FiSearch } from "react-icons/fi";
 
 const CoursesPage = () => {
-    const [courses, setCourses] = useState([]);
-    const [filter, setFilter] = useState("All");
-    const [loading, setLoading] = useState(true);
+  const [courses, setCourses] = useState([]);
+  const [filter, setFilter] = useState("All");
+  const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        const loadCourses = async () => {
-            try {
-                const data = await fetchCourses();
-                setCourses(data.courses);
-            } catch (err) {
-                console.error("Курстар жүктөлбөй калды", err);
-            } finally {
-                setLoading(false);
-            }
-        };
+  useEffect(() => {
+    const loadCourses = async () => {
+      try {
+        const data = await fetchCourses();
+        setCourses(data.courses);
+      } catch (err) {
+        console.error("Курстар жүктөлбөй калды", err);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-        loadCourses();
-    }, []);
+    loadCourses();
+  }, []);
 
-    const filteredCourses = courses.filter(
-        (course) => course.isPublished && (filter === "All" || course.level === filter)
-    );
+  const filteredCourses = courses.filter(
+    (course) =>
+      course.isPublished && (filter === "All" || course.level === filter)
+  );
 
-    if (loading) return <div className="pt-24 p-6">Курстар жүктөлүүдө...</div>;
+  if (loading) return <div className="pt-24 p-6">Курстар жүктөлүүдө...</div>;
 
-    return (
-        <div className="min-h-screen bg-gray-50 p-6 pt-24">
-            <h1 className="text-4xl font-bold text-center mb-6">Курстарыбыз менен таанышуу</h1>
-            <div className="flex justify-end mb-6">
-                <select
-                    className="p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    value={filter}
-                    onChange={(e) => setFilter(e.target.value)}
-                >
-                    <option value="All">Бардык деңгээлдер</option>
-                    <option value="Beginner">Башталгыч</option>
-                    <option value="Intermediate">Орто</option>
-                    <option value="Advanced">Жогорку</option>
-                </select>
-            </div>
+  return (
+    <div className="min-h-screen bg-gray-50 p-6 pt-24">
+      <h1 className="text-4xl font-bold text-center mb-6">Биздин курстар</h1>
+      <div className="w-full max-w-[431px] h-[51px] mx-auto flex items-center border border-gray-500 rounded-md mb-8 px-3">
+        <FiSearch className="text-gray-400" size={20} />
+        <input
+          type="text"
+          placeholder="Курсту издоо"
+          className="flex-grow px-3 py-2 outline-none border-none bg-transparent text-sm sm:text-base"
+        />
+      </div>
+      <div className="px-4 sm:px-6 lg:px-12">
+        <CoursesSection title="Сиз үчүн сунушталган курстар">
+          <Tops noBg hideTitleAndLink />
+        </CoursesSection>
 
-            {filteredCourses.length === 0 ? (
+        <CoursesSection title="Жаңы жарыяланган курстар">
+          <Tops noBg hideTitleAndLink />
+        </CoursesSection>
+
+        <CoursesSection title="Эң популярдуу курстар">
+          <Tops noBg hideTitleAndLink />
+        </CoursesSection>
+        <CoursesSection title="Эң мыкты акысыз онлайн курстар">
+          <Tops noBg hideTitleAndLink />
+        </CoursesSection>
+      </div>
+
+      {/* {filteredCourses.length === 0 ? (
                 <div className="text-center text-gray-500 text-lg">
                     Тандалган категория боюнча курстар табылган жок.
                 </div>
@@ -82,9 +98,9 @@ const CoursesPage = () => {
                         </div>
                     ))}
                 </div>
-            )}
-        </div>
-    );
+            )  } */}
+    </div>
+  );
 };
 
 export default CoursesPage;
