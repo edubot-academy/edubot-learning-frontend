@@ -1,6 +1,6 @@
 
 
-const Button = ({ children, onClick, className = "", type = "button", disabled = false, loading = false, }) => {
+const Button = ({ children, onClick, className = "", type = "button", disabled = false, loading = false, ...props }) => {
 
 
 
@@ -13,9 +13,8 @@ const Button = ({ children, onClick, className = "", type = "button", disabled =
     const disabledStyles =
         "bg-[#D9D9D9] text-gray-500 cursor-not-allowed shadow-none";
 
-    const finalStyles =
-        baseStyles + " " + (disabled || loading ? disabledStyles : defaultStyles);
-
+    const finalStyles = `${baseStyles} ${disabled || loading ? disabledStyles : defaultStyles
+        } ${className}`;
 
     return (
         <div>
@@ -24,6 +23,7 @@ const Button = ({ children, onClick, className = "", type = "button", disabled =
                 onClick={onClick}
                 disabled={disabled || loading}
                 className={finalStyles}
+                {...props}
             >
                 {loading ? (
                     <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin inline-block"></span>
