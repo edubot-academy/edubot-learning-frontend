@@ -1,8 +1,11 @@
 import React, { useState, useContext, useEffect, useRef } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { FaUserCircle, FaBars, FaTimes } from "react-icons/fa";
-import Logo from "../assets/images/edubot-logo.jpeg";
+import Logo from "../assets/images/Logo.svg";
 import { AuthContext } from "../context/AuthContext";
+import { IoSearchOutline } from "react-icons/io5";
+import { MdOutlineShoppingCart } from "react-icons/md";
+import { GrLanguage } from "react-icons/gr";
 
 const useClickOutside = (ref, handler) => {
     useEffect(() => {
@@ -35,13 +38,16 @@ const NavLinks = ({ user, onClick }) => {
 const Header = ({ cart = [] }) => {
     const [menuOpen, setMenuOpen] = useState(false);
     const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+    const [languageMenuOpen, setLanguageMenuOpen] = useState(false);
     const { user, logout } = useContext(AuthContext);
     const profileRef = useRef(null);
     const mobileMenuRef = useRef(null);
+    const languageMenuRef = useRef(null);
     const navigate = useNavigate();
 
     useClickOutside(profileRef, () => setProfileMenuOpen(false));
     useClickOutside(mobileMenuRef, () => setMenuOpen(false));
+    useClickOutside(languageMenuRef, () => setLanguageMenuOpen(false));
 
     useEffect(() => {
         document.body.style.overflow = menuOpen ? 'hidden' : 'auto';
@@ -53,54 +59,65 @@ const Header = ({ cart = [] }) => {
     };
 
     return (
-        <header className="fixed w-full z-30 bg-[#1c3a3e] shadow-md">
-            <div className="w-full px-6 py-4 flex items-center justify-between">
-                <Link to="/" className="flex items-center space-x-3">
-                    <img src={Logo} alt="Edubot Learning Logo" className="h-10" />
-                    <div translate="no" className="flex flex-col">
-                        <span className="text-2xl font-extrabold text-orange-500 leading-none">EDUBOT</span>
-                        <span className="text-sm font-bold tracking-widest text-white">LEARNING</span>
-                    </div>
-                </Link>
-                <button
-                    className="md:hidden text-white focus:outline-none menu-toggle"
-                    aria-label="Toggle menu"
-                    onClick={() => setMenuOpen(!menuOpen)}
-                >
-                    {menuOpen ? <FaTimes className="text-2xl" /> : <FaBars className="text-2xl" />}
-                </button>
-                <nav className="hidden md:flex space-x-8">
-                    <NavLinks user={user} />
-                </nav>
-                <div className="hidden md:flex items-center space-x-6">
-                    {user ? (
-                        <div className="relative profile-menu" ref={profileRef}>
-                            <button
-                                aria-label="User menu"
-                                onClick={() => setProfileMenuOpen(!profileMenuOpen)}
-                                className="flex items-center justify-center w-10 h-10 bg-orange-500 text-white font-bold rounded-full text-lg hover:bg-orange-600 transition"
-                            >
-                                <FaUserCircle className="text-2xl" />
-                            </button>
-                            {profileMenuOpen && (
-                                <div className="absolute right-0 mt-2 w-48 bg-white border rounded-lg shadow-lg py-2">
-                                    <Link to="/profile" className="block px-4 py-2 text-gray-700 hover:bg-gray-100">Профиль</Link>
-                                    <button onClick={() => logout()} className="block w-full text-left px-4 py-2 text-red-600 hover:bg-gray-100">Чыгуу</button>
+        <header className="fixed w-full z-30">
+            <div className="w-full px-8 py-6 flex justify-between">
+                <div className="flex items-center gap-[60px]">
+                    <Link to="/" className="flex items-center space-x-3">
+                        <img src={Logo} alt="Edubot Learning Logo" className="w-[67px]" />
+                        <div translate="no" className="flex flex-col">
+                            <span className="text-2xl font-extrabold text-orange-500 leading-none">EDUBOT</span>
+                            <span className="text-base tracking-widest text-white font-medium">LEARNING</span>
+                        </div>
+                    </Link>
+                    <nav className="hidden md:flex gap-[8px] lg:space-x-8 flex-wrap">
+                        <NavLinks user={user} />
+                    </nav>
+                </div>
+                <div className="flex items-center lg:gap-[33px] md:gap-2 gap-[20px]">
+                    <div className="hidden md:flex items-center space-x-6">
+                        {user ? (
+                            <div className="relative profile-menu" ref={profileRef}>
+                                <button
+                                    aria-label="User menu"
+                                    onClick={() => setProfileMenuOpen(!profileMenuOpen)}
+                                    className="flex items-center justify-center w-10 h-10 bg-orange-500 text-white font-bold rounded-full text-lg hover:bg-orange-600 transition"
+                                >
+                                    <FaUserCircle className="text-2xl" />
+                                </button>
+                                {profileMenuOpen && (
+                                    <div className="absolute right-0 mt-2 w-48 bg-white border rounded-lg shadow-lg py-2">
+                                        <Link to="/profile" className="block px-4 py-2 text-gray-700 hover:bg-gray-100">Профиль</Link>
+                                        <button onClick={() => logout()} className="block w-full text-left px-4 py-2 text-red-600 hover:bg-gray-100">Чыгуу</button>
+                                    </div>
+                                )}
+                            </div>
+                        ) : (
+                            <div className="flex items-center gap-[8px] lg:gap-[28px]">
+                                <IoSearchOutline className="text-white w-[40px] h-[40px] bg-[#122144] p-2.5 rounded-full cursor-pointer hover:text-orange-600" />
+                                <MdOutlineShoppingCart className="w-[23px] h-[23px] text-[#F97316] cursor-pointer hover:text-[#0EA78B]" />
+                                <div className="lg:space-x-4 space-x-1">
+                                    <Link to="/login" className="text-white hover:text-orange-400 transition">Логин</Link>
+                                    <Link to="/register" className="bg-orange-500 text-white px-6 py-3.5 rounded-full hover:bg-orange-600 transition">Катталуу</Link>
                                 </div>
-                            )}
-                        </div>
-                    ) : (
-                        <div className="space-x-4">
-                            <Link to="/login" className="text-white hover:text-orange-400 transition">Логин</Link>
-                            <Link to="/register" className="bg-orange-500 text-white px-4 py-2 rounded-full hover:bg-orange-600 transition">Катталуу</Link>
-                        </div>
-                    )}
+                            </div>
+                        )}
+                    </div>
+                    <button
+                        className="md:hidden text-white focus:outline-none menu-toggle"
+                        aria-label="Toggle menu"
+                        onClick={() => setMenuOpen(!menuOpen)}
+                    >
+                        {menuOpen ? <FaTimes className="text-2xl" /> : <FaBars className="text-2xl" />}
+                    </button>
+                    <GrLanguage onClick={() => setLanguageMenuOpen(!languageMenuOpen)} className="text-white w-[23px] h-[23px] cursor-pointer hover:text-orange-400" />
                 </div>
             </div>
             {menuOpen && (
                 <div ref={mobileMenuRef} className="md:hidden bg-[#1c3a3e] shadow-md py-4 flex flex-col items-center space-y-4 w-full mobile-menu transition-all duration-300 transform scale-100 opacity-100">
                     {user && <Link to="/profile" onClick={() => handleLinkClick('/profile')} className="block px-4 py-2 text-white hover:text-orange-400">Профиль</Link>}
                     <NavLinks user={user} onClick={() => setMenuOpen(false)} />
+                    <Link to="/" className={`text-white hover:text-orange-400 transition`}>Издөө</Link>
+                    <Link to="/" className={`text-white hover:text-orange-400 transition`}>Себет</Link>
                     {!user ? (
                         <div className="flex flex-col space-y-2 w-full px-6">
                             <Link to="/login" onClick={() => handleLinkClick('/login')} className="text-white hover:text-orange-400 transition font-semibold text-lg text-center">Логин</Link>
@@ -109,6 +126,13 @@ const Header = ({ cart = [] }) => {
                     ) : (
                         <button onClick={() => { logout(); setMenuOpen(false); }} className="text-white hover:text-orange-400 transition">Чыгуу</button>
                     )}
+                </div>
+            )}
+            {languageMenuOpen && (
+                <div className="absolute bg-orange-500 w-[50px] top-[100px] right-[20px] grid text-center py-1 rounded-lg">
+                    <strong onClick={() => setLanguageMenuOpen(!languageMenuOpen)} className={`text-white hover:text-[#1c3a3e] transition cursor-pointer`}>RU</strong>
+                    <strong onClick={() => setLanguageMenuOpen(!languageMenuOpen)} className={`text-white hover:text-[#1c3a3e] transition cursor-pointer`}>EN</strong>
+                    <strong onClick={() => setLanguageMenuOpen(!languageMenuOpen)} className={`text-white hover:text-[#1c3a3e] transition cursor-pointer`}>KG</strong>
                 </div>
             )}
         </header>
