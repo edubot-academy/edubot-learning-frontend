@@ -18,9 +18,9 @@ const useClickOutside = (ref, handler) => {
     }, [ref, handler]);
 };
 
-const NavLinks = ({ user, onClick }) => {
+const NavLinks = ({ user, onClick, textColor }) => {
     const location = useLocation();
-    const isActive = (path) => location.pathname === path ? "text-orange-400" : "text-white";
+    const isActive = (path) => location.pathname === path ? "text-orange-400" : textColor;
 
     return (
         <>
@@ -39,10 +39,12 @@ const Header = ({ cart = [] }) => {
     const [menuOpen, setMenuOpen] = useState(false);
     const [profileMenuOpen, setProfileMenuOpen] = useState(false);
     const [languageMenuOpen, setLanguageMenuOpen] = useState(false);
+    const [isLightBackground, setIsLightBackground] = useState(false);
     const { user, logout } = useContext(AuthContext);
     const profileRef = useRef(null);
     const mobileMenuRef = useRef(null);
     const languageMenuRef = useRef(null);
+    const headerRef = useRef(null);
     const navigate = useNavigate();
 
     useClickOutside(profileRef, () => setProfileMenuOpen(false));
@@ -53,24 +55,54 @@ const Header = ({ cart = [] }) => {
         document.body.style.overflow = menuOpen ? 'hidden' : 'auto';
     }, [menuOpen]);
 
+    useEffect(() => {
+        const checkBackgroundColor = () => {
+            const rect = headerRef.current?.getBoundingClientRect();
+            if (!rect) return;
+            const el = document.elementFromPoint(rect.left + 1, rect.bottom + 1);
+            if (!el) return;
+            const bgColor = window.getComputedStyle(el).backgroundColor;
+            const isLight = isLightColor(bgColor);
+            setIsLightBackground(isLight);
+        };
+
+        checkBackgroundColor();
+        window.addEventListener("scroll", checkBackgroundColor);
+        window.addEventListener("resize", checkBackgroundColor);
+        return () => {
+            window.removeEventListener("scroll", checkBackgroundColor);
+            window.removeEventListener("resize", checkBackgroundColor);
+        };
+    }, []);
+
+    const isLightColor = (color) => {
+        const match = color.match(/\d+/g);
+        if (!match) return false;
+        const [r, g, b] = match.map(Number);
+        const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+        return brightness > 160;
+    };
+
+    const textColor = isLightBackground ? "text-[#122144]" : "text-white";
+
     const handleLinkClick = (path) => {
         navigate(path);
         setMenuOpen(false);
     };
 
     return (
-        <header className="fixed w-full z-30">
+        <header ref={headerRef} className="fixed w-full z-30 bg-transparent transition-colors duration-300">
             <div className="w-full px-8 py-6 flex justify-between">
                 <div className="flex items-center gap-[60px]">
                     <Link to="/" className="flex items-center space-x-3">
                         <img src={Logo} alt="Edubot Learning Logo" className="w-[67px]" />
                         <div translate="no" className="flex flex-col">
                             <span className="text-2xl font-extrabold text-orange-500 leading-none">EDUBOT</span>
-                            <span className="text-base tracking-widest text-white font-medium">LEARNING</span>
+                            <span className={`text-base tracking-widest font-medium ${textColor}`}>LEARNING</span>
                         </div>
                     </Link>
                     <nav className="hidden md:flex gap-[8px] lg:space-x-8 flex-wrap">
-                        <NavLinks user={user} />
+                        <NavLinks user={user} textColor={textColor} />
                     </nav>
                 </div>
                 <div className="flex items-center lg:gap-[33px] md:gap-2 gap-[20px]">
@@ -96,26 +128,26 @@ const Header = ({ cart = [] }) => {
                                 <IoSearchOutline className="text-white w-[40px] h-[40px] bg-[#122144] p-2.5 rounded-full cursor-pointer hover:text-orange-600" />
                                 <MdOutlineShoppingCart className="w-[23px] h-[23px] text-[#F97316] cursor-pointer hover:text-[#0EA78B]" />
                                 <div className="lg:space-x-4 space-x-1">
-                                    <Link to="/login" className="text-white hover:text-orange-400 transition">Логин</Link>
+                                    <Link to="/login" className={` hover:text-orange-400 transition`}>Логин</Link>
                                     <Link to="/register" className="bg-orange-500 text-white px-6 py-3.5 rounded-full hover:bg-orange-600 transition">Катталуу</Link>
                                 </div>
                             </div>
                         )}
                     </div>
                     <button
-                        className="md:hidden text-white focus:outline-none menu-toggle"
+                        className="md:hidden focus:outline-none menu-toggle"
                         aria-label="Toggle menu"
                         onClick={() => setMenuOpen(!menuOpen)}
                     >
-                        {menuOpen ? <FaTimes className="text-2xl" /> : <FaBars className="text-2xl" />}
+                        {menuOpen ? <FaTimes className={`text-2xl ${textColor}`} /> : <FaBars className={`text-2xl ${textColor}`} />}
                     </button>
-                    <GrLanguage onClick={() => setLanguageMenuOpen(!languageMenuOpen)} className="text-white w-[23px] h-[23px] cursor-pointer hover:text-orange-400" />
+                    <GrLanguage onClick={() => setLanguageMenuOpen(!languageMenuOpen)} className={`${textColor} w-[23px] h-[23px] cursor-pointer hover:text-orange-400`} />
                 </div>
             </div>
             {menuOpen && (
                 <div ref={mobileMenuRef} className="md:hidden bg-[#1c3a3e] shadow-md py-4 flex flex-col items-center space-y-4 w-full mobile-menu transition-all duration-300 transform scale-100 opacity-100">
                     {user && <Link to="/profile" onClick={() => handleLinkClick('/profile')} className="block px-4 py-2 text-white hover:text-orange-400">Профиль</Link>}
-                    <NavLinks user={user} onClick={() => setMenuOpen(false)} />
+                    <NavLinks user={user} onClick={() => setMenuOpen(false)} textColor="text-white" />
                     <Link to="/" className={`text-white hover:text-orange-400 transition`}>Издөө</Link>
                     <Link to="/" className={`text-white hover:text-orange-400 transition`}>Себет</Link>
                     {!user ? (
@@ -129,10 +161,10 @@ const Header = ({ cart = [] }) => {
                 </div>
             )}
             {languageMenuOpen && (
-                <div className="absolute bg-orange-500 w-[50px] top-[100px] right-[20px] grid text-center py-1 rounded-lg">
-                    <strong onClick={() => setLanguageMenuOpen(!languageMenuOpen)} className={`text-white hover:text-[#1c3a3e] transition cursor-pointer`}>RU</strong>
-                    <strong onClick={() => setLanguageMenuOpen(!languageMenuOpen)} className={`text-white hover:text-[#1c3a3e] transition cursor-pointer`}>EN</strong>
-                    <strong onClick={() => setLanguageMenuOpen(!languageMenuOpen)} className={`text-white hover:text-[#1c3a3e] transition cursor-pointer`}>KG</strong>
+                <div ref={languageMenuRef} className="absolute bg-orange-500 w-[50px] top-[100px] right-[20px] grid text-center py-1 rounded-lg">
+                    <strong onClick={() => setLanguageMenuOpen(false)} className="text-white hover:text-[#1c3a3e] transition cursor-pointer">RU</strong>
+                    <strong onClick={() => setLanguageMenuOpen(false)} className="text-white hover:text-[#1c3a3e] transition cursor-pointer">EN</strong>
+                    <strong onClick={() => setLanguageMenuOpen(false)} className="text-white hover:text-[#1c3a3e] transition cursor-pointer">KG</strong>
                 </div>
             )}
         </header>
