@@ -1,5 +1,6 @@
 
 import Logotip from "../assets/images/logotip-hero.png"
+import Vektor from "../assets/images/vector.png"
 
 import { Link } from 'react-router-dom'
 
@@ -24,8 +25,21 @@ const HeroStart = () => {
                             Баштоо
                         </Link>
                     </div>
-                    <div className="w-full lg:w-1/2 flex justify-center lg:justify-end mb-10 lg:mb-0">
-                        <img src={Logotip} alt="Edubot Logo" className="w-[500px] h-[430px]" />
+
+                    <div className="w-full lg:w-1/2 flex justify-center lg:justify-end mb-10 lg:mb-0 relative">
+
+                        <img
+                            src={Vektor}
+                            alt="vector"
+                            className="absolute w-[520px] h-[450px]  top-10 right-[-60px] opacity-40 z-0"
+                        />
+
+
+                        <img
+                            src={Logotip}
+                            alt="Edubot Logo"
+                            className="max-w-[500px] h-auto relative z-10"
+                        />
                     </div>
                 </div>
 
