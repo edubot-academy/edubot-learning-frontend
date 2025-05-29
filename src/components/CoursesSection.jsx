@@ -1,5 +1,5 @@
 import React from "react";
-import { BsArrowLeftCircle, BsArrowRightCircle } from "react-icons/bs";
+import { AiOutlineLeftCircle, AiOutlineRightCircle } from "react-icons/ai";
 
 const CoursesSection = ({ title, children }) => {
   return (
@@ -9,9 +9,9 @@ const CoursesSection = ({ title, children }) => {
           {title}
         </h3>
         {/* Иконки скрыты на телефонах (xs), показываются с sm */}
-        <div className="hidden sm:flex gap-4 sm:gap-5">
-          <BsArrowLeftCircle size={32} />
-          <BsArrowRightCircle size={32} />
+        <div className="hidden sm:flex gap-4 sm:gap-5 text-edubot-green #0EA78B">
+          <AiOutlineLeftCircle size={34} />
+          <AiOutlineRightCircle size={34} />
         </div>
       </div>
       {children}
