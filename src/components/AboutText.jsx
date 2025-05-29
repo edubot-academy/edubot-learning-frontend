@@ -3,7 +3,7 @@ import React from 'react'
 function AboutText() {
     return (
         <div>
-            <div className="max-w-screen bg-[#1E605E] text-white p-20 rounded-t-[30px] relative overflow-hidden">
+            <div className="mb-[-100px] max-w-screen bg-[#1E605E] text-white p-20 rounded-t-[30px] relative overflow-hidden">
                 <div className="absolute left-15 top-20 bottom-10 border-l-2 border-white">
                     <div className="w-2 h-2 bg-white rounded-full absolute -top-1 left-[-5px]"></div>
                     <div className="w-2 h-2 bg-white rounded-full absolute -bottom-1 left-[-5px]"></div>
