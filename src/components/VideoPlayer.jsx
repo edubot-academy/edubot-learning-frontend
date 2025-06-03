@@ -90,7 +90,7 @@ const VideoPlayer = ({ videoUrl, resumeTime = 0, onProgress, onTimeUpdate, onPau
                     ref={videoRef}
                     className="absolute top-0 left-0 w-full h-full object-cover"
                     controls
-                    playsInline
+                    // playsInline
                     preload="metadata"
                     disablePictureInPicture
                     controlsList="nodownload"
