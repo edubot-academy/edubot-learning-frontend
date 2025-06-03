@@ -1,13 +1,47 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { FaPlayCircle, FaPauseCircle } from 'react-icons/fa';
+import { FaPlayCircle, FaPauseCircle, FaExpand, FaCompress } from 'react-icons/fa';
 import { Link } from 'react-router-dom';
 
-const VideoPlayer = ({ videoUrl, resumeTime = 0, onProgress, onTimeUpdate, onPause, allowPlay = true, videoRef, onEnded }) => {
+const VideoPlayer = ({
+    videoUrl,
+    resumeTime = 0,
+    onProgress,
+    onTimeUpdate,
+    onPause,
+    allowPlay = true,
+    videoRef,
+    onEnded
+}) => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [isPlaying, setIsPlaying] = useState(false);
     const [showControls, setShowControls] = useState(true);
+    const [isFullscreen, setIsFullscreen] = useState(false);
     const pauseTimeoutRef = useRef(null);
+
+    // Track fullscreen changes
+    useEffect(() => {
+        const handleFullscreenChange = () => {
+            const fsElement =
+                document.fullscreenElement ||
+                document.webkitFullscreenElement ||
+                document.mozFullScreenElement ||
+                document.msFullscreenElement;
+            setIsFullscreen(!!fsElement);
+        };
+
+        document.addEventListener('fullscreenchange', handleFullscreenChange);
+        document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+        document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+        document.addEventListener('MSFullscreenChange', handleFullscreenChange);
+
+        return () => {
+            document.removeEventListener('fullscreenchange', handleFullscreenChange);
+            document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+            document.removeEventListener('mozfullscreenchange', handleFullscreenChange);
+            document.removeEventListener('MSFullscreenChange', handleFullscreenChange);
+        };
+    }, []);
 
     useEffect(() => {
         setIsPlaying(false);
@@ -42,6 +76,7 @@ const VideoPlayer = ({ videoUrl, resumeTime = 0, onProgress, onTimeUpdate, onPau
 
         const handlePlay = () => {
             setIsPlaying(true);
+            setShowControls(true);
             if (pauseTimeoutRef.current) clearTimeout(pauseTimeoutRef.current);
             pauseTimeoutRef.current = setTimeout(() => setShowControls(false), 2000);
         };
@@ -74,6 +109,28 @@ const VideoPlayer = ({ videoUrl, resumeTime = 0, onProgress, onTimeUpdate, onPau
         };
     }, [resumeTime, onProgress, onTimeUpdate, allowPlay]);
 
+    const requestFullscreen = (element) => {
+        if (!element) return;
+        if (element.requestFullscreen) element.requestFullscreen();
+        else if (element.webkitRequestFullscreen) element.webkitRequestFullscreen();
+        else if (element.msRequestFullscreen) element.msRequestFullscreen();
+        else if (element.webkitEnterFullscreen) element.webkitEnterFullscreen(); // iOS Safari fallback
+    };
+
+    const exitFullscreen = () => {
+        if (document.exitFullscreen) document.exitFullscreen();
+        else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+        else if (document.msExitFullscreen) document.msExitFullscreen();
+    };
+
+    const handlePlayClick = () => {
+        const video = videoRef.current;
+        if (video && allowPlay) {
+            video.play();
+            setShowControls(false);
+        }
+    };
+
     return (
         <div className="video-player relative">
             {loading && (
@@ -88,19 +145,26 @@ const VideoPlayer = ({ videoUrl, resumeTime = 0, onProgress, onTimeUpdate, onPau
 
                 <video
                     ref={videoRef}
-                    className="absolute top-0 left-0 w-full h-full object-cover"
+                    className="absolute top-0 left-0 w-full h-full"
                     controls
-                    // playsInline
+                    playsInline
                     preload="metadata"
                     disablePictureInPicture
-                    controlsList="nodownload"
+                    controlsList="nodownload nofullscreen"
                     onClick={() => setShowControls(true)}
                     onEnded={onEnded}
                     onPlay={(e) => {
                         if (!allowPlay) {
                             e.preventDefault();
                             e.target.pause();
+                        } else {
+                            setIsPlaying(true);
                         }
+                    }}
+                    onPause={() => {
+                        setIsPlaying(false);
+                        setShowControls(true);
+                        if (onPause) onPause(videoRef.current?.currentTime || 0);
                     }}
                 >
                     <source src={videoUrl} type="video/mp4" />
@@ -109,20 +173,52 @@ const VideoPlayer = ({ videoUrl, resumeTime = 0, onProgress, onTimeUpdate, onPau
             </div>
 
             {allowPlay && !loading && showControls && (
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
+                <div className="absolute inset-0 flex items-center justify-center z-20">
                     {isPlaying ? (
-                        <FaPauseCircle className="text-6xl text-white drop-shadow-lg opacity-80" />
+                        <FaPauseCircle
+                            onClick={() => {
+                                const video = videoRef.current;
+                                if (video && allowPlay) {
+                                    video.pause();
+                                    setShowControls(true);
+                                }
+                            }}
+                            className="text-6xl text-white drop-shadow-lg opacity-80 cursor-pointer z-40"
+                        />
                     ) : (
-                        <FaPlayCircle className="text-6xl text-white drop-shadow-lg opacity-80" />
+                        <FaPlayCircle
+                            onClick={handlePlayClick}
+                            className="text-6xl text-white drop-shadow-lg opacity-80 cursor-pointer z-40"
+                        />
                     )}
                 </div>
+            )}
+
+            {allowPlay && !loading && (
+                <button
+                    onClick={() =>
+                        isFullscreen
+                            ? exitFullscreen()
+                            : requestFullscreen(videoRef.current)
+                    }
+                    className="absolute bottom-8 right-14 z-30 p-1.5 rounded-full hover:bg-black/30 transition"
+                    title={isFullscreen ? "Толук экрандан чыгуу" : "Толук экран"}
+                >
+                    {isFullscreen ? (
+                        <FaCompress className="text-base text-white" />
+                    ) : (
+                        <FaExpand className="text-base text-white" />
+                    )}
+                </button>
             )}
 
             {!allowPlay && (
                 <div className="absolute inset-0 bg-white/80 flex flex-col items-center justify-center text-center px-4 z-[5]">
                     <FaPlayCircle className="text-5xl text-gray-400 mb-4" />
                     <p className="text-gray-700 font-medium mb-2">Бул видеону көрүү үчүн курска катталыңыз.</p>
-                    <Link to="/contact" className="px-4 py-2 bg-edubot-orange text-white rounded hover:bg-orange-600">Байланышуу</Link>
+                    <Link to="/contact" className="px-4 py-2 bg-edubot-orange text-white rounded hover:bg-orange-600">
+                        Байланышуу
+                    </Link>
                 </div>
             )}
         </div>
