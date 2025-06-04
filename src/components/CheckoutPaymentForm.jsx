@@ -5,7 +5,7 @@ export default function CheckoutPaymentForm() {
   return (
     <div className="w-full max-w-md mx-auto pt-24 space-y-4">
       {/* Блок 1: Банковская карта */}
-      <div className=" max-w-[335px]  flex items-center gap-3 bg-gray-100 rounded-xl px-4 py-3">
+      <div className=" max-w-[335px]  flex items-center gap-3 bg-gray-200 rounded-xl px-4 py-3">
         <div className="w-8 h-8 bg-white rounded flex items-center justify-center shadow-sm">
           <svg
             className="w-5 h-5 text-black"
@@ -23,7 +23,7 @@ export default function CheckoutPaymentForm() {
 
       {/* Блок 2: Форма оплаты */}
       <div className="bg-white border rounded-xl p-6 space-y-4 shadow-sm">
-        <p className="text-base font-medium text-gray-900">Оплата картой</p>
+        <p className="text-base font-bold text-gray-900">Оплата картой</p>
 
         <div className="flex items-center justify-between">
           <label className="flex items-center gap-2 text-sm font-medium">
@@ -41,7 +41,7 @@ export default function CheckoutPaymentForm() {
         </div>
 
         <div className="space-y-2">
-          <label className="text-sm text-gray-600">Картанын номери</label>
+          <label className="text-sm text-#000000">Картанын номери</label>
           <input
             type="text"
             inputMode="numeric"
@@ -57,7 +57,7 @@ export default function CheckoutPaymentForm() {
 
         <div className="flex gap-4">
           <div className="w-1/2">
-            <label className="text-sm text-gray-600">MM/YY</label>
+            <label className="text-sm text-#000000">MM/YY</label>
             <input
               type="text"
               placeholder="MM/YY"
@@ -65,7 +65,7 @@ export default function CheckoutPaymentForm() {
             />
           </div>
           <div className="w-1/2">
-            <label className="text-sm text-gray-600">CVC/CVV</label>
+            <label className="text-sm text-#000000">CVC/CVV</label>
             <div className="relative">
               <input
                 type="text"

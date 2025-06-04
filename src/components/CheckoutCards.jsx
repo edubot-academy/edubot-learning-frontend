@@ -18,7 +18,7 @@ export default function CheckoutCards() {
         Буйрумтманын чоо-жайы (2 курс)
       </h2>
 
-      <hr className="border-t border-gray-300 w-full" />
+      <hr className="border-t border-gray-300  max-w-[455px]" />
 
       {/* Продукт */}
       <div className="flex items-center gap-4">
@@ -27,8 +27,8 @@ export default function CheckoutCards() {
           alt="UX Design Course"
           className="w-32 h-20 object-cover rounded-md"
         />
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full">
-          <p className="text-base font-medium text-gray-900">
+        <div className="grid grid-cols-1 sm:grid-cols-15 gap-2 mb-5  ">
+          <p className="text-1xl text-gray-900 ">
             User Experience Design're киришүү
           </p>
           <p className="text-lg font-semibold text-black sm:text-right">
