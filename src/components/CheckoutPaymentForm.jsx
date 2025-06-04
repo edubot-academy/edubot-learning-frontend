@@ -1,10 +1,11 @@
 import React from "react";
+import ChekoutVisa from "../assets/images/CheckoutVisaImg.png";
 
 export default function CheckoutPaymentForm() {
   return (
     <div className="w-full max-w-md mx-auto pt-24 space-y-4">
       {/* Блок 1: Банковская карта */}
-      <div className="flex items-center gap-3 bg-gray-100 rounded-xl px-4 py-3">
+      <div className=" max-w-[335px]  flex items-center gap-3 bg-gray-100 rounded-xl px-4 py-3">
         <div className="w-8 h-8 bg-white rounded flex items-center justify-center shadow-sm">
           <svg
             className="w-5 h-5 text-black"
@@ -35,16 +36,7 @@ export default function CheckoutPaymentForm() {
           </label>
 
           <div className="flex gap-1">
-            <img
-              src="https://img.icons8.com/color/48/visa.png"
-              alt="Visa"
-              className="h-10"
-            />
-            <img
-              src="https://img.icons8.com/color/48/mastercard-logo.png"
-              alt="Mastercard"
-              className="h-10"
-            />
+            <img src={ChekoutVisa} alt="Visa" className="h-7" />
           </div>
         </div>
 
@@ -52,8 +44,14 @@ export default function CheckoutPaymentForm() {
           <label className="text-sm text-gray-600">Картанын номери</label>
           <input
             type="text"
+            inputMode="numeric"
+            pattern="[0-9]*"
+            maxLength={16}
             placeholder="Номер карты"
             className="w-full border rounded-md px-4 py-2 text-sm placeholder-gray-400 focus:outline-none focus:ring focus:ring-blue-200"
+            onInput={(e) => {
+              e.target.value = e.target.value.replace(/\D/g, "");
+            }}
           />
         </div>
 
@@ -83,7 +81,7 @@ export default function CheckoutPaymentForm() {
 
         <button
           type="submit"
-          className="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-2 rounded-md text-sm transition"
+          className="w-full h-[55px] bg-edubot-green hover:bg-green-700 text-white font-medium py-2 rounded-2xl text-sm transition"
         >
           Төлөө
         </button>
