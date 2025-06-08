@@ -7,39 +7,65 @@ import { Link } from 'react-router-dom'
 const HeroStart = () => {
     return (
         <div>
-            <section className="relative bg-[#003A45] text-white py-32 text-center"  >
-                <div className="max-w-7xl mx-auto flex flex-col-reverse lg:flex-row items-center justify-between">
 
-                    <div className="w-full lg:w-1/2 text-center lg:text-left">
-                        <h1 className="font-inter font-semibold text-[48px] mb-6 animate-fade-in w-[835px] h-[232px]" >
+            <section className="relative bg-[#003A45] text-white py-16 sm:py-24 lg:py-32 text-center lg:text-left"  >
+
+                <div className="block sm:hidden mb-6">
+                    <div className="flex items-center w-[240px] h-[28px] bg-white rounded-full pl-3 shadow mx-auto">
+                        <input
+                            type="text"
+                            placeholder="издөө"
+                            className="flex-grow text-[#0A1F33] text-sm bg-transparent focus:outline-none"
+                        />
+                        <button className="bg-[#0A1F33] w-6 h-6 rounded-full flex items-center justify-center">
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                className="h-3.5 w-3.5 text-white"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                            >
+                                <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M21 21l-4.35-4.35M10 18a8 8 0 100-16 8 8 0 000 16z"
+                                />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                <div className="max-w-7xl mx-auto flex flex-col-reverse lg:flex-row items-center justify-between">
+                    <div className="w-full lg:w-1/2 text-center lg:text-left px-4">
+                        <h1 className="font-inter font-semibold text-[24px] sm:text-[32px] md:text-[40px] lg:text-[48px] leading-snug mb-6 animate-fade-in h-[]w-[350px] sm:w-[500px] lg:w-[835px]">
                             Окуңуз, өнүгөңүз жана ийгиликке жетишиңиз — мунун баарын Edubot Learning менен ишке ашырыңыз!
                         </h1>
 
-                        <p className="text-lg md:text-xl max-w-2xl mb-10">
+                        <p className="text-base sm:text-lg md:text-xl max-w-full md:max-w-2xl mb-8">
                             Программалоо тилдерин жана код жазуу жөндөмдөрүн интерактивдүү сабактар аркылуу өздөштүрүңүз
                         </p>
+
                         <Link
                             to="/courses"
-                            className=" absolute  w-[190px] h-[72px] bg-[#F78B31] text-white font-inter text-[20px] px-8 py-3 rounded-[20px] shadow-lg hover:bg-[#e57a28] transition transform hover:scale-105 flex items-center justify-center"
+                            className="inline-block w-[160px] sm:w-[190px] h-[56px] sm:h-[72px] bg-[#F78B31] text-white font-inter text-[16px] sm:text-[20px] px-6 py-3 rounded-[16px] sm:rounded-[20px] shadow-lg hover:bg-[#e57a28] transition transform hover:scale-105 flex items-center justify-center mx-auto lg:mx-0"
                         >
                             Баштоо
                         </Link>
                     </div>
-
-                    <div className="w-full lg:w-1/2 flex justify-center lg:justify-end mb-10 lg:mb-0 relative">
+                    <div className="w-full lg:w-1/2 flex justify-center lg:justify-end mb-6 sm:mb-8 lg:mb-0 relative">
 
                         <img
                             src={Vektor}
                             alt="vector"
-                            className="absolute w-[520px] h-[450px]  top-10 right-[-60px] opacity-40 z-0"
+                            className="absolute w-[250px] sm:w-[400px] md:w-[520px] h-auto top-10 right-0 opacity-40 z-0"
                         />
-
 
                         <img
                             src={Logotip}
                             alt="Edubot Logo"
-                            className="max-w-[500px] h-auto relative z-10"
+                            className="w-[285px] sm:w-[400px] lg:w-[500px] h-auto relative z-10"
                         />
+
                     </div>
                 </div>
 
