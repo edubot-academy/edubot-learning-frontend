@@ -9,37 +9,39 @@ const Evaluate = () => {
     };
 
     return (
-        <div className="bg-[#003A45] min-h-screen flex items-center justify-center p-4">
-            {/* Основной контейнер для двух колонок (изображение + форма) */}
-            <div className="flex flex-col md:flex-row bg-white rounded-2xl shadow-xl overflow-hidden w-full max-w-6xl min-h-[500px]">
+        <div className="bg-[#003A45] flex items-center justify-center p-4 py-8 sm:min-h-[unset] md:min-h-screen">
+            <div className="flex flex-col lg:flex-row w-full max-w-6xl gap-6 items-center lg:items-start">
 
-                {/* Левая колонка с изображением */}
-                {/* Теперь этот блок является частью flex-контейнера */}
-                <div className="md:w-1/2 w-full bg-[#003A45] flex items-end justify-center p-6">
+                {/* Фото — только на больших экранах */}
+                <div className="hidden lg:flex basis-[40%] max-w-[380px] justify-center mr-24">
                     <img
                         src={evaluate}
-                        alt="EduBot"
-                        // w-full заставляет изображение занимать всю ширину родительского блока
-                        // h-auto сохраняет пропорции
-                        // max-h-[600px] устанавливает максимальную высоту
-                        // object-contain гарантирует, что изображение впишется в контейнер
-                        className="w-full h-auto max-h-[600px] object-contain"
+                        alt="bot"
+                        className="w-full h-auto object-contain rounded-2xl"
                     />
                 </div>
 
-                {/* Правая колонка с формой */}
-                <div className="md:w-1/2 flex items-center justify-center p-6 md:pl-10 md:pr-16">
-                    <div className="w-full max-w-md text-[#001858]">
-                        <h2 className="text-2xl font-bold mb-4 text-center">EduBot платформасын баалаңыз</h2>
 
-                        {/* Звёзды */}
-                        <div className="flex justify-center gap-1 mb-4">
+
+                {/* Белый блок */}
+                <div className="bg-white rounded-2xl shadow-2xl p-4 sm:p-6 md:p-8 flex flex-col flex-grow basis-[60%] max-w-[500px] min-h-[460px] sm:min-h-[500px] lg:ml-6">
+
+                    {/* Заголовок и рейтинг */}
+                    <div className="flex flex-col flex-grow">
+                        <h2
+                            className="font-bold text-[#001858] mb-4 text-center lg:text-left whitespace-nowrap overflow-hidden"
+                            style={{ fontSize: 'clamp(10px, 3.5vw, 24px)' }}
+                        >
+                            EduBot платформасын баалаңыз
+                        </h2>
+
+                        <div className="flex justify-center lg:justify-start gap-4 md:gap-2 mb-4">
                             {[1, 2, 3, 4, 5].map((index) => (
                                 <svg
                                     key={index}
                                     onClick={() => handleClick(index)}
                                     xmlns="http://www.w3.org/2000/svg"
-                                    className={`w-8 h-8 cursor-pointer transition-colors duration-300 ${rating >= index ? 'fill-yellow-400' : 'fill-gray-300'
+                                    className={`w-6 sm:w-7 md:w-8 h-6 sm:h-7 md:h-8 cursor-pointer transition-colors duration-300 ${rating >= index ? 'fill-yellow-400' : 'fill-gray-300'
                                         }`}
                                     viewBox="0 0 24 24"
                                 >
@@ -48,17 +50,22 @@ const Evaluate = () => {
                             ))}
                         </div>
 
-                        {/* Текстовое поле */}
                         <textarea
                             placeholder="Платформаны колдонуудагы тажрыйбаңыз менен бөлүшүңүз..."
-                            className="w-full p-4 bg-[#F9F9F9] text-[#333] rounded-xl border border-[#E0E0E0] focus:outline-none focus:ring-0 resize-none min-h-[120px] shadow-sm"
+                            className="flex-grow w-full p-3 sm:p-4 bg-[#F9F9F9] text-[#333] text-sm sm:text-base rounded-xl border border-[#E0E0E0] 
+                         focus:outline-none focus:ring-2 focus:ring-teal-500 resize-none min-h-[140px] sm:min-h-[160px] shadow"
                         />
-
-                        {/* Кнопка */}
-                        <button className="mt-4 w-full bg-teal-600 hover:bg-teal-700 transition-colors duration-300 text-white py-2 px-4 rounded-lg font-semibold">
-                            Биз менен байланышышыңыз
-                        </button>
                     </div>
+
+                    {/* Кнопка — на всю ширину всегда */}
+                    <button
+                        className="mt-6 bg-teal-600 hover:bg-teal-700 transition-colors duration-300
+                       text-white py-3 px-4 rounded-lg font-semibold
+                       text-sm sm:text-base md:text-[17px]
+                       w-full"
+                    >
+                        Биз менен байланышышыңыз
+                    </button>
                 </div>
             </div>
         </div>
