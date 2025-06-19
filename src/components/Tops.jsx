@@ -1,6 +1,8 @@
+
 import TopCards from "./TopCards";
 import programmerImg from "../assets/images/photoprogrammer.png";
 import StarImg from "../assets/icons/star.svg";
+
 
 const Tops = ({ noBg = false, hideTitleAndLink = false }) => {
   const courses = [

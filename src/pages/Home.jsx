@@ -10,7 +10,7 @@ import Evaluate from '../components/Evaluate';
 import HeroStart from "../components/HeroStart";
 import Apply from "../components/Apply";
 import Contact from "../components/Contacts";
-
+import Instructor from "../components/TopInstructors"
 const HomePage = () => {
     const { user } = useContext(AuthContext);
     const [cart, setCart] = useState([]);
@@ -77,6 +77,7 @@ const HomePage = () => {
                 </div>
             </section> */}
             <Tops />
+            <Instructor/>
             <Feedback />
           <div className="w-full max-w-screen-xl h-0.5 bg-gray-400 mx-auto my-8"></div>
               <Apply/>
