@@ -10,7 +10,9 @@ export default function CheckoutCards() {
         <span>›</span>
         <span>себет</span>
         <span>›</span>
-        <span className="text-green-600 font-medium">Буйрумтманы түзүү</span>
+        <span className="text-edubot-green #0EA78B font-medium">
+          Буйрумтманы түзүү
+        </span>
       </nav>
 
       {/* Заголовок */}
