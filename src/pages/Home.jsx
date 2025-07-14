@@ -11,6 +11,7 @@ import HeroStart from "../components/HeroStart";
 import Apply from "../components/Apply";
 import Contact from "../components/Contacts";
 import Instructor from "../components/TopInstructors"
+
 const HomePage = () => {
     const { user } = useContext(AuthContext);
     const [cart, setCart] = useState([]);
@@ -39,7 +40,9 @@ const HomePage = () => {
 
             <HeroStart />
 
+
             <Benefits />
+
 
             {/* Курстар Секциясы
             <section className="py-16 bg-white text-center">
