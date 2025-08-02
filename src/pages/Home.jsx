@@ -16,6 +16,8 @@ const HomePage = () => {
     const [cart, setCart] = useState([]);
     const [coursesData, setCoursesData] = useState([]);
 
+
+
     const addToCart = (course) => {
         setCart([...cart, course]);
     };
