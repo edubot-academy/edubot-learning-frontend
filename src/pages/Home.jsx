@@ -4,7 +4,7 @@ import { FaStar } from "react-icons/fa";
 import { fetchCourses } from "../services/api";
 import { AuthContext } from "../context/AuthContext";
 import Benefits from "../components/Benefits";
-import Tops from "../components/Tops";
+import SectionContainer from "../components/SectionContainer";
 import Feedback from "../components/Feedback";
 import Evaluate from '../components/Evaluate';
 import HeroStart from "../components/HeroStart";
@@ -15,6 +15,8 @@ const HomePage = () => {
     const { user } = useContext(AuthContext);
     const [cart, setCart] = useState([]);
     const [coursesData, setCoursesData] = useState([]);
+
+
 
     const addToCart = (course) => {
         setCart([...cart, course]);
@@ -76,13 +78,13 @@ const HomePage = () => {
                     ))}
                 </div>
             </section> */}
-            <Tops />
-            <Instructor/>
+            <SectionContainer data={coursesData} />
+            <Instructor />
             <Feedback />
-          <div className="w-full max-w-screen-xl h-0.5 bg-gray-400 mx-auto my-8"></div>
-              <Apply/>
+            <div className="w-full max-w-screen-xl h-0.5 bg-gray-400 mx-auto my-8"></div>
+            <Apply />
             <Evaluate />
- 
+
             <Contact />
         </div>
     );
