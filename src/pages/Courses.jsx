@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { FaStar } from "react-icons/fa";
 import { fetchCourses } from "../services/api";
-import Tops from "../components/Tops";
+import SectionContainer from "../components/SectionContainer";
 import CoursesSection from "../components/CoursesSection";
 import { FiSearch } from "react-icons/fi";
 
@@ -46,18 +46,18 @@ const CoursesPage = () => {
       </div>
       <div className="px-4 sm:px-6 lg:px-12">
         <CoursesSection title="Сиз үчүн сунушталган курстар">
-          <Tops noBg hideTitleAndLink />
+          <SectionContainer noBg hideTitleAndLink data={courses} />
         </CoursesSection>
 
         <CoursesSection title="Жаңы жарыяланган курстар">
-          <Tops noBg hideTitleAndLink />
+          <SectionContainer noBg hideTitleAndLink data={courses} />
         </CoursesSection>
 
         <CoursesSection title="Эң популярдуу курстар">
-          <Tops noBg hideTitleAndLink />
+          <SectionContainer noBg hideTitleAndLink data={courses} />
         </CoursesSection>
         <CoursesSection title="Эң мыкты акысыз онлайн курстар">
-          <Tops noBg hideTitleAndLink />
+          <SectionContainer noBg hideTitleAndLink data={courses} />
         </CoursesSection>
       </div>
 

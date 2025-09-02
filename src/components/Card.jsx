@@ -1,4 +1,7 @@
-const TopCards = ({ img, title, description, star, ratingCount }) => {
+import React from 'react';
+
+
+const Card = ({ img, title, description, star, ratingCount }) => {
   return (
     <div className="w-full max-w-[360px] h-[400px] bg-white text-black rounded-xl p-4 shadow-lg flex flex-col justify-between">
       {img && (
@@ -29,11 +32,11 @@ const TopCards = ({ img, title, description, star, ratingCount }) => {
       <div className="flex justify-between items-center ">
         <span className=" font-semibold text-lg">11000 сом</span>
         <button className="bg-orange-500 text-white text-sm px-4 py-2 rounded-[5px] hover:bg-orange-600 transition">
-          Подробнее
+          Себетке кошуу
         </button>
       </div>
     </div>
   );
 };
 
-export default TopCards;
+export default Card;
