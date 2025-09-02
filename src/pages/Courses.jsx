@@ -36,14 +36,6 @@ const CoursesPage = () => {
   return (
     <div className="min-h-screen bg-gray-50 p-6 pt-24">
       <h1 className="text-4xl font-bold text-center mb-6">Биздин курстар</h1>
-      <div className="w-full max-w-[431px] h-[51px] mx-auto flex items-center border border-gray-500 rounded-3xl mb-8 px-3">
-        <FiSearch className="text-gray-400" size={20} />
-        <input
-          type="text"
-          placeholder="Курсту издоо"
-          className="flex-grow px-3 py-2 outline-none border-none bg-transparent text-sm sm:text-base"
-        />
-      </div>
       <div className="px-4 sm:px-6 lg:px-12">
         <CoursesSection title="Сиз үчүн сунушталган курстар">
           <SectionContainer noBg hideTitleAndLink data={courses} />

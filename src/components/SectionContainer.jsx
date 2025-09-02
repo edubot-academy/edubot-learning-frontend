@@ -34,6 +34,7 @@ const SectionContainer = ({ noBg = false, hideTitleAndLink = false, data = [] })
             title={course.title}
             description={course.description}
             star={course.imgg}
+            price={course.price}
             ratingCount={course.ratingCount}
           />
         ))}

@@ -98,7 +98,6 @@ const ContactPage = () => {
                     <form onSubmit={handleSubmit} className="space-y-5 max-w-xl">
                         {[
                             { label: 'Атыңыз', name: 'name', type: 'text' },
-                            { label: 'Электрондук почта', name: 'email', type: 'email' },
                             { label: 'Телефон номери', name: 'phone', type: 'tel' },
                             { label: 'Тема', name: 'subject', type: 'text' },
                         ].map(({ label, name, type }) => (
@@ -140,50 +139,42 @@ const ContactPage = () => {
                     {/* Контактная информация */}
                     <div className="space-y-6 text-lg">
                         <div>
-                            <h2 className="font-semibold text-[#0EA78B] flex items-center gap-2">
+                            <div className="font-semibold text-[#0EA78B] flex items-center gap-2">
+                                <img src={PhoneIcon} alt="phone" className="w-5 h-5" /> WhatsApp
+                            </div>
+                            <a href="https://wa.me/996503677798" className="text-[#122144] underline">
+                                +996 503 677 798
+                            </a>
+                        </div>
+                        <div>
+                            <div className="font-semibold text-[#0EA78B] flex items-center gap-2">
+                                <img src={InstagramIcon} alt="instagram" className="w-5 h-5" /> Instagram
+                            </div>
+                            <a href="https://www.instagram.com/edubot.company/" target="_blank" className="text-[#122144] underline">
+                                @edubot.company
+                            </a>
+                        </div>
+                        <div>
+                            <div className="font-semibold text-[#0EA78B] flex items-center gap-2">
                                 <img src={MailIcon} alt="mail" className="w-5 h-5" /> Электрондук почта
-                            </h2>
-                            <p>
-                                <a href="mailto:jardam.edubot_learning@outlook.com" className="text-[#122144] underline">
-                                    jardam.edubot_learning@outlook.com
-                                </a>
-                            </p>
+                            </div>
+                            <a href="mailto:jardam.edubot_learning@outlook.com" className="text-[#122144] underline">
+                                jardam.edubot_learning@outlook.com
+                            </a>
                         </div>
 
                         <div>
-                            <h2 className="font-semibold text-[#0EA78B] flex items-center gap-2">
+                            <div className="font-semibold text-[#0EA78B] flex items-center gap-2">
                                 <img src={MapPinIcon} alt="address" className="w-5 h-5" /> Дарек
-                            </h2>
+                            </div>
                             <p>Турусбеков 109/1, 4-кабат, Бишкек, Кыргызстан</p>
                         </div>
 
                         <div>
-                            <h2 className="font-semibold text-[#0EA78B] flex items-center gap-2">
-                                <img src={PhoneIcon} alt="phone" className="w-5 h-5" /> WhatsApp
-                            </h2>
-                            <p>
-                                <a href="https://wa.me/996503677798" className="text-[#122144] underline">
-                                    +996 503 677 798
-                                </a>
-                            </p>
-                        </div>
-
-                        <div>
-                            <h2 className="font-semibold text-[#0EA78B] flex items-center gap-2">
-                                <img src={InstagramIcon} alt="instagram" className="w-5 h-5" /> Instagram
-                            </h2>
-                            <p>
-                                <a href="https://www.instagram.com/edubot.company/" target="_blank" className="text-[#122144] underline">
-                                    @edubot.company
-                                </a>
-                            </p>
-                        </div>
-
-                        <div>
-                            <h2 className="font-semibold text-[#0EA78B] flex items-center gap-2">
+                            <div className="font-semibold text-[#0EA78B] flex items-center gap-2">
                                 <img src={ClockIcon} alt="clock" className="w-5 h-5" /> Иштөө убактысы
-                            </h2>
-                            <p>Дүйшөмбү — Жума, 9:00 — 18:00 (Бишкек убактысы)</p>
+                            </div>
+                            <p>Дүйшөмбү — Жума, 9:00 — 21:00 (Бишкек убактысы)</p>
                         </div>
                     </div>
                 </div>
