@@ -1,6 +1,6 @@
 import React from 'react';
 
-const PhoneInput = ({ value, onChange, className = '', required = false }) => {
+const PhoneInput = ({ value, onChange, required = false }) => {
     const handleInput = (e) => {
         const raw = e.target.value;
         if (/^[+\d]*$/.test(raw) && raw.length <= 16) {
@@ -24,8 +24,8 @@ const PhoneInput = ({ value, onChange, className = '', required = false }) => {
             value={value}
             onChange={handleInput}
             onPaste={handlePaste}
-            placeholder="+996700123456"
-            className={`w-full border p-2 rounded ${className}`}
+            placeholder="+996700123456 (милдеттүү эмес)"
+            className="w-full px-4 py-2 rounded bg-white text-black focus:outline-none"
             required={required}
         />
     );
