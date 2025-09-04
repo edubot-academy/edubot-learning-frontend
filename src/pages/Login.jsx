@@ -5,6 +5,8 @@ import { AuthContext } from "../context/AuthContext";
 import { Link } from "react-router-dom";
 import SignInImg from "../assets/images/sign-in.png";
 import Apple from "../assets/images/apple.png";
+import EyeIcon from '../assets/icons/EyeIcon';
+import EyeOffIcon from "../assets/icons/EyeOffIcon";
 
 const LoginPage = () => {
   const { login } = useContext(AuthContext);
@@ -33,49 +35,9 @@ const LoginPage = () => {
     }
   };
 
-  const EyeIcon = (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      className="h-5 w-5 text-gray-600"
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth="2"
-        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-      />
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth="2"
-        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-      />
-    </svg>
-  );
-
-  const EyeOffIcon = (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      className="h-5 w-5 text-gray-600"
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth="2"
-        d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.269-2.943-9.543-7a9.958 9.958 0 012.204-3.494m2.987-2.066A9.956 9.956 0 0112 5c4.477 0 8.268 2.943 9.542 7a9.955 9.955 0 01-4.293 5.293M3 3l18 18"
-      />
-    </svg>
-  );
-
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#1e605e] px-4">
-      <div className="flex flex-col md:flex-row items-center max-w-6xl w-full bg-[#1e605e] text-white gap-16">
+    <div className="min-h-screen flex items-center justify-center bg-edubot-teal px-4">
+      <div className="flex flex-col md:flex-row items-center max-w-6xl w-full text-white gap-16">
         {/* Сол жак: форма */}
         <div className="md:w-1/2 w-full flex flex-col items-start px-4">
           <h2 className="text-4xl font-bold mb-6">Кирүү</h2>
@@ -106,12 +68,12 @@ const LoginPage = () => {
                 onClick={() => setShowPassword(!showPassword)}
                 className="absolute right-3 top-3"
               >
-                {showPassword ? EyeOffIcon : EyeIcon}
+                {showPassword ? <EyeOffIcon /> : <EyeIcon />}
               </button>
             </div>
 
             <div className="flex items-center justify-between text-sm text-white">
-              <label className="relative flex items-center gap-2 cursor-pointer select-none bg-[#1e605e]">
+              {/* <label className="relative flex items-center gap-2 cursor-pointer select-none bg-[#1e605e]">
                 <input
                   type="checkbox"
                   checked={rememberMe}
@@ -132,7 +94,7 @@ const LoginPage = () => {
                   />
                 </svg>
                 Эсимде болсун
-              </label>
+              </label> */}
               <Link
                 to="/forgot-password"
                 className="text-orange-300 hover:underline"
@@ -150,7 +112,7 @@ const LoginPage = () => {
             </button>
           </form>
 
-          <div className="flex items-center justify-center w-[340px] my-5 text-white">
+          {/* <div className="flex items-center justify-center w-[340px] my-5 text-white">
             <hr className="flex-grow border-gray-300" />
             <span className="mx-2">же</span>
             <hr className="flex-grow border-gray-300" />
@@ -183,7 +145,7 @@ const LoginPage = () => {
               <img src={Apple} alt="Apple" className="w-5 h-5" />
               <span>Apple</span>
             </button>
-          </div>
+          </div> */}
 
           <p className="mt-5 text-sm text-white text-center w-[340px]">
             Аккаунтуңуз жокпу?{" "}
