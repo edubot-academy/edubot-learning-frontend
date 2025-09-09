@@ -10,7 +10,7 @@ const HeroStart = () => {
 
             <section className="relative bg-[#003A45] text-white py-16 sm:py-24 lg:py-32 text-center lg:text-left"  >
 
-                <div className="block sm:hidden mb-6">
+                {/* <div className="block sm:hidden mb-6">
                     <div className="flex items-center w-[240px] h-[28px] bg-white rounded-full pl-3 shadow mx-auto">
                         <input
                             type="text"
@@ -34,7 +34,8 @@ const HeroStart = () => {
                             </svg>
                         </button>
                     </div>
-                </div>
+                </div> */}
+                
                 <div className="max-w-7xl mx-auto flex flex-col-reverse lg:flex-row items-center justify-between">
                     <div className="w-full lg:w-1/2 text-center lg:text-left px-4">
                         <h1 className="font-inter font-semibold text-[24px] sm:text-[32px] md:text-[40px] lg:text-[48px] leading-snug mb-6 animate-fade-in h-[]w-[350px] sm:w-[500px] lg:w-[835px]">

@@ -1,7 +1,10 @@
 import React, { useState, useContext, useEffect, useRef } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { FaUserCircle, FaBars, FaTimes } from "react-icons/fa";
-import Logo from "../assets/images/edubot-logo.jpeg";
+import Logo from "../assets/images/logotip-hero.png"
+import { IoSearch } from "react-icons/io5";
+import { MdOutlineShoppingCart } from "react-icons/md";
+import { GrLanguage } from "react-icons/gr";
 import { AuthContext } from "../context/AuthContext";
 
 const useClickOutside = (ref, handler) => {
@@ -53,49 +56,68 @@ const Header = ({ cart = [] }) => {
     };
 
     return (
-        <header className="fixed w-full z-30 bg-[#1c3a3e] shadow-md">
-            <div className="w-full px-6 py-4 flex items-center justify-between">
-                <Link to="/" className="flex items-center space-x-3">
-                    <img src={Logo} alt="Edubot Learning Logo" className="h-10" />
-                    <div translate="no" className="flex flex-col">
-                        <span className="text-2xl font-extrabold text-orange-500 leading-none">EDUBOT</span>
-                        <span className="text-sm font-bold tracking-widest text-white">LEARNING</span>
+        <header className="fixed w-full z-30 bg-[#003A45]">
+            <div className="w-full px-[80px] pt-[33px] flex items-center justify-between">
+                <div className="flex items-center gap-[60px]">
+                    <Link to="/" className="flex items-center space-x-3">
+                        <img src={Logo} alt="Edubot Learning Logo" className="w-[67.42936706542969px] h-[55px]" />
+                        <div translate="no" className="flex flex-col">
+                            <span className="text-2xl font-extrabold text-orange-500 leading-none">EDUBOT</span>
+                            <span className="text-sm font-medium tracking-widest text-white ">LEARNING</span>
+                        </div>
+                    </Link>
+                    <nav className="hidden md:flex space-x-8 text-left">
+                        <NavLinks user={user} />
+                    </nav>
+                </div>
+                <div className="flex items-center space-x-6">
+
+                    <IoSearch className="hidden md:flex w-[49px] h-[49px] text-[#FFFFFF] bg-[#122144] p-[14px] rounded-full" />
+                    <MdOutlineShoppingCart className="w-[23.33333396911621px] h-[23.33333396911621px] text-[#F97316]"/>
+                    <div className="hidden md:flex items-center space-x-6">
+                        {user ? (
+                            <div className="relative profile-menu" ref={profileRef}>
+                                <button
+                                    aria-label="User menu"
+                                    onClick={() => setProfileMenuOpen(!profileMenuOpen)}
+                                    className="flex items-center justify-center w-10 h-10 bg-orange-500 text-white font-bold rounded-full text-lg hover:bg-orange-600 transition"
+                                >
+                                    <FaUserCircle className="text-2xl" />
+                                </button>
+                                {profileMenuOpen && (
+                                    <div className="absolute right-0 mt-2 w-48 bg-white border rounded-lg shadow-lg py-2">
+                                        <Link to="/profile" className="block px-4 py-2 text-gray-700 hover:bg-gray-100">Профиль</Link>
+                                        <button onClick={() => logout()} className="block w-full text-left px-4 py-2 text-red-600 hover:bg-gray-100">Чыгуу</button>
+                                    </div>
+                                )}
+                            </div>
+                        ) : (
+                            <div className="space-x-4">
+                                <Link to="/login" className="text-white hover:text-orange-400 transition">Логин</Link>
+                                <Link to="/register" className="
+font-weight: 600;
+font-style: SemiBold;
+text-[18px]
+leading-trim: NONE;
+line-height: 100%;
+letter-spacing: 0%;
+
+                                bg-orange-500 text-white px-4 py-2 rounded-xl hover:bg-orange-600 transition w-[135px] h-[50px]">Катталуу</Link>
+                            </div>
+                        )}
                     </div>
-                </Link>
-                <button
+
+                    <GrLanguage className="w-[21.86333465576172px] h-[23.2166690826416px] text-[#FFFFFF]"/>
+                    
+                    <button
                     className="md:hidden text-white focus:outline-none menu-toggle"
                     aria-label="Toggle menu"
                     onClick={() => setMenuOpen(!menuOpen)}
                 >
                     {menuOpen ? <FaTimes className="text-2xl" /> : <FaBars className="text-2xl" />}
                 </button>
-                <nav className="hidden md:flex space-x-8">
-                    <NavLinks user={user} />
-                </nav>
-                <div className="hidden md:flex items-center space-x-6">
-                    {user ? (
-                        <div className="relative profile-menu" ref={profileRef}>
-                            <button
-                                aria-label="User menu"
-                                onClick={() => setProfileMenuOpen(!profileMenuOpen)}
-                                className="flex items-center justify-center w-10 h-10 bg-orange-500 text-white font-bold rounded-full text-lg hover:bg-orange-600 transition"
-                            >
-                                <FaUserCircle className="text-2xl" />
-                            </button>
-                            {profileMenuOpen && (
-                                <div className="absolute right-0 mt-2 w-48 bg-white border rounded-lg shadow-lg py-2">
-                                    <Link to="/profile" className="block px-4 py-2 text-gray-700 hover:bg-gray-100">Профиль</Link>
-                                    <button onClick={() => logout()} className="block w-full text-left px-4 py-2 text-red-600 hover:bg-gray-100">Чыгуу</button>
-                                </div>
-                            )}
-                        </div>
-                    ) : (
-                        <div className="space-x-4">
-                            <Link to="/login" className="text-white hover:text-orange-400 transition">Логин</Link>
-                            <Link to="/register" className="bg-orange-500 text-white px-4 py-2 rounded-full hover:bg-orange-600 transition">Катталуу</Link>
-                        </div>
-                    )}
                 </div>
+                
             </div>
             {menuOpen && (
                 <div ref={mobileMenuRef} className="md:hidden bg-[#1c3a3e] shadow-md py-4 flex flex-col items-center space-y-4 w-full mobile-menu transition-all duration-300 transform scale-100 opacity-100">
