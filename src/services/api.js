@@ -112,6 +112,17 @@ export const enrollUserInCourse = async (userId, courseId, discountPercentage) =
 };
 
 
+export const unenrollUserFromCourse = async (userId, courseId) => {
+    try {
+        const response = await api.delete(`/enrollments/${courseId}/unenroll/${userId}`);
+        return response.data;
+    } catch (error) {
+        console.error("Error enrolling user:", error);
+        toast.error("Failed to enroll user in course");
+        throw error;
+    }
+};
+
 export const fetchEnrollment = async (courseId, userId) => {
     try {
         const params = { courseId };
