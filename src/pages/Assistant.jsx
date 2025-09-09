@@ -3,7 +3,8 @@ import {
     fetchUsers,
     fetchCourses,
     enrollUserInCourse,
-    checkEnrollments
+    checkEnrollments,
+    unenrollUserFromCourse
 } from '../services/api';
 import toast from 'react-hot-toast';
 
@@ -76,6 +77,46 @@ const AssistantDashboard = () => {
         return () => clearTimeout(debounceRef.current);
     }, [search, currentPage, loadStudentsAndCourses]);
 
+    const handleUnenroll = (student, courseId) => {
+        const courseTitle = courses.find(c => c.id === courseId)?.title;
+        toast(t => (
+            <div>
+                <div className="mb-2">
+                    <span className="font-bold">{student.fullName}</span>{' '}
+                    студентин <span className="font-bold">{courseTitle}</span> курсунан чыгаруу — макулсузбу?
+                </div>
+                <div className="mt-2 flex justify-end gap-2">
+                    <button
+                        onClick={async () => {
+                            toast.dismiss(t.id);
+                            try {
+                                await unenrollUserFromCourse(student.id, courseId);
+                                toast.success(
+                                    <span>
+                                        <span className="font-bold">{student.fullName}</span> курстан ийгиликтүү чыгарылды
+                                    </span>
+                                );
+                                // Refresh data
+                                await loadStudentsAndCourses();
+                            } catch {
+                                toast.error('Курстан чыгарууда ката кетти');
+                            }
+                        }}
+                        className="px-2 py-1 bg-red-600 text-white rounded"
+                    >
+                        Ооба
+                    </button>
+                    <button
+                        onClick={() => toast.dismiss(t.id)}
+                        className="px-2 py-1 border rounded hover:text-white"
+                    >
+                        Жок
+                    </button>
+                </div>
+            </div>
+        ));
+    };
+
     const filteredStudents = students;
 
     return (
@@ -141,10 +182,29 @@ const AssistantDashboard = () => {
                                             <span className="text-xs text-gray-500">{student.phoneNumber || '—'}</span>
                                         </td>
                                         <td className="p-2 border">
-                                            {enrolledCourseIds
-                                                .map(id => courses.find(c => c.id === id)?.title)
-                                                .filter(Boolean)
-                                                .join(', ') || '—'}
+                                            {enrolledCourseIds.length ? (
+                                                <div className="flex flex-wrap gap-2">
+                                                    {enrolledCourseIds.map((id) => {
+                                                        const course = courses.find(c => c.id === id);
+                                                        if (!course) return null;
+                                                        return (
+                                                            <span key={id} className="inline-flex items-center gap-2 bg-green-50 border border-green-200 px-2 py-1 rounded">
+                                                                <span className="text-sm">{course.title}</span>
+                                                                <button
+                                                                    className="text-xs px-2 py-0.5 rounded bg-red-600 text-white hover:bg-red-700"
+                                                                    onClick={() => handleUnenroll(student, id)}
+                                                                    disabled={loading}
+                                                                    title="Курстан чыгаруу"
+                                                                >
+                                                                    Чыгаруу
+                                                                </button>
+                                                            </span>
+                                                        );
+                                                    })}
+                                                </div>
+                                            ) : (
+                                                '—'
+                                            )}
                                         </td>
                                         <td className="p-2 border">
                                             {availableCourses.length > 0 ? (
