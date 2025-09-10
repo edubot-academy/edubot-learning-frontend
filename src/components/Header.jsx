@@ -57,7 +57,7 @@ const Header = ({ cart = [] }) => {
 
     return (
         <header className="fixed w-full z-30 bg-[#003A45]">
-            <div className="w-full px-[80px] pt-[33px] flex items-center justify-between">
+            <div className="w-full xl:px-[80px] sm:pt-[33px] px-[14px] pt-[14px] flex items-center justify-between">
                 <div className="flex items-center gap-[60px]">
                     <Link to="/" className="flex items-center space-x-3">
                         <img src={Logo} alt="Edubot Learning Logo" className="w-[67.42936706542969px] h-[55px]" />
@@ -66,15 +66,15 @@ const Header = ({ cart = [] }) => {
                             <span className="text-sm font-medium tracking-widest text-white ">LEARNING</span>
                         </div>
                     </Link>
-                    <nav className="hidden md:flex space-x-8 text-left">
+                    <nav className="hidden lg:flex space-x-8 text-left">
                         <NavLinks user={user} />
                     </nav>
                 </div>
                 <div className="flex items-center space-x-6">
 
-                    <IoSearch className="hidden md:flex w-[49px] h-[49px] text-[#FFFFFF] bg-[#122144] p-[14px] rounded-full" />
-                    <MdOutlineShoppingCart className="w-[23.33333396911621px] h-[23.33333396911621px] text-[#F97316]"/>
-                    <div className="hidden md:flex items-center space-x-6">
+                    <IoSearch className="hidden md:flex w-[49px] h-[49px] text-[#FFFFFF] bg-[#122144] p-[14px] rounded-full cursor-pointer" />
+                    <MdOutlineShoppingCart className="w-[23.33333396911621px] h-[23.33333396911621px] text-[#F97316] cursor-pointer"/>
+                    <div className="hidden lg:flex items-center space-x-6">
                         {user ? (
                             <div className="relative profile-menu" ref={profileRef}>
                                 <button
@@ -94,23 +94,15 @@ const Header = ({ cart = [] }) => {
                         ) : (
                             <div className="space-x-4">
                                 <Link to="/login" className="text-white hover:text-orange-400 transition">Логин</Link>
-                                <Link to="/register" className="
-font-weight: 600;
-font-style: SemiBold;
-text-[18px]
-leading-trim: NONE;
-line-height: 100%;
-letter-spacing: 0%;
-
-                                bg-orange-500 text-white px-4 py-2 rounded-xl hover:bg-orange-600 transition w-[135px] h-[50px]">Катталуу</Link>
+                                <Link to="/register" className="bg-orange-500 text-white px-4 py-2 rounded-xl hover:bg-orange-600 transition w-[135px] h-[50px]">Катталуу</Link>
                             </div>
                         )}
                     </div>
 
-                    <GrLanguage className="w-[21.86333465576172px] h-[23.2166690826416px] text-[#FFFFFF]"/>
+                    <GrLanguage className="w-[21.86333465576172px] h-[23.2166690826416px] text-[#FFFFFF] cursor-pointer"/>
                     
                     <button
-                    className="md:hidden text-white focus:outline-none menu-toggle"
+                    className="lg:hidden text-white focus:outline-none menu-toggle"
                     aria-label="Toggle menu"
                     onClick={() => setMenuOpen(!menuOpen)}
                 >
