@@ -78,15 +78,19 @@ const ContactPage = () => {
             <div className="max-w-6xl mx-auto">
 
                 <div className="mb-6 mt-10">
-                    <h1 className="text-3xl font-bold text-[#0EA78B]">Байланышуу</h1>
-                    <div className="pt-2 flex items-center gap-2">
-                        <Link to="/" className="text-[#334155] pl-6 cursor-pointer no-underline hover:text-[#334155]">
-                            Башкы бет
-                        </Link>
-                        <span className="mx-1">&gt;</span>
-                        <span className="text-[#0EA78B] font-medium">Байланыш</span>
-                    </div>
-                </div>
+    <h1 className="text-3xl font-bold text-black">Байланышуу</h1>
+    <div className="pt-2 flex items-center gap-2 text-sm">
+        <Link
+            to="/"
+            className="text-[#334155] cursor-pointer no-underline hover:text-[#334155]"
+        >
+            Башкы бет
+        </Link>
+        <span className="text-gray-400">{'>'}</span>
+        <span className="text-[#0EA78B] font-medium">Байланыш</span>
+    </div>
+</div>
+
 
                 <p className="mb-10 text-lg">
                     Суроолоруңуз барбы? Төмөнкү форма аркылуу биз менен байланышсаңыз болот же түз байланыш маалыматтарыбызды колдонсоңуз болот.
