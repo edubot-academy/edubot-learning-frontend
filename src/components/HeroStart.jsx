@@ -8,7 +8,7 @@ const HeroStart = () => {
     return (
         <div>
 
-            <section className="relative bg-[#003A45] text-white py-16 sm:py-24 lg:py-32 text-center lg:text-left"  >
+            <section className="relative bg-[--edubot-darkgreen] text-white py-16 sm:py-24 lg:py-32 text-center lg:text-left"  >
                 
                 <div className="max-w-7xl mx-auto flex flex-col-reverse lg:flex-row items-center justify-between">
                     <div className="w-full lg:w-1/2 text-center lg:text-left px-4">

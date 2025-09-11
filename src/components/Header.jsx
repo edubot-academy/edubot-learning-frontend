@@ -56,7 +56,7 @@ const Header = ({ cart = [] }) => {
     };
 
     return (
-        <header className="fixed w-full z-30 bg-[#003A45]">
+        <header className="fixed w-full z-30 bg-[--edubot-darkgreen]">
             <div className="w-full xl:px-[80px] sm:pt-[33px] px-[14px] pt-[14px] flex items-center justify-between">
                 <div className="flex items-center gap-[60px]">
                     <Link to="/" className="flex items-center space-x-3">
@@ -72,8 +72,8 @@ const Header = ({ cart = [] }) => {
                 </div>
                 <div className="flex items-center space-x-6">
 
-                    <IoSearch className="hidden md:flex w-[49px] h-[49px] text-[#FFFFFF] bg-[#122144] p-[14px] rounded-full cursor-pointer" />
-                    <MdOutlineShoppingCart className="w-[23.33333396911621px] h-[23.33333396911621px] text-[#F97316] cursor-pointer"/>
+                    <IoSearch className="hidden md:flex w-[49px] h-[49px] text-white bg-[--edubot-dark] p-[14px] rounded-full cursor-pointer" />
+                    <MdOutlineShoppingCart className="w-[23.33333396911621px] h-[23.33333396911621px] text-[--edubot-orange] cursor-pointer"/>
                     <div className="hidden lg:flex items-center space-x-6">
                         {user ? (
                             <div className="relative profile-menu" ref={profileRef}>
@@ -99,7 +99,7 @@ const Header = ({ cart = [] }) => {
                         )}
                     </div>
 
-                    <GrLanguage className="w-[21.86333465576172px] h-[23.2166690826416px] text-[#FFFFFF] cursor-pointer"/>
+                    <GrLanguage className="w-[21.86333465576172px] h-[23.2166690826416px] text-white cursor-pointer"/>
                     
                     <button
                     className="lg:hidden text-white focus:outline-none menu-toggle"
