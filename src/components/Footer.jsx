@@ -1,7 +1,7 @@
 import { FaFacebook, FaInstagram, FaTwitter } from "react-icons/fa";
 import { Link } from "react-router-dom";
 import { useState } from "react";
-import edubot from "../assets/images/edubot-logo.png";
+import edubot from '../../public/edubot.png'
 
 
 const FAQItem = ({ question, answer, isOpen, onClick }) => {
