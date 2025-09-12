@@ -5,8 +5,8 @@ import SignupPage from "./pages/Signup";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
 import HomePage from "./pages/Home";
-import CoursesPage from './pages/Courses'
-import CourseDetailsPage from './pages/CourseDetails'
+import CoursesPage from "./pages/Courses";
+import CourseDetailsPage from "./pages/CourseDetails";
 import DashboardPage from "./pages/Dashboard";
 import ProfilePage from "./pages/Profile";
 import InstructorDashboard from "./pages/InstructorDashboard";
@@ -21,44 +21,52 @@ import ContactPage from "./pages/Contact";
 import AssistantDashboard from "./pages/Assistant";
 import Unauthorized from "./pages/Unauthorized";
 import PrivateRoute from "./components/PrivateRoute";
+import Checkout from "./pages/Checkout";
 
 const AppRoutes = () => {
-    return (
-        <div className="flex flex-col min-h-screen">
-            <Header />
-            <div className="flex-grow">
-                <Routes>
-                    <Route path="/" element={<HomePage />} />
-                    <Route path="/login" element={<LoginPage />} />
-                    <Route path="/register" element={<SignupPage />} />
-                    <Route path="/courses" element={<CoursesPage />} />
-                    <Route path="/dashboard" element={<DashboardPage />} />
-                    <Route path="/profile" element={<ProfilePage />} />
-                    <Route path="/unauthorized" element={<Unauthorized />} />
-                    <Route element={<PrivateRoute allowedRoles={['instructor']} />}>
-                        <Route path="/instructor" element={<InstructorDashboard />} />
-                        <Route path="/instructor/course/create" element={<CreateCourse />} />
-                        <Route path="/instructor/courses" element={<InstructorCourses />} />
-                        <Route path="/instructor/courses/edit/:id" element={<EditInstructorCourse />} />
-                    </Route>
-                    <Route path="/courses/:id" element={<CourseDetailsPage />} />
-                    <Route path="/forgot-password" element={<ForgotPassword />} />
-                    <Route element={<PrivateRoute allowedRoles={['admin']} />}>
-                        <Route path="/admin" element={<AdminPanel />} />
-                    </Route>
-                    <Route element={<PrivateRoute allowedRoles={['sales']} />}>
-                        <Route path="/sales-manager" element={<SalesManager />} />
-                    </Route>
-                    <Route path="/about" element={<AboutPage />} />
-                    <Route path="/contact" element={<ContactPage />} />
-                    <Route element={<PrivateRoute allowedRoles={['assistant']} />}>
-                        <Route path="/assistant" element={<AssistantDashboard />} />
-                    </Route>
-                </Routes>
-            </div>
-            <Footer />
-        </div>
-    );
+  return (
+    <div className="flex flex-col min-h-screen">
+      <Header />
+      <div className="flex-grow">
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<SignupPage />} />
+          <Route path="/courses" element={<CoursesPage />} />
+          <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/unauthorized" element={<Unauthorized />} />
+          <Route element={<PrivateRoute allowedRoles={["instructor"]} />}>
+            <Route path="/instructor" element={<InstructorDashboard />} />
+            <Route
+              path="/instructor/course/create"
+              element={<CreateCourse />}
+            />
+            <Route path="/instructor/courses" element={<InstructorCourses />} />
+            <Route
+              path="/instructor/courses/edit/:id"
+              element={<EditInstructorCourse />}
+            />
+          </Route>
+          <Route path="/courses/:id" element={<CourseDetailsPage />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route element={<PrivateRoute allowedRoles={["admin"]} />}>
+            <Route path="/admin" element={<AdminPanel />} />
+          </Route>
+          <Route element={<PrivateRoute allowedRoles={["sales"]} />}>
+            <Route path="/sales-manager" element={<SalesManager />} />
+          </Route>
+          <Route path="/about" element={<AboutPage />} />
+          <Route path="/contact" element={<ContactPage />} />
+          <Route element={<PrivateRoute allowedRoles={["assistant"]} />}>
+            <Route path="/assistant" element={<AssistantDashboard />} />
+          </Route>
+          <Route path="/checkout" element={<Checkout />} />
+        </Routes>
+      </div>
+      <Footer />
+    </div>
+  );
 };
 
 export default AppRoutes;
