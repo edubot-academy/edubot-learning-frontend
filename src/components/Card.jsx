@@ -3,7 +3,7 @@ import React from 'react';
 
 const Card = ({ img, title, description, star, ratingCount, price }) => {
   return (
-    <div className="w-full max-w-[360px] h-[400px] bg-white text-black rounded-xl p-4 shadow-lg flex flex-col justify-between">
+    <div className="w-full max-w-[360px] h-[400px] bg-white text-black rounded-xl p-4 shadow-sm hover:shadow-2xl hover:scale-105 transform transition duration-300 ease-in-out flex flex-col justify-between">
       {img && (
         <img
           src={img}
