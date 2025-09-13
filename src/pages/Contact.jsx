@@ -102,7 +102,6 @@ const ContactPage = () => {
                             { label: 'Атыңыз', name: 'name', type: 'text' },
                             { label: 'Электронная почта', name: 'email', type: 'email' },
                             { label: 'Телефон номери', name: 'phone', type: 'tel' },
-                            { label: 'Тема', name: 'subject', type: 'text' },
                         ].map(({ label, name, type }) => (
                             <div key={name}>
                                 {errors[name] && <p className="text-red-500 text-sm mb-1">{errors[name]}</p>}
