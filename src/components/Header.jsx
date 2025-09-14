@@ -76,7 +76,7 @@ const Header = ({ cart = [] }) => {
                     </nav>
                 </div>
                 <div className="flex items-center space-x-6">
-                    <div className="relative flex items-center justify-end">
+                    <div className="hidden md:flex relative flex items-center justify-end">
                         <input
                             type="text"
                             placeholder="издөө"
