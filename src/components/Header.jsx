@@ -39,6 +39,7 @@ const Header = ({ cart = [] }) => {
     const [menuOpen, setMenuOpen] = useState(false);
     const [profileMenuOpen, setProfileMenuOpen] = useState(false);
     const { user, logout } = useContext(AuthContext);
+    const [isExpanded, setIsExpanded] = useState(false);
     const profileRef = useRef(null);
     const mobileMenuRef = useRef(null);
     const navigate = useNavigate();
@@ -55,9 +56,13 @@ const Header = ({ cart = [] }) => {
         setMenuOpen(false);
     };
 
+    const toggleSearch = () => {
+        setIsExpanded(!isExpanded);
+    };
+
     return (
         <header className="fixed w-full z-30 bg-[--edubot-darkgreen]">
-            <div className="w-full xl:px-[80px] sm:pt-[33px] px-[14px] pt-[14px] flex items-center justify-between">
+            <div className="w-full xl:px-[80px] sm:pt-[33px] px-[14px] py-[14px] flex items-center justify-between">
                 <div className="flex items-center gap-[60px]">
                     <Link to="/" className="flex items-center space-x-3">
                         <img src={Logo} alt="Edubot Learning Logo" className="w-[67.42936706542969px] h-[55px]" />
@@ -71,9 +76,21 @@ const Header = ({ cart = [] }) => {
                     </nav>
                 </div>
                 <div className="flex items-center space-x-6">
-
-                    <IoSearch className="hidden md:flex w-[49px] h-[49px] text-white bg-[--edubot-dark] p-[14px] rounded-full cursor-pointer" />
-                    <MdOutlineShoppingCart className="w-[23.33333396911621px] h-[23.33333396911621px] text-[--edubot-orange] cursor-pointer"/>
+                    <div className="relative flex items-center justify-end">
+                        <input
+                            type="text"
+                            placeholder="издөө"
+                            className={`text-black h-[49px] rounded-full transition-all duration-300 ease-in-out absolute ${isExpanded
+                                ? 'w-64 opacity-100 pl-4 pr-12'
+                                : 'w-0 opacity-0 pl-0 pr-0'
+                                }`}
+                        />
+                        <IoSearch
+                            onClick={toggleSearch}
+                            className={`w-[49px] h-[49px] text-white bg-[--edubot-dark] p-[14px] rounded-full cursor-pointer z-10 `}
+                        />
+                    </div>
+                    <MdOutlineShoppingCart className="w-[23.33333396911621px] h-[23.33333396911621px] text-[--edubot-orange] cursor-pointer" />
                     <div className="hidden lg:flex items-center space-x-6">
                         {user ? (
                             <div className="relative profile-menu" ref={profileRef}>
@@ -99,17 +116,17 @@ const Header = ({ cart = [] }) => {
                         )}
                     </div>
 
-                    <GrLanguage className="w-[21.86333465576172px] h-[23.2166690826416px] text-white cursor-pointer"/>
-                    
+                    <GrLanguage className="w-[21.86333465576172px] h-[23.2166690826416px] text-white cursor-pointer" />
+
                     <button
-                    className="lg:hidden text-white focus:outline-none menu-toggle"
-                    aria-label="Toggle menu"
-                    onClick={() => setMenuOpen(!menuOpen)}
-                >
-                    {menuOpen ? <FaTimes className="text-2xl" /> : <FaBars className="text-2xl" />}
-                </button>
+                        className="lg:hidden text-white focus:outline-none menu-toggle"
+                        aria-label="Toggle menu"
+                        onClick={() => setMenuOpen(!menuOpen)}
+                    >
+                        {menuOpen ? <FaTimes className="text-2xl" /> : <FaBars className="text-2xl" />}
+                    </button>
                 </div>
-                
+
             </div>
             {menuOpen && (
                 <div ref={mobileMenuRef} className="md:hidden bg-[#1c3a3e] shadow-md py-4 flex flex-col items-center space-y-4 w-full mobile-menu transition-all duration-300 transform scale-100 opacity-100">
