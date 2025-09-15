@@ -1,7 +1,10 @@
 import React, { useState, useContext, useEffect, useRef } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { FaUserCircle, FaBars, FaTimes } from "react-icons/fa";
-import Logo from "../assets/images/edubot-logo.jpeg";
+import Logo from "../assets/images/logotip-hero.png"
+import { IoSearch } from "react-icons/io5";
+import { MdOutlineShoppingCart } from "react-icons/md";
+import { GrLanguage } from "react-icons/gr";
 import { AuthContext } from "../context/AuthContext";
 
 const useClickOutside = (ref, handler) => {
@@ -36,6 +39,7 @@ const Header = ({ cart = [] }) => {
     const [menuOpen, setMenuOpen] = useState(false);
     const [profileMenuOpen, setProfileMenuOpen] = useState(false);
     const { user, logout } = useContext(AuthContext);
+    const [isExpanded, setIsExpanded] = useState(false);
     const profileRef = useRef(null);
     const mobileMenuRef = useRef(null);
     const navigate = useNavigate();
@@ -52,50 +56,77 @@ const Header = ({ cart = [] }) => {
         setMenuOpen(false);
     };
 
+    const toggleSearch = () => {
+        setIsExpanded(!isExpanded);
+    };
+
     return (
-        <header className="fixed w-full z-30 bg-[#1c3a3e] shadow-md">
-            <div className="w-full px-6 py-4 flex items-center justify-between">
-                <Link to="/" className="flex items-center space-x-3">
-                    <img src={Logo} alt="Edubot Learning Logo" className="h-10" />
-                    <div translate="no" className="flex flex-col">
-                        <span className="text-2xl font-extrabold text-orange-500 leading-none">EDUBOT</span>
-                        <span className="text-sm font-bold tracking-widest text-white">LEARNING</span>
-                    </div>
-                </Link>
-                <button
-                    className="md:hidden text-white focus:outline-none menu-toggle"
-                    aria-label="Toggle menu"
-                    onClick={() => setMenuOpen(!menuOpen)}
-                >
-                    {menuOpen ? <FaTimes className="text-2xl" /> : <FaBars className="text-2xl" />}
-                </button>
-                <nav className="hidden md:flex space-x-8">
-                    <NavLinks user={user} />
-                </nav>
-                <div className="hidden md:flex items-center space-x-6">
-                    {user ? (
-                        <div className="relative profile-menu" ref={profileRef}>
-                            <button
-                                aria-label="User menu"
-                                onClick={() => setProfileMenuOpen(!profileMenuOpen)}
-                                className="flex items-center justify-center w-10 h-10 bg-orange-500 text-white font-bold rounded-full text-lg hover:bg-orange-600 transition"
-                            >
-                                <FaUserCircle className="text-2xl" />
-                            </button>
-                            {profileMenuOpen && (
-                                <div className="absolute right-0 mt-2 w-48 bg-white border rounded-lg shadow-lg py-2">
-                                    <Link to="/profile" className="block px-4 py-2 text-gray-700 hover:bg-gray-100">Профиль</Link>
-                                    <button onClick={() => logout()} className="block w-full text-left px-4 py-2 text-red-600 hover:bg-gray-100">Чыгуу</button>
-                                </div>
-                            )}
+        <header className="fixed w-full z-30 bg-[--edubot-darkgreen]">
+            <div className="w-full xl:px-[80px] sm:pt-[33px] px-[14px] py-[14px] flex items-center justify-between">
+                <div className="flex items-center gap-[60px]">
+                    <Link to="/" className="flex items-center space-x-3">
+                        <img src={Logo} alt="Edubot Learning Logo" className="w-[67.42936706542969px] h-[55px]" />
+                        <div translate="no" className="flex flex-col">
+                            <span className="text-2xl font-extrabold text-orange-500 leading-none">EDUBOT</span>
+                            <span className="text-sm font-medium tracking-widest text-white ">LEARNING</span>
                         </div>
-                    ) : (
-                        <div className="space-x-4">
-                            <Link to="/login" className="text-white hover:text-orange-400 transition">Логин</Link>
-                            <Link to="/register" className="bg-orange-500 text-white px-4 py-2 rounded-full hover:bg-orange-600 transition">Катталуу</Link>
-                        </div>
-                    )}
+                    </Link>
+                    <nav className="hidden lg:flex space-x-8 text-left">
+                        <NavLinks user={user} />
+                    </nav>
                 </div>
+                <div className="flex items-center space-x-6">
+                    <div className="hidden md:flex relative flex items-center justify-end">
+                        <input
+                            type="text"
+                            placeholder="издөө"
+                            className={`text-black h-[49px] rounded-full transition-all duration-300 ease-in-out absolute ${isExpanded
+                                ? 'w-64 opacity-100 pl-4 pr-12'
+                                : 'w-0 opacity-0 pl-0 pr-0'
+                                }`}
+                        />
+                        <IoSearch
+                            onClick={toggleSearch}
+                            className={`w-[49px] h-[49px] text-white bg-[--edubot-dark] p-[14px] rounded-full cursor-pointer z-10 `}
+                        />
+                    </div>
+                    <MdOutlineShoppingCart className="w-[23.33333396911621px] h-[23.33333396911621px] text-[--edubot-orange] cursor-pointer" />
+                    <div className="hidden lg:flex items-center space-x-6">
+                        {user ? (
+                            <div className="relative profile-menu" ref={profileRef}>
+                                <button
+                                    aria-label="User menu"
+                                    onClick={() => setProfileMenuOpen(!profileMenuOpen)}
+                                    className="flex items-center justify-center w-10 h-10 bg-orange-500 text-white font-bold rounded-full text-lg hover:bg-orange-600 transition"
+                                >
+                                    <FaUserCircle className="text-2xl" />
+                                </button>
+                                {profileMenuOpen && (
+                                    <div className="absolute right-0 mt-2 w-48 bg-white border rounded-lg shadow-lg py-2">
+                                        <Link to="/profile" className="block px-4 py-2 text-gray-700 hover:bg-gray-100">Профиль</Link>
+                                        <button onClick={() => logout()} className="block w-full text-left px-4 py-2 text-red-600 hover:bg-gray-100">Чыгуу</button>
+                                    </div>
+                                )}
+                            </div>
+                        ) : (
+                            <div className="space-x-4">
+                                <Link to="/login" className="text-white hover:text-orange-400 transition">Логин</Link>
+                                <Link to="/register" className="bg-orange-500 text-white px-4 py-2 rounded-xl hover:bg-orange-600 transition w-[135px] h-[50px]">Катталуу</Link>
+                            </div>
+                        )}
+                    </div>
+
+                    <GrLanguage className="w-[21.86333465576172px] h-[23.2166690826416px] text-white cursor-pointer" />
+
+                    <button
+                        className="lg:hidden text-white focus:outline-none menu-toggle"
+                        aria-label="Toggle menu"
+                        onClick={() => setMenuOpen(!menuOpen)}
+                    >
+                        {menuOpen ? <FaTimes className="text-2xl" /> : <FaBars className="text-2xl" />}
+                    </button>
+                </div>
+
             </div>
             {menuOpen && (
                 <div ref={mobileMenuRef} className="md:hidden bg-[#1c3a3e] shadow-md py-4 flex flex-col items-center space-y-4 w-full mobile-menu transition-all duration-300 transform scale-100 opacity-100">
