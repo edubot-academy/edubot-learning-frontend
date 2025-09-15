@@ -78,18 +78,18 @@ const ContactPage = () => {
             <div className="max-w-6xl mx-auto">
 
                 <div className="mb-6 mt-10">
-    <h1 className="text-3xl font-bold text-black">Байланышуу</h1>
-    <div className="pt-2 flex items-center gap-2 text-sm">
-        <Link
-            to="/"
-            className="text-[#334155] cursor-pointer no-underline hover:text-[#334155]"
-        >
-            Башкы бет
-        </Link>
-        <span className="text-gray-400">{'>'}</span>
-        <span className="text-[#0EA78B] font-medium">Байланыш</span>
-    </div>
-</div>
+                    <h1 className="text-3xl font-bold text-black">Байланышуу</h1>
+                    <div className="pt-2 flex items-center gap-2 text-sm">
+                        <Link
+                            to="/"
+                            className="text-[#334155] cursor-pointer no-underline hover:text-[#334155]"
+                        >
+                            Башкы бет
+                        </Link>
+                        <span className="text-gray-400">{'>'}</span>
+                        <span className="text-[#0EA78B] font-medium">Байланыш</span>
+                    </div>
+                </div>
 
 
                 <p className="mb-10 text-lg">
@@ -139,47 +139,46 @@ const ContactPage = () => {
                     </form>
 
                     <div className="space-y-6 text-lg">
-    <div>
-        <div className="font-semibold text-[#0EA78B] flex items-center gap-2">
-            <img src={MailIcon} alt="mail" className="w-5 h-5" /> Электрондук почта
-        </div>
-        <a href="mailto:jardam.edubot_learning@outlook.com" className="text-[#122144] underline">
-            jardam.edubot_learning@outlook.com
-        </a>
-    </div>
+                        <div>
+                            <div className="font-semibold text-[#0EA78B] flex items-center gap-2">
+                                <img src={PhoneIcon} alt="phone" className="w-5 h-5" /> WhatsApp
+                            </div>
+                            <a href="https://wa.me/996503677798" className="text-[#122144] underline">
+                                +996 503 677 798
+                            </a>
+                        </div>
 
-    <div>
-        <div className="font-semibold text-[#0EA78B] flex items-center gap-2">
-            <img src={MapPinIcon} alt="address" className="w-5 h-5" /> Дарек
-        </div>
-        <p>Турусбеков 109/1, 4-кабат, Бишкек, Кыргызстан</p>
-    </div>
+                        <div>
+                            <div className="font-semibold text-[#0EA78B] flex items-center gap-2">
+                                <img src={InstagramIcon} alt="instagram" className="w-5 h-5" /> Instagram
+                            </div>
+                            <a href="https://www.instagram.com/edubot.company/" target="_blank" className="text-[#122144] underline">
+                                @edubot.company
+                            </a>
+                        </div>
+                        <div>
+                            <div className="font-semibold text-[#0EA78B] flex items-center gap-2">
+                                <img src={MailIcon} alt="mail" className="w-5 h-5" /> Электрондук почта
+                            </div>
+                            <a href="mailto:jardam.edubot_learning@outlook.com" className="text-[#122144] underline">
+                                jardam.edubot_learning@outlook.com
+                            </a>
+                        </div>
 
-    <div>
-        <div className="font-semibold text-[#0EA78B] flex items-center gap-2">
-            <img src={PhoneIcon} alt="phone" className="w-5 h-5" /> WhatsApp
-        </div>
-        <a href="https://wa.me/996503677798" className="text-[#122144] underline">
-            +996 503 677 798
-        </a>
-    </div>
+                        <div>
+                            <div className="font-semibold text-[#0EA78B] flex items-center gap-2">
+                                <img src={MapPinIcon} alt="address" className="w-5 h-5" /> Дарек
+                            </div>
+                            <p>Турусбеков 109/1, 4-кабат, Бишкек, Кыргызстан</p>
+                        </div>
 
-    <div>
-        <div className="font-semibold text-[#0EA78B] flex items-center gap-2">
-            <img src={InstagramIcon} alt="instagram" className="w-5 h-5" /> Instagram
-        </div>
-        <a href="https://www.instagram.com/edubot.company/" target="_blank" className="text-[#122144] underline">
-            @edubot.company
-        </a>
-    </div>
-
-    <div>
-        <div className="font-semibold text-[#0EA78B] flex items-center gap-2">
-            <img src={ClockIcon} alt="clock" className="w-5 h-5" /> Иштөө убактысы
-        </div>
-        <p>Дүйшөмбү — Жума, 9:00 — 21:00 (Бишкек убактысы)</p>
-    </div>
-</div>
+                        <div>
+                            <div className="font-semibold text-[#0EA78B] flex items-center gap-2">
+                                <img src={ClockIcon} alt="clock" className="w-5 h-5" /> Иштөө убактысы
+                            </div>
+                            <p>Дүйшөмбү — Жума, 9:00 — 21:00 (Бишкек убактысы)</p>
+                        </div>
+                    </div>
 
                 </div>
 
