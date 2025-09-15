@@ -77,29 +77,31 @@ const ContactPage = () => {
             <Toaster position="top-center" />
             <div className="max-w-6xl mx-auto">
 
-                {/* Хедер и навигация */}
                 <div className="mb-6 mt-10">
-                    <h1 className="text-3xl font-bold text-[#0EA78B]">Байланышуу</h1>
-                    <div className="pt-2 flex items-center gap-2">
-                        <Link to="/" className="text-[#334155] pl-6 cursor-pointer no-underline hover:text-[#334155]">
+                    <h1 className="text-3xl font-bold text-black">Байланышуу</h1>
+                    <div className="pt-2 flex items-center gap-2 text-sm">
+                        <Link
+                            to="/"
+                            className="text-[#334155] cursor-pointer no-underline hover:text-[#334155]"
+                        >
                             Башкы бет
                         </Link>
-                        <span className="mx-1">&gt;</span>
+                        <span className="text-gray-400">{'>'}</span>
                         <span className="text-[#0EA78B] font-medium">Байланыш</span>
                     </div>
                 </div>
+
 
                 <p className="mb-10 text-lg">
                     Суроолоруңуз барбы? Төмөнкү форма аркылуу биз менен байланышсаңыз болот же түз байланыш маалыматтарыбызды колдонсоңуз болот.
                 </p>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-16">
-                    {/* Форма */}
                     <form onSubmit={handleSubmit} className="space-y-5 max-w-xl">
                         {[
                             { label: 'Атыңыз', name: 'name', type: 'text' },
+                            { label: 'Электронная почта', name: 'email', type: 'email' },
                             { label: 'Телефон номери', name: 'phone', type: 'tel' },
-                            { label: 'Тема', name: 'subject', type: 'text' },
                         ].map(({ label, name, type }) => (
                             <div key={name}>
                                 {errors[name] && <p className="text-red-500 text-sm mb-1">{errors[name]}</p>}
@@ -136,7 +138,6 @@ const ContactPage = () => {
                         </button>
                     </form>
 
-                    {/* Контактная информация */}
                     <div className="space-y-6 text-lg">
                         <div>
                             <div className="font-semibold text-[#0EA78B] flex items-center gap-2">
@@ -146,6 +147,7 @@ const ContactPage = () => {
                                 +996 503 677 798
                             </a>
                         </div>
+
                         <div>
                             <div className="font-semibold text-[#0EA78B] flex items-center gap-2">
                                 <img src={InstagramIcon} alt="instagram" className="w-5 h-5" /> Instagram
@@ -177,9 +179,9 @@ const ContactPage = () => {
                             <p>Дүйшөмбү — Жума, 9:00 — 21:00 (Бишкек убактысы)</p>
                         </div>
                     </div>
+
                 </div>
 
-                {/* Карта */}
                 <div className="mt-16 max-w-3xl mx-auto">
                     <iframe
                         src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2923.348249525932!2d74.59004331548586!3d42.87013037915568!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x389eb7b3276c0b2d%3A0x8f63e8bc06a52c57!2s109%2F1%20Turusbekov%20St%2C%20Bishkek%2C%20Kyrgyzstan!5e0!3m2!1sen!2skg!4v1712844064853!5m2!1sen!2skg"

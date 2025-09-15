@@ -37,11 +37,15 @@ const CoursesPage = () => {
     <div className="min-h-screen bg-gray-50 p-6 pt-24">
       <h1 className="text-4xl font-bold text-center mb-6">Биздин курстар</h1>
       <div className="px-4 sm:px-6 lg:px-12">
-        <CoursesSection title="Сиз үчүн сунушталган курстар">
-          <SectionContainer noBg hideTitleAndLink data={courses} />
-        </CoursesSection>
 
-        <CoursesSection title="Жаңы жарыяланган курстар">
+        {courses.length < 4
+          ? <SectionContainer noBg hideTitleAndLink data={courses} />
+          : <CoursesSection>
+            <SectionContainer noBg hideTitleAndLink data={courses} />
+          </CoursesSection>
+        }
+
+        {/* <CoursesSection title="Жаңы жарыяланган курстар">
           <SectionContainer noBg hideTitleAndLink data={courses} />
         </CoursesSection>
 
@@ -50,7 +54,7 @@ const CoursesPage = () => {
         </CoursesSection>
         <CoursesSection title="Эң мыкты акысыз онлайн курстар">
           <SectionContainer noBg hideTitleAndLink data={courses} />
-        </CoursesSection>
+        </CoursesSection> */}
       </div>
 
       {/* {filteredCourses.length === 0 ? (
