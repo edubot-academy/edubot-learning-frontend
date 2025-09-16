@@ -8,29 +8,27 @@ import { Link } from "react-router-dom";
 const SectionContainer = ({ noBg = false, hideTitleAndLink = false, data = [] }) => {
 
   return (
-    <Link to="/courses/:id">
-      <div
-        className={`${noBg ? "" : "bg-[#002C37] text-white"
-          } px-4 py-8 sm:px-6 lg:px-12`}
-      >
-        {!hideTitleAndLink && (
-          <>
-            <h2 className="text-2xl sm:text-3xl font-bold text-center mb-4 sm:mb-6">
-              Топ Курстар
-            </h2>
+    <div
+      className={`${noBg ? "" : "bg-[#002C37] text-white"
+        } px-4 py-8 sm:px-6 lg:px-12`}
+    >
+      {!hideTitleAndLink && (
+        <>
+          <h2 className="text-2xl sm:text-3xl font-bold text-center mb-4 sm:mb-6">
+            Топ Курстар
+          </h2>
 
-            <div className="flex justify-end mb-6">
-              <Link to="/courses" className="text-sm cursor-pointer text-orange-500">
-                Увидеть все
-              </Link>
-            </div>
-          </>
-        )}
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 justify-items-center">
-          {data.slice(0, 3).map((course) => (
+          <div className="flex justify-end mb-6">
+            <Link to="/courses" className="text-sm cursor-pointer text-orange-500">
+              Увидеть все
+            </Link>
+          </div>
+        </>
+      )}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 justify-items-center">
+        {data.slice(0, 3).map((course) => (
+          <Link key={course.id} to={`/courses/${course.id}`}>
             <Card
-              key={course.id}
               img={course.coverImageUrl}
               title={course.title}
               description={course.description}
@@ -38,10 +36,11 @@ const SectionContainer = ({ noBg = false, hideTitleAndLink = false, data = [] })
               price={course.price}
               ratingCount={course.ratingCount}
             />
-          ))}
-        </div>
+          </Link>
+        ))}
       </div>
-    </Link>
+
+    </div>
   );
 };
 
