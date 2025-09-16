@@ -9,7 +9,7 @@ const SectionContainer = ({ noBg = false, hideTitleAndLink = false, data = [] })
 
   return (
     <div
-      className={`${noBg ? "" : "bg-[#002C37] text-white"
+      className={`${noBg ? "" : "bg-[--edubot-darkgreen] text-white"
         } px-4 py-8 sm:px-6 lg:px-12`}
     >
       {!hideTitleAndLink && (
