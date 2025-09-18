@@ -34,7 +34,7 @@ const instructors = [
 
 const TopInstructors = () => {
   return (
-    <div className="bg-[#002C37] px-4 py-10 sm:px-6 lg:px-12">
+    <div className="bg-[--edubot-darkgreen] px-4 py-10 sm:px-6 lg:px-12">
       <h2 className="text-2xl sm:text-3xl font-bold text-center mb-8 text-white">
         Топ Инструкторы
       </h2>

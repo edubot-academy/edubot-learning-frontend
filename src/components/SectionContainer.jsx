@@ -9,7 +9,7 @@ const SectionContainer = ({ noBg = false, hideTitleAndLink = false, data = [] })
 
   return (
     <div
-      className={`${noBg ? "" : "bg-[#002C37] text-white"
+      className={`${noBg ? "" : "bg-[--edubot-darkgreen] text-white"
         } px-4 py-8 sm:px-6 lg:px-12`}
     >
       {!hideTitleAndLink && (
@@ -25,20 +25,21 @@ const SectionContainer = ({ noBg = false, hideTitleAndLink = false, data = [] })
           </div>
         </>
       )}
-
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 justify-items-center">
         {data.slice(0, 3).map((course) => (
-          <Card
-            key={course.id}
-            img={course.coverImageUrl}
-            title={course.title}
-            description={course.description}
-            star={course.imgg}
-            price={course.price}
-            ratingCount={course.ratingCount}
-          />
+          <Link key={course.id} to={`/courses/${course.id}`}>
+            <Card
+              img={course.coverImageUrl}
+              title={course.title}
+              description={course.description}
+              star={course.imgg}
+              price={course.price}
+              ratingCount={course.ratingCount}
+            />
+          </Link>
         ))}
       </div>
+
     </div>
   );
 };
