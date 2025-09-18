@@ -3,7 +3,7 @@ import { IoCheckmark } from "react-icons/io5";
 
 const CourseHeader = ({ course, progress, enrolled }) => {
     const [numberButten, setNumberButten] = useState(1);
-
+    
     return (
         <div className="w-full text-white min-h-[380px] py-12 px-6 md:px-12">
             <div className="mx-auto w-[1280px]">
@@ -128,7 +128,6 @@ const CourseHeader = ({ course, progress, enrolled }) => {
                 </div>
 
                 <hr />
-
             </div>
         </div>
     );
