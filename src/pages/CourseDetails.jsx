@@ -35,7 +35,7 @@ const CourseDetailsPage = () => {
     const videoRef = useRef(null);
     const hasPlayedRef = useRef(false);
     const [shouldScrollToLesson, setShouldScrollToLesson] = useState(true);
-    const [paid, setPaid] = useState(false);
+    const [isaUthorization, setIsAuthorization] = useState(true);
 
     useEffect(() => {
         hasPlayedRef.current = false;
@@ -316,15 +316,10 @@ const CourseDetailsPage = () => {
     const { prev: prevLesson, next: nextLesson } = findPrevNextLessons();
     const totalLessons = sections.reduce((count, sec) => count + (sec.lessons?.length || 0), 0);
     const progress = Math.round((completedLessons.length / totalLessons) * 100);
-    
-    function changPaid() {
-        setPaid(!paid)
-    }
+
     return (
         <div className="min-h-screen pt-24">
-            <button onClick={changPaid}>tap</button>
-            {paid ? <CourseHeader course={course} progress={progress} enrolled={enrolled} />
-                :
+            {isaUthorization ?
                 <div className="max-w-6xl mx-auto p-6">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div className="md:col-span-2">
@@ -359,6 +354,8 @@ const CourseDetailsPage = () => {
                         />
                     </div>
                 </div>
+                : 
+                <CourseHeader course={course} progress={progress} enrolled={enrolled} />
             }
         </div>
     );
