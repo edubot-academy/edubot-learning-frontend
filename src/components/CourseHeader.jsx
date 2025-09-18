@@ -23,6 +23,8 @@ const CourseHeader = ({ course, progress, enrolled }) => {
                                 src={course.instructor.avatar}
                                 alt={course.instructor.fullName}
                                 className="w-12 h-12 rounded-full"
+                                loading="lazy"
+                                decoding="async"
                             />
                         ) : (
                             <div className="w-12 h-12 rounded-full bg-gray-300 flex items-center justify-center text-xl font-bold text-white">

@@ -261,6 +261,8 @@ const CourseBuilder = () => {
                         src={courseInfo.coverImageUrl}
                         alt="cover"
                         className="max-h-48 mt-2 rounded"
+                        decoding='async'
+                        loading='lazy'
                     />
                 )}
             </div>
