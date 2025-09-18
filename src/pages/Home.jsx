@@ -6,12 +6,12 @@ import { AuthContext } from "../context/AuthContext";
 
 const HomePage = () => {
     const { user } = useContext(AuthContext);
-    const [cart, setCart] = useState([]);
+    // const [cart, setCart] = useState([]);
     const [coursesData, setCoursesData] = useState([]);
 
-    const addToCart = (course) => {
-        setCart([...cart, course]);
-    };
+    // const addToCart = (course) => {
+    //     setCart([...cart, course]);
+    // };
 
     useEffect(() => {
         const loadCourses = async () => {
@@ -78,7 +78,13 @@ const HomePage = () => {
                     {coursesData.slice(0, 3).map((course) => (
                         <div key={course.id} className="bg-white border rounded-lg overflow-hidden shadow-md hover:shadow-xl transition">
                             <Link to={`/courses/${course.id}`} className="block">
-                                <img src={course.coverImageUrl || "https://source.unsplash.com/400x250/?education"} alt={course.title} className="w-full h-40 object-cover" />
+                                <img
+                                    src={course.coverImageUrl || "https://source.unsplash.com/400x250/?education"}
+                                    alt={course.title}
+                                    className="w-full h-40 object-cover"
+                                    loading="lazy"
+                                    decoding="async"
+                                />
                                 <div className="p-6 text-left">
                                     <h3 className="text-xl font-semibold mb-1">{course.title}</h3>
                                     <p className="text-sm text-gray-600">Окутуучу: {course.instructor?.fullName}</p>

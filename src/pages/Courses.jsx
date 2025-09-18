@@ -50,7 +50,7 @@ const CoursesPage = () => {
                     Тандалган категория боюнча курстар табылган жок.
                 </div>
             ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 content-visibility-auto">
                     {filteredCourses.map((course) => (
                         <div
                             key={course.id}
@@ -61,6 +61,8 @@ const CoursesPage = () => {
                                     src={course.coverImageUrl || "https://source.unsplash.com/400x250/?education"}
                                     alt={course.title}
                                     className="w-full h-40 object-cover"
+                                    decoding="async"
+                                    loading="lazy"
                                 />
                             </Link>
                             <div className="p-6">

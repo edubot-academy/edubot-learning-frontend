@@ -47,3 +47,8 @@ h3 {
 button {
   @apply rounded-lg border border-transparent px-4 py-2 text-white bg-blue-600 transition hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-300;
 }
+
+.content-visibility-auto {
+  content-visibility: auto;
+  contain-intrinsic-size: 1000px 800px;
+}
