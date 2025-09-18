@@ -50,6 +50,10 @@ const CourseVideoPlayer = ({
             >
                 →
             </button>
+
+            <div className='flex justify-end'>
+                <button className='mt-2 font-semibold border border-[#122144] rounded-2xl p-2 text-[#122144]'>Сын-пикир калтыруу</button>
+            </div>
         </div>
     );
 };
