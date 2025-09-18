@@ -16,6 +16,9 @@ import { AuthContext } from "../context/AuthContext";
 import CourseSidebar from "../components/CourseSidebar";
 import CourseHeader from "../components/CourseHeader";
 import CourseVideoPlayer from "../components/CourseVideoPlayer";
+import CourseIncludes from "../components/CourseContent";
+import AboutCourseMini from "../components/AboutCourseMini";
+import Review from "../components/Review";
 
 const CourseDetailsPage = () => {
     const { id } = useParams();
@@ -358,6 +361,9 @@ const CourseDetailsPage = () => {
                             lessonRefs={lessonRefs}
                         />
                     </div>
+                    <AboutCourseMini/>
+                    <CourseIncludes/>
+                    <Review/>
                 </div>
             }
         </div>
