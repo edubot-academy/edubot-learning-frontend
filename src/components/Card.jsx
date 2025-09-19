@@ -1,39 +1,57 @@
 import React from 'react';
+import CardIcon from '../assets/icons/cardvektor.svg'
 
 
-const Card = ({ img, title, description, star, ratingCount, price }) => {
+const Card = ({ img, title, description, star, price, ratingCount }) => {
   return (
-    <div className="w-full max-w-[360px] h-[400px] bg-white text-black rounded-xl p-4 shadow-lg flex flex-col justify-between">
-      {img && (
-        <img
-          src={img}
-          alt={title}
-          className="w-full h-40 object-cover rounded-lg mb-4"
-        />
-      )}
+     <div className="w-[450px] text-black bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden flex flex-col">
+     
+      <div className='pt-[29px] pb-[29px] px-[24px]'>
+        <img src={img} alt={title} className="w-full h-[300px] object-cover rounded-[4px]" />
 
-      <div>
-        <h3 className="text-base font-semibold mb-2">{title}</h3>
-        <p className="text-sm text-gray-700 mb-2">{description}</p>
+     
+      <div className="p-4 flex flex-col flex-grow">
+       
+        <h3 className="font-suisse font-normal text-[20px] ">{title}</h3>
 
-        {/* Блок рейтинга */}
-        <div className="flex items-center gap-2 mb-2">
-          {star && <img src={star} alt="звезда" className="w-8 h-8" />}
-          <span className="text-sm ">{ratingCount} рейтингов</span>
+        
+        <p className="text-gray-500 text-sm mb-3 line-clamp-2">
+          {description}
+        </p>
+
+     
+        <div className="flex items-center gap-2 mb-3 mt-[20px]">
+          <div className="flex text-yellow-400">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <span key={i}>★</span>
+            ))}
+          </div>
+          <span className="text-gray-500 text-sm">({ratingCount} рейтингов)</span>
         </div>
 
-        {/* Новый текст под рейтингом */}
-        <p className="text-xs text-gray-500 mb-4">
-          22 всего часа. 155 лекций. Новичок
-        </p>
-      </div>
+        
+        <div className="flex gap-2 mb-4">
+          <div className='flex'>
+           
+            <span className="px-3 py-1 text-xs rounded-full border flex gap-1">  <img className='w-[17px]' src={CardIcon} alt="" />новичок</span>
+          </div>
+          <span className="px-3 py-1 text-xs rounded-full border">22 всего часа</span>
+          <span className="px-3 py-1 text-xs rounded-full border">155 лекций</span>
+        </div>
 
-      {/* Блок с ценой и кнопкой */}
-      <div className="flex justify-between items-center ">
-        <span className=" font-semibold text-lg">{price} сом</span>
-        <button className="bg-orange-500 text-white text-sm px-4 py-2 rounded-[5px] hover:bg-orange-600 transition">
-          Себетке кошуу
-        </button>
+      
+        <div className="mt-auto">
+          
+          <div className='flex items-end gap-6 mt-[50px]'>
+         <div>   
+          <p className="text-sm text-gray-500">Цена</p>
+            <p className="text-32px color-[#333333]font-bold">{price} сом</p></div>
+          <button className="w-[250px] py-3 bg-gradient-to-r from-orange-400 to-red-500 text-white rounded-lg font-semibold shadow hover:opacity-90 transition">
+            Себетке кошуу
+          </button>
+          </div>
+        </div>
+      </div>
       </div>
     </div>
   );
