@@ -1,7 +1,7 @@
 import React, { useState, useContext, useEffect, useRef } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { FaUserCircle, FaBars, FaTimes } from "react-icons/fa";
-import Logo from "../assets/images/edubot-logo.jpeg";
+import Logo from '/edubot-logo.svg'
 import { AuthContext } from "../context/AuthContext";
 
 const useClickOutside = (ref, handler) => {
