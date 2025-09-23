@@ -81,7 +81,7 @@ const HomePage = () => {
             <SectionContainer data={coursesData} />
             <Instructor />
             <Feedback />
-            <div className="w-full max-w-screen-xl h-0.5 bg-gray-400 mx-auto my-8"></div>
+            
             <Apply />
             {/* <Evaluate /> */}
 
