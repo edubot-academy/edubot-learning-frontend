@@ -1,5 +1,5 @@
 import React, { useState, useContext, useEffect, useRef } from "react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { FaBars, FaTimes } from "react-icons/fa";
 import { IoSearch } from "react-icons/io5";
 import { GrLanguage } from "react-icons/gr";
@@ -36,6 +36,8 @@ const NavLinks = ({ isMobile }) => {
 
 const Header = () => {
   const { user } = useContext(AuthContext);
+  const location = useLocation();
+
   const [menuOpen, setMenuOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [langOpen, setLangOpen] = useState(false);
@@ -44,10 +46,17 @@ const Header = () => {
 
   const langRef = useRef(null);
 
+  // Закрываем мобильное меню при смене маршрута
+  useEffect(() => {
+    setMenuOpen(false);
+  }, [location.pathname]);
+
+  // Применение темы
   useEffect(() => {
     document.body.classList.toggle("dark", dark);
   }, [dark]);
 
+  // Закрытие выпадающего списка языка при клике вне
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (langRef.current && !langRef.current.contains(e.target)) {
@@ -62,16 +71,11 @@ const Header = () => {
   return (
     <header className="sticky top-0 w-full bg-white dark:bg-gray-900 shadow z-50">
       <div className="px-4 md:px-10 py-3 flex flex-col items-center">
-       
+        {/* Desktop */}
         <div className="hidden lg:flex items-center justify-between w-full">
           <div className="flex items-center gap-6 flex-1">
-          
             <Link to="/" className="flex items-center space-x-4 whitespace-nowrap">
-              <img
-                src={Logo}
-                alt="logo"
-                className="w-14 h-14 md:w-16 md:h-16"
-              />
+              <img src={Logo} alt="logo" className="w-14 h-14 md:w-16 md:h-16" />
               <div className="flex flex-col leading-none">
                 <span className="text-2xl md:text-3xl font-bold text-orange-500">
                   EDUBOT
@@ -82,7 +86,6 @@ const Header = () => {
               </div>
             </Link>
 
-        
             <div className="hidden md:flex items-center border border-black rounded overflow-hidden flex-1 max-w-xs ml-6">
               <IoSearch className="w-5 h-5 ml-2 text-gray-700 dark:text-gray-200" />
               <input
@@ -99,7 +102,6 @@ const Header = () => {
             </div>
           </div>
 
-      
           <div className="hidden md:flex items-center space-x-4">
             <div className="relative" ref={langRef}>
               <button
@@ -153,60 +155,76 @@ const Header = () => {
           </div>
         </div>
 
-<div className="lg:hidden flex flex-col items-center w-full">
+        {/* Mobile */}
+        <div className="lg:hidden flex flex-col items-center w-full">
+          <Link to="/" className="flex items-center justify-center mb-3">
+            <img src={Logo} alt="logo" className="w-14 h-14 sm:w-16 sm:h-16" />
+            <div className="flex flex-col ml-2 leading-tight">
+              <span className="text-2xl sm:text-3xl font-bold text-orange-500">
+                EDUBOT
+              </span>
+              <span className="text-sm sm:text-base text-gray-700 dark:text-gray-200 tracking-wide">
+                LEARNING
+              </span>
+            </div>
+          </Link>
 
-  <Link to="/" className="flex items-center justify-center mb-3">
-    <img src={Logo} alt="logo" className="w-14 h-14 sm:w-16 sm:h-16" />
-    <div className="flex flex-col ml-2 leading-tight">
-      <span className="text-2xl sm:text-3xl font-bold text-orange-500">
-        EDUBOT
-      </span>
-      <span className="text-sm sm:text-base text-gray-700 dark:text-gray-200 tracking-wide">
-        LEARNING
-      </span>
-    </div>
-  </Link>
-
- 
-  <div className="flex w-full justify-center items-center px-4 gap-x-2">
-    <div className="flex items-center border border-black rounded overflow-hidden w-[calc(100%-50px)] max-w-[280px]">
-      <IoSearch className="w-5 h-5 ml-2 text-gray-700 dark:text-gray-200" />
-      <input
-        type="text"
-        placeholder="Издөө"
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        className="px-3 py-2 focus:outline-none bg-transparent w-full truncate text-sm sm:text-base"
-      />
-    </div>
-    <button
-      onClick={() => setMenuOpen((p) => !p)}
-      className="text-gray-700 dark:text-gray-200 text-2xl"
-    >
-      <FaBars />
-    </button>
-  </div>
-</div>
-
-      </div>
-
-      {menuOpen && (
-        <div className="fixed inset-0 z-50 flex">
-          <div
-            className="flex-1 bg-black/50"
-            onClick={() => setMenuOpen(false)}
-          ></div>
-          <div className="w-64 sm:w-72 md:w-80 bg-white dark:bg-gray-800 h-full p-4 relative shadow-lg">
+          <div className="flex w-full justify-center items-center px-4 gap-x-2">
+            <div className="flex items-center border border-black rounded overflow-hidden w-[calc(100%-50px)] max-w-[280px]">
+              <IoSearch className="w-5 h-5 ml-2 text-gray-700 dark:text-gray-200" />
+              <input
+                type="text"
+                placeholder="Издөө"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="px-3 py-2 focus:outline-none bg-transparent w-full truncate text-sm sm:text-base"
+              />
+            </div>
             <button
-              onClick={() => setMenuOpen(false)}
-              className="absolute top-4 left-4 text-gray-600 dark:text-gray-300"
+              onClick={() => setMenuOpen((p) => !p)}
+              className="text-gray-700 dark:text-gray-200 text-2xl"
             >
-              <FaTimes className="text-2xl" />
+              <FaBars />
             </button>
-            <NavLinks isMobile={true} />
           </div>
         </div>
-      )}
+      </div>
+
+      {/* Mobile menu modal */}
+     {menuOpen && (
+  <div className="fixed inset-0 z-50 flex">
+    {/* Затемнённый фон */}
+    <div
+      className="flex-1 bg-black/50"
+      onClick={() => setMenuOpen(false)}
+    ></div>
+
+    {/* Боковая панель */}
+    <div className="w-64 sm:w-72 md:w-80 bg-white dark:bg-gray-800 h-full p-4 relative shadow-lg">
+      {/* Кнопка закрытия */}
+      <button
+        onClick={() => setMenuOpen(false)}
+        className="absolute top-4 left-4 text-gray-600 dark:text-gray-300"
+      >
+        <FaTimes className="text-2xl" />
+      </button>
+
+      {/* Навигационные ссылки */}
+      <NavLinks isMobile={true} />
+
+      {/* Кнопка "Катталуу" слева */}
+      <div className="mt-6">
+        <Link
+          to="/register"
+          className="block w-full text-left text-gray-700 dark:text-gray-200 rounded-md px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+        >
+          Катталуу
+        </Link>
+      </div>
+    </div>
+  </div>
+)}
+
     </header>
   );
 };
