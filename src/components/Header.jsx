@@ -1,149 +1,214 @@
 import React, { useState, useContext, useEffect, useRef } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { FaUserCircle, FaBars, FaTimes } from "react-icons/fa";
-import Logo from "../assets/images/logotip-hero.png"
+import { FaBars, FaTimes } from "react-icons/fa";
 import { IoSearch } from "react-icons/io5";
-import { MdOutlineShoppingCart } from "react-icons/md";
 import { GrLanguage } from "react-icons/gr";
+import { BsChevronDown } from "react-icons/bs";
+import Logo from "../assets/images/logotip-hero.png";
 import { AuthContext } from "../context/AuthContext";
 
-const useClickOutside = (ref, handler) => {
-    useEffect(() => {
-        const listener = (event) => {
-            if (!ref.current || ref.current.contains(event.target)) return;
-            handler(event);
-        };
-        document.addEventListener("mousedown", listener);
-        return () => document.removeEventListener("mousedown", listener);
-    }, [ref, handler]);
+const NavLinks = ({ isMobile }) => {
+  const location = useLocation();
+  const active = (path) =>
+    location.pathname === path ? "text-orange-500" : "";
+
+  const linkClass =
+    "relative hover:text-black after:content-[''] after:absolute after:-bottom-1 after:left-0 after:h-[2px] after:w-full after:bg-black after:scale-x-0 hover:after:scale-x-100 after:transition-transform after:duration-300";
+
+  return (
+    <div
+      className={`${
+        isMobile ? "flex flex-col space-y-4 mt-4" : "flex space-x-6 items-center"
+      }`}
+    >
+      <Link to="/courses" className={`${active("/courses")} ${linkClass}`}>
+        Курстар
+      </Link>
+      <Link to="/about" className={`${active("/about")} ${linkClass}`}>
+        Биз жөнүндө
+      </Link>
+      <Link to="/contact" className={`${active("/contact")} ${linkClass}`}>
+        Байланыш
+      </Link>
+    </div>
+  );
 };
 
-const NavLinks = ({ user, onClick }) => {
-    const location = useLocation();
-    const isActive = (path) => location.pathname === path ? "text-orange-400" : "text-white";
+const Header = () => {
+  const { user } = useContext(AuthContext);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const [langOpen, setLangOpen] = useState(false);
+  const [lang, setLang] = useState("Кыргызча");
+  const [dark, setDark] = useState(false);
 
-    return (
-        <>
-            <Link to="/courses" onClick={onClick} className={`${isActive("/courses")} hover:text-orange-400 transition`}>Курстар</Link>
-            <Link to="/about" onClick={onClick} className={`${isActive("/about")} hover:text-orange-400 transition`}>Биз жөнүндө</Link>
-            <Link to="/contact" onClick={onClick} className={`${isActive("/contact")} hover:text-orange-400 transition`}>Байланыш</Link>
-            {user?.role === "instructor" && <Link to="/instructor" onClick={onClick} className={`${isActive("/instructor")} hover:text-orange-400 transition`}>Инструктор</Link>}
-            {user?.role === "admin" && <Link to="/admin" onClick={onClick} className={`${isActive("/admin")} hover:text-orange-400 transition`}>Админ</Link>}
-            {user?.role === "sales" && <Link to="/sales-manager" onClick={onClick} className={`${isActive("/sales-manager")} hover:text-orange-400 transition`}>Сатуу</Link>}
-            {user?.role === "assistant" && <Link to="/assistant" onClick={onClick} className={`${isActive("/assistant")} hover:text-orange-400 transition`}>Ассистент</Link>}
-        </>
-    );
-};
+  const langRef = useRef(null);
 
-const Header = ({ cart = [] }) => {
-    const [menuOpen, setMenuOpen] = useState(false);
-    const [profileMenuOpen, setProfileMenuOpen] = useState(false);
-    const { user, logout } = useContext(AuthContext);
-    const [isExpanded, setIsExpanded] = useState(false);
-    const profileRef = useRef(null);
-    const mobileMenuRef = useRef(null);
-    const navigate = useNavigate();
+  useEffect(() => {
+    document.body.classList.toggle("dark", dark);
+  }, [dark]);
 
-    useClickOutside(profileRef, () => setProfileMenuOpen(false));
-    useClickOutside(mobileMenuRef, () => setMenuOpen(false));
-
-    useEffect(() => {
-        document.body.style.overflow = menuOpen ? 'hidden' : 'auto';
-    }, [menuOpen]);
-
-    const handleLinkClick = (path) => {
-        navigate(path);
-        setMenuOpen(false);
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (langRef.current && !langRef.current.contains(e.target)) {
+        setLangOpen(false);
+      }
     };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () =>
+      document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
-    const toggleSearch = () => {
-        setIsExpanded(!isExpanded);
-    };
+  return (
+    <header className="sticky top-0 w-full bg-white dark:bg-gray-900 shadow z-50">
+      <div className="px-4 md:px-10 py-3 flex flex-col items-center">
+       
+        <div className="hidden lg:flex items-center justify-between w-full">
+          <div className="flex items-center gap-6 flex-1">
+          
+            <Link to="/" className="flex items-center space-x-4 whitespace-nowrap">
+              <img
+                src={Logo}
+                alt="logo"
+                className="w-14 h-14 md:w-16 md:h-16"
+              />
+              <div className="flex flex-col leading-none">
+                <span className="text-2xl md:text-3xl font-bold text-orange-500">
+                  EDUBOT
+                </span>
+                <span className="text-sm md:text-base text-gray-700 dark:text-gray-200 tracking-wide">
+                  LEARNING
+                </span>
+              </div>
+            </Link>
 
-    return (
-        <header className="fixed w-full z-30 bg-[--edubot-darkgreen]">
-            <div className="w-full xl:px-[80px] sm:pt-[33px] px-[14px] py-[14px] flex items-center justify-between">
-                <div className="flex items-center gap-[60px]">
-                    <Link to="/" className="flex items-center space-x-3">
-                        <img src={Logo} alt="Edubot Learning Logo" className="w-[67.42936706542969px] h-[55px]" />
-                        <div translate="no" className="flex flex-col">
-                            <span className="text-2xl font-extrabold text-orange-500 leading-none">EDUBOT</span>
-                            <span className="text-sm font-medium tracking-widest text-white ">LEARNING</span>
-                        </div>
-                    </Link>
-                    <nav className="hidden lg:flex space-x-8 text-left">
-                        <NavLinks user={user} />
-                    </nav>
-                </div>
-                <div className="flex items-center space-x-6">
-                    <div className="hidden md:flex relative flex items-center justify-end">
-                        <input
-                            type="text"
-                            placeholder="издөө"
-                            className={`text-black h-[49px] rounded-full transition-all duration-300 ease-in-out absolute ${isExpanded
-                                ? 'w-64 opacity-100 pl-4 pr-12'
-                                : 'w-0 opacity-0 pl-0 pr-0'
-                                }`}
-                        />
-                        <IoSearch
-                            onClick={toggleSearch}
-                            className={`w-[49px] h-[49px] text-white bg-[--edubot-dark] p-[14px] rounded-full cursor-pointer z-10 `}
-                        />
-                    </div>
-                    <MdOutlineShoppingCart className="w-[23.33333396911621px] h-[23.33333396911621px] text-[--edubot-orange] cursor-pointer" />
-                    <div className="hidden lg:flex items-center space-x-6">
-                        {user ? (
-                            <div className="relative profile-menu" ref={profileRef}>
-                                <button
-                                    aria-label="User menu"
-                                    onClick={() => setProfileMenuOpen(!profileMenuOpen)}
-                                    className="flex items-center justify-center w-10 h-10 bg-orange-500 text-white font-bold rounded-full text-lg hover:bg-orange-600 transition"
-                                >
-                                    <FaUserCircle className="text-2xl" />
-                                </button>
-                                {profileMenuOpen && (
-                                    <div className="absolute right-0 mt-2 w-48 bg-white border rounded-lg shadow-lg py-2">
-                                        <Link to="/profile" className="block px-4 py-2 text-gray-700 hover:bg-gray-100">Профиль</Link>
-                                        <button onClick={() => logout()} className="block w-full text-left px-4 py-2 text-red-600 hover:bg-gray-100">Чыгуу</button>
-                                    </div>
-                                )}
-                            </div>
-                        ) : (
-                            <div className="space-x-4">
-                                <Link to="/login" className="text-white hover:text-orange-400 transition">Логин</Link>
-                                <Link to="/register" className="bg-orange-500 text-white px-4 py-2 rounded-xl hover:bg-orange-600 transition w-[135px] h-[50px]">Катталуу</Link>
-                            </div>
-                        )}
-                    </div>
-
-                    <GrLanguage className="w-[21.86333465576172px] h-[23.2166690826416px] text-white cursor-pointer" />
-
-                    <button
-                        className="lg:hidden text-white focus:outline-none menu-toggle"
-                        aria-label="Toggle menu"
-                        onClick={() => setMenuOpen(!menuOpen)}
-                    >
-                        {menuOpen ? <FaTimes className="text-2xl" /> : <FaBars className="text-2xl" />}
-                    </button>
-                </div>
-
+        
+            <div className="hidden md:flex items-center border border-black rounded overflow-hidden flex-1 max-w-xs ml-6">
+              <IoSearch className="w-5 h-5 ml-2 text-gray-700 dark:text-gray-200" />
+              <input
+                type="text"
+                placeholder="Издөө"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="px-3 py-2 focus:outline-none bg-transparent w-full"
+              />
             </div>
-            {menuOpen && (
-                <div ref={mobileMenuRef} className="md:hidden bg-[#1c3a3e] shadow-md py-4 flex flex-col items-center space-y-4 w-full mobile-menu transition-all duration-300 transform scale-100 opacity-100">
-                    {user && <Link to="/profile" onClick={() => handleLinkClick('/profile')} className="block px-4 py-2 text-white hover:text-orange-400">Профиль</Link>}
-                    <NavLinks user={user} onClick={() => setMenuOpen(false)} />
-                    {!user ? (
-                        <div className="flex flex-col space-y-2 w-full px-6">
-                            <Link to="/login" onClick={() => handleLinkClick('/login')} className="text-white hover:text-orange-400 transition font-semibold text-lg text-center">Логин</Link>
-                            <Link to="/register" onClick={() => handleLinkClick('/register')} className="bg-orange-500 text-white px-4 py-2 rounded-lg text-center hover:bg-orange-600 transition">Катталуу</Link>
-                        </div>
-                    ) : (
-                        <button onClick={() => { logout(); setMenuOpen(false); }} className="text-white hover:text-orange-400 transition">Чыгуу</button>
-                    )}
+
+            <div className="hidden md:flex items-center ml-6">
+              <NavLinks isMobile={false} />
+            </div>
+          </div>
+
+      
+          <div className="hidden md:flex items-center space-x-4">
+            <div className="relative" ref={langRef}>
+              <button
+                onClick={() => setLangOpen((p) => !p)}
+                className="flex items-center space-x-1 p-2"
+              >
+                <GrLanguage className="text-gray-700 dark:text-gray-200 w-5 h-5 sm:w-6 sm:h-6" />
+                <BsChevronDown
+                  className={`w-4 h-4 text-gray-700 dark:text-gray-200 transform transition-transform duration-300 ${
+                    langOpen ? "rotate-180" : ""
+                  }`}
+                />
+              </button>
+              {langOpen && (
+                <div className="absolute right-0 mt-2 bg-white dark:bg-gray-800 shadow rounded z-50">
+                  {["Кыргызча", "English"].map((l) => (
+                    <button
+                      key={l}
+                      onClick={() => {
+                        setLang(l);
+                        setLangOpen(false);
+                      }}
+                      className="block px-4 py-2 w-full text-left hover:bg-gray-100 dark:hover:bg-gray-700"
+                    >
+                      {l}
+                    </button>
+                  ))}
                 </div>
-            )}
-        </header>
-    );
+              )}
+            </div>
+
+            <button
+              onClick={() => setDark((p) => !p)}
+              className={`w-12 h-6 rounded-full relative transition-colors duration-300 ${
+                dark ? "bg-gray-700" : "bg-blue-300"
+              }`}
+            >
+              <span
+                className={`absolute top-[2px] w-5 h-5 rounded-full bg-white transition-all duration-300 ${
+                  dark ? "right-[2px]" : "left-[2px]"
+                }`}
+              ></span>
+            </button>
+
+            <Link
+              to="/register"
+              className="bg-orange-500 hover:bg-orange-500 text-white rounded-md px-4 py-2 text-base md:text-lg font-semibold shadow-[0_0_5px_2px_rgba(255,165,0,0.8)]"
+            >
+              Катталуу
+            </Link>
+          </div>
+        </div>
+
+<div className="lg:hidden flex flex-col items-center w-full">
+
+  <Link to="/" className="flex items-center justify-center mb-3">
+    <img src={Logo} alt="logo" className="w-14 h-14 sm:w-16 sm:h-16" />
+    <div className="flex flex-col ml-2 leading-tight">
+      <span className="text-2xl sm:text-3xl font-bold text-orange-500">
+        EDUBOT
+      </span>
+      <span className="text-sm sm:text-base text-gray-700 dark:text-gray-200 tracking-wide">
+        LEARNING
+      </span>
+    </div>
+  </Link>
+
+ 
+  <div className="flex w-full justify-center items-center px-4 gap-x-2">
+    <div className="flex items-center border border-black rounded overflow-hidden w-[calc(100%-50px)] max-w-[280px]">
+      <IoSearch className="w-5 h-5 ml-2 text-gray-700 dark:text-gray-200" />
+      <input
+        type="text"
+        placeholder="Издөө"
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        className="px-3 py-2 focus:outline-none bg-transparent w-full truncate text-sm sm:text-base"
+      />
+    </div>
+    <button
+      onClick={() => setMenuOpen((p) => !p)}
+      className="text-gray-700 dark:text-gray-200 text-2xl"
+    >
+      <FaBars />
+    </button>
+  </div>
+</div>
+
+      </div>
+
+      {menuOpen && (
+        <div className="fixed inset-0 z-50 flex">
+          <div
+            className="flex-1 bg-black/50"
+            onClick={() => setMenuOpen(false)}
+          ></div>
+          <div className="w-64 sm:w-72 md:w-80 bg-white dark:bg-gray-800 h-full p-4 relative shadow-lg">
+            <button
+              onClick={() => setMenuOpen(false)}
+              className="absolute top-4 left-4 text-gray-600 dark:text-gray-300"
+            >
+              <FaTimes className="text-2xl" />
+            </button>
+            <NavLinks isMobile={true} />
+          </div>
+        </div>
+      )}
+    </header>
+  );
 };
 
 export default Header;
