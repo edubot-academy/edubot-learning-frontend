@@ -12,9 +12,8 @@ const FAQItem = ({ question, answer, isOpen, onClick }) => {
       </button>
 
       <div
-        className={`overflow-hidden transition-all duration-500 ease-in-out ${
-          isOpen ? "max-h-40 opacity-100 mb-4" : "max-h-0 opacity-0"
-        }`}
+        className={`overflow-hidden transition-all duration-500 ease-in-out ${isOpen ? "max-h-40 opacity-100 mb-4" : "max-h-0 opacity-0"
+          }`}
       >
         <p className="text-gray-500 text-sm leading-relaxed">{answer}</p>
       </div>
@@ -45,7 +44,7 @@ const FAQ = () => {
   const [openIndex, setOpenIndex] = useState(null);
 
   return (
-    <div className="max-w-2xl py-8 pl-8 mb-20">
+    <div className="max-w-2xl px-4 lg:pl-40 sm:px-6 lg:px-8 py-8 mb-20">
       <h3 className="text-2xl font-bold text-gray-900">FAQ</h3>
       <p className="text-gray-500 text-sm mb-6">
         Мы тут собрали ответы на часто задаваемые вопросы
