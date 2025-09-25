@@ -4,67 +4,7 @@ import { useState } from "react";
 import edubot from '../../public/edubot.png'
 
 
-const FAQItem = ({ question, answer, isOpen, onClick }) => {
-  return (
-    <div className="border-b border-gray-700 pb-2">
-      <button
-        onClick={onClick}
-        className="w-full flex justify-between items-center text-left focus:outline-none"
-      >
-        <span>{question}</span>
-        <span className="text-xl">{isOpen ? "−" : "+"}</span>
-      </button>
 
-      <div
-        className={`overflow-hidden transition-all duration-500 ease-in-out ${
-          isOpen ? "max-h-40 opacity-100 mt-2" : "max-h-0 opacity-0"
-        }`}
-      >
-        <p className="text-gray-400 text-sm leading-relaxed">{answer}</p>
-      </div>
-    </div>
-  );
-};
-
-const FAQ = () => {
-  const faqData = [
-    {
-      q: "Как зарегистрироваться на курсы?",
-      a: "Чтобы зарегистрироваться, создайте аккаунт, выберите курс и нажмите «Записаться».",
-    },
-    {
-      q: "Какие курсы предлагает Edubot?",
-      a: "У нас есть курсы по IT, дизайну, маркетингу, языкам и другим направлениям.",
-    },
-    {
-      q: "Как получить сертификат после завершения курса?",
-      a: "После успешного завершения курса и сдачи теста, вы получите сертификат в личном кабинете.",
-    },
-    {
-      q: "Как связаться с поддержкой, если возникнут вопросы?",
-      a: "Вы можете написать нам на email: edubot@gmail.com или позвонить по телефону +996 (500) 000 000.",
-    },
-  ];
-
-  const [openIndex, setOpenIndex] = useState(null);
-
-  return (
-    <div className="sm:col-span-2 lg:col-start-2 lg:col-span-2 pt-8 space-y-4">
-      <h3 className="text-xl font-semibold text-center md:text-left">FAQ</h3>
-      <div className="space-y-4 text-sm text-gray-300">
-        {faqData.map((item, index) => (
-          <FAQItem
-            key={index}
-            question={item.q}
-            answer={item.a}
-            isOpen={openIndex === index}
-            onClick={() => setOpenIndex(openIndex === index ? null : index)}
-          />
-        ))}
-      </div>
-    </div>
-  );
-};
 
 const Footer = () => {
   return (
@@ -137,7 +77,6 @@ const Footer = () => {
           </div>
         </div>
 
-        <FAQ />
       </div>
 
       <div className="w-full h-px bg-gray-600 mt-12 mb-6"></div>

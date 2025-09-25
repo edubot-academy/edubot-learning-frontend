@@ -11,6 +11,7 @@ import HeroStart from "../components/HeroStart";
 import Apply from "../components/Apply";
 import Contact from "../components/Contacts";
 import Instructor from "../components/TopInstructors"
+import FAQ from "../components/FAQ";
 const HomePage = () => {
     const { user } = useContext(AuthContext);
     const [cart, setCart] = useState([]);
@@ -86,6 +87,7 @@ const HomePage = () => {
             {/* <Evaluate /> */}
 
             <Contact />
+            <FAQ/>
         </div>
     );
 };
