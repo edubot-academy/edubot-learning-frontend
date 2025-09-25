@@ -71,17 +71,17 @@ const Header = () => {
                 <div className="hidden lg:flex items-center justify-between w-full">
 
                     <div className="flex items-center gap-6 flex-1">
-                        <Link to="/" className="flex items-center space-x-4 whitespace-nowrap">
+                        <Link to="/" className="flex items-center whitespace-nowrap">
                             <img
                                 src={Logo}
                                 alt="logo"
-                                className="h-14 md:h-16 w-auto"
+                                className="h-14 w-auto"
                             />
-                            <div className="flex flex-col">
-                                <span className="text-2xl md:text-3xl font-bold text-orange-500">
+                            <div className="flex flex-col mt-1">
+                                <span className="text-2xl md:text-2xl font-bold text-orange-500">
                                     EDUBOT
                                 </span>
-                                <span className="-mt-2 text-sm md:text-base text-gray-700 dark:text-gray-200 tracking-wide">
+                                <span className="-mt-2 text-sm md:text-base text-gray-700 dark:text-gray-200 tracking-[0.14em]">
                                     LEARNING
                                 </span>
                             </div>
