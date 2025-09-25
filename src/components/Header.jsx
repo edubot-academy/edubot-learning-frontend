@@ -67,17 +67,21 @@ const Header = () => {
     return (
         <header className="sticky top-0 w-full bg-white dark:bg-gray-900 shadow z-50">
             <div className="px-4 md:px-10 py-3 flex flex-col items-center">
-      
+
                 <div className="hidden lg:flex items-center justify-between w-full">
-                  
+
                     <div className="flex items-center gap-6 flex-1">
                         <Link to="/" className="flex items-center space-x-4 whitespace-nowrap">
-                            <img src={Logo} alt="logo" className="w-14 h-14 md:w-16 md:h-16" />
+                            <img
+                                src={Logo}
+                                alt="logo"
+                                className="h-14 md:h-16 w-auto"
+                            />
                             <div className="flex flex-col">
                                 <span className="text-2xl md:text-3xl font-bold text-orange-500">
                                     EDUBOT
                                 </span>
-                                <span className="-mt-2 text-sm md:text-base text-gray-700 dark:text-gray-200 tracking-wide ">
+                                <span className="-mt-2 text-sm md:text-base text-gray-700 dark:text-gray-200 tracking-wide">
                                     LEARNING
                                 </span>
                             </div>
@@ -154,12 +158,12 @@ const Header = () => {
                 {/* Mobile */}
                 <div className="lg:hidden flex flex-col items-center w-full">
                     <Link to="/" className="flex items-center justify-center mb-3">
-                        <img src={Logo} alt="logo" className="w-14 h-14 sm:w-16 sm:h-16" />
+                        <img src={Logo} alt="logo" className="h-14 md:h-16 w-auto" />
                         <div className="flex flex-col ml-2 leading-tight">
                             <span className="text-2xl sm:text-3xl font-bold text-orange-500">
                                 EDUBOT
                             </span>
-                            <span className="text-sm sm:text-base text-gray-700 dark:text-gray-200 tracking-wide">
+                            <span className="text-sm -mt-2 sm:text-base text-gray-700 dark:text-gray-200 tracking-wide">
                                 LEARNING
                             </span>
                         </div>
