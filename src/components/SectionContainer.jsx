@@ -1,36 +1,12 @@
 
 import Card from "./Card";
-// import programmerImg from "../assets/images/photoprogrammer.png";
-// import StarImg from "../assets/icons/star.svg";
-
-import CardImg from "../assets/images/cradImg.png"
 
 
-const card = [
-  {
-    img: CardImg,
-    title: "Руководство для начинающих по UX/UI дизайну",
-    name:"Рональд Ричардс... Read More",
-    rating: "4.9",
-    price: "24000",
-  },
-  {
-    img: CardImg,
-    title: "Руководство для начинающих по UX/UI дизайну",
-    name:"Рональд Ричардс... Read More",
-   
-    rating: "4.9",
-    price: "24000",
-  },
-  {
-    img: CardImg,
-    title: "Руководство для начинающих по UX/UI дизайну",
-    name:"Рональд Ричардс... Read More",
-    rating: "4.9",
-    price: "24000",
-  },
 
-]
+
+
+
+
 
 
 const SectionContainer = ({ noBg = false, hideTitleAndLink = false, data = []  }) => {
@@ -63,10 +39,10 @@ const SectionContainer = ({ noBg = false, hideTitleAndLink = false, data = []  }
       )}
 
      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 justify-items-center">
-  {card.slice(0, 3).map((course) => (
+  {data.slice(0, 3).map((course) => (
     <Card
       key={course.id}
-      img={course.img}
+      img={course.coverImageUrl}
       title={course.title}
       description={course.name}
       star={course.img}

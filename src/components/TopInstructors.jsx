@@ -51,7 +51,7 @@ const TopInstructors = () => {
 </div>
 
   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 justify-items-center">
-  {instructors.map((instructor, index) => (
+  {instructors.slice(0,3).map((instructor, index) => (
     <div
       key={index}
       className="w-[305px] h-[340px] bg-white shadow-md rounded-xl flex flex-col overflow-hidden"
