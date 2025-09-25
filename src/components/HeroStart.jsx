@@ -4,6 +4,7 @@ import Logotip from "../assets/images/logotip-hero.png";
 import Vektor from "../assets/images/vector.png";
 
 import bannerImg1 from "../../public/banner-img1.png";
+import bannerBlure1 from "../../public/banner-img1-blure.png";
 import bannerImg2 from "../../public/banner-img2.png";
 import bannerImg3 from "../../public/banner-img3.png";
 import bannerMan3 from "../../public/banner-img-man.png";
@@ -21,8 +22,7 @@ const HeroStart = () => {
         },
         {
             title: "БУТКЕМП КУРСЫ ДЛЯ ВАШЕГО РЕБЕНКА!",
-            description:
-                "Программалоо тилдерин жана код жазуу жөндөмдөрүн интерактивдүү сабактар аркылуу өздөштүрүңүз",
+            description: "Программалоо тилдерин жана код жазуу жөндөмдөрүн интерактивдүү сабактар аркылуу өздөштүрүңүз",
             image: bannerImg2,
             color: "from-teal-900 to-teal-700",
         },
@@ -42,117 +42,94 @@ const HeroStart = () => {
     }, [slides.length]);
 
     return (
-        <div className="relative from-green-900 to-green-800 text-white h-[946px] overflow-hidden">
+        <div className="relative from-green-900 to-green-800 text-white h-[994px] overflow-hidden mt-[100px]">
             <div className="relative h-full">
                 {slides.map((slide, index) => (
                     <div
                         key={index}
-                        className={`absolute inset-0 transition-all duration-1000 ease-in-out ${index === currentSlide
+                        className={`absolute inset-0 transition-all duration-1000 ease-in-out  ${index === currentSlide
                             ? "opacity-100 z-10 translate-x-0"
                             : "opacity-0 z-0 translate-x-full"
                             }`}
                     >
                         {/* ---------- СЛАЙД 1 ---------- */}
                         {index === 0 && (
-                            <section className="relative max-w-7xl mx-auto flex flex-col lg:flex-row items-center justify-between h-[946px] px-6 py-12 text-black">
-                                <div className="w-full lg:w-1/2 text-center lg:text-left space-y-6">
-                                    <h1 className="font-inter font-bold text-3xl sm:text-4xl md:text-5xl lg:text-6xl leading-tight">
+                            <section className="w-[1763px] relative mx-auto flex flex-col lg:flex-row items-center justify-between px-6 py-12 text-black">
+                                <div className="w-full lg:w-1/2 text-center lg:text-left space-y-6 h-[454px]">
+                                    <h1 className="font-inter font-bold text-3xl sm:text-4xl md:text-5xl lg:text-[58px] leading-tight">
                                         {slide.title}
                                     </h1>
-                                    <p className="text-lg sm:text-xl md:text-2xl max-w-xl">
+                                    <p className="font-normal text-[26px] text-[#3E424A]">
                                         {slide.description}
                                     </p>
 
-                                    <div className="flex flex-wrap justify-center lg:justify-start gap-4 pt-4">
-                                        <Link
-                                            to="/info"
-                                            className="px-6 py-3 border border-gray-300 rounded-lg text-gray-800 hover:bg-gray-100 transition"
-                                        >
-                                            Толук маалымат алуу
-                                        </Link>
-                                        <Link
-                                            to="/courses"
-                                            className="px-6 py-3 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-lg shadow hover:opacity-90 transition"
-                                        >
-                                            Сабакты азыр баштоо
-                                        </Link>
-                                    </div>
-
-                                    <div className="flex gap-6 pt-6 justify-center lg:justify-start">
-                                        <div className="bg-gray-100 rounded-lg px-4 py-3 text-center">
-                                            <span className="text-2xl font-bold text-gray-800">
-                                                200+
-                                            </span>
-                                            <p className="text-sm text-gray-600">
-                                                Тажрыйбалуу менторлордон онлайн сабактар
-                                            </p>
-                                        </div>
-                                        <div className="bg-gray-100 rounded-lg px-4 py-3 text-center">
-                                            <span className="text-2xl font-bold text-gray-800">
-                                                10k+
-                                            </span>
-                                            <p className="text-sm text-gray-600">
-                                                Азыркы күнгө чейинки колдонуучулар
-                                            </p>
-                                        </div>
+                                    <div className="flex flex-wrap justify-center lg:justify-start gap-4 pt-[60px]"><button className='border border-[#141619] rounded-lg text-gray-800 hover:bg-gray-100 transition w-[373px] h-[72px] font-semibold text-[20px] '>
+                                        Толук маалымат алуу
+                                    </button>
+                                        <button
+                                            className="rounded-lg w-[394px] h-[72px] bg-gradient-to-b from-[#FF8C6E] to-[#E14219] font-semibold text-[20px] text-white shadow-[0px_5px_21.3px_0px_#E14219BF]">
+                                            Сабакты азыр баштоо</button>
                                     </div>
                                 </div>
 
                                 <div className="w-full lg:w-1/2 flex justify-center lg:justify-end relative mt-10 lg:mt-0">
+                                    <div className="absolute bg-gray-100 rounded-lg px-[33px] py-[32px] w-[369px] h-[198px] bg-[var(--Gray-Gray-50,#F3F4F6)] border border-[var(--Gray-Gray-50,#F3F4F6)] left-0 top-[370px] z-[0]">
+                                        <span className="text-[54px] font-[Suisse_Intl] font-normal text-[54px] leading-[100%] tracking-[0%] ">
+                                            200+
+                                        </span>
+                                        <p className="font-[Suisse_Intl] font-normal text-[20px] leading-[100%] tracking-[0%] text-[#141619] mt-[11px]">
+                                            Тажрыйбалуу менторлордон онлайн сабактар
+                                        </p>
+                                    </div>
+
+                                    <div className="absolute rounded-lg px-[33px] py-[32px] w-[315px] h-[198px] bg-white/30 backdrop-blur-lg border border-[var(--Gray-Gray-50,#F3F4F6)] left-[486px] top-[704px] z-[2]">
+                                        <span className="text-[54px] font-[Suisse_Intl] font-normal text-[54px] leading-[100%] tracking-[0%] ">
+                                            10k+
+                                        </span>
+                                        <p className="font-[Suisse_Intl] font-normal text-[20px] leading-[100%] tracking-[0%] text-[#141619] mt-[11px]">
+                                            Азыркы күнгө чейинки колдонуучулар
+                                        </p>
+                                    </div>
+
                                     <img
                                         src={slide.image}
                                         alt="Edubot"
-                                        className="w-[320px] sm:w-[450px] lg:w-[500px] h-auto object-contain"
+                                        className="w-[662px]  z-[1]"
                                     />
+                                    <img src={bannerBlure1} alt="" className='absolute z-[1] left-[680px] bottom-[10px]' />
                                 </div>
                             </section>
                         )}
 
                         {/* ---------- СЛАЙД 2 ---------- */}
                         {index === 1 && (
-                            <section className="relative h-[946px] flex items-center justify-center text-white">
+                            <section className="relative h-full flex items-center justify-center text-white">
                                 {/* фон с затемнением */}
                                 <div className="absolute inset-0">
                                     <img
                                         src={slide.image}
                                         alt="Background"
-                                        className="w-full h-full object-cover"
+                                        className="w-full h-full bg-[linear-gradient(168.58deg,rgba(65,65,65,0.86)_8.4%,rgba(255,255,255,0)_343.16%)]"
                                     />
-                                    <div className="absolute inset-0 bg-black/40" />
+                                    <div className="absolute inset-0 bg-[linear-gradient(168.58deg,rgba(65,65,65,0.86)_8.4%,rgba(255,255,255,0)_343.16%)]" />
                                 </div>
 
                                 {/* контент */}
-                                <div className="relative z-10 flex flex-col items-center text-center px-6 max-w-4xl space-y-6">
-                                    <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold">
+                                <div className="relative z-10 flex flex-col items-center text-center max-w-[1079px] space-y-6">
+                                    <h1 className="font-bold text-[67.95px] leading-[120%] tracking-[1%] text-center">
                                         {slide.title}
                                     </h1>
-                                    <p className="text-base sm:text-lg md:text-xl opacity-90">
+                                    <p className="font-normal text-[30.46px]">
                                         {slide.description}
                                     </p>
 
                                     {/* блок кнопок и контактов */}
-                                    <div className="mt-10 w-full max-w-4xl bg-white/20 backdrop-blur-md rounded-2xl p-6 flex flex-col sm:flex-row items-center justify-between gap-8">
-                                        <div className="flex flex-col sm:flex-row gap-6">
-                                            {/* кнопка 1 */}
-                                            <button className="flex items-center gap-2 px-4 py-2 text-white hover:text-gray-200">
-                                                <span>Посмотреть новые уроки</span>
-                                                <span className="flex items-center justify-center w-8 h-8 rounded-full bg-gray-300 text-black">
-                                                    →
-                                                </span>
-                                            </button>
-                                            {/* кнопка 2 */}
-                                            <button className="flex items-center gap-2 px-4 py-2 text-white hover:text-gray-200">
-                                                <span>Узнать расписание</span>
-                                                <span className="flex items-center justify-center w-8 h-8 rounded-full bg-gray-300 text-black">
-                                                    →
-                                                </span>
-                                            </button>
-                                        </div>
-
-                                        <div className="text-center sm:text-right">
-                                            <p className="text-sm opacity-80">Наши контакты</p>
-                                            <p className="text-lg font-semibold">+996 (550) 942 433</p>
-                                        </div>
+                                    <div className="flex flex-wrap justify-center lg:justify-start gap-4 pt-[60px]"><button className='border border-white rounded-lg text-white transition w-[373px] h-[72px] font-semibold text-[20px] '>
+                                        Толук маалымат алуу
+                                    </button>
+                                        <button
+                                            className="rounded-lg w-[394px] h-[72px] bg-gradient-to-b from-[#FF8C6E] to-[#E14219] font-semibold text-[20px] text-white shadow-[0px_5px_21.3px_0px_#E14219BF]">
+                                            Сабакты азыр баштоо</button>
                                     </div>
                                 </div>
                             </section>
@@ -160,7 +137,7 @@ const HeroStart = () => {
 
                         {/* ---------- СЛАЙД 3 ---------- */}
                         {index === 2 && (
-                            <section className="relative h-[946px] flex items-center justify-center text-white">
+                            <section className="relative h-full flex justify-center text-white">
                                 {/* Фон офиса */}
                                 <div className="absolute inset-0">
                                     <img
@@ -171,35 +148,31 @@ const HeroStart = () => {
                                     <div className="absolute inset-0 bg-black/30" />
                                 </div>
 
-                                {/* Контент */}
-                                <div className="relative z-10 w-full max-w-6xl flex items-center justify-center px-6 ">
-                                    {/* Оранжевый блок с текстом */}
-                                    <div className="relative bg-[#e87029] text-white rounded-2xl p-8 w-full w-[1703px] flex flex-col lg:flex-row items-center">
-                                        <div className="space-y-6 lg:w-2/3">
-                                            <h1 className="text-3xl sm:text-4xl font-bold leading-tight">
-                                                Купи годовой тариф <br /> и получи 50% скидку <br /> на все курсы
-                                            </h1>
-                                            <p className="text-base sm:text-lg opacity-90 max-w-md">
-                                                Программалоо тилдерин жана код жазуу жөндөмдөрүн интерактивдүү
-                                                сабактар аркылуу өздөштүрүңүз
-                                            </p>
-                                            <p className="absolute top-6 right-6 text-sm text-white/80">
-                                                болуп коробогондой арзандатуу!
-                                            </p>
-                                            <div className="absolute bottom-6 right-6 text-white/30 text-7xl font-bold">
-                                                50%
-                                            </div>
-                                        </div>
-
-                                        {/* Парень поверх блока, по центру */}
-                                        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex justify-center">
-                                            <img
-                                                src={bannerMan3}
-                                                alt="Student"
-                                                className="w-[300px] sm:w-[380px] lg:w-[420px] h-auto object-contain transform -scale-x-100"
-                                            />
+                                {/* Оранжевый блок с текстом */}
+                                <div className="relative bg-[linear-gradient(93.72deg,#F06743_11.31%,#D27A3B_67.42%)] text-white px-[61px] py-[66px] w-[1703px] flex w-[1703px] h-[601px] rounded-3xl mt-[269px] justify-between">
+                                    <div className="">
+                                        <h1 className="font-[Suisse_Intl] font-bold text-[58px] leading-[120%] tracking-[1%]">
+                                            Купи годовой тариф <br /> и получи 50% скидку <br /> на все курсы
+                                        </h1>
+                                        <p className="font-[Suisse_Intl] font-normal text-[26px] leading-[120%] tracking-[0%] mt-[26px] w-[672px]">
+                                            Программалоо тилдерин жана код жазуу жөндөмдөрүн интерактивдүү
+                                            сабактар аркылуу өздөштүрүңүз
+                                        </p>
+                                    </div>
+                                    <img
+                                        src={bannerMan3}
+                                        alt="Student"
+                                        className="w-[871px] h-[871px] -scale-x-100 absolute left-[500px] bottom-0"
+                                    />
+                                    <div className="flex flex-col justify-between h-[496px]">
+                                        <p className="text-[#FFFFFF73] font-normal text-[26px] leading-[120%] tracking-[0%]">
+                                            болуп коробогондой арзандатуу!
+                                        </p>
+                                        <div className="text-[#FFFFFF26] font-bold text-[150.49px] text-center">
+                                            50%
                                         </div>
                                     </div>
+
                                 </div>
                             </section>
                         )}
