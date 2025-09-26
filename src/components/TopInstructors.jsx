@@ -36,7 +36,7 @@ const TopInstructors = () => {
   return (
     <div className="bg-white px-4 py-10 sm:px-6 lg:px-12">
       <div className="flex items-center justify-between gap-10 text-black mb-12">
-  <div className="w-[640px]">
+  <div className="">
     <h2 className="font-suisse font-bold text-[44px] leading-[44px] tracking-[0.01em] mb-[26px]">
      Топ Инструктор
     </h2>
@@ -50,25 +50,25 @@ const TopInstructors = () => {
   </button>
 </div>
 
-  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 justify-items-center">
+  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10 ">
   {instructors.slice(0,3).map((instructor, index) => (
     <div
       key={index}
-      className="w-[305px] h-[340px] bg-white shadow-md rounded-xl flex flex-col overflow-hidden"
+      className="bg-white shadow-md rounded-xl flex flex-col overflow-hidden  px-[24px] py-[29px] border-[1px] border-[#C5C9D1] "
     >
       <img
         src={instructor.img}
         alt={instructor.name}
-        className="w-[265px] h-[198px] object-cover mx-auto mt-4 rounded-[10px]"
+        className="w-[450px] h-[400px] object-cover rounded-[4px]"
       />
 
-      <div className="mt-3 px-2 flex-grow">
-        <h3 className="text-lg font-semibold text-black">{instructor.name}</h3>
+      <div className="">
+        <h3 className="text-lg font-semibold text-black mt-[24px] mb-[18px]">{instructor.name}</h3>
         <p className="text-sm pt-2 text-gray-500">{instructor.position}</p>
       </div>
 
-      <div className="w-[265px] flex justify-between items-center mt-auto px-1 pb-4">
-        <div className="flex items-center gap-1">
+      <div className="flex mt-[30px] mb-[20px] gap-2">
+        <div className="flex items-center gap-1 ">
           <img src={StarImg} alt="звезда" className="w-5 h-5" />
           <span className="text-sm text-black">{instructor.rating}</span>
         </div>
