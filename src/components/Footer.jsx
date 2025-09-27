@@ -4,6 +4,7 @@ import { FaInstagram } from "react-icons/fa";
 import { FaTelegramPlane } from "react-icons/fa";
 import { IoIosCall } from "react-icons/io";
 
+
 const Footer = () => {
   return (
     <footer className="bg-white text-black py-12 border-t border-gray-300 p-5">
