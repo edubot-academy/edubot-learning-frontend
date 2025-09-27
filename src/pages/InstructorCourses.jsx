@@ -27,7 +27,13 @@ const InstructorCourses = () => {
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {courses.map((course) => (
                     <div key={course.id} className="bg-white rounded shadow p-4 relative">
-                        <img src={course.coverImageUrl} alt={course.title} className="w-full h-48 object-cover mb-4" />
+                        <img
+                            src={course.coverImageUrl}
+                            alt={course.title}
+                            className="w-full h-48 object-cover mb-4"
+                            loading="lazy"
+                            decoding="async"
+                        />
                         <h2 className="text-xl font-semibold mb-2">{course.title}</h2>
                         <p className="text-gray-700 mb-2">{course.instructor.fullName}</p>
                         <p className="text-sm text-gray-500 mb-2">Баасы: {course.price} с</p>

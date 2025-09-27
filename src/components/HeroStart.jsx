@@ -42,7 +42,7 @@ const HeroStart = () => {
     }, [slides.length]);
 
     return (
-        <div className="relative from-green-900 to-green-800 text-white h-[994px] overflow-hidden mt-[100px]">
+        <div className="relative from-green-900 to-green-800 text-white 2xl:h-[994px] h-[994px] lg:h-[535px] overflow-hidden">
             <div className="relative h-full">
                 {slides.map((slide, index) => (
                     <div
@@ -54,39 +54,42 @@ const HeroStart = () => {
                     >
                         {/* ---------- СЛАЙД 1 ---------- */}
                         {index === 0 && (
-                            <section className="w-[1763px] relative mx-auto flex flex-col lg:flex-row items-center justify-between px-6 py-12 text-black">
-                                <div className="w-full lg:w-1/2 text-center lg:text-left space-y-6 h-[454px]">
-                                    <h1 className="font-inter font-bold text-3xl sm:text-4xl md:text-5xl lg:text-[58px] leading-tight">
+                            <section className="2xl:w-[1763px] w-full relative mx-auto flex flex-col lg:flex-row items-center justify-between 2xl:px-6 px-10 py-12 text-black">
+                                <div className="lg:w-[600px] 2xl:w-1/2 text-center lg:text-left space-y-6 h-[454px]">
+                                    <h1 className="font-inter 2xl:font-bold text-[30px] 2xl:text-[58px] 2xl:leading-tight font-semibold leading-[100%] ">
                                         {slide.title}
                                     </h1>
-                                    <p className="font-normal text-[26px] text-[#3E424A]">
+                                    <p className="font-normal 2xl:text-[26px] text-[#3E424A] text-[18px]">
                                         {slide.description}
                                     </p>
 
-                                    <div className="flex flex-wrap justify-center lg:justify-start gap-4 pt-[60px]"><button className='border border-[#141619] rounded-lg text-gray-800 hover:bg-gray-100 transition w-[373px] h-[72px] font-semibold text-[20px] '>
-                                        Толук маалымат алуу
-                                    </button>
+                                    <div className="flex justify-center lg:justify-start 2xl:gap-4 gap-[12px] pt-[60px]">
                                         <button
-                                            className="rounded-lg w-[394px] h-[72px] bg-gradient-to-b from-[#FF8C6E] to-[#E14219] font-semibold text-[20px] text-white shadow-[0px_5px_21.3px_0px_#E14219BF]">
-                                            Сабакты азыр баштоо</button>
+                                            className='border border-[#141619] rounded-lg text-gray-800 hover:bg-gray-100 transition 2xl:w-[373px] 2xl:h-[72px] 2xl:font-semibold 2xl:text-[20px] w-[197px] h-[64px] font-normal text-[14px]'>
+                                            Толук маалымат алуу
+                                        </button>
+                                        <button
+                                            className="rounded-lg 2xl:w-[394px] 2xl:h-[72px] bg-gradient-to-b from-[#FF8C6E] to-[#E14219] 2xl:font-semibold 2xl:text-[20px] text-white shadow-[0px_5px_21.3px_0px_#E14219BF] w-[197px] h-[64px] font-normal text-[14px]">
+                                            Сабакты азыр баштоо
+                                        </button>
                                     </div>
                                 </div>
 
-                                <div className="w-full lg:w-1/2 flex justify-center lg:justify-end relative mt-10 lg:mt-0">
-                                    <div className="absolute bg-gray-100 rounded-lg px-[33px] py-[32px] w-[369px] h-[198px] bg-[var(--Gray-Gray-50,#F3F4F6)] border border-[var(--Gray-Gray-50,#F3F4F6)] left-0 top-[370px] z-[0]">
-                                        <span className="text-[54px] font-[Suisse_Intl] font-normal text-[54px] leading-[100%] tracking-[0%] ">
+                                <div className="flex justify-center lg:justify-end relative lg:mt-10 lg:mt-0">
+                                    <div className="absolute bg-gray-100 2xl:rounded-lg 2xl:px-[33px] 2xl:py-[32px] 2xl:w-[369px] 2xl:h-[198px] bg-[var(--Gray-Gray-50,#F3F4F6)] border border-[var(--Gray-Gray-50,#F3F4F6)] 2xl:left-0 left-[-105px] 2xl:top-[370px] top-[180px] z-[0] w-[228px] h-[117px] rounded-[4.73px] py-[18.91px] px-[19.51px]">
+                                        <span className="2xl:text-[54px] font-normal leading-[100%] tracking-[0%] text-[28px]">
                                             200+
                                         </span>
-                                        <p className="font-[Suisse_Intl] font-normal text-[20px] leading-[100%] tracking-[0%] text-[#141619] mt-[11px]">
+                                        <p className="2xl:text-[20px] leading-[100%] tracking-[0%] text-[#141619] font-normal text-[12px] 2xl:mt-[11px] mt-[5.91px]">
                                             Тажрыйбалуу менторлордон онлайн сабактар
                                         </p>
                                     </div>
 
-                                    <div className="absolute rounded-lg px-[33px] py-[32px] w-[315px] h-[198px] bg-white/30 backdrop-blur-lg border border-[var(--Gray-Gray-50,#F3F4F6)] left-[486px] top-[704px] z-[2]">
-                                        <span className="text-[54px] font-[Suisse_Intl] font-normal text-[54px] leading-[100%] tracking-[0%] ">
+                                    <div className="absolute 2xl:rounded-lg 2xl:px-[33px] 2xl:py-[32px] 2xl:w-[315px] 2xl:h-[198px] bg-white/30 backdrop-blur-lg border border-[var(--Gray-Gray-50,#F3F4F6)] 2xl:left-[486px] left-[110px] 2xl:top-[704px] top-[340px] z-[2] w-[205px] h-[129px] rounded-[5.23px] py-[20.9px] px-[21.56px]">
+                                        <span className="2xl:text-[54px] font-[Suisse_Intl] font-normal leading-[100%] tracking-[0%] text-[28px]">
                                             10k+
                                         </span>
-                                        <p className="font-[Suisse_Intl] font-normal text-[20px] leading-[100%] tracking-[0%] text-[#141619] mt-[11px]">
+                                        <p className="font-[Suisse_Intl] font-normal 2xl:text-[20px] text-[12px] leading-[100%] tracking-[0%] text-[#141619] 2xl:mt-[11px] mt-[6.53px]">
                                             Азыркы күнгө чейинки колдонуучулар
                                         </p>
                                     </div>
@@ -94,9 +97,9 @@ const HeroStart = () => {
                                     <img
                                         src={slide.image}
                                         alt="Edubot"
-                                        className="w-[662px]  z-[1]"
+                                        className="2xl:w-[662px] z-[1] w-[326px] 2xl:mr-0 mr-10"
                                     />
-                                    <img src={bannerBlure1} alt="" className='absolute z-[1] left-[680px] bottom-[10px]' />
+                                    <img src={bannerBlure1} alt="" className='absolute z-[1] left-[490px] bottom-[10px] hidden 2xl:flex' />
                                 </div>
                             </section>
                         )}
@@ -149,26 +152,26 @@ const HeroStart = () => {
                                 </div>
 
                                 {/* Оранжевый блок с текстом */}
-                                <div className="relative bg-[linear-gradient(93.72deg,#F06743_11.31%,#D27A3B_67.42%)] text-white px-[61px] py-[66px] w-[1703px] flex w-[1703px] h-[601px] rounded-3xl mt-[269px] justify-between">
+                                <div className="relative bg-[linear-gradient(93.72deg,#F06743_11.31%,#D27A3B_67.42%)] text-white 2xl:px-[61px] px-[2%] 2xl:py-[66px] py-[2%] flex flex-col lg:flex-row 2xl:w-[1703px] 2xl:h-[601px] h-[80%] w-[90%] rounded-3xl 2xl:mt-[269px] m-auto justify-between">
                                     <div className="">
-                                        <h1 className="font-[Suisse_Intl] font-bold text-[58px] leading-[120%] tracking-[1%]">
+                                        <h1 className="font-[Suisse_Intl] font-bold 2xl:text-[58px] text-[30px] leading-[120%] tracking-[1%]">
                                             Купи годовой тариф <br /> и получи 50% скидку <br /> на все курсы
                                         </h1>
-                                        <p className="font-[Suisse_Intl] font-normal text-[26px] leading-[120%] tracking-[0%] mt-[26px] w-[672px]">
-                                            Программалоо тилдерин жана код жазуу жөндөмдөрүн интерактивдүү
-                                            сабактар аркылуу өздөштүрүңүз
+                                        <p className="font-[Suisse_Intl] font-normal 2xl:text-[26px] text-[18px] leading-[120%] tracking-[0%] mt-[26px] ">
+                                            Программалоо тилдерин жана код жазуу <br /> жөндөмдөрүн интерактивдүү
+                                            сабактар аркылуу <br /> өздөштүрүңүз
                                         </p>
                                     </div>
                                     <img
                                         src={bannerMan3}
                                         alt="Student"
-                                        className="w-[871px] h-[871px] -scale-x-100 absolute left-[500px] bottom-0"
+                                        className="2xl:w-[871px] 2xl:h-[871px] lg:h-[120%] -scale-x-100 absolute 2xl:left-[500px] lg:left-[26%] left-[30%] bottom-0"
                                     />
-                                    <div className="flex flex-col justify-between h-[496px]">
+                                    <div className="flex flex-col justify-between 2xl:h-[496px]">
                                         <p className="text-[#FFFFFF73] font-normal text-[26px] leading-[120%] tracking-[0%]">
                                             болуп коробогондой арзандатуу!
                                         </p>
-                                        <div className="text-[#FFFFFF26] font-bold text-[150.49px] text-center">
+                                        <div className="text-[#FFFFFF26] font-bold text-[150.49px] lg:text-center text-left">
                                             50%
                                         </div>
                                     </div>
