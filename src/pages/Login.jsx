@@ -6,12 +6,14 @@ import { AuthContext } from "../context/AuthContext";
 import SignInImg from "../assets/images/edubot-signup.png";
 import EyeIcon from "../assets/icons/EyeIcon";
 import EyeOffIcon from "../assets/icons/EyeOffIcon";
+import ForgotPassword from "../components/ForgotPassword";
 
 const LoginPage = () => {
   const { login } = useContext(AuthContext);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [forgotPassword, setForgotPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
@@ -34,7 +36,7 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="min-h-screen flex">
+    <div className="min-h-screen flex relative">
       {/* Левая часть с градиентом */}
       <div className="hidden md:flex md:w-1/2 bg-[linear-gradient(151.1deg,#FFCBA5_3.26%,#E64D26_96.74%)] flex-col justify-center items-center text-white px-6">
         <img
@@ -82,13 +84,9 @@ const LoginPage = () => {
               </button>
             </div>
 
-            <div className="flex justify-center text-sm ">
-              <Link
-                to="/forgot-password"
-                className="text-blue-500 hover:underline mb-[40px]"
-              >
-                Забыли пароль?
-              </Link>
+            <div className="flex justify-center text-sm text-blue-500 hover:underline cursor-pointer"
+              onClick={() => setForgotPassword(!forgotPassword)}>
+              Забыли пароль?
             </div>
 
             <button
@@ -108,6 +106,9 @@ const LoginPage = () => {
           </p>
         </div>
       </div>
+      {forgotPassword && (
+        <ForgotPassword onClose={() => setForgotPassword(false)} />
+      )}
     </div>
   );
 };
