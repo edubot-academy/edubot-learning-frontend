@@ -1,9 +1,8 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { registerUser } from "../services/api";
-import { Link } from "react-router-dom";
 import PhoneInput from "../components/PhoneInput";
-import SignUpImg from "../assets/images/sign-up.png";
+import SignUpImg from "../assets/images/edubot-signup.png";
 import EyeIcon from "../assets/icons/EyeIcon";
 import EyeOffIcon from "../assets/icons/EyeOffIcon";
 import toast from "react-hot-toast";
@@ -70,7 +69,7 @@ const SignupPage = () => {
 
     const phone = formData.phoneNumber;
     if (phone) {
-      const digitsOnly = phone.replace(/\D/g, '');
+      const digitsOnly = phone.replace(/\D/g, "");
       if (digitsOnly.length < 10) {
         toast.error("Телефон номери кеминде 10 цифра болушу керек.");
         setLoading(false);
@@ -78,7 +77,9 @@ const SignupPage = () => {
       }
 
       if (!/^\+\d{10,15}$/.test(phone)) {
-        toast.error("Телефон номери эл аралык форматта болсун. Мисалы: +996700123456 же +14155552671");
+        toast.error(
+          "Телефон номери эл аралык форматта болсун. Мисалы: +996700123456 же +14155552671"
+        );
         setLoading(false);
         return;
       }
@@ -96,6 +97,7 @@ const SignupPage = () => {
       setError(
         err.response?.data?.message || "Ката чыкты. Кайра аракет кылыңыз."
       );
+      console.log(err)
     } finally {
       setLoading(false);
     }
@@ -105,38 +107,41 @@ const SignupPage = () => {
     <button
       type="button"
       onClick={() => setShowPassword(!showPassword)}
-      className="absolute right-2 top-2"
+      className="absolute right-3 top-3"
     >
       {showPassword ? <EyeOffIcon /> : <EyeIcon />}
     </button>
-  )
+  );
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#1e605e] px-4">
-      <div className="flex flex-col md:flex-row items-center max-w-6xl w-full bg-[#1e605e] text-white gap-16">
-        {/* Левая часть: изображение */}
-        <div className="hidden md:flex md:w-1/2 justify-center">
-          <img
-            src={SignUpImg}
-            alt="Sign up"
-            className="max-w-[420px] w-full object-contain"
-          />
-        </div>
+    <div className="min-h-screen flex">
+      {/* Левая часть с градиентом */}
+      <div className="hidden md:flex md:w-1/2 bg-[linear-gradient(151.1deg,#FFCBA5_3.26%,#E64D26_96.74%)] flex-col justify-center items-center text-white px-6">
+        <img
+          src={SignUpImg}
+          alt="Sign up"
+          className="object-contain mb-6 w-[400px] h-[300px]"
+        />
+        <h2 className="font-bold text-center text-[50px]">
+          EDUBOT <br /> LEARNING
+        </h2>
+      </div>
 
-        {/* Правая часть: форма */}
-        <div className="md:w-1/2 w-full flex flex-col items-start px-4">
-          <h2 className="text-4xl font-bold mb-6">Регистрация</h2>
+      {/* Правая часть с формой */}
+      <div className="flex-1 flex items-center justify-center px-6">
+        <div className="w-full max-w-md">
+          <h2 className="text-2xl font-bold text-black mb-6">Регистрация</h2>
 
-          {error && <p className="text-red-400 mb-4">{error}</p>}
+          {error && <p className="text-red-500 mb-4">{error}</p>}
 
-          <form onSubmit={handleSubmit} className="space-y-3 w-[320px]">
+          <form onSubmit={handleSubmit} className="space-y-4">
             <input
               type="text"
               name="lastName"
               value={formData.lastName}
               onChange={handleChange}
-              placeholder="Фамилияңызды жазыңыз"
-              className="w-full px-4 py-2 rounded bg-white text-black focus:outline-none"
+              placeholder="Фамилия"
+              className="w-full px-4 py-2 border rounded focus:outline-none"
               required
             />
             <input
@@ -144,8 +149,8 @@ const SignupPage = () => {
               name="firstName"
               value={formData.firstName}
               onChange={handleChange}
-              placeholder="Атыңызды  жазыңыз"
-              className="w-full px-4 py-2 rounded bg-white text-black focus:outline-none"
+              placeholder="Имя"
+              className="w-full px-4 py-2 border rounded focus:outline-none"
               required
             />
             <input
@@ -153,12 +158,10 @@ const SignupPage = () => {
               name="email"
               value={formData.email}
               onChange={handleChange}
-              placeholder=" Email"
-              className="w-full px-4 py-2 rounded bg-white text-black focus:outline-none"
+              placeholder="Email"
+              className="w-full px-4 py-2 border rounded focus:outline-none"
               required
             />
-
-            <PhoneInput onChange={handlePhoneChange} value={formData.phoneNumber} />
 
             {/* Пароль */}
             <div className="relative">
@@ -167,77 +170,24 @@ const SignupPage = () => {
                 name="password"
                 value={formData.password}
                 onChange={handleChange}
-                placeholder="Сырсөздү жазыңыз "
-                className="w-full px-4 py-2 rounded bg-white text-black focus:outline-none pr-10"
+                placeholder="Придумайте пароль"
+                className="w-full px-4 py-2 border rounded focus:outline-none pr-10"
                 required
                 onFocus={() => setShowTooltip(true)}
                 onBlur={() => setTimeout(() => setShowTooltip(false), 100)}
               />
-              <EyeIconButton setShowPassword={setShowPassword} showPassword={showPassword} />
-
+              <EyeIconButton
+                setShowPassword={setShowPassword}
+                showPassword={showPassword}
+              />
               {showTooltip && (
-                <div className="absolute z-10 top-full right-0 mt-2 bg-white text-black rounded shadow-lg text-sm w-[170px] px-3 py-2">
+                <div className="absolute z-10 top-full right-0 mt-2 bg-white text-black rounded shadow-lg text-xs w-[180px] px-3 py-2">
                   <div className="absolute -top-2 left-20 w-3 h-3 bg-white rotate-45 shadow-sm" />
-                  <div className="flex items-center gap-2">
-                    <span
-                      className={
-                        passwordValidations.length
-                          ? "text-green-600"
-                          : "text-gray-400"
-                      }
-                    >
-                      ✔
-                    </span>
-                    Длина 8 знаков
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span
-                      className={
-                        passwordValidations.lowercase
-                          ? "text-green-600"
-                          : "text-gray-400"
-                      }
-                    >
-                      ✔
-                    </span>
-                    Строчная буква
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span
-                      className={
-                        passwordValidations.uppercase
-                          ? "text-green-600"
-                          : "text-gray-400"
-                      }
-                    >
-                      ✔
-                    </span>
-                    Заглавная буква
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span
-                      className={
-                        passwordValidations.number
-                          ? "text-green-600"
-                          : "text-gray-400"
-                      }
-                    >
-                      ✔
-                    </span>
-                    Цифра
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span
-                      className={
-                        passwordValidations.specialChar
-                          ? "text-green-600"
-                          : "text-gray-400"
-                      }
-                    >
-                      ✔
-                    </span>
-                    Символ #*&% и др.
-                  </div>
+                  <p className={passwordValidations.length ? "text-green-600" : "text-gray-400"}>✔ Длина 8 знаков</p>
+                  <p className={passwordValidations.lowercase ? "text-green-600" : "text-gray-400"}>✔ Строчная буква</p>
+                  <p className={passwordValidations.uppercase ? "text-green-600" : "text-gray-400"}>✔ Заглавная буква</p>
+                  <p className={passwordValidations.number ? "text-green-600" : "text-gray-400"}>✔ Цифра</p>
+                  <p className={passwordValidations.specialChar ? "text-green-600" : "text-gray-400"}>✔ Символ</p>
                 </div>
               )}
             </div>
@@ -249,50 +199,29 @@ const SignupPage = () => {
                 name="repeatPassword"
                 value={formData.repeatPassword}
                 onChange={handleChange}
-                placeholder="Сырсөздү кайталаңыз"
-                className="w-full px-4 py-2 rounded bg-white text-black focus:outline-none pr-10"
+                placeholder="Повторите пароль"
+                className="w-full px-4 py-2 border rounded focus:outline-none pr-10 mb-[40px]"
                 required
               />
-              <EyeIconButton setShowPassword={setShowRepeatPassword} showPassword={showRepeatPassword} />
+              <EyeIconButton
+                setShowPassword={setShowRepeatPassword}
+                showPassword={showRepeatPassword}
+              />
             </div>
 
-            {/* Запомнить меня */}
-            {/* <div className="flex items-center justify-between text-sm text-white">
-              <label className="relative flex items-center gap-2 cursor-pointer select-none bg-[#1e605e]">
-                <input
-                  type="checkbox"
-                  className="peer appearance-none w-4 h-4 border border-white rounded bg-[#1e605e] checked:bg-orange-500 checked:border-orange-500"
-                />
-                <svg
-                  className="absolute left-0.5 top-0.7 w-3 h-3 text-white hidden peer-checked:block pointer-events-none"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M5 13l4 4L19 7"
-                  />
-                </svg>
-                мени эсте{" "}
-              </label>
-            </div> */}
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-orange-500 hover:bg-orange-600 text-white py-2 rounded text-lg font-semibold transition"
-            >
-              {loading ? "Загрузка..." : "Зарегистрироваться"}
-            </button>
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full shadow-[0px_5px_21.3px_0px_#E14219BF] bg-[linear-gradient(180deg,#FF8C6E_0%,#E14219_100%)] text-white py-2 rounded text-lg font-semibold shadow-md hover:opacity-90 transition"
+              >
+                {loading ? "Загрузка..." : "Зарегистрироваться"}
+              </button>
           </form>
 
-          <p className="mt-4 text-sm text-white text-center w-[320px]">
-            Катталгансызбы?{" "}
-            <Link to="/login" className="text-orange-300 hover:underline">
-              Кирүү
+          <p className="mt-4 text-sm text-gray-600 text-center">
+            Уже есть аккаунт?{" "}
+            <Link to="/login" className="text-blue-500 hover:underline">
+              Войти
             </Link>
           </p>
         </div>

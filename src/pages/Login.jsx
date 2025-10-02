@@ -3,7 +3,7 @@ import React, { useState, useContext } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { loginUser } from "../services/api";
 import { AuthContext } from "../context/AuthContext";
-import SignInImg from "../assets/images/sign-in.png";
+import SignInImg from "../assets/images/edubot-signup.png";
 import EyeIcon from "../assets/icons/EyeIcon";
 import EyeOffIcon from "../assets/icons/EyeOffIcon";
 
@@ -34,27 +34,33 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-edubot-teal px-4">
-      <div className="flex flex-col md:flex-row items-center max-w-6xl w-full text-white gap-10 md:gap-16">
-        {/* Форма */}
-        <div className="w-full md:w-1/2 flex flex-col items-center md:items-start px-2">
-          <h2 className="text-3xl md:text-4xl font-bold mb-6 text-center md:text-left">
-            Кирүү
-          </h2>
+    <div className="min-h-screen flex">
+      {/* Левая часть с градиентом */}
+      <div className="hidden md:flex md:w-1/2 bg-[linear-gradient(151.1deg,#FFCBA5_3.26%,#E64D26_96.74%)] flex-col justify-center items-center text-white px-6">
+        <img
+          src={SignInImg}
+          alt="Sign up"
+          className="object-contain mb-6 w-[400px] h-[300px]"
+        />
+        <h2 className="font-bold text-center text-[50px]">
+          EDUBOT <br /> LEARNING
+        </h2>
+      </div>
 
-          {error && (
-            <p className="text-red-400 mb-4 text-center md:text-left">
-              {error}
-            </p>
-          )}
+      {/* Правая часть с формой */}
+      <div className="flex-1 flex items-center justify-center px-6">
+        <div className="w-full max-w-md">
+          <h2 className="text-2xl font-bold text-black mb-6">Вход</h2>
 
-          <form onSubmit={handleLogin} className="space-y-4 w-full max-w-sm">
+          {error && <p className="text-red-500 mb-4">{error}</p>}
+
+          <form onSubmit={handleLogin} className="space-y-4">
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="Email киргизиңиз"
-              className="w-full px-4 py-3 rounded-xl bg-white text-black focus:outline-none"
+              placeholder="Email"
+              className="w-full px-4 py-2 border rounded focus:outline-none"
               required
             />
 
@@ -63,8 +69,8 @@ const LoginPage = () => {
                 type={showPassword ? "text" : "password"}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Сырсөздү киргизиңиз"
-                className="w-full px-4 py-3 rounded-xl bg-white text-black focus:outline-none pr-10"
+                placeholder="Введите пароль"
+                className="w-full px-4 py-2 border rounded focus:outline-none pr-10"
                 required
               />
               <button
@@ -76,39 +82,30 @@ const LoginPage = () => {
               </button>
             </div>
 
-            <div className="flex items-center justify-end text-sm text-white">
+            <div className="flex justify-center text-sm ">
               <Link
                 to="/forgot-password"
-                className="text-orange-300 hover:underline"
+                className="text-blue-500 hover:underline mb-[40px]"
               >
-                Сырсөздү унуттуңузбу?
+                Забыли пароль?
               </Link>
             </div>
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-orange-500 hover:bg-orange-600 text-white py-3 rounded-xl text-lg font-semibold transition"
+              className="w-full shadow-[0px_5px_21.3px_0px_#E14219BF] bg-[linear-gradient(180deg,#FF8C6E_0%,#E14219_100%)] text-white py-2 rounded text-lg font-semibold shadow-md hover:opacity-90 transition"
             >
-              {loading ? "Кирүүдө..." : "Кирүү"}
+              {loading ? "Вход..." : "Войти"}
             </button>
           </form>
 
-          <p className="mt-5 text-sm text-white text-center w-full max-w-sm">
-            Аккаунтуңуз жокпу?{" "}
-            <Link to="/register" className="text-orange-300 hover:underline">
-              Катталуу
+          <p className="mt-4 text-sm text-gray-600 text-center">
+            Нет аккаунта?{" "}
+            <Link to="/register" className="text-blue-500 hover:underline">
+              Зарегистрироваться
             </Link>
           </p>
-        </div>
-
-        {/* Сүрөт — телефондо жок */}
-        <div className="hidden md:flex md:w-1/2 justify-center">
-          <img
-            src={SignInImg}
-            alt="Кирүү сүрөтү"
-            className="max-w-[500px] w-full object-contain"
-          />
         </div>
       </div>
     </div>
