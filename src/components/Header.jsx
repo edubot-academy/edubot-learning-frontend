@@ -6,28 +6,49 @@ import { GrLanguage } from "react-icons/gr";
 import { BsChevronDown } from "react-icons/bs";
 import Logo from "../assets/images/logotip-hero.png";
 import { AuthContext } from "../context/AuthContext";
+import ModalImg from "../assets/icons/modalImg.svg"
+import VectorModal from "../assets/icons/vectorModal.svg"
+import ModalClose from "../assets/icons/modalclose.svg"
 
 const NavLinks = ({ isMobile }) => {
     const location = useLocation();
-    const active = (path) =>
-        location.pathname === path ? "text-orange-500" : "";
+  const active = (path) =>
+    location.pathname === path ? "bg-orange-500 text-white" : "";
 
-    const linkClass =
-        "relative hover:text-black after:content-[''] after:absolute after:-bottom-1 after:left-0 after:h-[2px] after:w-full after:bg-black after:scale-x-0 hover:after:scale-x-100 after:transition-transform after:duration-300";
+  const linkClass =
+    "relative px-4 py-2 rounded-md hover:bg-orange-500 hover:text-white after:content-[''] after:absolute after:-bottom-1 after:left-0 after:h-[2px] after:w-full after:bg-orange-500 after:scale-x-0 hover:after:scale-x-100 after:transition-transform after:duration-300";
+
 
     return (
         <div
             className={`${isMobile ? "flex flex-col space-y-4 mt-4" : "flex space-x-6 items-center"
                 }`}
         >
-            <Link to="/courses" className={`${active("/courses")} ${linkClass}`}>
-                Курстар
+           {isMobile && (
+        <div className="flex mt-[34px] pb-[10px] border-b border-gray-200 mb-[32px]">
+           <img src={ModalImg} alt="" className="w-[50px]" />
+           <div className="pl-[12px] pr-[32px]">
+           <h1 className="font-suisse font-semibold text-[20px] leading-[24px] tracking-[0.004em]">
+            Аяна Табалдиева
+            </h1>
+           <p className="font-inter font-medium text-[12px] leading-[16px] tracking-[0.004em] text-gray-500">
+            Неидентифицированный
+           </p>
+           </div>
+           <img src={VectorModal} alt="" className="w-[7px]" />
+          </div>
+          )}
+            <Link  to="/courses" className={`${active("/courses")} ${linkClass} `}>
+                Курстар жөнүндө
             </Link>
-            <Link to="/about" className={`${active("/about")} ${linkClass}`}>
+            <Link to="/about" className={`${active("/about")} ${linkClass} `}>
                 Биз жөнүндө
             </Link>
             <Link to="/contact" className={`${active("/contact")} ${linkClass}`}>
-                Байланыш
+                Байланышуу
+            </Link>
+             <Link to="/register" className={`${active("/register")} ${linkClass}`}>
+              Катталуу
             </Link>
         </div>
     );
@@ -146,12 +167,12 @@ const Header = () => {
                             ></span>
                         </button>
 
-                        <Link
+                        {/* <Link
                             to="/register"
                             className="bg-orange-500 hover:bg-orange-500 text-white rounded-md px-4 py-2 md:text-base font-semibold shadow-[0_0_5px_2px_rgba(255,165,0,0.8)]"
                         >
                             Катталуу
-                        </Link>
+                        </Link> */}
                     </div>
                 </div>
 
@@ -194,28 +215,32 @@ const Header = () => {
             {menuOpen && (
                 <div className="fixed inset-0 z-50 flex">
                     <div
-                        className="flex-1 bg-black/50"
+                       className={`
+        flex-1 bg-black transition-opacity duration-500
+        ${menuOpen ? 'opacity-50' : 'opacity-0'}
+      `}
                         onClick={() => setMenuOpen(false)}
                     ></div>
 
-                    <div className="w-64 sm:w-72 md:w-80 bg-white dark:bg-gray-800 h-full p-4 relative shadow-lg">
+                    <div className="w-[320px] sm:w-72 md:w-80 bg-white  h-full p-4 relative shadow-lg">
                         <button
                             onClick={() => setMenuOpen(false)}
-                            className="absolute top-4 left-4 text-gray-600 dark:text-gray-300"
+                            className="absolute top-[28px] right-4  text-gray-600 dark:text-gray-300"
                         >
-                            <FaTimes className="text-2xl" />
+                            
+                            <img src={ModalClose} alt="" />
                         </button>
 
                         <NavLinks isMobile={true} />
 
-                        <div className="mt-6">
+                        {/* <div className="mt-6">
                             <Link
                                 to="/register"
                                 className="block w-full text-left text-gray-700 dark:text-gray-200 rounded-md px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                             >
                                 Катталуу
                             </Link>
-                        </div>
+                        </div> */}
                     </div>
                 </div>
             )}
