@@ -11,17 +11,19 @@ import HeroStart from "../components/HeroStart";
 import Apply from "../components/Apply";
 import Contact from "../components/Contacts";
 import Instructor from "../components/TopInstructors"
+<<<<<<< HEAD
 import CourseDetailsPage from "./CourseDetails";
+=======
+import FAQ from "../components/FAQ";
+>>>>>>> bd4a0d0cb3aad900da44d65c06da7531c46cfc31
 const HomePage = () => {
     const { user } = useContext(AuthContext);
-    const [cart, setCart] = useState([]);
+    // const [cart, setCart] = useState([]);
     const [coursesData, setCoursesData] = useState([]);
 
-
-
-    const addToCart = (course) => {
-        setCart([...cart, course]);
-    };
+    // const addToCart = (course) => {
+    //     setCart([...cart, course]);
+    // };
 
     useEffect(() => {
         const loadCourses = async () => {
@@ -63,7 +65,13 @@ const HomePage = () => {
                     {coursesData.slice(0, 3).map((course) => (
                         <div key={course.id} className="bg-white border rounded-lg overflow-hidden shadow-md hover:shadow-xl transition">
                             <Link to={`/courses/${course.id}`} className="block">
-                                <img src={course.coverImageUrl || "https://source.unsplash.com/400x250/?education"} alt={course.title} className="w-full h-40 object-cover" />
+                                <img
+                                    src={course.coverImageUrl || "https://source.unsplash.com/400x250/?education"}
+                                    alt={course.title}
+                                    className="w-full h-40 object-cover"
+                                    loading="lazy"
+                                    decoding="async"
+                                />
                                 <div className="p-6 text-left">
                                     <h3 className="text-xl font-semibold mb-1">{course.title}</h3>
                                     <p className="text-sm text-gray-600">Окутуучу: {course.instructor?.fullName}</p>
@@ -84,11 +92,12 @@ const HomePage = () => {
             <SectionContainer data={coursesData} />
             <Instructor />
             <Feedback />
-            <div className="w-full max-w-screen-xl h-0.5 bg-gray-400 mx-auto my-8"></div>
+
             <Apply />
-            <Evaluate />
+            {/* <Evaluate /> */}
 
             <Contact />
+            <FAQ />
         </div>
     );
 };

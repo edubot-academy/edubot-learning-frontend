@@ -35,6 +35,7 @@ const CourseDetailsPage = () => {
     const videoRef = useRef(null);
     const hasPlayedRef = useRef(false);
     const [shouldScrollToLesson, setShouldScrollToLesson] = useState(true);
+    const [paid, setPaid] = useState(false);
 
     useEffect(() => {
         hasPlayedRef.current = false;
@@ -315,44 +316,50 @@ const CourseDetailsPage = () => {
     const { prev: prevLesson, next: nextLesson } = findPrevNextLessons();
     const totalLessons = sections.reduce((count, sec) => count + (sec.lessons?.length || 0), 0);
     const progress = Math.round((completedLessons.length / totalLessons) * 100);
-
+    
+    function changPaid() {
+        setPaid(!paid)
+    }
     return (
         <div className="min-h-screen pt-24">
-            <CourseHeader course={course} progress={progress} enrolled={enrolled} />
-            <div className="max-w-6xl mx-auto p-6">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div className="md:col-span-2">
-                        {activeLesson?.videoUrl && (
-                            <CourseVideoPlayer
-                                key={activeLesson.id}
-                                activeLesson={activeLesson}
-                                resumeVideoTime={resumeVideoTime}
-                                handleVideoProgress={(progress) => handleVideoProgress(progress, activeLesson)}
-                                handleTimeUpdate={handleTimeUpdate}
-                                handlePause={handlePause}
-                                videoRef={videoRef}
-                                nextLesson={nextLesson}
-                                prevLesson={prevLesson}
-                                onEnded={handleEnded}
-                                handleLessonClick={handleLessonClick}
-                            />
-                        )}
+            <button onClick={changPaid}>tap</button>
+            {paid ? <CourseHeader course={course} progress={progress} enrolled={enrolled} />
+                :
+                <div className="max-w-6xl mx-auto p-6">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div className="md:col-span-2">
+                            {activeLesson?.videoUrl && (
+                                <CourseVideoPlayer
+                                    key={activeLesson.id}
+                                    activeLesson={activeLesson}
+                                    resumeVideoTime={resumeVideoTime}
+                                    handleVideoProgress={(progress) => handleVideoProgress(progress, activeLesson)}
+                                    handleTimeUpdate={handleTimeUpdate}
+                                    handlePause={handlePause}
+                                    videoRef={videoRef}
+                                    nextLesson={nextLesson}
+                                    prevLesson={prevLesson}
+                                    onEnded={handleEnded}
+                                    handleLessonClick={handleLessonClick}
+                                />
+                            )}
+                        </div>
+                        <CourseSidebar
+                            key={activeSectionId}
+                            sections={sections}
+                            activeSectionId={activeSectionId}
+                            toggleSection={toggleSection}
+                            activeLesson={activeLesson}
+                            handleLessonClick={handleLessonClick}
+                            handleCheckboxToggle={handleCheckboxToggle}
+                            completedLessons={completedLessons}
+                            lastViewedLessonId={lastViewedLessonId}
+                            enrolled={enrolled}
+                            lessonRefs={lessonRefs}
+                        />
                     </div>
-                    <CourseSidebar
-                        key={activeSectionId}
-                        sections={sections}
-                        activeSectionId={activeSectionId}
-                        toggleSection={toggleSection}
-                        activeLesson={activeLesson}
-                        handleLessonClick={handleLessonClick}
-                        handleCheckboxToggle={handleCheckboxToggle}
-                        completedLessons={completedLessons}
-                        lastViewedLessonId={lastViewedLessonId}
-                        enrolled={enrolled}
-                        lessonRefs={lessonRefs}
-                    />
                 </div>
-            </div>
+            }
         </div>
     );
 };

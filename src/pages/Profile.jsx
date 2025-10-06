@@ -133,6 +133,8 @@ const ProfilePage = () => {
                             src={preview || user.avatar}
                             alt="Avatar"
                             className="w-24 h-24 rounded-full object-cover"
+                            decoding='async'
+                            loading='lazy'
                         />
                     ) : (
                         <div className="w-24 h-24 rounded-full bg-gray-300 flex items-center justify-center text-xl font-bold text-white">
