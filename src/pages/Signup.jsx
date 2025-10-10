@@ -162,6 +162,7 @@ const SignupPage = () => {
               className="w-full px-4 py-2 border rounded focus:outline-none"
               required
             />
+            <PhoneInput onChange={handlePhoneChange} value={formData.phoneNumber} />
 
             {/* Пароль */}
             <div className="relative">
@@ -181,14 +182,14 @@ const SignupPage = () => {
                 showPassword={showPassword}
               />
               {showTooltip && (
-                <div className="absolute z-10 top-full right-0 mt-2 bg-white text-black rounded shadow-lg text-xs w-[180px] px-3 py-2">
+                <ul className="absolute z-10 top-full right-0 mt-2 bg-white text-black rounded shadow-lg text-xs w-[180px] px-3 py-2">
                   <div className="absolute -top-2 left-20 w-3 h-3 bg-white rotate-45 shadow-sm" />
-                  <p className={passwordValidations.length ? "text-green-600" : "text-gray-400"}>✔ Длина 8 знаков</p>
-                  <p className={passwordValidations.lowercase ? "text-green-600" : "text-gray-400"}>✔ Строчная буква</p>
-                  <p className={passwordValidations.uppercase ? "text-green-600" : "text-gray-400"}>✔ Заглавная буква</p>
-                  <p className={passwordValidations.number ? "text-green-600" : "text-gray-400"}>✔ Цифра</p>
-                  <p className={passwordValidations.specialChar ? "text-green-600" : "text-gray-400"}>✔ Символ</p>
-                </div>
+                  <li className={passwordValidations.length ? "text-green-600" : "text-gray-400"}>✔ Длина 8 знаков</li>
+                  <li className={passwordValidations.lowercase ? "text-green-600" : "text-gray-400"}>✔ Строчная буква</li>
+                  <li className={passwordValidations.uppercase ? "text-green-600" : "text-gray-400"}>✔ Заглавная буква</li>
+                  <li className={passwordValidations.number ? "text-green-600" : "text-gray-400"}>✔ Цифра</li>
+                  <li className={passwordValidations.specialChar ? "text-green-600" : "text-gray-400"}>✔ Символ</li>
+                </ul>
               )}
             </div>
 
@@ -209,13 +210,13 @@ const SignupPage = () => {
               />
             </div>
 
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full shadow-[0px_5px_21.3px_0px_#E14219BF] bg-[linear-gradient(180deg,#FF8C6E_0%,#E14219_100%)] text-white py-2 rounded text-lg font-semibold shadow-md hover:opacity-90 transition"
-              >
-                {loading ? "Загрузка..." : "Зарегистрироваться"}
-              </button>
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full shadow-[0px_5px_21.3px_0px_#E14219BF] bg-[linear-gradient(180deg,#FF8C6E_0%,#E14219_100%)] text-white py-2 rounded text-lg font-semibold shadow-md hover:opacity-90 transition"
+            >
+              {loading ? "Загрузка..." : "Зарегистрироваться"}
+            </button>
           </form>
 
           <p className="mt-4 text-sm text-gray-600 text-center">
