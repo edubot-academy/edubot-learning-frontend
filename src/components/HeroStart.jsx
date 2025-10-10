@@ -42,7 +42,7 @@ const HeroStart = () => {
     }, [slides.length]);
 
     return (
-        <div className="relative from-green-900 to-green-800 text-white 2xl:h-[994px] h-[994px] lg:h-[535px] overflow-hidden">
+        <div className="relative from-green-900 to-green-800 text-white 2xl:h-[994px] h-[794px] lg:h-[535px] overflow-hidden">
             <div className="relative h-full">
                 {slides.map((slide, index) => (
                     <div
@@ -55,7 +55,7 @@ const HeroStart = () => {
                         {/* ---------- СЛАЙД 1 ---------- */}
                         {index === 0 && (
                             <section className="2xl:w-[1763px] w-full relative mx-auto flex flex-col lg:flex-row items-center justify-between 2xl:px-6 px-10 py-12 text-black">
-                                <div className="lg:w-[600px] 2xl:w-1/2 text-center lg:text-left space-y-6 h-[454px]">
+                                <div className="lg:w-[600px] 2xl:w-1/2 text-center lg:text-left space-y-6 h-[50%] lg:h-[454px]">
                                     <h1 className="font-inter 2xl:font-bold text-[30px] 2xl:text-[58px] 2xl:leading-tight font-semibold leading-[100%] ">
                                         {slide.title}
                                     </h1>
@@ -75,7 +75,7 @@ const HeroStart = () => {
                                     </div>
                                 </div>
 
-                                <div className="flex justify-center lg:justify-end relative lg:mt-10 lg:mt-0">
+                                <div className="flex justify-center lg:justify-end relative lg:mt-10 mt-0">
                                     <div className="absolute bg-gray-100 2xl:rounded-lg 2xl:px-[33px] 2xl:py-[32px] 2xl:w-[369px] 2xl:h-[198px] bg-[var(--Gray-Gray-50,#F3F4F6)] border border-[var(--Gray-Gray-50,#F3F4F6)] 2xl:left-0 left-[-105px] 2xl:top-[370px] top-[180px] z-[0] w-[228px] h-[117px] rounded-[4.73px] py-[18.91px] px-[19.51px]">
                                         <span className="2xl:text-[54px] font-normal leading-[100%] tracking-[0%] text-[28px]">
                                             200+
@@ -119,10 +119,10 @@ const HeroStart = () => {
 
                                 {/* контент */}
                                 <div className="relative z-10 flex flex-col items-center text-center max-w-[1079px] space-y-6">
-                                    <h1 className="font-bold text-[67.95px] leading-[120%] tracking-[1%] text-center">
+                                    <h1 className="font-bold lg:text-[67.95px] text-[40px] leading-[120%] tracking-[1%] text-center">
                                         {slide.title}
                                     </h1>
-                                    <p className="font-normal text-[30.46px]">
+                                    <p className="font-normal text-[20px] lg:text-[30.46px] px-5">
                                         {slide.description}
                                     </p>
 
