@@ -38,7 +38,7 @@ const SectionContainer = ({ noBg = false, hideTitleAndLink = false, data = []  }
         </>
       )}
 
-     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 justify-items-center">
+     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 justify-items-center"  to="/courses">
   {data.slice(0, 3).map((course) => (
     <Card
       key={course.id}
@@ -48,6 +48,7 @@ const SectionContainer = ({ noBg = false, hideTitleAndLink = false, data = []  }
       star={course.img}
       price={course.price}
       ratingCount={course.ratingCount}
+      
     />
   ))}
 </div>

@@ -11,11 +11,8 @@ import HeroStart from "../components/HeroStart";
 import Apply from "../components/Apply";
 import Contact from "../components/Contacts";
 import Instructor from "../components/TopInstructors"
-<<<<<<< HEAD
-import CourseDetailsPage from "./CourseDetails";
-=======
 import FAQ from "../components/FAQ";
->>>>>>> bd4a0d0cb3aad900da44d65c06da7531c46cfc31
+
 const HomePage = () => {
     const { user } = useContext(AuthContext);
     // const [cart, setCart] = useState([]);
@@ -90,6 +87,7 @@ const HomePage = () => {
                 </div>
             </section> */}
             <SectionContainer data={coursesData} />
+            
             <Instructor />
             <Feedback />
 
