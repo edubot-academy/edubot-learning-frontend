@@ -53,3 +53,11 @@ h3 {
   content-visibility: auto;
   contain-intrinsic-size: 1000px 800px;
 }
+
+.orange__shadow {
+  box-shadow: 0 10px 30px 5px rgba(225, 66, 25, 0.5);
+}
+
+.black__shadow {
+  box-shadow: 0 10px 30px 5px rgba(0, 0, 0, 0.15);
+}
