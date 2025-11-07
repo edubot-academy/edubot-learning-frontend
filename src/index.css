@@ -53,3 +53,9 @@ h3 {
   content-visibility: auto;
   contain-intrinsic-size: 1000px 800px;
 }
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}

@@ -1,11 +1,11 @@
 import React from 'react';
-import AboutImage from '../components/AboutImage';
 import AboutText from '../components/AboutText';
+import AboutHero from '../components/AboutHero';
 
 const AboutPage = () => {
     return (
-        <div className="bg-gray-50 min-h-screen py-24 text-gray-800"> {/* py-24 instead of py-10 to push content below header */}
-            <AboutImage />
+        <div className='mx-4 md:mx-12 '>
+            <AboutHero/>
             <AboutText />
         </div>
     );
