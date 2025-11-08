@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import evaluate from '../assets/images/evaluate-bot.png';
+// import evaluate from '../assets/images/evaluate-bot.png';
 
 const Evaluate = () => {
     const [rating, setRating] = useState(0);
@@ -17,7 +17,7 @@ const Evaluate = () => {
                 {/* Теперь этот блок является частью flex-контейнера */}
                 <div className="md:w-1/2 w-full bg-[#003A45] flex items-end justify-center p-6">
                     <img
-                        src={evaluate}
+                        // src={evaluate}
                         alt="EduBot"
                         // w-full заставляет изображение занимать всю ширину родительского блока
                         // h-auto сохраняет пропорции
