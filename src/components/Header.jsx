@@ -4,7 +4,7 @@ import { FaBars, FaTimes } from "react-icons/fa";
 import { IoSearch } from "react-icons/io5";
 import { GrLanguage } from "react-icons/gr";
 import { BsChevronDown } from "react-icons/bs";
-import Logo from "../assets/images/logotip-hero.png";
+// import Logo from "../assets/images/logotip-hero.png";
 import { AuthContext } from "../context/AuthContext";
 
 const NavLinks = ({ isMobile }) => {
@@ -73,7 +73,7 @@ const Header = () => {
                     <div className="flex items-center gap-6 flex-1">
                         <Link to="/" className="flex items-center whitespace-nowrap">
                             <img
-                                src={Logo}
+                                // src={Logo}
                                 alt="logo"
                                 className="h-14 w-auto"
                             />
@@ -158,7 +158,7 @@ const Header = () => {
                 {/* Mobile */}
                 <div className="lg:hidden flex flex-col items-center w-full">
                     <Link to="/" className="flex items-center justify-center mb-3">
-                        <img src={Logo} alt="logo" className="h-14 md:h-16 w-auto" />
+                        {/* <img src={Logo} alt="logo" className="h-14 md:h-16 w-auto" /> */}
                         <div className="flex flex-col ml-2 leading-tight">
                             <span className="text-2xl sm:text-3xl font-bold text-orange-500">
                                 EDUBOT

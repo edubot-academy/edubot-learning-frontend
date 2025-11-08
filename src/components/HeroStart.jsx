@@ -1,8 +1,4 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import Logotip from "../assets/images/logotip-hero.png";
-import Vektor from "../assets/images/vector.png";
-
 import bannerImg1 from "../../public/banner-img1.png";
 import bannerBlure1 from "../../public/banner-img1-blure.png";
 import bannerImg2 from "../../public/banner-img2.png";
