@@ -3,7 +3,6 @@ import { Routes, Route } from "react-router-dom";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
 import PrivateRoute from "./components/PrivateRoute";
-
 // Lazy imports
 const HomePage = lazy(() => import("./pages/Home"));
 const LoginPage = lazy(() => import("./pages/Login"));
@@ -13,7 +12,6 @@ const CourseDetailsPage = lazy(() => import("./pages/CourseDetails"));
 const DashboardPage = lazy(() => import("./pages/Dashboard"));
 const ProfilePage = lazy(() => import("./pages/Profile"));
 const InstructorDashboard = lazy(() => import("./pages/InstructorDashboard"));
-const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
 const CreateCourse = lazy(() => import("./pages/CreateCourse"));
 const InstructorCourses = lazy(() => import("./pages/InstructorCourses"));
 const EditInstructorCourse = lazy(() => import("./pages/EditInstructorCourse"));
@@ -47,7 +45,6 @@ const AppRoutes = () => {
                         </Route>
 
                         <Route path="/courses/:id" element={<CourseDetailsPage />} />
-                        <Route path="/forgot-password" element={<ForgotPassword />} />
 
                         <Route element={<PrivateRoute allowedRoles={['admin']} />}>
                             <Route path="/admin" element={<AdminPanel />} />
