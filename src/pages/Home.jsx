@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useContext } from "react";
 import { Link } from "react-router-dom";
 import { FaStar } from "react-icons/fa";
+import StickyButton from "../components/UI/StickyButton";
 import { fetchCourses } from "../services/api";
 import { AuthContext } from "../context/AuthContext";
 import Benefits from "../components/Benefits";
@@ -9,7 +10,6 @@ import Feedback from "../components/Feedback";
 import Evaluate from '../components/Evaluate';
 import HeroStart from "../components/HeroStart";
 import Apply from "../components/Apply";
-import Contact from "../components/Contacts";
 import Instructor from "../components/TopInstructors"
 import FAQ from "../components/FAQ";
 import TopCourses from "../components/TopCourses";
@@ -39,13 +39,13 @@ const HomePage = () => {
     return (
         <div>
             <HeroStart />
+            <StickyButton />
             <Benefits />
             <TopCourses coursesData={coursesData} />
             <Instructor />
             <Feedback />
             <Apply />
             {/* <Evaluate /> */}
-            <Contact />
             <FAQ />
         </div>
     );
