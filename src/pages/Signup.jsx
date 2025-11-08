@@ -5,7 +5,7 @@ import PhoneInput from "../components/PhoneInput";
 import SignUpImg from "../assets/images/edubot-signup.png";
 import toast from "react-hot-toast";
 import DefaultLabel from "../components/UI/forms/DefaultLabel";
-import LabelPassword from "../components/UI/forms/LabelPassowd";
+import LabelPassword from "../components/UI/forms/LabelPassword";
 
 const SignupPage = () => {
   const [formData, setFormData] = useState({
