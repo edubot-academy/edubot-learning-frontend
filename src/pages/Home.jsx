@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useContext } from "react";
 import { Link } from "react-router-dom";
 import { FaStar } from "react-icons/fa";
+import StickyButton from "../components/UI/StickyButton";
 import { fetchCourses } from "../services/api";
 import { AuthContext } from "../context/AuthContext";
 import Benefits from "../components/Benefits";
@@ -39,7 +40,7 @@ const HomePage = () => {
             {/* Каармандардын Секциясы */}
 
             <HeroStart />
-
+            <StickyButton />
             <Benefits />
 
             {/* Курстар Секциясы
