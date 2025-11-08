@@ -1,18 +1,17 @@
-// LoginPage.jsx
+
 import React, { useState, useContext } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { loginUser } from "../services/api";
 import { AuthContext } from "../context/AuthContext";
 import SignInImg from "../assets/images/edubot-signup.png";
-import EyeIcon from "../assets/icons/EyeIcon";
-import EyeOffIcon from "../assets/icons/EyeOffIcon";
+import DefaultLabel from "../components/UI/forms/DefaultLabel";
+import LabelPassword from "../components/UI/forms/LabelPassowd";
 import ForgotPassword from "../components/ForgotPassword";
 
 const LoginPage = () => {
   const { login } = useContext(AuthContext);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
   const [forgotPassword, setForgotPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -33,6 +32,14 @@ const LoginPage = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleEmailChange = (e) => {
+    setEmail(e.target.value);
+  };
+
+  const handlePasswordChange = (e) => {
+    setPassword(e.target.value);
   };
 
   return (
@@ -56,43 +63,42 @@ const LoginPage = () => {
 
           {error && <p className="text-red-500 mb-4">{error}</p>}
 
-          <form onSubmit={handleLogin} className="space-y-4">
-            <input
-              type="email"
+          <form onSubmit={handleLogin} className="space-y-2">
+            {/* Email */}
+            <DefaultLabel
+              label="Email"
+              name="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Email"
-              className="w-full px-4 py-2 border rounded focus:outline-none"
-              required
+              onChange={handleEmailChange}
+              placeholder=""
+              required={true}
+              width="w-full"
+              className="py-2"
             />
 
-            <div className="relative">
-              <input
-                type={showPassword ? "text" : "password"}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Введите пароль"
-                className="w-full px-4 py-2 border rounded focus:outline-none pr-10"
-                required
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-3"
-              >
-                {showPassword ? <EyeOffIcon /> : <EyeIcon />}
-              </button>
-            </div>
+            {/* Пароль */}
+            <LabelPassword
+              label="Пароль"
+              name="password"
+              value={password}
+              onChange={handlePasswordChange}
+              placeholder=""
+              required={true}
+              width="w-full"
+              className="py-2"
+            />
 
-            <div className="flex justify-center text-sm text-blue-500 hover:underline cursor-pointer"
-              onClick={() => setForgotPassword(!forgotPassword)}>
+            <div 
+              className="flex justify-center text-sm text-blue-500 hover:underline cursor-pointer mt-2"
+              onClick={() => setForgotPassword(!forgotPassword)}
+            >
               Забыли пароль?
             </div>
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full shadow-[0px_5px_21.3px_0px_#E14219BF] bg-[linear-gradient(180deg,#FF8C6E_0%,#E14219_100%)] text-white py-2 rounded text-lg font-semibold shadow-md hover:opacity-90 transition"
+              className="w-full mt-4 shadow-[0px_5px_21.3px_0px_#E14219BF] bg-[linear-gradient(180deg,#FF8C6E_0%,#E14219_100%)] text-white py-3 rounded text-lg font-semibold shadow-md hover:opacity-90 transition"
             >
               {loading ? "Вход..." : "Войти"}
             </button>
