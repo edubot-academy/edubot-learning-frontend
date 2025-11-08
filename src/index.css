@@ -59,6 +59,15 @@ h3 {
 *::after {
   box-sizing: border-box;
 }
+
+.orange__shadow {
+  box-shadow: 0 10px 30px 5px rgba(225, 66, 25, 0.5);
+}
+
+.black__shadow {
+  box-shadow: 0 10px 30px 5px rgba(0, 0, 0, 0.15);
+}
+
 input[type="checkbox"] {
   appearance: none;
   width: 20px;

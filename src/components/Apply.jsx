@@ -2,7 +2,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import student from "../assets/images/RightLittleMan.png";
 import Background from "../assets/images/background.png";
-import LogoStudies from "../assets/images/logostudies.png";
+import LogoStudies from "../assets/images/logoEduBot.png";
 
 function Apply({ user }) {
   if (user) return null;
