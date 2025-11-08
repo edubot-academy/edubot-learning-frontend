@@ -40,7 +40,7 @@ const HomePage = () => {
         <div>
             <HeroStart />
             <Benefits />
-            <TopCourses data={coursesData} />
+            <TopCourses coursesData={coursesData} />
             <Instructor />
             <Feedback />
             <Apply />

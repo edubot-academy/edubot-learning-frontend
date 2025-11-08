@@ -1,4 +1,5 @@
 import React from "react";
+import Button from '../components/UI/Button'
 
 const SectionContainer = ({
   title,
@@ -21,9 +22,9 @@ const SectionContainer = ({
             </p>
           </div>
           {buttonText && (
-            <button className="rounded-lg border border-[#141619] py-3 px-8">
+            <Button variant="secondary">
               {buttonText}
-            </button>
+            </Button>
           )}
         </div>
       )}
