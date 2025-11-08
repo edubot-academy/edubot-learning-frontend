@@ -5,7 +5,7 @@ import { loginUser } from "../services/api";
 import { AuthContext } from "../context/AuthContext";
 import SignInImg from "../assets/images/edubot-signup.png";
 import DefaultLabel from "../components/UI/forms/DefaultLabel";
-import LabelPassword from "../components/UI/forms/LabelPassowd";
+import LabelPassword from "../components/UI/forms/LabelPassword";
 import ForgotPassword from "../components/ForgotPassword";
 
 const LoginPage = () => {
