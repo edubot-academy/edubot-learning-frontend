@@ -1,11 +1,11 @@
-import React, { useState } from "react";
+import  { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { registerUser } from "../services/api";
 import PhoneInput from "../components/PhoneInput";
 import SignUpImg from "../assets/images/edubot-signup.png";
-import EyeIcon from "../assets/icons/EyeIcon";
-import EyeOffIcon from "../assets/icons/EyeOffIcon";
 import toast from "react-hot-toast";
+import DefaultLabel from "../components/UI/forms/DefaultLabel";
+import LabelPassword from "../components/UI/forms/LabelPassword";
 
 const SignupPage = () => {
   const [formData, setFormData] = useState({
@@ -103,16 +103,6 @@ const SignupPage = () => {
     }
   };
 
-  const EyeIconButton = ({ setShowPassword, showPassword }) => (
-    <button
-      type="button"
-      onClick={() => setShowPassword(!showPassword)}
-      className="absolute right-3 top-3"
-    >
-      {showPassword ? <EyeOffIcon /> : <EyeIcon />}
-    </button>
-  );
-
   return (
     <div className="min-h-screen flex">
       {/* Левая часть с градиентом */}
@@ -134,56 +124,64 @@ const SignupPage = () => {
 
           {error && <p className="text-red-500 mb-4">{error}</p>}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <input
-              type="text"
+          <form onSubmit={handleSubmit} className="space-y-2">
+            {/* Фамилия */}
+            <DefaultLabel
+              label="Введите фамилию"
               name="lastName"
               value={formData.lastName}
               onChange={handleChange}
-              placeholder="Фамилия"
-              className="w-full px-4 py-2 border rounded focus:outline-none"
-              required
+              placeholder=""
+              required={true}
+              width="w-full"
+              className="py-2"
             />
-            <input
-              type="text"
+
+            {/* Имя */}
+            <DefaultLabel
+              label="Введите имя"
               name="firstName"
               value={formData.firstName}
               onChange={handleChange}
-              placeholder="Имя"
-              className="w-full px-4 py-2 border rounded focus:outline-none"
-              required
+              placeholder=""
+              required={true}
+              width="w-full"
+              className="py-2"
             />
-            <input
-              type="email"
+
+            {/* Email */}
+            <DefaultLabel
+              label="Введите email"
               name="email"
               value={formData.email}
               onChange={handleChange}
-              placeholder="Email"
-              className="w-full px-4 py-2 border rounded focus:outline-none"
-              required
+              placeholder=""
+              required={true}
+              width="w-full"
+              className="py-2"
             />
-            <PhoneInput onChange={handlePhoneChange} value={formData.phoneNumber} />
+
+            {/* Телефон */}
+            <div className="py-2">
+              <PhoneInput onChange={handlePhoneChange} value={formData.phoneNumber} />
+            </div>
 
             {/* Пароль */}
-            <div className="relative">
-              <input
-                type={showPassword ? "text" : "password"}
+            <div className="relative py-2">
+              <LabelPassword
+                label="Придумайте пароль"
                 name="password"
                 value={formData.password}
                 onChange={handleChange}
-                placeholder="Придумайте пароль"
-                className="w-full px-4 py-2 border rounded focus:outline-none pr-10"
-                required
+                placeholder=""
+                required={true}
+                width="w-full"
                 onFocus={() => setShowTooltip(true)}
                 onBlur={() => setTimeout(() => setShowTooltip(false), 100)}
               />
-              <EyeIconButton
-                setShowPassword={setShowPassword}
-                showPassword={showPassword}
-              />
+              
               {showTooltip && (
-                <ul className="absolute z-10 top-full right-0 mt-2 bg-white text-black rounded shadow-lg text-xs w-[180px] px-3 py-2">
-                  <div className="absolute -top-2 left-20 w-3 h-3 bg-white rotate-45 shadow-sm" />
+                <ul className="absolute z-10 top-full left-0 mt-1 bg-white text-black rounded shadow-lg text-xs w-full px-3 py-2 border">
                   <li className={passwordValidations.length ? "text-green-600" : "text-gray-400"}>✔ Длина 8 знаков</li>
                   <li className={passwordValidations.lowercase ? "text-green-600" : "text-gray-400"}>✔ Строчная буква</li>
                   <li className={passwordValidations.uppercase ? "text-green-600" : "text-gray-400"}>✔ Заглавная буква</li>
@@ -194,26 +192,22 @@ const SignupPage = () => {
             </div>
 
             {/* Повтор пароля */}
-            <div className="relative">
-              <input
-                type={showRepeatPassword ? "text" : "password"}
+            <div className="py-2">
+              <LabelPassword
+                label="Повторите пароль"
                 name="repeatPassword"
                 value={formData.repeatPassword}
                 onChange={handleChange}
-                placeholder="Повторите пароль"
-                className="w-full px-4 py-2 border rounded focus:outline-none pr-10 mb-[40px]"
-                required
-              />
-              <EyeIconButton
-                setShowPassword={setShowRepeatPassword}
-                showPassword={showRepeatPassword}
+                placeholder=""
+                required={true}
+                width="w-full"
               />
             </div>
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full shadow-[0px_5px_21.3px_0px_#E14219BF] bg-[linear-gradient(180deg,#FF8C6E_0%,#E14219_100%)] text-white py-2 rounded text-lg font-semibold shadow-md hover:opacity-90 transition"
+              className="w-full mt-4 shadow-[0px_5px_21.3px_0px_#E14219BF] bg-[linear-gradient(180deg,#FF8C6E_0%,#E14219_100%)] text-white py-3 rounded text-lg font-semibold shadow-md hover:opacity-90 transition"
             >
               {loading ? "Загрузка..." : "Зарегистрироваться"}
             </button>

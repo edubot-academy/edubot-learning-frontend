@@ -1,14 +1,13 @@
 import React from 'react';
-import AboutImage from '../components/AboutImage';
-import AboutText from '../components/AboutText';
 import Vision from '../components/Vision';
+import team from '../assets/images/team.png'
+
 
 const AboutPage = () => {
     return (
-        <div>
+        <div className='mx-4 md:mx-12 '>
+            <img src={team} alt="" />
             <Vision />
-            <AboutImage />
-            <AboutText />
         </div>
     );
 };
