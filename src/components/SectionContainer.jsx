@@ -1,7 +1,7 @@
 
 import Card from "./Card";
-import programmerImg from "../assets/images/photoprogrammer.png";
-import StarImg from "../assets/icons/star.svg";
+// import programmerImg from "../assets/images/photoprogrammer.png";
+// import StarImg from "../assets/icons/star.svg";
 import { Link } from "react-router-dom";
 
 

@@ -53,3 +53,102 @@ h3 {
   content-visibility: auto;
   contain-intrinsic-size: 1000px 800px;
 }
+
+.orange__shadow {
+  box-shadow: 0 10px 30px 5px rgba(225, 66, 25, 0.5);
+}
+
+.black__shadow {
+  box-shadow: 0 10px 30px 5px rgba(0, 0, 0, 0.15);
+}
+input[type="checkbox"] {
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border: 2px solid #ccc;
+  border-radius: 4px;
+  display: inline-block;
+  position: relative;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+input[type="checkbox"]:checked {
+  background-color: #EA580C;
+  border-color: #EA580C;
+}
+
+input[type="checkbox"]:checked:not(.switch)::after {
+  content: "✔";
+  transform: translate(-50%, -55%);
+  color: #fff;
+  position: absolute;
+  top: 55%;
+  left: 50%;
+  font-size: 14px;
+}
+
+input[type="checkbox"].switch {
+  appearance: none;
+  width: 40px;
+  height: 22px;
+  background: #cfcfcf;
+  border-radius: 50px;
+  position: relative;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+input[type="checkbox"].switch::before {
+  content: "";
+  position: absolute;
+  top: 1px;
+  width: 18px;
+  height: 18px;
+  background: #fff;
+  border-radius: 50%;
+  transition: transform 0.3s;
+}
+
+input[type="checkbox"].switch:checked {
+  background: #EA580C;
+}
+
+input[type="checkbox"].switch:checked::before {
+  transform: translateX(18px);
+}
+
+input[type="radio"] {
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border: 2px solid #C5C9D1;
+  border-radius: 50%;
+  background: #fff;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+input[type="radio"]::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 8px;
+  height: 8px;
+  background: #EA580C;
+  border-radius: 50%;
+  transform: translate(-50%, -50%) scale(0);
+  transition: transform 0.2s ease;
+}
+
+input[type="radio"]:checked {
+  border-color: #EA580C;
+  background: #EA580C;
+}
+
+input[type="radio"]:checked::after {
+  background: #fff;
+  transform: translate(-50%, -50%) scale(1);
+}
