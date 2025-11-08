@@ -36,8 +36,6 @@ const AppRoutes = () => {
                         <Route path="/dashboard" element={<DashboardPage />} />
                         <Route path="/profile" element={<ProfilePage />} />
                         <Route path="/unauthorized" element={<Unauthorized />} />
-                        <Route path="/detailcourse" element={<DetailCourses />} />
-
                         <Route element={<PrivateRoute allowedRoles={['instructor']} />}>
                             <Route path="/instructor" element={<InstructorDashboard />} />
                             <Route path="/instructor/course/create" element={<CreateCourse />} />
