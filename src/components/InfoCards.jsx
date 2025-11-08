@@ -22,7 +22,7 @@ function InfoCards() {
         },
     ]
     return (
-        <div className='flex flex-col md:flex-row items-center gap-5 '>
+        <div className='flex flex-col md:flex-row items-center gap-5 mb-14'>
             {infoCards.map((x, index) => (
                 <div key={index} className='flex flex-col items-start gap-2 border border-[#C5C9D1] rounded p-3 h-64'>
                     <img src={x.icon} alt="" />
