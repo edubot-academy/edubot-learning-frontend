@@ -4,38 +4,29 @@ import toast from 'react-hot-toast';
 import {
     listCompanyCourses,
     fetchCourses,
-    setCourseCompany,
-    clearCourseCompany,
+    assignCourseToCompany,          // ✅ rename from setCourseCompany for clarity
+    unassignCourseFromCompany,       // ✅ new
+    // clearCourseCompany,           // ❌ no longer used here
 } from '../../services/api';
 
-/**
- * CompanyCourses Component
- * - Lists all courses linked to a company
- * - Allows searching / attaching new courses (via fetchCourses)
- * - Allows detaching courses
- */
 export default function CompanyCourses({ companyId, canManage = true }) {
-    // --- Main company course list ---
     const [qInput, setQInput] = React.useState('');
-    const [q, setQ] = React.useState(''); // debounced query
+    const [q, setQ] = React.useState('');
     const [page, setPage] = React.useState(1);
     const [data, setData] = React.useState({ items: [], totalPages: 1, total: 0 });
     const [loading, setLoading] = React.useState(false);
 
-    // --- Drawer for attaching courses ---
     const [adding, setAdding] = React.useState(false);
     const [searchQ, setSearchQ] = React.useState('');
     const [searching, setSearching] = React.useState(false);
     const [results, setResults] = React.useState([]);
     const [attachingId, setAttachingId] = React.useState(null);
 
-    // --- Debounce top search ---
     React.useEffect(() => {
         const t = setTimeout(() => setQ(qInput.trim()), 350);
         return () => clearTimeout(t);
     }, [qInput]);
 
-    // --- Load company courses ---
     const loadCompanyCourses = React.useCallback(async () => {
         setLoading(true);
         try {
@@ -52,11 +43,11 @@ export default function CompanyCourses({ companyId, canManage = true }) {
         loadCompanyCourses();
     }, [loadCompanyCourses]);
 
-    // --- Detach a course ---
+    // ✅ Detach only THIS company from the course (many-to-many safe)
     const onDetach = async (courseId) => {
-        if (!window.confirm('Бул курсту компаниядан ажыратасызбы?')) return;
+        if (!window.confirm('Бул курсту ушул компаниядан ажыратасызбы?')) return;
         try {
-            await clearCourseCompany(courseId);
+            await unassignCourseFromCompany(courseId, companyId);        // ✅ pass both ids
             toast.success('Курс компаниядан ажыратылды.');
             await loadCompanyCourses();
         } catch {
@@ -64,11 +55,11 @@ export default function CompanyCourses({ companyId, canManage = true }) {
         }
     };
 
-    // --- Attach a course ---
+    // Attach this company to a course (many-to-many)
     const onAttach = async (courseId) => {
         try {
             setAttachingId(courseId);
-            await setCourseCompany(courseId, companyId);
+            await assignCourseToCompany(courseId, companyId);            // ✅ assign endpoint
             toast.success('Курс компанияга байланыштырылды.');
             setResults((prev) => prev.filter((c) => c.id !== courseId));
             await loadCompanyCourses();
@@ -79,7 +70,9 @@ export default function CompanyCourses({ companyId, canManage = true }) {
         }
     };
 
-    // --- Drawer: Debounced search using fetchCourses ---
+    // Debounced search; don’t exclude courses “belonging to other companies”
+    // anymore — many-to-many allows multiple links. Just exclude the ones
+    // already linked to THIS company (data.items).
     React.useEffect(() => {
         if (!adding) return;
 
@@ -88,21 +81,12 @@ export default function CompanyCourses({ companyId, canManage = true }) {
             setSearching(true);
             try {
                 const excludeIds = (data?.items || []).map((c) => c.id);
-
+                const excludeCsv = Array.isArray(excludeIds) && excludeIds.length ? excludeIds.join(',') : undefined;
                 const raw = await fetchCourses(
-                    {
-                        q: searchQ?.trim() || '',
-                        limit: 20,
-                        excludeCompanyId: companyId, // exclude courses from other companies
-                        unassignedOnly: true,
-                        excludeIds,
-                    },
+                    { q: searchQ?.trim() || '', limit: 20, excludeIds: excludeCsv },  // ✅ keep it simple
                     { signal: controller.signal }
                 );
-
-                const arr = Array.isArray(raw)
-                    ? raw
-                    : raw?.items || raw?.courses || [];
+                const arr = Array.isArray(raw) ? raw : raw?.items || raw?.courses || [];
                 setResults(arr);
             } catch (e) {
                 if (e?.name !== 'AbortError') setResults([]);
@@ -115,9 +99,8 @@ export default function CompanyCourses({ companyId, canManage = true }) {
             controller.abort();
             clearTimeout(t);
         };
-    }, [adding, searchQ, companyId, data]);
+    }, [adding, searchQ, data]);
 
-    // --- Render ---
     return (
         <div className="max-w-5xl mx-auto p-4 space-y-4">
             {/* Header + Search */}
@@ -148,9 +131,7 @@ export default function CompanyCourses({ companyId, canManage = true }) {
             {/* Drawer for attaching */}
             {adding && canManage && (
                 <div className="border rounded p-3 space-y-3 bg-white">
-                    <div className="font-medium">
-                        Курс кошуу / Привязать курс к компании
-                    </div>
+                    <div className="font-medium">Курс кошуу / Привязать курс к компании</div>
                     <input
                         value={searchQ}
                         onChange={(e) => setSearchQ(e.target.value)}
@@ -160,35 +141,21 @@ export default function CompanyCourses({ companyId, canManage = true }) {
                     {searching ? (
                         <div className="text-sm text-gray-500">Изделүүдө…</div>
                     ) : results.length === 0 ? (
-                        <div className="text-sm text-gray-500">
-                            Көрсөтүү үчүн курс табылган жок.
-                        </div>
+                        <div className="text-sm text-gray-500">Көрсөтүү үчүн курс табылган жок.</div>
                     ) : (
                         <ul className="space-y-2">
                             {results.map((c) => {
                                 const disabled = attachingId === c.id;
                                 return (
-                                    <li
-                                        key={c.id}
-                                        className="border rounded p-2 flex items-center justify-between"
-                                    >
+                                    <li key={c.id} className="border rounded p-2 flex items-center justify-between">
                                         <div>
                                             <div className="font-medium">{c.title}</div>
-                                            <div className="text-xs text-gray-500">
-                                                {c.instructor?.fullName || '—'}
-                                            </div>
-                                            {!!c.companyId && c.companyId !== companyId && (
-                                                <div className="text-xs text-amber-600">
-                                                    Учурда башка компанияга байланган (ID: {c.companyId})
-                                                </div>
-                                            )}
+                                            <div className="text-xs text-gray-500">{c.instructor?.fullName || '—'}</div>
                                         </div>
                                         <button
                                             onClick={() => onAttach(c.id)}
                                             disabled={disabled}
-                                            className={`px-3 py-1 rounded text-white ${disabled
-                                                ? 'bg-gray-400 cursor-not-allowed'
-                                                : 'bg-green-600 hover:bg-green-700'
+                                            className={`px-3 py-1 rounded text-white ${disabled ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700'
                                                 }`}
                                         >
                                             {disabled ? '...' : 'Байланыштыруу'}
@@ -212,28 +179,17 @@ export default function CompanyCourses({ companyId, canManage = true }) {
 
                     <ul className="space-y-3">
                         {(data.items || []).map((c) => (
-                            <li
-                                key={c.id}
-                                className="border rounded p-3 flex items-center justify-between"
-                            >
+                            <li key={c.id} className="border rounded p-3 flex items-center justify-between">
                                 <div>
                                     <div className="font-medium">{c.title}</div>
-                                    <div className="text-sm text-gray-600">
-                                        {c.instructor?.fullName || '—'}
-                                    </div>
+                                    <div className="text-sm text-gray-600">{c.instructor?.fullName || '—'}</div>
                                 </div>
                                 <div className="flex items-center gap-3">
-                                    <Link
-                                        to={`/courses/${c.id}`}
-                                        className="text-blue-600 hover:underline"
-                                    >
+                                    <Link to={`/courses/${c.id}`} className="text-blue-600 hover:underline">
                                         Көрүү
                                     </Link>
                                     {canManage && (
-                                        <button
-                                            onClick={() => onDetach(c.id)}
-                                            className="text-red-600 hover:underline"
-                                        >
+                                        <button onClick={() => onDetach(c.id)} className="text-red-600 hover:underline">
                                             Ажыратуу
                                         </button>
                                     )}
@@ -244,19 +200,16 @@ export default function CompanyCourses({ companyId, canManage = true }) {
 
                     {/* Pagination */}
                     <div className="flex gap-2 justify-center mt-4">
-                        {Array.from({ length: data.totalPages || 1 }, (_, i) => i + 1).map(
-                            (p) => (
-                                <button
-                                    key={p}
-                                    onClick={() => setPage(p)}
-                                    className={`px-3 py-1 border rounded ${p === page ? 'bg-blue-600 text-white' : ''
-                                        }`}
-                                    disabled={p === page}
-                                >
-                                    {p}
-                                </button>
-                            )
-                        )}
+                        {Array.from({ length: data.totalPages || 1 }, (_, i) => i + 1).map((p) => (
+                            <button
+                                key={p}
+                                onClick={() => setPage(p)}
+                                className={`px-3 py-1 border rounded ${p === page ? 'bg-blue-600 text-white' : ''}`}
+                                disabled={p === page}
+                            >
+                                {p}
+                            </button>
+                        ))}
                     </div>
                 </>
             )}

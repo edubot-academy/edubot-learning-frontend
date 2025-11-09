@@ -184,9 +184,9 @@ export const addPayment = async (data) => {
 };
 
 // Courses
-export const fetchCourses = async () => {
+export const fetchCourses = async ({ q = '', limit = 20, excludeIds = '' } = {}) => {
     try {
-        const response = await api.get("/courses");
+        const response = await api.get("/courses", { params: clean({ q, limit, excludeIds }) });
         return response.data;
     } catch (error) {
         console.error("Error fetching courses:", error);
@@ -547,16 +547,24 @@ export async function updateCompany(id, patch /* { name?, logoUrl? } */) {
 }
 
 // NOTE: No DELETE /companies/:id in backend. Keep a guarded stub if UI calls it by mistake.
-export async function deleteCompany(/* id */) {
-    throw new Error('Deleting companies is not supported by the API.');
-}
-
-export async function setCourseCompany(id, companyId /* number|null */) {
-    const { data } = await api.patch(`/courses/${id}/company`, { companyId });
+export async function deleteCompany(id) {
+    const { data } = await api.delete(`/companies/${id}`);
     return data;
 }
-export async function clearCourseCompany(id) {
-    const { data } = await api.delete(`/courses/${id}/company`);
+
+export const assignCourseToCompany = async (courseId, companyId) => {
+    const { data } = await api.post(`/courses/${courseId}/companies/${companyId}`);
+    return data;
+}
+
+export const unassignCourseFromCompany = async (courseId, companyId) => {
+    const { data } = await api.delete(`/courses/${courseId}/companies/${companyId}`);
+    return data;
+}
+
+// (Optional) keep clearCourseCompany only if you still need “remove all links”:
+export const clearCourseCompany = async (courseId) => {
+    const { data } = await api.delete(`/courses/${courseId}/companies`);
     return data;
 }
 
@@ -593,6 +601,7 @@ export async function addCompanyMember(companyId, payload /* { userId:number, ro
 
 // Remove member. Optionally pass role to remove a single role; otherwise removes all roles for that user in the company.
 export async function removeCompanyMember(companyId, userId, role /* optional */) {
+    console.log(companyId, userId, role);
     const { data } = await api.delete(`/companies/${companyId}/members/${userId}`, {
         params: clean({ role }),
     });

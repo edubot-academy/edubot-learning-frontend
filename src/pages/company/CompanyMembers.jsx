@@ -29,6 +29,7 @@ export default function CompanyMembers({ companyId }) {
 
     // Debounced user search via fetchUsers({ search })
     React.useEffect(() => {
+        if (selected) { setResults([]); setSearching(false); setActiveIdx(-1); return; }
         if (!q.trim()) { setResults([]); setActiveIdx(-1); setSelected(null); return; }
         const t = setTimeout(async () => {
             setSearching(true);
@@ -50,12 +51,13 @@ export default function CompanyMembers({ companyId }) {
             }
         }, 300);
         return () => clearTimeout(t);
-    }, [q, items]);
+    }, [q, items, selected]);
 
     const onPick = (u) => {
         setSelected(u);
         setQ(u.fullName || u.email || `#${u.id}`);
         setResults([]);
+        setSearching(false);
         setActiveIdx(-1);
     };
 
@@ -82,7 +84,7 @@ export default function CompanyMembers({ companyId }) {
     const onSetRole = async (memberId, newRole) => {
         try {
             await setCompanyMemberRole(companyId, memberId, newRole);
-            setItems(prev => prev.map(m => m.id === memberId ? { ...m, role: newRole } : m));
+            setItems(prev => prev.map(m => m.userId === memberId ? { ...m, role: newRole } : m));
             toast.success('Роль өзгөртүлдү.');
         } catch { toast.error('Роль өзгөртүү катасы.'); }
     };
@@ -120,6 +122,7 @@ export default function CompanyMembers({ companyId }) {
                             value={q}
                             onChange={(e) => { setQ(e.target.value); setSelected(null); }}
                             onKeyDown={onKeyDown}
+                            onBlur={() => setTimeout(() => { setResults([]); setSearching(false); }, 120)}
                             autoComplete="off"
                         />
                         {(results.length > 0 || searching) && (
@@ -181,7 +184,7 @@ export default function CompanyMembers({ companyId }) {
                     </thead>
                     <tbody>
                         {items.map(m => (
-                            <tr key={m.id} className="border-b">
+                            <tr key={m.userId} className="border-b">
                                 <td className="p-2">
                                     <div className="flex items-center gap-2">
                                         {m.avatarUrl ? (
@@ -195,13 +198,13 @@ export default function CompanyMembers({ companyId }) {
                                     <select
                                         className="border rounded px-2 py-1"
                                         value={m.role}
-                                        onChange={(e) => onSetRole(m.id, e.target.value)}
+                                        onChange={(e) => onSetRole(m.userId, e.target.value)}
                                     >
                                         {ROLES.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
                                     </select>
                                 </td>
                                 <td className="p-2">
-                                    <button onClick={() => onRemove(m.id)} className="text-red-600 hover:underline">Өчүрүү</button>
+                                    <button onClick={() => onRemove(m.userId)} className="text-red-600 hover:underline">Өчүрүү</button>
                                 </td>
                             </tr>
                         ))}
