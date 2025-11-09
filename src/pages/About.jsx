@@ -1,4 +1,5 @@
 import React from 'react';
+import InfoCards from '../components/InfoCards';
 import Vision from '../components/Vision';
 import AboutHero from '../components/AboutHero';
 import Metrics from '../components/Metrics';
@@ -12,6 +13,7 @@ const AboutPage = () => {
             <Metrics />
             <img src={team} alt="" />
             <Vision />
+            <InfoCards />
         </div>
     );
 };

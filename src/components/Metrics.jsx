@@ -17,7 +17,7 @@ function Metrics() {
 
     ]
     return (
-        <div className='flex flex-col md:flex-row items-center justify-center gap-5 my-6 mx-4'>
+        <div className='flex flex-col md:flex-row items-center justify-center gap-5 my-6'>
             {metrics.map((x, index) => (
                 <div key={index} className='flex items-center justify-center gap-5 border border-[#C5C9D1] py-4 px-2 rounded'>
                     <span className='text-[#141619] text-6xl font-normal'>
