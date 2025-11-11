@@ -10,20 +10,20 @@ const Button = ({
     onClick,
 }) => {
     const base =
-        "inline-flex items-center justify-center gap-2 rounded-lg font-medium text-base px-6 py-3 transition-all duration-300";
+        "inline-flex items-center justify-center gap-2 rounded-lg font-medium text-base px-5 py-3 transition-all duration-300";
 
     const styles = {
         primary: `
       bg-gradient-to-b from-[#FF8C6E] to-[#E14219]
       text-white shadow-[0_4px_10px_rgba(225,66,25,0.3)]
       hover:from-[#C2410C] hover:to-[#C2410C] hover:shadow-[0_6px_14px_rgba(225,66,25,0.4)]
-      active:scale-95
+      active:scale-95 text-xs md:text-base
       disabled:bg-none disabled:bg-[#DFE1E5] disabled:text-[#3E424A] disabled:shadow-none disabled:cursor-not-allowed
     `,
         secondary: `
       border border-black text-black
       hover:bg-[#EA580C] hover:border-[#EA580C] hover:text-white
-      active:scale-95
+      active:scale-95 text-xs md:text-base
       disabled:bg-transparent disabled:border-[#C5C9D1] disabled:text-[#C5C9D1] disabled:cursor-not-allowed
     `,
     };

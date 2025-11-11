@@ -14,8 +14,8 @@ import {
 } from "../services/api";
 import { AuthContext } from "../context/AuthContext";
 import CourseSidebar from "../components/CourseSidebar";
-import CourseHeader from "../components/CourseHeader";
 import CourseVideoPlayer from "../components/CourseVideoPlayer";
+import CourseCard from "../components/CardVideo";
 
 const CourseDetailsPage = () => {
     const { id } = useParams();
@@ -323,7 +323,7 @@ const CourseDetailsPage = () => {
     return (
         <div className="min-h-screen pt-24">
             <button onClick={changPaid}>tap</button>
-            {paid ? <CourseHeader course={course} progress={progress} enrolled={enrolled} />
+            {paid ? <CourseCard course={course} progress={progress} enrolled={enrolled} />
                 :
                 <div className="max-w-6xl mx-auto p-6">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
