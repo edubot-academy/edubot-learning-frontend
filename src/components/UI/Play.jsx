@@ -1,156 +1,220 @@
-import React, { useRef, useState } from "react";
+import React, { useState, useEffect } from "react";
+import { CiPlay1 } from "react-icons/ci";
 
-const Play = () => {
-  const videoRef = useRef(null);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [volume, setVolume] = useState(1);
-  const [currentTime, setCurrentTime] = useState(0);
-  const [duration, setDuration] = useState(0);
-  const [showSettings, setShowSettings] = useState(false);
-  const [quality, setQuality] = useState("720p");
-  const [isFullscreen, setIsFullscreen] = useState(false);
+const VideoPlayerUI = ({
+    videoRef,
+    resumeTime,
+    onProgress,
+    onTimeUpdate,
+    onPause,
+    allowPlay = true,
+    onEnded
+}) => {
+    const [isPlaying, setIsPlaying] = useState(false);
+    const [isMuted, setIsMuted] = useState(false);
+    const [duration, setDuration] = useState(0);
+    const [currentTime, setCurrentTime] = useState(0);
+    const [openMenu, setOpenMenu] = useState(false);
 
-  const formatTime = (time) => {
-    const mins = Math.floor(time / 60);
-    const secs = Math.floor(time % 60);
-    return `${mins}:${secs < 10 ? "0" + secs : secs}`;
-  };
+    // Play / Pause
+    const togglePlay = () => {
+        if (!allowPlay) return;
+        if (videoRef.current.paused) {
+            videoRef.current.play();
+            setIsPlaying(true);
+        } else {
+            videoRef.current.pause();
+            setIsPlaying(false);
+        }
+    };
 
-  const togglePlay = () => {
-    if (isPlaying) videoRef.current.pause();
-    else videoRef.current.play();
-    setIsPlaying(!isPlaying);
-  };
+    const toggleMute = () => {
+        if (videoRef.current) {
+            videoRef.current.muted = !videoRef.current.muted;
+            setIsMuted(videoRef.current.muted);
+        }
+    };
 
-  const handleVolume = (e) => {
-    const vol = e.target.value;
-    setVolume(vol);
-    videoRef.current.volume = vol;
-  };
+    const skip = (seconds) => {
+        if (videoRef.current) {
+            videoRef.current.currentTime += seconds;
+        }
+    };
 
-  const handleTimeUpdate = () => {
-    setCurrentTime(videoRef.current.currentTime);
-  };
+    const toggleFullscreen = () => {
+        if (videoRef.current) {
+            const videoContainer = videoRef.current.parentElement;
+            if (!document.fullscreenElement) {
+                videoContainer.requestFullscreen();
+            } else {
+                document.exitFullscreen();
+            }
+        }
+    };
 
-  const handleProgress = (e) => {
-    const time = (e.target.value / 100) * duration;
-    videoRef.current.currentTime = time;
-  };
+    const formatTime = (time) => {
+        if (!time) return "0:00";
+        const m = Math.floor(time / 60);
+        const s = Math.floor(time % 60).toString().padStart(2, "0");
+        return `${m}:${s}`;
+    };
 
-  const handleLoadedMetadata = () => {
-    setDuration(videoRef.current.duration);
-  };
+    const onLoadedMetadata = () => {
+        if (videoRef.current) {
+            setDuration(videoRef.current.duration || 0);
+        }
+    };
 
-  const toggleFullscreen = () => {
-    if (!isFullscreen) {
-      videoRef.current.requestFullscreen();
-    } else {
-      document.exitFullscreen();
-    }
-    setIsFullscreen(!isFullscreen);
-  };
+    const handleTimeUpdateLocal = () => {
+        if (videoRef.current) {
+            const t = videoRef.current.currentTime;
+            setCurrentTime(t);
+            onTimeUpdate?.(t);
+            onProgress?.(t);
+        }
+    };
 
-  const handleQualityChange = (q) => {
-    setQuality(q);
-    setShowSettings(false);
-  };
+    // Обработчик клика по видео
+    const handleVideoClick = () => {
+        togglePlay();
+    };
 
-  return (
-    <div className="flex justify-center items-center min-h-screen bg-gray-100 p-4">
-      <div className="relative w-full max-w-3xl rounded-lg overflow-hidden shadow-2xl">
-        {/* ВИДЕО */}
-        <video
-          ref={videoRef}
-          className="w-full bg-gradient-to-b from-gray-400 to-black"
-          src="https://www.w3schools.com/html/mov_bbb.mp4"
-          onTimeUpdate={handleTimeUpdate}
-          onLoadedMetadata={handleLoadedMetadata}
-        ></video>
+    const handlePause = () => {
+        setIsPlaying(false);
+        onPause?.();
+    };
 
-        {/* ПАНЕЛЬ УПРАВЛЕНИЯ */}
-        <div className="absolute bottom-0 left-0 right-0 bg-black/70 backdrop-blur-sm text-white p-3 flex flex-col gap-2">
-          {/* ПРОГРЕСС */}
-          <input
-            type="range"
-            min="0"
-            max="100"
-            value={duration ? (currentTime / duration) * 100 : 0}
-            onChange={handleProgress}
-            className="w-full h-1 accent-orange-500"
-          />
+    const handlePlay = () => {
+        setIsPlaying(true);
+    };
 
-          {/* КНОПКИ */}
-          <div className="flex justify-between items-center text-sm">
-            <div className="flex items-center gap-3">
-              {/* Play */}
-              <button onClick={togglePlay} className="hover:text-orange-400">
-                {isPlaying ? "⏸️" : "▶️"}
-              </button>
+    // Restore progress
+    useEffect(() => {
+        if (resumeTime && videoRef.current) {
+            videoRef.current.currentTime = resumeTime;
+        }
+    }, [resumeTime, videoRef]);
 
-              {/* 10s back */}
-              <button
-                onClick={() => (videoRef.current.currentTime -= 10)}
-                className="hover:text-orange-400"
-              >
-                ⏪10s
-              </button>
+    // Добавляем обработчики событий к видео элементу
+    useEffect(() => {
+        const videoElement = videoRef.current;
+        if (!videoElement) return;
 
-              {/* Volume */}
-              <input
-                type="range"
-                min="0"
-                max="1"
-                step="0.05"
-                value={volume}
-                onChange={handleVolume}
-                className="w-20 accent-orange-500"
-              />
+        videoElement.addEventListener('loadedmetadata', onLoadedMetadata);
+        videoElement.addEventListener('timeupdate', handleTimeUpdateLocal);
+        videoElement.addEventListener('pause', handlePause);
+        videoElement.addEventListener('play', handlePlay);
+        videoElement.addEventListener('ended', onEnded);
 
-              {/* Time */}
-              <span className="text-gray-300 text-xs">
-                {formatTime(currentTime)} / {formatTime(duration)}
-              </span>
-            </div>
+        return () => {
+            videoElement.removeEventListener('loadedmetadata', onLoadedMetadata);
+            videoElement.removeEventListener('timeupdate', handleTimeUpdateLocal);
+            videoElement.removeEventListener('pause', handlePause);
+            videoElement.removeEventListener('play', handlePlay);
+            videoElement.removeEventListener('ended', onEnded);
+        };
+    }, [videoRef, onEnded]);
 
-            <div className="flex items-center gap-3">
-              {/* Settings */}
-              <div className="relative">
-                <button
-                  onClick={() => setShowSettings(!showSettings)}
-                  className="hover:text-orange-400"
+    const changeQuality = (q) => {
+        console.log("Quality changed:", q);
+        setOpenMenu(false);
+    };
+
+    const handleProgressClick = (e) => {
+        if (!videoRef.current || !duration) return;
+        
+        e.stopPropagation();
+        const rect = e.currentTarget.getBoundingClientRect();
+        const percent = (e.clientX - rect.left) / rect.width;
+        videoRef.current.currentTime = duration * percent;
+    };
+
+    return (
+        <>
+            {/* ==== OVERLAY CLICK AREA ==== */}
+            <div 
+                className="absolute inset-0 cursor-pointer"
+                onClick={handleVideoClick}
+            />
+            <div 
+                className="absolute cursor-pointer bottom-0 left-0 w-full h-[50%] bg-gradient-to-t from-black to-transparent"
+                onClick={handleVideoClick}
+            />
+
+            {/* ==== CONTROLS ==== */}
+            <div className="absolute bottom-0 left-0 w-full px-4 pb-3">
+
+                {/* === PROGRESS BAR === */}
+                <div
+                    className="w-full h-1.5 bg-gray-500/40 rounded-full cursor-pointer mb-3"
+                    onClick={handleProgressClick}
                 >
-                  ⚙️
-                </button>
-                {showSettings && (
-                  <div className="absolute bottom-8 right-0 bg-black text-white rounded-md shadow-md w-24">
-                    {["1080p", "720p", "480p", "360p", "240p"].map((q) => (
-                      <div
-                        key={q}
-                        onClick={() => handleQualityChange(q)}
-                        className={`px-3 py-1 hover:bg-gray-700 cursor-pointer ${
-                          quality === q ? "text-orange-400" : ""
-                        }`}
-                      >
-                        {q}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+                    <div
+                        className="h-full bg-orange-500 rounded-full"
+                        style={{ width: `${(currentTime / duration) * 100}%` }}
+                    />
+                </div>
 
-              {/* Fullscreen */}
-              <button
-                onClick={toggleFullscreen}
-                className="hover:text-orange-400"
-              >
-                ⛶
-              </button>
+                {/* === BOTTOM ROW === */}
+                <div className="flex items-center justify-between text-white text-sm">
+
+                    {/* LEFT buttons */}
+                    <div className="flex items-center gap-4">
+                        <button onClick={togglePlay} className="hover:opacity-80">
+                            {isPlaying ? "⏸️" : <CiPlay1 className="w-[20px] h-[20px]"/>}
+                        </button>
+
+                        <button onClick={() => skip(-15)} className="hover:opacity-80">
+                            ↺15
+                        </button>
+
+                        <button onClick={() => skip(15)} className="hover:opacity-80">
+                            15↻
+                        </button>
+
+                        <button onClick={toggleMute} className="hover:opacity-80">
+                            {isMuted ? "🔇" : "🔊"}
+                        </button>
+
+                        <span className="ml-1">
+                            {formatTime(currentTime)} / {formatTime(duration)}
+                        </span>
+                    </div>
+
+                    {/* RIGHT buttons */}
+                    <div className="flex items-center gap-4">
+                        {/* SETTINGS */}
+                        <div className="relative">
+                            <button
+                                className="hover:opacity-80"
+                                onClick={() => setOpenMenu(!openMenu)}
+                            >
+                                ⚙️
+                            </button>
+
+                            {openMenu && (
+                                <div className="absolute bottom-10 right-0 bg-black/90 text-white rounded-lg py-2 px-4 shadow-xl w-24">
+                                    {["1080p", "720p", "480p", "360p", "240p"].map((item) => (
+                                        <div
+                                            key={item}
+                                            onClick={() => changeQuality(item)}
+                                            className="py-1 cursor-pointer hover:text-orange-400"
+                                        >
+                                            {item}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        <button onClick={toggleFullscreen} className="hover:opacity-80">
+                            ⛶
+                        </button>
+                    </div>
+                </div>
             </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+        </>
+    );
 };
 
-export default Play;
+export default VideoPlayerUI;
