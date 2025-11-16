@@ -1,5 +1,4 @@
 import { Link } from "react-router-dom";
-import qr from "../assets/icons/qr.svg";
 import { FaInstagram } from "react-icons/fa";
 import { FaTelegramPlane } from "react-icons/fa";
 import { IoIosCall } from "react-icons/io";
@@ -58,8 +57,8 @@ const Footer = () => {
 
           <div>
             <img
-              src={qr}
-              alt="QR code"
+              src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=https://learning.edubot.it.com"
+              alt="EduBot Learning QR"
               className="w-[120px] h-[120px] object-contain"
             />
           </div>
