@@ -2,6 +2,7 @@ import React from "react";
 import SectionContainer from "../components/SectionContainer";
 import CardInstructor from "../components/CardInstrictor";
 import instructorImg from "../assets/images/instructor.png";
+import Button from "./UI/Button";
 
 const instructors = [
   { img: instructorImg, name: "Рональд Ричардс", position: "UI/UX Designer", rating: "4.9", students: "2400" },
@@ -14,7 +15,7 @@ const TopInstructors = () => {
     <SectionContainer
       title="Топ Инструктор"
       subtitle="Подборка самых востребованных и эффективных обучающих программ."
-      buttonText="Бардыгын көрүү"
+      rightContent={<Button variant="secondary">Бардыгын көрүү</Button>}
       data={instructors}
       CardComponent={CardInstructor}
     />
