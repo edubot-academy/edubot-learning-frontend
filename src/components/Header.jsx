@@ -8,7 +8,8 @@ import Logo from "/edubot-logo.svg";
 import { AuthContext } from "../context/AuthContext";
 import { searchCourses } from "../services/api";
 
-const NavLinks = ({ isMobile }) => {
+
+const NavLinks = ({ isMobile, user }) => {
     const location = useLocation();
     const active = (path) =>
         location.pathname === path ? "text-orange-500" : "";
@@ -33,6 +34,16 @@ const NavLinks = ({ isMobile }) => {
             <Link to="/contact" className={`${active("/contact")} ${linkClass}`}>
                 Байланыш
             </Link>
+            {user.role === "instructor" && (
+                <Link to="/instructor" className={`${active("/instructor")} ${linkClass}`}>
+                    Инструктор
+                </Link>
+            )}
+            {user.role === "admin" && (
+                <Link to="/admin" className={`${active("/admin")} ${linkClass}`}>
+                    Админ
+                </Link>
+            )}
         </div>
     );
 };
@@ -179,7 +190,7 @@ const Header = () => {
                         </div>
 
                         <div className="hidden md:flex items-center ml-6">
-                            <NavLinks isMobile={false} />
+                            <NavLinks isMobile={false} user={user} />
                         </div>
                     </div>
 
@@ -322,7 +333,7 @@ const Header = () => {
                                 <FaTimes className="text-2xl" />
                             </button>
 
-                            <NavLinks isMobile={true} />
+                            <NavLinks isMobile={true} user={user} />
 
                             <div className="mt-6">
                                 <Link
