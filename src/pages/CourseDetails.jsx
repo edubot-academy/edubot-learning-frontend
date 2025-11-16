@@ -15,7 +15,7 @@ import {
 import { AuthContext } from "../context/AuthContext";
 import CourseSidebar from "../components/CourseSidebar";
 import CourseVideoPlayer from "../components/CourseVideoPlayer";
-import CourseCard from "../components/CardVideo";
+import CardVideo from "../components/CardVideo";
 
 const CourseDetailsPage = () => {
     const { id } = useParams();
@@ -316,15 +316,36 @@ const CourseDetailsPage = () => {
     const { prev: prevLesson, next: nextLesson } = findPrevNextLessons();
     const totalLessons = sections.reduce((count, sec) => count + (sec.lessons?.length || 0), 0);
     const progress = Math.round((completedLessons.length / totalLessons) * 100);
-    
+    const courses = [
+        {
+            id: 1,
+            pricePerLesson: 120,
+            lessons: [
+                { id: 1, duration: 20 },
+                { id: 2, duration: 15 },
+                { id: 3, duration: 25 },
+            ],
+            isPrivate: true
+        },
+        {
+            id: 2,
+            pricePerLesson: 90,
+            lessons: [
+                { id: 1, duration: 40 },
+                { id: 2, duration: 35 },
+            ],
+            isPrivate: false
+        }
+    ];
     function changPaid() {
         setPaid(!paid)
     }
     return (
         <div className="min-h-screen pt-24">
             <button onClick={changPaid}>tap</button>
-            {paid ? <CourseCard course={course} progress={progress} enrolled={enrolled} />
-                :
+            {paid && course ? (
+                <CardVideo course={courses} />
+            ) : (
                 <div className="max-w-6xl mx-auto p-6">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div className="md:col-span-2">
@@ -359,9 +380,10 @@ const CourseDetailsPage = () => {
                         />
                     </div>
                 </div>
-            }
+            )}
         </div>
     );
 };
+
 
 export default CourseDetailsPage;
