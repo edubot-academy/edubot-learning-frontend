@@ -1,7 +1,10 @@
 import React from 'react';
+import InfoCards from '../components/InfoCards';
+import Vision from '../components/Vision';
 import AboutHero from '../components/AboutHero';
 import Metrics from '../components/Metrics';
 import team from '../assets/images/team.png'
+
 
 const AboutPage = () => {
     return (
@@ -9,6 +12,8 @@ const AboutPage = () => {
             <AboutHero />
             <Metrics />
             <img src={team} alt="" />
+            <Vision />
+            <InfoCards />
         </div>
     );
 };

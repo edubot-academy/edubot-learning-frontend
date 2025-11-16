@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback, useContext } from "react";
+import  { useState, useEffect, useRef, useCallback, useContext } from "react";
 import { useParams } from "react-router-dom";
 import debounce from "lodash.debounce";
 import {
@@ -16,6 +16,8 @@ import { AuthContext } from "../context/AuthContext";
 import CourseSidebar from "../components/CourseSidebar";
 import CourseVideoPlayer from "../components/CourseVideoPlayer";
 import CardVideo from "../components/CardVideo";
+import CourseDescription from "../components/CourseDescription";
+import Comment from "../components/Comment";
 
 const CourseDetailsPage = () => {
     const { id } = useParams();
@@ -87,7 +89,7 @@ const CourseDetailsPage = () => {
     };
 
     const toggleSection = (sectionId) => {
-        setShouldScrollToLesson(false); // 🔒 Disable scroll for this interaction
+        setShouldScrollToLesson(false);
 
         const newId = activeSectionId === sectionId ? null : sectionId;
         setActiveSectionId(newId);
@@ -98,10 +100,9 @@ const CourseDetailsPage = () => {
             localStorage.removeItem(`active_section_${id}`);
         }
 
-        // Optionally reset scroll flag after short delay
         setTimeout(() => {
             setShouldScrollToLesson(true);
-        }, 300); // adjust timing as needed
+        }, 300);
     };
 
     const handleLessonClick = async (lesson) => {
@@ -340,6 +341,7 @@ const CourseDetailsPage = () => {
     function changPaid() {
         setPaid(!paid)
     }
+
     return (
         <div className="min-h-screen pt-24">
             <button onClick={changPaid}>tap</button>
@@ -347,6 +349,8 @@ const CourseDetailsPage = () => {
                 <CardVideo course={courses} />
             ) : (
                 <div className="max-w-6xl mx-auto p-6">
+                    <CourseDescription course={course} />
+                    
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div className="md:col-span-2">
                             {activeLesson?.videoUrl && (
@@ -378,7 +382,9 @@ const CourseDetailsPage = () => {
                             enrolled={enrolled}
                             lessonRefs={lessonRefs}
                         />
+
                     </div>
+                    <Comment />
                 </div>
             )}
         </div>
