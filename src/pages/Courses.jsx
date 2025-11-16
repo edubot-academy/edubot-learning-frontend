@@ -4,7 +4,8 @@ import { FaStar } from "react-icons/fa";
 import { fetchCourses } from "../services/api";
 import SectionContainer from "../components/SectionContainer";
 import CoursesSection from "../components/CoursesSection";
-import { FiSearch } from "react-icons/fi";
+// import { FiSearch } from "react-icons/fi";
+// import CourseDescription from "../components/CourseDescription";
 
 const CoursesPage = () => {
   const [courses, setCourses] = useState([]);
@@ -97,6 +98,7 @@ const CoursesPage = () => {
                     ))}
                 </div>
             )  } */}
+            {/* <CourseDescription /> */}
     </div>
   );
 };

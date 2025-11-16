@@ -16,6 +16,7 @@ import { AuthContext } from "../context/AuthContext";
 import CourseSidebar from "../components/CourseSidebar";
 import CourseHeader from "../components/CourseHeader";
 import CourseVideoPlayer from "../components/CourseVideoPlayer";
+import CourseDescription from "../components/CourseDescription";
 import Comment from "../components/Comment";
 
 const CourseDetailsPage = () => {
@@ -88,7 +89,7 @@ const CourseDetailsPage = () => {
     };
 
     const toggleSection = (sectionId) => {
-        setShouldScrollToLesson(false); // 🔒 Disable scroll for this interaction
+        setShouldScrollToLesson(false);
 
         const newId = activeSectionId === sectionId ? null : sectionId;
         setActiveSectionId(newId);
@@ -99,10 +100,9 @@ const CourseDetailsPage = () => {
             localStorage.removeItem(`active_section_${id}`);
         }
 
-        // Optionally reset scroll flag after short delay
         setTimeout(() => {
             setShouldScrollToLesson(true);
-        }, 300); // adjust timing as needed
+        }, 300);
     };
 
     const handleLessonClick = async (lesson) => {
@@ -321,12 +321,17 @@ const CourseDetailsPage = () => {
     function changPaid() {
         setPaid(!paid)
     }
+
     return (
         <div className="min-h-screen pt-24">
             <button onClick={changPaid}>tap</button>
+            
             {paid ? <CourseHeader course={course} progress={progress} enrolled={enrolled} />
                 :
                 <div className="max-w-6xl mx-auto p-6">
+                    {/* ✅ ПРОСТО ВЫЗЫВАЕМ КОМПОНЕНТ ОПИСАНИЯ */}
+                    <CourseDescription course={course} />
+                    
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div className="md:col-span-2">
                             {activeLesson?.videoUrl && (
