@@ -3,13 +3,14 @@ import { Link } from "react-router-dom";
 import student from "../assets/images/RightLittleMan.png";
 import Background from "../assets/images/background.png";
 import LogoStudies from "../assets/images/logoEduBot.png";
+import Button from "./UI/Button";
 
 function Apply({ user }) {
   if (user) return null;
 
   return (
-    <div className="flex items-center justify-center gap-[130px]">
-      <div className="relative hidden md:flex items-center justify-center left-[80px]w-fuul h-[650px] ">
+    <div className="flex items-center justify-center gap-[130px] mt-20">
+      <div className="relative hidden md:flex items-center left-[80px] h-[650px] ">
         <img src={Background} alt="Background" className="" />
 
         <img
@@ -19,7 +20,7 @@ function Apply({ user }) {
         />
       </div>
 
-      <div className="relative w-[500px] h-[270px] mx-auto bg-white rounded-lg shadow p-6 text-center">
+      <div className="relative w-[500px] h-[270px] mx-auto bg-white rounded-lg border border-2 p-6 text-center">
         <div className="absolute -top-[90px] left-1/2 -translate-x-1/2">
           <img
             src={LogoStudies}
@@ -34,9 +35,9 @@ function Apply({ user }) {
         <p className="text-[#3E424A] mb-4">
           Edubot Learning кошулуу үчүн азыр баштаңыз
         </p>
-        <button className="px-6 py-3  bg-gradient-to-r  from-red-500 to-orange-400 text-white rounded-lg shadow hover:opacity-90 transition">
+        <Button>
           Сабакты азыр баштоо
-        </button>
+        </Button>
       </div>
     </div>
   );
