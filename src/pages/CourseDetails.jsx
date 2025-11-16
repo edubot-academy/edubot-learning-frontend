@@ -16,6 +16,7 @@ import { AuthContext } from "../context/AuthContext";
 import CourseSidebar from "../components/CourseSidebar";
 import CourseHeader from "../components/CourseHeader";
 import CourseVideoPlayer from "../components/CourseVideoPlayer";
+import Comment from "../components/Comment";
 
 const CourseDetailsPage = () => {
     const { id } = useParams();
@@ -316,7 +317,7 @@ const CourseDetailsPage = () => {
     const { prev: prevLesson, next: nextLesson } = findPrevNextLessons();
     const totalLessons = sections.reduce((count, sec) => count + (sec.lessons?.length || 0), 0);
     const progress = Math.round((completedLessons.length / totalLessons) * 100);
-    
+
     function changPaid() {
         setPaid(!paid)
     }
@@ -357,7 +358,9 @@ const CourseDetailsPage = () => {
                             enrolled={enrolled}
                             lessonRefs={lessonRefs}
                         />
+
                     </div>
+                    <Comment />
                 </div>
             }
         </div>
