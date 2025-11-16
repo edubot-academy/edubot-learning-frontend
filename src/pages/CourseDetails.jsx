@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback, useContext } from "react";
+import  { useState, useEffect, useRef, useCallback, useContext } from "react";
 import { useParams } from "react-router-dom";
 import debounce from "lodash.debounce";
 import {
@@ -17,6 +17,7 @@ import CourseSidebar from "../components/CourseSidebar";
 import CourseHeader from "../components/CourseHeader";
 import CourseVideoPlayer from "../components/CourseVideoPlayer";
 import CourseDescription from "../components/CourseDescription";
+import Comment from "../components/Comment";
 
 const CourseDetailsPage = () => {
     const { id } = useParams();
@@ -316,7 +317,7 @@ const CourseDetailsPage = () => {
     const { prev: prevLesson, next: nextLesson } = findPrevNextLessons();
     const totalLessons = sections.reduce((count, sec) => count + (sec.lessons?.length || 0), 0);
     const progress = Math.round((completedLessons.length / totalLessons) * 100);
-    
+
     function changPaid() {
         setPaid(!paid)
     }
@@ -362,7 +363,9 @@ const CourseDetailsPage = () => {
                             enrolled={enrolled}
                             lessonRefs={lessonRefs}
                         />
+
                     </div>
+                    <Comment />
                 </div>
             }
         </div>
