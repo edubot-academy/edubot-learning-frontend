@@ -6,7 +6,6 @@ import Button from "../components/ui/button";
 import { FaPlay } from "react-icons/fa";
 
 const CardVideo = ({ course }) => {
-    if (!course || !course.lessons) return null; 
     const lessonCount = course.lessons.length;
     const totalMinutes = course.lessons.reduce(
         (sum, lesson) => sum + lesson.duration,

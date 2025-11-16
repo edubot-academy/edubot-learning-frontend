@@ -322,9 +322,9 @@ const CourseDetailsPage = () => {
             id: 1,
             pricePerLesson: 120,
             lessons: [
-                { id: 1, duration: 20 },
-                { id: 2, duration: 15 },
-                { id: 3, duration: 25 },
+                { id: 1, duration: 40 },
+                { id: 2, duration: 35 },
+                { id: 3, duration: 65 },
             ],
             isPrivate: true
         },
@@ -346,7 +346,7 @@ const CourseDetailsPage = () => {
         <div className="min-h-screen pt-24">
             <button onClick={changPaid}>tap</button>
             {paid && course ? (
-                <CardVideo course={courses} />
+                <CardVideo course={courses[0]} />
             ) : (
                 <div className="max-w-6xl mx-auto p-6">
                     <CourseDescription course={course} />
