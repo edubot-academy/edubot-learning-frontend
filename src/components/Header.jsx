@@ -1,13 +1,15 @@
 import React, { useState, useContext, useEffect, useRef } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { FaBars, FaTimes } from "react-icons/fa";
 import { IoSearch } from "react-icons/io5";
 import { GrLanguage } from "react-icons/gr";
 import { BsChevronDown } from "react-icons/bs";
-// import Logo from "../assets/images/logotip-hero.png";
+import Logo from "/edubot-logo.svg";
 import { AuthContext } from "../context/AuthContext";
+import { searchCourses } from "../services/api";
 
-const NavLinks = ({ isMobile }) => {
+
+const NavLinks = ({ isMobile, user }) => {
     const location = useLocation();
     const active = (path) =>
         location.pathname === path ? "text-orange-500" : "";
@@ -17,8 +19,11 @@ const NavLinks = ({ isMobile }) => {
 
     return (
         <div
-            className={`${isMobile ? "flex flex-col space-y-4 mt-4" : "flex space-x-6 items-center"
-                }`}
+            className={
+                isMobile
+                    ? "flex flex-col space-y-4 mt-4"
+                    : "flex space-x-6 items-center"
+            }
         >
             <Link to="/courses" className={`${active("/courses")} ${linkClass}`}>
                 Курстар
@@ -29,6 +34,16 @@ const NavLinks = ({ isMobile }) => {
             <Link to="/contact" className={`${active("/contact")} ${linkClass}`}>
                 Байланыш
             </Link>
+            {user.role === "instructor" && (
+                <Link to="/instructor" className={`${active("/instructor")} ${linkClass}`}>
+                    Инструктор
+                </Link>
+            )}
+            {user.role === "admin" && (
+                <Link to="/admin" className={`${active("/admin")} ${linkClass}`}>
+                    Админ
+                </Link>
+            )}
         </div>
     );
 };
@@ -36,6 +51,7 @@ const NavLinks = ({ isMobile }) => {
 const Header = () => {
     const { user } = useContext(AuthContext);
     const location = useLocation();
+    const navigate = useNavigate();
 
     const [menuOpen, setMenuOpen] = useState(false);
     const [search, setSearch] = useState("");
@@ -44,6 +60,22 @@ const Header = () => {
     const [dark, setDark] = useState(false);
 
     const langRef = useRef(null);
+
+    const [results, setResults] = useState([]);
+    const [showDropdown, setShowDropdown] = useState(false);
+    const searchContainerRef = useRef(null);
+
+    // close dropdown on outside click
+    useEffect(() => {
+        const handleClickOutside = (e) => {
+            if (searchContainerRef.current && !searchContainerRef.current.contains(e.target)) {
+                setShowDropdown(false);
+            }
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
+
 
     useEffect(() => {
         setMenuOpen(false);
@@ -64,16 +96,44 @@ const Header = () => {
             document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
+    const handleSearchSubmit = (e) => {
+        e.preventDefault();
+        const q = search.trim();
+        if (!q) return;
+        navigate(`/search?q=${encodeURIComponent(q)}`);
+        // optionally keep the text; if you want to clear: setSearch("");
+        setMenuOpen(false);
+    };
+
+    const handleSearch = async (value) => {
+        setSearch(value);
+
+        if (value.length < 3) {
+            setResults([]);
+            setShowDropdown(false);
+            return;
+        }
+
+        try {
+            const data = await searchCourses(value);
+            setResults(data);
+            setShowDropdown(true);
+        } catch {
+            setResults([]);
+            setShowDropdown(false);
+        }
+    };
+
+
     return (
         <header className="sticky top-0 w-full bg-white dark:bg-gray-900 shadow z-50">
             <div className="px-4 md:px-10 py-3 flex flex-col items-center">
-
+                {/* Desktop */}
                 <div className="hidden lg:flex items-center justify-between w-full">
-
                     <div className="flex items-center gap-6 flex-1">
                         <Link to="/" className="flex items-center whitespace-nowrap">
                             <img
-                                // src={Logo}
+                                src={Logo}
                                 alt="logo"
                                 className="h-14 w-auto"
                             />
@@ -87,21 +147,50 @@ const Header = () => {
                             </div>
                         </Link>
 
+                        {/* Desktop search */}
+                        <div ref={searchContainerRef} className="relative hidden md:flex items-center flex-col flex-1 max-w-[200px] ml-6">
+                            <div className="flex items-center w-full border border-black rounded overflow-hidden">
+                                <IoSearch className="w-5 h-5 ml-2 text-gray-700 dark:text-gray-200" />
+                                <input
+                                    type="text"
+                                    placeholder="Издөө"
+                                    value={search}
+                                    onChange={(e) => handleSearch(e.target.value)}
+                                    className="px-3 py-2 focus:outline-none bg-transparent w-full"
+                                />
+                            </div>
 
-                        <div className="hidden md:flex items-center border border-black rounded overflow-hidden flex-1 max-w-[200px] ml-6">
-                            <IoSearch className="w-5 h-5 ml-2 text-gray-700 dark:text-gray-200" />
-                            <input
-                                type="text"
-                                placeholder="Издөө"
-                                value={search}
-                                onChange={(e) => setSearch(e.target.value)}
-                                className="px-3 py-2 focus:outline-none bg-transparent w-full"
-                            />
+                            {/* 🔍 Search dropdown */}
+                            {showDropdown && results.length > 0 && (
+                                <div className="absolute top-full left-0 right-0 bg-white shadow-lg border rounded mt-1 max-h-64 overflow-y-auto z-50">
+                                    {results.map((course) => (
+                                        <button
+                                            key={course.id}
+                                            onClick={() => {
+                                                navigate(`/courses/${course.id}`);
+                                                setShowDropdown(false);
+                                            }}
+                                            className="w-full text-left px-4 py-2 hover:bg-gray-100"
+                                        >
+                                            <div className="font-semibold text-sm">{course.title}</div>
+                                            <div className="text-xs text-gray-500 line-clamp-1">
+                                                {course.description}
+                                            </div>
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+
+                            {/* If no results */}
+                            {showDropdown && results.length === 0 && (
+                                <div className="absolute top-full left-0 right-0 bg-white shadow-lg border rounded mt-1 p-3 text-sm text-gray-500">
+                                    Натыйжа жок
+                                </div>
+                            )}
                         </div>
 
-
                         <div className="hidden md:flex items-center ml-6">
-                            <NavLinks isMobile={false} />
+                            <NavLinks isMobile={false} user={user} />
                         </div>
                     </div>
 
@@ -170,16 +259,53 @@ const Header = () => {
                     </Link>
 
                     <div className="flex w-full justify-center items-center px-4 gap-x-2">
-                        <div className="flex items-center border border-black rounded overflow-hidden w-[calc(100%-50px)] max-w-[280px]">
+                        {/* Mobile search */}
+                        <div
+                            onSubmit={handleSearchSubmit}
+                            className="flex items-center border border-black rounded overflow-hidden w-[calc(100%-50px)] max-w-[280px]"
+                        >
                             <IoSearch className="w-5 h-5 ml-2 text-gray-700 dark:text-gray-200" />
                             <input
                                 type="text"
                                 placeholder="Издөө"
                                 value={search}
-                                onChange={(e) => setSearch(e.target.value)}
+                                onChange={(e) => handleSearch(e.target.value)}
                                 className="px-3 py-2 focus:outline-none bg-transparent w-full truncate text-sm sm:text-base"
                             />
+
+                            {/* 🔍 Search dropdown */}
+                            {showDropdown && results.length > 0 && (
+                                <div className="absolute top-full left-0 right-0 bg-white shadow-lg border rounded mt-1 max-h-64 overflow-y-auto z-50">
+                                    {results.map((course) => (
+                                        <button
+                                            key={course.id}
+                                            onClick={() => {
+                                                navigate(`/courses/${course.id}`);
+                                                setShowDropdown(false);
+                                            }}
+                                            className="w-full text-left px-4 py-2 hover:bg-gray-100"
+                                        >
+                                            <div className="font-semibold text-sm">{course.title}</div>
+                                            <div className="text-xs text-gray-500 line-clamp-1">
+                                                {course.description}
+                                            </div>
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+
+                            {/* If no results */}
+                            {showDropdown && results.length === 0 && (
+                                <div className="absolute top-full left-0 right-0 bg-white shadow-lg border rounded mt-1 p-3 text-sm text-gray-500">
+                                    Натыйжа жок
+                                </div>
+                            )}
                         </div>
+
+                        <button type="submit" className="hidden">
+                            Search
+                        </button>
+
                         <button
                             onClick={() => setMenuOpen((p) => !p)}
                             className="text-gray-700 dark:text-gray-200 text-2xl"
@@ -188,38 +314,40 @@ const Header = () => {
                         </button>
                     </div>
                 </div>
-            </div>
+            </div >
 
             {/* Mobile menu modal */}
-            {menuOpen && (
-                <div className="fixed inset-0 z-50 flex">
-                    <div
-                        className="flex-1 bg-black/50"
-                        onClick={() => setMenuOpen(false)}
-                    ></div>
-
-                    <div className="w-64 sm:w-72 md:w-80 bg-white dark:bg-gray-800 h-full p-4 relative shadow-lg">
-                        <button
+            {
+                menuOpen && (
+                    <div className="fixed inset-0 z-50 flex">
+                        <div
+                            className="flex-1 bg-black/50"
                             onClick={() => setMenuOpen(false)}
-                            className="absolute top-4 left-4 text-gray-600 dark:text-gray-300"
-                        >
-                            <FaTimes className="text-2xl" />
-                        </button>
+                        ></div>
 
-                        <NavLinks isMobile={true} />
-
-                        <div className="mt-6">
-                            <Link
-                                to="/register"
-                                className="block w-full text-left text-gray-700 dark:text-gray-200 rounded-md px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                        <div className="w-64 sm:w-72 md:w-80 bg-white dark:bg-gray-800 h-full p-4 relative shadow-lg">
+                            <button
+                                onClick={() => setMenuOpen(false)}
+                                className="absolute top-4 left-4 text-gray-600 dark:text-gray-300"
                             >
-                                Катталуу
-                            </Link>
+                                <FaTimes className="text-2xl" />
+                            </button>
+
+                            <NavLinks isMobile={true} user={user} />
+
+                            <div className="mt-6">
+                                <Link
+                                    to="/register"
+                                    className="block w-full text-left text-gray-700 dark:text-gray-200 rounded-md px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                                >
+                                    Катталуу
+                                </Link>
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
-        </header>
+                )
+            }
+        </header >
     );
 };
 

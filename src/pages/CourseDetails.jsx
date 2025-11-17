@@ -1,4 +1,4 @@
-import  { useState, useEffect, useRef, useCallback, useContext } from "react";
+import { useState, useEffect, useRef, useCallback, useContext } from "react";
 import { useParams } from "react-router-dom";
 import debounce from "lodash.debounce";
 import {
@@ -325,13 +325,13 @@ const CourseDetailsPage = () => {
     return (
         <div className="min-h-screen pt-24">
             <button onClick={changPaid}>tap</button>
-            
+
             {paid ? <CourseHeader course={course} progress={progress} enrolled={enrolled} />
                 :
                 <div className="max-w-6xl mx-auto p-6">
                     {/* ✅ ПРОСТО ВЫЗЫВАЕМ КОМПОНЕНТ ОПИСАНИЯ */}
                     <CourseDescription course={course} />
-                    
+
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div className="md:col-span-2">
                             {activeLesson?.videoUrl && (
@@ -365,7 +365,7 @@ const CourseDetailsPage = () => {
                         />
 
                     </div>
-                    <Comment />
+                    <Comment courseId={id} />
                 </div>
             }
         </div>
