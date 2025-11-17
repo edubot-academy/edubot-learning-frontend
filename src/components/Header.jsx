@@ -34,12 +34,12 @@ const NavLinks = ({ isMobile, user }) => {
             <Link to="/contact" className={`${active("/contact")} ${linkClass}`}>
                 Байланыш
             </Link>
-            {user.role === "instructor" && (
+            {user?.role === "instructor" && (
                 <Link to="/instructor" className={`${active("/instructor")} ${linkClass}`}>
                     Инструктор
                 </Link>
             )}
-            {user.role === "admin" && (
+            {user?.role === "admin" && (
                 <Link to="/admin" className={`${active("/admin")} ${linkClass}`}>
                     Админ
                 </Link>
