@@ -50,7 +50,8 @@ const NavLinks = ({ isMobile }) => {
 };
 
 const Header = () => {
-  const { user } = useContext(AuthContext); // если user есть, показываем иконки
+  const { user } = useContext(AuthContext);
+  //   const user = null;
   const location = useLocation();
 
   const [menuOpen, setMenuOpen] = useState(false);
@@ -80,7 +81,7 @@ const Header = () => {
   }, []);
 
   return (
-    <header className="sticky top-0 w-full bg-white dark:bg-gray-900 shadow z-50">
+    <header className="sticky top-0 w-full bg-white dark:bg-white shadow z-50">
       <div className="px-4 md:px-10 py-3 flex flex-col items-center">
         <div className="hidden lg:flex items-center justify-between w-full">
           <div className="flex items-center gap-6 flex-1">
@@ -90,21 +91,21 @@ const Header = () => {
                 <span className="text-2xl md:text-2xl font-bold text-orange-500">
                   EDUBOT
                 </span>
-                <span className="-mt-2 text-sm md:text-base text-gray-700 dark:text-gray-200 tracking-[0.14em]">
+                <span className="-mt-2 text-sm md:text-base text-gray-700 dark:text-gray-700 tracking-[0.14em]">
                   LEARNING
                 </span>
               </div>
             </Link>
 
             {/* Desktop search input */}
-            <div className="hidden md:flex items-center border rounded overflow-hidden flex-1 max-w-[200px] ml-6 border-[#7B818C]">
-              <IoSearch className="w-5 h-5 ml-2 text-[#7B818C] dark:text-gray-200" />
+            <div className="hidden md:flex items-center border rounded overflow-hidden flex-1 max-w-[200px] ml-6 border-[#7B818C] dark:border-[#7B818C]">
+              <IoSearch className="w-5 h-5 ml-2 text-[#7B818C] dark:text-[#7B818C]" />
               <input
                 type="text"
                 placeholder="Издөө"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="px-3 py-2 focus:outline-none bg-transparent w-full"
+                className="px-3 py-2 focus:outline-none bg-transparent w-full dark:text-gray-700"
               />
             </div>
 
@@ -119,15 +120,15 @@ const Header = () => {
                 onClick={() => setLangOpen((p) => !p)}
                 className="flex items-center space-x-1 p-2"
               >
-                <GrLanguage className="text-gray-700 dark:text-gray-200 w-5 h-5 sm:w-6 sm:h-6" />
+                <GrLanguage className="text-gray-700 dark:text-gray-700 w-5 h-5 sm:w-6 sm:h-6" />
                 <BsChevronDown
-                  className={`w-4 h-4 text-gray-700 dark:text-gray-200 transform transition-transform duration-300 ${
+                  className={`w-4 h-4 text-gray-700 dark:text-gray-700 transform transition-transform duration-300 ${
                     langOpen ? "rotate-180" : ""
                   }`}
                 />
               </button>
               {langOpen && (
-                <div className="absolute right-0 mt-2 bg-white dark:bg-gray-800 shadow rounded z-50">
+                <div className="absolute right-0 mt-2 bg-white dark:bg-white shadow rounded z-50">
                   {["Русский", "English"].map((l) => (
                     <button
                       key={l}
@@ -135,7 +136,7 @@ const Header = () => {
                         setLang(l);
                         setLangOpen(false);
                       }}
-                      className="block px-4 py-2 w-full text-left hover:bg-gray-100 dark:hover:bg-gray-700"
+                      className="block px-4 py-2 w-full text-left hover:bg-gray-100 dark:hover:bg-gray-100 dark:text-gray-700"
                     >
                       {l}
                     </button>
@@ -147,7 +148,7 @@ const Header = () => {
             {/* Dark mode toggle только с иконкой */}
             <button
               onClick={() => setDark((p) => !p)}
-              className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-200 dark:bg-gray-700 transition-colors duration-300"
+              className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-200 dark:bg-gray-200 transition-colors duration-300"
             >
               {dark ? (
                 <BsSun className="text-yellow-400 w-5 h-5" />
@@ -162,17 +163,17 @@ const Header = () => {
                 <img
                   src={BlackHeart}
                   alt="favorites"
-                  className="w-6 h-6 cursor-pointer"
+                  className="w-9 h-9 cursor-pointer"
                 />
                 <img
                   src={BlackBasket}
                   alt="cart"
-                  className="w-6 h-6 cursor-pointer"
+                  className="w-9 h-9 cursor-pointer"
                 />
                 <img
                   src={BlackPerson}
                   alt="profile"
-                  className="w-6 h-6 cursor-pointer"
+                  className="w-9 h-9 cursor-pointer"
                 />
               </div>
             ) : (
@@ -190,26 +191,26 @@ const Header = () => {
               <span className="text-2xl sm:text-3xl font-bold text-orange-500">
                 EDUBOT
               </span>
-              <span className="text-sm -mt-2 sm:text-base text-gray-700 dark:text-gray-200 tracking-wide">
+              <span className="text-sm -mt-2 sm:text-base text-gray-700 dark:text-gray-700 tracking-wide">
                 LEARNING
               </span>
             </div>
           </Link>
 
           <div className="flex w-full justify-center items-center px-4 gap-x-2">
-            <div className="flex items-center border rounded overflow-hidden w-[calc(100%-50px)] max-w-[280px] border-[#7B818C]">
-              <IoSearch className="w-5 h-5 ml-2 text-[#7B818C] dark:text-gray-200" />
+            <div className="flex items-center border rounded overflow-hidden w-[calc(100%-50px)] max-w-[280px] border-[#7B818C] dark:border-[#7B818C]">
+              <IoSearch className="w-5 h-5 ml-2 text-[#7B818C] dark:text-[#7B818C]" />
               <input
                 type="text"
                 placeholder="Издөө"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="px-3 py-2 focus:outline-none bg-transparent w-full truncate text-sm sm:text-base"
+                className="px-3 py-2 focus:outline-none bg-transparent w-full truncate text-sm sm:text-base dark:text-gray-700"
               />
             </div>
             <button
               onClick={() => setMenuOpen((p) => !p)}
-              className="text-gray-700 dark:text-gray-200 text-2xl"
+              className="text-gray-700 dark:text-gray-700 text-2xl"
             >
               <FaBars />
             </button>
@@ -225,10 +226,10 @@ const Header = () => {
             onClick={() => setMenuOpen(false)}
           ></div>
 
-          <div className="w-64 sm:w-72 md:w-80 bg-white dark:bg-gray-800 h-full p-4 relative shadow-lg">
+          <div className="w-64 sm:w-72 md:w-80 bg-white dark:bg-white h-full p-4 relative shadow-lg">
             <button
               onClick={() => setMenuOpen(false)}
-              className="absolute top-4 left-4 text-gray-600 dark:text-gray-300"
+              className="absolute top-4 left-4 text-gray-600 dark:text-gray-600"
             >
               <FaTimes className="text-2xl" />
             </button>
@@ -264,7 +265,7 @@ const Header = () => {
               {/* Dark mode toggle */}
               <button
                 onClick={() => setDark((p) => !p)}
-                className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-200 dark:bg-gray-700 transition-colors duration-300 mt-2"
+                className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-200 dark:bg-gray-200 transition-colors duration-300 mt-2"
               >
                 {dark ? (
                   <BsSun className="text-yellow-400 w-5 h-5" />
