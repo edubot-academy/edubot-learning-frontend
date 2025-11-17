@@ -1,5 +1,5 @@
 import React from "react";
-import Button from '../components/UI/Button'
+import Button from "../components/UI/Button";
 
 const SectionContainer = ({
   title,
@@ -9,23 +9,24 @@ const SectionContainer = ({
   CardComponent,
   hideTitleAndLink = false,
 }) => {
+  console.log(title, subtitle, buttonText, data, CardComponent);
   return (
     <div className="px-4 py-8 sm:px-6 lg:px-12 bg-white">
       {!hideTitleAndLink && (
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-12">
           <div className="flex flex-col gap-2">
-            <h2 className="font-suisse font-bold text-[#141619] text-4xl">
-              {title}
-            </h2>
-            <p className="font-suisse font-normal text-[#3E424A] text-base max-w-md">
-              {subtitle}
-            </p>
+            {title && (
+              <h2 className="font-suisse font-bold text-[#141619] text-4xl">
+                {title}
+              </h2>
+            )}
+            {subtitle && (
+              <p className="font-suisse font-normal text-[#3E424A] text-base max-w-md">
+                {subtitle}
+              </p>
+            )}
           </div>
-          {buttonText && (
-            <Button variant="secondary">
-              {buttonText}
-            </Button>
-          )}
+          {buttonText && <Button variant="secondary">{buttonText}</Button>}
         </div>
       )}
 

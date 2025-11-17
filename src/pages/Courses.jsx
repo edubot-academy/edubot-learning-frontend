@@ -5,6 +5,7 @@ import { fetchCourses } from "../services/api";
 import SectionContainer from "../components/SectionContainer";
 import CoursesSection from "../components/CoursesSection";
 import { FiSearch } from "react-icons/fi";
+import CardCourse from "../components/CardCourse";
 
 const CoursesPage = () => {
   const [courses, setCourses] = useState([]);
@@ -32,18 +33,22 @@ const CoursesPage = () => {
   );
 
   if (loading) return <div className="pt-24 p-6">Курстар жүктөлүүдө...</div>;
-
+  console.log(courses.length);
   return (
     <div className="min-h-screen bg-gray-50 p-6 pt-24">
       <h1 className="text-4xl font-bold text-center mb-6">Биздин курстар</h1>
       <div className="px-4 sm:px-6 lg:px-12">
-
-        {courses.length < 4
-          ? <SectionContainer noBg hideTitleAndLink data={courses} />
-          : <CoursesSection>
+        {courses.length < 4 ? (
+          <SectionContainer
+            CardComponent={CardCourse}
+            hideTitleAndLink
+            data={courses}
+          />
+        ) : (
+          <CoursesSection>
             <SectionContainer noBg hideTitleAndLink data={courses} />
           </CoursesSection>
-        }
+        )}
 
         {/* <CoursesSection title="Жаңы жарыяланган курстар">
           <SectionContainer noBg hideTitleAndLink data={courses} />
