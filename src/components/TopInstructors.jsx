@@ -1,16 +1,33 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import SectionContainer from "../components/SectionContainer";
 import CardInstructor from "../components/CardInstrictor";
-import instructorImg from "../assets/images/instructor.png";
 import Button from "./UI/Button";
-
-const instructors = [
-  { img: instructorImg, name: "Рональд Ричардс", position: "UI/UX Designer", rating: "4.9", students: "2400" },
-  { img: instructorImg, name: "Джейн Доу", position: "Frontend Developer", rating: "4.8", students: "1800" },
-  { img: instructorImg, name: "Майкл Смит", position: "Product Designer", rating: "4.7", students: "2000" },
-];
+import { fetchTopInstructors } from "../services/api";
 
 const TopInstructors = () => {
+  const [instructors, setInstructors] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    async function load() {
+      try {
+        setLoading(true);
+        const res = await fetchTopInstructors(3);
+        setInstructors(res.items);
+      } catch (err) {
+        setError("Ошибка загрузки инструкторов");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    load();
+  }, []);
+
+  if (loading) return <div>Загрузка...</div>;
+  if (error) return <div>{error}</div>;
+
   return (
     <SectionContainer
       title="Топ Инструктор"

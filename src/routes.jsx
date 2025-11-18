@@ -21,7 +21,10 @@ const AboutPage = lazy(() => import("./pages/About"));
 const ContactPage = lazy(() => import("./pages/Contact"));
 const AssistantDashboard = lazy(() => import("./pages/Assistant"));
 const Unauthorized = lazy(() => import("./pages/Unauthorized"));
-
+const Catalog = lazy(() => import("./pages/catalog/Catalog"));
+const CompanyCourses = lazy(() => import("./pages/company/CompanyCourses"));
+const CompanyDetail = lazy(() => import("./pages/company/CompanyDetail"));
+const CompanyList = lazy(() => import("./pages/company/CompanyList"));
 const AppRoutes = () => {
     return (
         <div className="flex flex-col min-h-screen">
@@ -59,6 +62,10 @@ const AppRoutes = () => {
                         <Route element={<PrivateRoute allowedRoles={['assistant']} />}>
                             <Route path="/assistant" element={<AssistantDashboard />} />
                         </Route>
+                        <Route path="/companies/:id/courses" element={<CompanyCourses />} />
+                        <Route path="/catalog" element={<Catalog />} />
+                        <Route path="/companies" element={<CompanyList />} />
+                        <Route path="/companies/:id" element={<CompanyDetail />} />
                     </Routes>
                 </Suspense>
             </div>

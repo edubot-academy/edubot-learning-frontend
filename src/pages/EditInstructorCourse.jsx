@@ -14,9 +14,11 @@ import {
     uploadCourseImage,
     markCoursePending,
     uploadLessonFile,
-    deleteLesson as deleteLessonApi
+    deleteLesson as deleteLessonApi,
 } from "../services/api";
 import { getVideoDuration } from "../utils/videoUtils";
+import { LESSON_KIND_OPTIONS } from "../constants/lessons";
+import ArticleEditor from "../components/ArticleEditor";
 
 const EditInstructorCourse = () => {
     const { id } = useParams();
@@ -31,8 +33,12 @@ const EditInstructorCourse = () => {
     const [saving, setSaving] = useState(false);
     const [showCancelConfirm, setShowCancelConfirm] = useState(false);
     const [deletedLessons, setDeletedLessons] = useState([]);
-    const [confirmDelete, setConfirmDelete] = useState({ type: null, sectionIndex: null, lessonIndex: null, lessonTitle: '' });
-
+    const [confirmDelete, setConfirmDelete] = useState({
+        type: null,
+        sectionIndex: null,
+        lessonIndex: null,
+        lessonTitle: "",
+    });
 
     useEffect(() => {
         const loadData = async () => {
@@ -54,21 +60,44 @@ const EditInstructorCourse = () => {
                                 .sort((a, b) => a.order - b.order)
                                 .map((l) => ({
                                     ...l,
+                                    kind: l.kind || "video",
+                                    content: l.content || "",
+                                    resourceName: l.resourceName || "",
                                     uploadProgress: { video: 0, resource: 0 },
                                     uploading: { video: false, resource: false },
                                 })),
                         };
-                    })
+                    }),
                 );
 
                 allSections.sort((a, b) => a.order - b.order);
 
-                setCourse(courseData);
-                setOriginalCourse(courseData);
+                // Map backend → UI shape for new fields
+                const learningOutcomesText = Array.isArray(courseData.learningOutcomes)
+                    ? courseData.learningOutcomes.join("\n")
+                    : "";
+                const tagsText = Array.isArray(courseData.tags)
+                    ? courseData.tags.join(", ")
+                    : "";
+
+                const hydratedCourse = {
+                    ...courseData,
+                    languageCode: courseData.languageCode || "ky",
+                    isPaid:
+                        typeof courseData.isPaid === "boolean"
+                            ? courseData.isPaid
+                            : Number(courseData.price) > 0,
+                    learningOutcomesText,
+                    tagsText,
+                };
+
+                setCourse(hydratedCourse);
+                setOriginalCourse(hydratedCourse);
                 setCategories(categoryData);
                 setSections(allSections);
                 setOriginalSections(JSON.parse(JSON.stringify(allSections)));
             } catch (err) {
+                console.error(err);
                 toast.error("Маалыматты жүктөө катасы");
             } finally {
                 setLoading(false);
@@ -78,16 +107,32 @@ const EditInstructorCourse = () => {
     }, [id]);
 
     const handleCourseChange = (e) => {
-        const { name, value, files } = e.target;
-        if (files) {
-            setCourse((prev) => ({ ...prev, cover: files[0], coverImageUrl: URL.createObjectURL(files[0]) }));
-        } else {
-            setCourse((prev) => ({ ...prev, [name]: value }));
+        const { name, value, files, type, checked } = e.target;
+
+        if (files && files[0] && name === "cover") {
+            setCourse((prev) => ({
+                ...prev,
+                cover: files[0],
+                coverImageUrl: URL.createObjectURL(files[0]),
+            }));
+            return;
         }
+
+        if (type === "checkbox") {
+            setCourse((prev) => ({ ...prev, [name]: checked }));
+            return;
+        }
+
+        if (name === "title" && value.length > 200) {
+            toast.error("Аталыш өтө узун. Максимум 200 символ.");
+            return;
+        }
+
+        setCourse((prev) => ({ ...prev, [name]: value }));
     };
 
     const updateSectionTitle = (index, title) => {
-        setSections(prev => {
+        setSections((prev) => {
             const updated = [...prev];
             updated[index].title = title;
             return updated;
@@ -95,22 +140,29 @@ const EditInstructorCourse = () => {
     };
 
     const addSection = () => {
-        setSections(prev => [...prev, {
-            title: `Бөлүм ${prev.length + 1}`,
-            lessons: []
-        }]);
+        setSections((prev) => [
+            ...prev,
+            {
+                title: `Бөлүм ${prev.length + 1}`,
+                lessons: [],
+            },
+        ]);
     };
 
     const addLesson = (sectionIndex) => {
-        setSections(prev => {
+        setSections((prev) => {
             const updated = [...prev];
             const newLesson = {
-                title: '',
-                videoKey: '',
-                resourceKey: '',
+                title: "",
+                content: "",
+                kind: "video",
+                videoKey: "",
+                resourceKey: "",
+                resourceName: "",
                 previewVideo: false,
                 uploadProgress: { video: 0, resource: 0 },
                 uploading: { video: false, resource: false },
+                duration: undefined,
             };
             updated[sectionIndex] = {
                 ...updated[sectionIndex],
@@ -121,56 +173,97 @@ const EditInstructorCourse = () => {
     };
 
     const deleteLesson = (sectionIndex, lessonIndex) => {
-        setSections(prev => {
+        setSections((prev) => {
             const updated = [...prev];
             const lesson = updated[sectionIndex].lessons[lessonIndex];
             if (lesson?.id) {
-                setDeletedLessons(prev => [...prev, { sectionId: updated[sectionIndex].id, lessonId: lesson.id }]);
+                setDeletedLessons((prevDeleted) => [
+                    ...prevDeleted,
+                    { sectionId: updated[sectionIndex].id, lessonId: lesson.id },
+                ]);
             }
             updated[sectionIndex].lessons.splice(lessonIndex, 1);
             return updated;
         });
     };
 
-    const handleLessonFieldChange = (sectionIndex, lessonIndex, field, value) => {
-        setSections(prev => {
+    const handleLessonFieldChange = (
+        sectionIndex,
+        lessonIndex,
+        field,
+        value,
+    ) => {
+        setSections((prev) => {
             const updated = [...prev];
-            updated[sectionIndex].lessons[lessonIndex][field] = value;
+            const lesson = updated[sectionIndex].lessons[lessonIndex];
+            lesson[field] = value;
+            if (field === "kind" && value === "article") {
+                lesson.previewVideo = false;
+            }
             return updated;
         });
     };
 
     const handleFileUpload = async (sectionIndex, lessonIndex, type, file) => {
-        setSections(prev => {
+        if (!file) return;
+
+        setSections((prev) => {
             const updated = [...prev];
             updated[sectionIndex].lessons[lessonIndex].uploading[type] = true;
             return updated;
         });
 
         try {
-            const key = await uploadLessonFile(id, sectionIndex, type, file, lessonIndex, (percent) => {
-                setSections(prev => {
-                    const updated = [...prev];
-                    updated[sectionIndex].lessons[lessonIndex].uploadProgress[type] = percent;
-                    return updated;
-                });
-            });
+            const key = await uploadLessonFile(
+                id,
+                sectionIndex,
+                type,
+                file,
+                lessonIndex,
+                (percent) => {
+                    setSections((prev) => {
+                        const updated = [...prev];
+                        updated[sectionIndex].lessons[lessonIndex].uploadProgress[type] =
+                            percent;
+                        return updated;
+                    });
+                },
+            );
 
-            // ✅ Extract duration if type is video
-            if (type === 'video') {
+            if (type === "video") {
                 try {
                     const duration = await getVideoDuration(file);
-                    handleLessonFieldChange(sectionIndex, lessonIndex, 'duration', duration);
+                    handleLessonFieldChange(
+                        sectionIndex,
+                        lessonIndex,
+                        "duration",
+                        duration,
+                    );
                 } catch (err) {
-                    console.warn('Failed to extract video duration:', err);
+                    console.warn("Failed to extract video duration:", err);
                 }
             }
 
-            handleLessonFieldChange(sectionIndex, lessonIndex, type === 'video' ? 'videoKey' : 'resourceKey', key);
+            handleLessonFieldChange(
+                sectionIndex,
+                lessonIndex,
+                type === "video" ? "videoKey" : "resourceKey",
+                key,
+            );
+
+            if (type === "resource") {
+                handleLessonFieldChange(
+                    sectionIndex,
+                    lessonIndex,
+                    "resourceName",
+                    file.name,
+                );
+            }
         } catch (err) {
-            toast.error(err.message);
+            console.error(err);
+            toast.error(err.message || "Файл жүктөөдө ката кетти.");
         } finally {
-            setSections(prev => {
+            setSections((prev) => {
                 const updated = [...prev];
                 updated[sectionIndex].lessons[lessonIndex].uploading[type] = false;
                 return updated;
@@ -179,19 +272,50 @@ const EditInstructorCourse = () => {
     };
 
     const handleCourseSubmit = async () => {
-        if (!course.title || !course.description || !course.categoryId || !course.price) {
-            toast.error('Сураныч, бардык талааларды толтуруңуз.');
+        if (
+            !course.title ||
+            !course.description ||
+            !course.category.id ||
+            course.price === "" ||
+            course.price === null
+        ) {
+            toast.error("Сураныч, бардык талааларды толтуруңуз.");
             return;
         }
+
+        const learningOutcomes = (course.learningOutcomesText || "")
+            .split("\n")
+            .map((s) => s.trim())
+            .filter(Boolean);
+
+        const tags = (course.tagsText || "")
+            .split(",")
+            .map((s) => s.trim())
+            .filter(Boolean);
+
         try {
-            await updateCourse(id, course);
+            await updateCourse(id, {
+                title: course.title,
+                description: course.description,
+                categoryId: course.category.id,
+                price: Number(course.price),
+                subtitle: course.subtitle || undefined,
+                languageCode: course.languageCode || "ky",
+                learningOutcomes:
+                    learningOutcomes.length > 0 ? learningOutcomes : undefined,
+                tags: tags.length > 0 ? tags : undefined,
+                isPaid: course.isPaid && Number(course.price) > 0,
+            });
+
             if (course.cover instanceof File) {
                 await uploadCourseImage(id, course.cover);
             }
-            toast.success('Курс ийгиликтүү сакталды!');
+
+            toast.success("Курс ийгиликтүү сакталды!");
             setStep(2);
         } catch (err) {
-            toast.error('Курс сактоодо ката кетти.');
+            console.error(err);
+            toast.error("Курс сактоодо ката кетти.");
         }
     };
 
@@ -219,11 +343,14 @@ const EditInstructorCourse = () => {
                 for (const [lessonIdx, lesson] of section.lessons.entries()) {
                     const lessonPayload = {
                         title: lesson.title,
+                        kind: lesson.kind || "video",
+                        content: lesson.content?.trim() || undefined,
                         videoKey: lesson.videoKey,
                         resourceKey: lesson.resourceKey,
+                        resourceName: lesson.resourceName?.trim() || undefined,
                         previewVideo: lesson.previewVideo,
                         order: lessonIdx,
-                        duration: lesson.duration, // ✅ include duration here
+                        duration: lesson.duration,
                     };
 
                     if (!lesson.id && lesson.title) {
@@ -237,6 +364,7 @@ const EditInstructorCourse = () => {
             toast.success("Мазмун сакталды!");
             setStep(3);
         } catch (err) {
+            console.error(err);
             toast.error("Мазмунду сактоодо ката кетти.");
         } finally {
             setSaving(false);
@@ -249,6 +377,7 @@ const EditInstructorCourse = () => {
             toast.success("Курс модераторго жөнөтүлдү");
             navigate("/instructor/courses");
         } catch (err) {
+            console.error(err);
             toast.error("Курс жөнөтүлбөй калды");
         }
     };
@@ -256,170 +385,611 @@ const EditInstructorCourse = () => {
     const handleConfirmedDelete = () => {
         const { sectionIndex, lessonIndex } = confirmDelete;
         deleteLesson(sectionIndex, lessonIndex);
-        setConfirmDelete({ type: null, sectionIndex: null, lessonIndex: null, lessonTitle: '' });
+        setConfirmDelete({
+            type: null,
+            sectionIndex: null,
+            lessonIndex: null,
+            lessonTitle: "",
+        });
     };
 
-    const isChanged = () => JSON.stringify(course) !== JSON.stringify(originalCourse) || JSON.stringify(sections) !== JSON.stringify(originalSections);
-    const confirmCancel = () => isChanged() ? setShowCancelConfirm(true) : navigate("/instructor/courses");
+    const isChanged = () =>
+        JSON.stringify(course) !== JSON.stringify(originalCourse) ||
+        JSON.stringify(sections) !== JSON.stringify(originalSections);
+
+    const confirmCancel = () =>
+        isChanged() ? setShowCancelConfirm(true) : navigate("/instructor/courses");
+
     const handleCancel = () => navigate("/instructor/courses");
 
     if (loading) return <div className="p-6">Жүктөлүүдө...</div>;
     if (!course) return <div className="p-6 text-red-500">Курс табылган жок</div>;
 
-    const isUploading = sections.some(section =>
-        section.lessons.some(lesson => lesson.uploading?.video || lesson.uploading?.resource)
+    const isUploading = sections.some((section) =>
+        section.lessons.some(
+            (lesson) => lesson.uploading?.video || lesson.uploading?.resource,
+        ),
     );
 
     return (
         <div className="pt-24 p-6 max-w-4xl mx-auto">
             <div className="flex gap-4 mb-6">
-                <button onClick={() => setStep(1)} className={step === 1 ? 'text-edubot-orange font-bold underline' : ''}>1. Маалымат</button>
-                <button onClick={() => setStep(2)} disabled={!course} className={step === 2 ? 'text-edubot-orange font-bold underline' : ''}>2. Мазмун</button>
-                <button onClick={() => setStep(3)} disabled={!course} className={step === 3 ? 'text-edubot-orange font-bold underline' : ''}>3. Превью</button>
+                <button
+                    onClick={() => setStep(1)}
+                    className={
+                        step === 1 ? "text-edubot-orange font-bold underline" : ""
+                    }
+                >
+                    1. Маалымат
+                </button>
+                <button
+                    onClick={() => setStep(2)}
+                    disabled={!course}
+                    className={
+                        step === 2 ? "text-edubot-orange font-bold underline" : ""
+                    }
+                >
+                    2. Мазмун
+                </button>
+                <button
+                    onClick={() => setStep(3)}
+                    disabled={!course}
+                    className={
+                        step === 3 ? "text-edubot-orange font-bold underline" : ""
+                    }
+                >
+                    3. Превью
+                </button>
             </div>
 
+            {/* STEP 1 — INFO */}
             {step === 1 && (
                 <div className="space-y-4">
-                    <input name="title" value={course.title || ""} onChange={handleCourseChange} placeholder="Курс аталышы" className="w-full border p-2" />
-                    <textarea name="description" value={course.description || ""} onChange={handleCourseChange} placeholder="Курс сүрөттөмөсү" className="w-full border p-2" />
-                    <select name="categoryId" value={course.categoryId || ""} onChange={handleCourseChange} className="w-full border p-2">
+                    <input
+                        name="title"
+                        value={course.title || ""}
+                        onChange={handleCourseChange}
+                        placeholder="Курс аталышы"
+                        className="w-full border p-2 rounded"
+                    />
+                    <input
+                        name="subtitle"
+                        value={course.subtitle || ""}
+                        onChange={handleCourseChange}
+                        placeholder="Кыскача сүрөттөмө (подзаголовок)"
+                        className="w-full border p-2 rounded"
+                    />
+                    <textarea
+                        name="description"
+                        value={course.description || ""}
+                        onChange={handleCourseChange}
+                        placeholder="Курс сүрөттөмөсү"
+                        className="w-full border p-2 rounded"
+                    />
+
+                    <select
+                        name="categoryId"
+                        value={course.category.id || ""}
+                        onChange={handleCourseChange}
+                        className="w-full border p-2 rounded"
+                    >
                         <option value="">Категорияны тандаңыз</option>
-                        {categories.map(cat => (
-                            <option key={cat.id} value={cat.id}>{cat.name}</option>
+                        {categories.map((cat) => (
+                            <option key={cat.id} value={cat.id}>
+                                {cat.name}
+                            </option>
                         ))}
                     </select>
-                    <input name="price" type="number" value={course.price || ""} onChange={handleCourseChange} placeholder="Курс баасы" className="w-full border p-2" />
-                    {course.coverImageUrl && (<img src={course.coverImageUrl} alt="Курс сүрөтү" className="max-h-48 object-cover rounded" />)}
-                    <input type="file" name="cover" accept="image/*" onChange={handleCourseChange} className="w-full border p-2" />
-                    <button onClick={handleCourseSubmit} className="bg-edubot-dark text-white px-6 py-2 rounded">Сактоо жана улантуу</button>
+
+                    <div className="flex flex-col sm:flex-row gap-4">
+                        <div className="flex-1">
+                            <label className="block text-sm mb-1">
+                                Курс баасы (сом)
+                            </label>
+                            <input
+                                name="price"
+                                type="number"
+                                value={course.price || ""}
+                                onChange={handleCourseChange}
+                                placeholder="Курс баасы"
+                                className="w-full border p-2 rounded"
+                            />
+                        </div>
+                        <div className="flex items-center gap-2 mt-2 sm:mt-7">
+                            <input
+                                id="isPaid"
+                                name="isPaid"
+                                type="checkbox"
+                                checked={course.isPaid ?? true}
+                                onChange={handleCourseChange}
+                            />
+                            <label htmlFor="isPaid" className="text-sm">
+                                Бул курс акы төлөнүүчү
+                            </label>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label className="block text-sm mb-1">
+                            Сабак тили (Language)
+                        </label>
+                        <select
+                            name="languageCode"
+                            value={course.languageCode || "ky"}
+                            onChange={handleCourseChange}
+                            className="w-full border p-2 rounded"
+                        >
+                            <option value="ky">Кыргызча</option>
+                            <option value="ru">Русский</option>
+                            <option value="en">English</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label className="block text-sm mb-1">
+                            Бул курстан эмнени үйрөнөсүз? (ар бир сапка бир пункт)
+                        </label>
+                        <textarea
+                            name="learningOutcomesText"
+                            value={course.learningOutcomesText || ""}
+                            onChange={handleCourseChange}
+                            placeholder={
+                                "Мисалы:\n- UX негиздери\n- Figma менен иштөө\n- UI китепкана түзүү"
+                            }
+                            className="w-full border p-2 rounded text-sm min-h-[100px]"
+                        />
+                    </div>
+
+                    <div>
+                        <label className="block text-sm mb-1">
+                            Тегдер (запятая менен бөлүп жазыңыз)
+                        </label>
+                        <input
+                            name="tagsText"
+                            value={course.tagsText || ""}
+                            onChange={handleCourseChange}
+                            placeholder="мисалы: UX, UI, Figma, Design"
+                            className="w-full border p-2 rounded text-sm"
+                        />
+                    </div>
+
+                    {course.coverImageUrl && (
+                        <img
+                            src={course.coverImageUrl}
+                            alt="Курс сүрөтү"
+                            className="max-h-48 object-cover rounded"
+                        />
+                    )}
+                    <input
+                        type="file"
+                        name="cover"
+                        accept="image/*"
+                        onChange={handleCourseChange}
+                        className="w-full border p-2 rounded"
+                    />
+
+                    <div className="flex gap-3 mt-4">
+                        <button
+                            onClick={handleCourseSubmit}
+                            className="bg-edubot-dark text-white px-6 py-2 rounded"
+                        >
+                            Сактоо жана улантуу
+                        </button>
+                        <button
+                            onClick={confirmCancel}
+                            className="px-6 py-2 border rounded"
+                        >
+                            Артка
+                        </button>
+                    </div>
                 </div>
             )}
 
+            {/* STEP 2 — CURRICULUM */}
             {step === 2 && (
                 <div>
                     {sections.map((section, sIdx) => (
-                        <div key={sIdx} className="mb-6 border border-edubot-teal rounded p-4">
-                            <input className="w-full p-2 border rounded" value={section.title} onChange={(e) => updateSectionTitle(sIdx, e.target.value)} placeholder="Бөлүм аталышы" />
+                        <div
+                            key={sIdx}
+                            className="mb-6 border border-edubot-teal rounded p-4"
+                        >
+                            <input
+                                className="w-full p-2 border rounded mb-2"
+                                value={section.title}
+                                onChange={(e) => updateSectionTitle(sIdx, e.target.value)}
+                                placeholder="Бөлүм аталышы"
+                            />
                             {section.lessons.map((lesson, lIdx) => (
                                 <div key={lIdx} className="mb-4 p-2 bg-gray-50 rounded">
-                                    <input className="w-full p-2 mb-2 border rounded" value={lesson.title} onChange={(e) => handleLessonFieldChange(sIdx, lIdx, 'title', e.target.value)} placeholder="Сабак аталышы" />
+                                    <input
+                                        className="w-full p-2 mb-2 border rounded"
+                                        value={lesson.title}
+                                        onChange={(e) =>
+                                            handleLessonFieldChange(
+                                                sIdx,
+                                                lIdx,
+                                                "title",
+                                                e.target.value,
+                                            )
+                                        }
+                                        placeholder="Сабак аталышы"
+                                    />
 
-                                    <label className="block mb-1 font-medium">Видео жүктөө</label>
-                                    <div className="flex items-center justify-between gap-2">
-                                        <input type="file" accept="video/*" onChange={(e) => handleFileUpload(sIdx, lIdx, 'video', e.target.files[0])} className="w-full mb-2" />
-                                        {lesson.videoUrl && (
-                                            <div className="flex items-center gap-2">
-                                                <span className="text-xs text-blue-500 whitespace-nowrap">Видео файл бар</span>
+                                    <label className="block text-sm font-medium mb-1">
+                                        Сабактын тиби
+                                    </label>
+                                    <select
+                                        className="w-full p-2 mb-2 border rounded bg-white"
+                                        value={lesson.kind || "video"}
+                                        onChange={(e) =>
+                                            handleLessonFieldChange(
+                                                sIdx,
+                                                lIdx,
+                                                "kind",
+                                                e.target.value,
+                                            )
+                                        }
+                                    >
+                                        {LESSON_KIND_OPTIONS.map((option) => (
+                                            <option key={option.value} value={option.value}>
+                                                {option.label}
+                                            </option>
+                                        ))}
+                                    </select>
+
+                                    {lesson.kind === "article" ? (
+                                        <>
+                                            <label className="block mb-1 font-medium">
+                                                Макала тексти
+                                            </label>
+                                            <ArticleEditor
+                                                value={lesson.content || ""}
+                                                onChange={(val) =>
+                                                    handleLessonFieldChange(
+                                                        sIdx,
+                                                        lIdx,
+                                                        "content",
+                                                        val,
+                                                    )
+                                                }
+                                                placeholder="Сабактын негизги тексти"
+                                            />
+                                            <label className="block mb-1 font-medium">
+                                                Окуу убактысы (мүнөт)
+                                            </label>
+                                            <input
+                                                type="number"
+                                                min="1"
+                                                className="w-full p-2 mb-2 border rounded"
+                                                value={
+                                                    lesson.duration && lesson.duration > 0
+                                                        ? Math.round(lesson.duration / 60)
+                                                        : ""
+                                                }
+                                                onChange={(e) => {
+                                                    const minutes = Number(e.target.value);
+                                                    handleLessonFieldChange(
+                                                        sIdx,
+                                                        lIdx,
+                                                        "duration",
+                                                        Number.isFinite(minutes) && minutes > 0
+                                                            ? minutes * 60
+                                                            : 0,
+                                                    );
+                                                }}
+                                                placeholder="мисалы: 5"
+                                            />
+                                        </>
+                                    ) : (
+                                        <>
+                                            <label className="block mb-1 font-medium">
+                                                Видео жүктөө
+                                            </label>
+                                            <div className="flex items-center justify-between gap-2">
+                                                <input
+                                                    type="file"
+                                                    accept="video/*"
+                                                    onChange={(e) =>
+                                                        handleFileUpload(
+                                                            sIdx,
+                                                            lIdx,
+                                                            "video",
+                                                            e.target.files[0],
+                                                        )
+                                                    }
+                                                    className="w-full mb-2"
+                                                />
+                                                {lesson.videoUrl && (
+                                                    <span className="text-xs text-blue-500 whitespace-nowrap">
+                                                        Видео файл бар
+                                                    </span>
+                                                )}
                                             </div>
-                                        )}
-                                    </div>
-                                    {lesson.uploadProgress.video > 0 && (
-                                        <div className="mb-2">
-                                            <div className="w-full bg-gray-200 rounded h-2">
-                                                <div className="bg-blue-600 h-full rounded" style={{ width: `${lesson.uploadProgress.video}%` }}></div>
-                                            </div>
-                                            <p className="text-xs text-gray-500">{lesson.uploadProgress.video}% жүктөлдү</p>
-                                        </div>
+                                            {lesson.uploadProgress.video > 0 && (
+                                                <div className="mb-2">
+                                                    <div className="w-full bg-gray-200 rounded h-2">
+                                                        <div
+                                                            className="bg-blue-600 h-full rounded"
+                                                            style={{
+                                                                width: `${lesson.uploadProgress.video}%`,
+                                                            }}
+                                                        ></div>
+                                                    </div>
+                                                    <p className="text-xs text-gray-500">
+                                                        {lesson.uploadProgress.video}% жүктөлдү
+                                                    </p>
+                                                </div>
+                                            )}
+                                        </>
                                     )}
 
-                                    <label className="block mt-3 mb-1 font-medium">Материал жүктөө (PDF, ZIP)</label>
+                                    <label className="block mt-3 mb-1 font-medium">
+                                        Материал жүктөө (PDF, ZIP)
+                                    </label>
                                     <div className="flex items-center justify-between gap-2">
-                                        <input type="file" accept=".pdf,.zip" onChange={(e) => handleFileUpload(sIdx, lIdx, 'resource', e.target.files[0])} className="w-full mb-2" />
+                                        <input
+                                            type="file"
+                                            accept=".pdf,.zip"
+                                            onChange={(e) =>
+                                                handleFileUpload(
+                                                    sIdx,
+                                                    lIdx,
+                                                    "resource",
+                                                    e.target.files[0],
+                                                )
+                                            }
+                                            className="w-full mb-2"
+                                        />
                                         {lesson.resourceUrl && (
-                                            <div className="flex items-center gap-2">
-                                                <span className="text-xs text-purple-500 whitespace-nowrap">Материал файл бар</span>
-                                            </div>
+                                            <span className="text-xs text-purple-500 whitespace-nowrap">
+                                                Материал файл бар
+                                            </span>
                                         )}
                                     </div>
                                     {lesson.uploadProgress.resource > 0 && (
                                         <div className="mb-2">
                                             <div className="w-full bg-gray-100 rounded h-2">
-                                                <div className="bg-purple-500 h-full rounded" style={{ width: `${lesson.uploadProgress.resource}%` }}></div>
+                                                <div
+                                                    className="bg-purple-500 h-full rounded"
+                                                    style={{
+                                                        width: `${lesson.uploadProgress.resource}%`,
+                                                    }}
+                                                ></div>
                                             </div>
-                                            <p className="text-xs text-gray-500">{lesson.uploadProgress.resource}% жүктөлдү</p>
+                                            <p className="text-xs text-gray-500">
+                                                {lesson.uploadProgress.resource}% жүктөлдү
+                                            </p>
                                         </div>
                                     )}
 
-                                    <label className="flex items-center gap-2">
-                                        <input type="checkbox" checked={lesson.previewVideo} onChange={(e) => handleLessonFieldChange(sIdx, lIdx, 'previewVideo', e.target.checked)} />
-                                        Превью видео катары белгилөө
+                                    <label className="block text-sm font-medium">
+                                        Материалдын аталышы
                                     </label>
-
-                                    <button onClick={() => {
-                                        if (sIdx === 0 && sections[sIdx].lessons.length === 1) {
-                                            toast.error('Кеминде бир сабак болушу керек.');
-                                            return;
+                                    <input
+                                        type="text"
+                                        className="w-full p-2 mb-2 border rounded"
+                                        value={lesson.resourceName || ""}
+                                        onChange={(e) =>
+                                            handleLessonFieldChange(
+                                                sIdx,
+                                                lIdx,
+                                                "resourceName",
+                                                e.target.value,
+                                            )
                                         }
-                                        setConfirmDelete({ type: 'lesson', sectionIndex: sIdx, lessonIndex: lIdx, lessonTitle: lesson?.title });
-                                    }} className="mt-2 px-3 py-1 bg-red-100 text-red-700 border border-red-300 rounded hover:bg-red-200 text-sm">Сабакты өчүрүү</button>
+                                        placeholder="мисалы: Практикалык тапшырмалар.pdf"
+                                        disabled={!lesson.resourceKey}
+                                    />
+                                    <p className="text-xs text-gray-500 mb-2">
+                                        Бул аталыш студенттерге көрсөтүлөт.
+                                    </p>
+
+                                    {lesson.kind !== "article" && (
+                                        <label className="flex items-center gap-2 mt-2">
+                                            <input
+                                                type="checkbox"
+                                                checked={lesson.previewVideo}
+                                                onChange={(e) =>
+                                                    handleLessonFieldChange(
+                                                        sIdx,
+                                                        lIdx,
+                                                        "previewVideo",
+                                                        e.target.checked,
+                                                    )
+                                                }
+                                            />
+                                            Превью видео катары белгилөө
+                                        </label>
+                                    )}
+
+                                    <button
+                                        onClick={() => {
+                                            if (
+                                                sIdx === 0 &&
+                                                sections[sIdx].lessons.length === 1
+                                            ) {
+                                                toast.error("Кеминде бир сабак болушу керек.");
+                                                return;
+                                            }
+                                            setConfirmDelete({
+                                                type: "lesson",
+                                                sectionIndex: sIdx,
+                                                lessonIndex: lIdx,
+                                                lessonTitle: lesson?.title,
+                                            });
+                                        }}
+                                        className="mt-2 px-3 py-1 bg-red-100 text-red-700 border border-red-300 rounded hover:bg-red-200 text-sm"
+                                    >
+                                        Сабакты өчүрүү
+                                    </button>
                                 </div>
                             ))}
-                            <button onClick={() => addLesson(sIdx)} className="bg-edubot-orange text-white px-4 py-1 rounded mt-2">+ Сабак кошуу</button>
+                            <button
+                                onClick={() => addLesson(sIdx)}
+                                className="bg-edubot-orange text-white px-4 py-1 rounded mt-2"
+                            >
+                                + Сабак кошуу
+                            </button>
                         </div>
                     ))}
                     <div className="flex gap-4">
-                        <button onClick={addSection} className="bg-edubot-green text-white px-4 py-2 rounded">+ Бөлүм кошуу</button>
-                        <button onClick={handleSaveAll} disabled={isUploading || saving} className="bg-edubot-dark text-white px-6 py-2 rounded">Сактоо жана улантуу</button>
+                        <button
+                            onClick={addSection}
+                            className="bg-edubot-green text-white px-4 py-2 rounded"
+                        >
+                            + Бөлүм кошуу
+                        </button>
+                        <button
+                            onClick={handleSaveAll}
+                            disabled={isUploading || saving}
+                            className="bg-edubot-dark text-white px-6 py-2 rounded disabled:opacity-60"
+                        >
+                            Сактоо жана улантуу
+                        </button>
                     </div>
                 </div>
             )}
 
+            {/* STEP 3 — PREVIEW */}
             {step === 3 && (
                 <div className="space-y-6">
                     <h3 className="text-xl font-semibold">Курс Превью</h3>
                     <div>
                         <p className="text-lg font-bold">{course.title}</p>
+                        {course.subtitle && (
+                            <p className="text-sm text-gray-600 mb-1">
+                                {course.subtitle}
+                            </p>
+                        )}
                         <p>{course.description}</p>
-                        <p className="italic text-gray-500">Баасы: {course.price} сом</p>
-                        {course.coverImageUrl && (<img src={course.coverImageUrl} alt="Курс сүрөтү" className="max-h-48 mt-2 rounded" />)}
+                        <p className="italic text-gray-500">
+                            Баасы:{" "}
+                            {course.isPaid
+                                ? `${course.price} сом`
+                                : "Акысыз курс"}
+                        </p>
+                        {course.coverImageUrl && (
+                            <img
+                                src={course.coverImageUrl}
+                                alt="Курс сүрөтү"
+                                className="max-h-48 mt-2 rounded object-cover"
+                            />
+                        )}
                     </div>
+
+                    {course.learningOutcomesText && (
+                        <div>
+                            <h4 className="font-semibold mb-2">
+                                Бул курста эмнени үйрөнөсүз:
+                            </h4>
+                            <ul className="list-disc list-inside text-sm text-gray-700">
+                                {(course.learningOutcomesText || "")
+                                    .split("\n")
+                                    .map((line) => line.trim())
+                                    .filter(Boolean)
+                                    .map((line, idx) => (
+                                        <li key={idx}>{line}</li>
+                                    ))}
+                            </ul>
+                        </div>
+                    )}
+
                     <div>
                         {sections.map((section, sIdx) => (
                             <div key={sIdx} className="mb-4">
                                 <p className="font-semibold">{section.title}</p>
                                 <ul className="list-disc list-inside text-sm text-gray-700">
                                     {section.lessons.map((lesson, lIdx) => (
-                                        <li key={lIdx}>{lesson.title} {lesson.previewVideo && <span className="text-xs text-green-600">(Превью)</span>}</li>
+                                        <li key={lIdx}>
+                                            {lesson.title}{" "}
+                                            {lesson.previewVideo && (
+                                                <span className="text-xs text-green-600">
+                                                    (Превью)
+                                                </span>
+                                            )}
+                                        </li>
                                     ))}
                                 </ul>
                             </div>
                         ))}
                     </div>
+
                     <div className="flex gap-4">
-                        <button onClick={() => setStep(2)} className="px-4 py-2 bg-gray-200 rounded">Артка</button>
-                        <button onClick={handleSubmitForApproval} className="px-6 py-2 bg-edubot-teal text-white rounded">Тастыктоого жөнөтүү</button>
+                        <button
+                            onClick={() => setStep(2)}
+                            className="px-4 py-2 bg-gray-200 rounded"
+                        >
+                            Артка
+                        </button>
+                        <button
+                            onClick={handleSubmitForApproval}
+                            className="px-6 py-2 bg-edubot-teal text-white rounded"
+                        >
+                            Тастыктоого жөнөтүү
+                        </button>
                     </div>
                 </div>
             )}
 
+            {/* Cancel confirm modal */}
             {showCancelConfirm && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
                     <div className="bg-white p-6 rounded shadow max-w-sm w-full">
                         <h4 className="text-lg font-semibold mb-4">Ырастоо</h4>
-                        <p className="mb-6">Өзгөртүүлөр сакталбайт. Чын эле артка кайтасызбы?</p>
+                        <p className="mb-6">
+                            Өзгөртүүлөр сакталбайт. Чын эле артка кайтасызбы?
+                        </p>
                         <div className="flex justify-end gap-4">
-                            <button onClick={handleCancel} className="px-4 py-2 bg-red-600 text-white rounded">Ооба</button>
-                            <button onClick={() => setShowCancelConfirm(false)} className="px-4 py-2 bg-gray-300 text-gray-800 rounded">Жок</button>
+                            <button
+                                onClick={handleCancel}
+                                className="px-4 py-2 bg-red-600 text-white rounded"
+                            >
+                                Ооба
+                            </button>
+                            <button
+                                onClick={() => setShowCancelConfirm(false)}
+                                className="px-4 py-2 bg-gray-300 text-gray-800 rounded"
+                            >
+                                Жок
+                            </button>
                         </div>
                     </div>
                 </div>
             )}
 
+            {/* Delete lesson confirm */}
             {confirmDelete.type && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
                     <div className="bg-white p-6 rounded shadow max-w-sm w-full">
                         <h4 className="text-lg font-semibold mb-4">Ырастоо</h4>
                         <p className="mb-6">
-                            <strong>{confirmDelete.lessonTitle}</strong> сабагын өчүрүүнү каалайсызбы?
+                            <strong>{confirmDelete.lessonTitle}</strong> сабагын өчүрүүнү
+                            каалайсызбы?
                         </p>
                         <div className="flex justify-end gap-4">
-                            <button onClick={() => setConfirmDelete({ type: null, sectionIndex: null, lessonIndex: null, lessonTitle: '' })} className="px-4 py-2 bg-gray-200 rounded">Жок</button>
-                            <button onClick={handleConfirmedDelete} className="px-4 py-2 bg-red-600 text-white rounded">Ооба, өчүрүү</button>
+                            <button
+                                onClick={() =>
+                                    setConfirmDelete({
+                                        type: null,
+                                        sectionIndex: null,
+                                        lessonIndex: null,
+                                        lessonTitle: "",
+                                    })
+                                }
+                                className="px-4 py-2 bg-gray-200 rounded"
+                            >
+                                Жок
+                            </button>
+                            <button
+                                onClick={handleConfirmedDelete}
+                                className="px-4 py-2 bg-red-600 text-white rounded"
+                            >
+                                Ооба, өчүрүү
+                            </button>
                         </div>
                     </div>
                 </div>
             )}
-
         </div>
     );
 };
