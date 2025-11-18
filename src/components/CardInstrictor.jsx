@@ -1,10 +1,10 @@
 import React from 'react';
 
-const CardInstructor = ({ img, name, position, students }) => {
+const CardInstructor = ({ avatarUrl, fullName, position, totalStudents }) => {
     return (
         <div className="bg-white rounded flex flex-col overflow-hidden p-3 border border-[#C5C9D1]">
-            <img src={img} alt={name} className="w-full h-96 object-cover rounded" />
-            <h3 className="text-lg font-semibold text-black mt-4 mb-2">{name}</h3>
+            <img src={avatarUrl} alt={fullName} className="w-full h-96 object-cover rounded" />
+            <h3 className="text-lg font-semibold text-black mt-4 mb-2">{fullName}</h3>
             <p className="text-sm text-gray-500">{position}</p>
             <div className="flex mt-4 gap-2 items-center">
                 <div className="flex items-center gap-1">
@@ -14,7 +14,7 @@ const CardInstructor = ({ img, name, position, students }) => {
                         ))}
                     </div>
                 </div>
-                <span className="text-sm text-gray-500">({students} студентов)</span>
+                <span className="text-sm text-gray-500">({totalStudents} студентов)</span>
             </div>
         </div>
     );
