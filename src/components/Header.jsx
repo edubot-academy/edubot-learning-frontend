@@ -1,5 +1,5 @@
 import React, { useState, useContext, useEffect, useRef } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { FaBars, FaTimes } from "react-icons/fa";
 import { IoSearch } from "react-icons/io5";
 import { GrLanguage } from "react-icons/gr";

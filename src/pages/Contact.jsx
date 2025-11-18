@@ -143,7 +143,7 @@ const ContactPage = () => {
           <div className="space-y-4 flex flex-col items-start">
             <div>
               <div className="font-inter text-[#EA580C] flex items-center gap-2">
-                <img src={InstagramIcon} alt="instagram" className="w-5 h-5" />
+                <img src={InstagramIcon} alt="instagram" className="w-7 h-7" />
                 Instagram
               </div>
               <a
@@ -158,7 +158,7 @@ const ContactPage = () => {
 
             <div>
               <div className="font-inter text-[#EA580C] flex items-center gap-2">
-                <img src={Telegram} alt="telegram" className="w-5 h-5" />
+                <img src={Telegram} alt="telegram" className="w-7 h-7" />
                 Telegram
               </div>
               <a
@@ -175,7 +175,7 @@ const ContactPage = () => {
           <div className="flex flex-col items-center space-y-4">
             <div className="text-center">
               <div className="font-inter text-[#EA580C] flex items-center justify-start gap-2">
-                <img src={MailIcon} alt="mail" className="w-5 h-5" />
+                <img src={MailIcon} alt="mail" className="w-7 h-7" />
                 Электрондук почта
               </div>
               <a
@@ -190,7 +190,7 @@ const ContactPage = () => {
           <div className="space-y-4 flex flex-col items-start text-right">
             <div>
               <div className="font-inter text-[#EA580C] flex items-center justify-start gap-2">
-                <img src={ClockIcon} alt="clock" className="w-5 h-5" />
+                <img src={ClockIcon} alt="clock" className="w-7 h-7" />
                 Иштөө убактысы
               </div>
               <p className="text-black block mt-1 font-normal text-sm font-suisse Intl">
@@ -199,7 +199,7 @@ const ContactPage = () => {
             </div>
             <div>
               <div className="font-inter text-[#EA580C] flex items-center justify-start gap-2">
-                <img src={MapPinIcon} alt="address" className="w-5 h-5" />
+                <img src={MapPinIcon} alt="address" className="w-7 h-7" />
                 Дарек
               </div>
               <p className="text-black block mt-1 font-normal text-sm font-suisse Intl">
