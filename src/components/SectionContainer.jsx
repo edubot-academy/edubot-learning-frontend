@@ -11,7 +11,7 @@ const SectionContainer = ({
   rightContent = null,
 }) => {
   return (
-    <div className="px-4 py-8 sm:px-6 lg:px-12 bg-white">
+    <div className="px-4 py-16 sm:px-6 lg:px-12 bg-white">
       {!hideTitleAndLink && (
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-12">
           <div className="flex flex-col gap-2">
@@ -26,7 +26,7 @@ const SectionContainer = ({
         </div>
       )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 px-10">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {data.slice(0, 3).map((item, index) => (
           <CardComponent key={item.id || index} {...item} />
         ))}
