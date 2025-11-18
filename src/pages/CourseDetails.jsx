@@ -16,6 +16,7 @@ import { AuthContext } from "../context/AuthContext";
 import CourseSidebar from "../components/CourseSidebar";
 import CourseHeader from "../components/CourseHeader";
 import CourseVideoPlayer from "../components/CourseVideoPlayer";
+import ArticleLessonViewer from "../components/ArticleLessonViewer";
 import CourseDescription from "../components/CourseDescription";
 import Comment from "../components/Comment";
 
@@ -107,26 +108,35 @@ const CourseDetailsPage = () => {
 
     const handleLessonClick = async (lesson) => {
         console.log('handleLessonClick');
+        const isArticle = lesson.kind === 'article';
         setActiveLesson(lesson);
         localStorage.setItem(`active_section_${id}`, String(lesson.sectionId));
         setActiveSectionId(lesson.sectionId);
         scrollToLesson(lesson.id);
 
-        setTimeout(() => {
-            if (videoRef.current) {
-                videoRef.current.load();
-                if (!hasPlayedRef.current) {
-                    videoRef.current.play().catch(err => console.warn('Autoplay failed:', err));
+        if (!isArticle) {
+            setTimeout(() => {
+                if (videoRef.current) {
+                    videoRef.current.load();
+                    if (!hasPlayedRef.current) {
+                        videoRef.current.play().catch(err => console.warn('Autoplay failed:', err));
+                    }
                 }
-            }
-        }, 0);
+            }, 0);
+        } else {
+            setResumeVideoTime(0);
+        }
 
         if (user && enrolled && !lesson.locked) {
             await updateLastViewedLesson({ courseId: Number(id), lessonId: lesson.id });
-            const videoTime = await getVideoTime(id, lesson.id);
+            if (!isArticle) {
+                const videoTime = await getVideoTime(id, lesson.id);
 
-            if (videoTime?.time && videoTime.time < (lesson.duration || 9999) * 0.95 && !completedLessons.includes(lesson.id)) {
-                setResumeVideoTime(videoTime.time);
+                if (videoTime?.time && videoTime.time < (lesson.duration || 9999) * 0.95 && !completedLessons.includes(lesson.id)) {
+                    setResumeVideoTime(videoTime.time);
+                } else {
+                    setResumeVideoTime(0);
+                }
             } else {
                 setResumeVideoTime(0);
             }
@@ -142,7 +152,7 @@ const CourseDetailsPage = () => {
     };
 
     const handleEnded = async () => {
-        if (!hasPlayedRef.current) return;
+        if (!hasPlayedRef.current || activeLesson?.kind === 'article') return;
         if (user && enrolled && activeLesson) {
             console.log('Marking lesson as complete handleEnded');
             const resp = await markLessonComplete(
@@ -162,6 +172,8 @@ const CourseDetailsPage = () => {
 
     const handleVideoProgress = useCallback(
         async (progress, lessonParam) => {
+            if (lessonParam.kind === 'article') return;
+
             if (!hasPlayedRef.current) {
                 if (progress > 0) {
                     hasPlayedRef.current = true;
@@ -200,11 +212,13 @@ const CourseDetailsPage = () => {
         if (response.completed) {
             setCompletedLessons((prev) => [...new Set([...prev, lesson.id])]);
         } else {
-            await updateVideoTime({
-                courseId: Number(id),
-                lessonId: lesson.id,
-                time: 0
-            });
+            if (lesson.kind !== 'article') {
+                await updateVideoTime({
+                    courseId: Number(id),
+                    lessonId: lesson.id,
+                    time: 0
+                });
+            }
             if (activeLesson?.id === lesson.id) {
                 setResumeVideoTime(0);
             }
@@ -236,6 +250,8 @@ const CourseDetailsPage = () => {
                         .sort((a, b) => a.order - b.order)
                         .map((lesson) => ({
                             ...lesson,
+                            kind: lesson.kind || 'video',
+                            content: lesson.content || '',
                             sectionId: sec.id,
                             locked: !enrollment.enrolled && !lesson.previewVideo,
                         })),
@@ -287,11 +303,15 @@ const CourseDetailsPage = () => {
                     localStorage.setItem(`active_section_${id}`, String(lastLesson.sectionId));
                     scrollToLesson(lastLesson.id);
                     if (user && enrollment.enrolled && !lastLesson.locked) {
-                        const videoTime = await getVideoTime(id, lastLesson.id);
-                        if (videoTime?.time && videoTime.time < 0.95 * (lastLesson.duration || 9999)) {
-                            setResumeVideoTime(videoTime.time);
-                        } else {
+                        if (lastLesson.kind === 'article') {
                             setResumeVideoTime(0);
+                        } else {
+                            const videoTime = await getVideoTime(id, lastLesson.id);
+                            if (videoTime?.time && videoTime.time < 0.95 * (lastLesson.duration || 9999)) {
+                                setResumeVideoTime(videoTime.time);
+                            } else {
+                                setResumeVideoTime(0);
+                            }
                         }
                     }
                 }
@@ -334,20 +354,24 @@ const CourseDetailsPage = () => {
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div className="md:col-span-2">
-                            {activeLesson?.videoUrl && (
-                                <CourseVideoPlayer
-                                    key={activeLesson.id}
-                                    activeLesson={activeLesson}
-                                    resumeVideoTime={resumeVideoTime}
-                                    handleVideoProgress={(progress) => handleVideoProgress(progress, activeLesson)}
-                                    handleTimeUpdate={handleTimeUpdate}
-                                    handlePause={handlePause}
-                                    videoRef={videoRef}
-                                    nextLesson={nextLesson}
-                                    prevLesson={prevLesson}
-                                    onEnded={handleEnded}
-                                    handleLessonClick={handleLessonClick}
-                                />
+                            {activeLesson && (
+                                activeLesson.kind === 'article' ? (
+                                    <ArticleLessonViewer key={activeLesson.id} lesson={activeLesson} />
+                                ) : (
+                                    <CourseVideoPlayer
+                                        key={activeLesson.id}
+                                        activeLesson={activeLesson}
+                                        resumeVideoTime={resumeVideoTime}
+                                        handleVideoProgress={(progress) => handleVideoProgress(progress, activeLesson)}
+                                        handleTimeUpdate={handleTimeUpdate}
+                                        handlePause={handlePause}
+                                        videoRef={videoRef}
+                                        nextLesson={nextLesson}
+                                        prevLesson={prevLesson}
+                                        onEnded={handleEnded}
+                                        handleLessonClick={handleLessonClick}
+                                    />
+                                )
                             )}
                         </div>
                         <CourseSidebar
