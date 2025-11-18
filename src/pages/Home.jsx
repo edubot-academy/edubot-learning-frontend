@@ -43,8 +43,8 @@ const HomePage = () => {
             <Benefits />
             <TopCourses coursesData={coursesData} />
             <Instructor />
-            <Feedback />
             <Apply />
+            <Feedback />
             {/* <Evaluate /> */}
             <FAQ />
         </div>

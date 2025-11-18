@@ -17,6 +17,8 @@ import {
     deleteLesson as deleteLessonApi,
 } from "../services/api";
 import { getVideoDuration } from "../utils/videoUtils";
+import { LESSON_KIND_OPTIONS } from "../constants/lessons";
+import ArticleEditor from "../components/ArticleEditor";
 
 const EditInstructorCourse = () => {
     const { id } = useParams();
@@ -58,6 +60,9 @@ const EditInstructorCourse = () => {
                                 .sort((a, b) => a.order - b.order)
                                 .map((l) => ({
                                     ...l,
+                                    kind: l.kind || "video",
+                                    content: l.content || "",
+                                    resourceName: l.resourceName || "",
                                     uploadProgress: { video: 0, resource: 0 },
                                     uploading: { video: false, resource: false },
                                 })),
@@ -149,8 +154,11 @@ const EditInstructorCourse = () => {
             const updated = [...prev];
             const newLesson = {
                 title: "",
+                content: "",
+                kind: "video",
                 videoKey: "",
                 resourceKey: "",
+                resourceName: "",
                 previewVideo: false,
                 uploadProgress: { video: 0, resource: 0 },
                 uploading: { video: false, resource: false },
@@ -187,7 +195,11 @@ const EditInstructorCourse = () => {
     ) => {
         setSections((prev) => {
             const updated = [...prev];
-            updated[sectionIndex].lessons[lessonIndex][field] = value;
+            const lesson = updated[sectionIndex].lessons[lessonIndex];
+            lesson[field] = value;
+            if (field === "kind" && value === "article") {
+                lesson.previewVideo = false;
+            }
             return updated;
         });
     };
@@ -238,6 +250,15 @@ const EditInstructorCourse = () => {
                 type === "video" ? "videoKey" : "resourceKey",
                 key,
             );
+
+            if (type === "resource") {
+                handleLessonFieldChange(
+                    sectionIndex,
+                    lessonIndex,
+                    "resourceName",
+                    file.name,
+                );
+            }
         } catch (err) {
             console.error(err);
             toast.error(err.message || "Файл жүктөөдө ката кетти.");
@@ -322,8 +343,11 @@ const EditInstructorCourse = () => {
                 for (const [lessonIdx, lesson] of section.lessons.entries()) {
                     const lessonPayload = {
                         title: lesson.title,
+                        kind: lesson.kind || "video",
+                        content: lesson.content?.trim() || undefined,
                         videoKey: lesson.videoKey,
                         resourceKey: lesson.resourceKey,
+                        resourceName: lesson.resourceName?.trim() || undefined,
                         previewVideo: lesson.previewVideo,
                         order: lessonIdx,
                         duration: lesson.duration,
@@ -591,43 +615,112 @@ const EditInstructorCourse = () => {
                                         placeholder="Сабак аталышы"
                                     />
 
-                                    <label className="block mb-1 font-medium">
-                                        Видео жүктөө
+                                    <label className="block text-sm font-medium mb-1">
+                                        Сабактын тиби
                                     </label>
-                                    <div className="flex items-center justify-between gap-2">
-                                        <input
-                                            type="file"
-                                            accept="video/*"
-                                            onChange={(e) =>
-                                                handleFileUpload(
-                                                    sIdx,
-                                                    lIdx,
-                                                    "video",
-                                                    e.target.files[0],
-                                                )
-                                            }
-                                            className="w-full mb-2"
-                                        />
-                                        {lesson.videoUrl && (
-                                            <span className="text-xs text-blue-500 whitespace-nowrap">
-                                                Видео файл бар
-                                            </span>
-                                        )}
-                                    </div>
-                                    {lesson.uploadProgress.video > 0 && (
-                                        <div className="mb-2">
-                                            <div className="w-full bg-gray-200 rounded h-2">
-                                                <div
-                                                    className="bg-blue-600 h-full rounded"
-                                                    style={{
-                                                        width: `${lesson.uploadProgress.video}%`,
-                                                    }}
-                                                ></div>
+                                    <select
+                                        className="w-full p-2 mb-2 border rounded bg-white"
+                                        value={lesson.kind || "video"}
+                                        onChange={(e) =>
+                                            handleLessonFieldChange(
+                                                sIdx,
+                                                lIdx,
+                                                "kind",
+                                                e.target.value,
+                                            )
+                                        }
+                                    >
+                                        {LESSON_KIND_OPTIONS.map((option) => (
+                                            <option key={option.value} value={option.value}>
+                                                {option.label}
+                                            </option>
+                                        ))}
+                                    </select>
+
+                                    {lesson.kind === "article" ? (
+                                        <>
+                                            <label className="block mb-1 font-medium">
+                                                Макала тексти
+                                            </label>
+                                            <ArticleEditor
+                                                value={lesson.content || ""}
+                                                onChange={(val) =>
+                                                    handleLessonFieldChange(
+                                                        sIdx,
+                                                        lIdx,
+                                                        "content",
+                                                        val,
+                                                    )
+                                                }
+                                                placeholder="Сабактын негизги тексти"
+                                            />
+                                            <label className="block mb-1 font-medium">
+                                                Окуу убактысы (мүнөт)
+                                            </label>
+                                            <input
+                                                type="number"
+                                                min="1"
+                                                className="w-full p-2 mb-2 border rounded"
+                                                value={
+                                                    lesson.duration && lesson.duration > 0
+                                                        ? Math.round(lesson.duration / 60)
+                                                        : ""
+                                                }
+                                                onChange={(e) => {
+                                                    const minutes = Number(e.target.value);
+                                                    handleLessonFieldChange(
+                                                        sIdx,
+                                                        lIdx,
+                                                        "duration",
+                                                        Number.isFinite(minutes) && minutes > 0
+                                                            ? minutes * 60
+                                                            : 0,
+                                                    );
+                                                }}
+                                                placeholder="мисалы: 5"
+                                            />
+                                        </>
+                                    ) : (
+                                        <>
+                                            <label className="block mb-1 font-medium">
+                                                Видео жүктөө
+                                            </label>
+                                            <div className="flex items-center justify-between gap-2">
+                                                <input
+                                                    type="file"
+                                                    accept="video/*"
+                                                    onChange={(e) =>
+                                                        handleFileUpload(
+                                                            sIdx,
+                                                            lIdx,
+                                                            "video",
+                                                            e.target.files[0],
+                                                        )
+                                                    }
+                                                    className="w-full mb-2"
+                                                />
+                                                {lesson.videoUrl && (
+                                                    <span className="text-xs text-blue-500 whitespace-nowrap">
+                                                        Видео файл бар
+                                                    </span>
+                                                )}
                                             </div>
-                                            <p className="text-xs text-gray-500">
-                                                {lesson.uploadProgress.video}% жүктөлдү
-                                            </p>
-                                        </div>
+                                            {lesson.uploadProgress.video > 0 && (
+                                                <div className="mb-2">
+                                                    <div className="w-full bg-gray-200 rounded h-2">
+                                                        <div
+                                                            className="bg-blue-600 h-full rounded"
+                                                            style={{
+                                                                width: `${lesson.uploadProgress.video}%`,
+                                                            }}
+                                                        ></div>
+                                                    </div>
+                                                    <p className="text-xs text-gray-500">
+                                                        {lesson.uploadProgress.video}% жүктөлдү
+                                                    </p>
+                                                </div>
+                                            )}
+                                        </>
                                     )}
 
                                     <label className="block mt-3 mb-1 font-medium">
@@ -669,21 +762,45 @@ const EditInstructorCourse = () => {
                                         </div>
                                     )}
 
-                                    <label className="flex items-center gap-2 mt-2">
-                                        <input
-                                            type="checkbox"
-                                            checked={lesson.previewVideo}
-                                            onChange={(e) =>
-                                                handleLessonFieldChange(
-                                                    sIdx,
-                                                    lIdx,
-                                                    "previewVideo",
-                                                    e.target.checked,
-                                                )
-                                            }
-                                        />
-                                        Превью видео катары белгилөө
+                                    <label className="block text-sm font-medium">
+                                        Материалдын аталышы
                                     </label>
+                                    <input
+                                        type="text"
+                                        className="w-full p-2 mb-2 border rounded"
+                                        value={lesson.resourceName || ""}
+                                        onChange={(e) =>
+                                            handleLessonFieldChange(
+                                                sIdx,
+                                                lIdx,
+                                                "resourceName",
+                                                e.target.value,
+                                            )
+                                        }
+                                        placeholder="мисалы: Практикалык тапшырмалар.pdf"
+                                        disabled={!lesson.resourceKey}
+                                    />
+                                    <p className="text-xs text-gray-500 mb-2">
+                                        Бул аталыш студенттерге көрсөтүлөт.
+                                    </p>
+
+                                    {lesson.kind !== "article" && (
+                                        <label className="flex items-center gap-2 mt-2">
+                                            <input
+                                                type="checkbox"
+                                                checked={lesson.previewVideo}
+                                                onChange={(e) =>
+                                                    handleLessonFieldChange(
+                                                        sIdx,
+                                                        lIdx,
+                                                        "previewVideo",
+                                                        e.target.checked,
+                                                    )
+                                                }
+                                            />
+                                            Превью видео катары белгилөө
+                                        </label>
+                                    )}
 
                                     <button
                                         onClick={() => {

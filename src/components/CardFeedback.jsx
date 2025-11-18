@@ -11,7 +11,7 @@ const CardFeedback = ({ FeedbackNew, text, image, name, role, index }) => {
                 <div className="flex gap-3 text-yellow-400">
                     {Array.from({ length: 5 }).map((_, i) => (
                         <div className='border border-gray rounded-full px-2.5 py-1'>
-                            <span className='text-3xl' key={i}>★</span>
+                            <span className='text-xl md:text-3xl' key={i}>★</span>
                         </div>
                     ))}
                 </div>
