@@ -1,16 +1,17 @@
 import { Link, useLocation } from 'react-router-dom';
 import Button from './Button';
 import { FaTimes } from 'react-icons/fa';
-import Test from '../../assets/icons/grayPerson.svg';
+import Person from '../../assets/icons/grayPerson.svg';
 import BlackHeart from '../../assets/icons/baseHeart.svg';
 import BlubIcon from '../../assets/icons/blub.svg';
 import BellIcon from '../../assets/icons/bell.svg';
 import BasketIcon from '../../assets/icons/baseBasket.svg';
 import SettingIcon from '../../assets/icons/setting.svg';
-import { useState } from 'react';
+import { useContext } from 'react';
+import { AuthContext } from '../../context/AuthContext';
 
 const SideBar = ({ setMenuOpen, setPosition }) => {
-	const [isUser, setisUser] = useState(false);
+	const { user } = useContext(AuthContext);
 
 	const location = useLocation();
 	const active = (path) =>
@@ -37,28 +38,30 @@ const SideBar = ({ setMenuOpen, setPosition }) => {
 				<div className='mt-8'>
 					<div className='flex justify-between gap-1 pb-6 border-b border-gray-300 '>
 						<div className='flex '>
-							<img src={Test} alt='test' />
+							<img src={Person} alt='Person' />
 						</div>
-						<button
-							onClick={() => {
-								setisUser(!isUser);
-							}}
-							className='border-2 bg-gray-400'
-						>
-							user
-						</button>
-						<div className='w-full flex items-center justify-center'>
-							<Button variant='primary'>
-								<Link
-									to='/register'
-									className='block w-full text-left text-gray-700 dark:text-gray-200 rounded-md    transition-colors'
-								>
-									Катталуу
-								</Link>
-							</Button>
-						</div>
+
+						{user !== null ? (
+							<div className='w-full flex items-center justify-between ml-5'>
+								<div className='flex flex-col items-start'>
+									<h2 className='text-xl font-semibold'>{user.fullName}</h2>
+									<span className='text-[#208D28]'>Идентифицированный</span>
+								</div>
+							</div>
+						) : (
+							<div className='w-full flex  items-center justify-center'>
+								<Button variant='primary'>
+									<Link
+										to='/register'
+										className='block w-full px-5 text-left text-gray-700 dark:text-gray-200 rounded-md    transition-colors'
+									>
+										Катталуу
+									</Link>
+								</Button>
+							</div>
+						)}
 					</div>
-					{isUser ? (
+					{user !== null ? (
 						<div className=''>
 							<ul className='flex flex-col justify-between items-start'>
 								<Link
@@ -96,7 +99,11 @@ const SideBar = ({ setMenuOpen, setPosition }) => {
 							</ul>
 						</div>
 					) : null}
-					<div className={`${'flex flex-col  '} ${isUser ? 'mt-0' : 'mt-4'}`}>
+					<div
+						className={`${'flex flex-col  '} ${
+							user !== null ? 'mt-0' : 'mt-4'
+						}`}
+					>
 						<Link
 							to='/courses'
 							className={`${active('/courses')} ${linkClass}`}
@@ -112,7 +119,7 @@ const SideBar = ({ setMenuOpen, setPosition }) => {
 						>
 							Байланышуу
 						</Link>
-						{isUser ? null : (
+						{user !== null ? null : (
 							<Link
 								to='/register'
 								className={`${active('/register')} ${linkClass}`}

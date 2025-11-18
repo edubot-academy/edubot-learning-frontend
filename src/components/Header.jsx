@@ -1,9 +1,9 @@
 import { useState, useContext, useEffect, useRef } from 'react';
-import { FaBars, FaTimes } from 'react-icons/fa';
+import { FaBars } from 'react-icons/fa';
 import { IoSearch } from 'react-icons/io5';
 import { GrLanguage } from 'react-icons/gr';
 import { BsChevronDown } from 'react-icons/bs';
-import { data, Link, useLocation } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 
 import Logo from '../assets/images/logoEduBot.png';
 
@@ -58,6 +58,7 @@ const NavLinks = ({ isMobile, user }) => {
 
 const Header = () => {
 	const { user } = useContext(AuthContext);
+
 	const location = useLocation();
 
 	const [menuOpen, setMenuOpen] = useState(false);
@@ -248,13 +249,6 @@ const Header = () => {
 								</div>
 							)}
 						</div>
-						<button
-							onClick={() => {
-								setPositionBar(!positionBar);
-							}}
-						>
-							SideBar
-						</button>
 
 						<button
 							onClick={() => setDark((p) => !p)}
@@ -325,7 +319,6 @@ const Header = () => {
 								</div>
 							)}
 						</div>
-
 						<button type='submit' className='hidden'>
 							Search
 						</button>
