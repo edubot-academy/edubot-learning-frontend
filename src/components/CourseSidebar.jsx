@@ -54,9 +54,12 @@ const CourseSidebar = ({
                             {isOpen && section.lessons?.map((lesson) => {
                                 const isActive = activeLesson?.id === lesson.id;
                                 const isArticle = lesson.kind === 'article';
-                                const durationLabel = isArticle
-                                    ? formatReadTime(lesson.duration)
-                                    : formatDuration(lesson.duration);
+                                const isQuiz = lesson.kind === 'quiz';
+                                const durationLabel = isQuiz
+                                    ? 'Квиз'
+                                    : isArticle
+                                        ? formatReadTime(lesson.duration)
+                                        : formatDuration(lesson.duration);
                                 const resourceMeta =
                                     !lesson.locked && lesson.resourceUrl
                                         ? getResourceMeta(lesson.resourceKey, lesson.resourceName)
@@ -119,6 +122,8 @@ const CourseSidebar = ({
                                                 {durationLabel && (
                                                     <span className="text-xs text-gray-500 flex items-center gap-1">
                                                         {isArticle ? (
+                                                            <FiFileText className="w-4 h-4" />
+                                                        ) : isQuiz ? (
                                                             <FiFileText className="w-4 h-4" />
                                                         ) : (
                                                             <FiVideo className="w-4 h-4" />

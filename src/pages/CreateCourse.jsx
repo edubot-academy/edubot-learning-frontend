@@ -8,10 +8,18 @@ import {
     uploadCourseImage,
     markCoursePending,
     uploadLessonFile,
+    upsertLessonQuiz,
 } from '../services/api';
 import toast from 'react-hot-toast';
 import { getVideoDuration } from '../utils/videoUtils';
 import { LESSON_KIND_OPTIONS } from '../constants/lessons';
+import LessonQuizEditor from '../components/LessonQuizEditor';
+import {
+    createEmptyQuiz,
+    ensureQuizShape,
+    normalizeQuizForApi,
+    validateQuiz,
+} from '../utils/quizUtils';
 import ArticleEditor from '../components/ArticleEditor';
 
 const DEFAULT_COURSE_INFO = {
@@ -53,6 +61,7 @@ const CourseBuilder = () => {
                     videoKey: '',
                     resourceKey: '',
                     resourceName: '',
+                    quiz: createEmptyQuiz(),
                     previewVideo: false,
                     uploadProgress: { video: 0, resource: 0 },
                     uploading: { video: false, resource: false },
@@ -133,6 +142,7 @@ const CourseBuilder = () => {
             videoKey: '',
             resourceKey: '',
             resourceName: '',
+            quiz: createEmptyQuiz(),
             previewVideo: false,
             uploadProgress: { video: 0, resource: 0 },
             uploading: { video: false, resource: false },
@@ -153,10 +163,26 @@ const CourseBuilder = () => {
             const lesson = updated[sectionIndex].lessons[lessonIndex];
             lesson[field] = value;
 
-            if (field === 'kind' && value === 'article') {
-                lesson.previewVideo = false;
+            if (field === 'kind') {
+                if (value === 'article') {
+                    lesson.previewVideo = false;
+                }
+                if (value === 'quiz') {
+                    lesson.previewVideo = false;
+                    lesson.videoKey = '';
+                    lesson.quiz = ensureQuizShape(lesson.quiz);
+                }
             }
 
+            return updated;
+        });
+    };
+
+    const handleQuizChange = (sectionIndex, lessonIndex, newQuiz) => {
+        setCurriculum((prev) => {
+            const updated = [...prev];
+            const lesson = updated[sectionIndex].lessons[lessonIndex];
+            lesson.quiz = ensureQuizShape(newQuiz);
             return updated;
         });
     };
@@ -320,32 +346,53 @@ const CourseBuilder = () => {
 
                 for (const [lIdx, lesson] of section.lessons.entries()) {
                     const isArticle = lesson.kind === 'article';
+                    const isQuiz = lesson.kind === 'quiz';
                     const missingTitle = !lesson.title?.trim();
-                    const missingVideo = !isArticle && !lesson.videoKey;
+                    const missingVideo = lesson.kind === 'video' && !lesson.videoKey;
                     const missingContent = isArticle && !lesson.content?.trim();
                     const missingReadTime =
                         isArticle && (!lesson.duration || lesson.duration <= 0);
+                    const quizData = isQuiz ? ensureQuizShape(lesson.quiz) : null;
+                    const quizError = isQuiz ? validateQuiz(quizData) : null;
 
-                    if (missingTitle || missingVideo || missingContent || missingReadTime) {
+                    if (missingTitle || missingVideo || missingContent || missingReadTime || quizError) {
                         toast.error(
-                            isArticle
-                                ? 'Макала үчүн аталыш, текст жана окуу убактысы талап кылынат.'
-                                : 'Ар бир видео сабакта аталыш жана видео болушу керек.',
+                            quizError
+                                ? quizError
+                                : isArticle
+                                    ? 'Макала үчүн аталыш, текст жана окуу убактысы талап кылынат.'
+                                    : 'Ар бир видео сабакта аталыш жана видео болушу керек.',
                         );
                         continue;
                     }
 
-                    await createLesson(courseId, sec.id, {
+                    const lessonPayload = {
                         title: lesson.title.trim(),
                         kind: lesson.kind || 'video',
-                        content: lesson.content?.trim() || undefined,
-                        videoKey: lesson.videoKey,
+                        content: isArticle ? (lesson.content?.trim() || undefined) : undefined,
+                        videoKey: lesson.kind === 'video' ? lesson.videoKey : undefined,
                         resourceKey: lesson.resourceKey,
                         resourceName: lesson.resourceName?.trim() || undefined,
-                        previewVideo: lesson.previewVideo,
+                        previewVideo: lesson.kind === 'video' ? lesson.previewVideo : false,
                         order: lIdx,
-                        duration: lesson.duration,
-                    });
+                        duration:
+                            lesson.kind === 'video'
+                                ? lesson.duration
+                                : isArticle
+                                    ? lesson.duration
+                                    : undefined,
+                    };
+
+                    const createdLesson = await createLesson(courseId, sec.id, lessonPayload);
+
+                    if (isQuiz && quizData) {
+                        const quizPayload = normalizeQuizForApi(quizData);
+                        if (!quizPayload) {
+                            toast.error('Квиз маалыматтарын сактоо мүмкүн эмес.');
+                            continue;
+                        }
+                        await upsertLessonQuiz(courseId, sec.id, createdLesson.id, quizPayload);
+                    }
                 }
             }
 
@@ -686,7 +733,7 @@ const CourseBuilder = () => {
                                         ))}
                                     </select>
 
-                                    {lesson.kind === 'article' ? (
+                                    {lesson.kind === 'article' && (
                                         <>
                                             <label className="block mb-1 font-medium">
                                                 Макала тексти
@@ -724,7 +771,18 @@ const CourseBuilder = () => {
                                                 placeholder="мисалы: 5"
                                             />
                                         </>
-                                    ) : (
+                                    )}
+
+                                    {lesson.kind === 'quiz' && (
+                                        <LessonQuizEditor
+                                            quiz={lesson.quiz}
+                                            onChange={(newQuiz) =>
+                                                handleQuizChange(sIdx, lIdx, newQuiz)
+                                            }
+                                        />
+                                    )}
+
+                                    {lesson.kind === 'video' && (
                                         <>
                                             <label className="block mb-1 font-medium">
                                                 Видео жүктөө
@@ -816,7 +874,7 @@ const CourseBuilder = () => {
                                         Бул аталыш студенттерге көрсөтүлөт.
                                     </p>
 
-                                    {lesson.kind !== 'article' && (
+                                    {lesson.kind === 'video' && (
                                         <label className="flex items-center gap-2 mt-2">
                                             <input
                                                 type="checkbox"
