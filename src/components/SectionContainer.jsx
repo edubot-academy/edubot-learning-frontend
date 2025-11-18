@@ -8,6 +8,7 @@ const SectionContainer = ({
   data = [],
   CardComponent,
   hideTitleAndLink = false,
+  rightContent = null,
 }) => {
   return (
     <div className="px-4 py-8 sm:px-6 lg:px-12 bg-white">
@@ -21,11 +22,7 @@ const SectionContainer = ({
               {subtitle}
             </p>
           </div>
-          {buttonText && (
-            <Button variant="secondary">
-              {buttonText}
-            </Button>
-          )}
+          <div>{rightContent}</div>
         </div>
       )}
 

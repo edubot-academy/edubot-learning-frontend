@@ -4,13 +4,13 @@ import Button from './UI/Button'
 import { Link } from 'react-router-dom';
 
 
-const CardCourse = ({ coverImageUrl, title, instructor, price, ratingCount }) => {
+const CardCourse = ({ coverImageUrl, title, instructor, price, ratingCount, ratingAverage, id }) => {
 
   return (
-    <Link to='/courses'>
+    <Link to={`/courses/${id}`}>
       <div className="max-w-md bg-white border border-gray-200 rounded flex flex-col">
         <div className='p-3'>
-          <img src={coverImageUrl} alt={title} className="object-contain rounded max-h-64" />
+          <img src={coverImageUrl} alt={title} className="object-cover rounded max-h-64 w-full" />
           <div className="flex flex-col flex-grow py-4">
             <h3 className="font-suisse font-medium text-lg">{title}</h3>
             <p className="text-gray-500 text-sm my-1">

@@ -1,14 +1,19 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useContext } from 'react';
 import {
     fetchUsers,
     fetchCourses,
     enrollUserInCourse,
     checkEnrollments,
-    unenrollUserFromCourse
+    unenrollUserFromCourse,
+    listCompanyCourses,
+    myCompanies, // ✅ use existing helper
 } from '../services/api';
 import toast from 'react-hot-toast';
+import { AuthContext } from '../context/AuthContext';
 
 const AssistantDashboard = () => {
+    const { user } = useContext(AuthContext);
+
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 10;
 
@@ -24,49 +29,98 @@ const AssistantDashboard = () => {
     const [totalPages, setTotalPages] = useState(1);
     const [loading, setLoading] = useState(true);
 
+    // Company membership (derived from company-user entity)
+    const [myCos, setMyCos] = useState([]);         // [{id,name,role,...}]
+    const [activeCompanyId, setActiveCompanyId] = useState(null);
+
     const debounceRef = useRef();
 
+    const isAssistant = user?.role === 'assistant';
+
+    // Load assistant's companies (from /companies/my)
+    useEffect(() => {
+        (async () => {
+            if (!isAssistant) {
+                setMyCos([]);
+                setActiveCompanyId(null);
+                return;
+            }
+            try {
+                const res = await myCompanies({ page: 1, limit: 50, q: '' });
+                const items = res?.items ?? [];
+                setMyCos(items);
+                if (items.length === 1) setActiveCompanyId(items[0].id);
+            } catch {
+                toast.error('Компанияларыңызды жүктөөдө ката кетти');
+            }
+        })();
+    }, [isAssistant]);
+
+    const assistantNoCompany = isAssistant && myCos.length === 0;
+    const assistantNeedsSelect = isAssistant && myCos.length > 1 && !activeCompanyId;
+
     const loadStudentsAndCourses = useCallback(async () => {
+        // Guard: assistant without company → do not fetch, show message
+        if (assistantNoCompany || assistantNeedsSelect) {
+            setStudents([]); setTotalStudents(0); setTotalPages(1);
+            setCourses([]); setEnrollmentsMap({}); setCourseCounts({}); setEnrolledStudents([]);
+            setLoading(false);
+            return;
+        }
+
         setLoading(true);
         try {
-            const [usersRes, coursesRes] = await Promise.all([
-                fetchUsers({ role: 'student', page: currentPage, limit: itemsPerPage, search }),
-                fetchCourses(),
-            ]);
-
-            const studentsData = usersRes.data || [];
+            // 1) Students (role=student)
+            const usersRes = await fetchUsers({ role: 'student', page: currentPage, limit: itemsPerPage, search });
+            const studentsData = usersRes?.data ?? [];
             setStudents(studentsData);
-            setTotalStudents(usersRes.total || studentsData.length);
-            setTotalPages(usersRes.totalPages || 1);
+            setTotalStudents(usersRes?.total ?? studentsData.length);
+            setTotalPages(usersRes?.totalPages ?? 1);
 
-            const published = coursesRes.courses.filter(c => c.isPublished);
+            // 2) Courses (company-scoped for assistants)
+            let published = [];
+            if (isAssistant) {
+                if (activeCompanyId) {
+                    const companyRes = await listCompanyCourses(activeCompanyId, { page: 1, q: '' });
+                    const items = companyRes?.items ?? companyRes?.courses ?? [];
+                    published = items.filter((c) => c.isPublished);
+                } else {
+                    published = [];
+                }
+            } else {
+                const coursesRes = await fetchCourses();
+                const all = coursesRes?.courses ?? [];
+                published = all.filter((c) => c.isPublished);
+            }
             setCourses(published);
 
-            const courseIds = published.map(c => c.id);
-            const userIds = studentsData.map(s => s.id);
-            const map = await checkEnrollments(courseIds, userIds);
-            setEnrollmentsMap(map);
+            // 3) Enrollment map + counts
+            const courseIds = published.map((c) => c.id);
+            const userIds = studentsData.map((s) => s.id);
+            const map = courseIds.length && userIds.length ? await checkEnrollments(courseIds, userIds) : {};
+            setEnrollmentsMap(map || {});
 
             const counts = {};
             const enrolledSet = new Set();
-            courseIds.forEach(courseId => {
+            courseIds.forEach((courseId) => {
                 counts[courseId] = 0;
                 for (const studentId in map) {
-                    if (map[studentId].includes(courseId)) {
+                    if (map[studentId]?.includes(courseId)) {
                         counts[courseId]++;
                         enrolledSet.add(Number(studentId));
                     }
                 }
             });
             setCourseCounts(counts);
-            setEnrolledStudents(studentsData.filter(s => enrolledSet.has(s.id)));
+            setEnrolledStudents(studentsData.filter((s) => enrolledSet.has(s.id)));
         } catch {
             toast.error('Маалыматтарды жүктөөдө ката кетти');
         } finally {
             setLoading(false);
         }
-    }, [currentPage, itemsPerPage, search]);
+    }, [assistantNoCompany, assistantNeedsSelect, isAssistant, activeCompanyId, currentPage, itemsPerPage, search]);
 
+    // Debounced reload
     useEffect(() => {
         clearTimeout(debounceRef.current);
         debounceRef.current = setTimeout(() => {
@@ -78,8 +132,8 @@ const AssistantDashboard = () => {
     }, [search, currentPage, loadStudentsAndCourses]);
 
     const handleUnenroll = (student, courseId) => {
-        const courseTitle = courses.find(c => c.id === courseId)?.title;
-        toast(t => (
+        const courseTitle = courses.find((c) => c.id === courseId)?.title;
+        toast((t) => (
             <div>
                 <div className="mb-2">
                     <span className="font-bold">{student.fullName}</span>{' '}
@@ -96,7 +150,6 @@ const AssistantDashboard = () => {
                                         <span className="font-bold">{student.fullName}</span> курстан ийгиликтүү чыгарылды
                                     </span>
                                 );
-                                // Refresh data
                                 await loadStudentsAndCourses();
                             } catch {
                                 toast.error('Курстан чыгарууда ката кетти');
@@ -106,10 +159,7 @@ const AssistantDashboard = () => {
                     >
                         Ооба
                     </button>
-                    <button
-                        onClick={() => toast.dismiss(t.id)}
-                        className="px-2 py-1 border rounded hover:text-white"
-                    >
+                    <button onClick={() => toast.dismiss(t.id)} className="px-2 py-1 border rounded hover:text-white">
                         Жок
                     </button>
                 </div>
@@ -117,11 +167,66 @@ const AssistantDashboard = () => {
         ));
     };
 
+    // ⛔️ Assistant: no company memberships
+    if (assistantNoCompany) {
+        return (
+            <div className="pt-20 p-6">
+                <h2 className="text-2xl font-bold mb-4">📘 Assistant Dashboard</h2>
+                <div className="rounded-xl border border-amber-300 bg-amber-50 p-6 max-w-2xl">
+                    <div className="text-lg font-semibold mb-1">Компания дайындалган эмес</div>
+                    <p className="text-gray-700">
+                        Сиз азырынча эч бир компанияга байланыштырылган жоксуз. Иштей баштоо үчүн администраторго же компанияңыздын
+                        жетекчисине кайрылыңыз.
+                    </p>
+                    <p className="text-gray-500 mt-2 text-sm">
+                        (RU) Вы не привязаны ни к одной компании. Обратитесь к администратору или руководителю компании для доступа.
+                    </p>
+                </div>
+            </div>
+        );
+    }
+
+    // ⛔️ Assistant: multiple companies → require selection first
+    if (assistantNeedsSelect) {
+        return (
+            <div className="pt-20 p-6">
+                <h2 className="text-2xl font-bold mb-4">📘 Assistant Dashboard</h2>
+
+                <div className="max-w-xl rounded-xl border bg-white p-6 space-y-4">
+                    <div className="text-sm text-gray-700">
+                        Сураныч, компанияны тандаңыз (сиз бир нече компанияга байланыштырылгансыз).
+                        <br />
+                        (RU) Вы привязаны к нескольким компаниям — выберите, с какой работать.
+                    </div>
+
+                    <select
+                        className="w-full border rounded px-3 py-2"
+                        value={activeCompanyId ?? ''}
+                        onChange={(e) => setActiveCompanyId(Number(e.target.value))}
+                    >
+                        <option value="">-- Компанияны тандаңыз --</option>
+                        {myCos.map((c) => (
+                            <option key={c.id} value={c.id}>
+                                {c.name}{c.role ? ` · ${c.role}` : ''}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+            </div>
+        );
+    }
+
     const filteredStudents = students;
 
     return (
         <div className="pt-20 p-6 relative">
             <h2 className="text-2xl font-bold mb-4">📘 Assistant Dashboard</h2>
+
+            {isAssistant && activeCompanyId && (
+                <div className="mb-3 text-xs text-gray-600">
+                    Ассистент катары сиз <span className="font-semibold">компания #{activeCompanyId}</span> курстарын көрүп жатасыз.
+                </div>
+            )}
 
             <div className="flex gap-6 mb-4 text-sm font-medium flex-wrap">
                 <div>👥 Жалпы студенттер: {totalStudents}</div>
@@ -130,11 +235,12 @@ const AssistantDashboard = () => {
             </div>
 
             <div className="mb-4 flex flex-wrap gap-4 text-sm text-gray-700">
-                {courses.map(course => (
+                {courses.map((course) => (
                     <div key={course.id} className="bg-gray-100 px-3 py-1 rounded">
-                        {course.title}: {course.enrolledStudents || 0} студент
+                        {course.title}: {courseCounts[course.id] || 0} студент
                     </div>
                 ))}
+                {!courses.length && !loading && <div className="text-gray-500 italic">Курс табылган жок.</div>}
             </div>
 
             <div className="mb-4 max-w-md">
@@ -143,7 +249,7 @@ const AssistantDashboard = () => {
                     placeholder="Студент атын же email изде..."
                     className="border px-3 py-2 rounded w-full"
                     value={search}
-                    onChange={e => setSearch(e.target.value)}
+                    onChange={(e) => setSearch(e.target.value)}
                     disabled={loading}
                 />
             </div>
@@ -166,10 +272,10 @@ const AssistantDashboard = () => {
                                 </td>
                             </tr>
                         ) : (
-                            filteredStudents.map(student => {
+                            filteredStudents.map((student) => {
                                 const selectedCourseId = courseSelections[student.id] || '';
                                 const enrolledCourseIds = enrollmentsMap[student.id] || [];
-                                const availableCourses = courses.filter(c => !enrolledCourseIds.includes(c.id));
+                                const availableCourses = courses.filter((c) => !enrolledCourseIds.includes(c.id));
                                 const isDisabled = !selectedCourseId || availableCourses.length === 0;
 
                                 return (
@@ -185,10 +291,13 @@ const AssistantDashboard = () => {
                                             {enrolledCourseIds.length ? (
                                                 <div className="flex flex-wrap gap-2">
                                                     {enrolledCourseIds.map((id) => {
-                                                        const course = courses.find(c => c.id === id);
+                                                        const course = courses.find((c) => c.id === id);
                                                         if (!course) return null;
                                                         return (
-                                                            <span key={id} className="inline-flex items-center gap-2 bg-green-50 border border-green-200 px-2 py-1 rounded">
+                                                            <span
+                                                                key={id}
+                                                                className="inline-flex items-center gap-2 bg-green-50 border border-green-200 px-2 py-1 rounded"
+                                                            >
                                                                 <span className="text-sm">{course.title}</span>
                                                                 <button
                                                                     className="text-xs px-2 py-0.5 rounded bg-red-600 text-white hover:bg-red-700"
@@ -211,33 +320,34 @@ const AssistantDashboard = () => {
                                                 <select
                                                     className="w-full border p-1 rounded"
                                                     value={selectedCourseId}
-                                                    onChange={e => setCourseSelections(prev => ({
-                                                        ...prev,
-                                                        [student.id]: Number(e.target.value),
-                                                    }))}
+                                                    onChange={(e) =>
+                                                        setCourseSelections((prev) => ({
+                                                            ...prev,
+                                                            [student.id]: Number(e.target.value),
+                                                        }))
+                                                    }
                                                     disabled={loading}
                                                 >
                                                     <option value="">-- Тандоо --</option>
-                                                    {availableCourses.map(c => (
-                                                        <option key={c.id} value={c.id}>{c.title}</option>
+                                                    {availableCourses.map((c) => (
+                                                        <option key={c.id} value={c.id}>
+                                                            {c.title}
+                                                        </option>
                                                     ))}
                                                 </select>
                                             ) : (
-                                                <span className="text-gray-500 italic">
-                                                    Бардык курстарга катталган
-                                                </span>
+                                                <span className="text-gray-500 italic">Бардык курстарга катталган</span>
                                             )}
                                         </td>
                                         <td className="p-2 border">
                                             <button
-                                                className={`px-3 py-1 rounded text-white ${isDisabled
-                                                    ? 'bg-gray-400 cursor-not-allowed hover:bg-gray-400'
-                                                    : 'bg-blue-600 hover:bg-blue-700'}`}
+                                                className={`px-3 py-1 rounded text-white ${isDisabled ? 'bg-gray-400 cursor-not-allowed hover:bg-gray-400' : 'bg-blue-600 hover:bg-blue-700'
+                                                    }`}
                                                 disabled={isDisabled || loading}
                                                 onClick={() => {
                                                     if (isDisabled) return;
-                                                    const courseTitle = courses.find(c => c.id === selectedCourseId)?.title;
-                                                    toast(t => (
+                                                    const courseTitle = courses.find((c) => c.id === selectedCourseId)?.title;
+                                                    toast((t) => (
                                                         <div>
                                                             <div className="mb-2">
                                                                 <span className="font-bold text-lg text-700">{student.fullName}</span> студентин{' '}
@@ -255,15 +365,8 @@ const AssistantDashboard = () => {
                                                                                     ийгиликтүү катталды
                                                                                 </span>
                                                                             );
-
-                                                                            setCourseSelections(prev => ({
-                                                                                ...prev,
-                                                                                [student.id]: '',
-                                                                            }));
-                                                                            setDiscounts(prev => ({
-                                                                                ...prev,
-                                                                                [student.id]: 0,
-                                                                            }));
+                                                                            setCourseSelections((prev) => ({ ...prev, [student.id]: '' }));
+                                                                            setDiscounts((prev) => ({ ...prev, [student.id]: 0 }));
                                                                             loadStudentsAndCourses();
                                                                         } catch {
                                                                             toast.error('Ката каттоо учурунда');
@@ -273,10 +376,7 @@ const AssistantDashboard = () => {
                                                                 >
                                                                     Ооба
                                                                 </button>
-                                                                <button
-                                                                    onClick={() => toast.dismiss(t.id)}
-                                                                    className="px-2 py-1 border rounded hover:text-white"
-                                                                >
+                                                                <button onClick={() => toast.dismiss(t.id)} className="px-2 py-1 border rounded hover:text-white">
                                                                     Жок
                                                                 </button>
                                                             </div>
@@ -298,32 +398,29 @@ const AssistantDashboard = () => {
             {totalPages > 1 && (
                 <div className="flex justify-center items-center mt-4 space-x-2">
                     <button
-                        onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                        onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                         disabled={currentPage === 1 || loading}
                         className="px-3 py-1 border rounded disabled:opacity-50"
                     >
                         ⟨ Мурунку
                     </button>
                     {[...Array(totalPages).keys()]
-                        .filter(i => i + 1 === 1 || i + 1 === totalPages || Math.abs(i + 1 - currentPage) <= 2)
+                        .filter((i) => i + 1 === 1 || i + 1 === totalPages || Math.abs(i + 1 - currentPage) <= 2)
                         .map((p, idx, arr) => (
                             <React.Fragment key={p}>
-                                {idx > 0 && p - arr[idx - 1] > 1 && (
-                                    <span className="px-2 text-gray-400">...</span>
-                                )}
+                                {idx > 0 && p - arr[idx - 1] > 1 && <span className="px-2 text-gray-400">...</span>}
                                 <button
                                     onClick={() => setCurrentPage(p + 1)}
                                     disabled={loading}
-                                    className={`px-3 py-1 rounded border ${currentPage === p + 1
-                                        ? 'bg-blue-600 text-white'
-                                        : 'bg-white text-gray-700'}`}
+                                    className={`px-3 py-1 rounded border ${currentPage === p + 1 ? 'bg-blue-600 text-white' : 'bg-white text-gray-700'
+                                        }`}
                                 >
                                     {p + 1}
                                 </button>
                             </React.Fragment>
                         ))}
                     <button
-                        onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                        onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                         disabled={currentPage === totalPages || loading}
                         className="px-3 py-1 border rounded disabled:opacity-50"
                     >
@@ -333,23 +430,10 @@ const AssistantDashboard = () => {
             )}
 
             {loading && (
-                <div className="absolute inset-0 bg-white bg-opacity-70 flex items-center justify-center">
-                    <svg
-                        className="animate-spin h-8 w-8 text-blue-600"
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                    >
-                        <circle
-                            className="opacity-25"
-                            cx="12" cy="12" r="10"
-                            stroke="currentColor" strokeWidth="4"
-                        />
-                        <path
-                            className="opacity-75"
-                            fill="currentColor"
-                            d="M4 12a8 8 0 018-8v8H4z"
-                        />
+                <div className="absolute inset-0 bg-white/70 flex items-center justify-center">
+                    <svg className="animate-spin h-8 w-8 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
                     </svg>
                 </div>
             )}
