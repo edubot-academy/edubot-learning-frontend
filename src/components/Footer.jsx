@@ -6,7 +6,7 @@ import { IoIosCall } from "react-icons/io";
 
 const Footer = () => {
   return (
-    <footer className="bg-white text-black py-12 border-t border-gray-300 p-5">
+    <footer className="bg-white text-black py-12 px-4 sm:px-6 lg:px-12 border-t border-gray-300 p-5">
       <div className=" mx-auto flex flex-col items-start space-y-12">
         <h2 className="hidden md:block text-5xl font-normal text-center tracking-wide w-full">
           <span className="font-extrabold text-[#EA580C]">EDUBOT </span>

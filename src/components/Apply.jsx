@@ -35,9 +35,12 @@ function Apply({ user }) {
         <p className="text-[#3E424A] mb-4">
           Edubot Learning кошулуу үчүн азыр баштаңыз
         </p>
-        <Button>
-          Сабакты азыр баштоо
-        </Button>
+        <Link
+          to="/register">
+          <Button>
+            Сабакты азыр баштоо
+          </Button>
+        </Link>
       </div>
     </div>
   );
