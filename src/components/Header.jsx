@@ -3,13 +3,13 @@ import { BsChevronDown } from 'react-icons/bs';
 import { FaBars, FaTimes } from 'react-icons/fa';
 import { GrLanguage } from 'react-icons/gr';
 import { IoSearch } from 'react-icons/io5';
-import { Link, useLocation } from 'react-router-dom';
+import { data, Link, useLocation } from 'react-router-dom';
 import Logo from '../assets/images/logoEduBot.png';
-import Test from '../assets/icons/grayPerson.svg';
+
 import { AuthContext } from '../context/AuthContext';
 
-import Button from './UI/Button.jsx';
 import { CiSearch } from 'react-icons/ci';
+import SideBar from './UI/SideBar.jsx';
 
 const NavLinks = ({ isMobile }) => {
 	const location = useLocation();
@@ -28,7 +28,7 @@ const NavLinks = ({ isMobile }) => {
 			}`}
 		>
 			<Link to='/courses' className={`${active('/courses')} ${linkClass}`}>
-				Курстарss
+				Курстар
 			</Link>
 			<Link to='/about' className={`${active('/about')} ${linkClass}`}>
 				Биз жөнүндө
@@ -208,45 +208,8 @@ const Header = () => {
 			</div>
 
 			{/* Mobile menu modal */}
-			{menuOpen && (
-				<div
-					className='fixed flex flex-row-reverse bottom-0 top-0 left-0 z-50 w-full   
-          '
-				>
-					<div
-						className='flex-1 bg-black/50 w-1/3 h-screen '
-						onClick={() => setMenuOpen(false)}
-					></div>
 
-					<div className='w-2/3 md:max-w-[393px] bg-white dark:bg-gray-800 h-full p-4 relative shadow-lg'>
-						<div className='flex justify-end mt-5 mr-2 '>
-							<button
-								onClick={() => setMenuOpen(false)}
-								className='  text-gray-600 dark:text-gray-300'
-							>
-								<FaTimes className='text-2xl' />
-							</button>
-						</div>
-
-						<div className='mt-8'>
-							<div className='flex justify-between'>
-								<div className='flex '>
-									<img src={Test} alt='test' />
-								</div>
-								<Button variant='primary'>
-									<Link
-										to='/register'
-										className='block w-full text-left text-gray-700 dark:text-gray-200 rounded-md px-4 py-2  transition-colors'
-									>
-										Катталуу
-									</Link>
-								</Button>
-							</div>
-							<NavLinks isMobile={true} />
-						</div>
-					</div>
-				</div>
-			)}
+			<SideBar menuOpen={menuOpen} setMenuOpen={setMenuOpen} />
 		</header>
 	);
 };
