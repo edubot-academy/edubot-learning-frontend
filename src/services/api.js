@@ -184,9 +184,9 @@ export const addPayment = async (data) => {
 };
 
 // Courses
-export const fetchCourses = async () => {
+export const fetchCourses = async ({ q = '', limit = 20, excludeIds = '' } = {}) => {
     try {
-        const response = await api.get("/courses");
+        const response = await api.get("/courses", { params: clean({ q, limit, excludeIds }) });
         return response.data;
     } catch (error) {
         console.error("Error fetching courses:", error);
@@ -302,6 +302,54 @@ export async function deleteLesson(courseId, sectionId, lessonId) {
 
 export async function fetchLessons(courseId, sectionId) {
     const response = await api.get(`/courses/${courseId}/sections/${sectionId}/lessons`);
+    return response.data;
+}
+
+export async function fetchLessonQuiz(courseId, sectionId, lessonId, manage = false) {
+    const suffix = manage ? '/manage' : '';
+    const response = await api.get(
+        `/courses/${courseId}/sections/${sectionId}/lessons/${lessonId}/quiz${suffix}`
+    );
+    return response.data;
+}
+
+export async function upsertLessonQuiz(courseId, sectionId, lessonId, quizData) {
+    const response = await api.post(
+        `/courses/${courseId}/sections/${sectionId}/lessons/${lessonId}/quiz`,
+        quizData
+    );
+    return response.data;
+}
+
+export async function submitLessonQuiz(courseId, sectionId, lessonId, answers) {
+    const response = await api.post(
+        `/courses/${courseId}/sections/${sectionId}/lessons/${lessonId}/quiz/submit`,
+        answers
+    );
+    return response.data;
+}
+
+export async function fetchLessonChallenge(courseId, sectionId, lessonId, manage = false) {
+    const suffix = manage ? '/manage' : '';
+    const response = await api.get(
+        `/courses/${courseId}/sections/${sectionId}/lessons/${lessonId}/challenge${suffix}`
+    );
+    return response.data;
+}
+
+export async function upsertLessonChallenge(courseId, sectionId, lessonId, challengeData) {
+    const response = await api.post(
+        `/courses/${courseId}/sections/${sectionId}/lessons/${lessonId}/challenge`,
+        challengeData
+    );
+    return response.data;
+}
+
+export async function submitLessonChallenge(courseId, sectionId, lessonId, payload) {
+    const response = await api.post(
+        `/courses/${courseId}/sections/${sectionId}/lessons/${lessonId}/challenge/submit`,
+        payload
+    );
     return response.data;
 }
 
@@ -468,5 +516,219 @@ export const fetchContactMessages = async () => {
     const response = await api.get('/contact');
     return response.data;
 };
+
+
+// --- Courses additions ---
+
+export async function publicCatalog(params = {}) {
+    const { page = 1, limit = 20, q = '', language } = params;
+    const { data } = await api.get('/courses/catalog', { params: { page, limit, q, language } });
+    return data; // {items,total,page,limit,totalPages}
+}
+// --- Offerings ---
+export async function createOffering(payload) {
+    // { courseId, companyId?, title?, modality?, visibility?, startAt?, endAt?, scheduleNote?, capacity?, priceOverride? }
+    const { data } = await api.post('/offerings', payload);
+    return data;
+}
+
+export async function updateOffering(id, patch) {
+    const { data } = await api.patch(`/offerings/${id}`, patch);
+    return data;
+}
+
+// Auth (members/admin) — offerings for a course
+export async function listOfferingsForCourse(courseId, { q } = {}) {
+    const { data } = await api.get(`/offerings/course/${courseId}`, { params: { q } });
+    return data; // Offering[]
+}
+
+// Public (catalog) — only PUBLIC offerings for a course
+export async function publicOfferingsForCourse(courseId) {
+    const { data } = await api.get(`/public/course/${courseId}/offerings`);
+    return data; // Offering[]
+}
+
+
+
+// --- Companies (adjust to your real routes) ---
+
+// api.js — Companies client (EduBot Learning)
+// All responses localized on UI layer (KY/RU). This file is transport only.
+
+/** Utility: only send defined params */
+const clean = (obj) => Object.fromEntries(Object.entries(obj).filter(([, v]) => v !== undefined && v !== null));
+
+/** @typedef {{ id:number; name:string; logoUrl?:string; createdAt:string; updatedAt:string }} Company */
+/** @typedef {{ items:any[]; total:number; page:number; limit:number; totalPages:number }} Paged<T> */
+
+/* ------------------------------------------------------------------ */
+/* Companies                                                           */
+/* ------------------------------------------------------------------ */
+
+// List all companies you can see (admin) or that you belong to (member)
+export async function listCompanies({ page = 1, limit = 20, q = '' } = {}) {
+    const { data } = await api.get('/companies', { params: clean({ page, limit, q }) });
+    return data; // {items,total,page,limit,totalPages}
+}
+
+// Current user’s companies (quick menu / switcher) — now also paged
+export async function myCompanies({ page = 1, limit = 20, q = '' } = {}) {
+    const { data } = await api.get('/companies/my', { params: clean({ page, limit, q }) });
+    return data; // {items,total,page,limit,totalPages}
+}
+
+export async function getCompany(id) {
+    const { data } = await api.get(`/companies/${id}`);
+    return data; // Company
+}
+
+// Backend accepts only { name, logoUrl? }
+export async function createCompany(payload /* { name: string, logoUrl?: string } */) {
+    const { data } = await api.post('/companies', payload);
+    return data; // Company
+}
+
+export async function updateCompany(id, patch /* { name?, logoUrl? } */) {
+    const { data } = await api.patch(`/companies/${id}`, patch);
+    return data; // Company
+}
+
+// NOTE: No DELETE /companies/:id in backend. Keep a guarded stub if UI calls it by mistake.
+export async function deleteCompany(id) {
+    const { data } = await api.delete(`/companies/${id}`);
+    return data;
+}
+
+export const assignCourseToCompany = async (courseId, companyId) => {
+    const { data } = await api.post(`/courses/${courseId}/companies/${companyId}`);
+    return data;
+}
+
+export const unassignCourseFromCompany = async (courseId, companyId) => {
+    const { data } = await api.delete(`/courses/${courseId}/companies/${companyId}`);
+    return data;
+}
+
+// (Optional) keep clearCourseCompany only if you still need “remove all links”:
+export const clearCourseCompany = async (courseId) => {
+    const { data } = await api.delete(`/courses/${courseId}/companies`);
+    return data;
+}
+
+export async function uploadCompanyLogo(companyId, file) {
+    if (!file) throw new Error('No file provided');
+
+    const form = new FormData();
+    form.append('logo', file); // must match FileInterceptor('logo')
+
+    const { data } = await api.post(`/companies/${companyId}/upload-logo`, form, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+    });
+
+    // backend returns full updated company, hydrated with logoUrl
+    // we can safely return that URL for immediate preview
+    return data.logoUrl || data.url || null;
+}
+
+/* ------------------------------------------------------------------ */
+/* Company Members & Roles (admin/company_admin only)                  */
+/* ------------------------------------------------------------------ */
+
+// Includes user basic info for rendering without extra requests
+export async function listCompanyMembers(companyId) {
+    const { data } = await api.get(`/companies/${companyId}/members`);
+    // [{ id, userId, companyId, role, createdAt, fullName, email }]
+    return data;
+}
+
+export async function addCompanyMember(companyId, payload /* { userId:number, role:'company_admin'|'instructor'|'assistant' } */) {
+    const { data } = await api.post(`/companies/${companyId}/members`, payload);
+    return data; // role row
+}
+
+// Remove member. Optionally pass role to remove a single role; otherwise removes all roles for that user in the company.
+export async function removeCompanyMember(companyId, userId, role /* optional */) {
+    console.log(companyId, userId, role);
+    const { data } = await api.delete(`/companies/${companyId}/members/${userId}`, {
+        params: clean({ role }),
+    });
+    return data; // { ok: true }
+}
+
+// Change member role. mode: 'replace' (default) keeps only this role; 'add' adds alongside others.
+export async function setCompanyMemberRole(companyId, userId, role /* 'company_admin'|'instructor'|'assistant' */, mode = 'replace') {
+    const { data } = await api.patch(`/companies/${companyId}/members/${userId}`, { role, mode });
+    return data; // { ok: true }
+}
+
+/* ------------------------------------------------------------------ */
+/* Company Courses                                                     */
+/* ------------------------------------------------------------------ */
+
+// Paged courses under a company, searchable by title/description
+export async function listCompanyCourses(companyId, { page = 1, limit = 20, q = '' } = {}) {
+    const { data } = await api.get(`/companies/${companyId}/courses`, { params: clean({ page, limit, q }) });
+    return data; // {items,total,page,limit,totalPages}
+}
+
+
+/* ------------------------------------------------------------------ */
+/* Rate Courses                                         */
+/* ------------------------------------------------------------------ */
+
+export async function getCourseRating(courseId) {
+    const { data } = await api.get(`/courses/${courseId}/rating`);
+    return data;
+}
+
+export async function getTopRatings({ limit = 10 } = {}) {
+    const { data } = await api.get(`/courses/top-ratings`, {
+        params: { limit },
+    });
+    return data;
+}
+
+export async function rateCourse(courseId, { value, comment }) {
+    const { data } = await api.post(`/courses/${courseId}/rate`, {
+        value,
+        comment,
+    });
+    return data;
+}
+
+export async function fetchCourseReviews(courseId, page = 1, limit = 10) {
+    const { data } = await api.get(`/courses/${courseId}/reviews`, {
+        params: { page, limit },
+    });
+    return data; // { items, total, page, totalPages, ratingAverage, ratingCount }
+}
+
+/* ------------------------------------------------------------------ */
+/* Top Courses and Instructors                                         */
+/* ------------------------------------------------------------------ */
+
+export async function fetchTopCourses(limit = 3) {
+    const { data } = await api.get(`/courses/top`, {
+        params: { limit },
+    });
+    return data; // { items, total, hasMore }
+}
+
+export async function fetchTopInstructors(limit = 3) {
+    const { data } = await api.get(`/users/top-instructors`, {
+        params: { limit },
+    });
+    return data; // { items, total, hasMore }
+}
+
+
+// Course search
+export const searchCourses = async (q) => {
+    if (!q || q.length < 2) return [];
+    const res = await api.get("/courses/search", { params: { q } });
+    return res.data;
+};
+
 
 
