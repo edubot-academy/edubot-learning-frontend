@@ -1,5 +1,5 @@
 import React from "react";
-import { FiChevronDown, FiVideo, FiFileText, FiDownload } from 'react-icons/fi';
+import { FiChevronDown, FiVideo, FiFileText, FiDownload, FiCode } from 'react-icons/fi';
 import { formatDuration } from '../utils/timeUtils';
 import { formatReadTime, getResourceMeta } from '../utils/lessonUtils';
 
@@ -54,9 +54,15 @@ const CourseSidebar = ({
                             {isOpen && section.lessons?.map((lesson) => {
                                 const isActive = activeLesson?.id === lesson.id;
                                 const isArticle = lesson.kind === 'article';
-                                const durationLabel = isArticle
-                                    ? formatReadTime(lesson.duration)
-                                    : formatDuration(lesson.duration);
+                                const isQuiz = lesson.kind === 'quiz';
+                                const isCode = lesson.kind === 'code';
+                                const durationLabel = isQuiz
+                                    ? 'Квиз'
+                                    : isCode
+                                        ? 'Код тапшырма'
+                                        : isArticle
+                                            ? formatReadTime(lesson.duration)
+                                            : formatDuration(lesson.duration);
                                 const resourceMeta =
                                     !lesson.locked && lesson.resourceUrl
                                         ? getResourceMeta(lesson.resourceKey, lesson.resourceName)
@@ -120,6 +126,10 @@ const CourseSidebar = ({
                                                     <span className="text-xs text-gray-500 flex items-center gap-1">
                                                         {isArticle ? (
                                                             <FiFileText className="w-4 h-4" />
+                                                        ) : isQuiz ? (
+                                                            <FiFileText className="w-4 h-4" />
+                                                        ) : isCode ? (
+                                                            <FiCode className="w-4 h-4" />
                                                         ) : (
                                                             <FiVideo className="w-4 h-4" />
                                                         )}
