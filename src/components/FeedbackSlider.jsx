@@ -2,6 +2,7 @@ import useEmblaCarousel from 'embla-carousel-react';
 import { useEffect, useCallback, useState } from 'react';
 
 const FeedbackSlider = ({ data = [], CardComponent, arrows }) => {
+  
 	const [emblaRef, emblaApi] = useEmblaCarousel({
 		align: 'start',
 		dragFree: false,
@@ -48,7 +49,7 @@ const FeedbackSlider = ({ data = [], CardComponent, arrows }) => {
 							key={index}
 							className='px-3 min-w-[100%] sm:min-w-[50%] lg:min-w-[33.33%]'
 						>
-							<CardComponent {...item} />
+							<CardComponent {...item}/>
 						</div>
 					))}
 				</div>

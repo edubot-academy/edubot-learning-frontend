@@ -10,6 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@chepchik/react-rating": "^0.0.5",
     "@fontsource/inter": "^5.2.5",
     "autoprefixer": "^10.4.20",
     "axios": "^1.7.9",

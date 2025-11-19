@@ -1,64 +1,21 @@
-import FeedbackImg from '../assets/images/feedbackImg.png';
-import FeedbackNew from '../assets/icons/feedbacknew.svg';
 import SectionContainer from './SectionContainer';
 import arrowLeft from '../assets/icons/leftArrow.svg';
 import arrowRight from '../assets/icons/rightArrow.svg';
 import CardFeedback from './CardFeedback';
-import axios from 'axios';
-import { fetchCourseReviews } from '../services/api';
+import { getTopRatings } from '../services/api';
+import { useEffect, useState } from 'react';
 
 function Feedback() {
-	const feedbacks = [
-		{
-			star: FeedbackNew,
-			text: `Я прошла онлайн-курсы и осталась очень довольна! Материал подаётся простым и понятным языком, всё структурировано и логично. Особенно понравилось, что можно учиться в удобное время и сразу применять знания на практике. После прохождения курса я чувствую себя гораздо увереннее в новой профессии. Спасибо за такую возможность!`,
-			name: 'Jane Doe',
-			role: 'Designer',
-			image: FeedbackImg,
-		},
-		{
-			text: `Я прошла онлайн-курсы и осталась очень довольна! Материал подаётся простым и понятным языком, всё структурировано и логично. Особенно понравилось, что можно учиться в удобное время и сразу применять знания на практике. После прохождения курса я чувствую себя гораздо увереннее в новой профессии. Спасибо за такую возможность!`,
-			name: 'Jane Doe',
-			role: 'Designer',
-			image: FeedbackImg,
-		},
-		{
-			text: `Я прошла онлайн-курсы и осталась очень довольна! Материал подаётся простым и понятным языком, всё структурировано и логично. Особенно понравилось, что можно учиться в удобное время и сразу применять знания на практике. После прохождения курса я чувствую себя гораздо увереннее в новой профессии. Спасибо за такую возможность`,
-			name: 'Jane Doe',
-			role: 'Designer',
-			image: FeedbackImg,
-		},
-		{
-			text: `Я прошла онлайн-курсы и осталась очень довольна! Материал подаётся простым и понятным языком, всё структурировано и логично. Особенно понравилось, что можно учиться в удобное время и сразу применять знания на практике. После прохождения курса я чувствую себя гораздо увереннее в новой профессии. Спасибо за такую возможность!`,
-			name: 'Jane Doe',
-			role: 'Designer',
-			image: FeedbackImg,
-		},
-		{
-			text: `Я прошла онлайн-курсы и осталась очень довольна! Материал подаётся простым и понятным языком, всё структурировано и логично. Особенно понравилось, что можно учиться в удобное время и сразу применять знания на практике. После прохождения курса я чувствую себя гораздо увереннее в новой профессии. Спасибо за такую возможность`,
-			name: 'Jane Doe',
-			role: 'Designer',
-			image: FeedbackImg,
-		},
-		{
-			text: `Я прошла онлайн-курсы и осталась очень довольна! Материал подаётся простым и понятным языком, всё структурировано и логично. Особенно понравилось, что можно учиться в удобное время и сразу применять знания на практике. После прохождения курса я чувствую себя гораздо увереннее в новой профессии. Спасибо за такую возможность!`,
-			name: 'Jane Doe',
-			role: 'Designer',
-			image: FeedbackImg,
-		},
-		{
-			text: `Я прошла онлайн-курсы и осталась очень довольна! Материал подаётся простым и понятным языком, всё структурировано и логично. Особенно понравилось, что можно учиться в удобное время и сразу применять знания на практике. После прохождения курса я чувствую себя гораздо увереннее в новой профессии. Спасибо за такую возможность`,
-			name: 'Jane Doe',
-			role: 'Designer',
-			image: FeedbackImg,
-		},
-	];
+	const [newDate, setNewDate] = useState([]);
 
-	const testFunc = async () => {
-		const data = await fetchCourseReviews(2);
-		console.log(data);
+	const getTopRate = async () => {
+		const data = await getTopRatings();
+		const result = data;
+		setNewDate(result);
 	};
-	testFunc();
+	useEffect(() => {
+		getTopRate();
+	}, []);
 
 	const arrows = (
 		<div className='flex items-center gap-3'>
@@ -81,10 +38,10 @@ function Feedback() {
 		<SectionContainer
 			title='Биздин окуучулар эмне дейт'
 			subtitle='Тут вы можете посмотреть все отзывы наших студентов которые прошли  все наши онлайн уроки'
-			data={feedbacks}
+			data={newDate}
 			rightContent={arrows}
 			buttonText={null}
-			// CardComponent={ }
+			CardComponent={CardFeedback}
 		/>
 	);
 }
