@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import {
@@ -124,10 +124,6 @@ const EditInstructorCourse = () => {
                 const learningOutcomesText = Array.isArray(courseData.learningOutcomes)
                     ? courseData.learningOutcomes.join("\n")
                     : "";
-                const tagsText = Array.isArray(courseData.tags)
-                    ? courseData.tags.join(", ")
-                    : "";
-
                 const hydratedCourse = {
                     ...courseData,
                     languageCode: courseData.languageCode || "ky",
@@ -136,7 +132,6 @@ const EditInstructorCourse = () => {
                             ? courseData.isPaid
                             : Number(courseData.price) > 0,
                     learningOutcomesText,
-                    tagsText,
                 };
 
                 setCourse(hydratedCourse);
@@ -362,11 +357,6 @@ const EditInstructorCourse = () => {
             .map((s) => s.trim())
             .filter(Boolean);
 
-        const tags = (course.tagsText || "")
-            .split(",")
-            .map((s) => s.trim())
-            .filter(Boolean);
-
         try {
             await updateCourse(id, {
                 title: course.title,
@@ -377,7 +367,6 @@ const EditInstructorCourse = () => {
                 languageCode: course.languageCode || "ky",
                 learningOutcomes:
                     learningOutcomes.length > 0 ? learningOutcomes : undefined,
-                tags: tags.length > 0 ? tags : undefined,
                 isPaid: course.isPaid && Number(course.price) > 0,
             });
 
@@ -665,19 +654,6 @@ const EditInstructorCourse = () => {
                                 "Мисалы:\n- UX негиздери\n- Figma менен иштөө\n- UI китепкана түзүү"
                             }
                             className="w-full border p-2 rounded text-sm min-h-[100px]"
-                        />
-                    </div>
-
-                    <div>
-                        <label className="block text-sm mb-1">
-                            Тегдер (запятая менен бөлүп жазыңыз)
-                        </label>
-                        <input
-                            name="tagsText"
-                            value={course.tagsText || ""}
-                            onChange={handleCourseChange}
-                            placeholder="мисалы: UX, UI, Figma, Design"
-                            className="w-full border p-2 rounded text-sm"
                         />
                     </div>
 

@@ -43,9 +43,9 @@ const CourseDetailsPage = () => {
     const [enrolled, setEnrolled] = useState(false);
     const lessonRefs = useRef({});
     const videoRef = useRef(null);
-   const hasPlayedRef = useRef(false);
-   const [shouldScrollToLesson, setShouldScrollToLesson] = useState(true);
-   const [paid, setPaid] = useState(false);
+    const hasPlayedRef = useRef(false);
+    const [shouldScrollToLesson, setShouldScrollToLesson] = useState(true);
+    const [paid, setPaid] = useState(false);
     const [lessonQuizData, setLessonQuizData] = useState({});
     const [lessonQuizAnswers, setLessonQuizAnswers] = useState({});
     const [lessonQuizResults, setLessonQuizResults] = useState({});

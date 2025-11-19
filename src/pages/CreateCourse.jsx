@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     createCourse,
@@ -39,7 +39,6 @@ const DEFAULT_COURSE_INFO = {
     coverImageUrl: '',
     languageCode: 'ky',          // 'ky' | 'ru' | 'en'
     learningOutcomesText: '',    // textarea, split by \n
-    tagsText: '',                // comma-separated
     isPaid: true,
 };
 
@@ -95,7 +94,8 @@ const CourseBuilder = () => {
                     setCourseId(parsed.courseId || null);
                     setStep(parsed.step || 1);
                 }
-            } catch (err) {
+            } catch (error) {
+                console.error('Failed to load categories', error);
                 toast.error('Маалымат жүктөлбөдү');
             }
         };
@@ -327,11 +327,6 @@ const CourseBuilder = () => {
             .map((s) => s.trim())
             .filter(Boolean);
 
-        const tags = courseInfo.tagsText
-            .split(',')
-            .map((s) => s.trim())
-            .filter(Boolean);
-
         try {
             const course = await createCourse({
                 title: courseInfo.title,
@@ -341,7 +336,6 @@ const CourseBuilder = () => {
                 subtitle: courseInfo.subtitle || undefined,
                 languageCode: courseInfo.languageCode || 'ky',
                 learningOutcomes: learningOutcomes.length ? learningOutcomes : undefined,
-                tags: tags.length ? tags : undefined,
                 isPaid: courseInfo.isPaid && Number(courseInfo.price) > 0,
             });
 
@@ -532,7 +526,8 @@ const CourseBuilder = () => {
                             toast.success('Курс тастыктоого жөнөтүлдү');
                             localStorage.removeItem('draftCourse');
                             navigate('/instructor/courses');
-                        } catch (err) {
+                        } catch (error) {
+                            console.error('Failed to submit for approval', error);
                             toast.error('Жөнөтүүдө ката кетти');
                         }
                     }}
@@ -670,19 +665,6 @@ const CourseBuilder = () => {
                             onChange={handleCourseInfoChange}
                             placeholder={'Мисалы:\n- UX негиздери\n- Figma менен иштөө\n- UI китепкана түзүү'}
                             className="w-full border p-2 rounded text-sm min-h-[100px]"
-                        />
-                    </div>
-
-                    <div>
-                        <label className="block text-sm mb-1">
-                            Тегдер (запятая менен бөлүп жазыңыз)
-                        </label>
-                        <input
-                            name="tagsText"
-                            value={courseInfo.tagsText}
-                            onChange={handleCourseInfoChange}
-                            placeholder="мисалы: UX, UI, Figma, Design"
-                            className="w-full border p-2 rounded text-sm"
                         />
                     </div>
 

@@ -1,4 +1,4 @@
-import React from "react";
+import PropTypes from "prop-types";
 import { formatHoursToTime } from "../utils/timeUtils";
 
 const CourseHeader = ({ course, progress, enrolled }) => {
@@ -55,3 +55,18 @@ const CourseHeader = ({ course, progress, enrolled }) => {
 };
 
 export default CourseHeader;
+
+CourseHeader.propTypes = {
+    course: PropTypes.shape({
+        title: PropTypes.string,
+        description: PropTypes.string,
+        durationInHours: PropTypes.number,
+        instructor: PropTypes.shape({
+            fullName: PropTypes.string,
+            avatar: PropTypes.string,
+            bio: PropTypes.string,
+        }),
+    }).isRequired,
+    progress: PropTypes.number,
+    enrolled: PropTypes.bool,
+};
