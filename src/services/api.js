@@ -305,6 +305,54 @@ export async function fetchLessons(courseId, sectionId) {
     return response.data;
 }
 
+export async function fetchLessonQuiz(courseId, sectionId, lessonId, manage = false) {
+    const suffix = manage ? '/manage' : '';
+    const response = await api.get(
+        `/courses/${courseId}/sections/${sectionId}/lessons/${lessonId}/quiz${suffix}`
+    );
+    return response.data;
+}
+
+export async function upsertLessonQuiz(courseId, sectionId, lessonId, quizData) {
+    const response = await api.post(
+        `/courses/${courseId}/sections/${sectionId}/lessons/${lessonId}/quiz`,
+        quizData
+    );
+    return response.data;
+}
+
+export async function submitLessonQuiz(courseId, sectionId, lessonId, answers) {
+    const response = await api.post(
+        `/courses/${courseId}/sections/${sectionId}/lessons/${lessonId}/quiz/submit`,
+        answers
+    );
+    return response.data;
+}
+
+export async function fetchLessonChallenge(courseId, sectionId, lessonId, manage = false) {
+    const suffix = manage ? '/manage' : '';
+    const response = await api.get(
+        `/courses/${courseId}/sections/${sectionId}/lessons/${lessonId}/challenge${suffix}`
+    );
+    return response.data;
+}
+
+export async function upsertLessonChallenge(courseId, sectionId, lessonId, challengeData) {
+    const response = await api.post(
+        `/courses/${courseId}/sections/${sectionId}/lessons/${lessonId}/challenge`,
+        challengeData
+    );
+    return response.data;
+}
+
+export async function submitLessonChallenge(courseId, sectionId, lessonId, payload) {
+    const response = await api.post(
+        `/courses/${courseId}/sections/${sectionId}/lessons/${lessonId}/challenge/submit`,
+        payload
+    );
+    return response.data;
+}
+
 export async function uploadLessonFile(courseId, sectionId, type, file, lessonOrder, onProgress) {
     if (!file || typeof file.name !== 'string') {
         throw new Error('No file provided');
@@ -681,8 +729,6 @@ export const searchCourses = async (q) => {
     const res = await api.get("/courses/search", { params: { q } });
     return res.data;
 };
-
-
 
 
 

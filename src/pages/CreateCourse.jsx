@@ -8,9 +8,26 @@ import {
     uploadCourseImage,
     markCoursePending,
     uploadLessonFile,
+    upsertLessonQuiz,
+    upsertLessonChallenge,
 } from '../services/api';
 import toast from 'react-hot-toast';
 import { getVideoDuration } from '../utils/videoUtils';
+import { LESSON_KIND_OPTIONS } from '../constants/lessons';
+import LessonQuizEditor from '../components/LessonQuizEditor';
+import LessonChallengeEditor from '../components/LessonChallengeEditor';
+import {
+    createEmptyQuiz,
+    ensureQuizShape,
+    normalizeQuizForApi,
+    validateQuiz,
+} from '../utils/quizUtils';
+import {
+    createEmptyChallenge,
+    ensureChallengeShape,
+    normalizeChallengeForApi,
+} from '../utils/challengeUtils';
+import ArticleEditor from '../components/ArticleEditor';
 
 const DEFAULT_COURSE_INFO = {
     title: '',
@@ -46,8 +63,13 @@ const CourseBuilder = () => {
             lessons: [
                 {
                     title: 'Сабак 1',
+                    content: '',
+                    kind: 'video',
                     videoKey: '',
                     resourceKey: '',
+                    resourceName: '',
+                    quiz: createEmptyQuiz(),
+                    challenge: createEmptyChallenge(),
                     previewVideo: false,
                     uploadProgress: { video: 0, resource: 0 },
                     uploading: { video: false, resource: false },
@@ -123,8 +145,13 @@ const CourseBuilder = () => {
         const updated = [...curriculum];
         updated[sectionIndex].lessons.push({
             title: '',
+            content: '',
+            kind: 'video',
             videoKey: '',
             resourceKey: '',
+            resourceName: '',
+            quiz: createEmptyQuiz(),
+            challenge: createEmptyChallenge(),
             previewVideo: false,
             uploadProgress: { video: 0, resource: 0 },
             uploading: { video: false, resource: false },
@@ -142,7 +169,43 @@ const CourseBuilder = () => {
     const updateLesson = (sectionIndex, lessonIndex, field, value) => {
         setCurriculum((prev) => {
             const updated = [...prev];
-            updated[sectionIndex].lessons[lessonIndex][field] = value;
+            const lesson = updated[sectionIndex].lessons[lessonIndex];
+            lesson[field] = value;
+
+            if (field === 'kind') {
+                if (value === 'article') {
+                    lesson.previewVideo = false;
+                }
+                if (value === 'quiz') {
+                    lesson.previewVideo = false;
+                    lesson.videoKey = '';
+                    lesson.quiz = ensureQuizShape(lesson.quiz);
+                }
+                if (value === 'code') {
+                    lesson.previewVideo = false;
+                    lesson.videoKey = '';
+                    lesson.challenge = ensureChallengeShape(lesson.challenge);
+                }
+            }
+
+            return updated;
+        });
+    };
+
+    const handleChallengeChange = (sectionIndex, lessonIndex, newChallenge) => {
+        setCurriculum((prev) => {
+            const updated = [...prev];
+            const lesson = updated[sectionIndex].lessons[lessonIndex];
+            lesson.challenge = ensureChallengeShape(newChallenge);
+            return updated;
+        });
+    };
+
+    const handleQuizChange = (sectionIndex, lessonIndex, newQuiz) => {
+        setCurriculum((prev) => {
+            const updated = [...prev];
+            const lesson = updated[sectionIndex].lessons[lessonIndex];
+            lesson.quiz = ensureQuizShape(newQuiz);
             return updated;
         });
     };
@@ -227,6 +290,10 @@ const CourseBuilder = () => {
             }
 
             updateLesson(sectionIndex, lessonIndex, keyProp, key);
+
+            if (type === 'resource') {
+                updateLesson(sectionIndex, lessonIndex, 'resourceName', file.name);
+            }
         } catch (err) {
             toast.error(err.message || 'Файл жүктөөдө ката кетти.');
         } finally {
@@ -301,19 +368,69 @@ const CourseBuilder = () => {
                 });
 
                 for (const [lIdx, lesson] of section.lessons.entries()) {
-                    if (!lesson.title || !lesson.videoKey) {
-                        toast.error('Ар бир сабакта аталыш жана видео болушу керек.');
+                    const isArticle = lesson.kind === 'article';
+                    const isQuiz = lesson.kind === 'quiz';
+                    const isCode = lesson.kind === 'code';
+                    const missingTitle = !lesson.title?.trim();
+                    const missingVideo = lesson.kind === 'video' && !lesson.videoKey;
+                    const missingContent = isArticle && !lesson.content?.trim();
+                    const missingReadTime =
+                        isArticle && (!lesson.duration || lesson.duration <= 0);
+                    const quizData = isQuiz ? ensureQuizShape(lesson.quiz) : null;
+                    const quizError = isQuiz ? validateQuiz(quizData) : null;
+                    const challengeData = isCode ? ensureChallengeShape(lesson.challenge) : null;
+                    let challengePayload = null;
+                    if (isCode && challengeData) {
+                        try {
+                            challengePayload = normalizeChallengeForApi(challengeData);
+                        } catch (error) {
+                            toast.error(error.message);
+                            continue;
+                        }
+                    }
+
+                    if (missingTitle || missingVideo || missingContent || missingReadTime || quizError) {
+                        toast.error(
+                            quizError
+                                ? quizError
+                                : isArticle
+                                    ? 'Макала үчүн аталыш, текст жана окуу убактысы талап кылынат.'
+                                    : 'Ар бир видео сабакта аталыш жана видео болушу керек.',
+                        );
                         continue;
                     }
 
-                    await createLesson(courseId, sec.id, {
-                        title: lesson.title,
-                        videoKey: lesson.videoKey,
+                    const lessonPayload = {
+                        title: lesson.title.trim(),
+                        kind: lesson.kind || 'video',
+                        content: isArticle ? (lesson.content?.trim() || undefined) : undefined,
+                        videoKey: lesson.kind === 'video' ? lesson.videoKey : undefined,
                         resourceKey: lesson.resourceKey,
-                        previewVideo: lesson.previewVideo,
+                        resourceName: lesson.resourceName?.trim() || undefined,
+                        previewVideo: lesson.kind === 'video' ? lesson.previewVideo : false,
                         order: lIdx,
-                        duration: lesson.duration,
-                    });
+                        duration:
+                            lesson.kind === 'video'
+                                ? lesson.duration
+                                : isArticle
+                                    ? lesson.duration
+                                    : undefined,
+                    };
+
+                    const createdLesson = await createLesson(courseId, sec.id, lessonPayload);
+
+                    if (isQuiz && quizData) {
+                        const quizPayload = normalizeQuizForApi(quizData);
+                        if (!quizPayload) {
+                            toast.error('Квиз маалыматтарын сактоо мүмкүн эмес.');
+                            continue;
+                        }
+                        await upsertLessonQuiz(courseId, sec.id, createdLesson.id, quizPayload);
+                    }
+
+                    if (isCode && challengePayload) {
+                        await upsertLessonChallenge(courseId, sec.id, createdLesson.id, challengePayload);
+                    }
                 }
             }
 
@@ -637,37 +754,116 @@ const CourseBuilder = () => {
                                         placeholder="Сабак аталышы"
                                     />
 
-                                    <label className="block mb-1 font-medium">
-                                        Видео жүктөө
+                                    <label className="block text-sm font-medium mb-1">
+                                        Сабактын тиби
                                     </label>
-                                    <input
-                                        type="file"
-                                        accept="video/*"
-                                        className="w-full mb-2"
+                                    <select
+                                        className="w-full p-2 mb-2 border rounded bg-white"
+                                        value={lesson.kind || 'video'}
                                         onChange={(e) =>
-                                            handleFileUpload(
-                                                courseId,
-                                                sIdx,
-                                                lIdx,
-                                                'video',
-                                                e.target.files[0],
-                                            )
+                                            updateLesson(sIdx, lIdx, 'kind', e.target.value)
                                         }
-                                    />
-                                    {lesson.uploadProgress.video > 0 && (
-                                        <div className="w-full bg-gray-200 rounded h-2 mb-1">
-                                            <div
-                                                className="bg-blue-600 h-full rounded transition-all duration-200"
-                                                style={{
-                                                    width: `${lesson.uploadProgress.video}%`,
-                                                }}
+                                    >
+                                        {LESSON_KIND_OPTIONS.map((option) => (
+                                            <option key={option.value} value={option.value}>
+                                                {option.label}
+                                            </option>
+                                        ))}
+                                    </select>
+
+                                    {lesson.kind === 'article' && (
+                                        <>
+                                            <label className="block mb-1 font-medium">
+                                                Макала тексти
+                                            </label>
+                                            <ArticleEditor
+                                                value={lesson.content || ''}
+                                                onChange={(val) =>
+                                                    updateLesson(sIdx, lIdx, 'content', val)
+                                                }
+                                                placeholder="Сабактын негизги тексти"
                                             />
-                                        </div>
+                                            <label className="block mb-1 font-medium">
+                                                Окуу убактысы (мүнөт)
+                                            </label>
+                                            <input
+                                                type="number"
+                                                min="1"
+                                                className="w-full p-2 mb-2 border rounded"
+                                                value={
+                                                    lesson.duration && lesson.duration > 0
+                                                        ? Math.round(lesson.duration / 60)
+                                                        : ''
+                                                }
+                                                onChange={(e) => {
+                                                    const minutes = Number(e.target.value);
+                                                    updateLesson(
+                                                        sIdx,
+                                                        lIdx,
+                                                        'duration',
+                                                        Number.isFinite(minutes) && minutes > 0
+                                                            ? minutes * 60
+                                                            : 0,
+                                                    );
+                                                }}
+                                                placeholder="мисалы: 5"
+                                            />
+                                        </>
                                     )}
-                                    {lesson.uploadProgress.video > 0 && (
-                                        <p className="text-xs text-gray-500 mb-2">
-                                            {lesson.uploadProgress.video}% жүктөлдү
-                                        </p>
+
+                                    {lesson.kind === 'quiz' && (
+                                        <LessonQuizEditor
+                                            quiz={lesson.quiz}
+                                            onChange={(newQuiz) =>
+                                                handleQuizChange(sIdx, lIdx, newQuiz)
+                                            }
+                                        />
+                                    )}
+
+                                    {lesson.kind === 'code' && (
+                                        <LessonChallengeEditor
+                                            challenge={lesson.challenge}
+                                            onChange={(newChallenge) =>
+                                                handleChallengeChange(sIdx, lIdx, newChallenge)
+                                            }
+                                        />
+                                    )}
+
+                                    {lesson.kind === 'video' && (
+                                        <>
+                                            <label className="block mb-1 font-medium">
+                                                Видео жүктөө
+                                            </label>
+                                            <input
+                                                type="file"
+                                                accept="video/*"
+                                                className="w-full mb-2"
+                                                onChange={(e) =>
+                                                    handleFileUpload(
+                                                        courseId,
+                                                        sIdx,
+                                                        lIdx,
+                                                        'video',
+                                                        e.target.files[0],
+                                                    )
+                                                }
+                                            />
+                                            {lesson.uploadProgress.video > 0 && (
+                                                <div className="w-full bg-gray-200 rounded h-2 mb-1">
+                                                    <div
+                                                        className="bg-blue-600 h-full rounded transition-all duration-200"
+                                                        style={{
+                                                            width: `${lesson.uploadProgress.video}%`,
+                                                        }}
+                                                    />
+                                                </div>
+                                            )}
+                                            {lesson.uploadProgress.video > 0 && (
+                                                <p className="text-xs text-gray-500 mb-2">
+                                                    {lesson.uploadProgress.video}% жүктөлдү
+                                                </p>
+                                            )}
+                                        </>
                                     )}
 
                                     <label className="block mt-2 mb-1 font-medium">
@@ -703,21 +899,45 @@ const CourseBuilder = () => {
                                         </>
                                     )}
 
-                                    <label className="flex items-center gap-2 mt-2">
-                                        <input
-                                            type="checkbox"
-                                            checked={lesson.previewVideo}
-                                            onChange={(e) =>
-                                                updateLesson(
-                                                    sIdx,
-                                                    lIdx,
-                                                    'previewVideo',
-                                                    e.target.checked,
-                                                )
-                                            }
-                                        />
-                                        Превью видеосун белгилөө
+                                    <label className="block text-sm font-medium">
+                                        Материалдын аталышы
                                     </label>
+                                    <input
+                                        type="text"
+                                        className="w-full p-2 mb-2 border rounded"
+                                        value={lesson.resourceName || ''}
+                                        onChange={(e) =>
+                                            updateLesson(
+                                                sIdx,
+                                                lIdx,
+                                                'resourceName',
+                                                e.target.value,
+                                            )
+                                        }
+                                        placeholder="мисалы: Практикалык тапшырмалар.pdf"
+                                        disabled={!lesson.resourceKey}
+                                    />
+                                    <p className="text-xs text-gray-500 mb-2">
+                                        Бул аталыш студенттерге көрсөтүлөт.
+                                    </p>
+
+                                    {lesson.kind === 'video' && (
+                                        <label className="flex items-center gap-2 mt-2">
+                                            <input
+                                                type="checkbox"
+                                                checked={lesson.previewVideo}
+                                                onChange={(e) =>
+                                                    updateLesson(
+                                                        sIdx,
+                                                        lIdx,
+                                                        'previewVideo',
+                                                        e.target.checked,
+                                                    )
+                                                }
+                                            />
+                                            Превью видеосун белгилөө
+                                        </label>
+                                    )}
 
                                     <button
                                         onClick={() =>

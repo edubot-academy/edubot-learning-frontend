@@ -61,7 +61,7 @@ h3 {
 }
 
 .orange__shadow {
-  box-shadow: 0 10px 30px 5px rgba(225, 66, 25, 0.5);
+  box-shadow: 2px 8px 25px 1px rgba(225, 66, 25, 0.5);
 }
 
 .black__shadow {
@@ -158,4 +158,44 @@ input[type="radio"]:checked {
 input[type="radio"]:checked::after {
   background: #fff;
   transform: translate(-50%, -50%) scale(1);
+}
+
+.article-content {
+  @apply space-y-4 leading-relaxed text-gray-800;
+}
+
+.article-content h1 {
+  @apply text-3xl font-bold text-gray-900 mt-6 mb-3;
+}
+
+.article-content h2 {
+  @apply text-2xl font-semibold text-gray-900 mt-5 mb-2;
+}
+
+.article-content h3 {
+  @apply text-xl font-semibold text-gray-900 mt-4 mb-2;
+}
+
+.article-content p {
+  @apply text-base text-gray-800;
+}
+
+.article-content ul {
+  @apply list-disc pl-6 space-y-1;
+}
+
+.article-content ol {
+  @apply list-decimal pl-6 space-y-1;
+}
+
+.article-content a {
+  color: var(--edubot-orange);
+  text-decoration: underline;
+  text-decoration-color: var(--edubot-orange);
+  text-underline-offset: 3px;
+  transition: color 0.2s ease;
+}
+
+.article-content a:hover {
+  color: var(--edubot-dark);
 }

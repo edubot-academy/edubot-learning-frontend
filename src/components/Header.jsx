@@ -3,14 +3,17 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { FaBars, FaTimes } from "react-icons/fa";
 import { IoSearch } from "react-icons/io5";
 import { GrLanguage } from "react-icons/gr";
-import ThemeToggle from "../components/UI/ThemeToggle"; // путь к вашему компоненту
+import ThemeToggle from "../components/UI/ThemeToggle";
 import { BsChevronDown, BsSun, BsMoon } from "react-icons/bs";
+import { CiSearch } from "react-icons/ci";
 import EduBotLogo from "../assets/images/edubot-signup.png";
 import BlackHeart from "../assets/icons/blackHeart.svg";
 import BlackBasket from "../assets/icons/blackBasket.svg";
 import BlackPerson from "../assets/icons/personBlack.svg";
 import { AuthContext } from "../context/AuthContext";
 import { searchCourses } from "../services/api";
+import SideBar from "../components/UI/SideBar"; // путь к вашему SideBar компоненту
+import SidebarOverlay from "../components/UI/SidebarOverlay"; // путь к вашему SidebarOverlay компоненту
 
 const NavLinks = ({ isMobile, user }) => {
   const location = useLocation();
@@ -68,11 +71,12 @@ const Header = () => {
   const navigate = useNavigate();
 
   const [menuOpen, setMenuOpen] = useState(false);
+  const [positionBar, setPositionBar] = useState(false);
   const [search, setSearch] = useState("");
   const [langOpen, setLangOpen] = useState(false);
   const [lang, setLang] = useState("Кыргызча");
   const [dark, setDark] = useState(false);
-  const [searchOpen, setSearchOpen] = useState(false); // Для мобильного поиска
+  const [searchOpen, setSearchOpen] = useState(false);
 
   const langRef = useRef(null);
 
@@ -165,7 +169,7 @@ const Header = () => {
               </div>
             </Link>
 
-            {/* Search Bar - Desktop (слева после логотипа) */}
+            {/* Search Bar - Desktop */}
             <div
               className="flex items-center border rounded overflow-hidden hover:border-[#F06743]  flex-1 max-w-xs ml-6 border-[#7B818C] dark:border-[#7B818C]"
               ref={searchContainerRef}
@@ -291,7 +295,10 @@ const Header = () => {
           <div className="flex items-center justify-between">
             {/* Burger Menu - Left */}
             <button
-              onClick={() => setMenuOpen(true)}
+              onClick={() => {
+                setMenuOpen(true);
+                setPositionBar(false);
+              }}
               className="text-gray-700 dark:text-gray-700 text-2xl"
             >
               <FaBars />
@@ -325,7 +332,7 @@ const Header = () => {
             </button>
           </div>
 
-          {/* Mobile Search Input - появляется при клике на иконку */}
+          {/* Mobile Search Input */}
           {searchOpen && (
             <div className="mt-3" ref={searchContainerRef}>
               <div className="flex items-center border rounded overflow-hidden border-[#7B818C] dark:border-[#7B818C]">
@@ -378,79 +385,23 @@ const Header = () => {
           )}
         </div>
       </div>
-      {/* Mobile Menu Modal */}
-      {menuOpen && (
-        <div className="fixed inset-0 z-50 flex lg:hidden">
-          <div
-            className="flex-1 bg-black/50"
-            onClick={() => setMenuOpen(false)}
-          ></div>
 
-          <div className="w-64 sm:w-72 bg-white dark:bg-white h-full p-4 shadow-lg overflow-y-auto">
-            {" "}
-            {/* Добавлено overflow-y-auto */}
-            <button
-              onClick={() => setMenuOpen(false)}
-              className="absolute top-4 right-4 text-gray-600 dark:text-gray-600 z-10"
-            >
-              <FaTimes className="text-2xl" />
-            </button>
-            {/* Navigation Links inside burger menu */}
-            <div className="mt-8">
-              <NavLinks isMobile={true} user={user} />
-            </div>
-            <div className="mt-6 flex flex-col gap-3 pb-4">
-              {" "}
-              {/* Добавлен padding-bottom */}
-              {user ? (
-                <div className="flex items-center gap-3 justify-center">
-                  <img
-                    src={BlackHeart}
-                    alt="favorites"
-                    className="w-8 h-8 cursor-pointer hover:opacity-80 transition-opacity"
-                  />
-                  <img
-                    src={BlackBasket}
-                    alt="cart"
-                    className="w-8 h-8 cursor-pointer hover:opacity-80 transition-opacity"
-                  />
-                  <img
-                    src={BlackPerson}
-                    alt="profile"
-                    className="w-8 h-8 cursor-pointer hover:opacity-80 transition-opacity"
-                  />
-                </div>
-              ) : (
-                <Link to="/register" onClick={() => setMenuOpen(false)}>
-                  <button className="bg-orange-500 text-white px-4 py-2 rounded hover:bg-orange-600 transition-colors w-full">
-                    Катталуу
-                  </button>
-                </Link>
-              )}
-              {/* Language Selector */}
-              <div className="mt-4">
-                <select
-                  value={lang}
-                  onChange={(e) => setLang(e.target.value)}
-                  className="w-full p-2 border border-gray-300 rounded dark:bg-white dark:text-gray-700"
-                >
-                  <option value="Кыргызча">Кыргызча</option>
-                  <option value="Русский">Русский</option>
-                  <option value="English">English</option>
-                </select>
-              </div>
-              <div className="flex items-center justify-between mt-2">
-                <span className="text-sm text-gray-700 dark:text-gray-700">
-                  Тема:
-                </span>
-                <div className="relative top-[-12px]">
-                  <ThemeToggle dark={dark} setDark={setDark} />
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* SideBar Overlays */}
+      <SidebarOverlay
+        isOpen={menuOpen}
+        onClose={() => setMenuOpen(false)}
+        position="left"
+      >
+        <SideBar setMenuOpen={setMenuOpen} setPosition={setPositionBar} />
+      </SidebarOverlay>
+      
+      <SidebarOverlay
+        isOpen={positionBar}
+        onClose={() => setPositionBar(false)}
+        position="right"
+      >
+        <SideBar setMenuOpen={setMenuOpen} setPosition={setPositionBar} />
+      </SidebarOverlay>
     </header>
   );
 };
