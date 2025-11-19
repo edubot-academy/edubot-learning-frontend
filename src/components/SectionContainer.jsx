@@ -10,7 +10,9 @@ const SectionContainer = ({
   hideTitleAndLink = false,
   rightContent = null,
 }) => {
-  // console.log(data[0].enrollments);
+  console.log("SectionContainer данные:", data);
+  console.log("SectionContainer CardComponent:", CardComponent);
+
   return (
     <div className="px-4 py-16 sm:px-6 lg:px-12 bg-white">
       {!hideTitleAndLink && (
@@ -31,14 +33,20 @@ const SectionContainer = ({
         </div>
       )}
 
+      {/* ИСПРАВЛЕННАЯ ЧАСТЬ - рендерим CardComponent */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {data.slice(0, 1).map((item, index) =>
-          item.enrollments.map((e) => (
-            <>
-              <div>{e.id}</div>
-            </>
-          ))
-        )}
+        {data.map((course) => (
+          <CardComponent
+            key={course.id}
+            id={course.id}
+            coverImageUrl={course.coverImageUrl}
+            title={course.title}
+            instructor={course.instructor}
+            price={course.price}
+            ratingCount={course.ratingCount}
+            ratingAverage={course.ratingAverage}
+          />
+        ))}
       </div>
     </div>
   );

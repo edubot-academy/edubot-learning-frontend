@@ -4,6 +4,7 @@ import { FaStar } from "react-icons/fa";
 import { fetchCourses } from "../services/api";
 import SectionContainer from "../components/SectionContainer";
 import CoursesSection from "../components/CoursesSection";
+import CardCourse from "../components/CardCourse"; // Добавлен импорт CardCourse
 
 // import { FiSearch } from "react-icons/fi";
 // import CourseDescription from "../components/CourseDescription";
@@ -50,7 +51,7 @@ const CoursesPage = () => {
         {courses.length < 4 ? (
           <SectionContainer
             title={""}
-            CardComponent={null}
+            CardComponent={CardCourse} // Передаем CardCourse как компонент для карточек
             buttonText={null}
             subtitle={""}
             hideTitleAndLink={false}
@@ -61,7 +62,7 @@ const CoursesPage = () => {
           <CoursesSection>
             <SectionContainer
               title={""}
-              CardComponent={null}
+              CardComponent={CardCourse} // Передаем CardCourse как компонент для карточек
               buttonText={null}
               subtitle={""}
               hideTitleAndLink={false}
