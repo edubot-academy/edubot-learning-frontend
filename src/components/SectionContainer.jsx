@@ -1,45 +1,36 @@
+import React from "react";
+import Button from '../components/UI/Button'
 
-import Card from "./Card";
-import programmerImg from "../assets/images/photoprogrammer.png";
-import StarImg from "../assets/icons/star.svg";
-import { Link } from "react-router-dom";
-
-
-const SectionContainer = ({ noBg = false, hideTitleAndLink = false, data = [] }) => {
-
+const SectionContainer = ({
+  title,
+  subtitle,
+  buttonText,
+  data = [],
+  CardComponent,
+  hideTitleAndLink = false,
+  rightContent = null,
+}) => {
   return (
-    <div
-      className={`${noBg ? "" : "bg-[--edubot-darkgreen] text-white"
-        } px-4 py-8 sm:px-6 lg:px-12`}
-    >
+    <div className="px-4 py-16 sm:px-6 lg:px-12 bg-white">
       {!hideTitleAndLink && (
-        <>
-          <h2 className="text-2xl sm:text-3xl font-bold text-center mb-4 sm:mb-6">
-            Топ Курстар
-          </h2>
-
-          <div className="flex justify-end mb-6">
-            <Link to="/courses" className="text-sm cursor-pointer text-orange-500">
-              Увидеть все
-            </Link>
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-12">
+          <div className="flex flex-col gap-2">
+            <h2 className="font-suisse font-bold text-[#141619] text-4xl">
+              {title}
+            </h2>
+            <p className="font-suisse font-normal text-[#3E424A] text-base max-w-md">
+              {subtitle}
+            </p>
           </div>
-        </>
+          <div>{rightContent}</div>
+        </div>
       )}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 justify-items-center">
-        {data.slice(0, 3).map((course) => (
-          <Link key={course.id} to={`/courses/${course.id}`}>
-            <Card
-              img={course.coverImageUrl}
-              title={course.title}
-              description={course.description}
-              star={course.imgg}
-              price={course.price}
-              ratingCount={course.ratingCount}
-            />
-          </Link>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        {data.slice(0, 3).map((item, index) => (
+          <CardComponent key={item.id || index} {...item} />
         ))}
       </div>
-
     </div>
   );
 };

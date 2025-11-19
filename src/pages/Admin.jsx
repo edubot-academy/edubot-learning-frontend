@@ -1,4 +1,4 @@
-// Cleaned and fixed version of АдминPanel.jsx
+// AdminPanel.jsx — with Companies tab added (KY labels kept)
 import React, { useEffect, useState } from "react";
 import {
     fetchCourses,
@@ -14,7 +14,11 @@ import {
     fetchContactMessages,
     getPendingCourses,
     markCourseApproved,
-    markCourseRejected
+    markCourseRejected,
+
+    // ✅ NEW company endpoints
+    listCompanies,
+    createCompany,
 } from "../services/api";
 import { Link, useSearchParams } from "react-router-dom";
 import toast from "react-hot-toast";
@@ -31,6 +35,13 @@ const AdminPanel = () => {
     const [totalPages, setTotalPages] = useState(1);
     const [pendingCourses, setPendingCourses] = useState([]);
 
+    // ✅ Companies state
+    const [companies, setCompanies] = useState([]);
+    const [companiesTotalPages, setCompaniesTotalPages] = useState(1);
+    const [companySearch, setCompanySearch] = useState("");
+    const [companyPage, setCompanyPage] = useState(1);
+    const [newCompanyName, setNewCompanyName] = useState("");
+
     const [searchParams, setSearchParams] = useSearchParams();
     const page = Number(searchParams.get("page")) || 1;
     const [search, setSearch] = useState(searchParams.get("search") || "");
@@ -38,18 +49,21 @@ const AdminPanel = () => {
     const [dateFrom, setDateFrom] = useState(searchParams.get("dateFrom") || "");
     const [dateTo, setDateTo] = useState(searchParams.get("dateTo") || "");
 
-    const [activeTab, setActiveTab] = useState("users");
+    const [activeTab, setActiveTab] = useState("users"); // users | courses | contacts | pending | backfill | companies
 
+    // Tab-driven loaders
     useEffect(() => {
-        if (activeTab === 'courses') loadCoursesAndCategories();
-        if (activeTab === 'contacts') loadContacts();
-        if (activeTab === 'pending') loadPendingCourses();
+        if (activeTab === "courses") loadCoursesAndCategories();
+        if (activeTab === "contacts") loadContacts();
+        if (activeTab === "pending") loadPendingCourses();
+        if (activeTab === "companies") loadCompanies(); // ✅
     }, [activeTab]);
 
     useEffect(() => {
-        if (activeTab === 'users') loadUsers();
+        if (activeTab === "users") loadUsers();
     }, [searchParams, activeTab]);
 
+    // Debounce for Users search
     useEffect(() => {
         const delayDebounce = setTimeout(() => {
             if (search.length >= 3 || search === "") {
@@ -58,6 +72,17 @@ const AdminPanel = () => {
         }, 500);
         return () => clearTimeout(delayDebounce);
     }, [search]);
+
+    // Debounce for Companies search
+    useEffect(() => {
+        if (activeTab !== "companies") return;
+        const t = setTimeout(() => {
+            setCompanyPage(1);
+            loadCompanies(1, companySearch);
+        }, 400);
+        return () => clearTimeout(t);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [companySearch, activeTab]);
 
     const updateSearchParams = (params) => {
         const updated = new URLSearchParams(searchParams);
@@ -76,6 +101,7 @@ const AdminPanel = () => {
             setCategories(categoriesRes);
         } catch (error) {
             console.error("Failed to fetch courses/categories:", error);
+            toast.error("Курстар/категорияларды жүктөө катасы.");
         }
     };
 
@@ -84,7 +110,7 @@ const AdminPanel = () => {
             const res = await fetchContactMessages();
             setContacts(res);
         } catch (error) {
-            toast.error("Failed to load contact messages");
+            toast.error("Байланыш каттарын жүктөө катасы.");
         }
     };
 
@@ -101,41 +127,51 @@ const AdminPanel = () => {
             setUsers(res.data);
             setTotalPages(res.totalPages);
         } catch (err) {
-            toast.error("Failed to load users.");
+            toast.error("Колдонуучуларды жүктөө катасы.");
         }
     };
-
 
     const loadPendingCourses = async () => {
         try {
             const data = await getPendingCourses();
             setPendingCourses(data);
-            toast.success("Pending курстарды жүктөө үчүн үйрөнүлгү");
+            toast.success("Каралуудагы курстар жүктөлдү.");
         } catch (err) {
-            toast.error("Pending курстарды жүктөө катасы");
+            toast.error("Каралуудагы курстарды жүктөө катасы.");
+        }
+    };
+
+    // ✅ Companies loader
+    const loadCompanies = async (p = companyPage, q = companySearch) => {
+        try {
+            const { items, totalPages } = await listCompanies({ page: p, limit: 12, q });
+            setCompanies(items || []);
+            setCompaniesTotalPages(totalPages || 1);
+        } catch {
+            toast.error("Компанияларды жүктөө катасы.");
         }
     };
 
     const handleDeleteCourse = async (id) => {
-        if (window.confirm("Are you sure you want to delete this course?")) {
+        if (window.confirm("Бул курсту өчүрүүгө ишенимдүүсүзбү?")) {
             try {
                 await deleteCourse(id);
                 setCourses((prev) => prev.filter((c) => c.id !== id));
-                toast.success("Course deleted.");
+                toast.success("Курс өчүрүлдү.");
             } catch (err) {
-                toast.error("Failed to delete course.");
+                toast.error("Курс өчүрүү катасы.");
             }
         }
     };
 
     const handleDeleteCategory = async (id) => {
-        if (window.confirm("Are you sure you want to delete this category?")) {
+        if (window.confirm("Бул категорияны өчүрүүгө ишенимдүүсүзбү?")) {
             try {
                 await deleteCategory(id);
                 setCategories((prev) => prev.filter((cat) => cat.id !== id));
-                toast.success("Category deleted.");
+                toast.success("Категория өчүрүлдү.");
             } catch (err) {
-                toast.error("Failed to delete category.");
+                toast.error("Категория өчүрүү катасы.");
             }
         }
     };
@@ -148,20 +184,20 @@ const AdminPanel = () => {
             );
             setEditingCategoryId(null);
             setEditingCategoryName("");
-            toast.success("Category updated.");
+            toast.success("Категория жаңыртылды.");
         } catch (err) {
-            toast.error("Failed to update category.");
+            toast.error("Категорияны жаңыртуу катасы.");
         }
     };
 
     const handleDeleteUser = async (id) => {
-        if (window.confirm("Are you sure you want to delete this user?")) {
+        if (window.confirm("Бул колдонуучуну өчүрүүгө ишенимдүүсүзбү?")) {
             try {
                 await deleteUser(id);
                 setUsers((prev) => prev.filter((u) => u.id !== id));
-                toast.success("User deleted.");
+                toast.success("Колдонуучу өчүрүлдү.");
             } catch (err) {
-                toast.error("Failed to delete user.");
+                toast.error("Колдонуучуну өчүрүү катасы.");
             }
         }
     };
@@ -169,22 +205,20 @@ const AdminPanel = () => {
     const handleRoleChange = async (userId, newRole) => {
         try {
             await updateUserRole(userId, newRole);
-            setUsers((prev) =>
-                prev.map((u) => (u.id === userId ? { ...u, role: newRole } : u))
-            );
-            toast.success("Role updated.");
-        } catch (err) {
-            toast.error("Failed to update role.");
+        } catch {
+            toast.error("Роль жаңыртуу катасы."); return;
         }
+        setUsers((prev) => prev.map((u) => (u.id === userId ? { ...u, role: newRole } : u)));
+        toast.success("Роль жаңыртылды.");
     };
 
     const handleEnrollUser = async (userId, courseId) => {
-        if (window.confirm(`Enroll user #${userId} in course #${courseId}?`)) {
+        if (window.confirm(`Колдонуучу #${userId} курс #${courseId} га жазылсынбы?`)) {
             try {
                 await enrollUserInCourse(userId, courseId);
-                toast.success("User enrolled successfully.");
+                toast.success("Колдонуучу ийгиликтүү жазылды.");
             } catch (err) {
-                toast.error("Failed to enroll user.");
+                toast.error("Жазууда ката кетти.");
             }
         }
     };
@@ -195,9 +229,9 @@ const AdminPanel = () => {
             const category = await createCategory({ name: newCategory.trim() });
             setCategories((prev) => [...prev, category]);
             setNewCategory("");
-            toast.success("Category added.");
+            toast.success("Категория кошулду.");
         } catch (err) {
-            toast.error("Failed to add category.");
+            toast.error("Категория кошуу катасы.");
         }
     };
 
@@ -208,20 +242,37 @@ const AdminPanel = () => {
     const handleMarkCourseApproved = async (courseId) => {
         try {
             await markCourseApproved(courseId);
-            toast.success("Course marked as approved and published.");
-            setPendingCourses(prev => prev.filter(c => c.id !== courseId));
+            toast.success("Курс тастыкталды жана жарыяланды.");
+            setPendingCourses((prev) => prev.filter((c) => c.id !== courseId));
         } catch (err) {
-            toast.error("Failed to mark course as approved and published.");
+            toast.error("Курсту тастыктоо катасы.");
         }
     };
 
     const handleMarkCourseRejected = async (courseId) => {
         try {
             await markCourseRejected(courseId);
-            toast.success("Course marked as rejected.");
-            setPendingCourses(prev => prev.filter(c => c.id !== courseId));
+            toast.success("Курс жокко чыгарылды.");
+            setPendingCourses((prev) => prev.filter((c) => c.id !== courseId));
         } catch (err) {
-            toast.error("Failed to mark course as rejected.");
+            toast.error("Курсту жокко чыгаруу катасы.");
+        }
+    };
+
+    // ✅ Create company quick action
+    const handleCreateCompany = async (e) => {
+        e.preventDefault();
+        const name = newCompanyName.trim();
+        if (!name) return;
+        try {
+            await createCompany({ name });
+            setNewCompanyName("");
+            toast.success("Компания түзүлдү.");
+            setCompanyPage(1);
+            setCompanySearch("");
+            loadCompanies(1, "");
+        } catch {
+            toast.error("Компания түзүү катасы.");
         }
     };
 
@@ -229,15 +280,17 @@ const AdminPanel = () => {
         <div className="min-h-screen p-6 pt-24 max-w-7xl mx-auto">
             <h1 className="text-4xl font-bold mb-8 text-center">Админ Панель</h1>
 
-            <div className="flex justify-center gap-4 mb-8">
-                <button className={`px-4 py-2 rounded ${activeTab === 'users' ? 'bg-blue-600 text-white' : 'bg-gray-100'}`} onClick={() => setActiveTab('users')}>Колдонуучулар</button>
-                <button className={`px-4 py-2 rounded ${activeTab === 'courses' ? 'bg-blue-600 text-white' : 'bg-gray-100'}`} onClick={() => setActiveTab('courses')}>Курстар жана Категориялар</button>
-                <button className={`px-4 py-2 rounded ${activeTab === 'contacts' ? 'bg-blue-600 text-white' : 'bg-gray-100'}`} onClick={() => setActiveTab('contacts')}>Байланыш Каттары</button>
-                <button onClick={() => setActiveTab('pending')} className={`px-4 py-2 rounded ${activeTab === 'pending' ? 'bg-blue-600 text-white' : 'bg-gray-100'}`}>Каралуудагы курстар</button>
-                <button onClick={() => setActiveTab('backfill')} className={`px-4 py-2 rounded ${activeTab === 'backfill' ? 'bg-blue-600 text-white' : 'bg-gray-100'}`}>Backfill Lesson Durations</button>
+            <div className="flex justify-center flex-wrap gap-3 mb-8">
+                <button className={`px-4 py-2 rounded ${activeTab === "users" ? "bg-blue-600 text-white" : "bg-gray-100"}`} onClick={() => setActiveTab("users")}>Колдонуучулар</button>
+                <button className={`px-4 py-2 rounded ${activeTab === "courses" ? "bg-blue-600 text-white" : "bg-gray-100"}`} onClick={() => setActiveTab("courses")}>Курстар жана Категориялар</button>
+                <button className={`px-4 py-2 rounded ${activeTab === "contacts" ? "bg-blue-600 text-white" : "bg-gray-100"}`} onClick={() => setActiveTab("contacts")}>Байланыш Каттары</button>
+                <button className={`px-4 py-2 rounded ${activeTab === "pending" ? "bg-blue-600 text-white" : "bg-gray-100"}`} onClick={() => setActiveTab("pending")}>Каралуудагы курстар</button>
+                <button className={`px-4 py-2 rounded ${activeTab === "companies" ? "bg-blue-600 text-white" : "bg-gray-100"}`} onClick={() => setActiveTab("companies")}>Компаниялар</button>
+                <button className={`px-4 py-2 rounded ${activeTab === "backfill" ? "bg-blue-600 text-white" : "bg-gray-100"}`} onClick={() => setActiveTab("backfill")}>Backfill Lesson Durations</button>
             </div>
 
-            {activeTab === 'contacts' && (
+            {/* CONTACTS */}
+            {activeTab === "contacts" && (
                 <div className="bg-white shadow rounded p-4 mt-6">
                     <h2 className="text-2xl font-semibold mb-4">Байланыш Каттары</h2>
                     <table className="w-full text-left text-sm">
@@ -265,7 +318,8 @@ const AdminPanel = () => {
                 </div>
             )}
 
-            {activeTab === 'courses' && (
+            {/* COURSES & CATEGORIES */}
+            {activeTab === "courses" && (
                 <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="bg-white shadow rounded p-4">
                         <h2 className="text-2xl font-semibold mb-4">Курстар</h2>
@@ -279,7 +333,7 @@ const AdminPanel = () => {
                                         </div>
                                         <div className="flex items-center gap-2">
                                             <Link to={`/courses/${course.id}`} className="text-blue-600 hover:underline">Көрүү</Link>
-                                            <button onClick={() => handleDeleteCourse(course.id)} className="text-red-600 hover:underline">Delete</button>
+                                            <button onClick={() => handleDeleteCourse(course.id)} className="text-red-600 hover:underline">Өчүрүү</button>
                                         </div>
                                     </div>
                                     <div className="mt-2">
@@ -293,6 +347,7 @@ const AdminPanel = () => {
                                     </div>
                                 </li>
                             ))}
+                            {courses.length === 0 && <li className="text-center text-gray-500 p-4 border rounded">Курстар табылган жок.</li>}
                         </ul>
                     </div>
 
@@ -300,7 +355,7 @@ const AdminPanel = () => {
                         <h2 className="text-2xl font-semibold mb-4">Категориялар</h2>
                         <div className="flex gap-2 mb-4">
                             <input value={newCategory} onChange={(e) => setNewCategory(e.target.value)} className="border px-2 py-1 rounded w-full" placeholder="Жаңы категориянын аталышы" />
-                            <button onClick={handleAddCategory} className="bg-blue-600 text-white px-4 py-1 rounded">Add</button>
+                            <button onClick={handleAddCategory} className="bg-blue-600 text-white px-4 py-1 rounded">Кошуу</button>
                         </div>
                         <ul className="space-y-3">
                             {categories.map((cat) => (
@@ -315,19 +370,21 @@ const AdminPanel = () => {
                                         <>
                                             <span>{cat.name}</span>
                                             <div className="flex gap-2">
-                                                <button onClick={() => { setEditingCategoryId(cat.id); setEditingCategoryName(cat.name); }} className="text-blue-600 hover:underline">Edit</button>
-                                                <button onClick={() => handleDeleteCategory(cat.id)} className="text-red-600 hover:underline">Delete</button>
+                                                <button onClick={() => { setEditingCategoryId(cat.id); setEditingCategoryName(cat.name); }} className="text-blue-600 hover:underline">Өзгөртүү</button>
+                                                <button onClick={() => handleDeleteCategory(cat.id)} className="text-red-600 hover:underline">Өчүрүү</button>
                                             </div>
                                         </>
                                     )}
                                 </li>
                             ))}
+                            {categories.length === 0 && <li className="text-center text-gray-500 p-4 border rounded">Категориялар табылган жок.</li>}
                         </ul>
                     </div>
                 </div>
             )}
 
-            {activeTab === 'pending' && (
+            {/* PENDING COURSES */}
+            {activeTab === "pending" && (
                 <div className="bg-white shadow rounded p-4">
                     <h2 className="text-2xl font-semibold mb-4">Каралуудагы курстар</h2>
                     {pendingCourses.length === 0 ? (
@@ -335,23 +392,19 @@ const AdminPanel = () => {
                     ) : (
                         <ul className="space-y-4">
                             {pendingCourses.map((course) => (
-                                <li key={course.id} className="border p-4 rounded shadow flex justify-between items-center">
-                                    <div>
-                                        <h2 className="font-semibold text-lg">{course.title}</h2>
+                                <li key={course.id} className="border p-4 rounded shadow flex flex-wrap md:flex-nowrap gap-3 md:gap-6 items-center justify-between">
+                                    <div className="min-w-0">
+                                        <h2 className="font-semibold text-lg truncate">{course.title}</h2>
                                         <p className="text-sm text-gray-600">Окутуучу: {course.instructor?.fullName}</p>
                                     </div>
-                                    <button
-                                        onClick={() => handleMarkCourseApproved(course.id)}
-                                        className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
-                                    >
-                                        Тастыктоо
-                                    </button>
-                                    <button
-                                        onClick={() => handleMarkCourseRejected(course.id)}
-                                        className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
-                                    >
-                                        Жокко чыгаруу
-                                    </button>
+                                    <div className="flex gap-2">
+                                        <button onClick={() => handleMarkCourseApproved(course.id)} className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+                                            Тастыктоо
+                                        </button>
+                                        <button onClick={() => handleMarkCourseRejected(course.id)} className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700">
+                                            Жокко чыгаруу
+                                        </button>
+                                    </div>
                                 </li>
                             ))}
                         </ul>
@@ -359,7 +412,8 @@ const AdminPanel = () => {
                 </div>
             )}
 
-            {activeTab === 'users' && (
+            {/* USERS */}
+            {activeTab === "users" && (
                 <div className="mt-10 bg-white shadow rounded p-4">
                     <h2 className="text-2xl font-semibold mb-4">Колдонуучулар</h2>
                     <div className="flex flex-wrap gap-4 mb-4 items-end">
@@ -371,11 +425,7 @@ const AdminPanel = () => {
                             className="border px-2 py-1 rounded"
                         />
                         <div className="flex flex-wrap gap-2 items-end">
-                            <select
-                                value={roleFilter}
-                                onChange={(e) => setRoleFilter(e.target.value)}
-                                className="border px-2 py-1 rounded"
-                            >
+                            <select value={roleFilter} onChange={(e) => setRoleFilter(e.target.value)} className="border px-2 py-1 rounded">
                                 <option value="">Бардык ролдор</option>
                                 <option value="student">Студент</option>
                                 <option value="instructor">Окутуучу</option>
@@ -383,22 +433,9 @@ const AdminPanel = () => {
                                 <option value="admin">Admin</option>
                                 <option value="assistant">Ассистент</option>
                             </select>
-                            <input
-                                type="date"
-                                value={dateFrom}
-                                onChange={(e) => setDateFrom(e.target.value)}
-                                className="border px-2 py-1 rounded"
-                            />
-                            <input
-                                type="date"
-                                value={dateTo}
-                                onChange={(e) => setDateTo(e.target.value)}
-                                className="border px-2 py-1 rounded"
-                            />
-                            <button
-                                onClick={handleApplyFilters}
-                                className="bg-blue-600 text-white px-4 py-1 rounded"
-                            >
+                            <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="border px-2 py-1 rounded" />
+                            <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="border px-2 py-1 rounded" />
+                            <button onClick={handleApplyFilters} className="bg-blue-600 text-white px-4 py-1 rounded">
                                 Apply
                             </button>
                             <button
@@ -440,21 +477,78 @@ const AdminPanel = () => {
                                             <option value="admin">Admin</option>
                                             <option value="assistant">Assistant</option>
                                         </select>
-                                        <button onClick={() => handleDeleteUser(user.id)} className="text-red-600 hover:underline">Delete</button>
+                                        <button onClick={() => handleDeleteUser(user.id)} className="text-red-600 hover:underline">Өчүрүү</button>
                                     </td>
                                 </tr>
                             ))}
+                            {users.length === 0 && (
+                                <tr><td colSpan={5} className="p-4 text-center text-gray-500">Колдонуучулар табылган жок.</td></tr>
+                            )}
                         </tbody>
                     </table>
 
                     <div className="mt-4 flex justify-center gap-2">
                         {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-                            <button key={p} onClick={() => updateSearchParams({ page: p })} className={`px-3 py-1 border rounded ${p === page ? 'bg-blue-600 text-white' : ''}`}>{p}</button>
+                            <button key={p} onClick={() => updateSearchParams({ page: p })} className={`px-3 py-1 border rounded ${p === page ? "bg-blue-600 text-white" : ""}`}>{p}</button>
                         ))}
                     </div>
                 </div>
             )}
-            {activeTab === 'backfill' && (
+
+            {/* ✅ COMPANIES */}
+            {activeTab === "companies" && (
+                <div className="bg-white shadow rounded p-4 space-y-4">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                        <h2 className="text-2xl font-semibold">Компаниялар</h2>
+                        <input
+                            value={companySearch}
+                            onChange={(e) => setCompanySearch(e.target.value)}
+                            placeholder="Аты боюнча издөө…"
+                            className="border rounded px-3 py-1"
+                        />
+                    </div>
+
+                    <form onSubmit={handleCreateCompany} className="flex gap-2">
+                        <input
+                            className="border rounded px-3 py-2 w-full"
+                            placeholder="Жаңы компаниянын аты"
+                            value={newCompanyName}
+                            onChange={(e) => setNewCompanyName(e.target.value)}
+                        />
+                        <button className="bg-blue-600 text-white px-4 py-2 rounded">Түзүү</button>
+                    </form>
+
+                    <ul className="space-y-3">
+                        {companies.map((c) => (
+                            <li key={c.id} className="border rounded p-3 flex items-center justify-between">
+                                <div className="min-w-0">
+                                    <div className="font-semibold truncate">{c.name}</div>
+                                    {c.about && <div className="text-sm text-gray-600 line-clamp-1">{c.about}</div>}
+                                </div>
+                                <Link to={`/companies/${c.id}`} className="text-blue-600 hover:underline">Ачуу</Link>
+                            </li>
+                        ))}
+                        {companies.length === 0 && (
+                            <li className="text-center text-gray-500 p-6 border rounded">Компаниялар табылган жок.</li>
+                        )}
+                    </ul>
+
+                    <div className="flex gap-2 justify-center">
+                        {Array.from({ length: companiesTotalPages }, (_, i) => i + 1).map((p) => (
+                            <button
+                                key={p}
+                                onClick={() => { setCompanyPage(p); loadCompanies(p, companySearch); }}
+                                className={`px-3 py-1 border rounded ${p === companyPage ? "bg-blue-600 text-white" : ""}`}
+                            >
+                                {p}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {/* BACKFILL */}
+            {activeTab === "backfill" && (
                 <AdminBackfillLessonDurations />
             )}
         </div>
