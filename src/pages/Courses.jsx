@@ -4,6 +4,8 @@ import { FaStar } from "react-icons/fa";
 import { fetchCourses } from "../services/api";
 import SectionContainer from "../components/SectionContainer";
 import CoursesSection from "../components/CoursesSection";
+import CardCourse from "../components/CardCourse"; // Добавлен импорт CardCourse
+
 // import { FiSearch } from "react-icons/fi";
 // import CourseDescription from "../components/CourseDescription";
 
@@ -27,78 +29,49 @@ const CoursesPage = () => {
     loadCourses();
   }, []);
 
+  console.log(courses.length);
+
   const filteredCourses = courses.filter(
     (course) =>
       course.isPublished && (filter === "All" || course.level === filter)
   );
 
-  if (loading) return <div className="pt-24 p-6">Курстар жүктөлүүдө...</div>;
+  if (loading) return <div className="pt-[50px]">Курстар жүктөлүүдө...</div>;
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6 pt-24">
-      <h1 className="text-4xl font-bold text-center mb-6">Биздин курстар</h1>
-      <div className="px-4 sm:px-6 lg:px-12">
-
-        {courses.length < 4
-          ? <SectionContainer noBg hideTitleAndLink data={courses} />
-          : <CoursesSection>
-            <SectionContainer noBg hideTitleAndLink data={courses} />
-          </CoursesSection>
-        }
-
-        {/* <CoursesSection title="Жаңы жарыяланган курстар">
-          <SectionContainer noBg hideTitleAndLink data={courses} />
-        </CoursesSection>
-
-        <CoursesSection title="Эң популярдуу курстар">
-          <SectionContainer noBg hideTitleAndLink data={courses} />
-        </CoursesSection>
-        <CoursesSection title="Эң мыкты акысыз онлайн курстар">
-          <SectionContainer noBg hideTitleAndLink data={courses} />
-        </CoursesSection> */}
+    <div className="min-h-screen  bg-gray-50 p-6 pt-0">
+      <div className="ml-10 mt-5">
+        <h1 className="text-4xl font-bold text-start mb-0">Биздин курстар</h1>
+        <p className="font-inter text-sm md:text-base lg:text-lg">
+          Сиз үчүн сунушталган курстар
+        </p>
       </div>
 
-      {/* {filteredCourses.length === 0 ? (
-                <div className="text-center text-gray-500 text-lg">
-                    Тандалган категория боюнча курстар табылган жок.
-                </div>
-            ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 content-visibility-auto">
-                    {filteredCourses.map((course) => (
-                        <div
-                            key={course.id}
-                            className="block bg-white border rounded-lg overflow-hidden shadow-md hover:shadow-xl transition"
-                        >
-                            <Link to={`/courses/${course.id}`}>
-                                <img
-                                    src={course.coverImageUrl || "https://source.unsplash.com/400x250/?education"}
-                                    alt={course.title}
-                                    className="w-full h-40 object-cover"
-                                    decoding="async"
-                                    loading="lazy"
-                                />
-                            </Link>
-                            <div className="p-6">
-                                <Link to={`/courses/${course.id}`} className="block">
-                                    <h3 className="text-xl font-semibold">{course.title}</h3>
-                                    <p className="text-gray-600">Окутуучу: {course.instructor?.fullName || 'Белгисиз'}</p>
-                                    <div className="flex items-center text-yellow-500 my-2">
-                                        {[...Array(5)].map((_, i) => (
-                                            <FaStar
-                                                key={i}
-                                                className={i < Math.floor(course.rating || 0) ? "text-lg" : "text-lg text-gray-300"}
-                                            />
-                                        ))}
-                                        <span className="text-gray-600 text-sm ml-2">({course.rating || 0})</span>
-                                    </div>
-                                    <p className="text-lg font-bold text-blue-600">{course.price} с</p>
-                                </Link>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            )  } */}
-            {/* <CourseDescription /> */}
+      <div className="px-4 sm:px-6 lg:px-12">
+        {courses.length < 4 ? (
+          <SectionContainer
+            title={""}
+            CardComponent={CardCourse} // Передаем CardCourse как компонент для карточек
+            buttonText={null}
+            subtitle={""}
+            hideTitleAndLink={false}
+            data={courses}
+            rightContent={null}
+          />
+        ) : (
+          <CoursesSection>
+            <SectionContainer
+              title={""}
+              CardComponent={CardCourse} // Передаем CardCourse как компонент для карточек
+              buttonText={null}
+              subtitle={""}
+              hideTitleAndLink={false}
+              rightContent={null}
+              data={courses}
+            />
+          </CoursesSection>
+        )}
+      </div>
     </div>
   );
 };
