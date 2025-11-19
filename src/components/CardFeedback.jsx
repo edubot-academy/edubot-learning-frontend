@@ -1,6 +1,7 @@
 import { Rating } from '@chepchik/react-rating';
 import { Wicon } from '../assets/icons/Wicon';
 import { Yicon } from '../assets/icons/Yicon';
+import grayPerson from '../assets/icons/grayPerson.svg';
 
 const CardFeedback = ({ comment, user }) => {
 	return (
@@ -37,7 +38,7 @@ const CardFeedback = ({ comment, user }) => {
 
 				<div className='flex items-center gap-3 mt-auto'>
 					<img
-						src={user.avatar}
+						src={user.avatar ? user.avatar : grayPerson}
 						alt={'profile'}
 						className='w-16 h-16 rounded-full object-cover'
 					/>

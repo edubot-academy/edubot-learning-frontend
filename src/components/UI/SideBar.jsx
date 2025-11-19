@@ -11,7 +11,14 @@ import { useContext } from 'react';
 import { AuthContext } from '../../context/AuthContext';
 
 const SideBar = ({ setMenuOpen, setPosition }) => {
-	const { user } = useContext(AuthContext);
+	const { user, setUser } = useContext(AuthContext);
+
+	const logout = () => {
+		setUser(null);
+		localStorage.removeItem('token');
+		localStorage.removeItem('user');
+		window.location.href = '/login';
+	};
 
 	const location = useLocation();
 	const active = (path) =>
@@ -119,7 +126,18 @@ const SideBar = ({ setMenuOpen, setPosition }) => {
 						>
 							Байланышуу
 						</Link>
-						{user !== null ? null : (
+						{user !== null ? (
+							<>
+								<button
+									className={`${linkClass} mt-0.5`}
+									onClick={() => {
+										logout();
+									}}
+								>
+									Чыгуу
+								</button>
+							</>
+						) : (
 							<Link
 								to='/register'
 								className={`${active('/register')} ${linkClass}`}
