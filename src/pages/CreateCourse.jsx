@@ -9,17 +9,24 @@ import {
     markCoursePending,
     uploadLessonFile,
     upsertLessonQuiz,
+    upsertLessonChallenge,
 } from '../services/api';
 import toast from 'react-hot-toast';
 import { getVideoDuration } from '../utils/videoUtils';
 import { LESSON_KIND_OPTIONS } from '../constants/lessons';
 import LessonQuizEditor from '../components/LessonQuizEditor';
+import LessonChallengeEditor from '../components/LessonChallengeEditor';
 import {
     createEmptyQuiz,
     ensureQuizShape,
     normalizeQuizForApi,
     validateQuiz,
 } from '../utils/quizUtils';
+import {
+    createEmptyChallenge,
+    ensureChallengeShape,
+    normalizeChallengeForApi,
+} from '../utils/challengeUtils';
 import ArticleEditor from '../components/ArticleEditor';
 
 const DEFAULT_COURSE_INFO = {
@@ -62,6 +69,7 @@ const CourseBuilder = () => {
                     resourceKey: '',
                     resourceName: '',
                     quiz: createEmptyQuiz(),
+                    challenge: createEmptyChallenge(),
                     previewVideo: false,
                     uploadProgress: { video: 0, resource: 0 },
                     uploading: { video: false, resource: false },
@@ -143,6 +151,7 @@ const CourseBuilder = () => {
             resourceKey: '',
             resourceName: '',
             quiz: createEmptyQuiz(),
+            challenge: createEmptyChallenge(),
             previewVideo: false,
             uploadProgress: { video: 0, resource: 0 },
             uploading: { video: false, resource: false },
@@ -172,8 +181,22 @@ const CourseBuilder = () => {
                     lesson.videoKey = '';
                     lesson.quiz = ensureQuizShape(lesson.quiz);
                 }
+                if (value === 'code') {
+                    lesson.previewVideo = false;
+                    lesson.videoKey = '';
+                    lesson.challenge = ensureChallengeShape(lesson.challenge);
+                }
             }
 
+            return updated;
+        });
+    };
+
+    const handleChallengeChange = (sectionIndex, lessonIndex, newChallenge) => {
+        setCurriculum((prev) => {
+            const updated = [...prev];
+            const lesson = updated[sectionIndex].lessons[lessonIndex];
+            lesson.challenge = ensureChallengeShape(newChallenge);
             return updated;
         });
     };
@@ -347,6 +370,7 @@ const CourseBuilder = () => {
                 for (const [lIdx, lesson] of section.lessons.entries()) {
                     const isArticle = lesson.kind === 'article';
                     const isQuiz = lesson.kind === 'quiz';
+                    const isCode = lesson.kind === 'code';
                     const missingTitle = !lesson.title?.trim();
                     const missingVideo = lesson.kind === 'video' && !lesson.videoKey;
                     const missingContent = isArticle && !lesson.content?.trim();
@@ -354,6 +378,16 @@ const CourseBuilder = () => {
                         isArticle && (!lesson.duration || lesson.duration <= 0);
                     const quizData = isQuiz ? ensureQuizShape(lesson.quiz) : null;
                     const quizError = isQuiz ? validateQuiz(quizData) : null;
+                    const challengeData = isCode ? ensureChallengeShape(lesson.challenge) : null;
+                    let challengePayload = null;
+                    if (isCode && challengeData) {
+                        try {
+                            challengePayload = normalizeChallengeForApi(challengeData);
+                        } catch (error) {
+                            toast.error(error.message);
+                            continue;
+                        }
+                    }
 
                     if (missingTitle || missingVideo || missingContent || missingReadTime || quizError) {
                         toast.error(
@@ -392,6 +426,10 @@ const CourseBuilder = () => {
                             continue;
                         }
                         await upsertLessonQuiz(courseId, sec.id, createdLesson.id, quizPayload);
+                    }
+
+                    if (isCode && challengePayload) {
+                        await upsertLessonChallenge(courseId, sec.id, createdLesson.id, challengePayload);
                     }
                 }
             }
@@ -778,6 +816,15 @@ const CourseBuilder = () => {
                                             quiz={lesson.quiz}
                                             onChange={(newQuiz) =>
                                                 handleQuizChange(sIdx, lIdx, newQuiz)
+                                            }
+                                        />
+                                    )}
+
+                                    {lesson.kind === 'code' && (
+                                        <LessonChallengeEditor
+                                            challenge={lesson.challenge}
+                                            onChange={(newChallenge) =>
+                                                handleChallengeChange(sIdx, lIdx, newChallenge)
                                             }
                                         />
                                     )}

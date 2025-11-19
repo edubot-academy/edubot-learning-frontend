@@ -14,6 +14,8 @@ import {
     fetchEnrollment,
     fetchLessonQuiz,
     submitLessonQuiz,
+    fetchLessonChallenge,
+    submitLessonChallenge,
 } from "../services/api";
 import { AuthContext } from "../context/AuthContext";
 import CourseSidebar from "../components/CourseSidebar";
@@ -21,6 +23,7 @@ import CourseHeader from "../components/CourseHeader";
 import CourseVideoPlayer from "../components/CourseVideoPlayer";
 import ArticleLessonViewer from "../components/ArticleLessonViewer";
 import LessonQuizPlayer from "../components/LessonQuizPlayer";
+import LessonChallengePlayer from "../components/LessonChallengePlayer";
 import CourseDescription from "../components/CourseDescription";
 import Comment from "../components/Comment";
 
@@ -48,6 +51,11 @@ const CourseDetailsPage = () => {
     const [lessonQuizResults, setLessonQuizResults] = useState({});
     const [quizLoading, setQuizLoading] = useState(false);
     const [quizSubmitting, setQuizSubmitting] = useState(false);
+    const [lessonChallengeData, setLessonChallengeData] = useState({});
+    const [lessonChallengeCode, setLessonChallengeCode] = useState({});
+    const [lessonChallengeResults, setLessonChallengeResults] = useState({});
+    const [challengeLoading, setChallengeLoading] = useState(false);
+    const [challengeSubmitting, setChallengeSubmitting] = useState(false);
 
     useEffect(() => {
         hasPlayedRef.current = false;
@@ -136,16 +144,38 @@ const CourseDetailsPage = () => {
         }
     };
 
+    const loadChallengeForLesson = async (lesson) => {
+        if (lessonChallengeData[lesson.id]) return lessonChallengeData[lesson.id];
+        setChallengeLoading(true);
+        try {
+            const challenge = await fetchLessonChallenge(id, lesson.sectionId, lesson.id);
+            setLessonChallengeData((prev) => ({ ...prev, [lesson.id]: challenge }));
+            setLessonChallengeCode((prev) => ({
+                ...prev,
+                [lesson.id]: prev[lesson.id] ?? challenge.starterCode ?? '',
+            }));
+            return challenge;
+        } catch (err) {
+            console.error(err);
+            const message = err.response?.data?.message || "Код тапшырма жүктөлбөй калды";
+            toast.error(message);
+            return null;
+        } finally {
+            setChallengeLoading(false);
+        }
+    };
+
     const handleLessonClick = async (lesson) => {
         console.log('handleLessonClick');
         const isArticle = lesson.kind === 'article';
         const isQuiz = lesson.kind === 'quiz';
+        const isCode = lesson.kind === 'code';
         setActiveLesson(lesson);
         localStorage.setItem(`active_section_${id}`, String(lesson.sectionId));
         setActiveSectionId(lesson.sectionId);
         scrollToLesson(lesson.id);
 
-        if (!isArticle && !isQuiz) {
+        if (!isArticle && !isQuiz && !isCode) {
             setTimeout(() => {
                 if (videoRef.current) {
                     videoRef.current.load();
@@ -162,9 +192,20 @@ const CourseDetailsPage = () => {
             await loadQuizForLesson(lesson);
         }
 
+        if (isCode) {
+            const challenge = await loadChallengeForLesson(lesson);
+            const defaultCode = challenge?.starterCode || '';
+            if (typeof lessonChallengeCode[lesson.id] === 'undefined') {
+                setLessonChallengeCode((prev) => ({
+                    ...prev,
+                    [lesson.id]: defaultCode,
+                }));
+            }
+        }
+
         if (user && enrolled && !lesson.locked) {
             await updateLastViewedLesson({ courseId: Number(id), lessonId: lesson.id });
-            if (!isArticle && !isQuiz) {
+            if (!isArticle && !isQuiz && !isCode) {
                 const videoTime = await getVideoTime(id, lesson.id);
 
                 if (videoTime?.time && videoTime.time < (lesson.duration || 9999) * 0.95 && !completedLessons.includes(lesson.id)) {
@@ -239,6 +280,40 @@ const CourseDetailsPage = () => {
         }
     };
 
+    const handleChallengeCodeChange = (lessonId, value) => {
+        setLessonChallengeCode((prev) => ({
+            ...prev,
+            [lessonId]: value,
+        }));
+    };
+
+    const handleChallengeSubmit = async () => {
+        if (!activeLesson) return;
+        const challenge = lessonChallengeData[activeLesson.id];
+        if (!challenge) return;
+        const codeValue = lessonChallengeCode[activeLesson.id] ?? challenge.starterCode ?? '';
+
+        setChallengeSubmitting(true);
+        try {
+            const result = await submitLessonChallenge(
+                id,
+                activeLesson.sectionId,
+                activeLesson.id,
+                { code: codeValue }
+            );
+            setLessonChallengeResults((prev) => ({ ...prev, [activeLesson.id]: result }));
+            toast.success(result.passed ? 'Бардык тесттер өттү!' : 'Кээ бир тесттер өтпөй калды');
+            if (result.passed) {
+                setCompletedLessons((prev) => [...new Set([...prev, activeLesson.id])]);
+            }
+        } catch (err) {
+            console.error(err);
+            toast.error(err.response?.data?.message || 'Код тапшырма текшерилген жок');
+        } finally {
+            setChallengeSubmitting(false);
+        }
+    };
+
     const findPrevNextLessons = () => {
         const flatLessons = sections.flatMap((sec) => sec.lessons || []);
         const index = flatLessons.findIndex((l) => l.id === activeLesson?.id);
@@ -251,7 +326,8 @@ const CourseDetailsPage = () => {
         if (
             !hasPlayedRef.current ||
             activeLesson?.kind === 'article' ||
-            activeLesson?.kind === 'quiz'
+            activeLesson?.kind === 'quiz' ||
+            activeLesson?.kind === 'code'
         )
             return;
         if (user && enrolled && activeLesson) {
@@ -273,7 +349,7 @@ const CourseDetailsPage = () => {
 
     const handleVideoProgress = useCallback(
         async (progress, lessonParam) => {
-            if (lessonParam.kind === 'article' || lessonParam.kind === 'quiz') return;
+            if (lessonParam.kind === 'article' || lessonParam.kind === 'quiz' || lessonParam.kind === 'code') return;
 
             if (!hasPlayedRef.current) {
                 if (progress > 0) {
@@ -407,8 +483,17 @@ const CourseDetailsPage = () => {
                     if (lastLesson.kind === 'quiz') {
                         await loadQuizForLesson(lastLesson);
                     }
+                    if (lastLesson.kind === 'code') {
+                        const challenge = await loadChallengeForLesson(lastLesson);
+                        if (challenge && typeof lessonChallengeCode[lastLesson.id] === 'undefined') {
+                            setLessonChallengeCode((prev) => ({
+                                ...prev,
+                                [lastLesson.id]: challenge.starterCode || '',
+                            }));
+                        }
+                    }
                     if (user && enrollment.enrolled && !lastLesson.locked) {
-                        if (lastLesson.kind === 'article' || lastLesson.kind === 'quiz') {
+                        if (lastLesson.kind === 'article' || lastLesson.kind === 'quiz' || lastLesson.kind === 'code') {
                             setResumeVideoTime(0);
                         } else {
                             const videoTime = await getVideoTime(id, lastLesson.id);
@@ -474,6 +559,24 @@ const CourseDetailsPage = () => {
                                         disabled={!enrolled || activeLesson.locked}
                                         loading={quizLoading && !lessonQuizData[activeLesson.id]}
                                         result={lessonQuizResults[activeLesson.id]}
+                                    />
+                                ) : activeLesson.kind === 'code' ? (
+                                    <LessonChallengePlayer
+                                        key={activeLesson.id}
+                                        challenge={lessonChallengeData[activeLesson.id]}
+                                        code={
+                                            lessonChallengeCode[activeLesson.id] ??
+                                            lessonChallengeData[activeLesson.id]?.starterCode ??
+                                            ''
+                                        }
+                                        onCodeChange={(newCode) =>
+                                            handleChallengeCodeChange(activeLesson.id, newCode)
+                                        }
+                                        onSubmit={handleChallengeSubmit}
+                                        submitting={challengeSubmitting}
+                                        disabled={!enrolled || activeLesson.locked}
+                                        loading={challengeLoading && !lessonChallengeData[activeLesson.id]}
+                                        result={lessonChallengeResults[activeLesson.id]}
                                     />
                                 ) : (
                                     <CourseVideoPlayer

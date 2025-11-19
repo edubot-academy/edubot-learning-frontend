@@ -17,9 +17,12 @@ import {
     deleteLesson as deleteLessonApi,
     fetchLessonQuiz,
     upsertLessonQuiz,
+    fetchLessonChallenge,
+    upsertLessonChallenge,
 } from "../services/api";
 import { getVideoDuration } from "../utils/videoUtils";
 import LessonQuizEditor from "../components/LessonQuizEditor";
+import LessonChallengeEditor from "../components/LessonChallengeEditor";
 import {
     createEmptyQuiz,
     ensureQuizShape,
@@ -27,6 +30,12 @@ import {
     validateQuiz,
     mapQuizFromApi,
 } from "../utils/quizUtils";
+import {
+    createEmptyChallenge,
+    ensureChallengeShape,
+    normalizeChallengeForApi,
+    mapChallengeFromApi,
+} from "../utils/challengeUtils";
 import { LESSON_KIND_OPTIONS } from "../constants/lessons";
 import ArticleEditor from "../components/ArticleEditor";
 
@@ -63,7 +72,7 @@ const EditInstructorCourse = () => {
                     sectionData.map(async (sec) => {
                         const lessons = await fetchLessons(id, sec.id);
                         const sortedLessons = lessons.sort((a, b) => a.order - b.order);
-                        const lessonsWithQuiz = await Promise.all(
+                        const lessonsWithExtras = await Promise.all(
                             sortedLessons.map(async (l) => {
                                 const baseLesson = {
                                     ...l,
@@ -71,6 +80,7 @@ const EditInstructorCourse = () => {
                                     content: l.content || "",
                                     resourceName: l.resourceName || "",
                                     quiz: l.kind === "quiz" ? createEmptyQuiz() : undefined,
+                                    challenge: l.kind === "code" ? createEmptyChallenge() : undefined,
                                     uploadProgress: { video: 0, resource: 0 },
                                     uploading: { video: false, resource: false },
                                 };
@@ -85,6 +95,16 @@ const EditInstructorCourse = () => {
                                     }
                                 }
 
+                                if (baseLesson.kind === "code") {
+                                    try {
+                                        const challengeData = await fetchLessonChallenge(id, sec.id, l.id, true);
+                                        baseLesson.challenge = mapChallengeFromApi(challengeData, true);
+                                    } catch (error) {
+                                        console.error("Failed to load challenge", error);
+                                        toast.error("Код тапшырманы жүктөө мүмкүн болбоду");
+                                    }
+                                }
+
                                 return baseLesson;
                             })
                         );
@@ -93,7 +113,7 @@ const EditInstructorCourse = () => {
                             id: sec.id,
                             title: sec.title,
                             order: sec.order,
-                            lessons: lessonsWithQuiz,
+                            lessons: lessonsWithExtras,
                         };
                     }),
                 );
@@ -249,6 +269,15 @@ const EditInstructorCourse = () => {
         });
     };
 
+    const handleLessonChallengeChange = (sectionIndex, lessonIndex, newChallenge) => {
+        setSections((prev) => {
+            const updated = [...prev];
+            const lesson = updated[sectionIndex].lessons[lessonIndex];
+            lesson.challenge = ensureChallengeShape(newChallenge);
+            return updated;
+        });
+    };
+
     const handleFileUpload = async (sectionIndex, lessonIndex, type, file) => {
         if (!file) return;
 
@@ -389,6 +418,7 @@ const EditInstructorCourse = () => {
                     const isArticle = lesson.kind === "article";
                     const isVideo = lesson.kind === "video";
                     const isQuiz = lesson.kind === "quiz";
+                    const isCode = lesson.kind === "code";
 
                     if (!lesson.title?.trim()) {
                         toast.error("Ар бир сабакта аталыш болушу керек.");
@@ -412,6 +442,17 @@ const EditInstructorCourse = () => {
                     if (quizError) {
                         toast.error(quizError);
                         continue;
+                    }
+
+                    const challengeData = isCode ? ensureChallengeShape(lesson.challenge) : null;
+                    let challengePayload = null;
+                    if (isCode) {
+                        try {
+                            challengePayload = normalizeChallengeForApi(challengeData);
+                        } catch (error) {
+                            toast.error(error.message);
+                            continue;
+                        }
                     }
 
                     const lessonPayload = {
@@ -440,6 +481,10 @@ const EditInstructorCourse = () => {
                         if (quizPayload) {
                             await upsertLessonQuiz(id, section.id, savedLessonId, quizPayload);
                         }
+                    }
+
+                    if (isCode && savedLessonId && challengePayload) {
+                        await upsertLessonChallenge(id, section.id, savedLessonId, challengePayload);
                     }
                 }
             }
@@ -770,6 +815,19 @@ const EditInstructorCourse = () => {
                                             quiz={lesson.quiz}
                                             onChange={(newQuiz) =>
                                                 handleLessonQuizChange(sIdx, lIdx, newQuiz)
+                                            }
+                                        />
+                                    )}
+
+                                    {lesson.kind === "code" && (
+                                        <LessonChallengeEditor
+                                            challenge={lesson.challenge}
+                                            onChange={(newChallenge) =>
+                                                handleLessonChallengeChange(
+                                                    sIdx,
+                                                    lIdx,
+                                                    newChallenge,
+                                                )
                                             }
                                         />
                                     )}
