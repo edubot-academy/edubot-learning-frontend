@@ -1,38 +1,44 @@
+import React from "react";
+import { FaArrowRight } from "react-icons/fa6";
 
 
-const Button = ({ children, onClick, className = "", type = "button", disabled = false, loading = false, ...props }) => {
+const Button = ({
+    children,
+    variant = "primary",
+    disabled = false,
+    icon = false,
+    onClick,
+}) => {
+    const base =
+        "inline-flex items-center justify-center gap-2 rounded-lg font-medium text-base px-6 py-3 transition-all duration-300";
 
-
-
-    const baseStyles =
-        "px-4 py-2 rounded-lg text-white font-medium transition focus:outline-none focus:ring-0";
-
-    const defaultStyles =
-        "bg-[#19B08F] hover:shadow-[0_0_10px_#FF6A00CC] focus:ring-2 focus:ring-[#FF6A00CC] active:bg-[#D9D9D9]";
-
-    const disabledStyles =
-        "bg-[#D9D9D9] text-gray-500 cursor-not-allowed shadow-none";
-
-    const finalStyles = `${baseStyles} ${disabled || loading ? disabledStyles : defaultStyles
-        } ${className}`;
+    const styles = {
+        primary: `
+      bg-gradient-to-b from-[#FF8C6E] to-[#E14219]
+      text-white orange__shadow
+      hover:from-[#C2410C] hover:to-[#C2410C]
+      active:scale-95
+      disabled:bg-none disabled:bg-[#DFE1E5] disabled:text-[#3E424A] disabled:shadow-none disabled:cursor-not-allowed
+    `,
+        secondary: `
+      border border-black text-black
+      hover:bg-[#EA580C] hover:border-[#EA580C] hover:text-white
+      active:scale-95
+      disabled:bg-transparent disabled:border-[#C5C9D1] disabled:text-[#C5C9D1] disabled:cursor-not-allowed
+    `,
+    };
 
     return (
-        <div>
-            <button
-                type={type}
-                onClick={onClick}
-                disabled={disabled || loading}
-                className={finalStyles}
-                {...props}
-            >
-                {loading ? (
-                    <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin inline-block"></span>
-                ) : (
-                    children
-                )}
-            </button>
-        </div>
-    )
-}
+        <button
+            onClick={onClick}
+            disabled={disabled}
+            className={`${base} ${styles[variant]} ${disabled ? "opacity-80" : ""
+                }`}
+        >
+            {children}
+            {icon && <FaArrowRight size={18} />}
+        </button>
+    );
+};
 
-export default Button
+export default Button;

@@ -1,6 +1,7 @@
 import React from "react";
-import { FiChevronDown, FiVideo } from 'react-icons/fi';
+import { FiChevronDown, FiVideo, FiFileText, FiDownload } from 'react-icons/fi';
 import { formatDuration } from '../utils/timeUtils';
+import { formatReadTime, getResourceMeta } from '../utils/lessonUtils';
 
 
 const CourseSidebar = ({
@@ -14,6 +15,14 @@ const CourseSidebar = ({
     enrolled,
     lessonRefs,
 }) => {
+    const handleResourceDownload = (event, url) => {
+        event.stopPropagation();
+        event.preventDefault();
+        if (url && typeof window !== 'undefined') {
+            window.open(url, '_blank', 'noopener');
+        }
+    };
+
     return (
         <div className="bg-white p-6 rounded-lg shadow-md md:sticky md:top-28 self-start 
             max-h-none overflow-visible 
@@ -44,6 +53,17 @@ const CourseSidebar = ({
                         <div className={`overflow-hidden transition-all duration-300 ease-in-out ${isOpen ? "max-h-[1000px]" : "max-h-0"}`}>
                             {isOpen && section.lessons?.map((lesson) => {
                                 const isActive = activeLesson?.id === lesson.id;
+                                const isArticle = lesson.kind === 'article';
+                                const isQuiz = lesson.kind === 'quiz';
+                                const durationLabel = isQuiz
+                                    ? 'Квиз'
+                                    : isArticle
+                                        ? formatReadTime(lesson.duration)
+                                        : formatDuration(lesson.duration);
+                                const resourceMeta =
+                                    !lesson.locked && lesson.resourceUrl
+                                        ? getResourceMeta(lesson.resourceKey, lesson.resourceName)
+                                        : null;
 
                                 return (
                                     <button
@@ -99,17 +119,44 @@ const CourseSidebar = ({
                                                 <span className="flex items-center gap-2">
                                                     {lesson.title}
                                                 </span>
-                                                {lesson.duration && (
+                                                {durationLabel && (
                                                     <span className="text-xs text-gray-500 flex items-center gap-1">
-                                                        <FiVideo className="w-4 h-4" />
-                                                        {formatDuration(lesson.duration)}
+                                                        {isArticle ? (
+                                                            <FiFileText className="w-4 h-4" />
+                                                        ) : isQuiz ? (
+                                                            <FiFileText className="w-4 h-4" />
+                                                        ) : (
+                                                            <FiVideo className="w-4 h-4" />
+                                                        )}
+                                                        {durationLabel}
+                                                    </span>
+                                                )}
+                                                {resourceMeta && isActive && (
+                                                    <span
+                                                        className="mt-2 inline-flex items-center gap-1 text-[11px] text-edubot-orange bg-orange-50 border border-orange-100 rounded px-2 py-1 truncate max-w-[200px]"
+                                                        role="button"
+                                                        tabIndex={0}
+                                                        onClick={(e) =>
+                                                            handleResourceDownload(e, lesson.resourceUrl)
+                                                        }
+                                                        onKeyDown={(e) => {
+                                                            if (e.key === 'Enter') {
+                                                                handleResourceDownload(e, lesson.resourceUrl);
+                                                            }
+                                                        }}
+                                                    >
+                                                        <FiDownload className="text-xs" />
+                                                        <span className="truncate">{resourceMeta.fileName}</span>
+                                                        <span className="text-[10px] uppercase text-gray-500">
+                                                            {resourceMeta.typeLabel}
+                                                        </span>
                                                     </span>
                                                 )}
                                             </div>
                                         </div>
 
                                         <div className="flex items-center gap-2">
-                                            {lesson.previewVideo && !enrolled && (
+                                            {lesson.kind !== 'article' && lesson.previewVideo && !enrolled && (
                                                 <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded" title="Ачык сабак">
                                                     Превью
                                                 </span>
