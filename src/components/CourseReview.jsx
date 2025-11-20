@@ -6,19 +6,18 @@ const CourseReview = () => {
     <div className="w-full max-w-[360px] bg-white rounded-xl shadow-md p-5 flex flex-col justify-between gap-5">
       <div className="flex justify-between items-center">
         <h2 className="text-base font-semibold text-gray-900">Отзывы (236)</h2>
-        <button className="text-xs text-[#EA580C] hover:underline">
+        <button className="text-xs text-[#5A5F69] hover:text-[#7B818C]">
           смотреть все
         </button>
       </div>
 
       <div className="space-y-2.5">
         {[
-          { label: "Доступность объяснений", value: 4.9 },
-          { label: "Креативное мышление", value: 4.9 },
-          { label: "Умение вдохновлять студентов", value: 4.9 },
+          { value: 4.9 },
+          { value: 4.9 },
+          { value: 4.9 },
         ].map((item, i) => (
           <div key={i} className="flex items-center gap-20">
-            <p className="text-[10px] w-[120px] text-[#5A5F69]">{item.label}</p>
             <div className="flex items-center gap-1.5">
               <div className="w-[90px] bg-[#C5C9D1] h-2 rounded-full overflow-hidden">
                 <div

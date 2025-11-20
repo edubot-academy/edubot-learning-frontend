@@ -28,6 +28,32 @@ import CourseDescription from "../components/CourseDescription";
 import Comment from "../components/Comment";
 import CourseReview from "../components/CourseReview";
 
+const CHALLENGE_STORAGE_PREFIX = 'lessonChallengeState';
+
+const getChallengeStorageKey = (courseId, lessonId) =>
+    `${CHALLENGE_STORAGE_PREFIX}:${courseId}:${lessonId}`;
+
+const loadChallengeStateFromStorage = (courseId, lessonId) => {
+    if (typeof window === 'undefined') return null;
+    try {
+        const raw = localStorage.getItem(getChallengeStorageKey(courseId, lessonId));
+        return raw ? JSON.parse(raw) : null;
+    } catch (error) {
+        console.warn('Failed to read challenge state', error);
+        return null;
+    }
+};
+
+const saveChallengeStateToStorage = (courseId, lessonId, updates) => {
+    if (typeof window === 'undefined') return;
+    try {
+        const existing = loadChallengeStateFromStorage(courseId, lessonId) || {};
+        const next = { ...existing, ...updates };
+        localStorage.setItem(getChallengeStorageKey(courseId, lessonId), JSON.stringify(next));
+    } catch (error) {
+        console.warn('Failed to persist challenge state', error);
+    }
+};
 const CourseDetailsPage = () => {
     const { id } = useParams();
     const { user } = useContext(AuthContext);
@@ -44,9 +70,9 @@ const CourseDetailsPage = () => {
     const [enrolled, setEnrolled] = useState(false);
     const lessonRefs = useRef({});
     const videoRef = useRef(null);
-   const hasPlayedRef = useRef(false);
-   const [shouldScrollToLesson, setShouldScrollToLesson] = useState(true);
-   const [paid, setPaid] = useState(false);
+    const hasPlayedRef = useRef(false);
+    const [shouldScrollToLesson, setShouldScrollToLesson] = useState(true);
+    const [paid, setPaid] = useState(false);
     const [lessonQuizData, setLessonQuizData] = useState({});
     const [lessonQuizAnswers, setLessonQuizAnswers] = useState({});
     const [lessonQuizResults, setLessonQuizResults] = useState({});
@@ -82,6 +108,7 @@ const CourseDetailsPage = () => {
         }, 100);
     };
 
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     const debouncedTimeUpdate = useCallback(
         debounce((time) => {
             if (
@@ -151,10 +178,23 @@ const CourseDetailsPage = () => {
         try {
             const challenge = await fetchLessonChallenge(id, lesson.sectionId, lesson.id);
             setLessonChallengeData((prev) => ({ ...prev, [lesson.id]: challenge }));
+
+            const savedState = loadChallengeStateFromStorage(id, lesson.id);
             setLessonChallengeCode((prev) => ({
                 ...prev,
-                [lesson.id]: prev[lesson.id] ?? challenge.starterCode ?? '',
+                [lesson.id]:
+                    typeof prev[lesson.id] !== 'undefined'
+                        ? prev[lesson.id]
+                        : savedState?.code ?? challenge.starterCode ?? '',
             }));
+
+            if (savedState?.result) {
+                setLessonChallengeResults((prev) => ({
+                    ...prev,
+                    [lesson.id]: savedState.result,
+                }));
+            }
+
             return challenge;
         } catch (err) {
             console.error(err);
@@ -194,14 +234,7 @@ const CourseDetailsPage = () => {
         }
 
         if (isCode) {
-            const challenge = await loadChallengeForLesson(lesson);
-            const defaultCode = challenge?.starterCode || '';
-            if (typeof lessonChallengeCode[lesson.id] === 'undefined') {
-                setLessonChallengeCode((prev) => ({
-                    ...prev,
-                    [lesson.id]: defaultCode,
-                }));
-            }
+            await loadChallengeForLesson(lesson);
         }
 
         if (user && enrolled && !lesson.locked) {
@@ -286,6 +319,11 @@ const CourseDetailsPage = () => {
             ...prev,
             [lessonId]: value,
         }));
+        const existingResult = lessonChallengeResults[lessonId];
+        saveChallengeStateToStorage(id, lessonId, {
+            code: value,
+            result: existingResult || null,
+        });
     };
 
     const handleChallengeSubmit = async () => {
@@ -303,6 +341,10 @@ const CourseDetailsPage = () => {
                 { code: codeValue }
             );
             setLessonChallengeResults((prev) => ({ ...prev, [activeLesson.id]: result }));
+            saveChallengeStateToStorage(id, activeLesson.id, {
+                code: codeValue,
+                result,
+            });
             toast.success(result.passed ? 'Бардык тесттер өттү!' : 'Кээ бир тесттер өтпөй калды');
             if (result.passed) {
                 setCompletedLessons((prev) => [...new Set([...prev, activeLesson.id])]);
@@ -404,6 +446,7 @@ const CourseDetailsPage = () => {
         }
     };
 
+    /* eslint-disable react-hooks/exhaustive-deps */
     useEffect(() => {
         const fetchCourse = async () => {
             try {
@@ -485,13 +528,7 @@ const CourseDetailsPage = () => {
                         await loadQuizForLesson(lastLesson);
                     }
                     if (lastLesson.kind === 'code') {
-                        const challenge = await loadChallengeForLesson(lastLesson);
-                        if (challenge && typeof lessonChallengeCode[lastLesson.id] === 'undefined') {
-                            setLessonChallengeCode((prev) => ({
-                                ...prev,
-                                [lastLesson.id]: challenge.starterCode || '',
-                            }));
-                        }
+                        await loadChallengeForLesson(lastLesson);
                     }
                     if (user && enrollment.enrolled && !lastLesson.locked) {
                         if (lastLesson.kind === 'article' || lastLesson.kind === 'quiz' || lastLesson.kind === 'code') {
@@ -520,6 +557,7 @@ const CourseDetailsPage = () => {
         };
         fetchCourse();
     }, [id, user]);
+    /* eslint-enable react-hooks/exhaustive-deps */
 
     if (loading) return <div>Жүктөлүүдө...</div>;
     if (error) return <div>Ката: {error}</div>;
@@ -611,6 +649,8 @@ const CourseDetailsPage = () => {
                         />
 
                     </div>
+
+                    <CourseReview/>
                     <Comment courseId={id} />
                 </div>
             }

@@ -59,6 +59,15 @@ export const registerUser = async (userData) => await api.post("/auth/register",
 export const loginUser = async (userData) => await api.post("/auth/login", userData);
 export const fetchUserProfile = async () => await api.get("/auth/profile");
 export const updateUserProfile = async (userId, data) => await api.patch(`/auth/update/${userId}`, data);
+export const fetchInstructorProfile = async (userId) => {
+    const response = await api.get(`/users/${userId}/instructor-profile`);
+    return response.data;
+};
+
+export const updateInstructorProfile = async (userId, data) => {
+    const response = await api.patch(`/users/${userId}/instructor-profile`, data);
+    return response.data;
+};
 
 //Users
 
@@ -729,6 +738,5 @@ export const searchCourses = async (q) => {
     const res = await api.get("/courses/search", { params: { q } });
     return res.data;
 };
-
 
 

@@ -18,7 +18,7 @@ function AboutHero() {
                     Lorem ipsum dolor sit amet consectetur. Enim ultrices in id pellentesque. Bibendum odio eget porta aliquet. Eget et dui non non. Vestibulum vitae amet sagittis viverra dignissim ultrices elementum nunc quam. Lectus tellus tincidunt a eget quisque nibh varius eget viverra. Morbi vitae scelerisque dapibus tortor diam at mauris adipiscing gravida.
                 </p>
             </div>
-            <img src={globus} alt="globus" />
+            {/* <img src={globus} alt="globus" /> */}
         </div>
     )
 }
