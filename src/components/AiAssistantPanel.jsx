@@ -9,12 +9,7 @@ import {
     sendAiChatMessage,
 } from "../services/api";
 import toast from "react-hot-toast";
-import {
-    FiMoreHorizontal,
-    FiPaperclip,
-    FiMic,
-    FiChevronRight,
-} from "react-icons/fi";
+import { FiMoreHorizontal, FiPaperclip, FiMic } from "react-icons/fi";
 
 const formatTime = (dateString) => {
     if (!dateString) return "";
@@ -161,15 +156,14 @@ const AiAssistantPanel = ({ courseId, languageCode = "ru" }) => {
         }
     };
 
-    const handleSelectPrompt = (text) => {
-        setInputValue(text);
-    };
-
-    const handleSend = async () => {
-        const trimmed = inputValue.trim();
+    const handleSend = async (messageOverride) => {
+        const message = typeof messageOverride === "string" ? messageOverride : inputValue;
+        const trimmed = message.trim();
         if (!trimmed || !activeChatId) return;
         setSending(true);
-        setInputValue("");
+        if (!messageOverride) {
+            setInputValue("");
+        }
         try {
             await sendAiChatMessage(activeChatId, { content: trimmed });
             await loadMessages(activeChatId);
@@ -188,10 +182,16 @@ const AiAssistantPanel = ({ courseId, languageCode = "ru" }) => {
         } catch (error) {
             console.error(error);
             toast.error("Суроону жөнөтүү мүмкүн болбоду");
-            setInputValue(trimmed);
+            if (!messageOverride) {
+                setInputValue(trimmed);
+            }
         } finally {
             setSending(false);
         }
+    };
+
+    const handleSelectPrompt = (text) => {
+        handleSend(text);
     };
 
     const renderMessages = () => {
@@ -199,7 +199,7 @@ const AiAssistantPanel = ({ courseId, languageCode = "ru" }) => {
         if (!messages.length) return <EmptyState loading={false} />;
 
         return (
-            <div className="space-y-3 max-h-72 overflow-y-auto px-2">
+            <div className="space-y-3 px-2 min-h-[220px]">
                 {messages.map((message) => (
                     <div
                         key={message.id}
@@ -221,8 +221,6 @@ const AiAssistantPanel = ({ courseId, languageCode = "ru" }) => {
             </div>
         );
     };
-
-    const quickPrompts = (prompts || []).slice(0, 4);
 
     return (
         <div className="bg-white border border-gray-200 rounded-[28px] shadow-sm p-6 md:p-8 relative overflow-hidden">
@@ -274,70 +272,67 @@ const AiAssistantPanel = ({ courseId, languageCode = "ru" }) => {
                 <p className="mt-2 text-lg font-semibold text-[#FF6B00]">Привет! Чем могу помочь?</p>
             </div>
 
-            <div className="border border-gray-200 rounded-3xl p-4 bg-white space-y-3">
-                {renderMessages()}
-                <textarea
-                    value={inputValue}
-                    onChange={(e) => setInputValue(e.target.value)}
-                    placeholder="Задай свой вопрос"
-                    className="flex-1 bg-transparent outline-none resize-none text-sm min-h-[60px]"
-                    rows={2}
-                />
-                <div className="flex items-center gap-3 bg-gray-50 rounded-2xl p-3 border border-gray-100">
-                    <button
-                        type="button"
-                        className="w-10 h-10 rounded-full border border-gray-200 flex items-center justify-center text-gray-500"
-                        title="Прикрепить файл"
-                    >
-                        <FiPaperclip />
-                    </button>
+            {loadingChats && (
+                <p className="text-center text-sm text-gray-500 mb-2">Чаттар жүктөлүүдө...</p>
+            )}
 
-                    <button
-                        type="button"
-                        className="w-10 h-10 rounded-full border border-gray-200 flex items-center justify-center text-gray-500"
-                        title="Голосовой ввод (скоро)"
-                    >
-                        <FiMic />
-                    </button>
-                    <button
-                        type="button"
-                        onClick={handleSend}
-                        disabled={sending || !inputValue.trim()}
-                        className="px-5 py-2 rounded-2xl bg-gradient-to-r from-[#FF7E21] to-[#FF5F3D] text-white text-sm font-semibold shadow disabled:opacity-60"
-                    >
-                        {sending ? "Отправляем..." : "Отправить"}
-                    </button>
-                </div>
-                {quickPrompts.length > 0 && (
-                    <div className="flex flex-wrap gap-2">
-                        {quickPrompts.map((prompt) => (
-                            <button
-                                key={prompt.id || prompt.text}
-                                type="button"
-                                onClick={() => handleSelectPrompt(prompt.text)}
-                                className="px-4 py-2 rounded-full border border-gray-200 text-xs text-gray-700 hover:bg-gray-100 transition"
-                            >
-                                {prompt.text}
-                            </button>
-                        ))}
+            <div className="border border-gray-200 rounded-3xl p-4 bg-white space-y-4">
+                {renderMessages()}
+                {prompts.length > 0 && (
+                    <div>
+                        <p className="text-xs uppercase tracking-wide text-gray-400 font-semibold mb-2">
+                            Тез сунуштар
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                            {prompts.map((prompt) => (
+                                <button
+                                    key={prompt.id || prompt.text}
+                                    type="button"
+                                    onClick={() => handleSelectPrompt(prompt.text)}
+                                    className="px-4 py-2 rounded-full border border-gray-200 text-xs text-gray-700 hover:bg-gray-100 transition"
+                                >
+                                    {prompt.text}
+                                </button>
+                            ))}
+                        </div>
                     </div>
                 )}
-            </div>
-
-            {prompts.length > quickPrompts.length && (
-                <div className="mt-6 flex flex-wrap gap-3">
-                    {prompts.slice(quickPrompts.length).map((prompt) => (
+                <div className="space-y-3">
+                    <textarea
+                        value={inputValue}
+                        onChange={(e) => setInputValue(e.target.value)}
+                        placeholder="Сурооңузду ушул жерге жазыңыз..."
+                        className="w-full border border-gray-200 rounded-2xl bg-white px-4 py-3 text-sm text-gray-900 shadow-sm resize-none min-h-[80px] focus:outline-none focus:ring-2 focus:ring-[#FFB37C]"
+                        rows={3}
+                    />
+                    <div className="flex items-center justify-between gap-3 flex-wrap">
+                        <div className="flex items-center gap-2">
+                            <button
+                                type="button"
+                                className="w-11 h-11 rounded-full border border-gray-200 flex items-center justify-center text-gray-500 hover:text-gray-800"
+                                title="Прикрепить файл"
+                            >
+                                <FiPaperclip />
+                            </button>
+                            <button
+                                type="button"
+                                className="w-11 h-11 rounded-full border border-gray-200 flex items-center justify-center text-gray-500 hover:text-gray-800"
+                                title="Голосовой ввод (скоро)"
+                            >
+                                <FiMic />
+                            </button>
+                        </div>
                         <button
-                            key={prompt.id || prompt.text}
                             type="button"
-                            onClick={() => handleSelectPrompt(prompt.text)}
-                            className="px-4 py-2 rounded-full bg-gray-100 text-sm text-gray-700 hover:bg-gray-200 transition"
+                            onClick={handleSend}
+                            disabled={sending || !inputValue.trim()}
+                            className="px-6 py-3 rounded-2xl bg-gradient-to-r from-[#FF7E21] to-[#FF5F3D] text-white text-sm font-semibold shadow disabled:opacity-60 disabled:cursor-not-allowed"
                         >
-                            {prompt.text}
+                            {sending ? "Отправляем..." : "Отправить"}
                         </button>
-                    ))}
+                    </div>
                 </div>
-            )}
+            </div>
         </div>
     );
 };

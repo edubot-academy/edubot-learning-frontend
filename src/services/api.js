@@ -105,17 +105,21 @@ export const deleteUser = async (userId) => {
     }
 };
 
-export const enrollUserInCourse = async (userId, courseId, discountPercentage) => {
+export const enrollUserInCourse = async (userId, courseId, options = {}) => {
+    const { discountPercentage, offeringId } = options || {};
     try {
         const response = await api.post(`/enrollments/enroll`, {
             userId,
             courseId,
             discountPercentage,
+            offeringId,
         });
         return response.data;
     } catch (error) {
         console.error("Error enrolling user:", error);
-        toast.error("Failed to enroll user in course");
+        const message =
+            error.response?.data?.message || error.message || "Failed to enroll user in course";
+        toast.error(Array.isArray(message) ? message.join(", ") : message);
         throw error;
     }
 };
@@ -429,6 +433,21 @@ export const updateLessonDuration = async (courseId, sectionId, lessonId, durati
 // AI Assistant
 export const fetchCourseAiPrompts = async (courseId) => {
     const { data } = await api.get(`/courses/${courseId}/ai/prompts`);
+    return data;
+};
+
+export const addCourseAiPrompt = async (courseId, payload) => {
+    const { data } = await api.post(`/courses/${courseId}/ai/prompts`, payload);
+    return data;
+};
+
+export const updateCourseAiPrompt = async (courseId, promptId, payload) => {
+    const { data } = await api.patch(`/courses/${courseId}/ai/prompts/${promptId}`, payload);
+    return data;
+};
+
+export const deleteCourseAiPrompt = async (courseId, promptId) => {
+    const { data } = await api.delete(`/courses/${courseId}/ai/prompts/${promptId}`);
     return data;
 };
 
