@@ -11,31 +11,6 @@ const CourseReview = () => {
         </button>
       </div>
 
-      <div className="space-y-2.5">
-        {[
-          { value: 4.9 },
-          { value: 4.9 },
-          { value: 4.9 },
-        ].map((item, i) => (
-          <div key={i} className="flex items-center gap-20">
-            <div className="flex items-center gap-1.5">
-              <div className="w-[90px] bg-[#C5C9D1] h-2 rounded-full overflow-hidden">
-                <div
-                  className="h-2 rounded-full"
-                  style={{
-                    width: `${(item.value / 5) * 100}%`,
-                    backgroundColor: "#EA580C",
-                  }}
-                ></div>
-              </div>
-              <span className="w-[20px] text-gray-800 font-medium">
-                {item.value.toFixed(1)}
-              </span>
-            </div>
-          </div>
-        ))}
-      </div>
-
       <div>
         <p className="text-[40px] font-bold text-[#C2410C] leading-none">4.9</p>
         <div className="flex items-center mt-1.5">
