@@ -26,6 +26,7 @@ import LessonQuizPlayer from "../components/LessonQuizPlayer";
 import LessonChallengePlayer from "../components/LessonChallengePlayer";
 import CourseDescription from "../components/CourseDescription";
 import Comment from "../components/Comment";
+import AiAssistantPanel from "../components/AiAssistantPanel";
 
 const CHALLENGE_STORAGE_PREFIX = 'lessonChallengeState';
 
@@ -71,7 +72,7 @@ const CourseDetailsPage = () => {
     const videoRef = useRef(null);
     const hasPlayedRef = useRef(false);
     const [shouldScrollToLesson, setShouldScrollToLesson] = useState(true);
-    const [paid, setPaid] = useState(false);
+    const [activeTab, setActiveTab] = useState('program'); // 'program' | 'assistant'
     const [lessonQuizData, setLessonQuizData] = useState({});
     const [lessonQuizAnswers, setLessonQuizAnswers] = useState({});
     const [lessonQuizResults, setLessonQuizResults] = useState({});
@@ -564,93 +565,145 @@ const CourseDetailsPage = () => {
 
     const { prev: prevLesson, next: nextLesson } = findPrevNextLessons();
     const totalLessons = sections.reduce((count, sec) => count + (sec.lessons?.length || 0), 0);
-    const progress = Math.round((completedLessons.length / totalLessons) * 100);
+    const progress = totalLessons > 0
+        ? Math.round((completedLessons.length / totalLessons) * 100)
+        : 0;
 
-    function changPaid() {
-        setPaid(!paid)
-    }
+    const isCourseInstructor = Boolean(user && course?.instructor?.id === user.id);
+    const isAdmin = user?.role === 'admin';
+    const isAiAvailable = Boolean(course.aiAssistantEnabled && (enrolled || isCourseInstructor || isAdmin));
+    const assistantAvailableMessage = course.aiAssistantEnabled
+        ? 'Ассистентти колдонуу үчүн курсга жазылуу керек.'
+        : 'EDU AI ассистенти бул курста өчүрүлгөн.';
+
+    const tabs = [
+        { id: 'program', label: 'Программа курса', disabled: false },
+        { id: 'assistant', label: 'Edu AI Assistent', disabled: !isAiAvailable },
+    ];
+
+    const handleTabChange = (tab) => {
+        if (tab.disabled) {
+            toast.error('EDU AI азырынча бул курста жеткиликтүү эмес');
+            return;
+        }
+        setActiveTab(tab.id);
+    };
+
+    const renderTabButtons = () => (
+        <div className="flex flex-wrap gap-2 bg-gray-100 rounded-2xl p-1">
+            {tabs.map((tab) => (
+                <button
+                    key={tab.id}
+                    type="button"
+                    onClick={() => handleTabChange(tab)}
+                    className={`flex-1 min-w-[140px] px-4 py-2 rounded-xl text-sm font-medium transition ${
+                        activeTab === tab.id
+                            ? 'bg-white text-gray-900 shadow'
+                            : 'text-gray-600'
+                    } ${tab.disabled ? 'opacity-60 cursor-not-allowed' : 'hover:text-gray-900'}`}
+                >
+                    {tab.label}
+                </button>
+            ))}
+        </div>
+    );
 
     return (
-        <div className="min-h-screen pt-24">
-            <button onClick={changPaid}>tap</button>
+        <div className="min-h-screen pt-24 bg-[#f8f9fb]">
+            <CourseHeader course={course} progress={progress} enrolled={enrolled} />
+            <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+                <CourseDescription course={course} />
 
-            {paid ? <CourseHeader course={course} progress={progress} enrolled={enrolled} />
-                :
-                <div className="max-w-6xl mx-auto p-6">
-                    {/* ✅ ПРОСТО ВЫЗЫВАЕМ КОМПОНЕНТ ОПИСАНИЯ */}
-                    <CourseDescription course={course} />
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="md:col-span-2">
+                        {activeLesson && (
+                            activeLesson.kind === 'article' ? (
+                                <ArticleLessonViewer key={activeLesson.id} lesson={activeLesson} />
+                            ) : activeLesson.kind === 'quiz' ? (
+                                <LessonQuizPlayer
+                                    key={activeLesson.id}
+                                    quiz={lessonQuizData[activeLesson.id]}
+                                    answers={lessonQuizAnswers[activeLesson.id] || {}}
+                                    onAnswerChange={handleQuizAnswerChange}
+                                    onSubmit={handleQuizSubmit}
+                                    onRetake={handleQuizRetake}
+                                    submitting={quizSubmitting}
+                                    disabled={!enrolled || activeLesson.locked}
+                                    loading={quizLoading && !lessonQuizData[activeLesson.id]}
+                                    result={lessonQuizResults[activeLesson.id]}
+                                />
+                            ) : activeLesson.kind === 'code' ? (
+                                <LessonChallengePlayer
+                                    key={activeLesson.id}
+                                    challenge={lessonChallengeData[activeLesson.id]}
+                                    code={
+                                        lessonChallengeCode[activeLesson.id] ??
+                                        lessonChallengeData[activeLesson.id]?.starterCode ??
+                                        ''
+                                    }
+                                    onCodeChange={(newCode) =>
+                                        handleChallengeCodeChange(activeLesson.id, newCode)
+                                    }
+                                    onSubmit={handleChallengeSubmit}
+                                    submitting={challengeSubmitting}
+                                    disabled={!enrolled || activeLesson.locked}
+                                    loading={challengeLoading && !lessonChallengeData[activeLesson.id]}
+                                    result={lessonChallengeResults[activeLesson.id]}
+                                />
+                            ) : (
+                                <CourseVideoPlayer
+                                    key={activeLesson.id}
+                                    activeLesson={activeLesson}
+                                    resumeVideoTime={resumeVideoTime}
+                                    handleVideoProgress={(progress) => handleVideoProgress(progress, activeLesson)}
+                                    handleTimeUpdate={handleTimeUpdate}
+                                    handlePause={handlePause}
+                                    videoRef={videoRef}
+                                    nextLesson={nextLesson}
+                                    prevLesson={prevLesson}
+                                    onEnded={handleEnded}
+                                    handleLessonClick={handleLessonClick}
+                                />
+                            )
+                        )}
+                    </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div className="md:col-span-2">
-                            {activeLesson && (
-                                activeLesson.kind === 'article' ? (
-                                    <ArticleLessonViewer key={activeLesson.id} lesson={activeLesson} />
-                                ) : activeLesson.kind === 'quiz' ? (
-                                    <LessonQuizPlayer
-                                        key={activeLesson.id}
-                                        quiz={lessonQuizData[activeLesson.id]}
-                                        answers={lessonQuizAnswers[activeLesson.id] || {}}
-                                        onAnswerChange={handleQuizAnswerChange}
-                                        onSubmit={handleQuizSubmit}
-                                        onRetake={handleQuizRetake}
-                                        submitting={quizSubmitting}
-                                        disabled={!enrolled || activeLesson.locked}
-                                        loading={quizLoading && !lessonQuizData[activeLesson.id]}
-                                        result={lessonQuizResults[activeLesson.id]}
-                                    />
-                                ) : activeLesson.kind === 'code' ? (
-                                    <LessonChallengePlayer
-                                        key={activeLesson.id}
-                                        challenge={lessonChallengeData[activeLesson.id]}
-                                        code={
-                                            lessonChallengeCode[activeLesson.id] ??
-                                            lessonChallengeData[activeLesson.id]?.starterCode ??
-                                            ''
-                                        }
-                                        onCodeChange={(newCode) =>
-                                            handleChallengeCodeChange(activeLesson.id, newCode)
-                                        }
-                                        onSubmit={handleChallengeSubmit}
-                                        submitting={challengeSubmitting}
-                                        disabled={!enrolled || activeLesson.locked}
-                                        loading={challengeLoading && !lessonChallengeData[activeLesson.id]}
-                                        result={lessonChallengeResults[activeLesson.id]}
+                    <div className="space-y-4">
+                        {activeTab === 'program' ? (
+                            <CourseSidebar
+                                key={activeSectionId}
+                                sections={sections}
+                                activeSectionId={activeSectionId}
+                                toggleSection={toggleSection}
+                                activeLesson={activeLesson}
+                                handleLessonClick={handleLessonClick}
+                                handleCheckboxToggle={handleCheckboxToggle}
+                                completedLessons={completedLessons}
+                                lastViewedLessonId={lastViewedLessonId}
+                                enrolled={enrolled}
+                                lessonRefs={lessonRefs}
+                                headerContent={renderTabButtons()}
+                            />
+                        ) : (
+                            <div className="bg-white p-6 rounded-lg shadow-md md:sticky md:top-28">
+                                <div className="mb-4">{renderTabButtons()}</div>
+                                {isAiAvailable ? (
+                                    <AiAssistantPanel
+                                        courseId={Number(id)}
+                                        languageCode={course.languageCode}
                                     />
                                 ) : (
-                                    <CourseVideoPlayer
-                                        key={activeLesson.id}
-                                        activeLesson={activeLesson}
-                                        resumeVideoTime={resumeVideoTime}
-                                        handleVideoProgress={(progress) => handleVideoProgress(progress, activeLesson)}
-                                        handleTimeUpdate={handleTimeUpdate}
-                                        handlePause={handlePause}
-                                        videoRef={videoRef}
-                                        nextLesson={nextLesson}
-                                        prevLesson={prevLesson}
-                                        onEnded={handleEnded}
-                                        handleLessonClick={handleLessonClick}
-                                    />
-                                )
-                            )}
-                        </div>
-                        <CourseSidebar
-                            key={activeSectionId}
-                            sections={sections}
-                            activeSectionId={activeSectionId}
-                            toggleSection={toggleSection}
-                            activeLesson={activeLesson}
-                            handleLessonClick={handleLessonClick}
-                            handleCheckboxToggle={handleCheckboxToggle}
-                            completedLessons={completedLessons}
-                            lastViewedLessonId={lastViewedLessonId}
-                            enrolled={enrolled}
-                            lessonRefs={lessonRefs}
-                        />
-
+                                    <div className="text-center text-gray-500 text-sm">
+                                        {assistantAvailableMessage}
+                                    </div>
+                                )}
+                            </div>
+                        )}
                     </div>
-                    <Comment courseId={id} />
                 </div>
-            }
+
+                <Comment courseId={id} />
+            </div>
         </div>
     );
 };

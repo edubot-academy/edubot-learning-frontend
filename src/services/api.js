@@ -426,6 +426,37 @@ export const updateLessonDuration = async (courseId, sectionId, lessonId, durati
     }
 };
 
+// AI Assistant
+export const fetchCourseAiPrompts = async (courseId) => {
+    const { data } = await api.get(`/courses/${courseId}/ai/prompts`);
+    return data;
+};
+
+export const fetchCourseAiChats = async (courseId) => {
+    const { data } = await api.get(`/courses/${courseId}/ai/chats`);
+    return data;
+};
+
+export const createCourseAiChat = async (courseId, payload = {}) => {
+    const { data } = await api.post(`/courses/${courseId}/ai/chats`, payload);
+    return data;
+};
+
+export const deleteAiChat = async (chatId) => {
+    const { data } = await api.delete(`/ai/chats/${chatId}`);
+    return data;
+};
+
+export const fetchAiChatMessages = async (chatId) => {
+    const { data } = await api.get(`/ai/chats/${chatId}/messages`);
+    return data;
+};
+
+export const sendAiChatMessage = async (chatId, payload) => {
+    const { data } = await api.post(`/ai/chats/${chatId}/messages`, payload);
+    return data;
+};
+
 
 // Categories
 
@@ -738,5 +769,3 @@ export const searchCourses = async (q) => {
     const res = await api.get("/courses/search", { params: { q } });
     return res.data;
 };
-
-

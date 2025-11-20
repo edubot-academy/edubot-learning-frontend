@@ -40,6 +40,7 @@ const DEFAULT_COURSE_INFO = {
     languageCode: 'ky',          // 'ky' | 'ru' | 'en'
     learningOutcomesText: '',    // textarea, split by \n
     isPaid: true,
+    aiAssistantEnabled: false,
 };
 
 const CourseBuilder = () => {
@@ -336,6 +337,7 @@ const CourseBuilder = () => {
                 subtitle: courseInfo.subtitle || undefined,
                 languageCode: courseInfo.languageCode || 'ky',
                 learningOutcomes: learningOutcomes.length ? learningOutcomes : undefined,
+                aiAssistantEnabled: Boolean(courseInfo.aiAssistantEnabled),
                 isPaid: courseInfo.isPaid && Number(courseInfo.price) > 0,
             });
 
@@ -637,6 +639,19 @@ const CourseBuilder = () => {
                                 Бул курс акы төлөнүүчү
                             </label>
                         </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                        <input
+                            id="aiAssistantEnabled"
+                            name="aiAssistantEnabled"
+                            type="checkbox"
+                            checked={courseInfo.aiAssistantEnabled}
+                            onChange={handleCourseInfoChange}
+                        />
+                        <label htmlFor="aiAssistantEnabled" className="text-sm">
+                            EDU AI ассистенттин бул курста иштешине уруксат берүү
+                        </label>
                     </div>
 
                     <div>

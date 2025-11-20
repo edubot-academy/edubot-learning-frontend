@@ -132,6 +132,7 @@ const EditInstructorCourse = () => {
                             ? courseData.isPaid
                             : Number(courseData.price) > 0,
                     learningOutcomesText,
+                    aiAssistantEnabled: Boolean(courseData.aiAssistantEnabled),
                 };
 
                 setCourse(hydratedCourse);
@@ -367,6 +368,7 @@ const EditInstructorCourse = () => {
                 languageCode: course.languageCode || "ky",
                 learningOutcomes:
                     learningOutcomes.length > 0 ? learningOutcomes : undefined,
+                aiAssistantEnabled: Boolean(course.aiAssistantEnabled),
                 isPaid: course.isPaid && Number(course.price) > 0,
             });
 
@@ -624,6 +626,19 @@ const EditInstructorCourse = () => {
                                 Бул курс акы төлөнүүчү
                             </label>
                         </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                        <input
+                            id="aiAssistantEnabled"
+                            name="aiAssistantEnabled"
+                            type="checkbox"
+                            checked={course.aiAssistantEnabled ?? false}
+                            onChange={handleCourseChange}
+                        />
+                        <label htmlFor="aiAssistantEnabled" className="text-sm">
+                            EDU AI ассистентин бул курста колдонууга уруксат берүү
+                        </label>
                     </div>
 
                     <div>
