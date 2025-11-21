@@ -212,6 +212,60 @@ export const fetchCourseDetails = async (courseId) => {
     return response.data;
 };
 
+export const fetchCompanyCourses = async (companyId, params = {}) => {
+    const { page, limit, q } = params;
+    const { data } = await api.get(`/courses/company/${companyId}`, {
+        params: clean({ page, limit, q }),
+    });
+    return data;
+};
+
+// Student Dashboard APIs
+export const fetchStudentDashboardSummary = async (studentId) => {
+    const { data } = await api.get(`/students/${studentId}/dashboard-summary`);
+    return data;
+};
+
+export const fetchStudentCourses = async (studentId, params = {}) => {
+    const { status } = params;
+    const { data } = await api.get(`/students/${studentId}/courses`, { params: clean({ status }) });
+    return data;
+};
+
+export const fetchStudentOfferings = async (studentId) => {
+    const { data } = await api.get(`/students/${studentId}/offerings`);
+    return data;
+};
+
+export const fetchStudentTasks = async (studentId, params = {}) => {
+    const { status } = params;
+    const { data } = await api.get(`/students/${studentId}/tasks`, { params: clean({ status }) });
+    return data;
+};
+
+export const fetchStudentProgress = async (studentId) => {
+    const { data } = await api.get(`/students/${studentId}/progress`);
+    return data;
+};
+
+export const fetchStudentCertificates = async (studentId) => {
+    const { data } = await api.get(`/students/${studentId}/certificates`);
+    return data;
+};
+
+export const fetchStudentNotificationSettings = async (studentId) => {
+    const { data } = await api.get(`/students/${studentId}/notification-settings`);
+    return data;
+};
+
+export const updateStudentNotificationSettings = async (studentId, payload) => {
+    const { data } = await api.patch(
+        `/students/${studentId}/notification-settings`,
+        payload
+    );
+    return data;
+};
+
 export const createCourse = async (courseData) => {
     const response = await api.post('/courses', courseData);
     return response.data;
@@ -451,6 +505,16 @@ export const deleteCourseAiPrompt = async (courseId, promptId) => {
     return data;
 };
 
+export const fetchCourseAiSettings = async (courseId) => {
+    const { data } = await api.get(`/courses/${courseId}/ai/settings`);
+    return data;
+};
+
+export const updateCourseAiSettings = async (courseId, payload) => {
+    const { data } = await api.patch(`/courses/${courseId}/ai/settings`, payload);
+    return data;
+};
+
 export const fetchCourseAiChats = async (courseId) => {
     const { data } = await api.get(`/courses/${courseId}/ai/chats`);
     return data;
@@ -539,11 +603,6 @@ export const markLessonComplete = async (courseId, sectionId, lessonId) => {
 };
 
 //Student Progress
-export const fetchStudentProgress = async () => {
-    const response = await api.get(`/student-progress`);
-    return response.data;
-};
-
 export const updateLastViewedLesson = async ({ courseId, lessonId }) => {
     const res = await api.put(`/student-progress/last-viewed`, { courseId, lessonId });
     return res.data;
