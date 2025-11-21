@@ -1,4 +1,4 @@
-import React from 'react';
+import PropTypes from 'prop-types';
 
 const CardInstructor = ({ avatarUrl, fullName, position, totalStudents }) => {
     return (
@@ -21,3 +21,10 @@ const CardInstructor = ({ avatarUrl, fullName, position, totalStudents }) => {
 };
 
 export default CardInstructor;
+
+CardInstructor.propTypes = {
+    avatarUrl: PropTypes.string,
+    fullName: PropTypes.string,
+    position: PropTypes.string,
+    totalStudents: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
+};

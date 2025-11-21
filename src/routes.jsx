@@ -12,6 +12,7 @@ const CourseDetailsPage = lazy(() => import("./pages/CourseDetails"));
 const DashboardPage = lazy(() => import("./pages/Dashboard"));
 const ProfilePage = lazy(() => import("./pages/Profile"));
 const InstructorDashboard = lazy(() => import("./pages/InstructorDashboard"));
+const StudentDashboard = lazy(() => import("./pages/StudentDashboard"));
 const CreateCourse = lazy(() => import("./pages/CreateCourse"));
 const InstructorCourses = lazy(() => import("./pages/InstructorCourses"));
 const EditInstructorCourse = lazy(() => import("./pages/EditInstructorCourse"));
@@ -45,6 +46,10 @@ const AppRoutes = () => {
                             <Route path="/instructor/course/create" element={<CreateCourse />} />
                             <Route path="/instructor/courses" element={<InstructorCourses />} />
                             <Route path="/instructor/courses/edit/:id" element={<EditInstructorCourse />} />
+                        </Route>
+
+                        <Route element={<PrivateRoute allowedRoles={['student']} />}>
+                            <Route path="/student" element={<StudentDashboard />} />
                         </Route>
 
                         <Route path="/courses/:id" element={<CourseDetailsPage />} />

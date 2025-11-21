@@ -1,9 +1,9 @@
-import SectionContainer from './SectionContainer';
 import arrowLeft from '../assets/icons/leftArrow.svg';
 import arrowRight from '../assets/icons/rightArrow.svg';
 import CardFeedback from './CardFeedback';
 import { getTopRatings } from '../services/api';
 import { useEffect, useState } from 'react';
+import FeedbackSection from './FeedbackSection';
 
 function Feedback() {
 	const [newDate, setNewDate] = useState([]);
@@ -35,14 +35,16 @@ function Feedback() {
 	);
 
 	return (
-		<SectionContainer
-			title='Биздин окуучулар эмне дейт'
-			subtitle='Тут вы можете посмотреть все отзывы наших студентов которые прошли  все наши онлайн уроки'
-			data={newDate}
-			rightContent={arrows}
-			buttonText={null}
-			CardComponent={CardFeedback}
-		/>
+		<>
+			<FeedbackSection
+				title='Биздин окуучулар эмне дейт'
+				subtitle='Тут вы можете посмотреть все отзывы наших студентов которые прошли  все наши онлайн уроки'
+				data={newDate}
+				rightContent={arrows}
+				CardComponent={CardFeedback}
+        
+			/>
+		</>
 	);
 }
 
