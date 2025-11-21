@@ -1,347 +1,409 @@
-import { useState, useContext, useEffect, useRef } from 'react';
-import { FaBars } from 'react-icons/fa';
-import { IoSearch } from 'react-icons/io5';
-import { GrLanguage } from 'react-icons/gr';
-import { BsChevronDown } from 'react-icons/bs';
-import { Link, useLocation } from 'react-router-dom';
-
-import Logo from '../assets/images/logoEduBot.png';
-
-import { AuthContext } from '../context/AuthContext';
-import { searchCourses } from '../services/api';
-
-import { CiSearch } from 'react-icons/ci';
-import SideBar from './UI/SideBar.jsx';
-import SidebarOverlay from './UI/SidebarOverlay.jsx';
+import React, { useState, useContext, useEffect, useRef } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { FaBars, FaTimes } from "react-icons/fa";
+import { IoSearch } from "react-icons/io5";
+import { GrLanguage } from "react-icons/gr";
+import ThemeToggle from "../components/UI/ThemeToggle";
+import { BsChevronDown, BsSun, BsMoon } from "react-icons/bs";
+import { CiSearch } from "react-icons/ci";
+import EduBotLogo from "../assets/images/edubot-signup.png";
+import BlackHeart from "../assets/icons/blackHeart.svg";
+import BlackBasket from "../assets/icons/blackBasket.svg";
+import BlackPerson from "../assets/icons/personBlack.svg";
+import { AuthContext } from "../context/AuthContext";
+import { searchCourses } from "../services/api";
+import SideBar from "../components/UI/SideBar"; // путь к вашему SideBar компоненту
+import SidebarOverlay from "../components/UI/SidebarOverlay"; // путь к вашему SidebarOverlay компоненту
 
 const NavLinks = ({ isMobile, user }) => {
-	const location = useLocation();
-	const active = (path) =>
-		location.pathname === path ? 'text-orange-500' : '';
+  const location = useLocation();
+  const active = (path) =>
+    location.pathname === path ? "text-orange-500" : "";
 
-	const linkClass =
-		"relative hover:text-black after:content-[''] after:absolute after:-bottom-1 after:left-0 after:h-[2px] after:w-full after:bg-black after:scale-x-0 hover:after:scale-x-100 after:transition-transform after:duration-300";
+  const linkClass =
+    "hover:text-black after:content-[''] after:absolute after:-bottom-1 after:left-0 after:h-[2px] after:w-full after:bg-black after:scale-x-0 hover:after:scale-x-100 after:transition-transform after:duration-300";
 
-	return (
-		<div
-			className={
-				isMobile
-					? 'flex flex-col space-y-4 mt-4'
-					: 'flex space-x-6 items-center'
-			}
-		>
-			<Link to='/courses' className={`${active('/courses')} ${linkClass}`}>
-				Курстар
-			</Link>
-			<Link to='/about' className={`${active('/about')} ${linkClass}`}>
-				Биз жөнүндө
-			</Link>
-			<Link to='/contact' className={`${active('/contact')} ${linkClass}`}>
-				Байланыш
-			</Link>
-			{user?.role === 'instructor' && (
-				<Link
-					to='/instructor'
-					className={`${active('/instructor')} ${linkClass}`}
-				>
-					Инструктор
-				</Link>
-			)}
-			{user?.role === 'admin' && (
-				<Link to='/admin' className={`${active('/admin')} ${linkClass}`}>
-					Админ
-				</Link>
-			)}
-		</div>
-	);
+  return (
+    <div
+      className={
+        isMobile
+          ? "flex flex-col space-y-4 mt-4"
+          : "flex space-x-14 items-center  mr-[70px]"
+      }
+    >
+      <Link to="/courses" className={`${active("/courses")} ${linkClass}`}>
+        Курстар
+      </Link>
+      <Link to="/about" className={`${active("/about")} ${linkClass}`}>
+        Биз жөнүндө
+      </Link>
+      <Link to="/contact" className={`${active("/contact")} ${linkClass}`}>
+        Байланыш
+      </Link>
+      {user?.role === "instructor" && (
+        <Link
+          to="/instructor"
+          className={`${active("/instructor")} ${linkClass}`}
+        >
+          Инструктор
+        </Link>
+      )}
+      {user?.role === "admin" && (
+        <Link to="/admin" className={`${active("/admin")} ${linkClass}`}>
+          Админ
+        </Link>
+      )}
+      {user?.role === "assistant" && (
+        <Link
+          to="/assistant"
+          className={`${active("/assistant")} ${linkClass}`}
+        >
+          Ассистент
+        </Link>
+      )}
+    </div>
+  );
 };
 
 const Header = () => {
-	const { user } = useContext(AuthContext);
+  const { user } = useContext(AuthContext);
+  const location = useLocation();
+  const navigate = useNavigate();
 
-	const location = useLocation();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [positionBar, setPositionBar] = useState(false);
+  const [search, setSearch] = useState("");
+  const [langOpen, setLangOpen] = useState(false);
+  const [lang, setLang] = useState("Кыргызча");
+  const [dark, setDark] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
 
-	const [menuOpen, setMenuOpen] = useState(false);
-	const [positionBar, setPositionBar] = useState(false);
-	const [search, setSearch] = useState('');
-	const [langOpen, setLangOpen] = useState(false);
-	const [lang, setLang] = useState('Кыргызча');
-	const [dark, setDark] = useState(false);
+  const langRef = useRef(null);
 
-	const langRef = useRef(null);
+  const [results, setResults] = useState([]);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const searchContainerRef = useRef(null);
 
-	const [results, setResults] = useState([]);
-	const [showDropdown, setShowDropdown] = useState(false);
-	const searchContainerRef = useRef(null);
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (
+        searchContainerRef.current &&
+        !searchContainerRef.current.contains(e.target)
+      ) {
+        setShowDropdown(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
-	// close dropdown on outside click
-	useEffect(() => {
-		const handleClickOutside = (e) => {
-			if (
-				searchContainerRef.current &&
-				!searchContainerRef.current.contains(e.target)
-			) {
-				setShowDropdown(false);
-			}
-		};
-		document.addEventListener('mousedown', handleClickOutside);
-		return () => document.removeEventListener('mousedown', handleClickOutside);
-	}, []);
+  useEffect(() => {
+    setMenuOpen(false);
+  }, [location.pathname]);
 
-	useEffect(() => {
-		setMenuOpen(false);
-	}, [location.pathname]);
+  useEffect(() => {
+    document.body.classList.toggle("dark", dark);
+  }, [dark]);
 
-	useEffect(() => {
-		document.body.classList.toggle('dark', dark);
-	}, [dark]);
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (langRef.current && !langRef.current.contains(e.target)) {
+        setLangOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
-	useEffect(() => {
-		const handleClickOutside = (e) => {
-			if (langRef.current && !langRef.current.contains(e.target)) {
-				setLangOpen(false);
-			}
-		};
-		document.addEventListener('mousedown', handleClickOutside);
-		return () => document.removeEventListener('mousedown', handleClickOutside);
-	}, []);
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
+    const q = search.trim();
+    if (!q) return;
+    navigate(`/search?q=${encodeURIComponent(q)}`);
+    setMenuOpen(false);
+    setSearchOpen(false);
+  };
 
-	const handleSearchSubmit = (e) => {
-		e.preventDefault();
-		const q = search.trim();
-		if (!q) return;
-		navigate(`/search?q=${encodeURIComponent(q)}`);
-		// optionally keep the text; if you want to clear: setSearch("");
-		setMenuOpen(false);
-	};
+  const handleSearch = async (value) => {
+    setSearch(value);
 
-	const handleSearch = async (value) => {
-		setSearch(value);
+    if (value.length < 2) {
+      setResults([]);
+      setShowDropdown(false);
+      return;
+    }
 
-		if (value.length < 3) {
-			setResults([]);
-			setShowDropdown(false);
-			return;
-		}
+    try {
+      const data = await searchCourses(value);
+      setResults(data);
+      setShowDropdown(true);
+    } catch (error) {
+      setResults([]);
+      setShowDropdown(false);
+    }
+  };
 
-		try {
-			const data = await searchCourses(value);
-			setResults(data);
-			setShowDropdown(true);
-		} catch {
-			setResults([]);
-			setShowDropdown(false);
-		}
-	};
+  return (
+    <header className="sticky top-0 w-full bg-white dark:bg-white shadow z-50">
+      <div className="px-4 md:px-10 py-3">
+        {/* Desktop Layout */}
+        <div className="hidden lg:flex items-center justify-between">
+          {/* Logo + Search */}
+          <div className="flex items-center flex-1">
+            <Link to="/" className="flex items-center">
+              <div className="h-16 w-16 md:h-20 md:w-20">
+                <img
+                  src={EduBotLogo}
+                  alt="EduBot Logo"
+                  className="w-full h-full object-contain"
+                />
+              </div>
+              <div className="flex flex-col ml-3">
+                <span className="text-2xl font-bold text-orange-500">
+                  EDUBOT
+                </span>
+                <span className="text-base -mt-2 text-gray-700 dark:text-gray-700 tracking-[0.14em]">
+                  LEARNING
+                </span>
+              </div>
+            </Link>
 
-	return (
-		<header className='sticky top-0 w-full bg-white dark:bg-slate-500 shadow z-50'>
-			<div className='px-4 md:px-10 py-3 flex flex-col items-center'>
-				<div className=' lg:flex items-center justify-between w-full'>
-					<div className='flex items-center  flex-1 gap-3 mt-5 lg:mt-0  justify-between  lg:justify-start w-full'>
-						<div className=' lg:hidden flex   items-center'>
-							<button
-								onClick={() => {
-									setMenuOpen((p) => !p);
-									setPositionBar(false);
-								}}
-								className='text-gray-700 dark:text-gray-200 text-2xl'
-							>
-								<FaBars />
-							</button>
-						</div>
+            {/* Search Bar - Desktop */}
+            <div
+              className="flex items-center border rounded overflow-hidden hover:border-[#F06743]  flex-1 max-w-xs ml-6 border-[#7B818C] dark:border-[#7B818C]"
+              ref={searchContainerRef}
+            >
+              <IoSearch className="w-5 h-5 ml-2 text-[#7B818C] dark:text-[#7B818C]" />
+              <input
+                type="text"
+                placeholder="Издөө"
+                value={search}
+                onChange={(e) => handleSearch(e.target.value)}
+                onFocus={() => search.length >= 2 && setShowDropdown(true)}
+                className="px-3 py-2 focus:outline-none bg-transparent w-full text-base dark:text-gray-700"
+              />
 
-						<Link to='/' className='flex items-center whitespace-nowrap mr-7'>
-							<img src={Logo} alt='logo' className='h-14 w-auto mr-3' />
-							<div className='flex flex-col mt-1  items-center '>
-								<span className='text-2xl sm:text-3xl font-bold text-orange-500'>
-									EDUBOT
-								</span>
-								<span className='-mt-2 text-lg  md:text-xl text-gray-700 dark:text-gray-200 tracking-[0.14em]'>
-									LEARNING
-								</span>
-							</div>
-						</Link>
+              {/* Search Dropdown */}
+              {showDropdown && (
+                <div className="absolute top-full mt-2 w-full mt-[-24px] max-w-xs bg-[#C5C9D1] dark:bg-white shadow-xl  border-s-2 z-50 max-h-64 overflow-y-auto">
+                  {results.length > 0 ? (
+                    results.map((course) => (
+                      <button
+                        key={course.id}
+                        onClick={() => {
+                          navigate(`/courses/${course.id}`);
+                          setShowDropdown(false);
+                          setSearch("");
+                        }}
+                        className="w-full text-left px-4 py-3 hover:bg-gray-50 border-b border-gray-200 last:border-b-0"
+                      >
+                        <div className="font-semibold text-sm text-gray-900">
+                          {course.title}
+                        </div>
+                        {course.description && (
+                          <div className="text-xs text-gray-500 mt-1 line-clamp-1">
+                            {course.description}
+                          </div>
+                        )}
+                      </button>
+                    ))
+                  ) : (
+                    <div className="px-4 py-3 text-sm text-gray-500">
+                      Натыйжа жок
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
 
-						<div
-							ref={searchContainerRef}
-							className='relative hidden md:flex items-center flex-col flex-1 max-w-[200px] ml-6'
-						>
-							<div className='flex items-center w-full border border-black rounded overflow-hidden'>
-								<IoSearch className='w-5 h-5 ml-2 text-gray-700 dark:text-gray-200' />
-								<input
-									type='text'
-									placeholder='Издөө'
-									value={search}
-									onChange={(e) => handleSearch(e.target.value)}
-									className='px-3 py-2 focus:outline-none bg-transparent w-full'
-								/>
-							</div>
+          {/* Navigation Links - Desktop */}
+          <div className="flex items-center space-x-6 mx-6">
+            <NavLinks isMobile={false} user={user} />
+          </div>
 
-							{/* 🔍 Search dropdown */}
-							{showDropdown && results.length > 0 && (
-								<div className='absolute top-full left-0 right-0 bg-white shadow-lg border rounded mt-1 max-h-64 overflow-y-auto z-50'>
-									{results.map((course) => (
-										<button
-											key={course.id}
-											onClick={() => {
-												navigate(`/courses/${course.id}`);
-												setShowDropdown(false);
-											}}
-											className='w-full text-left px-4 py-2 hover:bg-gray-100'
-										>
-											<div className='font-semibold text-sm'>
-												{course.title}
-											</div>
-											<div className='text-xs text-gray-500 line-clamp-1'>
-												{course.description}
-											</div>
-										</button>
-									))}
-								</div>
-							)}
+          {/* Right Side Actions - Desktop */}
+          <div className="flex items-center space-x-4">
+            {/* Language Selector */}
+            <div className="relative" ref={langRef}>
+              <button
+                onClick={() => setLangOpen((p) => !p)}
+                className="flex items-center space-x-1 p-2"
+              >
+                <GrLanguage className="text-gray-700 dark:text-gray-700 w-5 h-5" />
+                <BsChevronDown
+                  className={`w-4 h-4 text-gray-700 dark:text-gray-700 transform transition-transform duration-300 ${
+                    langOpen ? "rotate-180" : ""
+                  }`}
+                />
+              </button>
+              {langOpen && (
+                <div className="absolute right-0 mt-2 bg-white dark:bg-white shadow rounded z-50">
+                  {["Кыргызча", "Русский", "English"].map((l) => (
+                    <button
+                      key={l}
+                      onClick={() => {
+                        setLang(l);
+                        setLangOpen(false);
+                      }}
+                      className="block px-4 py-2 w-full text-left hover:bg-gray-100 dark:hover:bg-gray-100 dark:text-gray-700 text-sm"
+                    >
+                      {l}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
 
-							{/* If no results */}
-							{showDropdown && results.length === 0 && (
-								<div className='absolute top-full left-0 right-0 bg-white shadow-lg border rounded mt-1 p-3 text-sm text-gray-500'>
-									Натыйжа жок
-								</div>
-							)}
-						</div>
-						<div className=' md:hidden flex   items-center'>
-							<button className='text-gray-700 dark:text-gray-200 text-2xl'>
-								<CiSearch />
-							</button>
-						</div>
+            <div className="relative top-[-12px]">
+              <ThemeToggle dark={dark} setDark={setDark} />
+            </div>
 
-						<div className='hidden lg:flex items-center ml-6'>
-							<NavLinks isMobile={false} user={user} />
-						</div>
-					</div>
+            {/* User Actions */}
+            {user ? (
+              <div className="flex items-center gap-3">
+                <img
+                  src={BlackHeart}
+                  alt="favorites"
+                  className="w-9 h-9 cursor-pointer hover:opacity-80 transition-opacity"
+                />
+                <img
+                  src={BlackBasket}
+                  alt="cart"
+                  className="w-9 h-9 cursor-pointer hover:opacity-80 transition-opacity"
+                />
+                <img
+                  src={BlackPerson}
+                  alt="profile"
+                  className="w-9 h-9 cursor-pointer hover:opacity-80 transition-opacity"
+                />
+              </div>
+            ) : (
+              <Link to="/register">
+                <button className="bg-orange-500 text-white px-4 py-2 rounded hover:bg-orange-600 transition-colors">
+                  Катталуу
+                </button>
+              </Link>
+            )}
+          </div>
+        </div>
 
-					<div className='hidden lg:flex items-center space-x-4 ml-auto'>
-						<div className='relative' ref={langRef}>
-							<button
-								onClick={() => setLangOpen((p) => !p)}
-								className='flex items-center space-x-1 p-2'
-							>
-								<GrLanguage className='text-gray-700 dark:text-gray-200 w-5 h-5 sm:w-6 sm:h-6' />
-								<BsChevronDown
-									className={`w-4 h-4 text-gray-700 dark:text-gray-200 transform transition-transform duration-300 ${
-										langOpen ? 'rotate-180' : ''
-									}`}
-								/>
-							</button>
-							{langOpen && (
-								<div className='absolute right-0 mt-2 bg-white dark:bg-gray-800 shadow rounded z-50'>
-									{['Русский', 'English'].map((l) => (
-										<button
-											key={l}
-											onClick={() => {
-												setLang(l);
-												setLangOpen(false);
-											}}
-											className='block px-4 py-2 w-full text-left hover:bg-gray-100 dark:hover:bg-gray-700'
-										>
-											{l}
-										</button>
-									))}
-								</div>
-							)}
-						</div>
+        {/* Mobile Layout */}
+        <div className="lg:hidden">
+          {/* Top Row - Burger Menu, Logo, Search Icon */}
+          <div className="flex items-center justify-between">
+            {/* Burger Menu - Left */}
+            <button
+              onClick={() => {
+                setMenuOpen(true);
+                setPositionBar(false);
+              }}
+              className="text-gray-700 dark:text-gray-700 text-2xl"
+            >
+              <FaBars />
+            </button>
 
-						<button
-							onClick={() => setDark((p) => !p)}
-							className={`w-12 h-6 rounded-full relative transition-colors duration-300 ${
-								dark ? 'bg-gray-700' : 'bg-blue-300'
-							}`}
-						>
-							<span
-								className={`absolute top-[2px] w-5 h-5 rounded-full bg-white transition-all duration-300 ${
-									dark ? 'right-[2px]' : 'left-[2px]'
-								}`}
-							></span>
-						</button>
+            {/* Logo - Center */}
+            <Link to="/" className="flex flex-col items-center">
+              <div className="h-12 w-12">
+                <img
+                  src={EduBotLogo}
+                  alt="EduBot Logo"
+                  className="w-full h-full object-contain"
+                />
+              </div>
+              <div className="flex flex-col items-center mt-1">
+                <span className="text-lg font-bold text-orange-500">
+                  EDUBOT
+                </span>
+                <span className="text-xs -mt-1 text-gray-700 dark:text-gray-700 tracking-[0.14em]">
+                  LEARNING
+                </span>
+              </div>
+            </Link>
 
-						<Link
-							to='/register'
-							className='bg-orange-500 hover:bg-orange-500 text-white rounded-md px-4 py-2 md:text-base font-semibold shadow-[0_0_5px_2px_rgba(255,165,0,0.8)]'
-						>
-							Катталуу
-						</Link>
-					</div>
-				</div>
+            {/* Search Icon - Right */}
+            <button
+              onClick={() => setSearchOpen(!searchOpen)}
+              className="text-gray-700 dark:text-gray-700 text-2xl"
+            >
+              <IoSearch />
+            </button>
+          </div>
 
-				{/* Mobile */}
+          {/* Mobile Search Input */}
+          {searchOpen && (
+            <div className="mt-3" ref={searchContainerRef}>
+              <div className="flex items-center border rounded overflow-hidden border-[#7B818C] dark:border-[#7B818C]">
+                <IoSearch className="w-5 h-5 ml-2 text-[#7B818C] dark:text-[#7B818C]" />
+                <input
+                  type="text"
+                  placeholder="Издөө"
+                  value={search}
+                  onChange={(e) => handleSearch(e.target.value)}
+                  onFocus={() => search.length >= 2 && setShowDropdown(true)}
+                  className="px-3 py-2 focus:outline-none bg-transparent w-full text-base dark:text-gray-700"
+                />
+              </div>
 
-				<div className='md:hidden'>
-					<div className='flex w-full justify-center items-center px-4 gap-x-2'>
-						<div
-							onSubmit={handleSearchSubmit}
-							className='flex items-center border border-black rounded overflow-hidden w-[calc(100%-50px)] max-w-[280px]'
-						>
-							<IoSearch className='w-5 h-5 ml-2 text-gray-700 dark:text-gray-200' />
-							<input
-								type='text'
-								placeholder='Издөө'
-								value={search}
-								onChange={(e) => handleSearch(e.target.value)}
-								className='px-3 py-2 focus:outline-none bg-transparent w-full truncate text-sm sm:text-base'
-							/>
+              {/* Mobile Search Dropdown */}
+              {showDropdown && (
+                <div className="absolute left-0 right-0 mt-1 mx-4 z-50">
+                  {results.length > 0 ? (
+                    <div className="bg-white dark:bg-white shadow-lg border rounded max-h-64 overflow-y-auto">
+                      {results.map((course) => (
+                        <button
+                          key={course.id}
+                          onClick={() => {
+                            navigate(`/courses/${course.id}`);
+                            setShowDropdown(false);
+                            setSearch("");
+                            setSearchOpen(false);
+                          }}
+                          className="w-full text-left px-4 py-3 hover:bg-gray-50 border-b border-gray-100 last:border-b-0"
+                        >
+                          <div className="font-semibold text-sm text-gray-900">
+                            {course.title}
+                          </div>
+                          {course.description && (
+                            <div className="text-xs text-gray-500 mt-1 line-clamp-1">
+                              {course.description}
+                            </div>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="bg-white dark:bg-white shadow-lg border rounded p-4 text-sm text-gray-500">
+                      Натыйжа жок
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
 
-							{/* 🔍 Search dropdown */}
-							{showDropdown && results.length > 0 && (
-								<div className='absolute top-full left-0 right-0 bg-white shadow-lg border rounded mt-1 max-h-64 overflow-y-auto z-50'>
-									{results.map((course) => (
-										<button
-											key={course.id}
-											onClick={() => {
-												navigate(`/courses/${course.id}`);
-												setShowDropdown(false);
-											}}
-											className='w-full text-left px-4 py-2 hover:bg-gray-100'
-										>
-											<div className='font-semibold text-sm'>
-												{course.title}
-											</div>
-											<div className='text-xs text-gray-500 line-clamp-1'>
-												{course.description}
-											</div>
-										</button>
-									))}
-								</div>
-							)}
-
-							{/* If no results */}
-							{showDropdown && results.length === 0 && (
-								<div className='absolute top-full left-0 right-0 bg-white shadow-lg border rounded mt-1 p-3 text-sm text-gray-500'>
-									Натыйжа жок
-								</div>
-							)}
-						</div>
-						<button type='submit' className='hidden'>
-							Search
-						</button>
-					</div>
-				</div>
-			</div>
-			{/* Mobile menu modal */}
-			<SidebarOverlay
-				isOpen={menuOpen}
-				onClose={() => setMenuOpen(false)}
-				position='left'
-			>
-				<SideBar setMenuOpen={setMenuOpen} setPosition={setPositionBar} />
-			</SidebarOverlay>
-			<SidebarOverlay
-				isOpen={positionBar}
-				onClose={() => setPositionBar(false)}
-				position='right'
-			>
-				<SideBar setMenuOpen={setMenuOpen} setPosition={setPositionBar} />
-			</SidebarOverlay>
-		</header>
-	);
+      {/* SideBar Overlays */}
+      <SidebarOverlay
+        isOpen={menuOpen}
+        onClose={() => setMenuOpen(false)}
+        position="left"
+      >
+        <SideBar setMenuOpen={setMenuOpen} setPosition={setPositionBar} />
+      </SidebarOverlay>
+      
+      <SidebarOverlay
+        isOpen={positionBar}
+        onClose={() => setPositionBar(false)}
+        position="right"
+      >
+        <SideBar setMenuOpen={setMenuOpen} setPosition={setPositionBar} />
+      </SidebarOverlay>
+    </header>
+  );
 };
 
 export default Header;
