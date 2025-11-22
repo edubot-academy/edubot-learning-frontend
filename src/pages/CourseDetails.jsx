@@ -708,9 +708,7 @@ const CourseDetailsPage = () => {
 
                 <CardVideo
                     key={id}
-                    videoRef={videoRef}
                     course={course}
-                    videoUrl={sections[0].lessons[0]?.videoUrl || ""}
                     lessonCount={lessonCount}
                     coverImageUrl={course.coverImageUrl}
                 />
