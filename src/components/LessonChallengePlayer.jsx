@@ -70,10 +70,9 @@ const LessonChallengePlayer = ({
                 <div className="flex flex-col lg:flex-row min-h-[500px]">
 
                     {/* Задание */}
-                    <div className="flex-1 bg-[#262729] p-6">
-                        <div className="flex flex-col h-full">   {/* FIX */}
+                    <div className="flex-1 bg-[#262729] p-3">
+                        <div className="flex flex-col h-full">   
 
-                            {/* Заголовок и инструкции */}
                             <div>
                                 <h3 className="text-xl font-semibold mb-4 flex items-center gap-2 text-white">
                                     <FiCode className="text-edubot-orange" /> Тапшырма
@@ -83,7 +82,7 @@ const LessonChallengePlayer = ({
                                     {challenge.instructions || 'Инструкция берилген эмес.'}
                                 </div>
                             </div>
-
+        
                             {/* Ачык тесттер – ВСЕГДА ВНИЗУ */}
                             {visibleTests.length > 0 && (
                                 <div className="bg-[#303133] rounded p-2 border border-[#404144] mt-auto">  {/* FIX */}
@@ -107,15 +106,20 @@ const LessonChallengePlayer = ({
                     {/* Редактор */}
                     <div className="flex-1 bg-[#262729] p-6 flex flex-col">
                         <div className="flex-1">
+                            <div className="flex justify-between items-center">
+                                <label className="block text-sm font-medium mb-3 text-white">
+                                    Код
+                                </label>
 
-                            <label className="block text-sm font-medium mb-3 text-white">Код</label>
+                                {challenge.timeLimitMs && (
+                                    <div className="flex items-center gap-2 text-sm text-gray-400 mb-3">
+                                        <FiClock className="text-edubot-orange text-xl" />
+                                        {(challenge.timeLimitMs / 1000 / 60).toFixed(1)} мин
+                                    </div>
 
-                            {challenge.timeLimitMs && (
-                                <div className="flex items-center gap-2 text-sm text-gray-400 mb-4">
-                                    <FiClock className="text-edubot-orange" />
-                                    Убакыт чектөөсү: {challenge.timeLimitMs} мс
-                                </div>
-                            )}
+                                )}
+                            </div>
+
 
                             <textarea
                                 className="w-full border border-[#404144] rounded p-4 font-mono min-h-[350px] bg-[#0f172a] text-gray-100 focus:border-edubot-orange focus:ring-1 focus:ring-edubot-orange resize-none"
@@ -135,7 +139,7 @@ const LessonChallengePlayer = ({
                                 disabled={disabled || submitting}
                                 className="w-full px-4 py-3 rounded bg-edubot-orange text-white disabled:opacity-60 hover:bg-orange-600 transition-colors font-medium"
                             >
-                                {submitting ? 'Текшерүүдө...' : 'Тапшыруу'}
+                                {submitting ? 'Текшерүүдө...' : 'Жөнөтүү'}
                             </button>
                         </div>
                     </div>
@@ -166,8 +170,8 @@ const LessonChallengePlayer = ({
 
                         <div className="p-4 overflow-y-auto max-h-[60vh]">
                             <div className={`rounded p-4 mb-4 ${result.passed
-                                    ? 'bg-green-900 bg-opacity-20 border border-green-800 text-green-400'
-                                    : 'bg-red-900 bg-opacity-20 border border-red-800 text-red-400'
+                                ? 'bg-green-900 bg-opacity-20 border border-green-800 text-green-400'
+                                : 'bg-red-900 bg-opacity-20 border border-red-800 text-red-400'
                                 }`}>
                                 <p className="font-semibold">
                                     {result.passed
@@ -181,8 +185,8 @@ const LessonChallengePlayer = ({
                                     <div
                                         key={testResult.testId || idx}
                                         className={`border rounded p-3 text-sm ${testResult.passed
-                                                ? 'border-green-500 bg-green-900 bg-opacity-10'
-                                                : 'border-red-500 bg-red-900 bg-opacity-10'
+                                            ? 'border-green-500 bg-green-900 bg-opacity-10'
+                                            : 'border-red-500 bg-red-900 bg-opacity-10'
                                             }`}
                                     >
                                         <p className="font-semibold flex items-center gap-2 text-white mb-2">
