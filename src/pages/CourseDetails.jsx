@@ -700,8 +700,8 @@ const CourseDetailsPage = () => {
                                 )}
                             </div>
                         )}
-                        <CourseReview/>
                     </div>
+                        <CourseReview/>
                 </div>
 
                 <Comment courseId={id} />
