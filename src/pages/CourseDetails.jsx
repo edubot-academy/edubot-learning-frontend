@@ -32,8 +32,7 @@ import LessonQuizPlayer from "../components/LessonQuizPlayer";
 import LessonChallengePlayer from "../components/LessonChallengePlayer";
 import CourseDescription from "../components/CourseDescription";
 import Comment from "../components/Comment";
-import InstructorsReview from "../components/InstructorsReview";
-
+import InstructorsInfo from "../components/InstructorsInfo";
 
 const CourseDetailsPage = () => {
   const { id } = useParams();
@@ -684,7 +683,7 @@ const CourseDetailsPage = () => {
               lessonRefs={lessonRefs}
             />
           </div>
-          <InstructorsReview/>
+          <InstructorsInfo instructorData={course?.instructor} />
           <Comment courseId={id} />
         </div>
       )}
