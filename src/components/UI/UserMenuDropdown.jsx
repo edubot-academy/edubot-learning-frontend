@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useContext } from "react";
 import { Link } from "react-router-dom";
 import Lamp from "../../assets/icons/lamp.svg";
 import Bell from "../../assets/icons/call.svg";
@@ -7,8 +7,12 @@ import Heart from "../../assets/icons/heart.svg";
 import Setting from "../../assets/icons/seting.svg";
 import Profile from "../../assets/icons/profile.svg";
 import ArrowRight from "../../assets/icons/arrowRight.svg";
+import { LuLogOut } from "react-icons/lu";
+import { AuthContext } from "../../context/AuthContext";
 
 function UserMenuDropdown({ user, onClose }) {
+  const { logout } = useContext(AuthContext);
+
   const getDashboardPath = () => {
     if (!user) return "/dashboard";
 
@@ -37,6 +41,13 @@ function UserMenuDropdown({ user, onClose }) {
   ];
 
   const handleItemClick = () => {
+    if (onClose) {
+      onClose();
+    }
+  };
+
+  const handleLogout = () => {
+    logout();
     if (onClose) {
       onClose();
     }
@@ -105,6 +116,32 @@ function UserMenuDropdown({ user, onClose }) {
                 </span>
               </div>
             ))}
+          </div>
+
+          <div className="mt-[0.35rem] border-t border-gray-200 pt-2">
+            <button
+              onClick={handleLogout}
+              className="
+                w-[200px] sm:w-[180px]
+                h-[50px] sm:h-[45px]
+                flex items-center gap-[0.8rem]
+                px-[1.25rem] sm:px-[1rem] py-[0.85rem] sm:py-[0.7rem]
+                cursor-pointer
+                text-[0.85rem] sm:text-[0.8rem]
+                text-red-600
+                hover:bg-red-50
+                transition-colors duration-200
+                rounded-lg
+                w-full
+              "
+            >
+              <img
+                src={<LuLogOut />}
+                alt=""
+                className="w-[1.2rem]  sm:w-[1.1rem]"
+              />
+              <span className="whitespace-nowrap ml-[-20px]">Logout</span>
+            </button>
           </div>
         </div>
       </div>
