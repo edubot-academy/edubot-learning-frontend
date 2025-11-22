@@ -36,12 +36,6 @@ function UserMenuDropdown({ user, onClose }) {
     { label: "Настройка", icon: Setting },
   ];
 
-  const menuItemsBottom = [
-    { label: "Курстар жөнүндө", path: "/courses" },
-    { label: "Биз жөнүндө", path: "/about" },
-    { label: "Байланышуу", path: "/contact" },
-  ];
-
   const handleItemClick = () => {
     if (onClose) {
       onClose();
@@ -89,17 +83,17 @@ function UserMenuDropdown({ user, onClose }) {
               <div
                 key={index}
                 className="
-          w-[200px] sm:w-[180px]
-          h-[50px] sm:h-[45px]
-          flex items-center gap-[0.8rem]
-          px-[1.25rem] sm:px-[1rem] py-[0.85rem] sm:py-[0.7rem]
-          cursor-pointer
-          text-[0.85rem] sm:text-[0.8rem]
-          text-gray-800
-          hover:bg-[#EA580C] hover:text-white
-          transition-colors duration-200
-          rounded-lg
-        "
+                  w-[200px] sm:w-[180px]
+                  h-[50px] sm:h-[45px]
+                  flex items-center gap-[0.8rem]
+                  px-[1.25rem] sm:px-[1rem] py-[0.85rem] sm:py-[0.7rem]
+                  cursor-pointer
+                  text-[0.85rem] sm:text-[0.8rem]
+                  text-gray-800
+                  hover:bg-[#EA580C] hover:text-white
+                  transition-colors duration-200
+                  rounded-lg
+                "
               >
                 <img
                   src={item.icon}
@@ -109,31 +103,6 @@ function UserMenuDropdown({ user, onClose }) {
                 <span className="whitespace-nowrap overflow-hidden text-ellipsis">
                   {item.label}
                 </span>
-              </div>
-            ))}
-          </div>
-          <div className="mt-[0.35rem]">
-            {menuItemsBottom.map((item, index) => (
-              <div
-                key={index}
-                className="
-          h-[50px] sm:h-[45px]
-          w-[200px] sm:w-[180px]
-          cursor-pointer 
-          text-[0.85rem] sm:text-[0.8rem]
-          px-[1.25rem] sm:px-[1rem] 
-          py-[0.85rem] sm:py-[0.7rem]
-          transition-colors duration-200
-          rounded-lg
-          hover:bg-[#EA580C] 
-          hover:text-white
-          flex 
-          items-center 
-          justify-start
-          pl-[1.25rem] sm:pl-[1rem]
-        "
-              >
-                {item.label}
               </div>
             ))}
           </div>
