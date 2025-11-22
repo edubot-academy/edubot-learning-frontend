@@ -68,42 +68,46 @@ const LessonChallengePlayer = ({
             {/* Основной контейнер */}
             <div className="mb-6 rounded-lg shadow-md overflow-hidden bg-[#303133] p-1">
                 <div className="flex flex-col lg:flex-row min-h-[500px]">
-                    
+
                     {/* Задание */}
                     <div className="flex-1 bg-[#262729] p-6">
-                        <div className="h-full flex flex-col">
-                            <div className="flex-1">
+                        <div className="flex flex-col h-full">   {/* FIX */}
+
+                            {/* Заголовок и инструкции */}
+                            <div>
                                 <h3 className="text-xl font-semibold mb-4 flex items-center gap-2 text-white">
                                     <FiCode className="text-edubot-orange" /> Тапшырма
                                 </h3>
-                                
+
                                 <div className="prose prose-sm max-w-none whitespace-pre-wrap text-gray-300 mb-4">
                                     {challenge.instructions || 'Инструкция берилген эмес.'}
                                 </div>
-
-                                {visibleTests.length > 0 && (
-                                    <div className="bg-[#303133] rounded p-4 border border-[#404144]">
-                                        <p className="text-sm font-semibold mb-3 text-white">Ачык тесттер</p>
-                                        <ul className="space-y-3 text-sm">
-                                            {visibleTests.map((test) => (
-                                                <li key={test.id || test.title} className="text-gray-300">
-                                                    <span className="font-medium text-white">{test.title}:</span>{" "}
-                                                    <code className="bg-[#262729] px-2 py-1 rounded text-orange-400">
-                                                        args: {test.args ? JSON.stringify(test.args) : '[]'}
-                                                    </code>
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    </div>
-                                )}
                             </div>
+
+                            {/* Ачык тесттер – ВСЕГДА ВНИЗУ */}
+                            {visibleTests.length > 0 && (
+                                <div className="bg-[#303133] rounded p-2 border border-[#404144] mt-auto">  {/* FIX */}
+                                    <p className="text-sm font-semibold mb-2 text-white">Ачык тесттер</p>
+                                    <ul className="space-y-3 text-sm">
+                                        {visibleTests.map((test) => (
+                                            <li key={test.id || test.title} className="text-gray-300">
+                                                <span className="font-medium text-white">{test.title}:</span>{" "}
+                                                <code className="bg-[#262729] px-2 py-1 rounded text-orange-400">
+                                                    args: {test.args ? JSON.stringify(test.args) : '[]'}
+                                                </code>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            )}
                         </div>
                     </div>
+
 
                     {/* Редактор */}
                     <div className="flex-1 bg-[#262729] p-6 flex flex-col">
                         <div className="flex-1">
-                            
+
                             <label className="block text-sm font-medium mb-3 text-white">Код</label>
 
                             {challenge.timeLimitMs && (
@@ -120,7 +124,7 @@ const LessonChallengePlayer = ({
                                 disabled={disabled}
                                 placeholder={challenge.starterCode || '// Каалаган JavaScript кодун жазыңыз'}
                             />
-                            
+
                         </div>
 
                         {/* Кнопка */}
@@ -161,11 +165,10 @@ const LessonChallengePlayer = ({
                         </div>
 
                         <div className="p-4 overflow-y-auto max-h-[60vh]">
-                            <div className={`rounded p-4 mb-4 ${
-                                result.passed 
-                                    ? 'bg-green-900 bg-opacity-20 border border-green-800 text-green-400' 
+                            <div className={`rounded p-4 mb-4 ${result.passed
+                                    ? 'bg-green-900 bg-opacity-20 border border-green-800 text-green-400'
                                     : 'bg-red-900 bg-opacity-20 border border-red-800 text-red-400'
-                            }`}>
+                                }`}>
                                 <p className="font-semibold">
                                     {result.passed
                                         ? '🎉 Бардык тесттер ийгиликтүү өттү!'
@@ -177,11 +180,10 @@ const LessonChallengePlayer = ({
                                 {result.results?.map((testResult, idx) => (
                                     <div
                                         key={testResult.testId || idx}
-                                        className={`border rounded p-3 text-sm ${
-                                            testResult.passed
+                                        className={`border rounded p-3 text-sm ${testResult.passed
                                                 ? 'border-green-500 bg-green-900 bg-opacity-10'
                                                 : 'border-red-500 bg-red-900 bg-opacity-10'
-                                        }`}
+                                            }`}
                                     >
                                         <p className="font-semibold flex items-center gap-2 text-white mb-2">
                                             {testResult.passed ? (
@@ -194,11 +196,11 @@ const LessonChallengePlayer = ({
                                                 {testResult.isHidden && ' (жашыруун)'}
                                             </span>
                                         </p>
-                                        
+
                                         {testResult.message && (
                                             <p className="text-red-400 text-xs mb-2">{testResult.message}</p>
                                         )}
-                                        
+
                                         {!testResult.isHidden && !testResult.message && (
                                             <div className="text-gray-300 space-y-1 text-xs">
                                                 {typeof testResult.actual !== 'undefined' && (
