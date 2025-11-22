@@ -12,13 +12,14 @@ const LessonChallengePlayer = ({
     loading = false,
 }) => {
     const [showResultPopup, setShowResultPopup] = useState(false);
+    const [submitted, setSubmitted] = useState(false); // 🔥 ДОБАВЛЕНО
 
-    // Показываем popup когда появляется результат
+    // Показывать popup только после сабмита
     useEffect(() => {
-        if (result && !submitting) {
+        if (submitted && result && !submitting) {
             setShowResultPopup(true);
         }
-    }, [result, submitting]);
+    }, [result, submitting, submitted]); // 🔥 ДОБАВЛЕНО "submitted"
 
     const closePopup = () => {
         setShowResultPopup(false);
@@ -37,6 +38,12 @@ const LessonChallengePlayer = ({
             return () => document.removeEventListener('keydown', handleEscape);
         }
     }, [showResultPopup]);
+
+    // 🔥 Обёртка над onSubmit, чтобы отметить "мы нажали Submit"
+    const handleSubmit = () => {
+        setSubmitted(true);
+        onSubmit?.();
+    };
 
     if (loading) {
         return (
@@ -58,32 +65,22 @@ const LessonChallengePlayer = ({
 
     return (
         <>
-            {/* Основной контейнер с горизонтальным разделением */}
+            {/* Основной контейнер */}
             <div className="mb-6 rounded-lg shadow-md overflow-hidden bg-[#303133] p-1">
                 <div className="flex flex-col lg:flex-row min-h-[500px]">
                     
-                    {/* Секция 1: Задание - левая часть */}
+                    {/* Задание */}
                     <div className="flex-1 bg-[#262729] p-6">
                         <div className="h-full flex flex-col">
-                            {/* Заголовок и инструкции */}
                             <div className="flex-1">
                                 <h3 className="text-xl font-semibold mb-4 flex items-center gap-2 text-white">
-                                    <FiCode className="text-edubot-orange" /> Код тапшырма
+                                    <FiCode className="text-edubot-orange" /> Тапшырма
                                 </h3>
                                 
                                 <div className="prose prose-sm max-w-none whitespace-pre-wrap text-gray-300 mb-4">
                                     {challenge.instructions || 'Инструкция берилген эмес.'}
                                 </div>
 
-                                {/* Ограничение по времени */}
-                                {challenge.timeLimitMs && (
-                                    <div className="flex items-center gap-2 text-sm text-gray-400 mb-4">
-                                        <FiClock className="text-edubot-orange" />
-                                        Убакыт чектөөсү: {challenge.timeLimitMs} мс
-                                    </div>
-                                )}
-
-                                {/* Видимые тесты */}
                                 {visibleTests.length > 0 && (
                                     <div className="bg-[#303133] rounded p-4 border border-[#404144]">
                                         <p className="text-sm font-semibold mb-3 text-white">Ачык тесттер</p>
@@ -100,20 +97,22 @@ const LessonChallengePlayer = ({
                                     </div>
                                 )}
                             </div>
-
-                            {/* Подсказка внизу левой секции */}
-                            <div className="mt-4 p-3 bg-[#303133] rounded border border-[#404144]">
-                                <p className="text-xs text-gray-400">
-                                    Каалаган JavaScript кодун колдонсоңуз болот. Функция, класс же жылаңач скрипт болушу мүмкүн — тесттер жөн гана чыгарган жыйынтыкка карайт.
-                                </p>
-                            </div>
                         </div>
                     </div>
 
-                    {/* Секция 2: Редактор кода - правая часть */}
+                    {/* Редактор */}
                     <div className="flex-1 bg-[#262729] p-6 flex flex-col">
                         <div className="flex-1">
+                            
                             <label className="block text-sm font-medium mb-3 text-white">Код</label>
+
+                            {challenge.timeLimitMs && (
+                                <div className="flex items-center gap-2 text-sm text-gray-400 mb-4">
+                                    <FiClock className="text-edubot-orange" />
+                                    Убакыт чектөөсү: {challenge.timeLimitMs} мс
+                                </div>
+                            )}
+
                             <textarea
                                 className="w-full border border-[#404144] rounded p-4 font-mono min-h-[350px] bg-[#0f172a] text-gray-100 focus:border-edubot-orange focus:ring-1 focus:ring-edubot-orange resize-none"
                                 value={code ?? challenge.starterCode ?? ''}
@@ -122,16 +121,13 @@ const LessonChallengePlayer = ({
                                 placeholder={challenge.starterCode || '// Каалаган JavaScript кодун жазыңыз'}
                             />
                             
-                            <p className="text-xs text-gray-400 mt-2">
-                                Кандай гана код стилин колдонсоңуз да болот. Натыйжа тесттердин күткөн маанисине дал келсе жетиштүү.
-                            </p>
                         </div>
 
-                        {/* Кнопка отправки - внизу правой секции */}
+                        {/* Кнопка */}
                         <div className="mt-6 pt-4 border-t border-[#404144]">
                             <button
                                 type="button"
-                                onClick={onSubmit}
+                                onClick={handleSubmit} // 🔥 ВАЖНО
                                 disabled={disabled || submitting}
                                 className="w-full px-4 py-3 rounded bg-edubot-orange text-white disabled:opacity-60 hover:bg-orange-600 transition-colors font-medium"
                             >
@@ -142,11 +138,11 @@ const LessonChallengePlayer = ({
                 </div>
             </div>
 
-            {/* Popup для результатов */}
+            {/* Popup */}
             {showResultPopup && result && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
                     <div className="bg-[#262729] rounded-lg shadow-xl max-w-2xl w-full max-h-[80vh] overflow-hidden border border-[#404144]">
-                        {/* Заголовок popup */}
+
                         <div className="flex items-center justify-between p-4 border-b border-[#404144]">
                             <h3 className="text-lg font-semibold text-white flex items-center gap-2">
                                 {result.passed ? (
@@ -164,9 +160,7 @@ const LessonChallengePlayer = ({
                             </button>
                         </div>
 
-                        {/* Контент popup */}
                         <div className="p-4 overflow-y-auto max-h-[60vh]">
-                            {/* Общий статус */}
                             <div className={`rounded p-4 mb-4 ${
                                 result.passed 
                                     ? 'bg-green-900 bg-opacity-20 border border-green-800 text-green-400' 
@@ -179,7 +173,6 @@ const LessonChallengePlayer = ({
                                 </p>
                             </div>
 
-                            {/* Детали по тестам */}
                             <div className="space-y-3">
                                 {result.results?.map((testResult, idx) => (
                                     <div
@@ -225,15 +218,6 @@ const LessonChallengePlayer = ({
                             </div>
                         </div>
 
-                        {/* Футер popup */}
-                        <div className="p-4 border-t border-[#404144] bg-[#303133]">
-                            <button
-                                onClick={closePopup}
-                                className="w-full px-4 py-2 rounded bg-edubot-orange text-white hover:bg-orange-600 transition-colors"
-                            >
-                                Жабуу
-                            </button>
-                        </div>
                     </div>
                 </div>
             )}
