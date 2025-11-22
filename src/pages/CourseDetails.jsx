@@ -337,27 +337,6 @@ const CourseDetailsPage = () => {
     const { prev: prevLesson, next: nextLesson } = findPrevNextLessons();
     const totalLessons = sections.reduce((count, sec) => count + (sec.lessons?.length || 0), 0);
     const progress = Math.round((completedLessons.length / totalLessons) * 100);
-    const courses = [
-        {
-            id: 1,
-            pricePerLesson: 120,
-            lessons: [
-                { id: 1, duration: 40 },
-                { id: 2, duration: 35 },
-                { id: 3, duration: 65 },
-            ],
-            isPrivate: true
-        },
-        {
-            id: 2,
-            pricePerLesson: 90,
-            lessons: [
-                { id: 1, duration: 40 },
-                { id: 2, duration: 35 },
-            ],
-            isPrivate: false
-        }
-    ];
     function changPaid() {
         setPaid(!paid)
     }
@@ -366,7 +345,13 @@ const CourseDetailsPage = () => {
         <div className="min-h-screen pt-24">
             <button onClick={changPaid}>tap</button>
             {paid && course ? (
-                <CardVideo course={courses[0]} />
+                <CardVideo
+                    key={activeLesson.id}
+                    videoRef={videoRef}
+                    course={course}
+                    videoUrl={activeLesson?.videoUrl}
+                />
+
             ) : (
                 <div className="max-w-6xl mx-auto p-6">
                     <CourseDescription course={course} />
