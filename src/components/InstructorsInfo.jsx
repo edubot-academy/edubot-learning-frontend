@@ -4,7 +4,13 @@ import CheckCircle from "../assets/icons/check.svg";
 import Briefcase from "../assets/icons/academicCap.svg";
 import BookOpen from "../assets/icons/bookOpen.svg";
 import People from "../assets/icons/people.svg";
-import Email from "../assets/icons/mailIcon.svg";
+import Instagram from "../assets/icons/instagram.svg";
+import Telegram from "../assets/icons/telegram.svg";
+import { FaLinkedin } from "react-icons/fa";
+import { FaYoutube } from "react-icons/fa";
+import { FaGithub } from "react-icons/fa6";
+import { IoLogoFacebook } from "react-icons/io5";
+import { FaTwitter } from "react-icons/fa";
 
 import DefaultAvatar from "../assets/icons/personBlack.svg";
 
@@ -17,12 +23,38 @@ function InstructorsInfo({ instructorData }) {
     yearsOfExperience,
     coursesCount = 0,
     numberOfStudents = 0,
+    socialLinks = {},
   } = instructorData || {};
 
   const tags =
     expertiseTags && expertiseTags.length > 0
       ? expertiseTags
       : ["Design", "UX-UI design", "Web Design"];
+
+  const getSocialIcon = (platform) => {
+    switch (platform?.toLowerCase()) {
+      case "instagram":
+        return { type: "img", component: Instagram };
+      case "telegram":
+        return { type: "img", component: Telegram };
+      case "linkedin":
+        return { type: "icon", component: FaLinkedin };
+      case "portfolio":
+      case "github":
+        return { type: "icon", component: FaGithub };
+      case "facebook":
+      case "fb":
+        return { type: "icon", component: IoLogoFacebook };
+      case "twitter":
+      case "x":
+        return { type: "icon", component: FaTwitter };
+      case "youtube":
+      case "yt":
+        return { type: "icon", component: FaYoutube };
+      default:
+        return null;
+    }
+  };
 
   return (
     <div className="max-w-[700px] w-full mx-auto bg-white rounded-xl shadow-md p-6 md:p-8 flex flex-col md:flex-row gap-6">
@@ -89,19 +121,37 @@ function InstructorsInfo({ instructorData }) {
               <img src={People} alt="book" className="w-4 h-4" />
               <span>{numberOfStudents}+ students</span>
             </div>
-            {instructorData?.email && (
-              <div className="flex items-center gap-2">
-                <img src={Email} alt="email" className="w-5 h-5" />
-                <span
-                  className="text-blue-600 hover:text-blue-800 cursor-pointer"
-                  onClick={() =>
-                    (window.location.href = `mailto:${instructorData.email}`)
-                  }
+
+            {Object.entries(socialLinks).map(([platform, url]) => {
+              const iconData = getSocialIcon(platform);
+              if (!iconData || !url) return null;
+
+              const IconComponent = iconData.component;
+
+              return (
+                <a
+                  key={platform}
+                  href={url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 text-gray-600 hover:text-blue-600 transition-colors"
                 >
-                  {instructorData.email}
-                </span>
-              </div>
-            )}
+                  {iconData.type === "img" ? (
+                    <div className="w-7 h-7 flex items-center justify-center">
+                      <img
+                        src={IconComponent}
+                        alt={platform}
+                        className="w-full h-full object-contain"
+                      />
+                    </div>
+                  ) : (
+                    <div className="w-5 h-5 flex items-center justify-center">
+                      <IconComponent className="w-full h-full" />
+                    </div>
+                  )}
+                </a>
+              );
+            })}
           </div>
         </div>
       </div>
