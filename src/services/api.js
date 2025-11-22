@@ -105,17 +105,21 @@ export const deleteUser = async (userId) => {
     }
 };
 
-export const enrollUserInCourse = async (userId, courseId, discountPercentage) => {
+export const enrollUserInCourse = async (userId, courseId, options = {}) => {
+    const { discountPercentage, offeringId } = options || {};
     try {
         const response = await api.post(`/enrollments/enroll`, {
             userId,
             courseId,
             discountPercentage,
+            offeringId,
         });
         return response.data;
     } catch (error) {
         console.error("Error enrolling user:", error);
-        toast.error("Failed to enroll user in course");
+        const message =
+            error.response?.data?.message || error.message || "Failed to enroll user in course";
+        toast.error(Array.isArray(message) ? message.join(", ") : message);
         throw error;
     }
 };
@@ -206,6 +210,60 @@ export const fetchCourses = async ({ q = '', limit = 20, excludeIds = '' } = {})
 export const fetchCourseDetails = async (courseId) => {
     const response = await api.get(`/courses/${courseId}`);
     return response.data;
+};
+
+export const fetchCompanyCourses = async (companyId, params = {}) => {
+    const { page, limit, q } = params;
+    const { data } = await api.get(`/courses/company/${companyId}`, {
+        params: clean({ page, limit, q }),
+    });
+    return data;
+};
+
+// Student Dashboard APIs
+export const fetchStudentDashboardSummary = async (studentId) => {
+    const { data } = await api.get(`/students/${studentId}/dashboard-summary`);
+    return data;
+};
+
+export const fetchStudentCourses = async (studentId, params = {}) => {
+    const { status } = params;
+    const { data } = await api.get(`/students/${studentId}/courses`, { params: clean({ status }) });
+    return data;
+};
+
+export const fetchStudentOfferings = async (studentId) => {
+    const { data } = await api.get(`/students/${studentId}/offerings`);
+    return data;
+};
+
+export const fetchStudentTasks = async (studentId, params = {}) => {
+    const { status } = params;
+    const { data } = await api.get(`/students/${studentId}/tasks`, { params: clean({ status }) });
+    return data;
+};
+
+export const fetchStudentProgress = async (studentId) => {
+    const { data } = await api.get(`/students/${studentId}/progress`);
+    return data;
+};
+
+export const fetchStudentCertificates = async (studentId) => {
+    const { data } = await api.get(`/students/${studentId}/certificates`);
+    return data;
+};
+
+export const fetchStudentNotificationSettings = async (studentId) => {
+    const { data } = await api.get(`/students/${studentId}/notification-settings`);
+    return data;
+};
+
+export const updateStudentNotificationSettings = async (studentId, payload) => {
+    const { data } = await api.patch(
+        `/students/${studentId}/notification-settings`,
+        payload
+    );
+    return data;
 };
 
 export const createCourse = async (courseData) => {
@@ -426,6 +484,62 @@ export const updateLessonDuration = async (courseId, sectionId, lessonId, durati
     }
 };
 
+// AI Assistant
+export const fetchCourseAiPrompts = async (courseId) => {
+    const { data } = await api.get(`/courses/${courseId}/ai/prompts`);
+    return data;
+};
+
+export const addCourseAiPrompt = async (courseId, payload) => {
+    const { data } = await api.post(`/courses/${courseId}/ai/prompts`, payload);
+    return data;
+};
+
+export const updateCourseAiPrompt = async (courseId, promptId, payload) => {
+    const { data } = await api.patch(`/courses/${courseId}/ai/prompts/${promptId}`, payload);
+    return data;
+};
+
+export const deleteCourseAiPrompt = async (courseId, promptId) => {
+    const { data } = await api.delete(`/courses/${courseId}/ai/prompts/${promptId}`);
+    return data;
+};
+
+export const fetchCourseAiSettings = async (courseId) => {
+    const { data } = await api.get(`/courses/${courseId}/ai/settings`);
+    return data;
+};
+
+export const updateCourseAiSettings = async (courseId, payload) => {
+    const { data } = await api.patch(`/courses/${courseId}/ai/settings`, payload);
+    return data;
+};
+
+export const fetchCourseAiChats = async (courseId) => {
+    const { data } = await api.get(`/courses/${courseId}/ai/chats`);
+    return data;
+};
+
+export const createCourseAiChat = async (courseId, payload = {}) => {
+    const { data } = await api.post(`/courses/${courseId}/ai/chats`, payload);
+    return data;
+};
+
+export const deleteAiChat = async (chatId) => {
+    const { data } = await api.delete(`/ai/chats/${chatId}`);
+    return data;
+};
+
+export const fetchAiChatMessages = async (chatId) => {
+    const { data } = await api.get(`/ai/chats/${chatId}/messages`);
+    return data;
+};
+
+export const sendAiChatMessage = async (chatId, payload) => {
+    const { data } = await api.post(`/ai/chats/${chatId}/messages`, payload);
+    return data;
+};
+
 
 // Categories
 
@@ -489,11 +603,6 @@ export const markLessonComplete = async (courseId, sectionId, lessonId) => {
 };
 
 //Student Progress
-export const fetchStudentProgress = async () => {
-    const response = await api.get(`/student-progress`);
-    return response.data;
-};
-
 export const updateLastViewedLesson = async ({ courseId, lessonId }) => {
     const res = await api.put(`/student-progress/last-viewed`, { courseId, lessonId });
     return res.data;
@@ -738,5 +847,3 @@ export const searchCourses = async (q) => {
     const res = await api.get("/courses/search", { params: { q } });
     return res.data;
 };
-
-

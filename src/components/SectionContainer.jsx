@@ -10,9 +10,6 @@ const SectionContainer = ({
   hideTitleAndLink = false,
   rightContent = null,
 }) => {
-  console.log("SectionContainer данные:", data);
-  console.log("SectionContainer CardComponent:", CardComponent);
-
   return (
     <div className="px-4 py-16 sm:px-6 lg:px-12 bg-white">
       {!hideTitleAndLink && (
