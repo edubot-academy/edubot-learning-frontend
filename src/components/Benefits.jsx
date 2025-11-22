@@ -22,8 +22,8 @@ const features = [
 
 export default function FeaturesSection() {
   return (
-    <section className="py-16 px-6 bg-[#F6F6F6] text-center">
-      <div className=" max-w-6xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+    <section className="px-4 py-8 sm:px-6 lg:px-12 bg-[#F6F6F6] text-center">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {features.map((feature, index) => (
           <div key={index} className="flex bg-white p-5 border border-gray rounded-md flex-col items-center">
             <div className="mb-4 flex justify-center items-center w-20 h-16">

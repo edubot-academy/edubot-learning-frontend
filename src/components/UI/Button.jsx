@@ -15,9 +15,9 @@ const Button = ({
     const styles = {
         primary: `
       bg-gradient-to-b from-[#FF8C6E] to-[#E14219]
-      text-white shadow-[0_4px_10px_rgba(225,66,25,0.3)]
-      hover:from-[#C2410C] hover:to-[#C2410C] hover:shadow-[0_6px_14px_rgba(225,66,25,0.4)]
-      active:scale-95 text-xs md:text-base
+      text-white orange__shadow
+      hover:from-[#C2410C] hover:to-[#C2410C]
+      active:scale-95
       disabled:bg-none disabled:bg-[#DFE1E5] disabled:text-[#3E424A] disabled:shadow-none disabled:cursor-not-allowed
     `,
         secondary: `

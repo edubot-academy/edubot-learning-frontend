@@ -5,7 +5,7 @@ import { TbLock } from "react-icons/tb";
 import Button from "../components/ui/button";
 import { FaPlay } from "react-icons/fa";
 
-const CardVideo = ({ videoRef, videoUrl, course, }) => {
+const CardVideo = ({ videoRef, videoUrl, course, lessonCount }) => {
     return (
         <div className="border border-gray-200 rounded-md overflow-hidden bg-white w-[90vw] sm:w-[70vw] md:w-[40vw] lg:w-[30vw] max-w-[420px] px-4 py-6 m-5">
             <div className="relative w-full ">
@@ -33,7 +33,7 @@ const CardVideo = ({ videoRef, videoUrl, course, }) => {
 
                 <div className="flex flex-col gap-2 text-[#3E424A]">
                     <p className="flex items-center gap-2 text-base font-semibold">
-                        <FiBook /> {course.coursesCount} уроков
+                        <FiBook /> {lessonCount} уроков
                     </p>
 
                     <p className="flex items-center gap-2 text-base font-semibold">

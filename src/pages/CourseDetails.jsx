@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback, useContext } from "react";
 import { useParams } from "react-router-dom";
 import debounce from "lodash.debounce";
+import toast from "react-hot-toast";
 import {
     fetchCourseDetails,
     fetchSections,
@@ -11,15 +12,49 @@ import {
     getVideoTime,
     updateVideoTime,
     fetchEnrollment,
+    fetchLessonQuiz,
+    submitLessonQuiz,
+    fetchLessonChallenge,
+    submitLessonChallenge,
 } from "../services/api";
 import { AuthContext } from "../context/AuthContext";
 import CourseSidebar from "../components/CourseSidebar";
 import CourseVideoPlayer from "../components/CourseVideoPlayer";
+import CourseHeader from "../components/CourseHeader";
 import CardVideo from "../components/CardVideo";
 import ArticleLessonViewer from "../components/ArticleLessonViewer";
+import LessonQuizPlayer from "../components/LessonQuizPlayer";
+import LessonChallengePlayer from "../components/LessonChallengePlayer";
 import CourseDescription from "../components/CourseDescription";
 import Comment from "../components/Comment";
+import AiAssistantPanel from "../components/AiAssistantPanel";
 
+const CHALLENGE_STORAGE_PREFIX = 'lessonChallengeState';
+
+const getChallengeStorageKey = (courseId, lessonId) =>
+    `${CHALLENGE_STORAGE_PREFIX}:${courseId}:${lessonId}`;
+
+const loadChallengeStateFromStorage = (courseId, lessonId) => {
+    if (typeof window === 'undefined') return null;
+    try {
+        const raw = localStorage.getItem(getChallengeStorageKey(courseId, lessonId));
+        return raw ? JSON.parse(raw) : null;
+    } catch (error) {
+        console.warn('Failed to read challenge state', error);
+        return null;
+    }
+};
+
+const saveChallengeStateToStorage = (courseId, lessonId, updates) => {
+    if (typeof window === 'undefined') return;
+    try {
+        const existing = loadChallengeStateFromStorage(courseId, lessonId) || {};
+        const next = { ...existing, ...updates };
+        localStorage.setItem(getChallengeStorageKey(courseId, lessonId), JSON.stringify(next));
+    } catch (error) {
+        console.warn('Failed to persist challenge state', error);
+    }
+};
 const CourseDetailsPage = () => {
     const { id } = useParams();
     const { user } = useContext(AuthContext);
@@ -38,7 +73,17 @@ const CourseDetailsPage = () => {
     const videoRef = useRef(null);
     const hasPlayedRef = useRef(false);
     const [shouldScrollToLesson, setShouldScrollToLesson] = useState(true);
-    const [paid, setPaid] = useState(false);
+    const [activeTab, setActiveTab] = useState('program'); // 'program' | 'assistant'
+    const [lessonQuizData, setLessonQuizData] = useState({});
+    const [lessonQuizAnswers, setLessonQuizAnswers] = useState({});
+    const [lessonQuizResults, setLessonQuizResults] = useState({});
+    const [quizLoading, setQuizLoading] = useState(false);
+    const [quizSubmitting, setQuizSubmitting] = useState(false);
+    const [lessonChallengeData, setLessonChallengeData] = useState({});
+    const [lessonChallengeCode, setLessonChallengeCode] = useState({});
+    const [lessonChallengeResults, setLessonChallengeResults] = useState({});
+    const [challengeLoading, setChallengeLoading] = useState(false);
+    const [challengeSubmitting, setChallengeSubmitting] = useState(false);
 
     useEffect(() => {
         hasPlayedRef.current = false;
@@ -64,9 +109,15 @@ const CourseDetailsPage = () => {
         }, 100);
     };
 
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     const debouncedTimeUpdate = useCallback(
         debounce((time) => {
-            if (user && enrolled && activeLessonRef.current?.id) {
+            if (
+                user &&
+                enrolled &&
+                activeLessonRef.current?.id &&
+                activeLessonRef.current?.kind === 'video'
+            ) {
                 updateVideoTime({ courseId: Number(id), lessonId: activeLessonRef.current.id, time });
             }
         }, 3000),
@@ -74,7 +125,7 @@ const CourseDetailsPage = () => {
     );
 
     const handleTimeUpdate = (time) => {
-        if (user && enrolled) {
+        if (user && enrolled && activeLessonRef.current?.kind === 'video') {
             debouncedTimeUpdate(time);
         }
     };
@@ -83,7 +134,7 @@ const CourseDetailsPage = () => {
         if (!videoRef.current) return;
         const currentTime = videoRef.current.currentTime;
         if (currentTime < (activeLessonRef.current?.duration ?? 9999) * 0.9) return;
-        if (user && enrolled) {
+        if (user && enrolled && activeLessonRef.current?.kind === 'video') {
             console.log('updateVideoTime');
             updateVideoTime(user.id, activeLessonRef.current.id, currentTime);
         }
@@ -106,15 +157,67 @@ const CourseDetailsPage = () => {
         }, 300);
     };
 
+    const loadQuizForLesson = async (lesson) => {
+        if (lessonQuizData[lesson.id]) return;
+        setQuizLoading(true);
+        try {
+            const quiz = await fetchLessonQuiz(id, lesson.sectionId, lesson.id);
+            setLessonQuizData((prev) => ({ ...prev, [lesson.id]: quiz }));
+            setLessonQuizAnswers((prev) => ({ ...prev, [lesson.id]: {} }));
+        } catch (err) {
+            console.error(err);
+            const message = err.response?.data?.message || "Квиз жүктөлбөй калды";
+            toast.error(message);
+        } finally {
+            setQuizLoading(false);
+        }
+    };
+
+    const loadChallengeForLesson = async (lesson) => {
+        if (lessonChallengeData[lesson.id]) return lessonChallengeData[lesson.id];
+        setChallengeLoading(true);
+        try {
+            const challenge = await fetchLessonChallenge(id, lesson.sectionId, lesson.id);
+            setLessonChallengeData((prev) => ({ ...prev, [lesson.id]: challenge }));
+
+            const savedState = loadChallengeStateFromStorage(id, lesson.id);
+            setLessonChallengeCode((prev) => ({
+                ...prev,
+                [lesson.id]:
+                    typeof prev[lesson.id] !== 'undefined'
+                        ? prev[lesson.id]
+                        : savedState?.code ?? challenge.starterCode ?? '',
+            }));
+
+            if (savedState?.result) {
+                setLessonChallengeResults((prev) => ({
+                    ...prev,
+                    [lesson.id]: savedState.result,
+                }));
+            }
+
+            return challenge;
+        } catch (err) {
+            console.error(err);
+            const message = err.response?.data?.message || "Код тапшырма жүктөлбөй калды";
+            toast.error(message);
+            return null;
+        } finally {
+            setChallengeLoading(false);
+        }
+    };
+
     const handleLessonClick = async (lesson) => {
         console.log('handleLessonClick');
         const isArticle = lesson.kind === 'article';
+        const isQuiz = lesson.kind === 'quiz';
+        const isCode = lesson.kind === 'code';
         setActiveLesson(lesson);
         localStorage.setItem(`active_section_${id}`, String(lesson.sectionId));
         setActiveSectionId(lesson.sectionId);
         scrollToLesson(lesson.id);
 
-        if (!isArticle) {
+        if (!isArticle && !isQuiz && !isCode) {
             setTimeout(() => {
                 if (videoRef.current) {
                     videoRef.current.load();
@@ -127,9 +230,17 @@ const CourseDetailsPage = () => {
             setResumeVideoTime(0);
         }
 
+        if (isQuiz) {
+            await loadQuizForLesson(lesson);
+        }
+
+        if (isCode) {
+            await loadChallengeForLesson(lesson);
+        }
+
         if (user && enrolled && !lesson.locked) {
             await updateLastViewedLesson({ courseId: Number(id), lessonId: lesson.id });
-            if (!isArticle) {
+            if (!isArticle && !isQuiz && !isCode) {
                 const videoTime = await getVideoTime(id, lesson.id);
 
                 if (videoTime?.time && videoTime.time < (lesson.duration || 9999) * 0.95 && !completedLessons.includes(lesson.id)) {
@@ -143,6 +254,110 @@ const CourseDetailsPage = () => {
         }
     };
 
+    const handleQuizAnswerChange = (questionId, optionId) => {
+        if (!activeLesson) return;
+        setLessonQuizAnswers((prev) => ({
+            ...prev,
+            [activeLesson.id]: {
+                ...(prev[activeLesson.id] || {}),
+                [questionId]: optionId,
+            },
+        }));
+    };
+
+    const handleQuizRetake = () => {
+        if (!activeLesson) return;
+        setLessonQuizResults((prev) => {
+            const next = { ...prev };
+            delete next[activeLesson.id];
+            return next;
+        });
+        setLessonQuizAnswers((prev) => ({
+            ...prev,
+            [activeLesson.id]: {},
+        }));
+    };
+
+    const handleQuizSubmit = async () => {
+        if (!activeLesson) return;
+        const quiz = lessonQuizData[activeLesson.id];
+        if (!quiz) return;
+        const answersMap = lessonQuizAnswers[activeLesson.id] || {};
+        const unanswered = quiz.questions.some((question) => !answersMap[question.id]);
+        if (unanswered) {
+            toast.error('Бардык суроолорго жооп бериңиз.');
+            return;
+        }
+        setQuizSubmitting(true);
+        try {
+            const payload = {
+                answers: quiz.questions.map((question) => ({
+                    questionId: question.id,
+                    optionId: answersMap[question.id],
+                })),
+            };
+            const result = await submitLessonQuiz(
+                id,
+                activeLesson.sectionId,
+                activeLesson.id,
+                payload,
+            );
+            setLessonQuizResults((prev) => ({ ...prev, [activeLesson.id]: result }));
+            toast.success(result.passed ? 'Куттуктайбыз! Квиз ийгиликтүү тапшырылды.' : 'Кайра аракет кылып көрүңүз.');
+            if (result.passed) {
+                setCompletedLessons((prev) => [...new Set([...prev, activeLesson.id])]);
+            }
+        } catch (err) {
+            console.error(err);
+            toast.error(err.response?.data?.message || 'Квизди тапшыруу мүмкүн болбоду');
+        } finally {
+            setQuizSubmitting(false);
+        }
+    };
+
+    const handleChallengeCodeChange = (lessonId, value) => {
+        setLessonChallengeCode((prev) => ({
+            ...prev,
+            [lessonId]: value,
+        }));
+        const existingResult = lessonChallengeResults[lessonId];
+        saveChallengeStateToStorage(id, lessonId, {
+            code: value,
+            result: existingResult || null,
+        });
+    };
+
+    const handleChallengeSubmit = async () => {
+        if (!activeLesson) return;
+        const challenge = lessonChallengeData[activeLesson.id];
+        if (!challenge) return;
+        const codeValue = lessonChallengeCode[activeLesson.id] ?? challenge.starterCode ?? '';
+
+        setChallengeSubmitting(true);
+        try {
+            const result = await submitLessonChallenge(
+                id,
+                activeLesson.sectionId,
+                activeLesson.id,
+                { code: codeValue }
+            );
+            setLessonChallengeResults((prev) => ({ ...prev, [activeLesson.id]: result }));
+            saveChallengeStateToStorage(id, activeLesson.id, {
+                code: codeValue,
+                result,
+            });
+            toast.success(result.passed ? 'Бардык тесттер өттү!' : 'Кээ бир тесттер өтпөй калды');
+            if (result.passed) {
+                setCompletedLessons((prev) => [...new Set([...prev, activeLesson.id])]);
+            }
+        } catch (err) {
+            console.error(err);
+            toast.error(err.response?.data?.message || 'Код тапшырма текшерилген жок');
+        } finally {
+            setChallengeSubmitting(false);
+        }
+    };
+
     const findPrevNextLessons = () => {
         const flatLessons = sections.flatMap((sec) => sec.lessons || []);
         const index = flatLessons.findIndex((l) => l.id === activeLesson?.id);
@@ -152,7 +367,13 @@ const CourseDetailsPage = () => {
     };
 
     const handleEnded = async () => {
-        if (!hasPlayedRef.current || activeLesson?.kind === 'article') return;
+        if (
+            !hasPlayedRef.current ||
+            activeLesson?.kind === 'article' ||
+            activeLesson?.kind === 'quiz' ||
+            activeLesson?.kind === 'code'
+        )
+            return;
         if (user && enrolled && activeLesson) {
             console.log('Marking lesson as complete handleEnded');
             const resp = await markLessonComplete(
@@ -172,7 +393,7 @@ const CourseDetailsPage = () => {
 
     const handleVideoProgress = useCallback(
         async (progress, lessonParam) => {
-            if (lessonParam.kind === 'article') return;
+            if (lessonParam.kind === 'article' || lessonParam.kind === 'quiz' || lessonParam.kind === 'code') return;
 
             if (!hasPlayedRef.current) {
                 if (progress > 0) {
@@ -212,7 +433,7 @@ const CourseDetailsPage = () => {
         if (response.completed) {
             setCompletedLessons((prev) => [...new Set([...prev, lesson.id])]);
         } else {
-            if (lesson.kind !== 'article') {
+            if (lesson.kind === 'video') {
                 await updateVideoTime({
                     courseId: Number(id),
                     lessonId: lesson.id,
@@ -226,6 +447,7 @@ const CourseDetailsPage = () => {
         }
     };
 
+    /* eslint-disable react-hooks/exhaustive-deps */
     useEffect(() => {
         const fetchCourse = async () => {
             try {
@@ -252,6 +474,7 @@ const CourseDetailsPage = () => {
                             ...lesson,
                             kind: lesson.kind || 'video',
                             content: lesson.content || '',
+                            resourceName: lesson.resourceName || '',
                             sectionId: sec.id,
                             locked: !enrollment.enrolled && !lesson.previewVideo,
                         })),
@@ -302,8 +525,14 @@ const CourseDetailsPage = () => {
                     setActiveSectionId(lastLesson.sectionId);
                     localStorage.setItem(`active_section_${id}`, String(lastLesson.sectionId));
                     scrollToLesson(lastLesson.id);
+                    if (lastLesson.kind === 'quiz') {
+                        await loadQuizForLesson(lastLesson);
+                    }
+                    if (lastLesson.kind === 'code') {
+                        await loadChallengeForLesson(lastLesson);
+                    }
                     if (user && enrollment.enrolled && !lastLesson.locked) {
-                        if (lastLesson.kind === 'article') {
+                        if (lastLesson.kind === 'article' || lastLesson.kind === 'quiz' || lastLesson.kind === 'code') {
                             setResumeVideoTime(0);
                         } else {
                             const videoTime = await getVideoTime(id, lastLesson.id);
@@ -329,6 +558,7 @@ const CourseDetailsPage = () => {
         };
         fetchCourse();
     }, [id, user]);
+    /* eslint-enable react-hooks/exhaustive-deps */
 
     if (loading) return <div>Жүктөлүүдө...</div>;
     if (error) return <div>Ката: {error}</div>;
@@ -336,66 +566,154 @@ const CourseDetailsPage = () => {
 
     const { prev: prevLesson, next: nextLesson } = findPrevNextLessons();
     const totalLessons = sections.reduce((count, sec) => count + (sec.lessons?.length || 0), 0);
-    const progress = Math.round((completedLessons.length / totalLessons) * 100);
-    function changPaid() {
-        setPaid(!paid)
-    }
+    const progress = totalLessons > 0
+        ? Math.round((completedLessons.length / totalLessons) * 100)
+        : 0;
+
+    const isCourseInstructor = Boolean(user && course?.instructor?.id === user.id);
+    const isAdmin = user?.role === 'admin';
+    const isAiAvailable = Boolean(course.aiAssistantEnabled && (enrolled || isCourseInstructor || isAdmin));
+    const assistantAvailableMessage = course.aiAssistantEnabled
+        ? 'Ассистентти колдонуу үчүн курсга жазылуу керек.'
+        : 'EDU AI ассистенти бул курста өчүрүлгөн.';
+
+    const tabs = [
+        { id: 'program', label: 'Программа курса', disabled: false },
+        { id: 'assistant', label: 'Edu AI Assistent', disabled: !isAiAvailable },
+    ];
+
+    const handleTabChange = (tab) => {
+        if (tab.disabled) {
+            toast.error('EDU AI азырынча бул курста жеткиликтүү эмес');
+            return;
+        }
+        setActiveTab(tab.id);
+    };
+
+    const renderTabButtons = () => (
+        <div className="flex flex-wrap gap-2 bg-gray-100 rounded-2xl p-1">
+            {tabs.map((tab) => (
+                <button
+                    key={tab.id}
+                    type="button"
+                    onClick={() => handleTabChange(tab)}
+                    className={`flex-1 min-w-[140px] px-4 py-2 rounded-xl text-sm font-medium transition ${activeTab === tab.id
+                            ? 'bg-white text-gray-900 shadow'
+                            : 'text-gray-600'
+                        } ${tab.disabled ? 'opacity-60 cursor-not-allowed' : 'hover:text-gray-900'}`}
+                >
+                    {tab.label}
+                </button>
+            ))}
+        </div>
+    );
+
+    const lessonCount = sections.reduce((count, sec) => count + (sec.lessons?.length || 0), 0);
 
     return (
-        <div className="min-h-screen pt-24">
-            <button onClick={changPaid}>tap</button>
-            {paid && course ? (
+        <div className="min-h-screen pt-24 bg-[#f8f9fb]">
+            <CourseHeader course={course} progress={progress} enrolled={enrolled} />
+            <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+                <CourseDescription course={course} />
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="md:col-span-2">
+                        {activeLesson && (
+                            activeLesson.kind === 'article' ? (
+                                <ArticleLessonViewer key={activeLesson.id} lesson={activeLesson} />
+                            ) : activeLesson.kind === 'quiz' ? (
+                                <LessonQuizPlayer
+                                    key={activeLesson.id}
+                                    quiz={lessonQuizData[activeLesson.id]}
+                                    answers={lessonQuizAnswers[activeLesson.id] || {}}
+                                    onAnswerChange={handleQuizAnswerChange}
+                                    onSubmit={handleQuizSubmit}
+                                    onRetake={handleQuizRetake}
+                                    submitting={quizSubmitting}
+                                    disabled={!enrolled || activeLesson.locked}
+                                    loading={quizLoading && !lessonQuizData[activeLesson.id]}
+                                    result={lessonQuizResults[activeLesson.id]}
+                                />
+                            ) : activeLesson.kind === 'code' ? (
+                                <LessonChallengePlayer
+                                    key={activeLesson.id}
+                                    challenge={lessonChallengeData[activeLesson.id]}
+                                    code={
+                                        lessonChallengeCode[activeLesson.id] ??
+                                        lessonChallengeData[activeLesson.id]?.starterCode ??
+                                        ''
+                                    }
+                                    onCodeChange={(newCode) =>
+                                        handleChallengeCodeChange(activeLesson.id, newCode)
+                                    }
+                                    onSubmit={handleChallengeSubmit}
+                                    submitting={challengeSubmitting}
+                                    disabled={!enrolled || activeLesson.locked}
+                                    loading={challengeLoading && !lessonChallengeData[activeLesson.id]}
+                                    result={lessonChallengeResults[activeLesson.id]}
+                                />
+                            ) : (
+                                <CourseVideoPlayer
+                                    key={activeLesson.id}
+                                    activeLesson={activeLesson}
+                                    resumeVideoTime={resumeVideoTime}
+                                    handleVideoProgress={(progress) => handleVideoProgress(progress, activeLesson)}
+                                    handleTimeUpdate={handleTimeUpdate}
+                                    handlePause={handlePause}
+                                    videoRef={videoRef}
+                                    nextLesson={nextLesson}
+                                    prevLesson={prevLesson}
+                                    onEnded={handleEnded}
+                                    handleLessonClick={handleLessonClick}
+                                />
+                            )
+                        )}
+                    </div>
+
+                    <div className="space-y-4">
+                        {activeTab === 'program' ? (
+                            <CourseSidebar
+                                key={activeSectionId}
+                                sections={sections}
+                                activeSectionId={activeSectionId}
+                                toggleSection={toggleSection}
+                                activeLesson={activeLesson}
+                                handleLessonClick={handleLessonClick}
+                                handleCheckboxToggle={handleCheckboxToggle}
+                                completedLessons={completedLessons}
+                                lastViewedLessonId={lastViewedLessonId}
+                                enrolled={enrolled}
+                                lessonRefs={lessonRefs}
+                                headerContent={renderTabButtons()}
+                            />
+                        ) : (
+                            <div className="bg-white p-6 rounded-lg shadow-md md:sticky md:top-28">
+                                <div className="mb-4">{renderTabButtons()}</div>
+                                {isAiAvailable ? (
+                                    <AiAssistantPanel
+                                        courseId={Number(id)}
+                                        languageCode={course.languageCode}
+                                    />
+                                ) : (
+                                    <div className="text-center text-gray-500 text-sm">
+                                        {assistantAvailableMessage}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                <Comment courseId={id} />
+
                 <CardVideo
-                    key={activeLesson.id}
+                    key={id}
                     videoRef={videoRef}
                     course={course}
-                    videoUrl={activeLesson?.videoUrl}
+                    videoUrl={sections[0].lessons[0]?.videoUrl || ""}
+                    lessonCount={lessonCount}
                 />
-
-            ) : (
-                <div className="max-w-6xl mx-auto p-6">
-                    <CourseDescription course={course} />
-
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div className="md:col-span-2">
-                            {activeLesson && (
-                                activeLesson.kind === 'article' ? (
-                                    <ArticleLessonViewer key={activeLesson.id} lesson={activeLesson} />
-                                ) : (
-                                    <CourseVideoPlayer
-                                        key={activeLesson.id}
-                                        activeLesson={activeLesson}
-                                        resumeVideoTime={resumeVideoTime}
-                                        handleVideoProgress={(progress) => handleVideoProgress(progress, activeLesson)}
-                                        handleTimeUpdate={handleTimeUpdate}
-                                        handlePause={handlePause}
-                                        videoRef={videoRef}
-                                        nextLesson={nextLesson}
-                                        prevLesson={prevLesson}
-                                        onEnded={handleEnded}
-                                        handleLessonClick={handleLessonClick}
-                                    />
-                                )
-                            )}
-                        </div>
-                        <CourseSidebar
-                            key={activeSectionId}
-                            sections={sections}
-                            activeSectionId={activeSectionId}
-                            toggleSection={toggleSection}
-                            activeLesson={activeLesson}
-                            handleLessonClick={handleLessonClick}
-                            handleCheckboxToggle={handleCheckboxToggle}
-                            completedLessons={completedLessons}
-                            lastViewedLessonId={lastViewedLessonId}
-                            enrolled={enrolled}
-                            lessonRefs={lessonRefs}
-                        />
-
-                    </div>
-                    <Comment courseId={id} />
-                </div>
-            )}
+            </div>
         </div>
     );
 };
