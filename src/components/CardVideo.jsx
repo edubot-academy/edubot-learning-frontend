@@ -5,15 +5,11 @@ import { TbLock } from "react-icons/tb";
 import Button from "../components/ui/button";
 import { FaPlay } from "react-icons/fa";
 
-const CardVideo = ({ videoRef, videoUrl, course, lessonCount }) => {
+const CardVideo = ({ coverImageUrl, course, lessonCount }) => {
     return (
         <div className="border border-gray-200 rounded-md overflow-hidden bg-white w-[90vw] sm:w-[70vw] md:w-[40vw] lg:w-[30vw] max-w-[420px] px-4 py-6 m-5">
             <div className="relative w-full ">
-                <video
-                    ref={videoRef}
-                    src={videoUrl}
-                    className="w-full aspect-video object-cover cursor-pointer"
-                />
+                <img src={coverImageUrl} alt="" />
                 <div className="absolute inset-0 flex items-center justify-center bg-black/35 hover:bg-black/45 transition rounded-md">
                     <button className="bg-white/35 rounded-full p-4">
                         <FaPlay className="text-[#EA580C] text-2xl pl-1" />

@@ -712,6 +712,7 @@ const CourseDetailsPage = () => {
                     course={course}
                     videoUrl={sections[0].lessons[0]?.videoUrl || ""}
                     lessonCount={lessonCount}
+                    coverImageUrl={course.coverImageUrl}
                 />
             </div>
         </div>
