@@ -1,9 +1,85 @@
-import React, { useEffect, useState, useContext, useRef } from 'react';
+import { useEffect, useState, useContext, useRef, useMemo, useCallback } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { updateUserProfile, fetchUserProfile } from '../services/api';
+import {
+    updateUserProfile,
+    fetchUserProfile,
+    fetchInstructorProfile,
+    updateInstructorProfile,
+} from '../services/api';
 import PhoneInput from '../components/PhoneInput';
+
+const SOCIAL_LINK_FIELDS = ['website', 'twitter', 'linkedin', 'instagram', 'youtube', 'facebook'];
+const SOCIAL_LABELS = {
+    website: 'Сайт / Портфолио',
+    twitter: 'Twitter / X',
+    linkedin: 'LinkedIn',
+    instagram: 'Instagram',
+    youtube: 'YouTube',
+    facebook: 'Facebook',
+};
+
+const createEmptyInstructorProfile = () => ({
+    bio: '',
+    yearsOfExperience: '',
+    numberOfStudents: '',
+    expertiseTagsText: '',
+    socialLinks: SOCIAL_LINK_FIELDS.reduce((acc, key) => {
+        acc[key] = '';
+        return acc;
+    }, {}),
+    courses: [],
+});
+
+const cloneInstructorProfileState = (profile) => ({
+    ...profile,
+    socialLinks: { ...(profile?.socialLinks || {}) },
+    courses: Array.isArray(profile?.courses) ? [...profile.courses] : [],
+});
+
+const toInputValue = (value) =>
+    value === undefined || value === null ? '' : String(value);
+
+const normalizeInstructorProfileState = (data = {}) => {
+    const base = createEmptyInstructorProfile();
+    base.bio = data.bio || '';
+    base.yearsOfExperience = toInputValue(data.yearsOfExperience);
+    base.numberOfStudents = toInputValue(data.numberOfStudents);
+    base.expertiseTagsText = Array.isArray(data.expertiseTags)
+        ? data.expertiseTags.join(', ')
+        : '';
+    base.courses = Array.isArray(data.courses) ? data.courses : [];
+    SOCIAL_LINK_FIELDS.forEach((key) => {
+        base.socialLinks[key] = data.socialLinks?.[key] || '';
+    });
+    return base;
+};
+
+const getEmptyInstructorState = () =>
+    cloneInstructorProfileState(createEmptyInstructorProfile());
+
+const mapProfileForCompare = (profile) => ({
+    bio: (profile.bio || '').trim(),
+    yearsOfExperience:
+        profile.yearsOfExperience === '' ? '' : Number(profile.yearsOfExperience),
+    numberOfStudents:
+        profile.numberOfStudents === '' ? '' : Number(profile.numberOfStudents),
+    expertiseTags: (profile.expertiseTagsText || '')
+        .split(',')
+        .map((tag) => tag.trim())
+        .filter(Boolean),
+    socialLinks: SOCIAL_LINK_FIELDS.reduce((acc, key) => {
+        acc[key] = (profile.socialLinks?.[key] || '').trim();
+        return acc;
+    }, {}),
+});
+
+const parseNumberValue = (value) => {
+    if (value === '' || value === undefined || value === null) return null;
+    const parsed = Number(value);
+    return Number.isNaN(parsed) ? null : parsed;
+};
 
 const ProfilePage = () => {
     const { user, setUser } = useContext(AuthContext);
@@ -15,9 +91,119 @@ const ProfilePage = () => {
     const [initialData, setInitialData] = useState(null);
     const [isEditing, setIsEditing] = useState(false);
     const [passwordData, setPasswordData] = useState({ newPassword: '', confirmPassword: '' });
+    const [instructorProfile, setInstructorProfile] = useState(getEmptyInstructorState);
+    const [instructorProfileInitial, setInstructorProfileInitial] = useState(getEmptyInstructorState);
+    const [loadingInstructorProfile, setLoadingInstructorProfile] = useState(false);
+    const [savingInstructorProfile, setSavingInstructorProfile] = useState(false);
+    const [loadedUserId, setLoadedUserId] = useState(null);
+    const [isInstructorEditing, setIsInstructorEditing] = useState(false);
+    const isInstructor = user?.role === 'instructor';
+
+    const applyInstructorProfileState = useCallback(
+        (data) => {
+            const normalized = cloneInstructorProfileState(
+                normalizeInstructorProfileState(data)
+            );
+            setInstructorProfile(normalized);
+            setInstructorProfileInitial(cloneInstructorProfileState(normalized));
+            setIsInstructorEditing(false);
+        },
+        [setInstructorProfile, setInstructorProfileInitial],
+    );
+
+    const loadInstructorProfileData = useCallback(
+        async (instructorId) => {
+            if (!instructorId) return;
+            setLoadingInstructorProfile(true);
+            try {
+                const data = await fetchInstructorProfile(instructorId);
+                applyInstructorProfileState(data);
+            } catch (error) {
+                console.error("Failed to load instructor profile", error);
+                toast.error("Инструктор профилин жүктөө мүмкүн болбоду");
+            } finally {
+                setLoadingInstructorProfile(false);
+            }
+        },
+        [applyInstructorProfileState],
+    );
+
+    const handleInstructorProfileChange = (field, value) => {
+        setInstructorProfile((prev) => ({
+            ...prev,
+            [field]: value,
+        }));
+    };
+
+    const handleSocialLinkChange = (field, value) => {
+        setInstructorProfile((prev) => ({
+            ...prev,
+            socialLinks: {
+                ...prev.socialLinks,
+                [field]: value,
+            },
+        }));
+    };
+
+    const handleInstructorProfileReset = () => {
+        setInstructorProfile(cloneInstructorProfileState(instructorProfileInitial));
+        setIsInstructorEditing(false);
+    };
+
+    const handleInstructorProfileSubmit = async () => {
+        if (!user) return;
+        setSavingInstructorProfile(true);
+        const expertiseTags = (instructorProfile.expertiseTagsText || '')
+            .split(',')
+            .map((tag) => tag.trim())
+            .filter(Boolean);
+        const socialLinksPayload = SOCIAL_LINK_FIELDS.reduce((acc, key) => {
+            const value = (instructorProfile.socialLinks?.[key] || '').trim();
+            if (value) acc[key] = value;
+            return acc;
+        }, {});
+
+        const payload = {
+            bio: instructorProfile.bio?.trim() || null,
+            yearsOfExperience: parseNumberValue(instructorProfile.yearsOfExperience),
+            numberOfStudents: parseNumberValue(instructorProfile.numberOfStudents),
+            expertiseTags,
+        };
+
+        if (Object.keys(socialLinksPayload).length > 0) {
+            payload.socialLinks = socialLinksPayload;
+        }
+
+        try {
+            const updatedProfile = await updateInstructorProfile(user.id, payload);
+            applyInstructorProfileState(updatedProfile);
+            setIsInstructorEditing(false);
+            toast.success("Инструктор маалыматы сакталды");
+        } catch (error) {
+            console.error("Failed to save instructor profile", error);
+            const message =
+                error.response?.data?.message ||
+                error.message ||
+                "Инструктор маалыматын сактоо мүмкүн болбоду";
+            toast.error(Array.isArray(message) ? message.join(", ") : message);
+        } finally {
+            setSavingInstructorProfile(false);
+        }
+    };
+
+    const isInstructorProfileChanged = useMemo(
+        () =>
+            JSON.stringify(mapProfileForCompare(instructorProfile)) !==
+            JSON.stringify(mapProfileForCompare(instructorProfileInitial)),
+        [instructorProfile, instructorProfileInitial]
+    );
 
     useEffect(() => {
-        if (!user) return navigate("/login");
+        if (!user) {
+            navigate("/login");
+            return;
+        }
+        if (loadedUserId === user.id) return;
 
         const loadProfile = async () => {
             try {
@@ -37,6 +223,13 @@ const ProfilePage = () => {
                 });
                 if (data.avatar) setPreview(data.avatar);
                 setUser(data);
+
+                if (data.role === 'instructor') {
+                    await loadInstructorProfileData(data.id);
+                } else {
+                    applyInstructorProfileState(createEmptyInstructorProfile());
+                }
+                setLoadedUserId(data.id);
             } catch {
                 if (!errorShown.current) {
                     errorShown.current = true;
@@ -46,7 +239,7 @@ const ProfilePage = () => {
         };
 
         loadProfile();
-    }, []);
+    }, [applyInstructorProfileState, loadInstructorProfileData, navigate, setUser, user, loadedUserId]);
 
     useEffect(() => {
         if (formData.avatar) {
@@ -111,6 +304,7 @@ const ProfilePage = () => {
             setIsEditing(false);
             setPasswordData({ newPassword: '', confirmPassword: '' });
         } catch (err) {
+            console.error(err);
             toast.error("Профилди жаңыртуу мүмкүн болбоду");
         }
     };
@@ -121,6 +315,19 @@ const ProfilePage = () => {
         (formData.avatar && formData.avatar instanceof File) ||
         (passwordData.newPassword.length >= 6 && passwordData.newPassword === passwordData.confirmPassword)
     );
+
+    const expertiseTagsList = (instructorProfile.expertiseTagsText || '')
+        .split(',')
+        .map((tag) => tag.trim())
+        .filter(Boolean);
+
+    const socialLinkEntries = SOCIAL_LINK_FIELDS
+        .map((field) => ({
+            key: field,
+            label: SOCIAL_LABELS[field],
+            value: instructorProfile.socialLinks[field],
+        }))
+        .filter(({ value }) => value);
 
     return (
         <div className="pt-24 max-w-4xl mx-auto p-6 min-h-screen">
@@ -233,10 +440,250 @@ const ProfilePage = () => {
                             className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700"
                         >Өзгөртүү</button>
                     )}
-                </div>
             </div>
         </div>
-    );
+
+        {isInstructor && (
+            <div className="bg-white p-6 shadow rounded-lg mt-8">
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+                    <div>
+                        <h2 className="text-2xl font-semibold">Инструктор маалыматы</h2>
+                        <p className="text-sm text-gray-500">
+                            Курсту сатып ала турган студенттер үчүн тажрыйбаңыз жана социалдык
+                            тармактар тууралуу айтып бериңиз.
+                        </p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                        {loadingInstructorProfile && (
+                            <span className="text-sm text-gray-500">Жүктөлүүдө...</span>
+                        )}
+                        {!isInstructorEditing ? (
+                            <button
+                                onClick={() => setIsInstructorEditing(true)}
+                                className="px-4 py-2 border border-edubot-dark text-edubot-dark rounded"
+                            >
+                                Өзгөртүү
+                            </button>
+                        ) : null}
+                    </div>
+                </div>
+
+                {!isInstructorEditing ? (
+                    <div className="space-y-5">
+                        <div>
+                            <p className="text-gray-600 font-medium mb-1">Био / Өзүм жөнүндө</p>
+                            <p className="text-gray-800 whitespace-pre-line">
+                                {instructorProfile.bio?.trim() || 'Маалымат кошула элек'}
+                            </p>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="border border-gray-200 rounded-lg p-4">
+                                <p className="text-xs uppercase text-gray-500 tracking-wide">
+                                    Тажрыйба (жыл)
+                                </p>
+                                <p className="text-2xl font-semibold text-gray-900">
+                                    {instructorProfile.yearsOfExperience || '—'}
+                                </p>
+                            </div>
+                            <div className="border border-gray-200 rounded-lg p-4">
+                                <p className="text-xs uppercase text-gray-500 tracking-wide">
+                                    Студенттердин саны
+                                </p>
+                                <p className="text-2xl font-semibold text-gray-900">
+                                    {instructorProfile.numberOfStudents || '—'}
+                                </p>
+                            </div>
+                        </div>
+
+                        <div>
+                            <p className="text-gray-600 font-medium mb-1">Экспертиза</p>
+                            {expertiseTagsList.length ? (
+                                <div className="flex flex-wrap gap-2">
+                                    {expertiseTagsList.map((tag) => (
+                                        <span
+                                            key={tag}
+                                            className="text-xs bg-[#F3F4F6] text-[#111827] px-2 py-1 rounded-full"
+                                        >
+                                            #{tag}
+                                        </span>
+                                    ))}
+                                </div>
+                            ) : (
+                                <p className="text-gray-500 text-sm">Экспертиза кошула элек</p>
+                            )}
+                        </div>
+
+                        <div>
+                            <p className="text-gray-600 font-medium mb-1">Социалдык тармактар</p>
+                            {socialLinkEntries.length ? (
+                                <div className="flex flex-col gap-1">
+                                    {socialLinkEntries.map(({ key, label, value }) => (
+                                        <a
+                                            key={key}
+                                            href={value}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="text-sm text-blue-600 hover:underline"
+                                        >
+                                            {label}
+                                        </a>
+                                    ))}
+                                </div>
+                            ) : (
+                                <p className="text-gray-500 text-sm">
+                                    Социалдык шилтемелер кошула элек
+                                </p>
+                            )}
+                        </div>
+
+                        {instructorProfile.courses?.length > 0 && (
+                            <div className="mt-6">
+                                <h3 className="text-lg font-semibold mb-3">Менин курстарым</h3>
+                                <div className="space-y-3">
+                                    {instructorProfile.courses.map((course) => (
+                                        <div
+                                            key={course.id || course.title}
+                                            className="border border-gray-200 rounded-lg px-4 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2"
+                                        >
+                                            <div>
+                                                <p className="font-medium">{course.title}</p>
+                                                {course.category?.name && (
+                                                    <p className="text-sm text-gray-500">
+                                                        {course.category.name}
+                                                    </p>
+                                                )}
+                                            </div>
+                                            <div className="text-sm text-gray-500">
+                                                {course.studentsCount
+                                                    ? `${course.studentsCount} студент`
+                                                    : course.status
+                                                        ? `Статус: ${course.status}`
+                                                        : ''}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                ) : (
+                    <div className="space-y-5">
+                        <div>
+                            <label className="text-gray-600 block mb-1">
+                                Био / Өзүм жөнүндө
+                            </label>
+                            <textarea
+                                value={instructorProfile.bio}
+                                onChange={(e) =>
+                                    handleInstructorProfileChange('bio', e.target.value)
+                                }
+                                className="w-full border border-blue-600 rounded p-3 text-sm min-h-[120px]"
+                                placeholder="Кыскача өз тажрыйбаңыз жана окуткан курстарыңыз тууралуу жазыңыз"
+                            />
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label className="text-gray-600 block mb-1">
+                                    Тажрыйба (жыл)
+                                </label>
+                                <input
+                                    type="text"
+                                    inputMode="numeric"
+                                    value={instructorProfile.yearsOfExperience}
+                                    onChange={(e) => {
+                                        const { value } = e.target;
+                                        if (value === '' || /^\d+$/.test(value)) {
+                                            handleInstructorProfileChange('yearsOfExperience', value);
+                                        }
+                                    }}
+                                    className="w-full border border-blue-600 rounded p-2"
+                                    placeholder="мисалы: 5"
+                                />
+                            </div>
+                            <div>
+                                <label className="text-gray-600 block mb-1">
+                                    Студенттердин саны
+                                </label>
+                                <input
+                                    type="text"
+                                    inputMode="numeric"
+                                    value={instructorProfile.numberOfStudents}
+                                    onChange={(e) => {
+                                        const { value } = e.target;
+                                        if (value === '' || /^\d+$/.test(value)) {
+                                            handleInstructorProfileChange('numberOfStudents', value);
+                                        }
+                                    }}
+                                    className="w-full border border-blue-600 rounded p-2"
+                                    placeholder="мисалы: 350"
+                                />
+                            </div>
+                        </div>
+
+                        <div>
+                            <label className="text-gray-600 block mb-1">
+                                Экспертиза (тегдер)
+                            </label>
+                            <input
+                                type="text"
+                                value={instructorProfile.expertiseTagsText}
+                                onChange={(e) =>
+                                    handleInstructorProfileChange(
+                                        'expertiseTagsText',
+                                        e.target.value,
+                                    )
+                                }
+                                className="w-full border border-blue-600 rounded p-2"
+                                placeholder="мисалы: Frontend, UI/UX, Product Design"
+                            />
+                            <p className="text-xs text-gray-500 mt-1">
+                                Запятая менен бөлүп жазыңыз.
+                            </p>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {SOCIAL_LINK_FIELDS.map((field) => (
+                                <div key={field}>
+                                    <label className="text-gray-600 block mb-1">
+                                        {SOCIAL_LABELS[field]}
+                                    </label>
+                                    <input
+                                        type="url"
+                                        value={instructorProfile.socialLinks[field]}
+                                        onChange={(e) =>
+                                            handleSocialLinkChange(field, e.target.value)
+                                        }
+                                        className="w-full border border-blue-600 rounded p-2"
+                                        placeholder="https://..."
+                                    />
+                                </div>
+                            ))}
+                        </div>
+
+                        <div className="flex flex-wrap gap-4">
+                            <button
+                                onClick={handleInstructorProfileSubmit}
+                                disabled={!isInstructorProfileChanged || savingInstructorProfile}
+                                className="bg-edubot-dark text-white px-6 py-2 rounded disabled:opacity-50"
+                            >
+                                Инструктор маалыматын сактоо
+                            </button>
+                            <button
+                                onClick={handleInstructorProfileReset}
+                                disabled={savingInstructorProfile}
+                                className="border border-gray-300 px-6 py-2 rounded"
+                            >
+                                Жокко чыгаруу
+                            </button>
+                        </div>
+                    </div>
+                )}
+            </div>
+        )}
+    </div>
+);
 };
 
 export default ProfilePage;

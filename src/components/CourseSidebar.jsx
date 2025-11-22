@@ -1,4 +1,4 @@
-import React from "react";
+import PropTypes from "prop-types";
 import { FiChevronDown, FiVideo, FiFileText, FiDownload, FiCode } from 'react-icons/fi';
 import { formatDuration } from '../utils/timeUtils';
 import { formatReadTime, getResourceMeta } from '../utils/lessonUtils';
@@ -14,6 +14,7 @@ const CourseSidebar = ({
     completedLessons = [],
     enrolled,
     lessonRefs,
+    headerContent = null,
 }) => {
     const handleResourceDownload = (event, url) => {
         event.stopPropagation();
@@ -27,7 +28,11 @@ const CourseSidebar = ({
         <div className="bg-white p-6 rounded-lg shadow-md md:sticky md:top-28 self-start 
             max-h-none overflow-visible 
             md:max-h-[calc(100vh-7rem)] md:overflow-y-auto">
-            <h2 className="text-xl font-semibold mb-4">Курстун мазмуну</h2>
+            {headerContent ? (
+                <div className="mb-4">{headerContent}</div>
+            ) : (
+                <h2 className="text-xl font-semibold mb-4">Курстун мазмуну</h2>
+            )}
 
             {sections.map((section) => {
                 const isOpen = activeSectionId === section.id;
@@ -185,3 +190,24 @@ const CourseSidebar = ({
 };
 
 export default CourseSidebar;
+
+CourseSidebar.propTypes = {
+    sections: PropTypes.arrayOf(PropTypes.shape({
+        id: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
+        title: PropTypes.string,
+        lessons: PropTypes.array,
+    })),
+    activeSectionId: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
+    toggleSection: PropTypes.func.isRequired,
+    activeLesson: PropTypes.object,
+    handleLessonClick: PropTypes.func.isRequired,
+    handleCheckboxToggle: PropTypes.func.isRequired,
+    completedLessons: PropTypes.arrayOf(
+        PropTypes.oneOfType([PropTypes.number, PropTypes.string])
+    ),
+    enrolled: PropTypes.bool,
+    lessonRefs: PropTypes.shape({
+        current: PropTypes.object,
+    }),
+    headerContent: PropTypes.node,
+};

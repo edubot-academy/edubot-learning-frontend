@@ -12,6 +12,7 @@ const CourseDetailsPage = lazy(() => import("./pages/CourseDetails"));
 const DashboardPage = lazy(() => import("./pages/Dashboard"));
 const ProfilePage = lazy(() => import("./pages/Profile"));
 const InstructorDashboard = lazy(() => import("./pages/InstructorDashboard"));
+const StudentDashboard = lazy(() => import("./pages/StudentDashboard"));
 const CreateCourse = lazy(() => import("./pages/CreateCourse"));
 const InstructorCourses = lazy(() => import("./pages/InstructorCourses"));
 const EditInstructorCourse = lazy(() => import("./pages/EditInstructorCourse"));
@@ -58,6 +59,10 @@ const AppRoutes = () => {
               />
             </Route>
 
+            <Route element={<PrivateRoute allowedRoles={["student"]} />}>
+              <Route path="/student" element={<StudentDashboard />} />
+            </Route>
+
             <Route path="/courses/:id" element={<CourseDetailsPage />} />
 
             <Route element={<PrivateRoute allowedRoles={["admin"]} />}>
@@ -71,19 +76,19 @@ const AppRoutes = () => {
             <Route path="/about" element={<AboutPage />} />
             <Route path="/contact" element={<ContactPage />} />
 
-                        <Route element={<PrivateRoute allowedRoles={['assistant']} />}>
-                            <Route path="/assistant" element={<AssistantDashboard />} />
-                        </Route>
-                        <Route path="/companies/:id/courses" element={<CompanyCourses />} />
-                        <Route path="/catalog" element={<Catalog />} />
-                        <Route path="/companies" element={<CompanyList />} />
-                        <Route path="/companies/:id" element={<CompanyDetail />} />
-                    </Routes>
-                </Suspense>
-            </div>
-            <Footer />
-        </div>
-    );
+            <Route element={<PrivateRoute allowedRoles={["assistant"]} />}>
+              <Route path="/assistant" element={<AssistantDashboard />} />
+            </Route>
+            <Route path="/companies/:id/courses" element={<CompanyCourses />} />
+            <Route path="/catalog" element={<Catalog />} />
+            <Route path="/companies" element={<CompanyList />} />
+            <Route path="/companies/:id" element={<CompanyDetail />} />
+          </Routes>
+        </Suspense>
+      </div>
+      <Footer />
+    </div>
+  );
 };
 
 export default AppRoutes;
