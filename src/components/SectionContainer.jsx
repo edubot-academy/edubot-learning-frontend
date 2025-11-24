@@ -7,11 +7,8 @@ const SectionContainer = ({
 	hideTitleAndLink = false,
 	rightContent = null,
 }) => {
-	console.log('SectionContainer данные:', data);
-	console.log('SectionContainer CardComponent:', CardComponent);
-
 	return (
-		<div className='px-4 py-16 sm:px-6 lg:px-12 bg-white '>
+		<div className='px-4 py-16 sm:px-6 lg:px-12 bg-white'>
 			{!hideTitleAndLink && (
 				<div className='flex flex-col md:flex-row items-start md:items-center justify-between mb-12'>
 					<div className='flex flex-col gap-2'>
@@ -26,8 +23,10 @@ const SectionContainer = ({
 							</p>
 						)}
 					</div>
+					<div>{rightContent}</div>
 				</div>
 			)}
+
 			{/* ИСПРАВЛЕННАЯ ЧАСТЬ - рендерим CardComponent */}
 			<div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6'>
 				{data.map((course) => (
