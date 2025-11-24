@@ -11,6 +11,8 @@ const sanitizeHtml = (html = "") => {
 };
 
 const ArticleLessonViewer = ({ lesson }) => {
+  console.log(lesson);
+  
     const content = useMemo(() => sanitizeHtml(lesson.content), [lesson.content]);
     const resourceMeta =
         !lesson.locked && lesson.resourceUrl
