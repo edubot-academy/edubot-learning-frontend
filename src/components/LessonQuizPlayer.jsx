@@ -1,5 +1,10 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { FiCheckCircle, FiClock, FiXCircle } from "react-icons/fi";
+import { IoIosArrowUp, IoIosArrowDown } from "react-icons/io";
+import Button from "./UI/Button";
+import A_plus from "../assets/images/A+.png";
+import B from "../assets/images/B.png";
+import C from "../assets/images/C.png";
 
 const LessonQuizPlayer = ({
     quiz,
@@ -13,6 +18,8 @@ const LessonQuizPlayer = ({
     loading = false,
 }) => {
     const [activeQuestionIndex, setActiveQuestionIndex] = useState(0);
+    const [startQuiz, setStartQuiz] = useState(false);
+    const [isShowAnswers, setIsShowAnswers] = useState(false);
 
     useEffect(() => {
         setActiveQuestionIndex(0);
@@ -97,9 +104,23 @@ const LessonQuizPlayer = ({
         onRetake?.();
     };
 
+    if (!startQuiz) {
+        return (
+            <div className="mb-6 bg-white rounded-lg shadow-md py-[20%] text-center">
+                <div className="">
+                    <h2 className="font-bold text-[200%] leading-[44px] tracking-[0.01em] mb-[5%]">Начнем тест! Ты готов?</h2>
+                    <div className="flex justify-center gap-[16px]">
+                        <Button children="Назад" variant="secondary" />
+                        <Button children="Начать тест" onClick={() => setStartQuiz(!startQuiz)} />
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="mb-6 bg-white rounded-lg shadow-md p-6 space-y-4">
-            <div className="flex items-center justify-between flex-wrap gap-2">
+            {/* <div className="flex items-center justify-between flex-wrap gap-2">
                 <h3 className="text-xl font-semibold">Квиз</h3>
                 <div className="flex items-center gap-4 text-sm text-gray-600">
                     <span>Өтүү упайы: {quiz.passingScore}%</span>
@@ -109,14 +130,14 @@ const LessonQuizPlayer = ({
                         </span>
                     )}
                 </div>
-            </div>
+            </div> */}
 
             {!result && (
                 currentQuestion ? (
                     <div className="space-y-4">
-                        <div className="border rounded p-4 space-y-3">
-                            <p className="font-semibold">
-                                {activeQuestionIndex + 1}. {currentQuestion.prompt}
+                        <div className="space-y-3">
+                            <p className="font-medium text-[20px] leading-[40px]">
+                                {activeQuestionIndex + 1 + " вопрос"}. {currentQuestion.prompt}
                             </p>
                             <div className="space-y-2">
                                 {currentQuestion.options.map((option) => {
@@ -137,13 +158,13 @@ const LessonQuizPlayer = ({
                                                 "border-red-500 bg-red-50 text-red-700";
                                         }
                                     } else if (isSelected) {
-                                        stateClasses = "border-edubot-orange bg-orange-50";
+                                        stateClasses = "border-2 border-edubot-orange";
                                     }
 
                                     return (
                                         <label
                                             key={option.id}
-                                            className={`flex items-center gap-2 border rounded p-2 cursor-pointer transition ${stateClasses ||
+                                            className={`flex items-center gap-2 border rounded-xl p-4 cursor-pointer transition ${stateClasses ||
                                                 "border-gray-200"} ${disabled ? "opacity-70 cursor-not-allowed" : ""
                                                 }`}
                                         >
@@ -164,7 +185,7 @@ const LessonQuizPlayer = ({
                             </div>
                         </div>
 
-                        <div className="flex items-center justify-between">
+                        {/* <div className="flex items-center justify-between">
                             <button
                                 type="button"
                                 className="px-3 py-2 rounded border text-sm disabled:opacity-60"
@@ -195,6 +216,30 @@ const LessonQuizPlayer = ({
                             >
                                 Кийинки
                             </button>
+                        </div> */}
+                        <div className="flex gap-4">
+                            <Button variant="secondary" >Пропустить</Button>
+                            {activeQuestionIndex + 1 === quiz.questions.length ?
+                                < Button
+                                    type="button"
+                                    onClick={onSubmit}
+                                    disabled={Boolean(result) || disabled || submitting || !allAnswered}
+                                    className="px-4 py-2 rounded bg-edubot-orange text-white disabled:opacity-60"
+                                >
+                                    {submitting ? "Загрузка..." : "Далее"}
+                                </Button>
+                                :
+                                <Button onClick={() =>
+                                    setActiveQuestionIndex((prev) =>
+                                        Math.min(quiz.questions.length - 1, prev + 1)
+                                    )}
+                                    disabled={
+                                        isLastQuestion ||
+                                        !selectedOption ||
+                                        disabled ||
+                                        submitting
+                                    }>Далее</Button>
+                            }
                         </div>
                     </div>
                 ) : (
@@ -203,78 +248,118 @@ const LessonQuizPlayer = ({
             )}
 
             {result && (
-                <div
-                    className={`rounded p-4 flex items-center gap-3 ${result.passed ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"
-                        }`}
-                >
-                    <FiCheckCircle />
-                    <div>
-                        <p className="font-semibold">
-                            Упай: {result.score}% ({result.correctAnswers}/{result.totalQuestions})
-                        </p>
-                        <p>{result.passed ? "Куттуктайбыз! Сиз кворумдан өттүңүз." : "Жыйынтык өтө алган жок. Кайра аракет кылыңыз."}</p>
+                <div className="rounded p-4 gap-3 w-full flex flex-col">
+                <div className="flex flex-col items-center text-center gap-3">
+            
+                    {/* Блок оценки */}
+                    {result.passed ? (
+                        <img src={A_plus} alt="grade" className="w-24" />
+                    ) : result.score >= 70 ? (
+                        <img src={B} alt="grade" className="w-24" />
+                    ) : (
+                        <img src={C} alt="grade" className="w-24" />
+                    )}
+            
+                    {/* Основной текст */}
+                    <p className="text-2xl font-bold">
+                        {result.score}% , ({result.correctAnswers}/{result.totalQuestions}) правильно ответили
+                    </p>
+            
+                    <p className="text-gray-600">
+                        {result.passed
+                            ? "Вы показали глубокие знания в области UX/UI-дизайна"
+                            : "Жыйынтык өтө алган жок. Кайра аракет кылыңыз."}
+                    </p>
+            
+                    {/* Кнопки */}
+                    <div className="flex gap-4 mt-2">
+                        <Button
+                            onClick={handleRetake}
+                            disabled={disabled}
+                            variant="secondary"
+                        >
+                            Пройти заново
+                        </Button>
+            
+                        <Button>
+                            Вернуться на главную
+                        </Button>
                     </div>
                 </div>
-            )}
-
-            {result && questionSummaries.length > 0 && (
-                <div className="space-y-3">
-                    <h4 className="text-sm font-semibold text-gray-700">
-                        Суроолор боюнча жыйынтык
-                    </h4>
-                    {questionSummaries.map(({ question, selected, correctOptions, answeredCorrect }, idx) => (
-                        <div
-                            key={question.id}
-                            className={`border rounded p-3 text-sm space-y-1 ${answeredCorrect === true
-                                ? "border-green-500 bg-green-50"
-                                : answeredCorrect === false
-                                    ? "border-red-500 bg-red-50"
-                                    : "border-gray-200 bg-gray-50"
-                                }`}
-                        >
-                            <p className="font-medium flex items-center gap-2">
-                                {answeredCorrect === true ? (
-                                    <FiCheckCircle className="text-green-600" />
-                                ) : answeredCorrect === false ? (
-                                    <FiXCircle className="text-red-600" />
-                                ) : (
-                                    <FiClock className="text-gray-400" />
-                                )}
-                                <span>
-                                    {idx + 1}. {question.prompt}
-                                </span>
-                            </p>
-                            <p>
-                                Сиздин жообуңуз:{" "}
-                                <span
-                                    className={`font-semibold px-1 rounded ${answeredCorrect === true
-                                        ? "text-green-700 bg-green-100"
-                                        : answeredCorrect === false
-                                            ? "text-red-700 bg-red-100"
-                                            : "text-gray-600 bg-gray-100"
-                                        }`}
-                                >
-                                    {selected?.text || "Жооп берилген жок"}
-                                </span>
-                            </p>
-                            {answeredCorrect === false && correctOptions.length > 0 && (
-                                <div className="text-sm text-green-700 space-y-1">
-                                    <p>Туура жооп:</p>
-                                    <ul className="list-disc list-inside">
-                                        {correctOptions.map((opt) => (
-                                            <li key={opt.id} className="font-semibold">
-                                                {opt.text}
-                                            </li>
-                                        ))}
-                                    </ul>
-                                </div>
-                            )}
-                        </div>
-                    ))}
+            
+                {/* Показ ответов */}
+                <div
+                    onClick={() => setIsShowAnswers(!isShowAnswers)}
+                    className="flex items-center gap-1 cursor-pointer mt-6 text-lg font-medium"
+                >
+                    <span>Посмотреть ответ</span>
+                    {isShowAnswers ? <IoIosArrowUp /> : <IoIosArrowDown />}
                 </div>
-            )}
+            </div>
+            
+            )
+            }
 
-            <div className="flex items-center gap-3 flex-wrap">
+            {/* {
+                result && questionSummaries.length > 0 && (
+                    <div className="space-y-3">
+                        <h4 className="text-sm font-semibold text-gray-700">
+                            Суроолор боюнча жыйынтык
+                        </h4>
+                        {questionSummaries.map(({ question, selected, correctOptions, answeredCorrect }, idx) => (
+                            <div
+                                key={question.id}
+                                className={`border rounded p-3 text-sm space-y-1 ${answeredCorrect === true
+                                    ? "border-green-500 bg-green-50"
+                                    : answeredCorrect === false
+                                        ? "border-red-500 bg-red-50"
+                                        : "border-gray-200 bg-gray-50"
+                                    }`}
+                            >
+                                <p className="font-medium flex items-center gap-2">
+                                    {answeredCorrect === true ? (
+                                        <FiCheckCircle className="text-green-600" />
+                                    ) : answeredCorrect === false ? (
+                                        <FiXCircle className="text-red-600" />
+                                    ) : (
+                                        <FiClock className="text-gray-400" />
+                                    )}
+                                    <span>
+                                        {idx + 1}. {question.prompt}
+                                    </span>
+                                </p>
+                                <p>
+                                    Сиздин жообуңуз:{" "}
+                                    <span
+                                        className={`font-semibold px-1 rounded ${answeredCorrect === true
+                                            ? "text-green-700 bg-green-100"
+                                            : answeredCorrect === false
+                                                ? "text-red-700 bg-red-100"
+                                                : "text-gray-600 bg-gray-100"
+                                            }`}
+                                    >
+                                        {selected?.text || "Жооп берилген жок"}
+                                    </span>
+                                </p>
+                                {answeredCorrect === false && correctOptions.length > 0 && (
+                                    <div className="text-sm text-green-700 space-y-1">
+                                        <p>Туура жооп:</p>
+                                        <ul className="list-disc list-inside">
+                                            {correctOptions.map((opt) => (
+                                                <li key={opt.id} className="font-semibold">
+                                                    {opt.text}
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                )}
+                            </div>
+                        ))}
+                    </div>
+                )
+            } */}
+
+            {/* <div className="flex items-center gap-3 flex-wrap">
                 <button
                     type="button"
                     onClick={onSubmit}
@@ -298,8 +383,8 @@ const LessonQuizPlayer = ({
                 <p className="text-xs text-gray-500">
                     Бардык суроолорго жооп бергенде гана жөнөтө аласыз.
                 </p>
-            )}
-        </div>
+            )} */}
+        </div >
     );
 };
 
