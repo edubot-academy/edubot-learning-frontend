@@ -249,113 +249,116 @@ const LessonQuizPlayer = ({
 
             {result && (
                 <div className="rounded p-4 gap-3 w-full flex flex-col">
-                <div className="flex flex-col items-center text-center gap-3">
-            
-                    {/* Блок оценки */}
-                    {result.passed ? (
-                        <img src={A_plus} alt="grade" className="w-24" />
-                    ) : result.score >= 70 ? (
-                        <img src={B} alt="grade" className="w-24" />
-                    ) : (
-                        <img src={C} alt="grade" className="w-24" />
-                    )}
-            
-                    {/* Основной текст */}
-                    <p className="text-2xl font-bold">
-                        {result.score}% , ({result.correctAnswers}/{result.totalQuestions}) правильно ответили
-                    </p>
-            
-                    <p className="text-gray-600">
-                        {result.passed
-                            ? "Вы показали глубокие знания в области UX/UI-дизайна"
-                            : "Жыйынтык өтө алган жок. Кайра аракет кылыңыз."}
-                    </p>
-            
-                    {/* Кнопки */}
-                    <div className="flex gap-4 mt-2">
-                        <Button
-                            onClick={handleRetake}
-                            disabled={disabled}
-                            variant="secondary"
-                        >
-                            Пройти заново
-                        </Button>
-            
-                        <Button>
-                            Вернуться на главную
-                        </Button>
+                    <div className="flex flex-col items-center text-center gap-3">
+
+                        {/* Блок оценки */}
+                        {result.passed ? (
+                            <img src={A_plus} alt="grade" className="w-24" />
+                        ) : result.score >= 70 ? (
+                            <img src={B} alt="grade" className="w-24" />
+                        ) : (
+                            <img src={C} alt="grade" className="w-24" />
+                        )}
+
+                        {/* Основной текст */}
+                        <p className="text-2xl font-bold">
+                            {result.score}% , ({result.correctAnswers}/{result.totalQuestions}) правильно ответили
+                        </p>
+
+                        <p className="text-gray-600">
+                            {result.passed
+                                ? "Вы показали глубокие знания в области UX/UI-дизайна"
+                                : "Жыйынтык өтө алган жок. Кайра аракет кылыңыз."}
+                        </p>
+
+                        {/* Кнопки */}
+                        <div className="flex gap-4 mt-2">
+                            <Button
+                                onClick={handleRetake}
+                                disabled={disabled}
+                                variant="secondary"
+                            >
+                                Пройти заново
+                            </Button>
+
+                            <Button>
+                                Вернуться на главную
+                            </Button>
+                        </div>
                     </div>
+
+                    {/* Показ ответов */}
+                    <div
+                        onClick={() => setIsShowAnswers(!isShowAnswers)}
+                        className="flex items-center gap-1 cursor-pointer mt-6 text-lg font-medium"
+                    >
+                        <span>Посмотреть ответ</span>
+                        {isShowAnswers ? <IoIosArrowUp /> : <IoIosArrowDown />}
+                    </div>
+                    {isShowAnswers && (
+                        <div className="space-y-3">
+                            <h4 className="text-sm font-semibold text-gray-700">
+                                Суроолор боюнча жыйынтык
+                            </h4>
+                            {questionSummaries.map(({ question, selected, correctOptions, answeredCorrect }, idx) => (
+                                <div
+                                    key={question.id}
+                                    className={`border rounded p-3 text-sm space-y-1 ${answeredCorrect === true
+                                        ? "border-green-500 bg-green-50"
+                                        : answeredCorrect === false
+                                            ? "border-red-500 bg-red-50"
+                                            : "border-gray-200 bg-gray-50"
+                                        }`}
+                                >
+                                    <p className="font-medium flex items-center gap-2">
+                                        {answeredCorrect === true ? (
+                                            <FiCheckCircle className="text-green-600" />
+                                        ) : answeredCorrect === false ? (
+                                            <FiXCircle className="text-red-600" />
+                                        ) : (
+                                            <FiClock className="text-gray-400" />
+                                        )}
+                                        <span>
+                                            {idx + 1}. {question.prompt}
+                                        </span>
+                                    </p>
+                                    <p>
+                                        Сиздин жообуңуз:{" "}
+                                        <span
+                                            className={`font-semibold px-1 rounded ${answeredCorrect === true
+                                                ? "text-green-700 bg-green-100"
+                                                : answeredCorrect === false
+                                                    ? "text-red-700 bg-red-100"
+                                                    : "text-gray-600 bg-gray-100"
+                                                }`}
+                                        >
+                                            {selected?.text || "Жооп берилген жок"}
+                                        </span>
+                                    </p>
+                                    {answeredCorrect === false && correctOptions.length > 0 && (
+                                        <div className="text-sm text-green-700 space-y-1">
+                                            <p>Туура жооп:</p>
+                                            <ul className="list-disc list-inside">
+                                                {correctOptions.map((opt) => (
+                                                    <li key={opt.id} className="font-semibold">
+                                                        {opt.text}
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    )}
                 </div>
-            
-                {/* Показ ответов */}
-                <div
-                    onClick={() => setIsShowAnswers(!isShowAnswers)}
-                    className="flex items-center gap-1 cursor-pointer mt-6 text-lg font-medium"
-                >
-                    <span>Посмотреть ответ</span>
-                    {isShowAnswers ? <IoIosArrowUp /> : <IoIosArrowDown />}
-                </div>
-            </div>
-            
+
             )
             }
 
             {/* {
                 result && questionSummaries.length > 0 && (
-                    <div className="space-y-3">
-                        <h4 className="text-sm font-semibold text-gray-700">
-                            Суроолор боюнча жыйынтык
-                        </h4>
-                        {questionSummaries.map(({ question, selected, correctOptions, answeredCorrect }, idx) => (
-                            <div
-                                key={question.id}
-                                className={`border rounded p-3 text-sm space-y-1 ${answeredCorrect === true
-                                    ? "border-green-500 bg-green-50"
-                                    : answeredCorrect === false
-                                        ? "border-red-500 bg-red-50"
-                                        : "border-gray-200 bg-gray-50"
-                                    }`}
-                            >
-                                <p className="font-medium flex items-center gap-2">
-                                    {answeredCorrect === true ? (
-                                        <FiCheckCircle className="text-green-600" />
-                                    ) : answeredCorrect === false ? (
-                                        <FiXCircle className="text-red-600" />
-                                    ) : (
-                                        <FiClock className="text-gray-400" />
-                                    )}
-                                    <span>
-                                        {idx + 1}. {question.prompt}
-                                    </span>
-                                </p>
-                                <p>
-                                    Сиздин жообуңуз:{" "}
-                                    <span
-                                        className={`font-semibold px-1 rounded ${answeredCorrect === true
-                                            ? "text-green-700 bg-green-100"
-                                            : answeredCorrect === false
-                                                ? "text-red-700 bg-red-100"
-                                                : "text-gray-600 bg-gray-100"
-                                            }`}
-                                    >
-                                        {selected?.text || "Жооп берилген жок"}
-                                    </span>
-                                </p>
-                                {answeredCorrect === false && correctOptions.length > 0 && (
-                                    <div className="text-sm text-green-700 space-y-1">
-                                        <p>Туура жооп:</p>
-                                        <ul className="list-disc list-inside">
-                                            {correctOptions.map((opt) => (
-                                                <li key={opt.id} className="font-semibold">
-                                                    {opt.text}
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    </div>
-                                )}
-                            </div>
-                        ))}
-                    </div>
+                    
                 )
             } */}
 

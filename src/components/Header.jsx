@@ -12,8 +12,9 @@ import BlackBasket from "../assets/icons/blackBasket.svg";
 import BlackPerson from "../assets/icons/personBlack.svg";
 import { AuthContext } from "../context/AuthContext";
 import { searchCourses } from "../services/api";
-import SideBar from "../components/UI/SideBar"; // путь к вашему SideBar компоненту
-import SidebarOverlay from "../components/UI/SidebarOverlay"; // путь к вашему SidebarOverlay компоненту
+import SideBar from "../components/UI/SideBar";
+import SidebarOverlay from "../components/UI/SidebarOverlay";
+import UserMenuDropdown from "../components/UI/UserMenuDropdown";
 
 const NavLinks = ({ isMobile, user }) => {
   const location = useLocation();
@@ -61,6 +62,11 @@ const NavLinks = ({ isMobile, user }) => {
           Ассистент
         </Link>
       )}
+      {user?.role === "student" && (
+        <Link to="/student" className={`${active("/student")} ${linkClass}`}>
+          Студент
+        </Link>
+      )}
     </div>
   );
 };
@@ -77,6 +83,7 @@ const Header = () => {
   const [lang, setLang] = useState("Кыргызча");
   const [dark, setDark] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
 
   const langRef = useRef(null);
 
@@ -186,7 +193,7 @@ const Header = () => {
 
               {/* Search Dropdown */}
               {showDropdown && (
-                <div className="absolute top-full mt-2 w-full mt-[-24px] max-w-xs bg-[#C5C9D1] dark:bg-white shadow-xl  border-s-2 z-50 max-h-64 overflow-y-auto">
+                <div className="absolute top-full mt-2 w-full mt-[-24px] max-w-xs bg-white border-[border: 1px solid oklch(86.72% .0192 282.72deg);] dark:bg-white shadow-xl   z-50 max-h-64 overflow-y-auto">
                   {results.length > 0 ? (
                     results.map((course) => (
                       <button
@@ -260,24 +267,24 @@ const Header = () => {
               <ThemeToggle dark={dark} setDark={setDark} />
             </div>
 
-            {/* User Actions */}
+            {/* User Actions  */}
             {user ? (
               <div className="flex items-center gap-3">
-                <img
-                  src={BlackHeart}
-                  alt="favorites"
-                  className="w-9 h-9 cursor-pointer hover:opacity-80 transition-opacity"
-                />
-                <img
-                  src={BlackBasket}
-                  alt="cart"
-                  className="w-9 h-9 cursor-pointer hover:opacity-80 transition-opacity"
-                />
-                <img
-                  src={BlackPerson}
-                  alt="profile"
-                  className="w-9 h-9 cursor-pointer hover:opacity-80 transition-opacity"
-                />
+                <img src={BlackHeart} className="w-9 h-9" />
+                <img src={BlackBasket} className="w-9 h-9" />
+
+                <div className="relative group">
+                  <img src={BlackPerson} className="w-9 h-9 cursor-pointer" />
+
+                  {/* Dropdown меню */}
+                  <div className="absolute top-full right-0 pt-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible lg:group-hover:opacity-100 lg:group-hover:visible transform translate-y-2 group-hover:translate-y-0 transition-all duration-300 ease-out z-50">
+                    <div className="relative">
+                      <div className="absolute -top-2 left-0 right-0 h-2 bg-transparent"></div>
+
+                      <UserMenuDropdown user={user} onClose={() => {}} />
+                    </div>
+                  </div>
+                </div>
               </div>
             ) : (
               <Link to="/register">
@@ -323,13 +330,37 @@ const Header = () => {
               </div>
             </Link>
 
-            {/* Search Icon - Right */}
-            <button
-              onClick={() => setSearchOpen(!searchOpen)}
-              className="text-gray-700 dark:text-gray-700 text-2xl"
-            >
-              <IoSearch />
-            </button>
+            {/* Right Side - Search + User */}
+            <div className="flex items-center gap-3">
+              {/* Search Icon */}
+              <button
+                onClick={() => setSearchOpen(!searchOpen)}
+                className="text-gray-700 dark:text-gray-700 text-2xl"
+              >
+                <IoSearch />
+              </button>
+
+              {/* User Icon for Mobile */}
+              {user && (
+                <div className="relative">
+                  <img
+                    src={BlackPerson}
+                    className="w-7 h-7 cursor-pointer"
+                    onClick={() => setUserMenuOpen(!userMenuOpen)}
+                  />
+
+                  {/* Mobile User Dropdown */}
+                  {userMenuOpen && (
+                    <div className="absolute right-0 top-full mt-2 z-50">
+                      <UserMenuDropdown
+                        user={user}
+                        onClose={() => setUserMenuOpen(false)}
+                      />
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Mobile Search Input */}
@@ -394,7 +425,7 @@ const Header = () => {
       >
         <SideBar setMenuOpen={setMenuOpen} setPosition={setPositionBar} />
       </SidebarOverlay>
-      
+
       <SidebarOverlay
         isOpen={positionBar}
         onClose={() => setPositionBar(false)}
