@@ -1,7 +1,7 @@
-import { useCallback, useContext, useEffect, useMemo, useState } from "react";
-import { Link, Navigate } from "react-router-dom";
-import { AuthContext } from "../context/AuthContext";
-import DashboardSidebar from "../components/DashboardSidebar";
+import { useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { Link, Navigate } from 'react-router-dom';
+import { AuthContext } from '../context/AuthContext';
+import DashboardSidebar from '@features/dashboard/components/DashboardSidebar';
 import {
     fetchCourses,
     fetchInstructorProfile,
@@ -11,8 +11,8 @@ import {
     createOffering,
     updateOffering,
     enrollUserInCourse,
-} from "../services/api";
-import toast from "react-hot-toast";
+} from '@services/api';
+import toast from 'react-hot-toast';
 import {
     FiHome,
     FiBookOpen,
@@ -24,21 +24,21 @@ import {
     FiFilter,
     FiCalendar,
     FiGlobe,
-} from "react-icons/fi";
+} from 'react-icons/fi';
 
 const NAV_ITEMS = [
-    { id: "overview", label: "Кыскача", icon: FiHome },
-    { id: "courses", label: "Курстарым", icon: FiBookOpen },
-    { id: "students", label: "Студенттер", icon: FiUsers },
-    { id: "profile", label: "Профиль", icon: FiUser },
-    { id: "ai", label: "AI ассистент", icon: FiCpu },
-    { id: "offerings", label: "Offeringдер", icon: FiLayers },
+    { id: 'overview', label: 'Кыскача', icon: FiHome },
+    { id: 'courses', label: 'Курстарым', icon: FiBookOpen },
+    { id: 'students', label: 'Студенттер', icon: FiUsers },
+    { id: 'profile', label: 'Профиль', icon: FiUser },
+    { id: 'ai', label: 'AI ассистент', icon: FiCpu },
+    { id: 'offerings', label: 'Offeringдер', icon: FiLayers },
 ];
 
 const InstructorDashboard = () => {
     const { user } = useContext(AuthContext);
     const [sidebarOpen, setSidebarOpen] = useState(true);
-    const [activeTab, setActiveTab] = useState("overview");
+    const [activeTab, setActiveTab] = useState('overview');
     const [profile, setProfile] = useState(null);
     const [loadingProfile, setLoadingProfile] = useState(false);
     const [courseList, setCourseList] = useState([]);
@@ -52,15 +52,15 @@ const InstructorDashboard = () => {
     );
 
     useEffect(() => {
-        if (!user?.id || user.role !== "instructor") return;
+        if (!user?.id || user.role !== 'instructor') return;
         const loadProfile = async () => {
             setLoadingProfile(true);
             try {
                 const data = await fetchInstructorProfile(user.id);
                 setProfile(data);
             } catch (error) {
-                console.error("Failed to load instructor profile", error);
-                toast.error("Инструктор маалыматын жүктөө мүмкүн болбоду");
+                console.error('Failed to load instructor profile', error);
+                toast.error('Инструктор маалыматын жүктөө мүмкүн болбоду');
             } finally {
                 setLoadingProfile(false);
             }
@@ -70,7 +70,7 @@ const InstructorDashboard = () => {
     }, [user]);
 
     useEffect(() => {
-        if (!user?.id || user.role !== "instructor") return;
+        if (!user?.id || user.role !== 'instructor') return;
         const loadCourses = async () => {
             setLoadingCourses(true);
             try {
@@ -80,8 +80,8 @@ const InstructorDashboard = () => {
                 );
                 setCourseList(instructorCourses);
             } catch (error) {
-                console.error("Failed to load instructor courses", error);
-                toast.error("Инструктор курстарын жүктөө мүмкүн болбоду");
+                console.error('Failed to load instructor courses', error);
+                toast.error('Инструктор курстарын жүктөө мүмкүн болбоду');
             } finally {
                 setLoadingCourses(false);
             }
@@ -90,42 +90,39 @@ const InstructorDashboard = () => {
         loadCourses();
     }, [user]);
 
-    const loadOfferingsForCourses = useCallback(
-        async (courseArray) => {
-            if (!courseArray.length) {
-                setOfferingsByCourse({});
-                return;
-            }
-            setLoadingOfferings(true);
-            try {
-                const summaries = {};
-                await Promise.all(
-                    courseArray.map(async (course) => {
-                        try {
-                            const data = await listOfferingsForCourse(course.id);
-                            summaries[course.id] = (data || []).map((offering) => ({
-                                ...offering,
-                                course,
-                            }));
-                        } catch (error) {
-                            console.error("Failed to load offerings for course", course.id, error);
-                        }
-                    })
-                );
-                setOfferingsByCourse(summaries);
-            } finally {
-                setLoadingOfferings(false);
-            }
-        },
-        []
-    );
+    const loadOfferingsForCourses = useCallback(async (courseArray) => {
+        if (!courseArray.length) {
+            setOfferingsByCourse({});
+            return;
+        }
+        setLoadingOfferings(true);
+        try {
+            const summaries = {};
+            await Promise.all(
+                courseArray.map(async (course) => {
+                    try {
+                        const data = await listOfferingsForCourse(course.id);
+                        summaries[course.id] = (data || []).map((offering) => ({
+                            ...offering,
+                            course,
+                        }));
+                    } catch (error) {
+                        console.error('Failed to load offerings for course', course.id, error);
+                    }
+                })
+            );
+            setOfferingsByCourse(summaries);
+        } finally {
+            setLoadingOfferings(false);
+        }
+    }, []);
 
     useEffect(() => {
         if (!courses.length) return;
         loadOfferingsForCourses(courses);
     }, [courses, loadOfferingsForCourses]);
 
-    if (!user || user.role !== "instructor") {
+    if (!user || user.role !== 'instructor') {
         return <Navigate to="/" replace />;
     }
 
@@ -141,9 +138,9 @@ const InstructorDashboard = () => {
         if (Array.isArray(profile?.expertiseTags) && profile.expertiseTags.length) {
             return profile.expertiseTags;
         }
-        if (typeof profile?.expertiseTagsText === "string" && profile.expertiseTagsText.trim()) {
+        if (typeof profile?.expertiseTagsText === 'string' && profile.expertiseTagsText.trim()) {
             return profile.expertiseTagsText
-                .split(",")
+                .split(',')
                 .map((tag) => tag.trim())
                 .filter(Boolean);
         }
@@ -153,7 +150,7 @@ const InstructorDashboard = () => {
     const socialLinks = useMemo(
         () =>
             Object.entries(profile?.socialLinks || {}).filter(
-                ([, value]) => typeof value === "string" && value.trim().length
+                ([, value]) => typeof value === 'string' && value.trim().length
             ),
         [profile]
     );
@@ -170,24 +167,19 @@ const InstructorDashboard = () => {
         }
 
         switch (activeTab) {
-            case "courses":
+            case 'courses':
                 return (
                     <CoursesSection
                         courses={courses}
                         loading={loadingCourses}
                         offeringsByCourse={offeringsByCourse}
                         loadingOfferings={loadingOfferings}
-                        onViewOfferings={() => setActiveTab("offerings")}
+                        onViewOfferings={() => setActiveTab('offerings')}
                     />
                 );
-            case "students":
-                return (
-                    <StudentsSection
-                        total={profile?.numberOfStudents}
-                        courses={courses}
-                    />
-                );
-            case "profile":
+            case 'students':
+                return <StudentsSection total={profile?.numberOfStudents} courses={courses} />;
+            case 'profile':
                 return (
                     <ProfileSection
                         profile={profile}
@@ -195,14 +187,9 @@ const InstructorDashboard = () => {
                         socialLinks={socialLinks}
                     />
                 );
-            case "ai":
-                return (
-                    <AiSection
-                        aiCourses={aiCourses}
-                        totalCourses={courses.length}
-                    />
-                );
-            case "offerings":
+            case 'ai':
+                return <AiSection aiCourses={aiCourses} totalCourses={courses.length} />;
+            case 'offerings':
                 return (
                     <OfferingsSection
                         courses={courses}
@@ -211,7 +198,7 @@ const InstructorDashboard = () => {
                         refreshOfferings={handleRefreshOfferings}
                     />
                 );
-            case "overview":
+            case 'overview':
             default:
                 return (
                     <OverviewSection
@@ -241,8 +228,12 @@ const InstructorDashboard = () => {
                 <main className="flex-1 space-y-6">
                     <div className="flex items-center justify-between flex-wrap gap-3">
                         <div>
-                            <p className="text-sm uppercase tracking-wide text-gray-400">Инструктор</p>
-                            <h1 className="text-3xl font-bold text-gray-900">{user.fullName || user.email}</h1>
+                            <p className="text-sm uppercase tracking-wide text-gray-400">
+                                Инструктор
+                            </p>
+                            <h1 className="text-3xl font-bold text-gray-900">
+                                {user.fullName || user.email}
+                            </h1>
                             <p className="text-sm text-gray-500">
                                 Курстарыңызды жана студенттерди толук көзөмөлдөңүз
                             </p>
@@ -252,7 +243,7 @@ const InstructorDashboard = () => {
                             className="hidden md:inline-flex px-4 py-2 rounded-full border text-sm text-gray-600"
                             type="button"
                         >
-                            {sidebarOpen ? "Менюну жашыруу" : "Менюну көрсөтүү"}
+                            {sidebarOpen ? 'Менюну жашыруу' : 'Менюну көрсөтүү'}
                         </button>
                     </div>
 
@@ -263,23 +254,30 @@ const InstructorDashboard = () => {
     );
 };
 
-const OverviewSection = ({ user, profile, courses, publishedCount, pendingCount, aiEnabledCount }) => {
+const OverviewSection = ({
+    user,
+    profile,
+    courses,
+    publishedCount,
+    pendingCount,
+    aiEnabledCount,
+}) => {
     const stats = [
         {
-            label: "Жарыяланган курстар",
+            label: 'Жарыяланган курстар',
             value: publishedCount,
         },
         {
-            label: "Каралуудагы курстар",
+            label: 'Каралуудагы курстар',
             value: pendingCount,
         },
         {
-            label: "AI ассистент иштетилген",
+            label: 'AI ассистент иштетилген',
             value: aiEnabledCount,
         },
         {
-            label: "Студенттер",
-            value: profile?.numberOfStudents ?? "—",
+            label: 'Студенттер',
+            value: profile?.numberOfStudents ?? '—',
         },
     ];
 
@@ -291,7 +289,8 @@ const OverviewSection = ({ user, profile, courses, publishedCount, pendingCount,
                     {user.fullName || user.email}
                 </h2>
                 <p className="mt-2 text-gray-600">
-                    Профилди толтуруңуз, курстарды жаңыртыңыз жана студенттерге баалуулук тартуулаңыз.
+                    Профилди толтуруңуз, курстарды жаңыртыңыз жана студенттерге баалуулук
+                    тартуулаңыз.
                 </p>
                 <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
                     {stats.map((stat) => (
@@ -326,7 +325,13 @@ const OverviewSection = ({ user, profile, courses, publishedCount, pendingCount,
     );
 };
 
-const CoursesSection = ({ courses, loading, offeringsByCourse, loadingOfferings, onViewOfferings }) => (
+const CoursesSection = ({
+    courses,
+    loading,
+    offeringsByCourse,
+    loadingOfferings,
+    onViewOfferings,
+}) => (
     <div className="bg-white rounded-3xl p-6 shadow-sm">
         <div className="flex items-center justify-between flex-wrap gap-3 mb-4">
             <div>
@@ -357,19 +362,26 @@ const CoursesSection = ({ courses, loading, offeringsByCourse, loadingOfferings,
                                 )}
                             </div>
                             <span
-                                className={`text-xs px-2 py-1 rounded-full ${course.isPublished ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"
-                                    }`}
+                                className={`text-xs px-2 py-1 rounded-full ${
+                                    course.isPublished
+                                        ? 'bg-green-100 text-green-700'
+                                        : 'bg-yellow-100 text-yellow-700'
+                                }`}
                             >
-                                {course.isPublished ? "Жарыяланды" : "Каралууда"}
+                                {course.isPublished ? 'Жарыяланды' : 'Каралууда'}
                             </span>
                         </div>
                         <div className="flex items-center justify-between text-sm text-gray-500">
                             <span>
                                 {course.studentsCount
                                     ? `${course.studentsCount} студент`
-                                    : "Студенттер маалымат жок"}
+                                    : 'Студенттер маалымат жок'}
                             </span>
-                            <span>{course.updatedAt ? new Date(course.updatedAt).toLocaleDateString() : ""}</span>
+                            <span>
+                                {course.updatedAt
+                                    ? new Date(course.updatedAt).toLocaleDateString()
+                                    : ''}
+                            </span>
                         </div>
                         <OfferingsSummary
                             offerings={offeringsByCourse?.[course.id] || []}
@@ -412,7 +424,7 @@ const StudentsSection = ({ total, courses }) => (
                 Жалпы студенттердин саны (бардык курстар боюнча).
             </p>
             <div className="mt-4">
-                <StatCard label="Студенттер" value={total ?? "—"} />
+                <StatCard label="Студенттер" value={total ?? '—'} />
             </div>
         </div>
         <div className="bg-white rounded-3xl p-6 shadow-sm">
@@ -420,15 +432,20 @@ const StudentsSection = ({ total, courses }) => (
             {courses.length ? (
                 <div className="space-y-3">
                     {courses.map((course) => (
-                        <div key={course.id || course.title} className="flex items-center justify-between gap-4">
+                        <div
+                            key={course.id || course.title}
+                            className="flex items-center justify-between gap-4"
+                        >
                             <div>
                                 <p className="font-semibold">{course.title}</p>
                                 <p className="text-sm text-gray-500">
-                                    {course.category?.name || "Категория белгисиз"}
+                                    {course.category?.name || 'Категория белгисиз'}
                                 </p>
                             </div>
                             <span className="text-sm text-gray-600">
-                                {course.studentsCount ? `${course.studentsCount} студент` : "Маалымат жок"}
+                                {course.studentsCount
+                                    ? `${course.studentsCount} студент`
+                                    : 'Маалымат жок'}
                             </span>
                         </div>
                     ))}
@@ -442,7 +459,8 @@ const StudentsSection = ({ total, courses }) => (
                 <p className="text-sm uppercase tracking-wide text-orange-600">Кеңеш</p>
                 <h3 className="text-xl font-semibold text-gray-900">Катталууларды башкарыңыз</h3>
                 <p className="text-sm text-gray-600">
-                    Курстар боюнча студенттерди кошуу же алып салуу үчүн админ панелиндеги "Катталуулар" бөлүмүн колдонууга болот.
+                    Курстар боюнча студенттерди кошуу же алып салуу үчүн админ панелиндеги
+                    "Катталуулар" бөлүмүн колдонууга болот.
                 </p>
             </div>
             <Link
@@ -472,22 +490,18 @@ const ProfileSection = ({ profile, expertiseTags, socialLinks }) => (
         </div>
         <div>
             <p className="text-gray-600 font-medium mb-1">Био / Өзүм жөнүндө</p>
-            <p className="text-gray-800">
-                {profile?.bio?.trim() || "Маалымат кошула элек"}
-            </p>
+            <p className="text-gray-800">{profile?.bio?.trim() || 'Маалымат кошула элек'}</p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
                 <p className="text-gray-600 font-medium mb-1">Тажрыйба</p>
                 <p className="text-gray-800">
-                    {profile?.yearsOfExperience ? `${profile.yearsOfExperience} жыл` : "—"}
+                    {profile?.yearsOfExperience ? `${profile.yearsOfExperience} жыл` : '—'}
                 </p>
             </div>
             <div>
                 <p className="text-gray-600 font-medium mb-1">Студенттер</p>
-                <p className="text-gray-800">
-                    {profile?.numberOfStudents ?? "—"}
-                </p>
+                <p className="text-gray-800">{profile?.numberOfStudents ?? '—'}</p>
             </div>
         </div>
         <div>
@@ -495,7 +509,10 @@ const ProfileSection = ({ profile, expertiseTags, socialLinks }) => (
             {expertiseTags.length ? (
                 <div className="flex flex-wrap gap-2">
                     {expertiseTags.map((tag) => (
-                        <span key={tag} className="text-xs bg-gray-100 text-gray-800 px-3 py-1 rounded-full">
+                        <span
+                            key={tag}
+                            className="text-xs bg-gray-100 text-gray-800 px-3 py-1 rounded-full"
+                        >
                             #{tag}
                         </span>
                     ))}
@@ -559,7 +576,9 @@ const AiSection = ({ aiCourses, totalCourses }) => (
                         <div>
                             <p className="font-semibold">{course.title}</p>
                             <p className="text-xs text-gray-500">
-                                {course.updatedAt ? `Жаңыртылды: ${new Date(course.updatedAt).toLocaleDateString()}` : "Жаңыртуу маалыматы жок"}
+                                {course.updatedAt
+                                    ? `Жаңыртылды: ${new Date(course.updatedAt).toLocaleDateString()}`
+                                    : 'Жаңыртуу маалыматы жок'}
                             </p>
                         </div>
                         <Link
@@ -591,9 +610,9 @@ const AiSection = ({ aiCourses, totalCourses }) => (
 );
 
 const formatDateTimeForInput = (value) => {
-    if (!value) return "";
+    if (!value) return '';
     const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return "";
+    if (Number.isNaN(date.getTime())) return '';
     const offset = date.getTimezoneOffset();
     const local = new Date(date.getTime() - offset * 60000);
     return local.toISOString().slice(0, 16);
@@ -605,45 +624,45 @@ const OfferingsSection = ({ courses, offerings, loading, refreshOfferings }) => 
             courseId: base?.courseId
                 ? String(base.courseId)
                 : courses[0]?.id
-                    ? String(courses[0].id)
-                    : "",
-            title: base?.title || "",
-            modality: base?.modality || "ONLINE",
-            visibility: base?.visibility || "PRIVATE",
-            startAt: base?.startAt ? formatDateTimeForInput(base.startAt) : "",
-            endAt: base?.endAt ? formatDateTimeForInput(base.endAt) : "",
-            scheduleNote: base?.scheduleNote || "",
+                  ? String(courses[0].id)
+                  : '',
+            title: base?.title || '',
+            modality: base?.modality || 'ONLINE',
+            visibility: base?.visibility || 'PRIVATE',
+            startAt: base?.startAt ? formatDateTimeForInput(base.startAt) : '',
+            endAt: base?.endAt ? formatDateTimeForInput(base.endAt) : '',
+            scheduleNote: base?.scheduleNote || '',
             scheduleBlocks: base?.scheduleBlocks
                 ? base.scheduleBlocks.map((block) => ({
-                    day: block.day || "",
-                    startTime: block.startTime || "",
-                    endTime: block.endTime || "",
-                }))
+                      day: block.day || '',
+                      startTime: block.startTime || '',
+                      endTime: block.endTime || '',
+                  }))
                 : [],
-            capacity: base?.capacity ? String(base.capacity) : "",
-            priceOverride: base?.priceOverride || "",
-            companyId: base?.companyId ? String(base.companyId) : "",
-            status: base?.status || "DRAFT",
+            capacity: base?.capacity ? String(base.capacity) : '',
+            priceOverride: base?.priceOverride || '',
+            companyId: base?.companyId ? String(base.companyId) : '',
+            status: base?.status || 'DRAFT',
             isFeatured: Boolean(base?.isFeatured),
         }),
         [courses]
     );
 
-    const [filterCourseId, setFilterCourseId] = useState("all");
-    const [search, setSearch] = useState("");
-    const [statusFilter, setStatusFilter] = useState("upcoming");
+    const [filterCourseId, setFilterCourseId] = useState('all');
+    const [search, setSearch] = useState('');
+    const [statusFilter, setStatusFilter] = useState('upcoming');
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [creating, setCreating] = useState(false);
-    const [modalMode, setModalMode] = useState("create");
+    const [modalMode, setModalMode] = useState('create');
     const [editingOffering, setEditingOffering] = useState(null);
     const [createForm, setCreateForm] = useState(() => getInitialForm());
     const [showEnrollModal, setShowEnrollModal] = useState(false);
     const [enrollOffering, setEnrollOffering] = useState(null);
-    const [enrollForm, setEnrollForm] = useState({ userId: "", discountPercentage: "" });
+    const [enrollForm, setEnrollForm] = useState({ userId: '', discountPercentage: '' });
     const [enrolling, setEnrolling] = useState(false);
     const [enrollStudents, setEnrollStudents] = useState([]);
     const [loadingEnrollStudents, setLoadingEnrollStudents] = useState(false);
-    const [enrollUserSearch, setEnrollUserSearch] = useState("");
+    const [enrollUserSearch, setEnrollUserSearch] = useState('');
     const [enrollStudentOptions, setEnrollStudentOptions] = useState([]);
     const [loadingUserOptions, setLoadingUserOptions] = useState(false);
     const [showUserDropdown, setShowUserDropdown] = useState(false);
@@ -651,24 +670,23 @@ const OfferingsSection = ({ courses, offerings, loading, refreshOfferings }) => 
     useEffect(() => {
         setCreateForm((prev) => ({
             ...prev,
-            courseId: courses[0]?.id ? String(courses[0].id) : "",
+            courseId: courses[0]?.id ? String(courses[0].id) : '',
         }));
     }, [courses]);
 
     const summary = useMemo(() => {
         const now = Date.now();
-        const upcoming = offerings.filter((offering) => offering.startAt && new Date(offering.startAt).getTime() >= now);
+        const upcoming = offerings.filter(
+            (offering) => offering.startAt && new Date(offering.startAt).getTime() >= now
+        );
         const past = offerings.length - upcoming.length;
         const company = offerings.filter((offering) => offering.companyId);
-        const publicOnes = offerings.filter((offering) => offering.visibility === "PUBLIC");
-        const statusCounts = offerings.reduce(
-            (acc, offering) => {
-                const key = offering.status || "DRAFT";
-                acc[key] = (acc[key] || 0) + 1;
-                return acc;
-            },
-            {}
-        );
+        const publicOnes = offerings.filter((offering) => offering.visibility === 'PUBLIC');
+        const statusCounts = offerings.reduce((acc, offering) => {
+            const key = offering.status || 'DRAFT';
+            acc[key] = (acc[key] || 0) + 1;
+            return acc;
+        }, {});
         return {
             total: offerings.length,
             upcoming: upcoming.length,
@@ -683,18 +701,19 @@ const OfferingsSection = ({ courses, offerings, loading, refreshOfferings }) => 
 
     const filteredOfferings = useMemo(() => {
         return offerings.filter((offering) => {
-            if (filterCourseId !== "all" && offering.course.id !== Number(filterCourseId)) {
+            if (filterCourseId !== 'all' && offering.course.id !== Number(filterCourseId)) {
                 return false;
             }
-            if (statusFilter !== "all") {
+            if (statusFilter !== 'all') {
                 const now = Date.now();
                 const start = offering.startAt ? new Date(offering.startAt).getTime() : null;
-                if (statusFilter === "upcoming" && start && start < now) return false;
-                if (statusFilter === "past" && start && start >= now) return false;
+                if (statusFilter === 'upcoming' && start && start < now) return false;
+                if (statusFilter === 'past' && start && start >= now) return false;
             }
             if (search.trim()) {
                 const term = search.toLowerCase();
-                const haystack = `${offering.title || ""} ${offering.course.title || ""} ${offering.company?.name || ""}`.toLowerCase();
+                const haystack =
+                    `${offering.title || ''} ${offering.course.title || ''} ${offering.company?.name || ''}`.toLowerCase();
                 return haystack.includes(term);
             }
             return true;
@@ -710,7 +729,7 @@ const OfferingsSection = ({ courses, offerings, loading, refreshOfferings }) => 
 
     const handleCreateOffering = async () => {
         if (!createForm.courseId) {
-            toast.error("Курс тандаңыз");
+            toast.error('Курс тандаңыз');
             return;
         }
         setCreating(true);
@@ -720,14 +739,16 @@ const OfferingsSection = ({ courses, offerings, loading, refreshOfferings }) => 
                 title: createForm.title.trim() || null,
                 modality: createForm.modality,
                 visibility: createForm.visibility,
-                startAt: createForm.startAt ? new Date(createForm.startAt).toISOString() : undefined,
+                startAt: createForm.startAt
+                    ? new Date(createForm.startAt).toISOString()
+                    : undefined,
                 endAt: createForm.endAt ? new Date(createForm.endAt).toISOString() : undefined,
                 scheduleNote: createForm.scheduleNote.trim() || null,
                 scheduleBlocks:
                     createForm.scheduleBlocks && createForm.scheduleBlocks.length
                         ? createForm.scheduleBlocks.filter(
-                            (block) => block.day && block.startTime && block.endTime
-                        )
+                              (block) => block.day && block.startTime && block.endTime
+                          )
                         : null,
                 capacity: createForm.capacity ? Number(createForm.capacity) : null,
                 priceOverride: createForm.priceOverride.trim() || null,
@@ -735,24 +756,24 @@ const OfferingsSection = ({ courses, offerings, loading, refreshOfferings }) => 
                 status: createForm.status,
                 isFeatured: Boolean(createForm.isFeatured),
             };
-            if (modalMode === "edit" && editingOffering) {
+            if (modalMode === 'edit' && editingOffering) {
                 const patch = { ...payload };
                 delete patch.courseId;
                 await updateOffering(editingOffering.id, patch);
-                toast.success("Offering жаңыртылды");
+                toast.success('Offering жаңыртылды');
             } else {
                 await createOffering(payload);
-                toast.success("Offering ийгиликтүү түзүлдү");
+                toast.success('Offering ийгиликтүү түзүлдү');
             }
             setShowCreateModal(false);
             setCreateForm(getInitialForm());
             setEditingOffering(null);
             refreshOfferings();
         } catch (error) {
-            console.error("Failed to create offering", error);
+            console.error('Failed to create offering', error);
             const message =
-                error.response?.data?.message || error.message || "Offering түзүүдө ката кетти";
-            toast.error(Array.isArray(message) ? message.join(", ") : message);
+                error.response?.data?.message || error.message || 'Offering түзүүдө ката кетти';
+            toast.error(Array.isArray(message) ? message.join(', ') : message);
         } finally {
             setCreating(false);
         }
@@ -771,14 +792,14 @@ const OfferingsSection = ({ courses, offerings, loading, refreshOfferings }) => 
                     )
                     .map((enrollment) => ({
                         id: enrollment.user?.id || enrollment.userId || enrollment.id,
-                        name: enrollment.user?.fullName || enrollment.user?.email || "Студент",
-                        email: enrollment.user?.email || "—",
+                        name: enrollment.user?.fullName || enrollment.user?.email || 'Студент',
+                        email: enrollment.user?.email || '—',
                         enrolledAt: enrollment.enrolledAt,
                     })) || [];
             setEnrollStudents(list);
         } catch (error) {
-            console.error("Failed to load offering students", error);
-            toast.error("Студенттердин тизмесин жүктөө мүмкүн болбodu");
+            console.error('Failed to load offering students', error);
+            toast.error('Студенттердин тизмесин жүктөө мүмкүн болбodu');
             setEnrollStudents([]);
         } finally {
             setLoadingEnrollStudents(false);
@@ -786,8 +807,8 @@ const OfferingsSection = ({ courses, offerings, loading, refreshOfferings }) => 
     }, []);
     const handleOpenEnrollModal = (offering) => {
         setEnrollOffering(offering);
-        setEnrollForm({ userId: "", discountPercentage: "" });
-        setEnrollUserSearch("");
+        setEnrollForm({ userId: '', discountPercentage: '' });
+        setEnrollUserSearch('');
         setEnrollStudentOptions([]);
         setShowEnrollModal(true);
         loadOfferingStudents(offering);
@@ -806,7 +827,7 @@ const OfferingsSection = ({ courses, offerings, loading, refreshOfferings }) => 
             page: 1,
             limit: 10,
             search: enrollUserSearch.trim(),
-            role: "student",
+            role: 'student',
         })
             .then((res) => {
                 if (cancelled) return;
@@ -814,17 +835,20 @@ const OfferingsSection = ({ courses, offerings, loading, refreshOfferings }) => 
                 const options = rows.map((user) => ({
                     id: user.id,
                     name: user.fullName || user.email || `ID: ${user.id}`,
-                    email: user.email || "",
+                    email: user.email || '',
                 }));
                 setEnrollStudentOptions(options);
-                if (options.length && !options.some((opt) => String(opt.id) === enrollForm.userId)) {
+                if (
+                    options.length &&
+                    !options.some((opt) => String(opt.id) === enrollForm.userId)
+                ) {
                     setEnrollForm((prev) => ({ ...prev, userId: String(options[0].id) }));
                 }
             })
             .catch((error) => {
-                console.error("Failed to fetch users", error);
+                console.error('Failed to fetch users', error);
                 if (!cancelled) {
-                    toast.error("Студенттерди издөөдө ката кетти");
+                    toast.error('Студенттерди издөөдө ката кетти');
                     setEnrollStudentOptions([]);
                 }
             })
@@ -840,7 +864,7 @@ const OfferingsSection = ({ courses, offerings, loading, refreshOfferings }) => 
         if (!enrollOffering) return;
         const userIdValue = Number(enrollForm.userId);
         if (!userIdValue || Number.isNaN(userIdValue)) {
-            toast.error("Колдонуучу ID туура эмес");
+            toast.error('Колдонуучу ID туура эмес');
             return;
         }
         setEnrolling(true);
@@ -851,16 +875,18 @@ const OfferingsSection = ({ courses, offerings, loading, refreshOfferings }) => 
                     ? Number(enrollForm.discountPercentage)
                     : undefined,
             });
-            toast.success("Студент offeringге кошулду");
+            toast.success('Студент offeringге кошулду');
             setShowEnrollModal(false);
             setEnrollOffering(null);
-            setEnrollForm({ userId: "", discountPercentage: "" });
+            setEnrollForm({ userId: '', discountPercentage: '' });
             refreshOfferings();
         } catch (error) {
-            console.error("Failed to enroll student", error);
+            console.error('Failed to enroll student', error);
             const message =
-                error.response?.data?.message || error.message || "Студентти offeringге кошууда ката";
-            toast.error(Array.isArray(message) ? message.join(", ") : message);
+                error.response?.data?.message ||
+                error.message ||
+                'Студентти offeringге кошууда ката';
+            toast.error(Array.isArray(message) ? message.join(', ') : message);
         } finally {
             setEnrolling(false);
         }
@@ -870,7 +896,9 @@ const OfferingsSection = ({ courses, offerings, loading, refreshOfferings }) => 
         <div className="space-y-6">
             <div className="flex items-center justify-between flex-wrap gap-3">
                 <div>
-                    <p className="text-sm uppercase tracking-wide text-gray-400">Offering башкаруу</p>
+                    <p className="text-sm uppercase tracking-wide text-gray-400">
+                        Offering башкаруу
+                    </p>
                     <h2 className="text-2xl font-bold text-gray-900">Курс сунуштары</h2>
                     <p className="text-sm text-gray-500">
                         Курстарыңызга арналган корпоративдик же атайын сунуштарды көзөмөлдөңүз.
@@ -879,7 +907,7 @@ const OfferingsSection = ({ courses, offerings, loading, refreshOfferings }) => 
                 <button
                     type="button"
                     className="px-4 py-2 rounded-full bg-blue-600 text-white text-sm"
-                    onClick={() => handleOpenModal("create")}
+                    onClick={() => handleOpenModal('create')}
                 >
                     Offering түзүү
                 </button>
@@ -943,7 +971,7 @@ const OfferingsSection = ({ courses, offerings, loading, refreshOfferings }) => 
                             <OfferingCard
                                 key={offering.id}
                                 offering={offering}
-                                onEdit={(item) => handleOpenModal("edit", item)}
+                                onEdit={(item) => handleOpenModal('edit', item)}
                                 onEnroll={handleOpenEnrollModal}
                             />
                         ))}
@@ -991,7 +1019,7 @@ const OfferingsSection = ({ courses, offerings, loading, refreshOfferings }) => 
                     onClose={() => {
                         setShowEnrollModal(false);
                         setEnrollOffering(null);
-                        setEnrollUserSearch("");
+                        setEnrollUserSearch('');
                         setEnrollStudentOptions([]);
                     }}
                     onSubmit={handleEnrollStudent}
@@ -1017,11 +1045,11 @@ const StatCard = ({ label, value }) => (
     </div>
 );
 
-const QuickActionCard = ({ title, description, link, buttonText, accent = "blue" }) => {
+const QuickActionCard = ({ title, description, link, buttonText, accent = 'blue' }) => {
     const accentClasses = {
-        blue: "bg-blue-600 hover:bg-blue-700",
-        green: "bg-green-600 hover:bg-green-700",
-        amber: "bg-amber-500 hover:bg-amber-600",
+        blue: 'bg-blue-600 hover:bg-blue-700',
+        green: 'bg-green-600 hover:bg-green-700',
+        amber: 'bg-amber-500 hover:bg-amber-600',
     }[accent];
 
     return (
@@ -1045,10 +1073,7 @@ const EmptyState = ({ title, description, actionLabel, actionLink }) => (
         <p className="text-lg font-semibold text-gray-900">{title}</p>
         <p className="text-sm text-gray-500">{description}</p>
         {actionLabel && actionLink && (
-            <Link
-                to={actionLink}
-                className="px-4 py-2 rounded-full bg-blue-600 text-white text-sm"
-            >
+            <Link to={actionLink} className="px-4 py-2 rounded-full bg-blue-600 text-white text-sm">
                 {actionLabel}
             </Link>
         )}
@@ -1063,7 +1088,11 @@ const OfferingsSummary = ({ offerings, loading, onViewOfferings }) => {
         return (
             <div className="border border-dashed border-gray-200 rounded-2xl p-3 text-xs text-gray-500 flex flex-col gap-2">
                 <span>Offering түзүлө элек.</span>
-                <button type="button" onClick={onViewOfferings} className="text-blue-600 hover:underline text-left">
+                <button
+                    type="button"
+                    onClick={onViewOfferings}
+                    className="text-blue-600 hover:underline text-left"
+                >
                     Offering түзүү
                 </button>
             </div>
@@ -1074,13 +1103,9 @@ const OfferingsSummary = ({ offerings, loading, onViewOfferings }) => {
         .sort((a, b) => new Date(a.startAt) - new Date(b.startAt));
     return (
         <div className="border border-gray-100 rounded-2xl p-3 text-xs text-gray-600 flex flex-col gap-1">
-            <span className="font-semibold text-gray-700">
-                {offerings.length} offering
-            </span>
+            <span className="font-semibold text-gray-700">{offerings.length} offering</span>
             {upcoming[0] && (
-                <span>
-                    Жакынкысы: {new Date(upcoming[0].startAt).toLocaleDateString()}
-                </span>
+                <span>Жакынкысы: {new Date(upcoming[0].startAt).toLocaleDateString()}</span>
             )}
             <button
                 type="button"
@@ -1095,26 +1120,23 @@ const OfferingsSummary = ({ offerings, loading, onViewOfferings }) => {
 
 const CreateOfferingModal = ({ courses, form, onChange, onClose, onSubmit, creating, mode }) => {
     const modalityDescriptions = {
-        ONLINE: "Zoom же Google Meet аркылуу жандуу сабак.",
-        OFFLINE: "Офлайн тренинг – жайгашкан жерди көрсөтүңүз.",
-        HYBRID: "Онлайн жана офлайн аралаш формат.",
+        ONLINE: 'Zoom же Google Meet аркылуу жандуу сабак.',
+        OFFLINE: 'Офлайн тренинг – жайгашкан жерди көрсөтүңүз.',
+        HYBRID: 'Онлайн жана офлайн аралаш формат.',
     };
     const scheduleBlocks = form.scheduleBlocks || [];
     const handleBlockChange = (index, field, value) => {
         const next = scheduleBlocks.map((block, idx) =>
             idx === index ? { ...block, [field]: value } : block
         );
-        onChange("scheduleBlocks", next);
+        onChange('scheduleBlocks', next);
     };
     const handleBlockAdd = () => {
-        onChange("scheduleBlocks", [
-            ...scheduleBlocks,
-            { day: "", startTime: "", endTime: "" },
-        ]);
+        onChange('scheduleBlocks', [...scheduleBlocks, { day: '', startTime: '', endTime: '' }]);
     };
     const handleBlockRemove = (index) => {
         onChange(
-            "scheduleBlocks",
+            'scheduleBlocks',
             scheduleBlocks.filter((_, idx) => idx !== index)
         );
     };
@@ -1125,13 +1147,17 @@ const CreateOfferingModal = ({ courses, form, onChange, onClose, onSubmit, creat
                 <div className="flex items-center justify-between mb-4">
                     <div>
                         <p className="text-sm uppercase tracking-wide text-gray-400">
-                            {mode === "edit" ? "Offering өзгөртүү" : "Жаңы offering"}
+                            {mode === 'edit' ? 'Offering өзгөртүү' : 'Жаңы offering'}
                         </p>
                         <h2 className="text-2xl font-semibold text-gray-900">
-                            {mode === "edit" ? "Offeringди өзгөртүү" : "Курс сунушун түзүү"}
+                            {mode === 'edit' ? 'Offeringди өзгөртүү' : 'Курс сунушун түзүү'}
                         </h2>
                     </div>
-                    <button type="button" onClick={onClose} className="text-gray-500 hover:text-gray-700">
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        className="text-gray-500 hover:text-gray-700"
+                    >
                         Жабуу
                     </button>
                 </div>
@@ -1147,7 +1173,7 @@ const CreateOfferingModal = ({ courses, form, onChange, onClose, onSubmit, creat
                             <label className="text-sm font-medium text-gray-600">Курс</label>
                             <select
                                 value={form.courseId}
-                                onChange={(e) => onChange("courseId", e.target.value)}
+                                onChange={(e) => onChange('courseId', e.target.value)}
                                 className="mt-1 w-full border rounded-2xl px-3 py-2"
                                 required
                             >
@@ -1160,11 +1186,13 @@ const CreateOfferingModal = ({ courses, form, onChange, onClose, onSubmit, creat
                             </select>
                         </div>
                         <div>
-                            <label className="text-sm font-medium text-gray-600">Offering аталышы (опция)</label>
+                            <label className="text-sm font-medium text-gray-600">
+                                Offering аталышы (опция)
+                            </label>
                             <input
                                 type="text"
                                 value={form.title}
-                                onChange={(e) => onChange("title", e.target.value)}
+                                onChange={(e) => onChange('title', e.target.value)}
                                 className="mt-1 w-full border rounded-2xl px-3 py-2"
                                 placeholder="Мисалы: Жандуу интенсив 15-апрел"
                             />
@@ -1175,20 +1203,22 @@ const CreateOfferingModal = ({ courses, form, onChange, onClose, onSubmit, creat
                             <label className="text-sm font-medium text-gray-600">Модалдуулук</label>
                             <select
                                 value={form.modality}
-                                onChange={(e) => onChange("modality", e.target.value)}
+                                onChange={(e) => onChange('modality', e.target.value)}
                                 className="mt-1 w-full border rounded-2xl px-3 py-2"
                             >
                                 <option value="ONLINE">Онлайн (Zoom/Meet)</option>
                                 <option value="OFFLINE">Офлайн (жандуу)</option>
                                 <option value="HYBRID">Гибрид</option>
                             </select>
-                            <p className="text-xs text-gray-500 mt-1">{modalityDescriptions[form.modality]}</p>
+                            <p className="text-xs text-gray-500 mt-1">
+                                {modalityDescriptions[form.modality]}
+                            </p>
                         </div>
                         <div>
                             <label className="text-sm font-medium text-gray-600">Көрүнүү</label>
                             <select
                                 value={form.visibility}
-                                onChange={(e) => onChange("visibility", e.target.value)}
+                                onChange={(e) => onChange('visibility', e.target.value)}
                                 className="mt-1 w-full border rounded-2xl px-3 py-2"
                             >
                                 <option value="PRIVATE">Жабык</option>
@@ -1203,7 +1233,7 @@ const CreateOfferingModal = ({ courses, form, onChange, onClose, onSubmit, creat
                             <input
                                 type="datetime-local"
                                 value={form.startAt}
-                                onChange={(e) => onChange("startAt", e.target.value)}
+                                onChange={(e) => onChange('startAt', e.target.value)}
                                 className="mt-1 w-full border rounded-2xl px-3 py-2"
                             />
                         </div>
@@ -1212,7 +1242,7 @@ const CreateOfferingModal = ({ courses, form, onChange, onClose, onSubmit, creat
                             <input
                                 type="datetime-local"
                                 value={form.endAt}
-                                onChange={(e) => onChange("endAt", e.target.value)}
+                                onChange={(e) => onChange('endAt', e.target.value)}
                                 className="mt-1 w-full border rounded-2xl px-3 py-2"
                             />
                         </div>
@@ -1222,7 +1252,7 @@ const CreateOfferingModal = ({ courses, form, onChange, onClose, onSubmit, creat
                             <label className="text-sm font-medium text-gray-600">Статус</label>
                             <select
                                 value={form.status}
-                                onChange={(e) => onChange("status", e.target.value)}
+                                onChange={(e) => onChange('status', e.target.value)}
                                 className="mt-1 w-full border rounded-2xl px-3 py-2"
                             >
                                 <option value="DRAFT">Draft (жарыяланбаган)</option>
@@ -1235,7 +1265,7 @@ const CreateOfferingModal = ({ courses, form, onChange, onClose, onSubmit, creat
                             <input
                                 type="checkbox"
                                 checked={form.isFeatured}
-                                onChange={(e) => onChange("isFeatured", e.target.checked)}
+                                onChange={(e) => onChange('isFeatured', e.target.checked)}
                             />
                             Featured offering катары белгилөө
                         </label>
@@ -1246,14 +1276,16 @@ const CreateOfferingModal = ({ courses, form, onChange, onClose, onSubmit, creat
                         </label>
                         <textarea
                             value={form.scheduleNote}
-                            onChange={(e) => onChange("scheduleNote", e.target.value)}
+                            onChange={(e) => onChange('scheduleNote', e.target.value)}
                             className="mt-1 w-full border rounded-2xl px-3 py-2 min-h-[100px]"
                             placeholder="Мисалы: Бишкек, Бизнес борбор 3-кабат. Же: Zoom — https://zoom.us/..."
                         />
                     </div>
                     <div>
                         <div className="flex items-center justify-between">
-                            <label className="text-sm font-medium text-gray-600">Даяр расписание блоктору</label>
+                            <label className="text-sm font-medium text-gray-600">
+                                Даяр расписание блоктору
+                            </label>
                             <button
                                 type="button"
                                 onClick={handleBlockAdd}
@@ -1274,19 +1306,29 @@ const CreateOfferingModal = ({ courses, form, onChange, onClose, onSubmit, creat
                                             className="col-span-4 border rounded-xl px-2 py-1 text-sm"
                                             placeholder="Күн (мисалы: Дүйшөмбү)"
                                             value={block.day}
-                                            onChange={(e) => handleBlockChange(index, "day", e.target.value)}
+                                            onChange={(e) =>
+                                                handleBlockChange(index, 'day', e.target.value)
+                                            }
                                         />
                                         <input
                                             type="time"
                                             className="col-span-3 border rounded-xl px-2 py-1 text-sm"
                                             value={block.startTime}
-                                            onChange={(e) => handleBlockChange(index, "startTime", e.target.value)}
+                                            onChange={(e) =>
+                                                handleBlockChange(
+                                                    index,
+                                                    'startTime',
+                                                    e.target.value
+                                                )
+                                            }
                                         />
                                         <input
                                             type="time"
                                             className="col-span-3 border rounded-xl px-2 py-1 text-sm"
                                             value={block.endTime}
-                                            onChange={(e) => handleBlockChange(index, "endTime", e.target.value)}
+                                            onChange={(e) =>
+                                                handleBlockChange(index, 'endTime', e.target.value)
+                                            }
                                         />
                                         <button
                                             type="button"
@@ -1300,38 +1342,45 @@ const CreateOfferingModal = ({ courses, form, onChange, onClose, onSubmit, creat
                             </div>
                         ) : (
                             <p className="text-xs text-gray-500 mt-1">
-                                Жума күндөрү жана убакыттарын кошуу үчүн "Блок кошуу" баскычын басыңыз.
+                                Жума күндөрү жана убакыттарын кошуу үчүн "Блок кошуу" баскычын
+                                басыңыз.
                             </p>
                         )}
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
-                            <label className="text-sm font-medium text-gray-600">Капасити (опция)</label>
+                            <label className="text-sm font-medium text-gray-600">
+                                Капасити (опция)
+                            </label>
                             <input
                                 type="number"
                                 min="1"
                                 value={form.capacity}
-                                onChange={(e) => onChange("capacity", e.target.value)}
+                                onChange={(e) => onChange('capacity', e.target.value)}
                                 className="mt-1 w-full border rounded-2xl px-3 py-2"
                                 placeholder="Мисалы: 25"
                             />
                         </div>
                         <div>
-                            <label className="text-sm font-medium text-gray-600">Бааны өзгөртүү (опция)</label>
+                            <label className="text-sm font-medium text-gray-600">
+                                Бааны өзгөртүү (опция)
+                            </label>
                             <input
                                 type="text"
                                 value={form.priceOverride}
-                                onChange={(e) => onChange("priceOverride", e.target.value)}
+                                onChange={(e) => onChange('priceOverride', e.target.value)}
                                 className="mt-1 w-full border rounded-2xl px-3 py-2"
                                 placeholder="Мисалы: 4500 сом"
                             />
                         </div>
                         <div>
-                            <label className="text-sm font-medium text-gray-600">Компания ID (опция)</label>
+                            <label className="text-sm font-medium text-gray-600">
+                                Компания ID (опция)
+                            </label>
                             <input
                                 type="text"
                                 value={form.companyId}
-                                onChange={(e) => onChange("companyId", e.target.value)}
+                                onChange={(e) => onChange('companyId', e.target.value)}
                                 className="mt-1 w-full border rounded-2xl px-3 py-2"
                                 placeholder="Компания бириктирүү керек болсо"
                             />
@@ -1351,7 +1400,11 @@ const CreateOfferingModal = ({ courses, form, onChange, onClose, onSubmit, creat
                             className="px-5 py-2 rounded-full bg-blue-600 text-white text-sm disabled:opacity-60"
                             disabled={creating}
                         >
-                            {creating ? "Сакталууда..." : mode === "edit" ? "Өзгөртүүлөрдү сактоо" : "Offering түзүү"}
+                            {creating
+                                ? 'Сакталууда...'
+                                : mode === 'edit'
+                                  ? 'Өзгөртүүлөрдү сактоо'
+                                  : 'Offering түзүү'}
                         </button>
                     </div>
                 </form>
@@ -1362,20 +1415,20 @@ const CreateOfferingModal = ({ courses, form, onChange, onClose, onSubmit, creat
 
 const OfferingCard = ({ offering, onEdit, onEnroll }) => {
     const title = offering.title || `${offering.course.title} Offering`;
-    const start = offering.startAt ? new Date(offering.startAt).toLocaleString() : "Белгисиз";
+    const start = offering.startAt ? new Date(offering.startAt).toLocaleString() : 'Белгисиз';
     const end = offering.endAt ? new Date(offering.endAt).toLocaleString() : null;
-    const modality = offering.modality || "ONLINE";
+    const modality = offering.modality || 'ONLINE';
     const modalityLabel =
-        modality === "OFFLINE" ? "Офлайн" : modality === "HYBRID" ? "Гибрид" : "Онлайн";
-    const capacity = offering.capacity ? `${offering.capacity} орун` : "Орун чектелбеген";
-    const visibility = offering.visibility || "PRIVATE";
+        modality === 'OFFLINE' ? 'Офлайн' : modality === 'HYBRID' ? 'Гибрид' : 'Онлайн';
+    const capacity = offering.capacity ? `${offering.capacity} орун` : 'Орун чектелбеген';
+    const visibility = offering.visibility || 'PRIVATE';
     const companyName = offering.company?.name;
-    const status = offering.status || "DRAFT";
+    const status = offering.status || 'DRAFT';
     const statusStyles = {
-        ACTIVE: "bg-green-100 text-green-700",
-        DRAFT: "bg-gray-200 text-gray-700",
-        COMPLETED: "bg-blue-100 text-blue-700",
-        ARCHIVED: "bg-orange-100 text-orange-700",
+        ACTIVE: 'bg-green-100 text-green-700',
+        DRAFT: 'bg-gray-200 text-gray-700',
+        COMPLETED: 'bg-blue-100 text-blue-700',
+        ARCHIVED: 'bg-orange-100 text-orange-700',
     };
     return (
         <div className="border border-gray-200 rounded-2xl p-4 space-y-3">
@@ -1385,12 +1438,13 @@ const OfferingCard = ({ offering, onEdit, onEnroll }) => {
                     <p className="text-sm text-gray-500">Курс: {offering.course.title}</p>
                 </div>
                 <span
-                    className={`px-3 py-1 rounded-full text-xs font-semibold ${visibility === "PUBLIC"
-                        ? "bg-green-100 text-green-700"
-                        : "bg-gray-100 text-gray-600"
-                        }`}
+                    className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                        visibility === 'PUBLIC'
+                            ? 'bg-green-100 text-green-700'
+                            : 'bg-gray-100 text-gray-600'
+                    }`}
                 >
-                    {visibility === "PUBLIC" ? "Публичный" : "Жабык"}
+                    {visibility === 'PUBLIC' ? 'Публичный' : 'Жабык'}
                 </span>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm text-gray-600">
@@ -1410,7 +1464,7 @@ const OfferingCard = ({ offering, onEdit, onEnroll }) => {
             </div>
             <div className="flex items-center gap-2 text-xs">
                 <span
-                    className={`px-3 py-1 rounded-full font-semibold ${statusStyles[status] || "bg-gray-200 text-gray-700"}`}
+                    className={`px-3 py-1 rounded-full font-semibold ${statusStyles[status] || 'bg-gray-200 text-gray-700'}`}
                 >
                     {status}
                 </span>
@@ -1493,10 +1547,16 @@ const EnrollStudentModal = ({
             <div className="flex items-center justify-between mb-4">
                 <div>
                     <p className="text-sm uppercase tracking-wide text-gray-400">Студент кошуу</p>
-                    <h2 className="text-2xl font-semibold text-gray-900">{offering.course.title}</h2>
-                    <p className="text-sm text-gray-500">{offering.title || "Offering"}</p>
+                    <h2 className="text-2xl font-semibold text-gray-900">
+                        {offering.course.title}
+                    </h2>
+                    <p className="text-sm text-gray-500">{offering.title || 'Offering'}</p>
                 </div>
-                <button type="button" onClick={onClose} className="text-gray-500 hover:text-gray-700">
+                <button
+                    type="button"
+                    onClick={onClose}
+                    className="text-gray-500 hover:text-gray-700"
+                >
                     Жабуу
                 </button>
             </div>
@@ -1508,7 +1568,9 @@ const EnrollStudentModal = ({
                 }}
             >
                 <div>
-                    <label className="text-sm font-medium text-gray-600">Студентти издөө жана тандоо</label>
+                    <label className="text-sm font-medium text-gray-600">
+                        Студентти издөө жана тандоо
+                    </label>
                     <div className="relative">
                         <input
                             type="text"
@@ -1525,16 +1587,22 @@ const EnrollStudentModal = ({
                                         key={student.id}
                                         type="button"
                                         className={`w-full text-left px-3 py-2 text-sm ${
-                                            String(student.id) === form.userId ? "bg-blue-50 text-blue-700" : "hover:bg-gray-50"
+                                            String(student.id) === form.userId
+                                                ? 'bg-blue-50 text-blue-700'
+                                                : 'hover:bg-gray-50'
                                         }`}
                                         onClick={() => {
-                                            onChange("userId", String(student.id));
-                                            onSearchChange(student.name || student.email || "");
+                                            onChange('userId', String(student.id));
+                                            onSearchChange(student.name || student.email || '');
                                             setShowDropdown(false);
                                         }}
                                     >
                                         <span className="font-medium">{student.name}</span>
-                                        {student.email && <span className="text-xs text-gray-500 ml-2">{student.email}</span>}
+                                        {student.email && (
+                                            <span className="text-xs text-gray-500 ml-2">
+                                                {student.email}
+                                            </span>
+                                        )}
                                     </button>
                                 ))}
                             </div>
@@ -1549,7 +1617,7 @@ const EnrollStudentModal = ({
                     <p className="text-xs text-gray-500 mt-1">
                         {form.userId
                             ? `Тандалган студент ID: ${form.userId}`
-                            : "Кеминде эки тамга издөө үчүн жазыңыз жана тизмеден тандаңыз."}
+                            : 'Кеминде эки тамга издөө үчүн жазыңыз жана тизмеден тандаңыз.'}
                     </p>
                 </div>
                 <div>
@@ -1559,16 +1627,16 @@ const EnrollStudentModal = ({
                         min="0"
                         max="100"
                         value={form.discountPercentage}
-                        onChange={(e) => onChange("discountPercentage", e.target.value)}
+                        onChange={(e) => onChange('discountPercentage', e.target.value)}
                         className="mt-1 w-full border rounded-2xl px-3 py-2"
                         placeholder="Мисалы: 10"
                     />
                 </div>
                 <div className="text-xs text-gray-500">
-                    Offering ID: {offering.id}. Орундар:{" "}
+                    Offering ID: {offering.id}. Орундар:{' '}
                     {offering.capacity != null
                         ? `${offering.enrolledCount ?? 0}/${offering.capacity}`
-                        : "Чектелбеген"}
+                        : 'Чектелбеген'}
                 </div>
                 <div className="flex justify-end gap-3 pt-2">
                     <button
@@ -1584,7 +1652,7 @@ const EnrollStudentModal = ({
                         className="px-5 py-2 rounded-full bg-green-600 text-white text-sm disabled:opacity-60"
                         disabled={enrolling}
                     >
-                        {enrolling ? "Кошууда..." : "Студент кошуу"}
+                        {enrolling ? 'Кошууда...' : 'Студент кошуу'}
                     </button>
                 </div>
             </form>

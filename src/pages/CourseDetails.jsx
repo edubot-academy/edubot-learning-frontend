@@ -1,7 +1,7 @@
-import { useState, useEffect, useRef, useCallback, useContext } from "react";
-import { useParams } from "react-router-dom";
-import debounce from "lodash.debounce";
-import toast from "react-hot-toast";
+import { useState, useEffect, useRef, useCallback, useContext } from 'react';
+import { useParams } from 'react-router-dom';
+import debounce from 'lodash.debounce';
+import toast from 'react-hot-toast';
 import {
     fetchCourseDetails,
     fetchSections,
@@ -16,18 +16,18 @@ import {
     submitLessonQuiz,
     fetchLessonChallenge,
     submitLessonChallenge,
-} from "../services/api";
-import { AuthContext } from "../context/AuthContext";
-import CourseSidebar from "../components/CourseSidebar";
-import CourseVideoPlayer from "../components/CourseVideoPlayer";
-import CourseHeader from "../components/CourseHeader";
-import CardVideo from "../components/CardVideo";
-import ArticleLessonViewer from "../components/ArticleLessonViewer";
-import LessonQuizPlayer from "../components/LessonQuizPlayer";
-import LessonChallengePlayer from "../components/LessonChallengePlayer";
-import CourseDescription from "../components/CourseDescription";
-import Comment from "../components/Comment";
-import AiAssistantPanel from "../components/AiAssistantPanel";
+} from '@services/api';
+import { AuthContext } from '../context/AuthContext';
+import CourseSidebar from '@features/courses/components/CourseSidebar';
+import CourseVideoPlayer from '@features/courses/components/CourseVideoPlayer';
+import CourseHeader from '@features/courses/components/CourseHeader';
+import CardVideo from '@features/courses/components/CardVideo';
+import ArticleLessonViewer from '@features/courses/components/ArticleLessonViewer';
+import LessonQuizPlayer from '@features/courses/components/LessonQuizPlayer';
+import LessonChallengePlayer from '@features/courses/components/LessonChallengePlayer';
+import CourseDescription from '@features/courses/components/CourseDescription';
+import Comment from '@features/ratings/components/Comment';
+import AiAssistantPanel from '@features/assistant/components/AiAssistantPanel';
 
 const CHALLENGE_STORAGE_PREFIX = 'lessonChallengeState';
 
@@ -103,7 +103,7 @@ const CourseDetailsPage = () => {
                 const isVisible = rect.top >= 0 && rect.bottom <= window.innerHeight;
 
                 if (!isVisible) {
-                    el.scrollIntoView({ behavior: "smooth", block: "center" });
+                    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 }
             }
         }, 100);
@@ -118,7 +118,11 @@ const CourseDetailsPage = () => {
                 activeLessonRef.current?.id &&
                 activeLessonRef.current?.kind === 'video'
             ) {
-                updateVideoTime({ courseId: Number(id), lessonId: activeLessonRef.current.id, time });
+                updateVideoTime({
+                    courseId: Number(id),
+                    lessonId: activeLessonRef.current.id,
+                    time,
+                });
             }
         }, 3000),
         [id, user, enrolled]
@@ -166,7 +170,7 @@ const CourseDetailsPage = () => {
             setLessonQuizAnswers((prev) => ({ ...prev, [lesson.id]: {} }));
         } catch (err) {
             console.error(err);
-            const message = err.response?.data?.message || "Квиз жүктөлбөй калды";
+            const message = err.response?.data?.message || 'Квиз жүктөлбөй калды';
             toast.error(message);
         } finally {
             setQuizLoading(false);
@@ -186,7 +190,7 @@ const CourseDetailsPage = () => {
                 [lesson.id]:
                     typeof prev[lesson.id] !== 'undefined'
                         ? prev[lesson.id]
-                        : savedState?.code ?? challenge.starterCode ?? '',
+                        : (savedState?.code ?? challenge.starterCode ?? ''),
             }));
 
             if (savedState?.result) {
@@ -199,7 +203,7 @@ const CourseDetailsPage = () => {
             return challenge;
         } catch (err) {
             console.error(err);
-            const message = err.response?.data?.message || "Код тапшырма жүктөлбөй калды";
+            const message = err.response?.data?.message || 'Код тапшырма жүктөлбөй калды';
             toast.error(message);
             return null;
         } finally {
@@ -222,7 +226,9 @@ const CourseDetailsPage = () => {
                 if (videoRef.current) {
                     videoRef.current.load();
                     if (!hasPlayedRef.current) {
-                        videoRef.current.play().catch(err => console.warn('Autoplay failed:', err));
+                        videoRef.current
+                            .play()
+                            .catch((err) => console.warn('Autoplay failed:', err));
                     }
                 }
             }, 0);
@@ -243,7 +249,11 @@ const CourseDetailsPage = () => {
             if (!isArticle && !isQuiz && !isCode) {
                 const videoTime = await getVideoTime(id, lesson.id);
 
-                if (videoTime?.time && videoTime.time < (lesson.duration || 9999) * 0.95 && !completedLessons.includes(lesson.id)) {
+                if (
+                    videoTime?.time &&
+                    videoTime.time < (lesson.duration || 9999) * 0.95 &&
+                    !completedLessons.includes(lesson.id)
+                ) {
                     setResumeVideoTime(videoTime.time);
                 } else {
                     setResumeVideoTime(0);
@@ -300,10 +310,14 @@ const CourseDetailsPage = () => {
                 id,
                 activeLesson.sectionId,
                 activeLesson.id,
-                payload,
+                payload
             );
             setLessonQuizResults((prev) => ({ ...prev, [activeLesson.id]: result }));
-            toast.success(result.passed ? 'Куттуктайбыз! Квиз ийгиликтүү тапшырылды.' : 'Кайра аракет кылып көрүңүз.');
+            toast.success(
+                result.passed
+                    ? 'Куттуктайбыз! Квиз ийгиликтүү тапшырылды.'
+                    : 'Кайра аракет кылып көрүңүз.'
+            );
             if (result.passed) {
                 setCompletedLessons((prev) => [...new Set([...prev, activeLesson.id])]);
             }
@@ -382,7 +396,7 @@ const CourseDetailsPage = () => {
                 activeLesson.id
             );
             if (resp.completed) {
-                setCompletedLessons(prev => [...new Set([...prev, activeLesson.id])]);
+                setCompletedLessons((prev) => [...new Set([...prev, activeLesson.id])]);
             }
         }
         const { next } = findPrevNextLessons();
@@ -393,7 +407,12 @@ const CourseDetailsPage = () => {
 
     const handleVideoProgress = useCallback(
         async (progress, lessonParam) => {
-            if (lessonParam.kind === 'article' || lessonParam.kind === 'quiz' || lessonParam.kind === 'code') return;
+            if (
+                lessonParam.kind === 'article' ||
+                lessonParam.kind === 'quiz' ||
+                lessonParam.kind === 'code'
+            )
+                return;
 
             if (!hasPlayedRef.current) {
                 if (progress > 0) {
@@ -437,7 +456,7 @@ const CourseDetailsPage = () => {
                 await updateVideoTime({
                     courseId: Number(id),
                     lessonId: lesson.id,
-                    time: 0
+                    time: 0,
                 });
             }
             if (activeLesson?.id === lesson.id) {
@@ -532,11 +551,18 @@ const CourseDetailsPage = () => {
                         await loadChallengeForLesson(lastLesson);
                     }
                     if (user && enrollment.enrolled && !lastLesson.locked) {
-                        if (lastLesson.kind === 'article' || lastLesson.kind === 'quiz' || lastLesson.kind === 'code') {
+                        if (
+                            lastLesson.kind === 'article' ||
+                            lastLesson.kind === 'quiz' ||
+                            lastLesson.kind === 'code'
+                        ) {
                             setResumeVideoTime(0);
                         } else {
                             const videoTime = await getVideoTime(id, lastLesson.id);
-                            if (videoTime?.time && videoTime.time < 0.95 * (lastLesson.duration || 9999)) {
+                            if (
+                                videoTime?.time &&
+                                videoTime.time < 0.95 * (lastLesson.duration || 9999)
+                            ) {
                                 setResumeVideoTime(videoTime.time);
                             } else {
                                 setResumeVideoTime(0);
@@ -547,11 +573,13 @@ const CourseDetailsPage = () => {
 
                 if (!lastLesson) {
                     const storedSection = localStorage.getItem(`active_section_${id}`);
-                    const sectionIdToOpen = storedSection ? Number(storedSection) : updatedSections[0]?.id;
+                    const sectionIdToOpen = storedSection
+                        ? Number(storedSection)
+                        : updatedSections[0]?.id;
                     setActiveSectionId(sectionIdToOpen);
                 }
             } catch (err) {
-                setError(err.message || "Курс жүктөлбөй калды.");
+                setError(err.message || 'Курс жүктөлбөй калды.');
             } finally {
                 setLoading(false);
             }
@@ -566,13 +594,14 @@ const CourseDetailsPage = () => {
 
     const { prev: prevLesson, next: nextLesson } = findPrevNextLessons();
     const totalLessons = sections.reduce((count, sec) => count + (sec.lessons?.length || 0), 0);
-    const progress = totalLessons > 0
-        ? Math.round((completedLessons.length / totalLessons) * 100)
-        : 0;
+    const progress =
+        totalLessons > 0 ? Math.round((completedLessons.length / totalLessons) * 100) : 0;
 
     const isCourseInstructor = Boolean(user && course?.instructor?.id === user.id);
     const isAdmin = user?.role === 'admin';
-    const isAiAvailable = Boolean(course.aiAssistantEnabled && (enrolled || isCourseInstructor || isAdmin));
+    const isAiAvailable = Boolean(
+        course.aiAssistantEnabled && (enrolled || isCourseInstructor || isAdmin)
+    );
     const assistantAvailableMessage = course.aiAssistantEnabled
         ? 'Ассистентти колдонуу үчүн курсга жазылуу керек.'
         : 'EDU AI ассистенти бул курста өчүрүлгөн.';
@@ -597,10 +626,9 @@ const CourseDetailsPage = () => {
                     key={tab.id}
                     type="button"
                     onClick={() => handleTabChange(tab)}
-                    className={`flex-1 min-w-[140px] px-4 py-2 rounded-xl text-sm font-medium transition ${activeTab === tab.id
-                            ? 'bg-white text-gray-900 shadow'
-                            : 'text-gray-600'
-                        } ${tab.disabled ? 'opacity-60 cursor-not-allowed' : 'hover:text-gray-900'}`}
+                    className={`flex-1 min-w-[140px] px-4 py-2 rounded-xl text-sm font-medium transition ${
+                        activeTab === tab.id ? 'bg-white text-gray-900 shadow' : 'text-gray-600'
+                    } ${tab.disabled ? 'opacity-60 cursor-not-allowed' : 'hover:text-gray-900'}`}
                 >
                     {tab.label}
                 </button>
@@ -618,8 +646,8 @@ const CourseDetailsPage = () => {
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div className="md:col-span-2">
-                        {activeLesson && (
-                            activeLesson.kind === 'article' ? (
+                        {activeLesson &&
+                            (activeLesson.kind === 'article' ? (
                                 <ArticleLessonViewer key={activeLesson.id} lesson={activeLesson} />
                             ) : activeLesson.kind === 'quiz' ? (
                                 <LessonQuizPlayer
@@ -649,7 +677,9 @@ const CourseDetailsPage = () => {
                                     onSubmit={handleChallengeSubmit}
                                     submitting={challengeSubmitting}
                                     disabled={!enrolled || activeLesson.locked}
-                                    loading={challengeLoading && !lessonChallengeData[activeLesson.id]}
+                                    loading={
+                                        challengeLoading && !lessonChallengeData[activeLesson.id]
+                                    }
                                     result={lessonChallengeResults[activeLesson.id]}
                                 />
                             ) : (
@@ -657,7 +687,9 @@ const CourseDetailsPage = () => {
                                     key={activeLesson.id}
                                     activeLesson={activeLesson}
                                     resumeVideoTime={resumeVideoTime}
-                                    handleVideoProgress={(progress) => handleVideoProgress(progress, activeLesson)}
+                                    handleVideoProgress={(progress) =>
+                                        handleVideoProgress(progress, activeLesson)
+                                    }
                                     handleTimeUpdate={handleTimeUpdate}
                                     handlePause={handlePause}
                                     videoRef={videoRef}
@@ -666,8 +698,7 @@ const CourseDetailsPage = () => {
                                     onEnded={handleEnded}
                                     handleLessonClick={handleLessonClick}
                                 />
-                            )
-                        )}
+                            ))}
                     </div>
 
                     <div className="space-y-4">
