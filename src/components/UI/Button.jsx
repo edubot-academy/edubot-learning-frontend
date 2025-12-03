@@ -10,7 +10,7 @@ const Button = ({
     onClick,
 }) => {
     const base =
-        "inline-flex items-center justify-center gap-2 rounded-lg font-medium text-base px-6 py-3 transition-all duration-300";
+        "inline-flex items-center justify-center gap-2 rounded-lg font-medium text-base px-5 py-3 transition-all duration-300";
 
     const styles = {
         primary: `
@@ -23,7 +23,7 @@ const Button = ({
         secondary: `
       border border-black text-black
       hover:bg-[#EA580C] hover:border-[#EA580C] hover:text-white
-      active:scale-95
+      active:scale-95 text-xs md:text-base
       disabled:bg-transparent disabled:border-[#C5C9D1] disabled:text-[#C5C9D1] disabled:cursor-not-allowed
     `,
     };
