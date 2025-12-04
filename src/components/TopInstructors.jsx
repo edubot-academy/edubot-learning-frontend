@@ -1,5 +1,5 @@
-import instructorImg from "../assets/images/instructor.png"
-import StarImg from "../assets/icons/star.svg"
+import instructorImg from "../assets/images/instructor.png";
+import StarImg from "../assets/icons/star.svg";
 
 const instructors = [
   {
@@ -30,7 +30,7 @@ const instructors = [
     rating: "4.9",
     students: "2400",
   },
-]
+];
 
 const TopInstructors = () => {
   return (
@@ -52,8 +52,12 @@ const TopInstructors = () => {
             />
 
             <div className="text-center mt-3">
-              <h3 className="text-lg font-semibold text-black">{instructor.name}</h3>
-              <p className="text-sm pt-2 text-gray-500">{instructor.position}</p>
+              <h3 className="text-lg font-semibold text-black">
+                {instructor.name}
+              </h3>
+              <p className="text-sm pt-2 text-gray-500">
+                {instructor.position}
+              </p>
             </div>
 
             <div className="w-[265px] mt-4 border-t border-gray-300" />
@@ -63,14 +67,15 @@ const TopInstructors = () => {
                 <img src={StarImg} alt="звезда" className="w-5 h-5" />
                 <span className="text-sm text-black">{instructor.rating}</span>
               </div>
-              <span className="text-sm text-gray-500">{instructor.students} студентов</span>
+              <span className="text-sm text-gray-500">
+                {instructor.students} студентов
+              </span>
             </div>
           </div>
         ))}
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default TopInstructors
- 
+export default TopInstructors;
