@@ -1,7 +1,7 @@
 import React from 'react'
 import { IoStarSharp } from "react-icons/io5";
 
-const CardFeedback = ({ FeedbackNew, text, image, name, role, index }) => {
+const CardFeedback = ({ index, text, image, name, role, }) => {
     return (
         <div>
             <div
