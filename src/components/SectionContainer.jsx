@@ -1,7 +1,6 @@
 const SectionContainer = ({
 	title,
 	subtitle,
-	buttonText,
 	data = [],
 	CardComponent,
 	hideTitleAndLink = false,

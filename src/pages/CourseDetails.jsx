@@ -19,8 +19,9 @@ import {
 } from "../services/api";
 import { AuthContext } from "../context/AuthContext";
 import CourseSidebar from "../components/CourseSidebar";
-import CourseHeader from "../components/CourseHeader";
 import CourseVideoPlayer from "../components/CourseVideoPlayer";
+import CourseHeader from "../components/CourseHeader";
+import CardVideo from "../components/CardVideo";
 import ArticleLessonViewer from "../components/ArticleLessonViewer";
 import LessonQuizPlayer from "../components/LessonQuizPlayer";
 import LessonChallengePlayer from "../components/LessonChallengePlayer";
@@ -596,17 +597,18 @@ const CourseDetailsPage = () => {
                     key={tab.id}
                     type="button"
                     onClick={() => handleTabChange(tab)}
-                    className={`flex-1 min-w-[140px] px-4 py-2 rounded-xl text-sm font-medium transition ${
-                        activeTab === tab.id
+                    className={`flex-1 min-w-[140px] px-4 py-2 rounded-xl text-sm font-medium transition ${activeTab === tab.id
                             ? 'bg-white text-gray-900 shadow'
                             : 'text-gray-600'
-                    } ${tab.disabled ? 'opacity-60 cursor-not-allowed' : 'hover:text-gray-900'}`}
+                        } ${tab.disabled ? 'opacity-60 cursor-not-allowed' : 'hover:text-gray-900'}`}
                 >
                     {tab.label}
                 </button>
             ))}
         </div>
     );
+
+    const lessonCount = sections.reduce((count, sec) => count + (sec.lessons?.length || 0), 0);
 
     return (
         <div className="min-h-screen pt-24 bg-[#f8f9fb]">
@@ -703,6 +705,13 @@ const CourseDetailsPage = () => {
                 </div>
 
                 <Comment courseId={id} />
+
+                <CardVideo
+                    key={id}
+                    course={course}
+                    lessonCount={lessonCount}
+                    coverImageUrl={course.coverImageUrl}
+                />
             </div>
         </div>
     );
