@@ -4,42 +4,42 @@
 
 /* Ensure the app takes full width */
 #root {
-  @apply w-full min-h-screen;
+    @apply w-full min-h-screen;
 }
 
 /* Logo */
 .logo {
-  @apply h-24 p-6 transition hover:drop-shadow-lg;
+    @apply h-24 p-6 transition hover:drop-shadow-lg;
 }
 
 /* Remove unnecessary will-change */
 .logo:hover {
-  @apply drop-shadow-2xl;
+    @apply drop-shadow-2xl;
 }
 
 /* Card Component */
 .card {
-  @apply p-8 bg-white rounded-lg shadow-lg;
+    @apply p-8 bg-white rounded-lg shadow-lg;
 }
 
 /* Fix animations only if needed */
 @media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: spin infinite 20s linear;
-  }
+    a:nth-of-type(2) .logo {
+        animation: spin infinite 20s linear;
+    }
 }
 
 @keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
+    from {
+        transform: rotate(0deg);
+    }
 
-  to {
-    transform: rotate(360deg);
-  }
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 /* Remove unnecessary styles */
 .read-the-docs {
-  @apply text-gray-500;
+    @apply text-gray-500;
 }

@@ -10,12 +10,12 @@ import {
     uploadLessonFile,
     upsertLessonQuiz,
     upsertLessonChallenge,
-} from '../services/api';
+} from '@services/api';
 import toast from 'react-hot-toast';
 import { getVideoDuration } from '../utils/videoUtils';
 import { LESSON_KIND_OPTIONS } from '../constants/lessons';
-import LessonQuizEditor from '../components/LessonQuizEditor';
-import LessonChallengeEditor from '../components/LessonChallengeEditor';
+import LessonQuizEditor from '@features/courses/components/LessonQuizEditor';
+import LessonChallengeEditor from '@features/courses/components/LessonChallengeEditor';
 import {
     createEmptyQuiz,
     ensureQuizShape,
@@ -27,7 +27,7 @@ import {
     ensureChallengeShape,
     normalizeChallengeForApi,
 } from '../utils/challengeUtils';
-import ArticleEditor from '../components/ArticleEditor';
+import ArticleEditor from '@features/courses/components/ArticleEditor';
 
 const DEFAULT_COURSE_INFO = {
     title: '',
@@ -37,8 +37,8 @@ const DEFAULT_COURSE_INFO = {
     price: '',
     cover: null,
     coverImageUrl: '',
-    languageCode: 'ky',          // 'ky' | 'ru' | 'en'
-    learningOutcomesText: '',    // textarea, split by \n
+    languageCode: 'ky', // 'ky' | 'ru' | 'en'
+    learningOutcomesText: '', // textarea, split by \n
     isPaid: true,
     aiAssistantEnabled: false,
 };
@@ -104,10 +104,7 @@ const CourseBuilder = () => {
     }, []);
 
     useEffect(() => {
-        localStorage.setItem(
-            'draftCourse',
-            JSON.stringify({ courseInfo, courseId, step }),
-        );
+        localStorage.setItem('draftCourse', JSON.stringify({ courseInfo, courseId, step }));
     }, [courseInfo, courseId, step]);
 
     const handleCourseInfoChange = (e) => {
@@ -224,16 +221,13 @@ const CourseBuilder = () => {
             }
         }
         if (confirmDelete.type === 'section') {
-            const updated = curriculum.filter(
-                (_, i) => i !== confirmDelete.sectionIndex,
-            );
+            const updated = curriculum.filter((_, i) => i !== confirmDelete.sectionIndex);
             setCurriculum(updated);
         } else if (confirmDelete.type === 'lesson') {
             const updated = [...curriculum];
-            updated[confirmDelete.sectionIndex].lessons =
-                updated[confirmDelete.sectionIndex].lessons.filter(
-                    (_, i) => i !== confirmDelete.lessonIndex,
-                );
+            updated[confirmDelete.sectionIndex].lessons = updated[
+                confirmDelete.sectionIndex
+            ].lessons.filter((_, i) => i !== confirmDelete.lessonIndex);
             setCurriculum(updated);
         }
         setConfirmDelete({
@@ -244,18 +238,11 @@ const CourseBuilder = () => {
         });
     };
 
-    const handleFileUpload = async (
-        courseId,
-        sectionIndex,
-        lessonIndex,
-        type,
-        file,
-    ) => {
+    const handleFileUpload = async (courseId, sectionIndex, lessonIndex, type, file) => {
         if (!file || !courseId) return;
 
         const keyProp = type === 'video' ? 'videoKey' : 'resourceKey';
-        const existingKey =
-            curriculum[sectionIndex].lessons[lessonIndex][keyProp];
+        const existingKey = curriculum[sectionIndex].lessons[lessonIndex][keyProp];
         if (existingKey) return;
 
         setCurriculum((prev) => {
@@ -274,11 +261,10 @@ const CourseBuilder = () => {
                 (percent) => {
                     setCurriculum((prev) => {
                         const updated = [...prev];
-                        updated[sectionIndex].lessons[lessonIndex].uploadProgress[type] =
-                            percent;
+                        updated[sectionIndex].lessons[lessonIndex].uploadProgress[type] = percent;
                         return updated;
                     });
-                },
+                }
             );
 
             if (type === 'video') {
@@ -307,9 +293,7 @@ const CourseBuilder = () => {
     };
 
     const isUploading = curriculum.some((section) =>
-        section.lessons.some(
-            (lesson) => lesson.uploading?.video || lesson.uploading?.resource,
-        ),
+        section.lessons.some((lesson) => lesson.uploading?.video || lesson.uploading?.resource)
     );
 
     const handleCourseSubmit = async () => {
@@ -370,8 +354,7 @@ const CourseBuilder = () => {
                     const missingTitle = !lesson.title?.trim();
                     const missingVideo = lesson.kind === 'video' && !lesson.videoKey;
                     const missingContent = isArticle && !lesson.content?.trim();
-                    const missingReadTime =
-                        isArticle && (!lesson.duration || lesson.duration <= 0);
+                    const missingReadTime = isArticle && (!lesson.duration || lesson.duration <= 0);
                     const quizData = isQuiz ? ensureQuizShape(lesson.quiz) : null;
                     const quizError = isQuiz ? validateQuiz(quizData) : null;
                     const challengeData = isCode ? ensureChallengeShape(lesson.challenge) : null;
@@ -385,13 +368,19 @@ const CourseBuilder = () => {
                         }
                     }
 
-                    if (missingTitle || missingVideo || missingContent || missingReadTime || quizError) {
+                    if (
+                        missingTitle ||
+                        missingVideo ||
+                        missingContent ||
+                        missingReadTime ||
+                        quizError
+                    ) {
                         toast.error(
                             quizError
                                 ? quizError
                                 : isArticle
-                                    ? 'Макала үчүн аталыш, текст жана окуу убактысы талап кылынат.'
-                                    : 'Ар бир видео сабакта аталыш жана видео болушу керек.',
+                                  ? 'Макала үчүн аталыш, текст жана окуу убактысы талап кылынат.'
+                                  : 'Ар бир видео сабакта аталыш жана видео болушу керек.'
                         );
                         continue;
                     }
@@ -399,7 +388,7 @@ const CourseBuilder = () => {
                     const lessonPayload = {
                         title: lesson.title.trim(),
                         kind: lesson.kind || 'video',
-                        content: isArticle ? (lesson.content?.trim() || undefined) : undefined,
+                        content: isArticle ? lesson.content?.trim() || undefined : undefined,
                         videoKey: lesson.kind === 'video' ? lesson.videoKey : undefined,
                         resourceKey: lesson.resourceKey,
                         resourceName: lesson.resourceName?.trim() || undefined,
@@ -409,8 +398,8 @@ const CourseBuilder = () => {
                             lesson.kind === 'video'
                                 ? lesson.duration
                                 : isArticle
-                                    ? lesson.duration
-                                    : undefined,
+                                  ? lesson.duration
+                                  : undefined,
                     };
 
                     const createdLesson = await createLesson(courseId, sec.id, lessonPayload);
@@ -425,7 +414,12 @@ const CourseBuilder = () => {
                     }
 
                     if (isCode && challengePayload) {
-                        await upsertLessonChallenge(courseId, sec.id, createdLesson.id, challengePayload);
+                        await upsertLessonChallenge(
+                            courseId,
+                            sec.id,
+                            createdLesson.id,
+                            challengePayload
+                        );
                     }
                 }
             }
@@ -444,16 +438,11 @@ const CourseBuilder = () => {
             <div>
                 <p className="text-lg font-bold">{courseInfo.title}</p>
                 {courseInfo.subtitle && (
-                    <p className="text-sm text-gray-600 mb-1">
-                        {courseInfo.subtitle}
-                    </p>
+                    <p className="text-sm text-gray-600 mb-1">{courseInfo.subtitle}</p>
                 )}
                 <p>{courseInfo.description}</p>
                 <p className="italic text-gray-500">
-                    Баасы:{' '}
-                    {courseInfo.isPaid
-                        ? `${courseInfo.price} сом`
-                        : 'Акысыз курс'}
+                    Баасы: {courseInfo.isPaid ? `${courseInfo.price} сом` : 'Акысыз курс'}
                 </p>
                 {courseInfo.coverImageUrl && (
                     <img
@@ -490,10 +479,7 @@ const CourseBuilder = () => {
                                 <li key={lIdx}>
                                     {lesson.title}
                                     {lesson.previewVideo && (
-                                        <span className="text-xs text-green-600">
-                                            {' '}
-                                            (Превью)
-                                        </span>
+                                        <span className="text-xs text-green-600"> (Превью)</span>
                                     )}
                                 </li>
                             ))}
@@ -503,10 +489,7 @@ const CourseBuilder = () => {
             </div>
 
             <div className="flex flex-wrap gap-4">
-                <button
-                    onClick={() => setStep(2)}
-                    className="px-4 py-2 bg-gray-200 rounded"
-                >
+                <button onClick={() => setStep(2)} className="px-4 py-2 bg-gray-200 rounded">
                     Артка
                 </button>
 
@@ -543,34 +526,26 @@ const CourseBuilder = () => {
 
     return (
         <div className="pt-24 p-6 max-w-4xl mx-auto">
-            <h2 className="text-2xl font-bold text-edubot-dark mb-6">
-                Жаңы курс түзүү
-            </h2>
+            <h2 className="text-2xl font-bold text-edubot-dark mb-6">Жаңы курс түзүү</h2>
 
             <div className="flex gap-4 mb-6">
                 <button
                     onClick={() => setStep(1)}
-                    className={
-                        step === 1 ? 'text-edubot-orange font-bold underline' : ''
-                    }
+                    className={step === 1 ? 'text-edubot-orange font-bold underline' : ''}
                 >
                     1. Маалымат
                 </button>
                 <button
                     onClick={() => setStep(2)}
                     disabled={!courseId}
-                    className={
-                        step === 2 ? 'text-edubot-orange font-bold underline' : ''
-                    }
+                    className={step === 2 ? 'text-edubot-orange font-bold underline' : ''}
                 >
                     2. Мазмун
                 </button>
                 <button
                     onClick={() => setStep(3)}
                     disabled={!courseId}
-                    className={
-                        step === 3 ? 'text-edubot-orange font-bold underline' : ''
-                    }
+                    className={step === 3 ? 'text-edubot-orange font-bold underline' : ''}
                 >
                     3. Превью
                 </button>
@@ -615,9 +590,7 @@ const CourseBuilder = () => {
 
                     <div className="flex flex-col sm:flex-row gap-4">
                         <div className="flex-1">
-                            <label className="block text-sm mb-1">
-                                Курс баасы (сом)
-                            </label>
+                            <label className="block text-sm mb-1">Курс баасы (сом)</label>
                             <input
                                 name="price"
                                 type="number"
@@ -655,9 +628,7 @@ const CourseBuilder = () => {
                     </div>
 
                     <div>
-                        <label className="block text-sm mb-1">
-                            Сабак тили (Language)
-                        </label>
+                        <label className="block text-sm mb-1">Сабак тили (Language)</label>
                         <select
                             name="languageCode"
                             value={courseInfo.languageCode}
@@ -678,7 +649,9 @@ const CourseBuilder = () => {
                             name="learningOutcomesText"
                             value={courseInfo.learningOutcomesText}
                             onChange={handleCourseInfoChange}
-                            placeholder={'Мисалы:\n- UX негиздери\n- Figma менен иштөө\n- UI китепкана түзүү'}
+                            placeholder={
+                                'Мисалы:\n- UX негиздери\n- Figma менен иштөө\n- UI китепкана түзүү'
+                            }
                             className="w-full border p-2 rounded text-sm min-h-[100px]"
                         />
                     </div>
@@ -711,17 +684,12 @@ const CourseBuilder = () => {
                 <div>
                     <h3 className="text-xl font-semibold mb-4">Окуу мазмуну</h3>
                     {curriculum.map((section, sIdx) => (
-                        <div
-                            key={sIdx}
-                            className="mb-6 border border-edubot-teal rounded p-4"
-                        >
+                        <div key={sIdx} className="mb-6 border border-edubot-teal rounded p-4">
                             <div className="flex justify-between items-center mb-2 gap-2">
                                 <input
                                     className="w-full p-2 border rounded"
                                     value={section.sectionTitle}
-                                    onChange={(e) =>
-                                        updateSectionTitle(sIdx, e.target.value)
-                                    }
+                                    onChange={(e) => updateSectionTitle(sIdx, e.target.value)}
                                     placeholder="Бөлүм аталышы"
                                 />
                                 <button
@@ -738,10 +706,7 @@ const CourseBuilder = () => {
                                 </button>
                             </div>
                             {section.lessons.map((lesson, lIdx) => (
-                                <div
-                                    key={lIdx}
-                                    className="mb-4 p-2 bg-gray-50 rounded border"
-                                >
+                                <div key={lIdx} className="mb-4 p-2 bg-gray-50 rounded border">
                                     <input
                                         className="w-full p-2 mb-2 border rounded"
                                         value={lesson.title}
@@ -800,7 +765,7 @@ const CourseBuilder = () => {
                                                         'duration',
                                                         Number.isFinite(minutes) && minutes > 0
                                                             ? minutes * 60
-                                                            : 0,
+                                                            : 0
                                                     );
                                                 }}
                                                 placeholder="мисалы: 5"
@@ -841,7 +806,7 @@ const CourseBuilder = () => {
                                                         sIdx,
                                                         lIdx,
                                                         'video',
-                                                        e.target.files[0],
+                                                        e.target.files[0]
                                                     )
                                                 }
                                             />
@@ -875,7 +840,7 @@ const CourseBuilder = () => {
                                                 sIdx,
                                                 lIdx,
                                                 'resource',
-                                                e.target.files[0],
+                                                e.target.files[0]
                                             )
                                         }
                                         className="w-full mb-2"
@@ -904,12 +869,7 @@ const CourseBuilder = () => {
                                         className="w-full p-2 mb-2 border rounded"
                                         value={lesson.resourceName || ''}
                                         onChange={(e) =>
-                                            updateLesson(
-                                                sIdx,
-                                                lIdx,
-                                                'resourceName',
-                                                e.target.value,
-                                            )
+                                            updateLesson(sIdx, lIdx, 'resourceName', e.target.value)
                                         }
                                         placeholder="мисалы: Практикалык тапшырмалар.pdf"
                                         disabled={!lesson.resourceKey}
@@ -928,7 +888,7 @@ const CourseBuilder = () => {
                                                         sIdx,
                                                         lIdx,
                                                         'previewVideo',
-                                                        e.target.checked,
+                                                        e.target.checked
                                                     )
                                                 }
                                             />
@@ -984,13 +944,13 @@ const CourseBuilder = () => {
                         <p className="mb-6">
                             {confirmDelete.type === 'section' ? (
                                 <span>
-                                    <strong>{confirmDelete.title}</strong>{' '}
-                                    бөлүмүн өчүрүүнү каалайсызбы?
+                                    <strong>{confirmDelete.title}</strong> бөлүмүн өчүрүүнү
+                                    каалайсызбы?
                                 </span>
                             ) : (
                                 <span>
-                                    <strong>{confirmDelete.title}</strong>{' '}
-                                    сабагын өчүрүүнү каалайсызбы?
+                                    <strong>{confirmDelete.title}</strong> сабагын өчүрүүнү
+                                    каалайсызбы?
                                 </span>
                             )}
                         </p>

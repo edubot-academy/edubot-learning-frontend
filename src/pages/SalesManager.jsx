@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { toast } from 'react-hot-toast';
-import RegisterAndEnrollModal from '../components/RegisterAndEnrollModal';
-import PayMoreModal from '../components/PayMoreModal';
-import { fetchMyStudents } from '../services/api';
+import RegisterAndEnrollModal from '@features/enrollments/components/RegisterAndEnrollModal';
+import PayMoreModal from '@features/enrollments/components/PayMoreModal';
+import { fetchMyStudents } from '@services/api';
 
 const SalesDashboard = () => {
     const [students, setStudents] = useState([]);
@@ -31,11 +31,12 @@ const SalesDashboard = () => {
     };
 
     const getRemainingBalance = (student) => {
-        const totalFee = student.enrollments?.reduce((sum, e) => {
-            const price = e.course?.price || 0;
-            const discount = e.discountPercentage || 0;
-            return sum + (price - (price * discount / 100));
-        }, 0) || 0;
+        const totalFee =
+            student.enrollments?.reduce((sum, e) => {
+                const price = e.course?.price || 0;
+                const discount = e.discountPercentage || 0;
+                return sum + (price - (price * discount) / 100);
+            }, 0) || 0;
         return totalFee - getTotalPaid(student);
     };
 
@@ -73,9 +74,12 @@ const SalesDashboard = () => {
                                 <td className="p-2 border">{student.fullName}</td>
                                 <td className="p-2 border">{student.phoneNumber || '—'}</td>
                                 <td className="p-2 border">
-                                    {student.enrollments?.map(e => e.course?.title).join(', ') || '—'}
+                                    {student.enrollments?.map((e) => e.course?.title).join(', ') ||
+                                        '—'}
                                 </td>
-                                <td className="p-2 border">{formatCurrency(getTotalPaid(student))}</td>
+                                <td className="p-2 border">
+                                    {formatCurrency(getTotalPaid(student))}
+                                </td>
                                 <td className="p-2 border">
                                     {getRemainingBalance(student) > 0
                                         ? formatCurrency(getRemainingBalance(student))
