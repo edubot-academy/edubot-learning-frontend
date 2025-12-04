@@ -25,6 +25,7 @@ const Catalog = lazy(() => import('../pages/catalog/Catalog'));
 const CompanyCourses = lazy(() => import('../pages/company/CompanyCourses'));
 const CompanyDetail = lazy(() => import('../pages/company/CompanyDetail'));
 const CompanyList = lazy(() => import('../pages/company/CompanyList'));
+const NotificationsPage = lazy(() => import('../pages/Notifications'));
 const AppRoutes = () => {
     return (
         <MainLayout>
@@ -71,6 +72,7 @@ const AppRoutes = () => {
                     <Route path="/catalog" element={<Catalog />} />
                     <Route path="/companies" element={<CompanyList />} />
                     <Route path="/companies/:id" element={<CompanyDetail />} />
+                    <Route path="/notifications" element={<NotificationsPage />} />
                 </Routes>
             </Suspense>
         </MainLayout>

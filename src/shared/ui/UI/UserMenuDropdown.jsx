@@ -32,12 +32,13 @@ function UserMenuDropdown({ user, onClose }) {
 
     const dashboardPath = getDashboardPath();
 
+    // Добавляем поле link для элементов, которые должны вести на другие страницы
     const menuItemsTop = [
-        { label: 'Менин курстарым', icon: Lamp },
-        { label: 'Билдирүүлөр', icon: Bell },
-        { label: 'Корзина', icon: Basket },
-        { label: 'Избранные', icon: Heart },
-        { label: 'Настройка', icon: Setting },
+        { label: 'Менин курстарым', icon: Lamp, link: '/my-courses' },
+        { label: 'Билдирүүлөр', icon: Bell, link: '/notifications' },
+        { label: 'Корзина', icon: Basket, link: '/cart' },
+        { label: 'Избранные', icon: Heart, link: '/favorites' },
+        { label: 'Настройка', icon: Setting, link: '/settings' },
     ];
 
     const handleItemClick = () => {
@@ -90,49 +91,81 @@ function UserMenuDropdown({ user, onClose }) {
 
                 <div className="w-[18rem] sm:w-[16rem] items-center ml-[30px] mb-6">
                     <div>
-                        {menuItemsTop.map((item, index) => (
-                            <div
-                                key={index}
-                                className="
-                  w-[200px] sm:w-[180px]
-                  h-[50px] sm:h-[45px]
-                  flex items-center gap-[0.8rem]
-                  px-[1.25rem] sm:px-[1rem] py-[0.85rem] sm:py-[0.7rem]
-                  cursor-pointer
-                  text-[0.85rem] sm:text-[0.8rem]
-                  text-gray-800
-                  hover:bg-[#EA580C] hover:text-white
-                  transition-colors duration-200
-                  rounded-lg
-                "
-                            >
-                                <img src={item.icon} alt="" className="w-[1.2rem] sm:w-[1.1rem]" />
-                                <span className="whitespace-nowrap overflow-hidden text-ellipsis">
-                                    {item.label}
-                                </span>
-                            </div>
-                        ))}
+                        {menuItemsTop.map((item, index) => {
+                            // Если у элемента есть ссылка, используем Link
+                            if (item.link) {
+                                return (
+                                    <Link
+                                        key={index}
+                                        to={item.link}
+                                        onClick={handleItemClick}
+                                        className="
+                                            w-[200px] sm:w-[180px]
+                                            h-[50px] sm:h-[45px]
+                                            flex items-center gap-[0.8rem]
+                                            px-[1.25rem] sm:px-[1rem] py-[0.85rem] sm:py-[0.7rem]
+                                            cursor-pointer
+                                            text-[0.85rem] sm:text-[0.8rem]
+                                            text-gray-800
+                                            hover:bg-[#EA580C] hover:text-white
+                                            transition-colors duration-200
+                                            rounded-lg
+                                            block
+                                        "
+                                    >
+                                        <img src={item.icon} alt="" className="w-[1.2rem] sm:w-[1.1rem]" />
+                                        <span className="whitespace-nowrap overflow-hidden text-ellipsis">
+                                            {item.label}
+                                        </span>
+                                    </Link>
+                                );
+                            }
+                            
+                            // Если ссылки нет, используем обычный div
+                            return (
+                                <div
+                                    key={index}
+                                    className="
+                                        w-[200px] sm:w-[180px]
+                                        h-[50px] sm:h-[45px]
+                                        flex items-center gap-[0.8rem]
+                                        px-[1.25rem] sm:px-[1rem] py-[0.85rem] sm:py-[0.7rem]
+                                        cursor-pointer
+                                        text-[0.85rem] sm:text-[0.8rem]
+                                        text-gray-800
+                                        hover:bg-[#EA580C] hover:text-white
+                                        transition-colors duration-200
+                                        rounded-lg
+                                    "
+                                >
+                                    <img src={item.icon} alt="" className="w-[1.2rem] sm:w-[1.1rem]" />
+                                    <span className="whitespace-nowrap overflow-hidden text-ellipsis">
+                                        {item.label}
+                                    </span>
+                                </div>
+                            );
+                        })}
                     </div>
 
                     <div className="mt-[0.35rem] border-t border-gray-200 pt-2">
                         <button
                             onClick={handleLogout}
                             className="
-                w-[200px] sm:w-[180px]
-                h-[50px] sm:h-[45px]
-                flex items-center gap-[0.8rem]
-                px-[1.25rem] sm:px-[1rem] py-[0.85rem] sm:py-[0.7rem]
-                cursor-pointer
-                text-[0.85rem] sm:text-[0.8rem]
-                text-red-600
-                hover:bg-red-50
-                transition-colors duration-200
-                rounded-lg
-                w-full
-              "
+                                w-[200px] sm:w-[180px]
+                                h-[50px] sm:h-[45px]
+                                flex items-center gap-[0.8rem]
+                                px-[1.25rem] sm:px-[1rem] py-[0.85rem] sm:py-[0.7rem]
+                                cursor-pointer
+                                text-[0.85rem] sm:text-[0.8rem]
+                                text-red-600
+                                hover:bg-red-50
+                                transition-colors duration-200
+                                rounded-lg
+                                w-full
+                            "
                         >
-                            <img src={<LuLogOut />} alt="" className="w-[1.2rem]  sm:w-[1.1rem]" />
-                            <span className="whitespace-nowrap ml-[-20px]">Logout</span>
+                            <LuLogOut className="w-[1.2rem] h-[1.2rem] sm:w-[1.1rem] sm:h-[1.1rem]" />
+                            <span className="whitespace-nowrap">Logout</span>
                         </button>
                     </div>
                 </div>
