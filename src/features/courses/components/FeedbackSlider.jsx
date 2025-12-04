@@ -1,61 +1,75 @@
+import { getTopRatings } from '@services/api';
 import useEmblaCarousel from 'embla-carousel-react';
 import { useEffect, useCallback, useState } from 'react';
 
-const FeedbackSlider = ({ data = [], CardComponent, arrows }) => {
-  
-	const [emblaRef, emblaApi] = useEmblaCarousel({
-		align: 'start',
-		dragFree: false,
-		loop: true,
-		containScroll: 'keepSnaps',
-	});
+const FeedbackSlider = ({ CardComponent, arrows }) => {
+    const [emblaRef, emblaApi] = useEmblaCarousel({
+        align: 'start',
+        dragFree: false,
+        loop: true,
+        containScroll: 'keepSnaps',
+    });
 
-	const [, setCanPrev] = useState(false);
-	const [, setCanNext] = useState(true);
+    const [newDate, setNewDate] = useState([]);
 
-	const onSelect = useCallback(() => {
-		if (!emblaApi) return;
-		setCanPrev(emblaApi.canScrollPrev());
-		setCanNext(emblaApi.canScrollNext());
-	}, [emblaApi]);
+    const getTopRate = async () => {
+        const data = await getTopRatings();
+        const result = data;
+        setNewDate(result);
+    };
+    useEffect(() => {
+        getTopRate();
+    }, []);
 
-	useEffect(() => {
-		if (!emblaApi) return;
-		onSelect();
-		emblaApi.on('select', onSelect);
-	}, [emblaApi, onSelect]);
+    const [, setCanPrev] = useState(false);
+    const [, setCanNext] = useState(true);
 
-	const handleArrowClick = (e) => {
-		const btn = e.target.closest('[data-arrow]');
-		if (!btn || !emblaApi) return;
+    const onSelect = useCallback(() => {
+        if (!emblaApi) return;
+        setCanPrev(emblaApi.canScrollPrev());
+        setCanNext(emblaApi.canScrollNext());
+    }, [emblaApi]);
 
-		if (btn.dataset.arrow === 'prev') emblaApi.scrollPrev();
-		if (btn.dataset.arrow === 'next') emblaApi.scrollNext();
-	};
+    useEffect(() => {
+        if (!emblaApi) return;
+        onSelect();
+        emblaApi.on('select', onSelect);
+    }, [emblaApi, onSelect]);
 
-	return (
-		<div>
-			<div
-				className='absolute bottom-[80%] left-[88%]'
-				onClick={handleArrowClick}
-			>
-				{arrows}
-			</div>
+    const handleArrowClick = (e) => {
+        const btn = e.target.closest('[data-arrow]');
+        if (!btn || !emblaApi) return;
 
-			<div ref={emblaRef} className='overflow-hidden mt-6'>
-				<div className='flex'>
-					{data.map((item, index) => (
-						<div
-							key={index}
-							className='px-3 min-w-[100%] sm:min-w-[50%] lg:min-w-[33.33%]'
-						>
-							<CardComponent {...item}/>
-						</div>
-					))}
-				</div>
-			</div>
-		</div>
-	);
+        if (btn.dataset.arrow === 'prev') emblaApi.scrollPrev();
+        if (btn.dataset.arrow === 'next') emblaApi.scrollNext();
+    };
+
+    return (
+        <div>
+            <div className="absolute bottom-[80%] left-[88%]" onClick={handleArrowClick}>
+                {arrows}
+            </div>
+
+            <div ref={emblaRef} className="overflow-hidden mt-6">
+                <div className="flex">
+                    {newDate.length !== 0 ? (
+                        newDate.map((item, index) => (
+                            <div
+                                key={index}
+                                className="px-3 min-w-[100%] sm:min-w-[50%] lg:min-w-[33.33%]"
+                            >
+                                <CardComponent {...item} />
+                            </div>
+                        ))
+                    ) : (
+                        <>
+                            <div className="max-w-[320px] w-full min-h-[384px] animate-pulse shadow-xl bg-neutral-200 rounded-xl"></div>
+                        </>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
 };
 
 export default FeedbackSlider;
