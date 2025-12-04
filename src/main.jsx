@@ -5,14 +5,16 @@ import './index.css';
 import '@fontsource/inter';
 import App from './App.jsx';
 import { AuthProvider } from "./context/AuthContext";
+import { FavoritesProvider } from "./context/FavoritesContext";
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <BrowserRouter>
-      <AuthProvider>
-        <App />
-      </AuthProvider>
+      <FavoritesProvider> 
+        <AuthProvider>
+          <App />
+        </AuthProvider>
+      </FavoritesProvider>
     </BrowserRouter>
   </StrictMode>
 );
-

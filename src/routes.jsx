@@ -3,6 +3,7 @@ import { Routes, Route } from "react-router-dom";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
 import PrivateRoute from "./components/PrivateRoute";
+import Favorite from "./pages/Favorite";
 // Lazy imports
 const HomePage = lazy(() => import("./pages/Home"));
 const LoginPage = lazy(() => import("./pages/Login"));
@@ -40,6 +41,7 @@ const AppRoutes = () => {
                         <Route path="/dashboard" element={<DashboardPage />} />
                         <Route path="/profile" element={<ProfilePage />} />
                         <Route path="/unauthorized" element={<Unauthorized />} />
+                        <Route path="/favorite" element={<Favorite />} />
 
                         <Route element={<PrivateRoute allowedRoles={['instructor']} />}>
                             <Route path="/instructor" element={<InstructorDashboard />} />

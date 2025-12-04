@@ -270,7 +270,9 @@ const Header = () => {
             {/* User Actions  */}
             {user ? (
               <div className="flex items-center gap-3">
+                <Link to='/favorite'>
                 <img src={BlackHeart} className="w-9 h-9" />
+                </Link>
                 <img src={BlackBasket} className="w-9 h-9" />
 
                 <div className="relative group">
