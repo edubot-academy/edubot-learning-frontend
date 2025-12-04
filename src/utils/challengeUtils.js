@@ -15,8 +15,7 @@ export const createEmptyChallenge = () => ({
 export const cloneChallenge = (challenge = createEmptyChallenge()) =>
     JSON.parse(JSON.stringify(challenge));
 
-export const ensureChallengeShape = (challenge) =>
-    challenge ? challenge : createEmptyChallenge();
+export const ensureChallengeShape = (challenge) => (challenge ? challenge : createEmptyChallenge());
 
 export const mapChallengeFromApi = (challenge, includeHidden = false) => {
     if (!challenge) return createEmptyChallenge();
@@ -30,9 +29,7 @@ export const mapChallengeFromApi = (challenge, includeHidden = false) => {
             title: test.title || `Тест ${idx + 1}`,
             isHidden: Boolean(test.isHidden),
             argsText:
-                includeHidden || !test.isHidden
-                    ? JSON.stringify(test.args ?? [], null, 2)
-                    : '[]',
+                includeHidden || !test.isHidden ? JSON.stringify(test.args ?? [], null, 2) : '[]',
             expectedText:
                 includeHidden || !test.isHidden
                     ? JSON.stringify(test.expected ?? null, null, 2)

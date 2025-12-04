@@ -1,18 +1,14 @@
-import React, { useState, useEffect, useContext } from "react";
-import { Link } from "react-router-dom";
-import { FaStar } from "react-icons/fa";
-import StickyButton from "../components/UI/StickyButton";
-import { fetchCourses } from "../services/api";
-import { AuthContext } from "../context/AuthContext";
-import Benefits from "../components/Benefits";
-import SectionContainer from "../components/SectionContainer";
-import Feedback from "../components/Feedback";
-import Evaluate from '../components/Evaluate';
-import HeroStart from "../components/HeroStart";
-import Apply from "../components/Apply";
-import Instructor from "../components/TopInstructors"
-import FAQ from "../components/FAQ";
-import TopCourses from "../components/TopCourses";
+import React, { useState, useEffect, useContext } from 'react';
+import StickyButton from '@shared-ui/UI/StickyButton';
+import { fetchCourses } from '@services/api';
+import { AuthContext } from '../context/AuthContext';
+import Benefits from '@features/marketing/components/Benefits';
+import Feedback from '@features/marketing/components/Feedback';
+import HeroStart from '@features/marketing/components/HeroStart';
+import Apply from '@features/marketing/components/Apply';
+import Instructor from '@features/ratings/components/TopInstructors';
+import FAQ from '@features/marketing/components/FAQ';
+import TopCourses from '@features/courses/components/TopCourses';
 
 const HomePage = () => {
     const { user } = useContext(AuthContext);
@@ -30,7 +26,7 @@ const HomePage = () => {
                 const filteredCourses = data.courses.filter((course) => course.isPublished);
                 setCoursesData(filteredCourses);
             } catch (err) {
-                console.error("Failed to fetch courses", err);
+                console.error('Failed to fetch courses', err);
             }
         };
         loadCourses();
