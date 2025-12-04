@@ -1,14 +1,13 @@
 import React from 'react';
-import InfoCards from '../components/InfoCards';
-import Vision from '../components/Vision';
-import AboutHero from '../components/AboutHero';
-import Metrics from '../components/Metrics';
-import team from '../assets/images/team.png'
-
+import InfoCards from '@features/marketing/components/InfoCards';
+import Vision from '@features/marketing/components/Vision';
+import AboutHero from '@features/marketing/components/AboutHero';
+import Metrics from '@features/marketing/components/Metrics';
+import team from '@assets/images/team.png';
 
 const AboutPage = () => {
     return (
-        <div className='mx-4 md:mx-12 '>
+        <div className="mx-4 md:mx-12 ">
             <AboutHero />
             <Metrics />
             <img src={team} alt="" />

@@ -1,8 +1,29 @@
-# React + Vite
+# Frontend structure
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+The app now follows a feature-first layout with shared utilities and alias paths:
 
-Currently, two official plugins are available:
+- `src/features/*` – domain modules (courses, ratings, enrollments, assistant, marketing, dashboard, auth, etc.). Each holds its own components and API client slices.
+- `src/shared/api/client.js` – axios instance/interceptors; `src/services/api.js` re-exports feature API modules.
+- `src/shared/ui` – cross-cutting UI (Header, Footer, PrivateRoute, VideoPlayer, PhoneInput, UI/\*, CoursesSection).
+- `src/app` – app shell/routes/layouts/providers (`app/providers` wraps AuthProvider).
+- `src/assets` / `src/constants` / `src/utils` – shared assets and helpers.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+Aliases (vite/jsconfig):
+
+- `@app` → `src/app`
+- `@shared` → `src/shared`
+- `@features` → `src/features`
+- `@shared-ui` → `src/shared/ui`
+- `@pages` → `src/pages`
+- `@utils` → `src/utils`
+- `@assets` → `src/assets`
+- `@services` → `src/services`
+
+Use these aliases for imports instead of deep relative paths. Run `npm run build` (or `npm run dev` for local) to sanity-check after changes.
+
+## Formatting
+
+Prettier config is checked in (`.prettierrc.json`) to keep formatting consistent across devs:
+
+- single quotes, trailing commas (es5), tab width 4, semicolons, print width 100.
+- run `npx prettier .` before committing if your editor is not auto-formatting.

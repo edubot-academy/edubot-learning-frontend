@@ -6,7 +6,6 @@ export function formatDuration(seconds) {
     return `${mins} мүн ${secs} сек`;
 }
 
-
 export function formatHoursToTime(hours) {
     if (!hours || hours <= 0) return null;
     const totalMinutes = Math.round(hours * 60);
