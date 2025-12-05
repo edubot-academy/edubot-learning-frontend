@@ -1,4 +1,4 @@
-import Button from "@shared/ui/UI/Button";
+import Button from "@shared/ui/Button";
 import React, { useEffect, useMemo, useState } from "react";
 import { FiCheckCircle, FiClock, FiXCircle } from "react-icons/fi";
 import { IoIosArrowUp, IoIosArrowDown } from "react-icons/io";
