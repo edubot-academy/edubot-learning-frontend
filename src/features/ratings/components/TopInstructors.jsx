@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import SectionContainer from '@features/marketing/components/SectionContainer';
 import CardInstructor from './CardInstrictor';
-import Button from '@shared-ui/UI/Button';
+import Button from '@shared/ui/Button';
 import { fetchTopInstructors } from '@services/api';
 
 const TopInstructors = () => {

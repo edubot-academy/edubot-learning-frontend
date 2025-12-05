@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import VideoPlayer from '@shared-ui/VideoPlayer';
+import VideoPlayer from '@shared/VideoPlayer';
 
 const CourseVideoPlayer = ({
     activeLesson,
