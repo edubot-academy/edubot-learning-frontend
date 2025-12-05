@@ -4,6 +4,7 @@ import CardCourse from './CardCourse';
 import Button from '@shared-ui/UI/Button';
 
 const TopCourses = ({ coursesData }) => {
+    
     return (
         <SectionContainer
             title="Топ курстар"
