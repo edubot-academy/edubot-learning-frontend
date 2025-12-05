@@ -8,7 +8,7 @@ import BellIcon from '@assets/icons/bell.svg';
 import BasketIcon from '@assets/icons/baseBasket.svg';
 import SettingIcon from '@assets/icons/setting.svg';
 import { useContext } from 'react';
-import { AuthContext } from '../../../context/AuthContext';
+import { AuthContext } from '../../context/AuthContext';
 
 const SideBar = ({ setMenuOpen, setPosition }) => {
     const { user } = useContext(AuthContext);

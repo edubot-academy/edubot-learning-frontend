@@ -8,7 +8,7 @@ import {
     fetchInstructorProfile,
     updateInstructorProfile,
 } from '@services/api';
-import PhoneInput from '@shared-ui/forms/PhoneInput';
+import PhoneInput from '@shared/ui/forms/PhoneInput';
 
 const SOCIAL_LINK_FIELDS = ['website', 'twitter', 'linkedin', 'instagram', 'youtube', 'facebook'];
 const SOCIAL_LABELS = {
@@ -592,8 +592,8 @@ const ProfilePage = () => {
                                                     {course.studentsCount
                                                         ? `${course.studentsCount} студент`
                                                         : course.status
-                                                          ? `Статус: ${course.status}`
-                                                          : ''}
+                                                            ? `Статус: ${course.status}`
+                                                            : ''}
                                                 </div>
                                             </div>
                                         ))}

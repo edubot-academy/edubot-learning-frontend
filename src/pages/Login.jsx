@@ -3,8 +3,8 @@ import { useNavigate, Link } from 'react-router-dom';
 import { loginUser } from '@services/api';
 import { AuthContext } from '../context/AuthContext';
 import SignInImg from '../assets/images/edubot-signup.png';
-import DefaultLabel from '@shared-ui/UI/forms/DefaultLabel';
-import LabelPassword from '@shared-ui/UI/forms/LabelPassword';
+import DefaultLabel from '@shared/ui/forms/DefaultLabel';
+import LabelPassword from '@shared/ui/forms/LabelPassword';
 import ForgotPassword from '@features/auth/components/ForgotPassword';
 
 const LoginPage = () => {
