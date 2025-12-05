@@ -10,11 +10,11 @@ import { FavouritesProvider } from './context/FavouritesContext';
 createRoot(document.getElementById('root')).render(
     <StrictMode>
         <BrowserRouter>
-            <FavouritesProvider>
-                <AppProviders>
+            <AppProviders>
+                <FavouritesProvider>
                     <App />
-                </AppProviders>
-            </FavouritesProvider>
+                </FavouritesProvider>
+            </AppProviders>
         </BrowserRouter>
     </StrictMode>
 );
