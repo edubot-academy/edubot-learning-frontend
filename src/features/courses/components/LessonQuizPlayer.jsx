@@ -18,12 +18,14 @@ const LessonQuizPlayer = ({
     const [activeQuestionIndex, setActiveQuestionIndex] = useState(0);
     const [startQuiz, setStartQuiz] = useState(false);
     const [isShowAnswers, setIsShowAnswers] = useState(false);
+    const [skippedQuestions, setSkippedQuestions] = useState([]);
 
     // reset index when quiz changes
     useEffect(() => {
         setActiveQuestionIndex(0);
         setStartQuiz(false);
         setIsShowAnswers(false);
+        setSkippedQuestions([]);
     }, [quiz?.id]);
 
     // result answers
@@ -63,6 +65,61 @@ const LessonQuizPlayer = ({
         quiz?.questions &&
         activeQuestionIndex === quiz.questions.length - 1;
 
+    // Function to handle skip question
+    const handleSkipQuestion = () => {
+        if (!currentQuestion) return;
+
+        // Mark this question as skipped
+        const questionId = currentQuestion.id;
+        setSkippedQuestions(prev => [...prev, questionId]);
+
+        // Move to next question
+        if (!isLastQuestion) {
+            setActiveQuestionIndex(prev => prev + 1);
+        }
+    };
+
+    // Prepare answers for submission with skipped questions marked as wrong
+    const prepareAnswersForSubmission = () => {
+        if (!quiz?.questions) return [];
+
+        return quiz.questions.map((question) => {
+            const answerId = answers[question.id];
+            const isSkipped = skippedQuestions.includes(question.id);
+
+            // If question is skipped or not answered, return null optionId
+            if (!answerId || isSkipped) {
+                return {
+                    questionId: question.id,
+                    optionId: null, // null indicates no answer or skipped
+                };
+            }
+
+            return {
+                questionId: question.id,
+                optionId: answerId,
+            };
+        });
+    };
+
+    // Handle quiz submission
+    const handleSubmit = async () => {
+        if (!onSubmit) return;
+
+        const preparedAnswers = prepareAnswersForSubmission();
+
+        // Check if all questions have answers (including null for skipped)
+        const allQuestionsCovered = preparedAnswers.length === quiz?.questions?.length;
+
+        if (!allQuestionsCovered) {
+            toast.error('Все вопросы должны быть обработаны');
+            return;
+        }
+
+        // Call the parent's onSubmit with prepared answers
+        await onSubmit(preparedAnswers);
+    };
+
     // summaries
     const questionSummaries = useMemo(() => {
         if (!quiz?.questions) return [];
@@ -96,6 +153,7 @@ const LessonQuizPlayer = ({
     const handleRetake = () => {
         setActiveQuestionIndex(0);
         setStartQuiz(false);
+        setSkippedQuestions([]);
         onRetake?.();
     };
 
@@ -189,11 +247,11 @@ const LessonQuizPlayer = ({
                                     <p>
                                         Ваш ответ:{" "}
                                         <span className="font-semibold bg-gray-100 px-1 rounded">
-                                            {selected?.text || "Нет ответа"}
+                                            {selected?.text || "Пропущено"}
                                         </span>
                                     </p>
 
-                                    {answeredCorrect === false &&
+                                    {(answeredCorrect === false || !selected) &&
                                         correctOptions.length > 0 && (
                                             <div className="text-sm text-green-700">
                                                 <p>Правильный ответ:</p>
@@ -254,23 +312,17 @@ const LessonQuizPlayer = ({
                         })}
                     </div>
 
-
-
                     {isLastQuestion ? (
                         <div className="flex gap-4">
                             <Button
                                 variant="secondary"
-                                onClick={() =>
-                                    setActiveQuestionIndex((i) =>
-                                        Math.min(quiz.questions.length - 1, i + 1)
-                                    )
-                                }
+                                onClick={handleSkipQuestion}
                             >
                                 Пропустить
                             </Button>
                             <Button
-                                onClick={onSubmit}
-                                disabled={submitting || !selectedOption}
+                                onClick={handleSubmit}
+                                disabled={submitting}
                             >
                                 {submitting ? "Загрузка..." : "Завершить"}
                             </Button>
@@ -279,11 +331,7 @@ const LessonQuizPlayer = ({
                         <div className="flex gap-4">
                             <Button
                                 variant="secondary"
-                                onClick={() =>
-                                    setActiveQuestionIndex((i) =>
-                                        Math.min(quiz.questions.length - 1, i + 1)
-                                    )
-                                }
+                                onClick={handleSkipQuestion}
                             >
                                 Пропустить
                             </Button>
@@ -300,6 +348,9 @@ const LessonQuizPlayer = ({
                         </div>
                     )}
 
+                    <div className="text-sm text-gray-500 mt-2">
+                        Пропущенные вопросы: {skippedQuestions.length} из {quiz.questions?.length || 0}
+                    </div>
                 </div>
             ) : (
                 <p>Вопросы не найдены.</p>
