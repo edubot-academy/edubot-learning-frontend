@@ -288,30 +288,117 @@ const CourseDetailsPage = () => {
         }));
     };
 
-    const handleQuizSubmit = async () => {
+    // В CourseDetailsPage обновим handleQuizSubmit:
+    const handleQuizSubmit = async (preparedAnswers = null) => {
         if (!activeLesson) return;
         const quiz = lessonQuizData[activeLesson.id];
         if (!quiz) return;
-        const answersMap = lessonQuizAnswers[activeLesson.id] || {};
-        const unanswered = quiz.questions.some((question) => !answersMap[question.id]);
-        if (unanswered) {
-            toast.error('Бардык суроолорго жооп бериңиз.');
-            return;
-        }
-        setQuizSubmitting(true);
-        try {
-            const payload = {
+
+        let answersPayload;
+
+        if (preparedAnswers) {
+            // Фильтруем только отвеченные вопросы
+            const answeredQuestions = preparedAnswers.filter(answer =>
+                answer.optionId && !answer.isSkipped
+            );
+
+            // Проверяем, что есть хотя бы один ответ
+            if (answeredQuestions.length === 0) {
+                toast.error('Пожалуйста, ответьте хотя бы на один вопрос');
+                return;
+            }
+
+            answersPayload = {
+                answers: answeredQuestions.map(answer => ({
+                    questionId: answer.questionId,
+                    optionId: answer.optionId,
+                }))
+            };
+        } else {
+            // Старая логика
+            const currentAnswers = lessonQuizAnswers[activeLesson.id] || {};
+            const unanswered = quiz.questions.some((question) => !currentAnswers[question.id]);
+
+            if (unanswered) {
+                toast.error('Бардык суроолорго жооп бериңиз.');
+                return;
+            }
+
+            answersPayload = {
                 answers: quiz.questions.map((question) => ({
                     questionId: question.id,
-                    optionId: answersMap[question.id],
-                })),
+                    optionId: currentAnswers[question.id],
+                }))
             };
+        }
+
+        setQuizSubmitting(true);
+        try {
             const result = await submitLessonQuiz(
                 id,
                 activeLesson.sectionId,
                 activeLesson.id,
-                payload
+                answersPayload
             );
+
+            // На клиенте добавим пропущенные вопросы как неправильные
+            if (preparedAnswers) {
+                const skippedQuestions = preparedAnswers.filter(answer =>
+                    answer.isSkipped
+                );
+
+                if (skippedQuestions.length > 0) {
+                    // Обновляем результат на клиенте
+                    const totalQuestions = quiz.questions.length;
+                    const correctFromServer = result.correctAnswers || 0;
+                    const totalFromServer = result.totalQuestions || totalQuestions;
+
+                    // Вычисляем новый процент с учетом пропущенных
+                    const totalCorrect = correctFromServer;
+                    const actualTotal = totalQuestions;
+                    const newScore = Math.round((totalCorrect / actualTotal) * 100);
+
+                    // Помечаем пропущенные как неправильные
+                    const updatedAnswers = [...(result.answers || [])];
+                    skippedQuestions.forEach(skipped => {
+                        updatedAnswers.push({
+                            questionId: skipped.questionId,
+                            selectedOptionId: null,
+                            isCorrect: false,
+                            correctOptionId: quiz.questions.find(q => q.id === skipped.questionId)?.options
+                                ?.find(opt => opt.isCorrect)?.id || null
+                        });
+                    });
+
+                    const updatedResult = {
+                        ...result,
+                        score: newScore,
+                        correctAnswers: totalCorrect,
+                        totalQuestions: actualTotal,
+                        passed: newScore >= (result.passingScore || 70),
+                        answers: updatedAnswers
+                    };
+
+                    setLessonQuizResults((prev) => ({
+                        ...prev,
+                        [activeLesson.id]: updatedResult
+                    }));
+
+                    toast.success(
+                        updatedResult.passed
+                            ? 'Куттуктайбыз! Квиз ийгиликтүү тапшырылды.'
+                            : `Кайра аракет кылып көрүңүз. Сиз ${newScore}% туздук.`
+                    );
+
+                    if (updatedResult.passed) {
+                        setCompletedLessons((prev) => [...new Set([...prev, activeLesson.id])]);
+                    }
+
+                    return;
+                }
+            }
+
+            // Если нет пропущенных вопросов, используем ответ сервера
             setLessonQuizResults((prev) => ({ ...prev, [activeLesson.id]: result }));
             toast.success(
                 result.passed
@@ -626,9 +713,8 @@ const CourseDetailsPage = () => {
                     key={tab.id}
                     type="button"
                     onClick={() => handleTabChange(tab)}
-                    className={`flex-1 min-w-[140px] px-4 py-2 rounded-xl text-sm font-medium transition ${
-                        activeTab === tab.id ? 'bg-white text-gray-900 shadow' : 'text-gray-600'
-                    } ${tab.disabled ? 'opacity-60 cursor-not-allowed' : 'hover:text-gray-900'}`}
+                    className={`flex-1 min-w-[140px] px-4 py-2 rounded-xl text-sm font-medium transition ${activeTab === tab.id ? 'bg-white text-gray-900 shadow' : 'text-gray-600'
+                        } ${tab.disabled ? 'opacity-60 cursor-not-allowed' : 'hover:text-gray-900'}`}
                 >
                     {tab.label}
                 </button>
