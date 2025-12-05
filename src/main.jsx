@@ -5,12 +5,15 @@ import './index.css';
 import '@fontsource/inter';
 import App from './app/App.jsx';
 import AppProviders from './app/providers';
+import { FavouritesProvider } from './context/FavouritesContext';
 
 createRoot(document.getElementById('root')).render(
     <StrictMode>
         <BrowserRouter>
             <AppProviders>
-                <App />
+                <FavouritesProvider>
+                    <App />
+                </FavouritesProvider>
             </AppProviders>
         </BrowserRouter>
     </StrictMode>
