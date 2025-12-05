@@ -1,6 +1,6 @@
 import React from 'react';
 import CardIcon from '@assets/icons/cardvektor.svg';
-import Button from '@shared-ui/UI/Button';
+import Button from '@shared/ui/Button';
 import { Link } from 'react-router-dom';
 import { useFavourites } from "../../../context/FavouritesContext";
 import { GoHeart, GoHeartFill } from "react-icons/go";

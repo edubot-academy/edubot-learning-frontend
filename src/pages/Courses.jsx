@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { FaStar } from 'react-icons/fa';
 import { fetchCourses } from '@services/api';
 import SectionContainer from '@features/marketing/components/SectionContainer';
-import CoursesSection from '@shared-ui/CoursesSection';
+import CoursesSection from '@shared/CoursesSection';
 import CardCourse from '@features/courses/components/CardCourse'; // Добавлен импорт CardCourse
 
 // import { FiSearch } from "react-icons/fi";

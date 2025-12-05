@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { registerUser } from '@services/api';
-import PhoneInput from '@shared-ui/forms/PhoneInput';
+import PhoneInput from '@shared/ui/forms/PhoneInput';
 import SignUpImg from '../assets/images/edubot-signup.png';
 import toast from 'react-hot-toast';
-import DefaultLabel from '@shared-ui/UI/forms/DefaultLabel';
-import LabelPassword from '@shared-ui/UI/forms/LabelPassword';
+import DefaultLabel from '@shared/ui/forms/DefaultLabel';
+import LabelPassword from '@shared/ui/forms/LabelPassword';
 
 const SignupPage = () => {
     const [formData, setFormData] = useState({
