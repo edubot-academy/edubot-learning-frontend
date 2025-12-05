@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
-import StickyButton from '@shared/ui/StickyButton';
-import { fetchCourses } from '@services/api';
+import StickyButton from '@shared-ui/UI/StickyButton';
+import { fetchTopCourses } from '@services/api';
 import { AuthContext } from '../context/AuthContext';
 import Benefits from '@features/marketing/components/Benefits';
 import Feedback from '@features/marketing/components/Feedback';
@@ -20,16 +20,15 @@ const HomePage = () => {
     // };
 
     useEffect(() => {
-        const loadCourses = async () => {
+        const loadTopCourses = async () => {
             try {
-                const data = await fetchCourses();
-                const filteredCourses = data.courses.filter((course) => course.isPublished);
-                setCoursesData(filteredCourses);
+                const data = await fetchTopCourses();
+                setCoursesData(data.items);
             } catch (err) {
                 console.error('Failed to fetch courses', err);
             }
         };
-        loadCourses();
+        loadTopCourses();
     }, []);
 
     return (

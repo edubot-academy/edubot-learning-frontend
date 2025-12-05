@@ -240,3 +240,10 @@ export const updateLessonDuration = async (courseId, sectionId, lessonId, durati
         throw error;
     }
 };
+
+export async function fetchTopCourses(limit = 3) {
+    const { data } = await api.get(`/courses/top`, {
+        params: { limit },
+    });
+    return data;
+}
