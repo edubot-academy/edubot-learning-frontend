@@ -1,7 +1,7 @@
 import React from 'react';
 import SectionContainer from '@features/marketing/components/SectionContainer';
 import CardCourse from './CardCourse';
-import Button from '@shared-ui/UI/Button';
+import Button from '@shared/ui/Button';
 
 const TopCourses = ({ coursesData }) => {
     

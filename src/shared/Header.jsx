@@ -3,18 +3,18 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { FaBars, FaTimes } from 'react-icons/fa';
 import { IoSearch } from 'react-icons/io5';
 import { GrLanguage } from 'react-icons/gr';
-import ThemeToggle from '@shared-ui/UI/ThemeToggle';
+import ThemeToggle from '@shared/ui/ThemeToggle';
 import { BsChevronDown, BsSun, BsMoon } from 'react-icons/bs';
 import { CiSearch } from 'react-icons/ci';
 import EduBotLogo from '@assets/images/edubot-signup.png';
 import BlackHeart from '@assets/icons/blackHeart.svg';
 import BlackBasket from '@assets/icons/blackBasket.svg';
 import BlackPerson from '@assets/icons/personBlack.svg';
-import { AuthContext } from '../../context/AuthContext';
+import { AuthContext } from '../context/AuthContext';
 import { searchCourses } from '@services/api';
-import SideBar from '@shared-ui/UI/SideBar';
-import SidebarOverlay from '@shared-ui/UI/SidebarOverlay';
-import UserMenuDropdown from '@shared-ui/UI/UserMenuDropdown';
+import SideBar from '@shared/ui/SideBar';
+import SidebarOverlay from '@shared/ui/SidebarOverlay';
+import UserMenuDropdown from '@shared/ui/UserMenuDropdown';
 
 const NavLinks = ({ isMobile, user }) => {
     const location = useLocation();
@@ -228,9 +228,8 @@ const Header = () => {
                             >
                                 <GrLanguage className="text-gray-700 dark:text-gray-700 w-5 h-5" />
                                 <BsChevronDown
-                                    className={`w-4 h-4 text-gray-700 dark:text-gray-700 transform transition-transform duration-300 ${
-                                        langOpen ? 'rotate-180' : ''
-                                    }`}
+                                    className={`w-4 h-4 text-gray-700 dark:text-gray-700 transform transition-transform duration-300 ${langOpen ? 'rotate-180' : ''
+                                        }`}
                                 />
                             </button>
                             {langOpen && (
@@ -269,7 +268,7 @@ const Header = () => {
                                         <div className="relative">
                                             <div className="absolute -top-2 left-0 right-0 h-2 bg-transparent"></div>
 
-                                            <UserMenuDropdown user={user} onClose={() => {}} />
+                                            <UserMenuDropdown user={user} onClose={() => { }} />
                                         </div>
                                     </div>
                                 </div>
