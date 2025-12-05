@@ -25,6 +25,8 @@ const Catalog = lazy(() => import('../pages/catalog/Catalog'));
 const CompanyCourses = lazy(() => import('../pages/company/CompanyCourses'));
 const CompanyDetail = lazy(() => import('../pages/company/CompanyDetail'));
 const CompanyList = lazy(() => import('../pages/company/CompanyList'));
+const Basket = lazy(() => import('../pages/Basket')); // Добавьте эту строку
+
 const AppRoutes = () => {
     return (
         <MainLayout>
@@ -37,6 +39,8 @@ const AppRoutes = () => {
                     <Route path="/dashboard" element={<DashboardPage />} />
                     <Route path="/profile" element={<ProfilePage />} />
                     <Route path="/unauthorized" element={<Unauthorized />} />
+                    <Route path="/basket" element={<Basket />} /> 
+                    
                     <Route element={<PrivateRoute allowedRoles={['instructor']} />}>
                         <Route path="/instructor" element={<InstructorDashboard />} />
                         <Route path="/instructor/course/create" element={<CreateCourse />} />
@@ -67,6 +71,7 @@ const AppRoutes = () => {
                     <Route element={<PrivateRoute allowedRoles={['assistant']} />}>
                         <Route path="/assistant" element={<AssistantDashboard />} />
                     </Route>
+                    
                     <Route path="/companies/:id/courses" element={<CompanyCourses />} />
                     <Route path="/catalog" element={<Catalog />} />
                     <Route path="/companies" element={<CompanyList />} />
