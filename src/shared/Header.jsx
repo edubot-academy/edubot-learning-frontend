@@ -255,8 +255,10 @@ const Header = () => {
                             >
                                 <GrLanguage className="text-gray-700 dark:text-gray-700 w-5 h-5" />
                                 <BsChevronDown
-                                    className={`w-4 h-4 text-gray-700 dark:text-gray-700 transform transition-transform duration-300 ${langOpen ? 'rotate-180' : ''
-                                        }`}
+                                    className={`w-4 h-4 text-gray-700 dark:text-gray-700 transform transition-transform duration-300 ${
+                                        langOpen ? 'rotate-180' : ''
+                                    }`}
+
                                 />
                             </button>
                             {langOpen && (
@@ -329,7 +331,7 @@ const Header = () => {
                                         <div className="relative">
                                             <div className="absolute -top-2 left-0 right-0 h-2 bg-transparent"></div>
 
-                                            <UserMenuDropdown user={user} onClose={() => { }} />
+                                            <UserMenuDropdown user={user} onClose={() => {}} />
                                         </div>
                                     </div>
                                 </div>
