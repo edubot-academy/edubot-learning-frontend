@@ -1,13 +1,13 @@
+import { useContext } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import Button from './Button';
 import { FaTimes } from 'react-icons/fa';
+import { AuthContext } from '@app/providers';
+import Button from './Button';
 import Person from '@assets/icons/grayPerson.svg';
 import BlackHeart from '@assets/icons/baseHeart.svg';
 import BellIcon from '@assets/icons/bell.svg';
 import BasketIcon from '@assets/icons/baseBasket.svg';
 import SettingIcon from '@assets/icons/setting.svg';
-import { useContext } from 'react';
-import { AuthContext } from '@app/providers';
 
 const SideBar = ({ setMenuOpen, setPosition }) => {
     const { user, setUser } = useContext(AuthContext);

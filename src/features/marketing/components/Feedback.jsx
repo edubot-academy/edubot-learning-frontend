@@ -11,8 +11,6 @@ function Feedback() {
     const getTopRate = async () => {
         const data = await getTopRatings();
         const result = data;
-        console.log(data);
-
         setNewDate(result);
     };
     useEffect(() => {

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import Button from '@shared-ui/UI/Button';
+import Button from '@shared/ui/Button';
 import { IoStar, IoStarOutline } from 'react-icons/io5';
 import { rateCourse, getCourseRating } from '@services/api';
 import toast from 'react-hot-toast';

@@ -1,5 +1,5 @@
 import React from 'react';
-import VideoPlayerUI from './UI/Play.jsx';
+import VideoPlayerUI from './Play.jsx';
 
 const VideoPlayer = ({
     videoUrl,

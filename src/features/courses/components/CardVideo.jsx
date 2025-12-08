@@ -2,7 +2,7 @@ import React from 'react';
 import { FiBook } from 'react-icons/fi';
 import { IoMdTime } from 'react-icons/io';
 import { TbLock } from 'react-icons/tb';
-import Button from '@shared-ui/UI/Button';
+import Button from '@shared/ui/Button';
 import { FaPlay } from 'react-icons/fa';
 
 const CardVideo = ({ coverImageUrl, course, lessonCount }) => {
