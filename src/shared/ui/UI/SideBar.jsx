@@ -11,7 +11,7 @@ import { useContext } from 'react';
 import { AuthContext } from '../../../context/AuthContext';
 
 const SideBar = ({ setMenuOpen, setPosition }) => {
-    const { user } = useContext(AuthContext);
+    const { user, setUser } = useContext(AuthContext);
     const location = useLocation();
     const navigate = useNavigate();
 
@@ -42,6 +42,12 @@ const SideBar = ({ setMenuOpen, setPosition }) => {
         setPosition(false);
     };
 
+    const logout = () => {
+        setUser(null);
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        window.location.href = '/login';
+    };
     return (
         <>
             <div className="flex justify-end mt-5 mr-2 ">
@@ -123,7 +129,18 @@ const SideBar = ({ setMenuOpen, setPosition }) => {
                     <Link to="/contact" className={`${active('/contact')}  ${linkClass}`}>
                         Байланышуу
                     </Link>
-                    {user !== null ? null : (
+                    {user !== null ? (
+                        <>
+                            <button
+                                className={`${linkClass} mt-0.5`}
+                                onClick={() => {
+                                    logout();
+                                }}
+                            >
+                                Чыгуу
+                            </button>
+                        </>
+                    ) : (
                         <Link to="/register" className={`${active('/register')} ${linkClass}`}>
                             Катталуу
                         </Link>
