@@ -6,13 +6,16 @@ import '@fontsource/inter';
 import App from './app/App.jsx';
 import AppProviders from './app/providers';
 import { FavouritesProvider } from './context/FavouritesContext';
+import { CartProvider } from './context/CartContext';
 
 createRoot(document.getElementById('root')).render(
     <StrictMode>
         <BrowserRouter>
             <AppProviders>
                 <FavouritesProvider>
-                    <App />
+                    <CartProvider> 
+                        <App />
+                    </CartProvider>
                 </FavouritesProvider>
             </AppProviders>
         </BrowserRouter>

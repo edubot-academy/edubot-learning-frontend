@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
-import StickyButton from '@shared-ui/UI/StickyButton';
+import StickyButton from '@shared-ui/StickyButton';
 import { fetchTopCourses } from '@services/api';
 import { AuthContext } from '../context/AuthContext';
 import Benefits from '@features/marketing/components/Benefits';

@@ -1,5 +1,5 @@
 import React, { useContext } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router-dom'; 
 import Lamp from '@assets/icons/lamp.svg';
 import Bell from '@assets/icons/call.svg';
 import Basket from '@assets/icons/basket.svg';
@@ -8,10 +8,10 @@ import Setting from '@assets/icons/seting.svg';
 import Profile from '@assets/icons/profile.svg';
 import ArrowRight from '@assets/icons/arrowRight.svg';
 import { LuLogOut } from 'react-icons/lu';
-import { AuthContext } from '../../context/AuthContext';
+// import { AuthContext } from '../../../context/AuthContext';
 
 function UserMenuDropdown({ user, onClose }) {
-    const { logout } = useContext(AuthContext);
+    // const { logout } = useContext(AuthContext);
 
     const getDashboardPath = () => {
         if (!user) return '/dashboard';
@@ -33,11 +33,11 @@ function UserMenuDropdown({ user, onClose }) {
     const dashboardPath = getDashboardPath();
 
     const menuItemsTop = [
-        { label: 'Менин курстарым', icon: Lamp },
-        { label: 'Билдирүүлөр', icon: Bell },
-        { label: 'Корзина', icon: Basket },
-        { label: 'Избранные', icon: Heart },
-        { label: 'Настройка', icon: Setting },
+        { label: 'Менин курстарым', icon: Lamp, path: '/my-courses' },
+        { label: 'Билдирүүлөр', icon: Bell, path: '/notifications' },
+        { label: 'Корзина', icon: Basket, path: '/cart' },
+        { label: 'Избранные', icon: Heart, path: '/favorites' },
+        { label: 'Настройка', icon: Setting, path: '/settings' },
     ];
 
     const handleItemClick = () => {
@@ -90,49 +90,70 @@ function UserMenuDropdown({ user, onClose }) {
 
                 <div className="w-[18rem] sm:w-[16rem] items-center ml-[30px] mb-6">
                     <div>
-                        {menuItemsTop.map((item, index) => (
-                            <div
-                                key={index}
-                                className="
-                  w-[200px] sm:w-[180px]
-                  h-[50px] sm:h-[45px]
-                  flex items-center gap-[0.8rem]
-                  px-[1.25rem] sm:px-[1rem] py-[0.85rem] sm:py-[0.7rem]
-                  cursor-pointer
-                  text-[0.85rem] sm:text-[0.8rem]
-                  text-gray-800
-                  hover:bg-[#EA580C] hover:text-white
-                  transition-colors duration-200
-                  rounded-lg
-                "
-                            >
-                                <img src={item.icon} alt="" className="w-[1.2rem] sm:w-[1.1rem]" />
-                                <span className="whitespace-nowrap overflow-hidden text-ellipsis">
-                                    {item.label}
-                                </span>
-                            </div>
-                        ))}
+                        {menuItemsTop.map((item, index) => {
+                            const content = (
+                                <div
+                                    className="
+                                        w-[200px] sm:w-[180px]
+                                        h-[50px] sm:h-[45px]
+                                        flex items-center gap-[0.8rem]
+                                        px-[1.25rem] sm:px-[1rem] py-[0.85rem] sm:py-[0.7rem]
+                                        cursor-pointer
+                                        text-[0.85rem] sm:text-[0.8rem]
+                                        text-gray-800
+                                        hover:bg-[#EA580C] hover:text-white
+                                        transition-colors duration-200
+                                        rounded-lg
+                                    "
+                                >
+                                    <img src={item.icon} alt="" className="w-[1.2rem] sm:w-[1.1rem]" />
+                                    <span className="whitespace-nowrap overflow-hidden text-ellipsis">
+                                        {item.label}
+                                    </span>
+                                </div>
+                            );
+
+                            // Если есть path, оборачиваем в Link
+                            if (item.path) {
+                                return (
+                                    <Link
+                                        key={index}
+                                        to={item.path}
+                                        onClick={handleItemClick}
+                                    >
+                                        {content}
+                                    </Link>
+                                );
+                            }
+
+                            // Иначе просто div
+                            return (
+                                <div key={index}>
+                                    {content}
+                                </div>
+                            );
+                        })}
                     </div>
 
                     <div className="mt-[0.35rem] border-t border-gray-200 pt-2">
                         <button
                             onClick={handleLogout}
                             className="
-                w-[200px] sm:w-[180px]
-                h-[50px] sm:h-[45px]
-                flex items-center gap-[0.8rem]
-                px-[1.25rem] sm:px-[1rem] py-[0.85rem] sm:py-[0.7rem]
-                cursor-pointer
-                text-[0.85rem] sm:text-[0.8rem]
-                text-red-600
-                hover:bg-red-50
-                transition-colors duration-200
-                rounded-lg
-                w-full
-              "
+                                w-full
+                                h-[50px] sm:h-[45px]
+                                flex items-center gap-[0.8rem]
+                                px-[1.25rem] sm:px-[1rem] py-[0.85rem] sm:py-[0.7rem]
+                                cursor-pointer
+                                text-[0.85rem] sm:text-[0.8rem]
+                                text-red-600
+                                hover:bg-red-50
+                                transition-colors duration-200
+                                rounded-lg
+                            "
                         >
-                            <img src={<LuLogOut />} alt="" className="w-[1.2rem]  sm:w-[1.1rem]" />
-                            <span className="whitespace-nowrap ml-[-20px]">Logout</span>
+                            {/* Исправлено: LuLogOut это компонент, а не путь к изображению */}
+                            <LuLogOut className="w-[1.2rem] h-[1.2rem]" />
+                            <span>Logout</span>
                         </button>
                     </div>
                 </div>
