@@ -1,6 +1,6 @@
 import { useState, useEffect, useContext } from 'react';
 import StickyButton from '@shared/ui/StickyButton';
-import { fetchCourses } from '@services/api';
+import { fetchTopCourses } from '@services/api';
 import Benefits from '@features/marketing/components/Benefits';
 import Feedback from '@features/marketing/components/Feedback';
 import HeroStart from '@features/marketing/components/HeroStart';
