@@ -2,6 +2,7 @@ import React, { useState, useEffect, useContext } from 'react';
 import { fetchTopCourses } from '@services/api';
 import { AuthContext } from '../context/AuthContext';
 import StickyButton from '@shared/ui/StickyButton';
+import { fetchTopCourses } from '@services/api';
 import Benefits from '@features/marketing/components/Benefits';
 import Feedback from '@features/marketing/components/Feedback';
 import HeroStart from '@features/marketing/components/HeroStart';
