@@ -3,12 +3,11 @@ import Button from './Button';
 import { FaTimes } from 'react-icons/fa';
 import Person from '@assets/icons/grayPerson.svg';
 import BlackHeart from '@assets/icons/baseHeart.svg';
-import BlubIcon from '@assets/icons/blub.svg';
 import BellIcon from '@assets/icons/bell.svg';
 import BasketIcon from '@assets/icons/baseBasket.svg';
 import SettingIcon from '@assets/icons/setting.svg';
 import { useContext } from 'react';
-import { AuthContext } from '../../../context/AuthContext';
+import { AuthContext } from '@app/providers';
 
 const SideBar = ({ setMenuOpen, setPosition }) => {
     const { user, setUser } = useContext(AuthContext);
