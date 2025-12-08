@@ -1,6 +1,6 @@
 import React from 'react';
-import Header from '@shared-ui/Header';
-import Footer from '@shared-ui/Footer';
+import Header from '@shared/Header';
+import Footer from '@shared/Footer';
 
 const MainLayout = ({ children }) => {
     return (

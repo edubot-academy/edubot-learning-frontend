@@ -8,7 +8,7 @@ import Setting from '@assets/icons/seting.svg';
 import Profile from '@assets/icons/profile.svg';
 import ArrowRight from '@assets/icons/arrowRight.svg';
 import { LuLogOut } from 'react-icons/lu';
-import { AuthContext } from '../../../context/AuthContext';
+import { AuthContext } from '../../context/AuthContext';
 
 function UserMenuDropdown({ user, onClose }) {
     const { logout } = useContext(AuthContext);

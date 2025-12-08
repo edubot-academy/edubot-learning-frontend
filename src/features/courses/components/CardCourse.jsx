@@ -1,7 +1,9 @@
 import React from 'react';
 import CardIcon from '@assets/icons/cardvektor.svg';
-import Button from '@shared-ui/UI/Button';
+import Button from '@shared/ui/Button';
 import { Link } from 'react-router-dom';
+import { useFavourites } from "../../../context/FavouritesContext";
+import { GoHeart, GoHeartFill } from "react-icons/go";
 
 const CardCourse = ({
     coverImageUrl,
@@ -12,9 +14,29 @@ const CardCourse = ({
     ratingAverage,
     id,
 }) => {
+
+    const { favourites, toggleFavourite } = useFavourites();
+
+    const isFavourite = favourites.some((f) => f.id === id);
+
+    const handleFavourite = (e) => {
+        e.preventDefault();
+        toggleFavourite({ coverImageUrl, title, instructor, price, ratingCount, ratingAverage, id });
+    };
+
     return (
         <Link to={`/courses/${id}`}>
-            <div className="max-w-md bg-white border border-gray-200 rounded flex flex-col">
+            <div className="max-w-md bg-white border rounded relative">
+                <button
+                    className="absolute top-6 right-6 text-2xl"
+                    onClick={handleFavourite}
+                >
+                    {isFavourite ? (
+                        <GoHeartFill className="text-red-500 w-6" />
+                    ) : (
+                        <GoHeart className="text-black w-6" />
+                    )}
+                </button>
                 <div className="p-3">
                     <img
                         src={coverImageUrl}
