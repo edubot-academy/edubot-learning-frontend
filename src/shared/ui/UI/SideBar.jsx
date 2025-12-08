@@ -98,8 +98,10 @@ const SideBar = ({ setMenuOpen, setPosition }) => {
                                 Билдирүүлөр
                             </div>
                             <div className={`${linkClass}`}>
-                                <img src={BasketIcon} alt="" className="max-w-6 pb-1" />
-                                Корзина
+                                <Link to="/cart" className={`${linkClass}`}>
+                                    <img src={BasketIcon} alt="" className="max-w-6 pb-1" />
+                                    Корзина
+                                </Link>
                             </div>
                             <div className={`${linkClass}`}>
                                 <img src={BlackHeart} alt="" className="max-w-6 pb-1" />

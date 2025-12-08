@@ -25,6 +25,7 @@ const Catalog = lazy(() => import('../pages/catalog/Catalog'));
 const CompanyCourses = lazy(() => import('../pages/company/CompanyCourses'));
 const CompanyDetail = lazy(() => import('../pages/company/CompanyDetail'));
 const CompanyList = lazy(() => import('../pages/company/CompanyList'));
+const Cart = lazy(() => import('../pages/Cart'));
 const AppRoutes = () => {
     return (
         <MainLayout>
@@ -37,6 +38,7 @@ const AppRoutes = () => {
                     <Route path="/dashboard" element={<DashboardPage />} />
                     <Route path="/profile" element={<ProfilePage />} />
                     <Route path="/unauthorized" element={<Unauthorized />} />
+                    <Route path="/cart" element={<Cart />} />
                     <Route element={<PrivateRoute allowedRoles={['instructor']} />}>
                         <Route path="/instructor" element={<InstructorDashboard />} />
                         <Route path="/instructor/course/create" element={<CreateCourse />} />
