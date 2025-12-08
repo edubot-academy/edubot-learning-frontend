@@ -19,16 +19,15 @@ const HomePage = () => {
     // };
 
     useEffect(() => {
-        const loadCourses = async () => {
+        const loadTopCourses = async () => {
             try {
-                const data = await fetchCourses();
-                const filteredCourses = data.courses.filter((course) => course.isPublished);
-                setCoursesData(filteredCourses);
+                const data = await fetchTopCourses();
+                setCoursesData(data.items);
             } catch (err) {
                 console.error('Failed to fetch courses', err);
             }
         };
-        loadCourses();
+        loadTopCourses();
     }, []);
 
     return (

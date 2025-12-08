@@ -231,6 +231,7 @@ const Header = () => {
                                     className={`w-4 h-4 text-gray-700 dark:text-gray-700 transform transition-transform duration-300 ${
                                         langOpen ? 'rotate-180' : ''
                                     }`}
+
                                 />
                             </button>
                             {langOpen && (

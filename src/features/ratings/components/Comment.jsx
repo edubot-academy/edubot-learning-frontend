@@ -90,7 +90,7 @@ function Comment({ courseId }) {
             console.error('Error rating course:', error);
             toast.error(
                 error?.response?.data?.message ||
-                    'Сын-пикир жөнөтүүдө ката кетти. Кайра аракет кылыңыз.'
+                'Сын-пикир жөнөтүүдө ката кетти. Кайра аракет кылыңыз.'
             );
         } finally {
             setLoading(false);
