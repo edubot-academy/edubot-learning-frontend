@@ -1,6 +1,6 @@
 import React, { Suspense, lazy } from 'react';
 import { Routes, Route } from 'react-router-dom';
-import PrivateRoute from '@shared-ui/PrivateRoute';
+import PrivateRoute from '@shared/PrivateRoute';
 import MainLayout from './layouts/MainLayout';
 
 const HomePage = lazy(() => import('../pages/Home'));

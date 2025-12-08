@@ -10,7 +10,7 @@ import EduBotLogo from '@assets/images/edubot-signup.png';
 import BlackHeart from '@assets/icons/blackHeart.svg';
 import BlackBasket from '@assets/icons/blackBasket.svg';
 import BlackPerson from '@assets/icons/personBlack.svg';
-import { AuthContext } from '../../context/AuthContext';
+import { AuthContext } from '../context/AuthContext';
 import { searchCourses } from '@services/api';
 import SideBar from '@shared/ui/SideBar';
 import SidebarOverlay from '@shared/ui/SidebarOverlay';

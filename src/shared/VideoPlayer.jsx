@@ -1,5 +1,4 @@
-import React from 'react';
-import VideoPlayerUI from './Play.jsx';
+import VideoPlayerUI from './ui/Play.jsx';
 
 const VideoPlayer = ({
     videoUrl,
@@ -19,7 +18,6 @@ const VideoPlayer = ({
                 src={videoUrl}
                 className="w-full aspect-video object-cover cursor-pointer"
             />
-
             {/* ==== UI КОНТРОЛЫ ==== */}
             <VideoPlayerUI
                 videoRef={videoRef}
