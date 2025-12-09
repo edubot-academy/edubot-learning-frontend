@@ -26,6 +26,7 @@ const CompanyCourses = lazy(() => import('../pages/company/CompanyCourses'));
 const CompanyDetail = lazy(() => import('../pages/company/CompanyDetail'));
 const CompanyList = lazy(() => import('../pages/company/CompanyList'));
 const Favourite = lazy(() => import('../pages/Favourite'));
+const CartPage = lazy(() => import('../pages/Cart'));
 const AppRoutes = () => {
     return (
         <MainLayout>
@@ -39,6 +40,7 @@ const AppRoutes = () => {
                     <Route path="/profile" element={<ProfilePage />} />
                     <Route path="/unauthorized" element={<Unauthorized />} />
                     <Route path="/favourite" element={<Favourite />} />
+                     <Route path="/cart" element={<CartPage />} />
                     <Route element={<PrivateRoute allowedRoles={['instructor']} />}>
                         <Route path="/instructor" element={<InstructorDashboard />} />
                         <Route path="/instructor/course/create" element={<CreateCourse />} />
