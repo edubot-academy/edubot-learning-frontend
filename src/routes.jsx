@@ -27,37 +27,25 @@ const CompanyCourses = lazy(() => import("./pages/company/CompanyCourses"));
 const CompanyDetail = lazy(() => import("./pages/company/CompanyDetail"));
 const CompanyList = lazy(() => import("./pages/company/CompanyList"));
 const AppRoutes = () => {
-  return (
-    <div className="flex flex-col min-h-screen">
-      <Header />
-      <div className="flex-grow">
-        <Suspense
-          fallback={<div className="p-6 text-center">Жүктөлүүдө...</div>}
-        >
-          <Routes>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/register" element={<SignupPage />} />
-            <Route path="/courses" element={<CoursesPage />} />
-            <Route path="/dashboard" element={<DashboardPage />} />
-            <Route path="/profile" element={<ProfilePage />} />
-            <Route path="/unauthorized" element={<Unauthorized />} />
-
-            <Route element={<PrivateRoute allowedRoles={["instructor"]} />}>
-              <Route path="/instructor" element={<InstructorDashboard />} />
-              <Route
-                path="/instructor/course/create"
-                element={<CreateCourse />}
-              />
-              <Route
-                path="/instructor/courses"
-                element={<InstructorCourses />}
-              />
-              <Route
-                path="/instructor/courses/edit/:id"
-                element={<EditInstructorCourse />}
-              />
-            </Route>
+    return (
+        <div className="flex flex-col min-h-screen">
+            <Header />
+            <div className="flex-grow">
+                <Suspense fallback={<div className="p-6 text-center">Жүктөлүүдө...</div>}>
+                    <Routes>
+                        <Route path="/" element={<HomePage />} />
+                        <Route path="/login" element={<LoginPage />} />
+                        <Route path="/register" element={<SignupPage />} />
+                        <Route path="/courses" element={<CoursesPage />} />
+                        <Route path="/dashboard" element={<DashboardPage />} />
+                        <Route path="/profile" element={<ProfilePage />} />
+                        <Route path="/unauthorized" element={<Unauthorized />} />
+                        <Route element={<PrivateRoute allowedRoles={['instructor']} />}>
+                            <Route path="/instructor" element={<InstructorDashboard />} />
+                            <Route path="/instructor/course/create" element={<CreateCourse />} />
+                            <Route path="/instructor/courses" element={<InstructorCourses />} />
+                            <Route path="/instructor/courses/edit/:id" element={<EditInstructorCourse />} />
+                        </Route>
 
             <Route element={<PrivateRoute allowedRoles={["student"]} />}>
               <Route path="/student" element={<StudentDashboard />} />
