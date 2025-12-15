@@ -11,6 +11,8 @@ import { FaYoutube } from "react-icons/fa";
 import { FaGithub } from "react-icons/fa6";
 import { IoLogoFacebook } from "react-icons/io5";
 import { FaTwitter } from "react-icons/fa";
+import { FaEnvelope } from "react-icons/fa";
+
 
 import DefaultAvatar from "../assets/icons/personBlack.svg";
 
@@ -51,6 +53,8 @@ function InstructorsInfo({ instructorData }) {
       case "youtube":
       case "yt":
         return { type: "icon", component: FaYoutube };
+      case "email":
+        return { type: "icon", component: FaEnvelope }; 
       default:
         return null;
     }

@@ -200,7 +200,7 @@ const CourseDetailsPage = () => {
         [lesson.id]:
           typeof prev[lesson.id] !== "undefined"
             ? prev[lesson.id]
-            : savedState?.code ?? challenge.starterCode ?? "",
+            : (savedState?.code ?? challenge.starterCode ?? ""),
       }));
 
       if (savedState?.result) {
@@ -621,161 +621,182 @@ const CourseDetailsPage = () => {
   }, [id, user]);
   /* eslint-enable react-hooks/exhaustive-deps */
 
-    if (loading) return <div>Жүктөлүүдө...</div>;
-    if (error) return <div>Ката: {error}</div>;
-    if (!course) return <div>Курс табылган жок</div>;
+  if (loading) return <div>Жүктөлүүдө...</div>;
+  if (error) return <div>Ката: {error}</div>;
+  if (!course) return <div>Курс табылган жок</div>;
 
-    const { prev: prevLesson, next: nextLesson } = findPrevNextLessons();
-    const totalLessons = sections.reduce((count, sec) => count + (sec.lessons?.length || 0), 0);
-    const progress = totalLessons > 0
-        ? Math.round((completedLessons.length / totalLessons) * 100)
-        : 0;
+  const { prev: prevLesson, next: nextLesson } = findPrevNextLessons();
+  const totalLessons = sections.reduce(
+    (count, sec) => count + (sec.lessons?.length || 0),
+    0
+  );
+  const progress =
+    totalLessons > 0
+      ? Math.round((completedLessons.length / totalLessons) * 100)
+      : 0;
 
-    const isCourseInstructor = Boolean(user && course?.instructor?.id === user.id);
-    const isAdmin = user?.role === 'admin';
-    const isAiAvailable = Boolean(course.aiAssistantEnabled && (enrolled || isCourseInstructor || isAdmin));
-    const assistantAvailableMessage = course.aiAssistantEnabled
-        ? 'Ассистентти колдонуу үчүн курсга жазылуу керек.'
-        : 'EDU AI ассистенти бул курста өчүрүлгөн.';
+  const isCourseInstructor = Boolean(
+    user && course?.instructor?.id === user.id
+  );
+  const isAdmin = user?.role === "admin";
+  const isAiAvailable = Boolean(
+    course.aiAssistantEnabled && (enrolled || isCourseInstructor || isAdmin)
+  );
+  const assistantAvailableMessage = course.aiAssistantEnabled
+    ? "Ассистентти колдонуу үчүн курсга жазылуу керек."
+    : "EDU AI ассистенти бул курста өчүрүлгөн.";
 
-    const tabs = [
-        { id: 'program', label: 'Программа курса', disabled: false },
-        { id: 'assistant', label: 'Edu AI Assistent', disabled: !isAiAvailable },
-    ];
+  const tabs = [
+    { id: "program", label: "Программа курса", disabled: false },
+    { id: "assistant", label: "Edu AI Assistent", disabled: !isAiAvailable },
+  ];
 
-    const handleTabChange = (tab) => {
-        if (tab.disabled) {
-            toast.error('EDU AI азырынча бул курста жеткиликтүү эмес');
-            return;
-        }
-        setActiveTab(tab.id);
-    };
+  const handleTabChange = (tab) => {
+    if (tab.disabled) {
+      toast.error("EDU AI азырынча бул курста жеткиликтүү эмес");
+      return;
+    }
+    setActiveTab(tab.id);
+  };
 
-    const renderTabButtons = () => (
-        <div className="flex flex-wrap gap-2 bg-gray-100 rounded-2xl p-1">
-            {tabs.map((tab) => (
-                <button
-                    key={tab.id}
-                    type="button"
-                    onClick={() => handleTabChange(tab)}
-                    className={`flex-1 min-w-[140px] px-4 py-2 rounded-xl text-sm font-medium transition ${activeTab === tab.id
-                            ? 'bg-white text-gray-900 shadow'
-                            : 'text-gray-600'
-                        } ${tab.disabled ? 'opacity-60 cursor-not-allowed' : 'hover:text-gray-900'}`}
-                >
-                    {tab.label}
-                </button>
-            ))}
-        </div>
-    );
+  const renderTabButtons = () => (
+    <div className="flex flex-wrap gap-2 bg-gray-100 rounded-2xl p-1">
+      {tabs.map((tab) => (
+        <button
+          key={tab.id}
+          type="button"
+          onClick={() => handleTabChange(tab)}
+          className={`flex-1 min-w-[140px] px-4 py-2 rounded-xl text-sm font-medium transition ${
+            activeTab === tab.id
+              ? "bg-white text-gray-900 shadow"
+              : "text-gray-600"
+          } ${tab.disabled ? "opacity-60 cursor-not-allowed" : "hover:text-gray-900"}`}
+        >
+          {tab.label}
+        </button>
+      ))}
+    </div>
+  );
 
-    const lessonCount = sections.reduce((count, sec) => count + (sec.lessons?.length || 0), 0);
+  const lessonCount = sections.reduce(
+    (count, sec) => count + (sec.lessons?.length || 0),
+    0
+  );
 
-    return (
-        <div className="min-h-screen pt-24 bg-[#f8f9fb]">
-            <CourseHeader course={course} progress={progress} enrolled={enrolled} />
-            <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-                <CourseDescription course={course} />
+  return (
+    <div className="min-h-screen pt-24 bg-[#f8f9fb]">
+      <CourseHeader course={course} progress={progress} enrolled={enrolled} />
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+        <CourseDescription course={course} />
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div className="md:col-span-2">
-                        {activeLesson && (
-                            activeLesson.kind === 'article' ? (
-                                <ArticleLessonViewer key={activeLesson.id} lesson={activeLesson} />
-                            ) : activeLesson.kind === 'quiz' ? (
-                                <LessonQuizPlayer
-                                    key={activeLesson.id}
-                                    quiz={lessonQuizData[activeLesson.id]}
-                                    answers={lessonQuizAnswers[activeLesson.id] || {}}
-                                    onAnswerChange={handleQuizAnswerChange}
-                                    onSubmit={handleQuizSubmit}
-                                    onRetake={handleQuizRetake}
-                                    submitting={quizSubmitting}
-                                    disabled={!enrolled || activeLesson.locked}
-                                    loading={quizLoading && !lessonQuizData[activeLesson.id]}
-                                    result={lessonQuizResults[activeLesson.id]}
-                                />
-                            ) : activeLesson.kind === 'code' ? (
-                                <LessonChallengePlayer
-                                    key={activeLesson.id}
-                                    challenge={lessonChallengeData[activeLesson.id]}
-                                    code={
-                                        lessonChallengeCode[activeLesson.id] ??
-                                        lessonChallengeData[activeLesson.id]?.starterCode ??
-                                        ''
-                                    }
-                                    onCodeChange={(newCode) =>
-                                        handleChallengeCodeChange(activeLesson.id, newCode)
-                                    }
-                                    onSubmit={handleChallengeSubmit}
-                                    submitting={challengeSubmitting}
-                                    disabled={!enrolled || activeLesson.locked}
-                                    loading={challengeLoading && !lessonChallengeData[activeLesson.id]}
-                                    result={lessonChallengeResults[activeLesson.id]}
-                                />
-                            ) : (
-                                <CourseVideoPlayer
-                                    key={activeLesson.id}
-                                    activeLesson={activeLesson}
-                                    resumeVideoTime={resumeVideoTime}
-                                    handleVideoProgress={(progress) => handleVideoProgress(progress, activeLesson)}
-                                    handleTimeUpdate={handleTimeUpdate}
-                                    handlePause={handlePause}
-                                    videoRef={videoRef}
-                                    nextLesson={nextLesson}
-                                    prevLesson={prevLesson}
-                                    onEnded={handleEnded}
-                                    handleLessonClick={handleLessonClick}
-                                />
-                            )
-                        )}
-                    </div>
-
-                    <div className="space-y-4">
-                        {activeTab === 'program' ? (
-                            <CourseSidebar
-                                key={activeSectionId}
-                                sections={sections}
-                                activeSectionId={activeSectionId}
-                                toggleSection={toggleSection}
-                                activeLesson={activeLesson}
-                                handleLessonClick={handleLessonClick}
-                                handleCheckboxToggle={handleCheckboxToggle}
-                                completedLessons={completedLessons}
-                                lastViewedLessonId={lastViewedLessonId}
-                                enrolled={enrolled}
-                                lessonRefs={lessonRefs}
-                                headerContent={renderTabButtons()}
-                            />
-                        ) : (
-                            <div className="bg-white p-6 rounded-lg shadow-md md:sticky md:top-28">
-                                <div className="mb-4">{renderTabButtons()}</div>
-                                {isAiAvailable ? (
-                                    <AiAssistantPanel
-                                        courseId={Number(id)}
-                                        languageCode={course.languageCode}
-                                    />
-                                ) : (
-                                    <div className="text-center text-gray-500 text-sm">
-                                        {assistantAvailableMessage}
-                                    </div>
-                                )}
-                            </div>
-                        )}
-                    </div>
-                </div>
-
-                <Comment courseId={id} />
-
-                <CardVideo
-                    key={id}
-                    course={course}
-                    lessonCount={lessonCount}
-                    coverImageUrl={course.coverImageUrl}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="md:col-span-2">
+            {activeLesson &&
+              (activeLesson.kind === "article" ? (
+                <ArticleLessonViewer
+                  key={activeLesson.id}
+                  lesson={activeLesson}
                 />
-            </div>
+              ) : activeLesson.kind === "quiz" ? (
+                <LessonQuizPlayer
+                  key={activeLesson.id}
+                  quiz={lessonQuizData[activeLesson.id]}
+                  answers={lessonQuizAnswers[activeLesson.id] || {}}
+                  onAnswerChange={handleQuizAnswerChange}
+                  onSubmit={handleQuizSubmit}
+                  onRetake={handleQuizRetake}
+                  submitting={quizSubmitting}
+                  disabled={!enrolled || activeLesson.locked}
+                  loading={quizLoading && !lessonQuizData[activeLesson.id]}
+                  result={lessonQuizResults[activeLesson.id]}
+                />
+              ) : activeLesson.kind === "code" ? (
+                <LessonChallengePlayer
+                  key={activeLesson.id}
+                  challenge={lessonChallengeData[activeLesson.id]}
+                  code={
+                    lessonChallengeCode[activeLesson.id] ??
+                    lessonChallengeData[activeLesson.id]?.starterCode ??
+                    ""
+                  }
+                  onCodeChange={(newCode) =>
+                    handleChallengeCodeChange(activeLesson.id, newCode)
+                  }
+                  onSubmit={handleChallengeSubmit}
+                  submitting={challengeSubmitting}
+                  disabled={!enrolled || activeLesson.locked}
+                  loading={
+                    challengeLoading && !lessonChallengeData[activeLesson.id]
+                  }
+                  result={lessonChallengeResults[activeLesson.id]}
+                />
+              ) : (
+                <CourseVideoPlayer
+                  key={activeLesson.id}
+                  activeLesson={activeLesson}
+                  resumeVideoTime={resumeVideoTime}
+                  handleVideoProgress={(progress) =>
+                    handleVideoProgress(progress, activeLesson)
+                  }
+                  handleTimeUpdate={handleTimeUpdate}
+                  handlePause={handlePause}
+                  videoRef={videoRef}
+                  nextLesson={nextLesson}
+                  prevLesson={prevLesson}
+                  onEnded={handleEnded}
+                  handleLessonClick={handleLessonClick}
+                />
+              ))}
+          </div>
+
+          <div className="space-y-4">
+            {activeTab === "program" ? (
+              <CourseSidebar
+                key={activeSectionId}
+                sections={sections}
+                activeSectionId={activeSectionId}
+                toggleSection={toggleSection}
+                activeLesson={activeLesson}
+                handleLessonClick={handleLessonClick}
+                handleCheckboxToggle={handleCheckboxToggle}
+                completedLessons={completedLessons}
+                lastViewedLessonId={lastViewedLessonId}
+                enrolled={enrolled}
+                lessonRefs={lessonRefs}
+                headerContent={renderTabButtons()}
+              />
+            ) : (
+              <div className="bg-white p-6 rounded-lg shadow-md md:sticky md:top-28">
+                <div className="mb-4">{renderTabButtons()}</div>
+                {isAiAvailable ? (
+                  <AiAssistantPanel
+                    courseId={Number(id)}
+                    languageCode={course.languageCode}
+                  />
+                ) : (
+                  <div className="text-center text-gray-500 text-sm">
+                    {assistantAvailableMessage}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </div>
-    );
+
+        <Comment courseId={id} />
+
+        {/* Добавьте эту строку */}
+        <InstructorsInfo instructorData={course?.instructor} />
+
+        <CardVideo
+          key={id}
+          course={course}
+          lessonCount={lessonCount}
+          coverImageUrl={course.coverImageUrl}
+        />
+      </div>
+    </div>
+  );
 };
 
 export default CourseDetailsPage;
