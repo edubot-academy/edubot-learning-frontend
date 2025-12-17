@@ -14,3 +14,5 @@ export * from '../features/payments/api';
 export * from '../features/ratings/api';
 export * from '../features/search/api';
 export * from '../features/cart/api';
+export * from '../features/notifications/api';
+export * from '../features/instructorChat/api';
