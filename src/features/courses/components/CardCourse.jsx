@@ -11,6 +11,9 @@ const CardCourse = ({
     ratingCount,
     ratingAverage,
     id,
+    level,
+    durationInHours,
+    lessonCount,
 }) => {
     const [showPopup, setShowPopup] = useState(false);
     const navigate = useNavigate();
@@ -34,6 +37,9 @@ const CardCourse = ({
             coverImageUrl,
             ratingCount,
             ratingAverage,
+            level,
+            durationInHours,
+            lessonCount,
         };
 
         const result = addToCart(courseData);
@@ -79,18 +85,24 @@ const CardCourse = ({
                                 <span className="text-gray-600 text-sm">({ratingCount} рейтингов)</span>
                             </div>
                             <div className="flex gap-2 mb-4">
-                                <div className="flex">
-                                    <span className="px-3 py-2 text-xs rounded-full border flex gap-1">
-                                        <img className="w-4" src={CardIcon} alt="" />
-                                        новичок
+                                {level && (
+                                    <div className="flex">
+                                        <span className="px-3 py-2 text-xs rounded-full border flex gap-1">
+                                            <img className="w-4" src={CardIcon} alt="" />
+                                            {level}
+                                        </span>
+                                    </div>
+                                )}
+                                {durationInHours && (
+                                    <span className="px-3 py-2 text-xs rounded-full border">
+                                        {durationInHours} всего часа
                                     </span>
-                                </div>
-                                <span className="px-3 py-2 text-xs rounded-full border">
-                                    22 всего часа
-                                </span>
-                                <span className="px-3 py-2 text-xs rounded-full border">
-                                    155 лекций
-                                </span>
+                                )}
+                                {lessonCount && (
+                                    <span className="px-3 py-2 text-xs rounded-full border">
+                                        {lessonCount} лекций
+                                    </span>
+                                )}
                             </div>
                             <div>
                                 <div className="flex justify-between items-end gap-6 mt-6">

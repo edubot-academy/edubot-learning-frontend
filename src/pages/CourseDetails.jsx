@@ -682,7 +682,8 @@ const CourseDetailsPage = () => {
     if (!course) return <div>Курс табылган жок</div>;
 
     const { prev: prevLesson, next: nextLesson } = findPrevNextLessons();
-    const totalLessons = sections.reduce((count, sec) => count + (sec.lessons?.length || 0), 0);
+    const totalLessons =
+        course?.lessonCount || sections.reduce((count, sec) => count + (sec.lessons?.length || 0), 0);
     const progress =
         totalLessons > 0 ? Math.round((completedLessons.length / totalLessons) * 100) : 0;
 
@@ -724,7 +725,7 @@ const CourseDetailsPage = () => {
         </div>
     );
 
-    const lessonCount = sections.reduce((count, sec) => count + (sec.lessons?.length || 0), 0);
+    const lessonCount = course?.lessonCount ?? sections.reduce((count, sec) => count + (sec.lessons?.length || 0), 0);
 
     return (
         <div className="min-h-screen pt-24 bg-[#f8f9fb]">

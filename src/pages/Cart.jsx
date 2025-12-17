@@ -187,17 +187,23 @@ const Cart = () => {
                         
                         {/* Метаданные курса */}
                         <div className="flex flex-wrap items-center gap-2 mb-4">
-                          <span className="px-3 py-1.5 text-xs rounded-full border border-gray-300 flex items-center gap-1">
-                            новичок
-                          </span>
-                          <span className="px-3 py-1.5 text-xs rounded-full border border-gray-300 flex items-center gap-1">
-                            <FaClock size={12} />
-                            22 всего часа
-                          </span>
-                          <span className="px-3 py-1.5 text-xs rounded-full border border-gray-300 flex items-center gap-1">
-                            <FaBook size={12} />
-                            155 лекций
-                          </span>
+                          {item.level && (
+                            <span className="px-3 py-1.5 text-xs rounded-full border border-gray-300 flex items-center gap-1">
+                              {item.level}
+                            </span>
+                          )}
+                          {item.durationInHours && (
+                            <span className="px-3 py-1.5 text-xs rounded-full border border-gray-300 flex items-center gap-1">
+                              <FaClock size={12} />
+                              {item.durationInHours} часа
+                            </span>
+                          )}
+                          {item.lessonCount && (
+                            <span className="px-3 py-1.5 text-xs rounded-full border border-gray-300 flex items-center gap-1">
+                              <FaBook size={12} />
+                              {item.lessonCount} лекций
+                            </span>
+                          )}
                         </div>
                         
                         {/* Цена */}

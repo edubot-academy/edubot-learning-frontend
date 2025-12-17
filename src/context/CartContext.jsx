@@ -151,6 +151,11 @@ export const CartProvider = ({ children }) => {
         }
       } catch (error) {
         console.error('Failed to add to cart', error);
+        if (error?.response?.data?.message?.includes?.('Already enrolled')) {
+          setCartItems(prev => prev.filter(item => item.id !== course.id));
+          localStorage.setItem('cart', JSON.stringify(cartItems.filter(item => item.id !== course.id)));
+          return { success: false, message: 'Сиз бул курсга жазылгансыз' };
+        }
         return { success: false, message: 'Курс корзинага кошулган жок' };
       }
     } else {
