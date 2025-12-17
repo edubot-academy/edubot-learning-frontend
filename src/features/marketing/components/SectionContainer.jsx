@@ -1,5 +1,3 @@
-import React from 'react';
-
 const SectionContainer = ({
     title,
     subtitle,
@@ -36,6 +34,9 @@ const SectionContainer = ({
                         id={course.id}
                         coverImageUrl={course.coverImageUrl}
                         title={course.title}
+                        level={course.level}
+                        durationInHours={course.durationInHours}
+                        lessonCount={course.lessonCount}
                         instructor={course.instructor}
                         price={course.price}
                         ratingCount={course.ratingCount}

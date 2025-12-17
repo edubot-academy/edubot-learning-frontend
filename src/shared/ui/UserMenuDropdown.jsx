@@ -8,7 +8,7 @@ import Setting from '@assets/icons/seting.svg';
 import Profile from '@assets/icons/profile.svg';
 import ArrowRight from '@assets/icons/arrowRight.svg';
 import { LuLogOut } from 'react-icons/lu';
-import { AuthContext } from '../../../context/AuthContext';
+import { AuthContext } from '../../context/AuthContext';
 
 function UserMenuDropdown({ user, onClose }) {
     const { logout } = useContext(AuthContext);
@@ -32,13 +32,21 @@ function UserMenuDropdown({ user, onClose }) {
 
     const dashboardPath = getDashboardPath();
 
-    // Добавляем поле link для элементов, которые должны вести на другие страницы
+    const notificationsPath =
+        user?.role === 'student'
+            ? '/student?tab=notifications'
+            : user?.role === 'instructor'
+              ? '/instructor?tab=notifications'
+              : user?.role === 'admin'
+                ? '/admin?tab=notifications'
+                : '/dashboard';
+
     const menuItemsTop = [
-        { label: 'Менин курстарым', icon: Lamp, link: '/my-courses' },
-        { label: 'Билдирүүлөр', icon: Bell, link: '/notifications' },
-        { label: 'Корзина', icon: Basket, link: '/cart' },
-        { label: 'Избранные', icon: Heart, link: '/favorites' },
-        { label: 'Настройка', icon: Setting, link: '/settings' },
+        { label: 'Менин курстарым', icon: Lamp, path: '/my-courses' },
+        { label: 'Билдирүүлөр', icon: Bell, path: notificationsPath },
+        { label: 'Корзина', icon: Basket, path: '/cart' },
+        { label: 'Избранные', icon: Heart, path: '/favorites' },
+        { label: 'Настройка', icon: Setting, path: '/settings' },
     ];
 
     const handleItemClick = () => {
@@ -92,39 +100,8 @@ function UserMenuDropdown({ user, onClose }) {
                 <div className="w-[18rem] sm:w-[16rem] items-center ml-[30px] mb-6">
                     <div>
                         {menuItemsTop.map((item, index) => {
-                            // Если у элемента есть ссылка, используем Link
-                            if (item.link) {
-                                return (
-                                    <Link
-                                        key={index}
-                                        to={item.link}
-                                        onClick={handleItemClick}
-                                        className="
-                                            w-[200px] sm:w-[180px]
-                                            h-[50px] sm:h-[45px]
-                                            flex items-center gap-[0.8rem]
-                                            px-[1.25rem] sm:px-[1rem] py-[0.85rem] sm:py-[0.7rem]
-                                            cursor-pointer
-                                            text-[0.85rem] sm:text-[0.8rem]
-                                            text-gray-800
-                                            hover:bg-[#EA580C] hover:text-white
-                                            transition-colors duration-200
-                                            rounded-lg
-                                            block
-                                        "
-                                    >
-                                        <img src={item.icon} alt="" className="w-[1.2rem] sm:w-[1.1rem]" />
-                                        <span className="whitespace-nowrap overflow-hidden text-ellipsis">
-                                            {item.label}
-                                        </span>
-                                    </Link>
-                                );
-                            }
-                            
-                            // Если ссылки нет, используем обычный div
-                            return (
+                            const content = (
                                 <div
-                                    key={index}
                                     className="
                                         w-[200px] sm:w-[180px]
                                         h-[50px] sm:h-[45px]
@@ -144,6 +121,19 @@ function UserMenuDropdown({ user, onClose }) {
                                     </span>
                                 </div>
                             );
+
+                            if (item.path) {
+                                return (
+                                    <Link key={index} to={item.path} onClick={handleItemClick}>
+                                        {content}
+                                    </Link>
+                                );
+                            }
+                            return (
+                                <div key={index}>
+                                    {content}
+                                </div>
+                            );
                         })}
                     </div>
 
@@ -151,7 +141,7 @@ function UserMenuDropdown({ user, onClose }) {
                         <button
                             onClick={handleLogout}
                             className="
-                                w-[200px] sm:w-[180px]
+                                w-full
                                 h-[50px] sm:h-[45px]
                                 flex items-center gap-[0.8rem]
                                 px-[1.25rem] sm:px-[1rem] py-[0.85rem] sm:py-[0.7rem]
@@ -159,13 +149,13 @@ function UserMenuDropdown({ user, onClose }) {
                                 text-[0.85rem] sm:text-[0.8rem]
                                 text-red-600
                                 hover:bg-red-50
-                                transition-colors duration-200
                                 rounded-lg
-                                w-full
                             "
                         >
-                            <LuLogOut className="w-[1.2rem] h-[1.2rem] sm:w-[1.1rem] sm:h-[1.1rem]" />
-                            <span className="whitespace-nowrap">Logout</span>
+                            <LuLogOut className="text-lg" />
+                            <span className="whitespace-nowrap overflow-hidden text-ellipsis">
+                                Чыгуу
+                            </span>
                         </button>
                     </div>
                 </div>

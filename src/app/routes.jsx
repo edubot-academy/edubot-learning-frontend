@@ -1,6 +1,6 @@
 import React, { Suspense, lazy } from 'react';
 import { Routes, Route } from 'react-router-dom';
-import PrivateRoute from '@shared-ui/PrivateRoute';
+import PrivateRoute from '@shared/PrivateRoute';
 import MainLayout from './layouts/MainLayout';
 
 const HomePage = lazy(() => import('../pages/Home'));
@@ -25,7 +25,9 @@ const Catalog = lazy(() => import('../pages/catalog/Catalog'));
 const CompanyCourses = lazy(() => import('../pages/company/CompanyCourses'));
 const CompanyDetail = lazy(() => import('../pages/company/CompanyDetail'));
 const CompanyList = lazy(() => import('../pages/company/CompanyList'));
-const NotificationsPage = lazy(() => import('../pages/Notifications'));
+const Favourite = lazy(() => import('../pages/Favourite'));
+const CartPage = lazy(() => import('../pages/Cart'));
+
 const AppRoutes = () => {
     return (
         <MainLayout>
@@ -38,6 +40,8 @@ const AppRoutes = () => {
                     <Route path="/dashboard" element={<DashboardPage />} />
                     <Route path="/profile" element={<ProfilePage />} />
                     <Route path="/unauthorized" element={<Unauthorized />} />
+                    <Route path="/favourite" element={<Favourite />} />
+                    <Route path="/cart" element={<CartPage />} />
                     <Route element={<PrivateRoute allowedRoles={['instructor']} />}>
                         <Route path="/instructor" element={<InstructorDashboard />} />
                         <Route path="/instructor/course/create" element={<CreateCourse />} />
@@ -72,7 +76,6 @@ const AppRoutes = () => {
                     <Route path="/catalog" element={<Catalog />} />
                     <Route path="/companies" element={<CompanyList />} />
                     <Route path="/companies/:id" element={<CompanyDetail />} />
-                    <Route path="/notifications" element={<NotificationsPage />} />
                 </Routes>
             </Suspense>
         </MainLayout>

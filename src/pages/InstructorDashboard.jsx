@@ -24,7 +24,10 @@ import {
     FiFilter,
     FiCalendar,
     FiGlobe,
+    FiBell,
 } from 'react-icons/fi';
+import NotificationsWidget from '@features/notifications/components/NotificationsWidget';
+import NotificationsTab from '@features/notifications/components/NotificationsTab';
 
 const NAV_ITEMS = [
     { id: 'overview', label: 'Кыскача', icon: FiHome },
@@ -33,6 +36,7 @@ const NAV_ITEMS = [
     { id: 'profile', label: 'Профиль', icon: FiUser },
     { id: 'ai', label: 'AI ассистент', icon: FiCpu },
     { id: 'offerings', label: 'Offeringдер', icon: FiLayers },
+    { id: 'notifications', label: 'Билдирүүлөр', icon: FiBell },
 ];
 
 const InstructorDashboard = () => {
@@ -198,6 +202,8 @@ const InstructorDashboard = () => {
                         refreshOfferings={handleRefreshOfferings}
                     />
                 );
+            case 'notifications':
+                return <NotificationsTab />;
             case 'overview':
             default:
                 return (
@@ -321,6 +327,8 @@ const OverviewSection = ({
                     accent="amber"
                 />
             </div>
+
+            <NotificationsWidget />
         </>
     );
 };
@@ -492,7 +500,11 @@ const ProfileSection = ({ profile, expertiseTags, socialLinks }) => (
             <p className="text-gray-600 font-medium mb-1">Био / Өзүм жөнүндө</p>
             <p className="text-gray-800">{profile?.bio?.trim() || 'Маалымат кошула элек'}</p>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+                <p className="text-gray-600 font-medium mb-1">Наам</p>
+                <p className="text-gray-800">{profile?.title?.trim() || '—'}</p>
+            </div>
             <div>
                 <p className="text-gray-600 font-medium mb-1">Тажрыйба</p>
                 <p className="text-gray-800">

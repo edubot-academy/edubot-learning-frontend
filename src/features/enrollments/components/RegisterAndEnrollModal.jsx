@@ -6,7 +6,7 @@ import { enrollUserInCourse } from '@features/enrollments/api';
 import { addPayment } from '@features/payments/api';
 import { toast } from 'react-hot-toast';
 import { FaEye, FaEyeSlash, FaRegCopy } from 'react-icons/fa';
-import PhoneInput from '@shared-ui/forms/PhoneInput';
+import PhoneInput from '@shared/ui/forms/PhoneInput';
 
 const RegisterAndEnrollModal = ({ onClose, onSuccess }) => {
     const [users, setUsers] = useState([]);
