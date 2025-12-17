@@ -1,6 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
-import { fetchTopCourses } from '@services/api';
-import { AuthContext } from '../context/AuthContext';
+import React, { useState, useEffect } from 'react';
 import StickyButton from '@shared/ui/StickyButton';
 import { fetchTopCourses } from '@services/api';
 import Benefits from '@features/marketing/components/Benefits';
@@ -10,15 +8,9 @@ import Apply from '@features/marketing/components/Apply';
 import Instructor from '@features/ratings/components/TopInstructors';
 import FAQ from '@features/marketing/components/FAQ';
 import TopCourses from '@features/courses/components/TopCourses';
-import { AuthContext } from '@app/providers';
 
 const HomePage = () => {
-    const { user } = useContext(AuthContext);
-    // const [cart, setCart] = useState([]);
     const [coursesData, setCoursesData] = useState([]);
-    // const addToCart = (course) => {
-    //     setCart([...cart, course]);
-    // };
 
     useEffect(() => {
         const loadTopCourses = async () => {
@@ -41,7 +33,6 @@ const HomePage = () => {
             <Instructor />
             <Apply />
             <Feedback />
-            {/* <Evaluate /> */}
             <FAQ />
         </div>
     );

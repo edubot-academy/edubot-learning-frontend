@@ -492,7 +492,11 @@ const ProfileSection = ({ profile, expertiseTags, socialLinks }) => (
             <p className="text-gray-600 font-medium mb-1">Био / Өзүм жөнүндө</p>
             <p className="text-gray-800">{profile?.bio?.trim() || 'Маалымат кошула элек'}</p>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+                <p className="text-gray-600 font-medium mb-1">Наам</p>
+                <p className="text-gray-800">{profile?.title?.trim() || '—'}</p>
+            </div>
             <div>
                 <p className="text-gray-600 font-medium mb-1">Тажрыйба</p>
                 <p className="text-gray-800">
