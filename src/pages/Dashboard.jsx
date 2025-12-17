@@ -1,20 +1,20 @@
-import React from "react";
-import { Link } from "react-router-dom";
-import { FaCheckCircle, FaDownload } from "react-icons/fa";
+import React from 'react';
+import { Link } from 'react-router-dom';
+import { FaCheckCircle, FaDownload } from 'react-icons/fa';
 
 const enrolledCourses = [
     {
         id: 1,
-        title: "Web Development Masterclass",
+        title: 'Web Development Masterclass',
         progress: 75,
-        lastLesson: "JavaScript Fundamentals",
+        lastLesson: 'JavaScript Fundamentals',
         certificateAvailable: true,
     },
     {
         id: 2,
-        title: "Data Science Bootcamp",
+        title: 'Data Science Bootcamp',
         progress: 50,
-        lastLesson: "Machine Learning Basics",
+        lastLesson: 'Machine Learning Basics',
         certificateAvailable: false,
     },
 ];
@@ -22,11 +22,11 @@ const enrolledCourses = [
 const recommendedCourses = [
     {
         id: 3,
-        title: "Machine Learning Fundamentals",
+        title: 'Machine Learning Fundamentals',
     },
     {
         id: 4,
-        title: "UI/UX Design Essentials",
+        title: 'UI/UX Design Essentials',
     },
 ];
 
@@ -75,7 +75,10 @@ const DashboardPage = () => {
                 <ul>
                     {recommendedCourses.map((course) => (
                         <li key={course.id} className="mb-2">
-                            <Link to={`/courses/${course.id}`} className="text-blue-600 hover:underline">
+                            <Link
+                                to={`/courses/${course.id}`}
+                                className="text-blue-600 hover:underline"
+                            >
                                 {course.title}
                             </Link>
                         </li>

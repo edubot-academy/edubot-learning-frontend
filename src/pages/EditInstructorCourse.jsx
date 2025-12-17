@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
-import toast from "react-hot-toast";
+import { useEffect, useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import {
     fetchCourseDetails,
     updateCourse,
@@ -19,25 +19,25 @@ import {
     upsertLessonQuiz,
     fetchLessonChallenge,
     upsertLessonChallenge,
-} from "../services/api";
-import { getVideoDuration } from "../utils/videoUtils";
-import LessonQuizEditor from "../components/LessonQuizEditor";
-import LessonChallengeEditor from "../components/LessonChallengeEditor";
+} from '@services/api';
+import { getVideoDuration } from '../utils/videoUtils';
+import LessonQuizEditor from '@features/courses/components/LessonQuizEditor';
+import LessonChallengeEditor from '@features/courses/components/LessonChallengeEditor';
 import {
     createEmptyQuiz,
     ensureQuizShape,
     normalizeQuizForApi,
     validateQuiz,
     mapQuizFromApi,
-} from "../utils/quizUtils";
+} from '../utils/quizUtils';
 import {
     createEmptyChallenge,
     ensureChallengeShape,
     normalizeChallengeForApi,
     mapChallengeFromApi,
-} from "../utils/challengeUtils";
-import { LESSON_KIND_OPTIONS } from "../constants/lessons";
-import ArticleEditor from "../components/ArticleEditor";
+} from '../utils/challengeUtils';
+import { LESSON_KIND_OPTIONS } from '../constants/lessons';
+import ArticleEditor from '@features/courses/components/ArticleEditor';
 
 const EditInstructorCourse = () => {
     const { id } = useParams();
@@ -56,7 +56,7 @@ const EditInstructorCourse = () => {
         type: null,
         sectionIndex: null,
         lessonIndex: null,
-        lessonTitle: "",
+        lessonTitle: '',
     });
 
     useEffect(() => {
@@ -76,32 +76,46 @@ const EditInstructorCourse = () => {
                             sortedLessons.map(async (l) => {
                                 const baseLesson = {
                                     ...l,
-                                    kind: l.kind || "video",
-                                    content: l.content || "",
-                                    resourceName: l.resourceName || "",
-                                    quiz: l.kind === "quiz" ? createEmptyQuiz() : undefined,
-                                    challenge: l.kind === "code" ? createEmptyChallenge() : undefined,
+                                    kind: l.kind || 'video',
+                                    content: l.content || '',
+                                    resourceName: l.resourceName || '',
+                                    quiz: l.kind === 'quiz' ? createEmptyQuiz() : undefined,
+                                    challenge:
+                                        l.kind === 'code' ? createEmptyChallenge() : undefined,
                                     uploadProgress: { video: 0, resource: 0 },
                                     uploading: { video: false, resource: false },
                                 };
 
-                                if (baseLesson.kind === "quiz") {
+                                if (baseLesson.kind === 'quiz') {
                                     try {
-                                        const quizData = await fetchLessonQuiz(id, sec.id, l.id, true);
+                                        const quizData = await fetchLessonQuiz(
+                                            id,
+                                            sec.id,
+                                            l.id,
+                                            true
+                                        );
                                         baseLesson.quiz = mapQuizFromApi(quizData, true);
                                     } catch (error) {
-                                        console.error("Failed to load quiz", error);
-                                        toast.error("Квизди жүктөө мүмкүн болбоду");
+                                        console.error('Failed to load quiz', error);
+                                        toast.error('Квизди жүктөө мүмкүн болбоду');
                                     }
                                 }
 
-                                if (baseLesson.kind === "code") {
+                                if (baseLesson.kind === 'code') {
                                     try {
-                                        const challengeData = await fetchLessonChallenge(id, sec.id, l.id, true);
-                                        baseLesson.challenge = mapChallengeFromApi(challengeData, true);
+                                        const challengeData = await fetchLessonChallenge(
+                                            id,
+                                            sec.id,
+                                            l.id,
+                                            true
+                                        );
+                                        baseLesson.challenge = mapChallengeFromApi(
+                                            challengeData,
+                                            true
+                                        );
                                     } catch (error) {
-                                        console.error("Failed to load challenge", error);
-                                        toast.error("Код тапшырманы жүктөө мүмкүн болбоду");
+                                        console.error('Failed to load challenge', error);
+                                        toast.error('Код тапшырманы жүктөө мүмкүн болбоду');
                                     }
                                 }
 
@@ -115,20 +129,20 @@ const EditInstructorCourse = () => {
                             order: sec.order,
                             lessons: lessonsWithExtras,
                         };
-                    }),
+                    })
                 );
 
                 allSections.sort((a, b) => a.order - b.order);
 
                 // Map backend → UI shape for new fields
                 const learningOutcomesText = Array.isArray(courseData.learningOutcomes)
-                    ? courseData.learningOutcomes.join("\n")
-                    : "";
+                    ? courseData.learningOutcomes.join('\n')
+                    : '';
                 const hydratedCourse = {
                     ...courseData,
-                    languageCode: courseData.languageCode || "ky",
+                    languageCode: courseData.languageCode || 'ky',
                     isPaid:
-                        typeof courseData.isPaid === "boolean"
+                        typeof courseData.isPaid === 'boolean'
                             ? courseData.isPaid
                             : Number(courseData.price) > 0,
                     learningOutcomesText,
@@ -142,7 +156,7 @@ const EditInstructorCourse = () => {
                 setOriginalSections(JSON.parse(JSON.stringify(allSections)));
             } catch (err) {
                 console.error(err);
-                toast.error("Маалыматты жүктөө катасы");
+                toast.error('Маалыматты жүктөө катасы');
             } finally {
                 setLoading(false);
             }
@@ -153,7 +167,7 @@ const EditInstructorCourse = () => {
     const handleCourseChange = (e) => {
         const { name, value, files, type, checked } = e.target;
 
-        if (files && files[0] && name === "cover") {
+        if (files && files[0] && name === 'cover') {
             setCourse((prev) => ({
                 ...prev,
                 cover: files[0],
@@ -162,13 +176,13 @@ const EditInstructorCourse = () => {
             return;
         }
 
-        if (type === "checkbox") {
+        if (type === 'checkbox') {
             setCourse((prev) => ({ ...prev, [name]: checked }));
             return;
         }
 
-        if (name === "title" && value.length > 200) {
-            toast.error("Аталыш өтө узун. Максимум 200 символ.");
+        if (name === 'title' && value.length > 200) {
+            toast.error('Аталыш өтө узун. Максимум 200 символ.');
             return;
         }
 
@@ -197,12 +211,12 @@ const EditInstructorCourse = () => {
         setSections((prev) => {
             const updated = [...prev];
             const newLesson = {
-                title: "",
-                content: "",
-                kind: "video",
-                videoKey: "",
-                resourceKey: "",
-                resourceName: "",
+                title: '',
+                content: '',
+                kind: 'video',
+                videoKey: '',
+                resourceKey: '',
+                resourceName: '',
                 quiz: createEmptyQuiz(),
                 previewVideo: false,
                 uploadProgress: { video: 0, resource: 0 },
@@ -232,23 +246,18 @@ const EditInstructorCourse = () => {
         });
     };
 
-    const handleLessonFieldChange = (
-        sectionIndex,
-        lessonIndex,
-        field,
-        value,
-    ) => {
+    const handleLessonFieldChange = (sectionIndex, lessonIndex, field, value) => {
         setSections((prev) => {
             const updated = [...prev];
             const lesson = updated[sectionIndex].lessons[lessonIndex];
             lesson[field] = value;
-            if (field === "kind") {
-                if (value === "article") {
+            if (field === 'kind') {
+                if (value === 'article') {
                     lesson.previewVideo = false;
                 }
-                if (value === "quiz") {
+                if (value === 'quiz') {
                     lesson.previewVideo = false;
-                    lesson.videoKey = "";
+                    lesson.videoKey = '';
                     lesson.quiz = ensureQuizShape(lesson.quiz);
                 }
             }
@@ -293,45 +302,34 @@ const EditInstructorCourse = () => {
                 (percent) => {
                     setSections((prev) => {
                         const updated = [...prev];
-                        updated[sectionIndex].lessons[lessonIndex].uploadProgress[type] =
-                            percent;
+                        updated[sectionIndex].lessons[lessonIndex].uploadProgress[type] = percent;
                         return updated;
                     });
-                },
+                }
             );
 
-            if (type === "video") {
+            if (type === 'video') {
                 try {
                     const duration = await getVideoDuration(file);
-                    handleLessonFieldChange(
-                        sectionIndex,
-                        lessonIndex,
-                        "duration",
-                        duration,
-                    );
+                    handleLessonFieldChange(sectionIndex, lessonIndex, 'duration', duration);
                 } catch (err) {
-                    console.warn("Failed to extract video duration:", err);
+                    console.warn('Failed to extract video duration:', err);
                 }
             }
 
             handleLessonFieldChange(
                 sectionIndex,
                 lessonIndex,
-                type === "video" ? "videoKey" : "resourceKey",
-                key,
+                type === 'video' ? 'videoKey' : 'resourceKey',
+                key
             );
 
-            if (type === "resource") {
-                handleLessonFieldChange(
-                    sectionIndex,
-                    lessonIndex,
-                    "resourceName",
-                    file.name,
-                );
+            if (type === 'resource') {
+                handleLessonFieldChange(sectionIndex, lessonIndex, 'resourceName', file.name);
             }
         } catch (err) {
             console.error(err);
-            toast.error(err.message || "Файл жүктөөдө ката кетти.");
+            toast.error(err.message || 'Файл жүктөөдө ката кетти.');
         } finally {
             setSections((prev) => {
                 const updated = [...prev];
@@ -346,15 +344,15 @@ const EditInstructorCourse = () => {
             !course.title ||
             !course.description ||
             !course.category.id ||
-            course.price === "" ||
+            course.price === '' ||
             course.price === null
         ) {
-            toast.error("Сураныч, бардык талааларды толтуруңуз.");
+            toast.error('Сураныч, бардык талааларды толтуруңуз.');
             return;
         }
 
-        const learningOutcomes = (course.learningOutcomesText || "")
-            .split("\n")
+        const learningOutcomes = (course.learningOutcomesText || '')
+            .split('\n')
             .map((s) => s.trim())
             .filter(Boolean);
 
@@ -365,9 +363,8 @@ const EditInstructorCourse = () => {
                 categoryId: course.category.id,
                 price: Number(course.price),
                 subtitle: course.subtitle || undefined,
-                languageCode: course.languageCode || "ky",
-                learningOutcomes:
-                    learningOutcomes.length > 0 ? learningOutcomes : undefined,
+                languageCode: course.languageCode || 'ky',
+                learningOutcomes: learningOutcomes.length > 0 ? learningOutcomes : undefined,
                 aiAssistantEnabled: Boolean(course.aiAssistantEnabled),
                 isPaid: course.isPaid && Number(course.price) > 0,
             });
@@ -376,11 +373,11 @@ const EditInstructorCourse = () => {
                 await uploadCourseImage(id, course.cover);
             }
 
-            toast.success("Курс ийгиликтүү сакталды!");
+            toast.success('Курс ийгиликтүү сакталды!');
             setStep(2);
         } catch (err) {
             console.error(err);
-            toast.error("Курс сактоодо ката кетти.");
+            toast.error('Курс сактоодо ката кетти.');
         }
     };
 
@@ -406,24 +403,26 @@ const EditInstructorCourse = () => {
                 }
 
                 for (const [lessonIdx, lesson] of section.lessons.entries()) {
-                    const isArticle = lesson.kind === "article";
-                    const isVideo = lesson.kind === "video";
-                    const isQuiz = lesson.kind === "quiz";
-                    const isCode = lesson.kind === "code";
+                    const isArticle = lesson.kind === 'article';
+                    const isVideo = lesson.kind === 'video';
+                    const isQuiz = lesson.kind === 'quiz';
+                    const isCode = lesson.kind === 'code';
 
                     if (!lesson.title?.trim()) {
-                        toast.error("Ар бир сабакта аталыш болушу керек.");
+                        toast.error('Ар бир сабакта аталыш болушу керек.');
                         continue;
                     }
 
                     if (isVideo && !lesson.videoKey) {
-                        toast.error("Видео сабактар үчүн файл жүктөө керек.");
+                        toast.error('Видео сабактар үчүн файл жүктөө керек.');
                         continue;
                     }
 
                     if (isArticle) {
                         if (!lesson.content?.trim() || !lesson.duration || lesson.duration <= 0) {
-                            toast.error("Макала сабактары үчүн текст жана окуу убактысы талап кылынат.");
+                            toast.error(
+                                'Макала сабактары үчүн текст жана окуу убактысы талап кылынат.'
+                            );
                             continue;
                         }
                     }
@@ -448,8 +447,8 @@ const EditInstructorCourse = () => {
 
                     const lessonPayload = {
                         title: lesson.title.trim(),
-                        kind: lesson.kind || "video",
-                        content: isArticle ? (lesson.content?.trim() || undefined) : undefined,
+                        kind: lesson.kind || 'video',
+                        content: isArticle ? lesson.content?.trim() || undefined : undefined,
                         videoKey: isVideo ? lesson.videoKey : undefined,
                         resourceKey: lesson.resourceKey,
                         resourceName: lesson.resourceName?.trim() || undefined,
@@ -475,16 +474,21 @@ const EditInstructorCourse = () => {
                     }
 
                     if (isCode && savedLessonId && challengePayload) {
-                        await upsertLessonChallenge(id, section.id, savedLessonId, challengePayload);
+                        await upsertLessonChallenge(
+                            id,
+                            section.id,
+                            savedLessonId,
+                            challengePayload
+                        );
                     }
                 }
             }
 
-            toast.success("Мазмун сакталды!");
+            toast.success('Мазмун сакталды!');
             setStep(3);
         } catch (err) {
             console.error(err);
-            toast.error("Мазмунду сактоодо ката кетти.");
+            toast.error('Мазмунду сактоодо ката кетти.');
         } finally {
             setSaving(false);
         }
@@ -493,11 +497,11 @@ const EditInstructorCourse = () => {
     const handleSubmitForApproval = async () => {
         try {
             await markCoursePending(id);
-            toast.success("Курс модераторго жөнөтүлдү");
-            navigate("/instructor/courses");
+            toast.success('Курс модераторго жөнөтүлдү');
+            navigate('/instructor/courses');
         } catch (err) {
             console.error(err);
-            toast.error("Курс жөнөтүлбөй калды");
+            toast.error('Курс жөнөтүлбөй калды');
         }
     };
 
@@ -508,7 +512,7 @@ const EditInstructorCourse = () => {
             type: null,
             sectionIndex: null,
             lessonIndex: null,
-            lessonTitle: "",
+            lessonTitle: '',
         });
     };
 
@@ -517,17 +521,15 @@ const EditInstructorCourse = () => {
         JSON.stringify(sections) !== JSON.stringify(originalSections);
 
     const confirmCancel = () =>
-        isChanged() ? setShowCancelConfirm(true) : navigate("/instructor/courses");
+        isChanged() ? setShowCancelConfirm(true) : navigate('/instructor/courses');
 
-    const handleCancel = () => navigate("/instructor/courses");
+    const handleCancel = () => navigate('/instructor/courses');
 
     if (loading) return <div className="p-6">Жүктөлүүдө...</div>;
     if (!course) return <div className="p-6 text-red-500">Курс табылган жок</div>;
 
     const isUploading = sections.some((section) =>
-        section.lessons.some(
-            (lesson) => lesson.uploading?.video || lesson.uploading?.resource,
-        ),
+        section.lessons.some((lesson) => lesson.uploading?.video || lesson.uploading?.resource)
     );
 
     return (
@@ -535,27 +537,21 @@ const EditInstructorCourse = () => {
             <div className="flex gap-4 mb-6">
                 <button
                     onClick={() => setStep(1)}
-                    className={
-                        step === 1 ? "text-edubot-orange font-bold underline" : ""
-                    }
+                    className={step === 1 ? 'text-edubot-orange font-bold underline' : ''}
                 >
                     1. Маалымат
                 </button>
                 <button
                     onClick={() => setStep(2)}
                     disabled={!course}
-                    className={
-                        step === 2 ? "text-edubot-orange font-bold underline" : ""
-                    }
+                    className={step === 2 ? 'text-edubot-orange font-bold underline' : ''}
                 >
                     2. Мазмун
                 </button>
                 <button
                     onClick={() => setStep(3)}
                     disabled={!course}
-                    className={
-                        step === 3 ? "text-edubot-orange font-bold underline" : ""
-                    }
+                    className={step === 3 ? 'text-edubot-orange font-bold underline' : ''}
                 >
                     3. Превью
                 </button>
@@ -566,21 +562,21 @@ const EditInstructorCourse = () => {
                 <div className="space-y-4">
                     <input
                         name="title"
-                        value={course.title || ""}
+                        value={course.title || ''}
                         onChange={handleCourseChange}
                         placeholder="Курс аталышы"
                         className="w-full border p-2 rounded"
                     />
                     <input
                         name="subtitle"
-                        value={course.subtitle || ""}
+                        value={course.subtitle || ''}
                         onChange={handleCourseChange}
                         placeholder="Кыскача сүрөттөмө (подзаголовок)"
                         className="w-full border p-2 rounded"
                     />
                     <textarea
                         name="description"
-                        value={course.description || ""}
+                        value={course.description || ''}
                         onChange={handleCourseChange}
                         placeholder="Курс сүрөттөмөсү"
                         className="w-full border p-2 rounded"
@@ -588,7 +584,7 @@ const EditInstructorCourse = () => {
 
                     <select
                         name="categoryId"
-                        value={course.category.id || ""}
+                        value={course.category.id || ''}
                         onChange={handleCourseChange}
                         className="w-full border p-2 rounded"
                     >
@@ -602,13 +598,11 @@ const EditInstructorCourse = () => {
 
                     <div className="flex flex-col sm:flex-row gap-4">
                         <div className="flex-1">
-                            <label className="block text-sm mb-1">
-                                Курс баасы (сом)
-                            </label>
+                            <label className="block text-sm mb-1">Курс баасы (сом)</label>
                             <input
                                 name="price"
                                 type="number"
-                                value={course.price || ""}
+                                value={course.price || ''}
                                 onChange={handleCourseChange}
                                 placeholder="Курс баасы"
                                 className="w-full border p-2 rounded"
@@ -642,12 +636,10 @@ const EditInstructorCourse = () => {
                     </div>
 
                     <div>
-                        <label className="block text-sm mb-1">
-                            Сабак тили (Language)
-                        </label>
+                        <label className="block text-sm mb-1">Сабак тили (Language)</label>
                         <select
                             name="languageCode"
-                            value={course.languageCode || "ky"}
+                            value={course.languageCode || 'ky'}
                             onChange={handleCourseChange}
                             className="w-full border p-2 rounded"
                         >
@@ -663,10 +655,10 @@ const EditInstructorCourse = () => {
                         </label>
                         <textarea
                             name="learningOutcomesText"
-                            value={course.learningOutcomesText || ""}
+                            value={course.learningOutcomesText || ''}
                             onChange={handleCourseChange}
                             placeholder={
-                                "Мисалы:\n- UX негиздери\n- Figma менен иштөө\n- UI китепкана түзүү"
+                                'Мисалы:\n- UX негиздери\n- Figma менен иштөө\n- UI китепкана түзүү'
                             }
                             className="w-full border p-2 rounded text-sm min-h-[100px]"
                         />
@@ -694,10 +686,7 @@ const EditInstructorCourse = () => {
                         >
                             Сактоо жана улантуу
                         </button>
-                        <button
-                            onClick={confirmCancel}
-                            className="px-6 py-2 border rounded"
-                        >
+                        <button onClick={confirmCancel} className="px-6 py-2 border rounded">
                             Артка
                         </button>
                     </div>
@@ -708,10 +697,7 @@ const EditInstructorCourse = () => {
             {step === 2 && (
                 <div>
                     {sections.map((section, sIdx) => (
-                        <div
-                            key={sIdx}
-                            className="mb-6 border border-edubot-teal rounded p-4"
-                        >
+                        <div key={sIdx} className="mb-6 border border-edubot-teal rounded p-4">
                             <input
                                 className="w-full p-2 border rounded mb-2"
                                 value={section.title}
@@ -727,8 +713,8 @@ const EditInstructorCourse = () => {
                                             handleLessonFieldChange(
                                                 sIdx,
                                                 lIdx,
-                                                "title",
-                                                e.target.value,
+                                                'title',
+                                                e.target.value
                                             )
                                         }
                                         placeholder="Сабак аталышы"
@@ -739,13 +725,13 @@ const EditInstructorCourse = () => {
                                     </label>
                                     <select
                                         className="w-full p-2 mb-2 border rounded bg-white"
-                                        value={lesson.kind || "video"}
+                                        value={lesson.kind || 'video'}
                                         onChange={(e) =>
                                             handleLessonFieldChange(
                                                 sIdx,
                                                 lIdx,
-                                                "kind",
-                                                e.target.value,
+                                                'kind',
+                                                e.target.value
                                             )
                                         }
                                     >
@@ -756,19 +742,19 @@ const EditInstructorCourse = () => {
                                         ))}
                                     </select>
 
-                                    {lesson.kind === "article" && (
+                                    {lesson.kind === 'article' && (
                                         <>
                                             <label className="block mb-1 font-medium">
                                                 Макала тексти
                                             </label>
                                             <ArticleEditor
-                                                value={lesson.content || ""}
+                                                value={lesson.content || ''}
                                                 onChange={(val) =>
                                                     handleLessonFieldChange(
                                                         sIdx,
                                                         lIdx,
-                                                        "content",
-                                                        val,
+                                                        'content',
+                                                        val
                                                     )
                                                 }
                                                 placeholder="Сабактын негизги тексти"
@@ -783,17 +769,17 @@ const EditInstructorCourse = () => {
                                                 value={
                                                     lesson.duration && lesson.duration > 0
                                                         ? Math.round(lesson.duration / 60)
-                                                        : ""
+                                                        : ''
                                                 }
                                                 onChange={(e) => {
                                                     const minutes = Number(e.target.value);
                                                     handleLessonFieldChange(
                                                         sIdx,
                                                         lIdx,
-                                                        "duration",
+                                                        'duration',
                                                         Number.isFinite(minutes) && minutes > 0
                                                             ? minutes * 60
-                                                            : 0,
+                                                            : 0
                                                     );
                                                 }}
                                                 placeholder="мисалы: 5"
@@ -801,7 +787,7 @@ const EditInstructorCourse = () => {
                                         </>
                                     )}
 
-                                    {lesson.kind === "quiz" && (
+                                    {lesson.kind === 'quiz' && (
                                         <LessonQuizEditor
                                             quiz={lesson.quiz}
                                             onChange={(newQuiz) =>
@@ -810,20 +796,20 @@ const EditInstructorCourse = () => {
                                         />
                                     )}
 
-                                    {lesson.kind === "code" && (
+                                    {lesson.kind === 'code' && (
                                         <LessonChallengeEditor
                                             challenge={lesson.challenge}
                                             onChange={(newChallenge) =>
                                                 handleLessonChallengeChange(
                                                     sIdx,
                                                     lIdx,
-                                                    newChallenge,
+                                                    newChallenge
                                                 )
                                             }
                                         />
                                     )}
 
-                                    {lesson.kind === "video" && (
+                                    {lesson.kind === 'video' && (
                                         <>
                                             <label className="block mb-1 font-medium">
                                                 Видео жүктөө
@@ -836,8 +822,8 @@ const EditInstructorCourse = () => {
                                                         handleFileUpload(
                                                             sIdx,
                                                             lIdx,
-                                                            "video",
-                                                            e.target.files[0],
+                                                            'video',
+                                                            e.target.files[0]
                                                         )
                                                     }
                                                     className="w-full mb-2"
@@ -877,8 +863,8 @@ const EditInstructorCourse = () => {
                                                 handleFileUpload(
                                                     sIdx,
                                                     lIdx,
-                                                    "resource",
-                                                    e.target.files[0],
+                                                    'resource',
+                                                    e.target.files[0]
                                                 )
                                             }
                                             className="w-full mb-2"
@@ -911,13 +897,13 @@ const EditInstructorCourse = () => {
                                     <input
                                         type="text"
                                         className="w-full p-2 mb-2 border rounded"
-                                        value={lesson.resourceName || ""}
+                                        value={lesson.resourceName || ''}
                                         onChange={(e) =>
                                             handleLessonFieldChange(
                                                 sIdx,
                                                 lIdx,
-                                                "resourceName",
-                                                e.target.value,
+                                                'resourceName',
+                                                e.target.value
                                             )
                                         }
                                         placeholder="мисалы: Практикалык тапшырмалар.pdf"
@@ -927,7 +913,7 @@ const EditInstructorCourse = () => {
                                         Бул аталыш студенттерге көрсөтүлөт.
                                     </p>
 
-                                    {lesson.kind === "video" && (
+                                    {lesson.kind === 'video' && (
                                         <label className="flex items-center gap-2 mt-2">
                                             <input
                                                 type="checkbox"
@@ -936,8 +922,8 @@ const EditInstructorCourse = () => {
                                                     handleLessonFieldChange(
                                                         sIdx,
                                                         lIdx,
-                                                        "previewVideo",
-                                                        e.target.checked,
+                                                        'previewVideo',
+                                                        e.target.checked
                                                     )
                                                 }
                                             />
@@ -947,15 +933,12 @@ const EditInstructorCourse = () => {
 
                                     <button
                                         onClick={() => {
-                                            if (
-                                                sIdx === 0 &&
-                                                sections[sIdx].lessons.length === 1
-                                            ) {
-                                                toast.error("Кеминде бир сабак болушу керек.");
+                                            if (sIdx === 0 && sections[sIdx].lessons.length === 1) {
+                                                toast.error('Кеминде бир сабак болушу керек.');
                                                 return;
                                             }
                                             setConfirmDelete({
-                                                type: "lesson",
+                                                type: 'lesson',
                                                 sectionIndex: sIdx,
                                                 lessonIndex: lIdx,
                                                 lessonTitle: lesson?.title,
@@ -1000,16 +983,11 @@ const EditInstructorCourse = () => {
                     <div>
                         <p className="text-lg font-bold">{course.title}</p>
                         {course.subtitle && (
-                            <p className="text-sm text-gray-600 mb-1">
-                                {course.subtitle}
-                            </p>
+                            <p className="text-sm text-gray-600 mb-1">{course.subtitle}</p>
                         )}
                         <p>{course.description}</p>
                         <p className="italic text-gray-500">
-                            Баасы:{" "}
-                            {course.isPaid
-                                ? `${course.price} сом`
-                                : "Акысыз курс"}
+                            Баасы: {course.isPaid ? `${course.price} сом` : 'Акысыз курс'}
                         </p>
                         {course.coverImageUrl && (
                             <img
@@ -1022,12 +1000,10 @@ const EditInstructorCourse = () => {
 
                     {course.learningOutcomesText && (
                         <div>
-                            <h4 className="font-semibold mb-2">
-                                Бул курста эмнени үйрөнөсүз:
-                            </h4>
+                            <h4 className="font-semibold mb-2">Бул курста эмнени үйрөнөсүз:</h4>
                             <ul className="list-disc list-inside text-sm text-gray-700">
-                                {(course.learningOutcomesText || "")
-                                    .split("\n")
+                                {(course.learningOutcomesText || '')
+                                    .split('\n')
                                     .map((line) => line.trim())
                                     .filter(Boolean)
                                     .map((line, idx) => (
@@ -1044,7 +1020,7 @@ const EditInstructorCourse = () => {
                                 <ul className="list-disc list-inside text-sm text-gray-700">
                                     {section.lessons.map((lesson, lIdx) => (
                                         <li key={lIdx}>
-                                            {lesson.title}{" "}
+                                            {lesson.title}{' '}
                                             {lesson.previewVideo && (
                                                 <span className="text-xs text-green-600">
                                                     (Превью)
@@ -1079,9 +1055,7 @@ const EditInstructorCourse = () => {
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
                     <div className="bg-white p-6 rounded shadow max-w-sm w-full">
                         <h4 className="text-lg font-semibold mb-4">Ырастоо</h4>
-                        <p className="mb-6">
-                            Өзгөртүүлөр сакталбайт. Чын эле артка кайтасызбы?
-                        </p>
+                        <p className="mb-6">Өзгөртүүлөр сакталбайт. Чын эле артка кайтасызбы?</p>
                         <div className="flex justify-end gap-4">
                             <button
                                 onClick={handleCancel}
@@ -1116,7 +1090,7 @@ const EditInstructorCourse = () => {
                                         type: null,
                                         sectionIndex: null,
                                         lessonIndex: null,
-                                        lessonTitle: "",
+                                        lessonTitle: '',
                                     })
                                 }
                                 className="px-4 py-2 bg-gray-200 rounded"

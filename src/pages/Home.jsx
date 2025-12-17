@@ -1,39 +1,35 @@
-import React, { useState, useEffect, useContext } from "react";
-import { Link } from "react-router-dom";
-import { FaStar } from "react-icons/fa";
-import StickyButton from "../components/UI/StickyButton";
-import { fetchCourses } from "../services/api";
-import { AuthContext } from "../context/AuthContext";
-import Benefits from "../components/Benefits";
-import SectionContainer from "../components/SectionContainer";
-import Feedback from "../components/Feedback";
-import Evaluate from '../components/Evaluate';
-import HeroStart from "../components/HeroStart";
-import Apply from "../components/Apply";
-import Instructor from "../components/TopInstructors"
-import FAQ from "../components/FAQ";
-import TopCourses from "../components/TopCourses";
+import React, { useState, useEffect, useContext } from 'react';
+import { fetchTopCourses } from '@services/api';
+import { AuthContext } from '../context/AuthContext';
+import StickyButton from '@shared/ui/StickyButton';
+import { fetchTopCourses } from '@services/api';
+import Benefits from '@features/marketing/components/Benefits';
+import Feedback from '@features/marketing/components/Feedback';
+import HeroStart from '@features/marketing/components/HeroStart';
+import Apply from '@features/marketing/components/Apply';
+import Instructor from '@features/ratings/components/TopInstructors';
+import FAQ from '@features/marketing/components/FAQ';
+import TopCourses from '@features/courses/components/TopCourses';
+import { AuthContext } from '@app/providers';
 
 const HomePage = () => {
     const { user } = useContext(AuthContext);
     // const [cart, setCart] = useState([]);
     const [coursesData, setCoursesData] = useState([]);
-
     // const addToCart = (course) => {
     //     setCart([...cart, course]);
     // };
 
     useEffect(() => {
-        const loadCourses = async () => {
+        const loadTopCourses = async () => {
             try {
-                const data = await fetchCourses();
-                const filteredCourses = data.courses.filter((course) => course.isPublished);
-                setCoursesData(filteredCourses);
+                const data = await fetchTopCourses();
+                setCoursesData(data.items);
             } catch (err) {
-                console.error("Failed to fetch courses", err);
+                console.error('Failed to fetch courses', err);
             }
         };
-        loadCourses();
+        loadTopCourses();
     }, []);
 
     return (

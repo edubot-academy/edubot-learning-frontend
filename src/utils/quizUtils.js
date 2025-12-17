@@ -18,40 +18,40 @@ export const createEmptyQuiz = () => ({
     questions: [createEmptyQuestion()],
 });
 
-export const cloneQuiz = (quiz) =>
-    JSON.parse(JSON.stringify(quiz ?? createEmptyQuiz()));
+export const cloneQuiz = (quiz) => JSON.parse(JSON.stringify(quiz ?? createEmptyQuiz()));
 
 export const normalizeQuizForApi = (quiz) => {
     if (!quiz) return null;
 
     const passingScore = clamp(
-        Number.isFinite(Number(quiz.passingScore))
-            ? Number(quiz.passingScore)
-            : 0,
+        Number.isFinite(Number(quiz.passingScore)) ? Number(quiz.passingScore) : 0,
         0,
-        100,
+        100
     );
 
     const timeLimitSecondsRaw = Number(quiz.timeLimitSeconds);
-    const timeLimitSeconds = Number.isFinite(timeLimitSecondsRaw) && timeLimitSecondsRaw > 0
-        ? Math.round(timeLimitSecondsRaw)
-        : undefined;
+    const timeLimitSeconds =
+        Number.isFinite(timeLimitSecondsRaw) && timeLimitSecondsRaw > 0
+            ? Math.round(timeLimitSecondsRaw)
+            : undefined;
 
-    const questions = (quiz.questions || []).map((question, qIdx) => {
-        const options = (question.options || [])
-            .map((option, oIdx) => ({
-                text: (option.text || '').trim(),
-                isCorrect: Boolean(option.isCorrect),
-                order: oIdx,
-            }))
-            .filter((option) => option.text.length > 0);
+    const questions = (quiz.questions || [])
+        .map((question, qIdx) => {
+            const options = (question.options || [])
+                .map((option, oIdx) => ({
+                    text: (option.text || '').trim(),
+                    isCorrect: Boolean(option.isCorrect),
+                    order: oIdx,
+                }))
+                .filter((option) => option.text.length > 0);
 
-        return {
-            prompt: (question.prompt || '').trim(),
-            order: qIdx,
-            options,
-        };
-    }).filter((q) => q.prompt && q.options.length >= 2);
+            return {
+                prompt: (question.prompt || '').trim(),
+                order: qIdx,
+                options,
+            };
+        })
+        .filter((q) => q.prompt && q.options.length >= 2);
 
     return {
         passingScore,
