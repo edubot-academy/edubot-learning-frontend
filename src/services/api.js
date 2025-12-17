@@ -13,3 +13,4 @@ export * from '../features/contact/api';
 export * from '../features/payments/api';
 export * from '../features/ratings/api';
 export * from '../features/search/api';
+export * from '../features/cart/api';

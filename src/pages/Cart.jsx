@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import Button from '@shared-ui/Button';
+import toast from 'react-hot-toast';
 
 // Импортируем иконки из react-icons
 import { 
@@ -42,9 +43,30 @@ const Cart = () => {
   };
 
   const handleClearCart = () => {
-    if (window.confirm('Вы уверены, что хотите очистить корзину?')) {
-      clearCart();
-    }
+    const toastId = toast.custom((t) => (
+      <div className={`bg-white shadow-lg rounded-lg p-4 border border-gray-200 max-w-sm ${t.visible ? 'animate-enter' : 'animate-leave'}`}>
+        <p className="text-sm text-gray-800 font-medium">Очистить корзину?</p>
+        <p className="text-xs text-gray-500 mt-1">Все товары будут удалены.</p>
+        <div className="flex justify-end gap-2 mt-3">
+          <button
+            onClick={() => toast.dismiss(toastId)}
+            className="px-3 py-1 text-sm text-gray-600 hover:text-gray-800"
+          >
+            Отмена
+          </button>
+          <button
+            onClick={() => {
+              clearCart();
+              toast.dismiss(toastId);
+              toast.success('Корзина очищена');
+            }}
+            className="px-3 py-1 text-sm bg-orange-500 text-white rounded hover:bg-orange-600"
+          >
+            Очистить
+          </button>
+        </div>
+      </div>
+    ), { duration: 4000 });
   };
 
   const handleContinueShopping = () => {
