@@ -28,6 +28,7 @@ import LessonChallengePlayer from '@features/courses/components/LessonChallengeP
 import CourseDescription from '@features/courses/components/CourseDescription';
 import Comment from '@features/ratings/components/Comment';
 import AiAssistantPanel from '@features/assistant/components/AiAssistantPanel';
+import InstructorsInfo from '@features/courses/components/InstructorsInfo';
 
 const CHALLENGE_STORAGE_PREFIX = 'lessonChallengeState';
 
@@ -820,6 +821,8 @@ const CourseDetailsPage = () => {
                         )}
                     </div>
                 </div>
+
+                <InstructorsInfo instructorData={course.instructor} />
 
                 <Comment courseId={id} />
 
