@@ -23,9 +23,11 @@ import {
     deleteCourseAiPrompt,
 } from '@services/api';
 import { Link, useSearchParams } from 'react-router-dom';
-import { FiUsers, FiBookOpen, FiMail, FiClock, FiBriefcase, FiCpu } from 'react-icons/fi';
+import { FiUsers, FiBookOpen, FiMail, FiClock, FiBriefcase, FiCpu, FiBell } from 'react-icons/fi';
 import DashboardSidebar from '@features/dashboard/components/DashboardSidebar';
 import toast from 'react-hot-toast';
+import NotificationsWidget from '@features/notifications/components/NotificationsWidget';
+import NotificationsTab from '@features/notifications/components/NotificationsTab';
 
 const AdminPanel = () => {
     const [courses, setCourses] = useState([]);
@@ -62,7 +64,7 @@ const AdminPanel = () => {
     const [dateFrom, setDateFrom] = useState(searchParams.get('dateFrom') || '');
     const [dateTo, setDateTo] = useState(searchParams.get('dateTo') || '');
 
-    const [activeTab, setActiveTab] = useState('users'); // users | courses | contacts | pending | companies | ai-prompts
+    const [activeTab, setActiveTab] = useState('users'); // users | courses | contacts | pending | companies | ai-prompts | notifications
 
     const NAV_ITEMS = [
         { id: 'users', label: 'Колдонуучулар', icon: FiUsers },
@@ -71,6 +73,7 @@ const AdminPanel = () => {
         { id: 'pending', label: 'Каралуудагы курстар', icon: FiClock },
         { id: 'companies', label: 'Компаниялар', icon: FiBriefcase },
         { id: 'ai-prompts', label: 'AI сунуштары', icon: FiCpu },
+        { id: 'notifications', label: 'Билдирүүлөр', icon: FiBell },
     ];
 
     const updateSearchParams = useCallback(
@@ -443,6 +446,8 @@ const AdminPanel = () => {
                             {sidebarOpen ? 'Менюну жашыруу' : 'Менюну көрсөтүү'}
                         </button>
                     </div>
+                    <NotificationsWidget />
+                    {activeTab === 'notifications' && <NotificationsTab />}
 
                     {activeTab === 'contacts' && (
                         <div className="bg-white shadow rounded p-4">

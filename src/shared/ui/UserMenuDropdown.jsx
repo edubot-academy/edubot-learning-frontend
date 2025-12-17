@@ -1,5 +1,5 @@
 import React, { useContext } from 'react';
-import { Link } from 'react-router-dom'; 
+import { Link } from 'react-router-dom';
 import Lamp from '@assets/icons/lamp.svg';
 import Bell from '@assets/icons/call.svg';
 import Basket from '@assets/icons/basket.svg';
@@ -8,10 +8,10 @@ import Setting from '@assets/icons/seting.svg';
 import Profile from '@assets/icons/profile.svg';
 import ArrowRight from '@assets/icons/arrowRight.svg';
 import { LuLogOut } from 'react-icons/lu';
-// import { AuthContext } from '../../../context/AuthContext';
+import { AuthContext } from '../../context/AuthContext';
 
 function UserMenuDropdown({ user, onClose }) {
-    // const { logout } = useContext(AuthContext);
+    const { logout } = useContext(AuthContext);
 
     const getDashboardPath = () => {
         if (!user) return '/dashboard';
@@ -32,9 +32,18 @@ function UserMenuDropdown({ user, onClose }) {
 
     const dashboardPath = getDashboardPath();
 
+    const notificationsPath =
+        user?.role === 'student'
+            ? '/student?tab=notifications'
+            : user?.role === 'instructor'
+              ? '/instructor?tab=notifications'
+              : user?.role === 'admin'
+                ? '/admin?tab=notifications'
+                : '/dashboard';
+
     const menuItemsTop = [
         { label: 'Менин курстарым', icon: Lamp, path: '/my-courses' },
-        { label: 'Билдирүүлөр', icon: Bell, path: '/notifications' },
+        { label: 'Билдирүүлөр', icon: Bell, path: notificationsPath },
         { label: 'Корзина', icon: Basket, path: '/cart' },
         { label: 'Избранные', icon: Heart, path: '/favorites' },
         { label: 'Настройка', icon: Setting, path: '/settings' },
@@ -113,20 +122,13 @@ function UserMenuDropdown({ user, onClose }) {
                                 </div>
                             );
 
-                            // Если есть path, оборачиваем в Link
                             if (item.path) {
                                 return (
-                                    <Link
-                                        key={index}
-                                        to={item.path}
-                                        onClick={handleItemClick}
-                                    >
+                                    <Link key={index} to={item.path} onClick={handleItemClick}>
                                         {content}
                                     </Link>
                                 );
                             }
-
-                            // Иначе просто div
                             return (
                                 <div key={index}>
                                     {content}
@@ -147,13 +149,13 @@ function UserMenuDropdown({ user, onClose }) {
                                 text-[0.85rem] sm:text-[0.8rem]
                                 text-red-600
                                 hover:bg-red-50
-                                transition-colors duration-200
                                 rounded-lg
                             "
                         >
-                            {/* Исправлено: LuLogOut это компонент, а не путь к изображению */}
-                            <LuLogOut className="w-[1.2rem] h-[1.2rem]" />
-                            <span>Logout</span>
+                            <LuLogOut className="text-lg" />
+                            <span className="whitespace-nowrap overflow-hidden text-ellipsis">
+                                Чыгуу
+                            </span>
                         </button>
                     </div>
                 </div>
