@@ -214,7 +214,7 @@ const Header = () => {
                     </div>
 
                     {/* Navigation Links - Desktop */}
-                    <div className="flex items-center space-x-6 mx-6">
+                    <div className="hidden items-center space-x-6 mx-6 xl:flex">
                         <NavLinks isMobile={false} user={user} />
                     </div>
 
@@ -257,8 +257,10 @@ const Header = () => {
                         {/* User Actions  */}
                         {user ? (
                             <div className="flex items-center gap-3">
-                                <img src={BlackHeart} className="w-9 h-9" />
-                                <img src={BlackBasket} className="w-9 h-9" />
+                                <Link to="/favourite">
+                                    <img src={BlackHeart} className="w-9 h-9 cursor-pointer" />
+                                </Link>
+                                <img src={BlackBasket} className="w-9 h-9 cursor-pointer" />
 
                                 <div className="relative group">
                                     <img src={BlackPerson} className="w-9 h-9 cursor-pointer" />
@@ -280,6 +282,16 @@ const Header = () => {
                                 </button>
                             </Link>
                         )}
+
+                        <button
+                            onClick={() => {
+                                setMenuOpen(true);
+                                setPositionBar(false);
+                            }}
+                            className="text-gray-700 dark:text-gray-700 text-2xl xl:hidden"
+                        >
+                            <FaBars />
+                        </button>
                     </div>
                 </div>
 
