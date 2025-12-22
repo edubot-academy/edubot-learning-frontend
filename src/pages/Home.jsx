@@ -1,7 +1,6 @@
-import React, { useState, useEffect, useContext } from 'react';
-// import StickyButton from '@shared-ui/UI/StickyButton';
+import React, { useState, useEffect } from 'react';
+import StickyButton from '@shared/ui/StickyButton';
 import { fetchTopCourses } from '@services/api';
-import { AuthContext } from '../context/AuthContext';
 import Benefits from '@features/marketing/components/Benefits';
 import Feedback from '@features/marketing/components/Feedback';
 import HeroStart from '@features/marketing/components/HeroStart';
@@ -11,13 +10,7 @@ import FAQ from '@features/marketing/components/FAQ';
 import TopCourses from '@features/courses/components/TopCourses';
 
 const HomePage = () => {
-    const { user } = useContext(AuthContext);
-    // const [cart, setCart] = useState([]);
     const [coursesData, setCoursesData] = useState([]);
-
-    // const addToCart = (course) => {
-    //     setCart([...cart, course]);
-    // };
 
     useEffect(() => {
         const loadTopCourses = async () => {
@@ -34,13 +27,12 @@ const HomePage = () => {
     return (
         <div>
             <HeroStart />
-            {/* <StickyButton /> */}
+            <StickyButton />
             <Benefits />
             <TopCourses coursesData={coursesData} />
             <Instructor />
             <Apply />
             <Feedback />
-            {/* <Evaluate /> */}
             <FAQ />
         </div>
     );

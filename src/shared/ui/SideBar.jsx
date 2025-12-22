@@ -1,17 +1,16 @@
+import { useContext } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import Button from './Button';
 import { FaTimes } from 'react-icons/fa';
+import { AuthContext } from '@app/providers';
+import Button from './Button';
 import Person from '@assets/icons/grayPerson.svg';
 import BlackHeart from '@assets/icons/baseHeart.svg';
-import BlubIcon from '@assets/icons/blub.svg';
 import BellIcon from '@assets/icons/bell.svg';
 import BasketIcon from '@assets/icons/baseBasket.svg';
 import SettingIcon from '@assets/icons/setting.svg';
-import { useContext } from 'react';
-import { AuthContext } from '../../context/AuthContext';
 
 const SideBar = ({ setMenuOpen, setPosition }) => {
-    const { user } = useContext(AuthContext);
+    const { user, setUser } = useContext(AuthContext);
     const location = useLocation();
     const navigate = useNavigate();
 
@@ -42,6 +41,12 @@ const SideBar = ({ setMenuOpen, setPosition }) => {
         setPosition(false);
     };
 
+    const logout = () => {
+        setUser(null);
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        window.location.href = '/login';
+    };
     return (
         <>
             <div className="flex justify-end mt-5 mr-2 ">
@@ -123,7 +128,18 @@ const SideBar = ({ setMenuOpen, setPosition }) => {
                     <Link to="/contact" className={`${active('/contact')}  ${linkClass}`}>
                         Байланышуу
                     </Link>
-                    {user !== null ? null : (
+                    {user !== null ? (
+                        <>
+                            <button
+                                className={`${linkClass} mt-0.5`}
+                                onClick={() => {
+                                    logout();
+                                }}
+                            >
+                                Чыгуу
+                            </button>
+                        </>
+                    ) : (
                         <Link to="/register" className={`${active('/register')} ${linkClass}`}>
                             Катталуу
                         </Link>

@@ -28,6 +28,8 @@ import LessonChallengePlayer from '@features/courses/components/LessonChallengeP
 import CourseDescription from '@features/courses/components/CourseDescription';
 import Comment from '@features/ratings/components/Comment';
 import AiAssistantPanel from '@features/assistant/components/AiAssistantPanel';
+import InstructorsInfo from '@features/courses/components/InstructorsInfo';
+import CourseReview from '@features/courses/components/CourseReview';
 
 const CHALLENGE_STORAGE_PREFIX = 'lessonChallengeState';
 
@@ -680,7 +682,8 @@ const CourseDetailsPage = () => {
     if (!course) return <div>Курс табылган жок</div>;
 
     const { prev: prevLesson, next: nextLesson } = findPrevNextLessons();
-    const totalLessons = sections.reduce((count, sec) => count + (sec.lessons?.length || 0), 0);
+    const totalLessons =
+        course?.lessonCount || sections.reduce((count, sec) => count + (sec.lessons?.length || 0), 0);
     const progress =
         totalLessons > 0 ? Math.round((completedLessons.length / totalLessons) * 100) : 0;
 
@@ -722,7 +725,7 @@ const CourseDetailsPage = () => {
         </div>
     );
 
-    const lessonCount = sections.reduce((count, sec) => count + (sec.lessons?.length || 0), 0);
+    const lessonCount = course?.lessonCount ?? sections.reduce((count, sec) => count + (sec.lessons?.length || 0), 0);
 
     return (
         <div className="min-h-screen pt-24 bg-[#f8f9fb]">
@@ -820,6 +823,14 @@ const CourseDetailsPage = () => {
                         )}
                     </div>
                 </div>
+
+                <InstructorsInfo instructorData={course.instructor} />
+
+                <CourseReview
+                    ratingAverage={course.ratingAverage}
+                    ratingCount={course.ratingCount}
+                    ratingBreakdown={course?.ratingBreakdown}
+                />
 
                 <Comment courseId={id} />
 
