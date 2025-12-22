@@ -241,7 +241,7 @@ const Header = () => {
                     </div>
 
                     {/* Navigation Links - Desktop */}
-                    <div className="flex items-center space-x-6 mx-6">
+                    <div className="hidden items-center space-x-6 mx-6 xl:flex">
                         <NavLinks isMobile={false} user={user} />
                     </div>
 
@@ -343,6 +343,16 @@ const Header = () => {
                                 </button>
                             </Link>
                         )}
+
+                        <button
+                            onClick={() => {
+                                setMenuOpen(true);
+                                setPositionBar(false);
+                            }}
+                            className="text-gray-700 dark:text-gray-700 text-2xl xl:hidden"
+                        >
+                            <FaBars />
+                        </button>
                     </div>
                 </div>
 
