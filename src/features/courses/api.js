@@ -12,6 +12,18 @@ export const fetchCourses = async ({ q = '', limit = 20, excludeIds = '' } = {})
     }
 };
 
+export const fetchCatalogCourses = async ({ page = 1, limit = 20, q = '' } = {}) => {
+    try {
+        const response = await api.get('/courses/catalog', {
+            params: clean({ page, limit, q }),
+        });
+        return response.data;
+    } catch (error) {
+        console.error('Error fetching catalog courses:', error);
+        throw error;
+    }
+};
+
 export const fetchCoursePreview = async (courseId) => {
     const response = await api.get(`/courses/${courseId}/preview`);
     return response.data;
