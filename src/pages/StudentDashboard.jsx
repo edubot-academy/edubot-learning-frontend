@@ -1,6 +1,5 @@
 import { useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import DashboardSidebar from '@features/dashboard/components/DashboardSidebar';
-import NotificationsWidget from '@features/notifications/components/NotificationsWidget';
 import {
     fetchStudentCourses,
     fetchStudentDashboardSummary,
@@ -498,11 +497,11 @@ const ScheduleTab = ({ offerings }) => {
                         offering.date ||
                         (offering.startAt
                             ? new Date(offering.startAt).toLocaleString('ru-RU', {
-                                  day: '2-digit',
-                                  month: 'short',
-                                  hour: '2-digit',
-                                  minute: '2-digit',
-                              })
+                                day: '2-digit',
+                                month: 'short',
+                                hour: '2-digit',
+                                minute: '2-digit',
+                            })
                             : 'Белгисиз убакыт');
                     const modality = offering.modality || offering.modalityLabel || '';
                     return (
@@ -562,11 +561,10 @@ const TasksTab = ({ tasks }) => (
                                 </td>
                                 <td className="px-4 py-3">
                                     <span
-                                        className={`px-3 py-1 rounded-full text-xs ${
-                                            task.status === 'completed'
+                                        className={`px-3 py-1 rounded-full text-xs ${task.status === 'completed'
                                                 ? 'bg-green-100 text-green-700'
                                                 : 'bg-amber-100 text-amber-700'
-                                        }`}
+                                            }`}
                                     >
                                         {task.status === 'completed' ? 'Жабылган' : 'Күтүүдө'}
                                     </span>
