@@ -12,6 +12,17 @@ export const fetchCourses = async ({ q = '', limit = 20, excludeIds = '' } = {})
     }
 };
 
+export const fetchCoursePreview = async (courseId) => {
+    const response = await api.get(`/courses/${courseId}/preview`);
+    return response.data;
+};
+
+export const fetchTopReviews = async ({ courseId, limit = 3 }) => {
+    console.log('courseId', courseId);
+    const response = await api.get(`/courses/${courseId}/reviews/top`, { params: { limit } });
+    return response.data;
+};
+
 export const fetchCourseDetails = async (courseId) => {
     const response = await api.get(`/courses/${courseId}`);
     return response.data;
