@@ -1,8 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import CardIcon from '@assets/icons/cardvektor.svg';
 import Button from '@shared-ui/Button';
 import { useCart } from '../../../context/CartContext';
+import { AuthContext } from '@app/providers';
+import AuthRequiredModal from '../components/AuthRequiredModal';
+
 const CardCourse = ({
     coverImageUrl,
     title,
@@ -16,13 +19,20 @@ const CardCourse = ({
     lessonCount,
 }) => {
     const [showPopup, setShowPopup] = useState(false);
+    const [showAuthModal, setShowAuthModal] = useState(false);
     const navigate = useNavigate();
-    const { addToCart, isInCart } = useCart(); // Теперь useCart определен
+    const { addToCart, isInCart } = useCart();
+    const { user } = useContext(AuthContext);
     const courseAlreadyInCart = isInCart(id);
 
     const handleButtonClick = (e) => {
         e.stopPropagation();
         e.preventDefault();
+
+        if (!user) {
+            setShowAuthModal(true);
+            return;
+        }
 
         if (courseAlreadyInCart) {
             navigate("/cart");
@@ -127,7 +137,13 @@ const CardCourse = ({
                 </div>
             </Link>
 
-            {/* Попап */}
+            <AuthRequiredModal
+                isOpen={showAuthModal}
+                onClose={() => setShowAuthModal(false)}
+                title={`"${title}" курсу`}
+                description="Курсту корзинага кошуу үчүн системага кириңиз же жаңы аккаунт түзүңүз"
+            />
+
             {showPopup && (
                 <>
                     <div
