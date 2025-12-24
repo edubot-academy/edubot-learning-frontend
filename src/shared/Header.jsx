@@ -18,7 +18,6 @@ import SideBar from '@shared-ui/SideBar';
 import SidebarOverlay from '@shared-ui/SidebarOverlay';
 import UserMenuDropdown from '@shared-ui/UserMenuDropdown';
 import { useCart } from '../context/CartContext';
-import AuthRequiredModal from '../features/courses/components/AuthRequiredModal';
 
 const NavLinks = ({ isMobile, user }) => {
     const location = useLocation();
@@ -70,11 +69,10 @@ const NavLinks = ({ isMobile, user }) => {
 };
 
 const Header = () => {
-  const { getUniqueItemsCount, user: cartUser } = useCart();
-  const { user } = useContext(AuthContext);
-  const currentUser = user || cartUser;
-  const cartItemsCount = currentUser ? getUniqueItemsCount() : 0;
+  const { getUniqueItemsCount } = useCart();
+  const cartItemsCount = getUniqueItemsCount(); // Счетчик для всех
   
+  const { user } = useContext(AuthContext);
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -86,7 +84,6 @@ const Header = () => {
   const [dark, setDark] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const [showAuthModal, setShowAuthModal] = useState(false);
   const [activeIcon, setActiveIcon] = useState(null);
 
   const langRef = useRef(null);
@@ -160,26 +157,15 @@ const Header = () => {
 
   const handleIconClick = (iconName, callback) => {
     setActiveIcon(iconName);
-    
-    if (iconName === 'cart' && !currentUser) {
-      setShowAuthModal(true);
-      return;
-    }
-    
     if (callback) callback();
   };
 
   return (
     <header className="sticky top-0 w-full bg-white dark:bg-white shadow z-50">
-      <AuthRequiredModal
-        isOpen={showAuthModal}
-        onClose={() => setShowAuthModal(false)}
-        title="Корзина"
-        description="Корзинаңызды көрүү үчүн системага кириңиз же жаңы аккаунт түзүңүз"
-      />
-      
       <div className="px-4 md:px-10 py-3">
+        {/* Desktop Layout */}
         <div className="hidden lg:flex items-center justify-between">
+          {/* Logo + Search */}
           <div className="flex items-center flex-1">
             <Link to="/" className="flex items-center">
               <div className="h-16 w-16 md:h-20 md:w-20">
@@ -197,6 +183,7 @@ const Header = () => {
               </div>
             </Link>
 
+            {/* Search Bar - Desktop */}
             <div
               className="flex items-center border rounded overflow-hidden hover:border-[#F06743]  flex-1 max-w-xs ml-6 border-[#7B818C] dark:border-[#7B818C]"
               ref={searchContainerRef}
@@ -211,6 +198,7 @@ const Header = () => {
                 className="px-3 py-2 focus:outline-none bg-transparent w-full text-base dark:text-gray-700"
               />
 
+              {/* Search Dropdown */}
               {showDropdown && (
                 <div className="absolute top-full mt-2 w-full mt-[-24px] max-w-xs bg-white border-[border: 1px solid oklch(86.72% .0192 282.72deg);] dark:bg-white shadow-xl   z-50 max-h-64 overflow-y-auto">
                   {results.length > 0 ? (
@@ -244,11 +232,14 @@ const Header = () => {
             </div>
           </div>
 
+          {/* Navigation Links - Desktop */}
           <div className="flex items-center space-x-6 mx-6">
-            <NavLinks isMobile={false} user={currentUser} />
+            <NavLinks isMobile={false} user={user} />
           </div>
 
+          {/* Right Side Actions - Desktop */}
           <div className="flex items-center space-x-4">
+            {/* Language Selector */}
             <div className="relative" ref={langRef}>
               <button
                 onClick={() => setLangOpen((p) => !p)}
@@ -283,8 +274,10 @@ const Header = () => {
               <ThemeToggle dark={dark} setDark={setDark} />
             </div>
 
-            {currentUser ? (
+            {/* User Actions */}
+            {user ? (
               <div className="flex items-center gap-3">
+                {/* Иконка сердца */}
                 <button
                   className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-300 ${
                     activeIcon === 'heart'
@@ -298,6 +291,58 @@ const Header = () => {
                   }`} />
                 </button>
 
+                {/* Иконка корзины */}
+                <div className="relative">
+                  <button
+                    className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-300 ${
+                      activeIcon === 'cart' || location.pathname === '/cart'
+                        ? 'bg-orange-500 border-orange-500'
+                        : 'border-black hover:border-gray-600'
+                    }`}
+                    onClick={() => handleIconClick('cart', () => navigate('/cart'))}
+                  >
+                    <BsCart2 className={`w-5 h-5 transition-colors duration-300 ${
+                      activeIcon === 'cart' || location.pathname === '/cart' ? 'text-white' : 'text-black'
+                    }`} />
+                    
+                    {/* Бейдж с количеством - показывается всегда если есть товары */}
+                    {cartItemsCount > 0 && (
+                      <span className="absolute -top-1 -right-1 bg-orange-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-medium">
+                        {cartItemsCount}
+                      </span>
+                    )}
+                  </button>
+                </div>
+
+                {/* Иконка пользователя */}
+                <div className="relative group">
+                  <button
+                    className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-300 ${
+                      activeIcon === 'user' || userMenuOpen
+                        ? 'bg-orange-500 border-orange-500'
+                        : 'border-black hover:border-gray-600'
+                    }`}
+                    onClick={() => {
+                      handleIconClick('user');
+                      setUserMenuOpen(!userMenuOpen);
+                    }}
+                  >
+                    <FaRegUser className={`w-5 h-5 transition-colors duration-300 ${
+                      activeIcon === 'user' || userMenuOpen ? 'text-white' : 'text-black'
+                    }`} />
+                  </button>
+
+                  <div className="absolute top-full right-0 pt-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible lg:group-hover:opacity-100 lg:group-hover:visible transform translate-y-2 group-hover:translate-y-0 transition-all duration-300 ease-out z-50">
+                    <div className="relative">
+                      <div className="absolute -top-2 left-0 right-0 h-2 bg-transparent"></div>
+                      <UserMenuDropdown user={user} onClose={() => {}} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center gap-3">
+                {/* Иконка корзины для неавторизованных */}
                 <div className="relative">
                   <button
                     className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-300 ${
@@ -319,43 +364,21 @@ const Header = () => {
                   </button>
                 </div>
 
-                <div className="relative group">
-                  <button
-                    className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-300 ${
-                      activeIcon === 'user' || userMenuOpen
-                        ? 'bg-orange-500 border-orange-500'
-                        : 'border-black hover:border-gray-600'
-                    }`}
-                    onClick={() => {
-                      handleIconClick('user');
-                      setUserMenuOpen(!userMenuOpen);
-                    }}
-                  >
-                    <FaRegUser className={`w-5 h-5 transition-colors duration-300 ${
-                      activeIcon === 'user' || userMenuOpen ? 'text-white' : 'text-black'
-                    }`} />
+                <Link to="/register">
+                  <button className="bg-orange-500 text-white px-4 py-2 rounded hover:bg-orange-600 transition-colors">
+                    Катталуу
                   </button>
-
-                  <div className="absolute top-full right-0 pt-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible lg:group-hover:opacity-100 lg:group-hover:visible transform translate-y-2 group-hover:translate-y-0 transition-all duration-300 ease-out z-50">
-                    <div className="relative">
-                      <div className="absolute -top-2 left-0 right-0 h-2 bg-transparent"></div>
-                      <UserMenuDropdown user={currentUser} onClose={() => {}} />
-                    </div>
-                  </div>
-                </div>
+                </Link>
               </div>
-            ) : (
-              <Link to="/register">
-                <button className="bg-orange-500 text-white px-4 py-2 rounded hover:bg-orange-600 transition-colors">
-                  Катталуу
-                </button>
-              </Link>
             )}
           </div>
         </div>
 
+        {/* Mobile Layout */}
         <div className="lg:hidden">
+          {/* Top Row - Burger Menu, Logo, Search Icon */}
           <div className="flex items-center justify-between">
+            {/* Burger Menu - Left */}
             <button
               onClick={() => {
                 setMenuOpen(true);
@@ -366,6 +389,7 @@ const Header = () => {
               <FaBars />
             </button>
 
+            {/* Logo - Center */}
             <Link to="/" className="flex flex-col items-center">
               <div className="h-12 w-12">
                 <img
@@ -382,7 +406,9 @@ const Header = () => {
               </div>
             </Link>
 
+            {/* Right Side - Search + Cart */}
             <div className="flex items-center gap-3">
+              {/* Search Icon */}
               <button
                 onClick={() => setSearchOpen(!searchOpen)}
                 className="text-gray-700 dark:text-gray-700 text-2xl"
@@ -390,7 +416,30 @@ const Header = () => {
                 <IoSearch />
               </button>
 
-              {currentUser && (
+              {/* Корзина для мобильных - для всех */}
+              <div className="relative">
+                <button
+                  className={`w-9 h-9 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${
+                    activeIcon === 'cart' || location.pathname === '/cart'
+                      ? 'bg-orange-500 border-orange-500'
+                      : 'border-black hover:border-gray-600'
+                  }`}
+                  onClick={() => handleIconClick('cart', () => navigate('/cart'))}
+                >
+                  <BsCart2 className={`w-4 h-4 transition-colors duration-300 ${
+                    activeIcon === 'cart' || location.pathname === '/cart' ? 'text-white' : 'text-black'
+                  }`} />
+                  
+                  {cartItemsCount > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-orange-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-medium">
+                      {cartItemsCount}
+                    </span>
+                  )}
+                </button>
+              </div>
+
+              {/* User Icon for Mobile - только для авторизованных */}
+              {user && (
                 <div className="relative">
                   <button
                     className={`w-9 h-9 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${
@@ -405,10 +454,11 @@ const Header = () => {
                     }`} />
                   </button>
 
+                  {/* Mobile User Dropdown */}
                   {userMenuOpen && (
                     <div className="absolute right-0 top-full mt-2 z-50">
                       <UserMenuDropdown
-                        user={currentUser}
+                        user={user}
                         onClose={() => setUserMenuOpen(false)}
                       />
                     </div>
@@ -418,6 +468,7 @@ const Header = () => {
             </div>
           </div>
 
+          {/* Mobile Search Input */}
           {searchOpen && (
             <div className="mt-3" ref={searchContainerRef}>
               <div className="flex items-center border rounded overflow-hidden border-[#7B818C] dark:border-[#7B818C]">
@@ -432,6 +483,7 @@ const Header = () => {
                 />
               </div>
 
+              {/* Mobile Search Dropdown */}
               {showDropdown && (
                 <div className="absolute left-0 right-0 mt-1 mx-4 z-50">
                   {results.length > 0 ? (
@@ -468,46 +520,20 @@ const Header = () => {
             </div>
           )}
 
-          {currentUser && searchOpen === false && (
-            <div className="flex justify-center gap-4 mt-3">
-              <button
-                className={`w-10 h-10 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${
-                  activeIcon === 'heart'
-                    ? 'bg-orange-500 border-orange-500'
-                    : 'border-black hover:border-gray-600'
-                }`}
-                onClick={() => handleIconClick('heart')}
-              >
-                <IoHeartOutline className={`w-5 h-5 transition-colors duration-300 ${
-                  activeIcon === 'heart' ? 'text-white' : 'text-black'
-                }`} />
-              </button>
-
-              <div className="relative">
-                <button
-                  className={`w-10 h-10 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${
-                    activeIcon === 'cart' || location.pathname === '/cart'
-                      ? 'bg-orange-500 border-orange-500'
-                      : 'border-black hover:border-gray-600'
-                  }`}
-                  onClick={() => handleIconClick('cart', () => currentUser ? navigate('/cart') : setShowAuthModal(true))}
-                >
-                  <BsCart2 className={`w-5 h-5 transition-colors duration-300 ${
-                    activeIcon === 'cart' || location.pathname === '/cart' ? 'text-white' : 'text-black'
-                  }`} />
-                  
-                  {cartItemsCount > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-orange-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-medium">
-                      {cartItemsCount}
-                    </span>
-                  )}
+          {/* Кнопка регистрации для неавторизованных на мобильных */}
+          {!user && searchOpen === false && (
+            <div className="mt-3 flex justify-center">
+              <Link to="/register" className="w-full max-w-xs">
+                <button className="w-full bg-orange-500 text-white py-2 rounded hover:bg-orange-600 transition-colors font-medium">
+                  Катталуу
                 </button>
-              </div>
+              </Link>
             </div>
           )}
         </div>
       </div>
 
+      {/* SideBar Overlays */}
       <SidebarOverlay isOpen={menuOpen} onClose={() => setMenuOpen(false)} position="left">
         <SideBar
           setMenuOpen={setMenuOpen}

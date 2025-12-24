@@ -47,14 +47,14 @@ export const CartProvider = ({ children }) => {
   }, []);
 
   const mergeGuestCartIntoBackend = useCallback(
-    async (guestCart, serverData) => {
-      if (!user || !guestCart?.length) return serverData;
+    async (guestCart) => {
+      if (!user || !guestCart?.length) return;
 
-      const serverNormalized = normalizeCartItems(serverData);
-      const serverCourseIds = new Set(serverNormalized.map((item) => item.id));
-      const toAdd = guestCart.filter((item) => !serverCourseIds.has(item.id));
-
-        if (toAdd.length === 0) return serverData;
+      try {
+        const serverData = await fetchCartApi();
+        const serverNormalized = normalizeCartItems(serverData);
+        const serverCourseIds = new Set(serverNormalized.map((item) => item.id));
+        const toAdd = guestCart.filter((item) => !serverCourseIds.has(item.id));
 
         for (const item of toAdd) {
           try {
@@ -64,13 +64,12 @@ export const CartProvider = ({ children }) => {
           }
         }
 
-      try {
         const refreshed = await fetchCartApi();
-        localStorage.removeItem('cart');
-        return refreshed;
+        const normalized = normalizeCartItems(refreshed);
+        setCartItems(normalized);
+        localStorage.setItem('cart', JSON.stringify(normalized));
       } catch (error) {
-        console.error('Failed to reload cart after merge', error);
-        return serverData;
+        console.error('Failed to merge cart', error);
       }
     },
     [normalizeCartItems, user]
@@ -84,18 +83,23 @@ export const CartProvider = ({ children }) => {
 
         if (user) {
           let serverData = await fetchCartApi();
-          serverData = await mergeGuestCartIntoBackend(savedCart, serverData);
-          const normalized = normalizeCartItems(serverData);
-          setCartItems(normalized);
-          localStorage.setItem('cart', JSON.stringify(normalized));
+          const serverNormalized = normalizeCartItems(serverData);
+          
+          if (savedCart.length > 0) {
+            await mergeGuestCartIntoBackend(savedCart);
+          } else {
+            setCartItems(serverNormalized);
+            localStorage.setItem('cart', JSON.stringify(serverNormalized));
+          }
         } else {
           setCartItems(savedCart);
         }
       } catch (error) {
         console.error('Failed to load cart:', error);
-        if (!user) {
-          setCartItems([]);
-          localStorage.removeItem('cart');
+        if (error.response?.status === 401 || error.response?.status === 403) {
+          // Для гостей используем только localStorage
+          const savedCart = parseSavedCart();
+          setCartItems(savedCart);
         }
       } finally {
         setLoading(false);
@@ -130,38 +134,24 @@ export const CartProvider = ({ children }) => {
       quantity: 1
     };
 
-    // Гостевая корзина (только localStorage)
-    if (!user) {
-      const newCart = [...cartItems, cartItem];
-      setCartItems(newCart);
-      localStorage.setItem('cart', JSON.stringify(newCart));
-      
-      return { 
-        success: true, 
-        message: 'Курс добавлен в корзину',
-        course: cartItem,
-        requiresAuth: true
-      };
-    }
+    // Для гостей и авторизованных - одинаково в localStorage
+    const newCart = [...cartItems, cartItem];
+    setCartItems(newCart);
+    localStorage.setItem('cart', JSON.stringify(newCart));
 
-    // Для авторизованных - API запрос
-    try {
-      const data = await addCourseToCart({ courseId: course.id });
-      const normalized = normalizeCartItems(data);
-      if (normalized.length) {
+    // Для авторизованных - дополнительно API запрос
+    if (user) {
+      try {
+        await addCourseToCart({ courseId: course.id });
+        // После успешного API запроса перезагружаем корзину
+        const data = await fetchCartApi();
+        const normalized = normalizeCartItems(data);
         setCartItems(normalized);
         localStorage.setItem('cart', JSON.stringify(normalized));
-      } else {
-        setCartItems(prev => [...prev, cartItem]);
+      } catch (error) {
+        console.error('Failed to add to cart via API', error);
+        // Оставляем в localStorage даже если API ошибка
       }
-    } catch (error) {
-      console.error('Failed to add to cart', error);
-      if (error?.response?.data?.message?.includes?.('Already enrolled')) {
-        setCartItems(prev => prev.filter(item => item.id !== course.id));
-        localStorage.setItem('cart', JSON.stringify(cartItems.filter(item => item.id !== course.id)));
-        return { success: false, message: 'Сиз бул курсга жазылгансыз' };
-      }
-      return { success: false, message: 'Курс корзинага кошулган жок' };
     }
     
     return { 
@@ -172,43 +162,26 @@ export const CartProvider = ({ children }) => {
   }, [cartItems, user, normalizeCartItems]);
 
   const removeFromCart = useCallback(async (courseId) => {
-    try {
-      if (user) {
-        await removeCourseFromCart({ courseId });
-      }
-    } catch (error) {
-      console.error('Failed to remove from cart', error);
-    }
-    setCartItems(prev => {
-      const updated = prev.filter(item => item.id !== courseId);
-      localStorage.setItem('cart', JSON.stringify(updated));
-      return updated;
-    });
-    return { success: true };
-  }, [user]);
+    // Сначала удаляем из локального состояния
+    const updated = cartItems.filter(item => item.id !== courseId);
+    setCartItems(updated);
+    localStorage.setItem('cart', JSON.stringify(updated));
 
-  const removeCartItem = useCallback(async (cartItemId) => {
-    const item = cartItems.find((c) => c.cartItemId === cartItemId);
-    const courseId = item?.id;
-    if (!courseId) return { success: false };
-    try {
-      if (user) {
+    // Для авторизованных - удаляем через API
+    if (user) {
+      try {
         await removeCourseFromCart({ courseId });
+      } catch (error) {
+        console.error('Failed to remove from cart via API', error);
       }
-    } catch (error) {
-      console.error('Failed to remove cart item', error);
     }
-    setCartItems(prev => {
-      const updated = prev.filter(item => item.cartItemId !== cartItemId);
-      localStorage.setItem('cart', JSON.stringify(updated));
-      return updated;
-    });
+    
     return { success: true };
-  }, [user, cartItems]);
+  }, [cartItems, user]);
 
   const clearCart = useCallback(async () => {
-    try {
-      if (user) {
+    if (user) {
+      try {
         const uniqueCourseIds = [...new Set(cartItems.map((item) => item.id))];
         for (const cid of uniqueCourseIds) {
           try {
@@ -217,28 +190,15 @@ export const CartProvider = ({ children }) => {
             console.error('Failed to remove course from cart', cid, err);
           }
         }
+      } catch (error) {
+        console.error('Failed to clear cart', error);
       }
-    } catch (error) {
-      console.error('Failed to clear cart', error);
     }
+    
     setCartItems([]);
     localStorage.removeItem('cart');
     return { success: true };
   }, [user, cartItems]);
-
-  const updateQuantity = useCallback((cartItemId, quantity) => {
-    if (quantity <= 0) {
-      return removeCartItem(cartItemId);
-    }
-    
-    setCartItems(prev => prev.map(item => 
-      item.cartItemId === cartItemId 
-        ? { ...item, quantity }
-        : item
-    ));
-    
-    return { success: true };
-  }, [removeCartItem]);
 
   const getCartItemsCount = useCallback(() => {
     return cartItems.reduce((total, item) => total + (item.quantity || 1), 0);
@@ -260,70 +220,30 @@ export const CartProvider = ({ children }) => {
     return cartItems.some(item => item.id === courseId);
   }, [cartItems]);
 
-  const getCartItem = useCallback((courseId) => {
-    return cartItems.find(item => item.id === courseId);
-  }, [cartItems]);
-
-  const loadCartFromStorage = useCallback(() => {
-    try {
-      const savedCart = localStorage.getItem('cart');
-      if (savedCart) {
-        const parsedCart = JSON.parse(savedCart);
-        setCartItems(parsedCart);
-        return { success: true, items: parsedCart };
-      }
-      return { success: false, message: 'Корзина пуста' };
-    } catch (error) {
-      console.error('Ошибка при загрузке корзины:', error);
-      return { success: false, message: 'Ошибка загрузки' };
-    }
-  }, []);
-
   const value = useMemo(() => ({
     cartItems,
     loading,
     initialized,
     addToCart,
     removeFromCart,
-    removeCartItem,
     clearCart,
-    updateQuantity,
     getCartItemsCount,
     getUniqueItemsCount,
     getTotalPrice,
     isInCart,
-    getCartItem,
-    loadCartFromStorage,
-    
-    syncCartWithAPI: async () => {
-      if (!user) return { success: true };
-      try {
-        const data = await fetchCartApi();
-        const normalized = normalizeCartItems(data);
-        setCartItems(normalized);
-        localStorage.setItem('cart', JSON.stringify(normalized));
-        return { success: true, items: normalized };
-      } catch (error) {
-        console.error('Failed to sync cart', error);
-        return { success: false };
-      }
-    }
+    user, // Добавляем user в контекст
   }), [
     cartItems,
     loading,
     initialized,
-    user,
     addToCart,
     removeFromCart,
-    removeCartItem,
     clearCart,
-    updateQuantity,
     getCartItemsCount,
     getUniqueItemsCount,
     getTotalPrice,
     isInCart,
-    getCartItem,
-    loadCartFromStorage
+    user
   ]);
 
   return (

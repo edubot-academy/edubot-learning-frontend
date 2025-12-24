@@ -1,10 +1,8 @@
-import React, { useState, useContext } from 'react';
+import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import CardIcon from '@assets/icons/cardvektor.svg';
 import Button from '@shared-ui/Button';
 import { useCart } from '../../../context/CartContext';
-import { AuthContext } from '@app/providers';
-import AuthRequiredModal from '../components/AuthRequiredModal';
 
 const CardCourse = ({
     coverImageUrl,
@@ -19,20 +17,13 @@ const CardCourse = ({
     lessonCount,
 }) => {
     const [showPopup, setShowPopup] = useState(false);
-    const [showAuthModal, setShowAuthModal] = useState(false);
     const navigate = useNavigate();
     const { addToCart, isInCart } = useCart();
-    const { user } = useContext(AuthContext);
     const courseAlreadyInCart = isInCart(id);
 
     const handleButtonClick = (e) => {
         e.stopPropagation();
         e.preventDefault();
-
-        if (!user) {
-            setShowAuthModal(true);
-            return;
-        }
 
         if (courseAlreadyInCart) {
             navigate("/cart");
@@ -78,17 +69,11 @@ const CardCourse = ({
             <Link to={`/courses/${id}`} className="block relative">
                 <div className="max-w-md bg-white border border-gray-200 rounded flex flex-col hover:shadow-lg transition-shadow duration-300">
                     <div className="p-3">
-                        <div className="w-full h-48 bg-gray-100 rounded overflow-hidden flex items-center justify-center">
-                            {coverImageUrl ? (
-                                <img
-                                    src={coverImageUrl}
-                                    alt={title}
-                                    className="object-cover w-full h-full"
-                                />
-                            ) : (
-                                <span className="text-gray-400 text-sm">No image</span>
-                            )}
-                        </div>
+                        <img
+                            src={coverImageUrl}
+                            alt={title}
+                            className="object-cover rounded max-h-64 w-full"
+                        />
                         <div className="flex flex-col flex-grow py-4">
                             <h3 className="font-suisse font-medium text-lg">{title}</h3>
                             <p className="text-gray-500 text-sm my-1">{instructor.fullName}</p>
@@ -142,13 +127,6 @@ const CardCourse = ({
                     </div>
                 </div>
             </Link>
-
-            <AuthRequiredModal
-                isOpen={showAuthModal}
-                onClose={() => setShowAuthModal(false)}
-                title={`"${title}" курсу`}
-                description="Курсту корзинага кошуу үчүн системага кириңиз же жаңы аккаунт түзүңүз"
-            />
 
             {showPopup && (
                 <>

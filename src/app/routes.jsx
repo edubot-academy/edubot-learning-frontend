@@ -27,7 +27,7 @@ const CompanyDetail = lazy(() => import('../pages/company/CompanyDetail'));
 const CompanyList = lazy(() => import('../pages/company/CompanyList'));
 const Favourite = lazy(() => import('../pages/Favourite'));
 const CartPage = lazy(() => import('../pages/Cart'));
-const ProtectedRoute = lazy(() => import('../features/courses/components/ProtectedRoute'));
+// const ProtectedRoute = lazy(() => import('../features/courses/components/ProtectedRoute'));
 const AppRoutes = () => {
     return (
         <MainLayout>
@@ -44,9 +44,9 @@ const AppRoutes = () => {
                     <Route
                         path="/cart"
                         element={
-                            <ProtectedRoute>
+                           
                                 <CartPage />
-                            </ProtectedRoute>
+                         
                         }
                     />
                     <Route element={<PrivateRoute allowedRoles={['instructor']} />}>
