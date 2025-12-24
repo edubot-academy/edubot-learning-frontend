@@ -6,14 +6,14 @@ import Button from '@shared/ui/Button';
 import { FaPlay } from 'react-icons/fa';
 import ModalCourses from './ModalCourses';
 
-const CardVideo = ({ coverImageUrl, course, lessonCount }) => {
+const CardVideo = ({ coverImageUrl, course, lessonCount, activeLesson, videoRef }) => {
     const [openModal, setOpenModal] = useState(false);
 
     return (
         <>
             <div
                 onClick={() => setOpenModal(true)}
-                className="border border-gray-200 rounded-md overflow-hidden bg-white w-[90vw] sm:w-[70vw] md:w-[40vw] lg:w-[30vw] max-w-[420px] px-4 py-5 m-5 cursor-pointer"
+                className="border border-gray-200 rounded-md overflow-hidden bg-white w-[90vw] sm:w-[70vw] md:w-[40vw] lg:w-[30vw] max-w-[420px] px-4 py-5 cursor-pointer"
             >
                 <div className="relative w-full ">
                     <img
@@ -49,7 +49,14 @@ const CardVideo = ({ coverImageUrl, course, lessonCount }) => {
                     </div>
                 </div>
             </div>
-            {openModal && <ModalCourses onClose={() => setOpenModal(false)} />}
+            {openModal && activeLesson?.videoUrl && (
+                <ModalCourses
+                    videoRef={videoRef}
+                    videoUrl={activeLesson.videoUrl}
+                    course={course}
+                    onClose={() => setOpenModal(false)}
+                />
+            )}
         </>
     );
 };

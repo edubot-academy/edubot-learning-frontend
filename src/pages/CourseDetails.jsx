@@ -828,6 +828,8 @@ const CourseDetailsPage = () => {
                     course={course}
                     lessonCount={lessonCount}
                     coverImageUrl={course.coverImageUrl}
+                    activeLesson={activeLesson}
+                    videoRef={videoRef}
                 />
             </div>
         </div>

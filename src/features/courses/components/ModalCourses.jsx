@@ -1,17 +1,25 @@
 import IntroductionBeforeRegistr from '@shared/ui/IntroductionBeforeRegistr';
-import React from 'react';
+import React, { useEffect } from 'react';
 import { RiCloseLargeFill } from "react-icons/ri";
 
+function ModalCourses({ onClose, course, videoUrl, videoRef }) {
 
-function ModalCourses({ onClose }) {
+    useEffect(() => {
+        document.body.style.overflow = 'hidden';
+
+        return () => {
+            document.body.style.overflow = '';
+        };
+    }, []);
+
     return (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-            <div className="bg-white rounded max-w-xl w-full shadow-xl overflow-hidden p-4">
+            <div className="bg-white rounded max-w-xl w-full shadow-xl m-4 p-2 max-h-[90vh] overflow-y-auto">
                 <div className="flex items-start justify-between p-5 border-b">
                     <div>
-                        <h2 className="text-xl font-semibold">Figma UI UX Design Essentials</h2>
+                        <h2 className="text-xl font-semibold">{course.title}</h2>
                         <p className="text-sm text-gray-500 mt-1">
-                            Use Figma to get a job in UI Design, User Interfaces, User Experience design, UX Design & Web Design
+                            {course.description || 'Описание курса скоро будет добавлено...'}
                         </p>
                     </div>
                     <button
@@ -21,13 +29,18 @@ function ModalCourses({ onClose }) {
                         <RiCloseLargeFill className="w-5 h-5" />
                     </button>
                 </div>
-                <div className="w-full h-48 bg-gray-200 flex items-center justify-center relative">
-                    <button className="w-16 h-16 bg-white/90 rounded-full flex items-center justify-center shadow-lg">
-                        ▶
-                    </button>
+                <div className="relative w-full ">
+                    <video
+                        ref={videoRef}
+                        src={videoUrl}
+                        controls
+                        autoPlay
+                        playsInline
+                        className="w-full aspect-video"
+                    />
                 </div>
                 <div className='py-3'>
-                <IntroductionBeforeRegistr />
+                    <IntroductionBeforeRegistr />
                 </div>
             </div>
         </div>
