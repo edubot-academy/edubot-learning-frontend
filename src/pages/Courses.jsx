@@ -1,24 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { FaStar } from 'react-icons/fa';
-import { fetchCourses } from '@services/api';
+import { fetchCatalogCourses } from '@services/api';
 import SectionContainer from '@features/marketing/components/SectionContainer';
-import CoursesSection from '@shared/CoursesSection';
-import CardCourse from '@features/courses/components/CardCourse'; // Добавлен импорт CardCourse
-
-// import { FiSearch } from "react-icons/fi";
-// import CourseDescription from "../components/CourseDescription";
+import CardCourse from '@features/courses/components/CardCourse';
 
 const CoursesPage = () => {
     const [courses, setCourses] = useState([]);
-    const [filter, setFilter] = useState('All');
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const loadCourses = async () => {
             try {
-                const data = await fetchCourses();
-                setCourses(data.courses);
+                const data = await fetchCatalogCourses();
+                setCourses(data.items);
             } catch (err) {
                 console.error('Курстар жүктөлбөй калды', err);
             } finally {
@@ -29,16 +22,10 @@ const CoursesPage = () => {
         loadCourses();
     }, []);
 
-    console.log(courses.length);
-
-    const filteredCourses = courses.filter(
-        (course) => course.isPublished && (filter === 'All' || course.level === filter)
-    );
-
     if (loading) return <div className="pt-[50px]">Курстар жүктөлүүдө...</div>;
 
     return (
-        <div className="min-h-screen  bg-gray-50 p-6 pt-0">
+        <div className="min-h-screen p-6 pt-0">
             <div className="ml-10 mt-5">
                 <h1 className="text-4xl font-bold text-start mb-0">Биздин курстар</h1>
                 <p className="font-inter text-sm md:text-base lg:text-lg">
@@ -47,29 +34,15 @@ const CoursesPage = () => {
             </div>
 
             <div className="px-4 sm:px-6 lg:px-12">
-                {courses.length < 4 ? (
-                    <SectionContainer
-                        title={''}
-                        CardComponent={CardCourse} // Передаем CardCourse как компонент для карточек
-                        buttonText={null}
-                        subtitle={''}
-                        hideTitleAndLink={false}
-                        data={courses}
-                        rightContent={null}
-                    />
-                ) : (
-                    <CoursesSection>
-                        <SectionContainer
-                            title={''}
-                            CardComponent={CardCourse} // Передаем CardCourse как компонент для карточек
-                            buttonText={null}
-                            subtitle={''}
-                            hideTitleAndLink={false}
-                            rightContent={null}
-                            data={courses}
-                        />
-                    </CoursesSection>
-                )}
+                <SectionContainer
+                    title={''}
+                    CardComponent={CardCourse}
+                    buttonText={null}
+                    subtitle={''}
+                    hideTitleAndLink={false}
+                    items={courses}
+                    rightContent={null}
+                />
             </div>
         </div>
     );

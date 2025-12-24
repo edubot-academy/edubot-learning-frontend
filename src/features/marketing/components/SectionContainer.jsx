@@ -1,11 +1,21 @@
 const SectionContainer = ({
     title,
     subtitle,
-    data = [],
+    items = [],
     CardComponent,
     hideTitleAndLink = false,
     rightContent = null,
+    cols = '3',
+    loading = false,
+    emptyText = 'Азырынча элементтер жок.',
 }) => {
+    const colClasses =
+        cols === '4'
+            ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4'
+            : cols === '2'
+              ? 'grid-cols-1 sm:grid-cols-2'
+              : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3';
+
     return (
         <div className="px-4 py-16 sm:px-6 lg:px-12 bg-white">
             {!hideTitleAndLink && (
@@ -26,24 +36,17 @@ const SectionContainer = ({
                 </div>
             )}
 
-            {/* ИСПРАВЛЕННАЯ ЧАСТЬ - рендерим CardComponent */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {data.map((course, idx) => (
-                    <CardComponent
-                        key={course.id ?? idx}
-                        id={course.id}
-                        coverImageUrl={course.coverImageUrl}
-                        title={course.title}
-                        level={course.level}
-                        durationInHours={course.durationInHours}
-                        lessonCount={course.lessonCount}
-                        instructor={course.instructor}
-                        price={course.price}
-                        ratingCount={course.ratingCount}
-                        ratingAverage={course.ratingAverage}
-                    />
-                ))}
-            </div>
+            {loading ? (
+                <p className="text-sm text-gray-500">Жүктөлүүдө...</p>
+            ) : !items?.length ? (
+                <p className="text-sm text-gray-500">{emptyText}</p>
+            ) : (
+                <div className={`grid ${colClasses} gap-6`}>
+                    {items.map((item, idx) => (
+                        <CardComponent key={item.id ?? idx} {...item} />
+                    ))}
+                </div>
+            )}
         </div>
     );
 };

@@ -6,6 +6,23 @@ export function formatDuration(seconds) {
     return `${mins} мүн ${secs} сек`;
 }
 
+export function formatSecondsToTime(seconds) {
+    if (!seconds || isNaN(seconds)) return null;
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return mins + ':' + secs;
+}
+
+export function formatMinutesToTime(minutes) {
+    if (!minutes || minutes <= 0) return null;
+    const h = Math.floor(minutes / 60);
+    const m = Math.round(minutes % 60);
+
+    if (h > 0 && m > 0) return `${h} саат ${m} мин`;
+    if (h > 0) return `${h} саат`;
+    return `${m} мин`;
+}
+
 export function formatHoursToTime(hours) {
     if (!hours || hours <= 0) return null;
     const totalMinutes = Math.round(hours * 60);

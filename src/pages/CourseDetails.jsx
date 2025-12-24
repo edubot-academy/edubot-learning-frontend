@@ -30,6 +30,7 @@ import Comment from '@features/ratings/components/Comment';
 import AiAssistantPanel from '@features/assistant/components/AiAssistantPanel';
 import InstructorsInfo from '@features/courses/components/InstructorsInfo';
 import CourseReview from '@features/courses/components/CourseReview';
+import CourseContent from '@features/courses/components/CourseContent';
 
 const CHALLENGE_STORAGE_PREFIX = 'lessonChallengeState';
 
@@ -840,6 +841,8 @@ const CourseDetailsPage = () => {
                     lessonCount={lessonCount}
                     coverImageUrl={course.coverImageUrl}
                 />
+
+                <CourseContent sections={sections} />
             </div>
         </div>
     );

@@ -106,10 +106,10 @@ const SideBar = ({ setMenuOpen, setPosition }) => {
                                 <img src={BasketIcon} alt="" className="max-w-6 pb-1" />
                                 Корзина
                             </div>
-                            <div className={`${linkClass}`}>
+                            <Link to="/favourite" className={`${linkClass}`}>
                                 <img src={BlackHeart} alt="" className="max-w-6 pb-1" />
                                 Избранные
-                            </div>
+                            </Link>
                             <div className={`${linkClass}`}>
                                 <img src={SettingIcon} alt="" className="max-w-6 pb-1" />
                                 Настройка

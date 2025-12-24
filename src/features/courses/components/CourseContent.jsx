@@ -1,36 +1,10 @@
-import React, { useState, useRef, useEffect } from 'react';
-import DownArrow from '@assets/icons/downArrow.svg';
+import React, { useState, useRef } from 'react';
+import { IoIosArrowDown, IoIosArrowUp } from "react-icons/io";
 import ReelsIcon from '@assets/icons/reelsIcon.svg';
 import VideoIcon from '@assets/icons/video.svg';
+import { formatMinutesToTime, formatSecondsToTime } from '../../../utils/timeUtils';
 
-const IntroductionBeforeRegistr = () => {
-    const introductions = [
-        {
-            id: 1,
-            title: 'Введение',
-            lectures: '6 lectures • 20min',
-            items: [
-                {
-                    reelText:
-                        'When it comes to creating online courses, most people focus on the wrong things',
-                    videoText: 'Preview',
-                    videoDuration: '03:00',
-                },
-            ],
-        },
-        {
-            id: 2,
-            title: 'Введение',
-            lectures: '4 lectures • 15min',
-            items: [
-                {
-                    reelText: 'Planning your course content is key',
-                    videoText: 'Preview',
-                    videoDuration: '02:30',
-                },
-            ],
-        },
-    ];
+const CourseContent = ({ sections }) => {
 
     const [openIds, setOpenIds] = useState([]);
     const contentRefs = useRef({});
@@ -45,31 +19,31 @@ const IntroductionBeforeRegistr = () => {
 
     return (
         <div className="mx-auto rounded-sm w-full max-w-[613px] space-y-0">
-            {introductions.map((intro) => (
-                <div key={intro.id} className="border border-[#DFE1E5] bg-white ">
+            {sections.map((section) => (
+                <div key={section.id} className="border border-[#DFE1E5] bg-white ">
                     <button
-                        onClick={() => toggleOpen(intro.id)}
+                        onClick={() => toggleOpen(section.id)}
                         className="flex justify-between items-center w-full px-4 py-3 text-left transition hover:bg-gray-50"
                     >
                         <div className="flex items-center gap-2 text-[#EA580C] font-semibold">
-                            <img src={DownArrow} alt="" className="w-4 h-4" />
-                            {intro.title}
+                            {openIds.includes(section.id) ? <IoIosArrowUp /> : <IoIosArrowDown />}
+                            {section.title}
                         </div>
-                        <span className="text-gray-500 text-sm">{intro.lectures}</span>
+                        <span className="text-gray-500 text-sm">{section.lessons.length} сабак {section.durationMinutes ? '• ' : ''}{formatMinutesToTime(section.durationMinutes)}</span>
                     </button>
 
                     <div
-                        ref={(el) => (contentRefs.current[intro.id] = el)}
+                        ref={(el) => (contentRefs.current[section.id] = el)}
                         style={{
-                            maxHeight: openIds.includes(intro.id)
-                                ? contentRefs.current[intro.id]?.scrollHeight
+                            maxHeight: openIds.includes(section.id)
+                                ? contentRefs.current[section.id]?.scrollHeight
                                 : 0,
                             transition: 'max-height 0.3s ease',
                             overflow: 'hidden',
                         }}
                     >
                         <div className="border-t !border-white bg-white px-4 py-2 w-full space-y-2">
-                            {intro.items.map((item, idx) => (
+                            {section.lessons.map((lesson, idx) => (
                                 <div
                                     key={idx}
                                     className="flex justify-between items-start gap-4 border border-[#DFE1E5] rounded px-3 py-2 bg-white w-full"
@@ -77,17 +51,17 @@ const IntroductionBeforeRegistr = () => {
                                     <div className="flex items-start gap-2 flex-1">
                                         <img src={ReelsIcon} alt="reel" className="w-5 h-5 mt-1" />
                                         <p className="text-gray-700 text-sm break-words">
-                                            {item.reelText}
+                                            {lesson.title}
                                         </p>
                                     </div>
 
                                     <div className="flex items-center gap-2 flex-shrink-0">
                                         <img src={VideoIcon} alt="video" className="w-5 h-5" />
                                         <p className="text-gray-700 text-sm break-words">
-                                            {item.videoText}
+                                            {lesson.previewVideo ? 'Превью' : ''}
                                         </p>
                                         <span className="text-gray-500 text-xs">
-                                            {item.videoDuration}
+                                            {formatSecondsToTime(lesson.duration)}
                                         </span>
                                     </div>
                                 </div>
@@ -100,4 +74,4 @@ const IntroductionBeforeRegistr = () => {
     );
 };
 
-export default IntroductionBeforeRegistr;
+export default CourseContent;
