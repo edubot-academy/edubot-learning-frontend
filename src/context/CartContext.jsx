@@ -109,38 +109,56 @@ export const CartProvider = ({ children }) => {
     loadCart();
   }, [user, normalizeCartItems, parseSavedCart, mergeGuestCartIntoBackend]);
 
+  useEffect(() => {
+    if (!initialized) return;
+    if (cartItems.length > 0) {
+      localStorage.setItem('cart', JSON.stringify(cartItems));
+    } else {
+      localStorage.removeItem('cart');
+    }
+  }, [cartItems, initialized]);
+
+  useEffect(() => {
+    if (!user) {
+      setCartItems([]);
+      localStorage.removeItem('cart');
+    }
+  }, [user]);
+
   const addToCart = useCallback(async (course) => {
-    setCartItems(prev => {
-      const alreadyInCart = prev.some(item => item.id === course.id);
-      
-      if (alreadyInCart) {
-        return prev;
-      }
+    const alreadyInCart = cartItems.some((item) => item.id === course.id);
+    if (alreadyInCart) {
+      return { success: false, message: 'Курс уже в корзине' };
+    }
 
-      const cartItem = {
-        ...course,
-        cartItemId: `${course.id}_${Date.now()}`,
-        addedAt: new Date().toISOString(),
-        quantity: 1
-      };
+    const cartItem = {
+      ...course,
+      cartItemId: `${course.id}_${Date.now()}`,
+      addedAt: new Date().toISOString(),
+      quantity: 1,
+    };
 
+    setCartItems((prev) => {
       const newCart = [...prev, cartItem];
       localStorage.setItem('cart', JSON.stringify(newCart));
       return newCart;
     });
 
-    // Для авторизованных - дополнительно API запрос
     if (user) {
       try {
         await addCourseToCart({ courseId: course.id });
-        // После успешного API запроса перезагружаем корзину
         const data = await fetchCartApi();
         const normalized = normalizeCartItems(data);
         setCartItems(normalized);
         localStorage.setItem('cart', JSON.stringify(normalized));
       } catch (error) {
         console.error('Failed to add to cart via API', error);
-        // Оставляем в localStorage даже если API ошибка
+        setCartItems((prev) => {
+          const updated = prev.filter((item) => item.id !== course.id);
+          localStorage.setItem('cart', JSON.stringify(updated));
+          return updated;
+        });
+        return { success: false, message: 'Курс корзинага кошулган жок' };
       }
     }
     
@@ -148,7 +166,7 @@ export const CartProvider = ({ children }) => {
       success: true, 
       message: 'Курс добавлен в корзину'
     };
-  }, [user, normalizeCartItems]);
+  }, [user, normalizeCartItems, cartItems]);
 
   const removeFromCart = useCallback(async (courseId) => {
     setCartItems(prev => {
