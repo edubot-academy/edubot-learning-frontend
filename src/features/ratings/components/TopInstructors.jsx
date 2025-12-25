@@ -32,8 +32,8 @@ const TopInstructors = () => {
         <SectionContainer
             title="Топ Инструктор"
             subtitle="Подборка самых востребованных и эффективных обучающих программ."
-            rightContent={<Button variant="secondary">Бардыгын көрүү</Button>}
-            data={instructors}
+            // rightContent={<Button variant="secondary">Бардыгын көрүү</Button>}
+            items={instructors}
             CardComponent={CardInstructor}
         />
     );

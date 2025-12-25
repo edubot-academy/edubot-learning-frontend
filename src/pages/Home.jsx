@@ -1,7 +1,6 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect } from 'react';
 import StickyButton from '@shared/ui/StickyButton';
-import { fetchCourses } from '@services/api';
-import { AuthContext } from '../context/AuthContext';
+import { fetchTopCourses } from '@services/api';
 import Benefits from '@features/marketing/components/Benefits';
 import Feedback from '@features/marketing/components/Feedback';
 import HeroStart from '@features/marketing/components/HeroStart';
@@ -11,25 +10,18 @@ import FAQ from '@features/marketing/components/FAQ';
 import TopCourses from '@features/courses/components/TopCourses';
 
 const HomePage = () => {
-    const { user } = useContext(AuthContext);
-    // const [cart, setCart] = useState([]);
     const [coursesData, setCoursesData] = useState([]);
 
-    // const addToCart = (course) => {
-    //     setCart([...cart, course]);
-    // };
-
     useEffect(() => {
-        const loadCourses = async () => {
+        const loadTopCourses = async () => {
             try {
-                const data = await fetchCourses();
-                const filteredCourses = data.courses.filter((course) => course.isPublished);
-                setCoursesData(filteredCourses);
+                const data = await fetchTopCourses();
+                setCoursesData(data.items);
             } catch (err) {
                 console.error('Failed to fetch courses', err);
             }
         };
-        loadCourses();
+        loadTopCourses();
     }, []);
 
     return (
@@ -41,7 +33,6 @@ const HomePage = () => {
             <Instructor />
             <Apply />
             <Feedback />
-            {/* <Evaluate /> */}
             <FAQ />
         </div>
     );

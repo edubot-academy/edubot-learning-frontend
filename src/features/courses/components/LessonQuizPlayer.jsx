@@ -1,7 +1,10 @@
-import Button from '@shared/ui/Button';
+import Button from "@shared/ui/Button";
 import React, { useEffect, useMemo, useState } from "react";
 import { FiCheckCircle, FiClock, FiXCircle } from "react-icons/fi";
 import { IoIosArrowUp, IoIosArrowDown } from "react-icons/io";
+import grade_A from '../../../assets/images/grade_A.png';
+import grade_B from '../../../assets/images/grade_B.png';
+import grade_C from '../../../assets/images/grade_C.png';
 
 const LessonQuizPlayer = ({
     quiz,
@@ -193,6 +196,15 @@ const LessonQuizPlayer = ({
         return (
             <div className="mb-6 bg-white rounded-lg shadow-md p-6 space-y-4">
                 <div className="flex flex-col items-center gap-3 text-center">
+
+                    {result.passed ? (
+                        <img src={grade_A} alt="grade" className="w-24" />
+                    ) : result.score >= 70 ? (
+                        <img src={grade_B} alt="grade" className="w-24" />
+                    ) : (
+                        <img src={grade_C} alt="grade" className="w-24" />
+                    )}
+
                     <p className="text-2xl font-bold">
                         {result.score}% ({result.correctAnswers}/
                         {result.totalQuestions}) правильно

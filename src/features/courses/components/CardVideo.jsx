@@ -4,17 +4,16 @@ import { IoMdTime } from 'react-icons/io';
 import { TbLock } from 'react-icons/tb';
 import Button from '@shared/ui/Button';
 import { FaPlay } from 'react-icons/fa';
+import ContactCourseModal from './ContactCourseModal';
 import ModalCourses from './ModalCourses';
 
-const CardVideo = ({ coverImageUrl, course, lessonCount, activeLesson, videoRef }) => {
+const CardVideo = ({ coverImageUrl, course, lessonCount, activeLesson, videoRef, sections }) => {
+    const [isContactOpen, setIsContactOpen] = useState(false);
     const [openModal, setOpenModal] = useState(false);
 
     return (
         <>
-            <div
-                onClick={() => setOpenModal(true)}
-                className="border border-gray-200 rounded-md overflow-hidden bg-white w-[90vw] sm:w-[70vw] md:w-[40vw] lg:w-[30vw] max-w-[420px] px-4 py-5 cursor-pointer"
-            >
+            <div onClick={() => setOpenModal(true)} className="border border-gray-200 rounded-md overflow-hidden bg-white w-[90vw] sm:w-[70vw] md:w-[40vw] lg:w-[30vw] max-w-[420px] px-4 py-5">
                 <div className="relative w-full ">
                     <img
                         src={coverImageUrl}
@@ -22,7 +21,7 @@ const CardVideo = ({ coverImageUrl, course, lessonCount, activeLesson, videoRef 
                         alt="courseImage"
                     />
                     <div className="absolute inset-0 flex items-center justify-center bg-black/35 hover:bg-black/45 transition rounded-md">
-                        <button className="bg-white/35 rounded-full p-4 pointer-events-none">
+                        <button className="bg-white/35 rounded-full p-4">
                             <FaPlay className="text-[#EA580C] text-2xl pl-1" />
                         </button>
                     </div>
@@ -36,25 +35,37 @@ const CardVideo = ({ coverImageUrl, course, lessonCount, activeLesson, videoRef 
                         <p className="flex items-center gap-2 text-base font-semibold">
                             <FiBook /> {lessonCount} уроков
                         </p>
+
                         <p className="flex items-center gap-2 text-base font-semibold">
                             <IoMdTime /> {course.durationInHours} часа
                         </p>
+
                         <p className="flex items-center gap-2 text-base font-semibold">
                             <TbLock /> Доступ {course.isPaid ? 'Платный' : 'Бесплатный'}
                         </p>
                     </div>
+
                     <div className="flex flex-col gap-3 mt-3">
-                        <Button>Байланышуу</Button>
-                        <Button variant="secondary">Добавить в избранное</Button>
+                        <div>
+                            <Button onClick={() => setIsContactOpen(true)}>Байланышуу</Button>
+                        </div>
+                        <div>
+                            <Button variant="secondary">Добавить в избранное</Button>
+                        </div>
                     </div>
                 </div>
             </div>
+            <ContactCourseModal
+                isOpen={isContactOpen}
+                onClose={() => setIsContactOpen(false)}
+                course={course}
+                lessonCount={lessonCount}
+            />
             {openModal && activeLesson?.videoUrl && (
                 <ModalCourses
-                    videoRef={videoRef}
-                    videoUrl={activeLesson.videoUrl}
                     course={course}
                     onClose={() => setOpenModal(false)}
+                    courseId={course.id}
                 />
             )}
         </>

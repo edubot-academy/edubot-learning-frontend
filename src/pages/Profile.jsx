@@ -21,6 +21,7 @@ const SOCIAL_LABELS = {
 };
 
 const createEmptyInstructorProfile = () => ({
+    title: '',
     bio: '',
     yearsOfExperience: '',
     numberOfStudents: '',
@@ -42,6 +43,7 @@ const toInputValue = (value) => (value === undefined || value === null ? '' : St
 
 const normalizeInstructorProfileState = (data = {}) => {
     const base = createEmptyInstructorProfile();
+    base.title = data.title || '';
     base.bio = data.bio || '';
     base.yearsOfExperience = toInputValue(data.yearsOfExperience);
     base.numberOfStudents = toInputValue(data.numberOfStudents);
@@ -56,6 +58,7 @@ const normalizeInstructorProfileState = (data = {}) => {
 const getEmptyInstructorState = () => cloneInstructorProfileState(createEmptyInstructorProfile());
 
 const mapProfileForCompare = (profile) => ({
+    title: (profile.title || '').trim(),
     bio: (profile.bio || '').trim(),
     yearsOfExperience: profile.yearsOfExperience === '' ? '' : Number(profile.yearsOfExperience),
     numberOfStudents: profile.numberOfStudents === '' ? '' : Number(profile.numberOfStudents),
@@ -162,6 +165,7 @@ const ProfilePage = () => {
         }, {});
 
         const payload = {
+            title: instructorProfile.title?.trim() || null,
             bio: instructorProfile.bio?.trim() || null,
             yearsOfExperience: parseNumberValue(instructorProfile.yearsOfExperience),
             numberOfStudents: parseNumberValue(instructorProfile.numberOfStudents),
@@ -603,6 +607,19 @@ const ProfilePage = () => {
                         </div>
                     ) : (
                         <div className="space-y-5">
+                            <div>
+                                <label className="text-gray-600 block mb-1">Наам</label>
+                                <input
+                                    type="text"
+                                    value={instructorProfile.title}
+                                    onChange={(e) =>
+                                        handleInstructorProfileChange('title', e.target.value)
+                                    }
+                                    className="w-full border border-blue-600 rounded p-2"
+                                    placeholder="мисалы: UX/UI designer"
+                                />
+                            </div>
+
                             <div>
                                 <label className="text-gray-600 block mb-1">
                                     Био / Өзүм жөнүндө

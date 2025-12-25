@@ -12,7 +12,10 @@ import {
 } from '@services/api';
 import { AuthContext } from '../context/AuthContext';
 import toast from 'react-hot-toast';
-import { FiHome, FiBookOpen, FiCalendar, FiCheckCircle, FiBarChart2, FiUser } from 'react-icons/fi';
+import { FiHome, FiBookOpen, FiCalendar, FiCheckCircle, FiBarChart2, FiUser, FiBell } from 'react-icons/fi';
+import NotificationsWidget from '@features/notifications/components/NotificationsWidget';
+import NotificationsTab from '@features/notifications/components/NotificationsTab';
+import { useSearchParams } from 'react-router-dom';
 
 const NAV_ITEMS = [
     { id: 'overview', label: 'Кыскача', icon: FiHome },
@@ -20,6 +23,7 @@ const NAV_ITEMS = [
     { id: 'schedule', label: 'Расписание', icon: FiCalendar },
     { id: 'tasks', label: 'Тапшырмалар', icon: FiCheckCircle },
     { id: 'progress', label: 'Прогресс', icon: FiBarChart2 },
+    { id: 'notifications', label: 'Билдирүүлөр', icon: FiBell },
     { id: 'profile', label: 'Профиль', icon: FiUser },
 ];
 
@@ -63,9 +67,11 @@ const formatNotificationLabel = (key) =>
 
 const StudentDashboard = () => {
     const { user } = useContext(AuthContext);
+    const [searchParams, setSearchParams] = useSearchParams();
+    const initialTab = searchParams.get('tab') || 'overview';
     const studentId = user?.id;
     const [sidebarOpen, setSidebarOpen] = useState(true);
-    const [activeTab, setActiveTab] = useState('overview');
+    const [activeTab, setActiveTab] = useState(initialTab);
     const [summary, setSummary] = useState(null);
     const [courses, setCourses] = useState([]);
     const [offerings, setOfferings] = useState([]);
@@ -80,6 +86,7 @@ const StudentDashboard = () => {
         schedule: false,
         tasks: false,
         progress: false,
+        notifications: true,
     });
     const [notificationsLoaded, setNotificationsLoaded] = useState(false);
     const [notificationLoading, setNotificationLoading] = useState(false);
@@ -191,6 +198,11 @@ const StudentDashboard = () => {
 
     useEffect(() => {
         if (!studentId) return;
+        setSearchParams((prev) => {
+            const next = new URLSearchParams(prev);
+            next.set('tab', activeTab);
+            return next;
+        });
         const tab = activeTab === 'profile' ? 'overview' : activeTab;
         if (tab === 'overview') {
             loadOverview();
@@ -316,6 +328,8 @@ const StudentDashboard = () => {
                 return <TasksTab tasks={tasks} />;
             case 'progress':
                 return <ProgressTab items={progressItems} />;
+            case 'notifications':
+                return <NotificationsTab />;
             case 'profile':
                 return (
                     <ProfileTab
@@ -394,6 +408,7 @@ const OverviewTab = ({ student, stats }) => (
             <StatCard label="Бул жумадагы убакыт" value={stats.timeThisWeek} />
             <StatCard label="Күтүлүп жаткан тапшырмалар" value={stats.pendingTasks} />
         </div>
+        <NotificationsWidget />
     </div>
 );
 
@@ -482,11 +497,11 @@ const ScheduleTab = ({ offerings }) => {
                         offering.date ||
                         (offering.startAt
                             ? new Date(offering.startAt).toLocaleString('ru-RU', {
-                                  day: '2-digit',
-                                  month: 'short',
-                                  hour: '2-digit',
-                                  minute: '2-digit',
-                              })
+                                day: '2-digit',
+                                month: 'short',
+                                hour: '2-digit',
+                                minute: '2-digit',
+                            })
                             : 'Белгисиз убакыт');
                     const modality = offering.modality || offering.modalityLabel || '';
                     return (
@@ -546,11 +561,10 @@ const TasksTab = ({ tasks }) => (
                                 </td>
                                 <td className="px-4 py-3">
                                     <span
-                                        className={`px-3 py-1 rounded-full text-xs ${
-                                            task.status === 'completed'
+                                        className={`px-3 py-1 rounded-full text-xs ${task.status === 'completed'
                                                 ? 'bg-green-100 text-green-700'
                                                 : 'bg-amber-100 text-amber-700'
-                                        }`}
+                                            }`}
                                     >
                                         {task.status === 'completed' ? 'Жабылган' : 'Күтүүдө'}
                                     </span>
