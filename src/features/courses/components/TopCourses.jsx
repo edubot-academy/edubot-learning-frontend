@@ -4,7 +4,6 @@ import CardCourse from './CardCourse';
 import { Link } from 'react-router-dom';
 
 const TopCourses = ({ coursesData }) => {
-
     return (
         <SectionContainer
             title="Топ курстар"

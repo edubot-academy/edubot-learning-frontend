@@ -26,7 +26,7 @@ const CardCourse = ({
         e.preventDefault();
 
         if (courseAlreadyInCart) {
-            navigate("/cart");
+            navigate('/cart');
             return;
         }
 
@@ -44,7 +44,7 @@ const CardCourse = ({
         };
 
         const result = addToCart(courseData);
-        
+
         if (result.success) {
             setShowPopup(true);
         }
@@ -61,7 +61,7 @@ const CardCourse = ({
 
     const goToCart = () => {
         closePopup();
-        navigate("/cart");
+        navigate('/cart');
     };
 
     return (
@@ -80,10 +80,14 @@ const CardCourse = ({
                             <div className="flex items-center gap-2 mb-3 mt-3">
                                 <div className="flex text-yellow-400">
                                     {Array.from({ length: 5 }).map((_, i) => (
-                                        <span className="text-2xl" key={i}>★</span>
+                                        <span className="text-2xl" key={i}>
+                                            ★
+                                        </span>
                                     ))}
                                 </div>
-                                <span className="text-gray-600 text-sm">({ratingCount} рейтингов)</span>
+                                <span className="text-gray-600 text-sm">
+                                    ({ratingCount} рейтингов)
+                                </span>
                             </div>
                             <div className="flex gap-2 mb-4">
                                 {level && (
@@ -114,12 +118,12 @@ const CardCourse = ({
                                         </p>
                                     </div>
                                     <Button
-                                        variant={courseAlreadyInCart ? "secondary" : "primary"}
+                                        variant={courseAlreadyInCart ? 'secondary' : 'primary'}
                                         onClick={handleButtonClick}
                                         className="whitespace-nowrap"
                                         disabled={courseAlreadyInCart}
                                     >
-                                        {courseAlreadyInCart ? "Корзинада ✓" : "Себетке кошуу"}
+                                        {courseAlreadyInCart ? 'Корзинада ✓' : 'Себетке кошуу'}
                                     </Button>
                                 </div>
                             </div>
@@ -144,7 +148,9 @@ const CardCourse = ({
                     >
                         <div className="p-4 sm:p-6">
                             <div className="flex items-center justify-between mb-4">
-                                <h3 className="text-lg font-bold text-gray-800">Успешно добавлено!</h3>
+                                <h3 className="text-lg font-bold text-gray-800">
+                                    Успешно добавлено!
+                                </h3>
                                 <button
                                     onClick={closePopup}
                                     className="text-gray-400 hover:text-gray-600 text-2xl leading-none w-8 h-8 flex items-center justify-center"
@@ -155,7 +161,8 @@ const CardCourse = ({
                             </div>
 
                             <p className="text-gray-600 mb-4 text-sm sm:text-base">
-                                Курс "<span className="font-semibold">{title}</span>" добавлен в вашу корзину.
+                                Курс "<span className="font-semibold">{title}</span>" добавлен в
+                                вашу корзину.
                             </p>
 
                             <div className="mb-4 p-3 border rounded-lg bg-gray-50">
@@ -167,7 +174,9 @@ const CardCourse = ({
                                     />
                                     <div className="flex-1 min-w-0 overflow-hidden">
                                         <h4 className="font-medium text-sm truncate">{title}</h4>
-                                        <p className="text-xs text-gray-500 truncate">{instructor.fullName}</p>
+                                        <p className="text-xs text-gray-500 truncate">
+                                            {instructor.fullName}
+                                        </p>
                                         <p className="text-sm font-bold mt-1">{price} сом</p>
                                     </div>
                                 </div>

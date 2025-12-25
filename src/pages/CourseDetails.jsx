@@ -301,8 +301,8 @@ const CourseDetailsPage = () => {
 
         if (preparedAnswers) {
             // Фильтруем только отвеченные вопросы
-            const answeredQuestions = preparedAnswers.filter(answer =>
-                answer.optionId && !answer.isSkipped
+            const answeredQuestions = preparedAnswers.filter(
+                (answer) => answer.optionId && !answer.isSkipped
             );
 
             // Проверяем, что есть хотя бы один ответ
@@ -312,10 +312,10 @@ const CourseDetailsPage = () => {
             }
 
             answersPayload = {
-                answers: answeredQuestions.map(answer => ({
+                answers: answeredQuestions.map((answer) => ({
                     questionId: answer.questionId,
                     optionId: answer.optionId,
-                }))
+                })),
             };
         } else {
             // Старая логика
@@ -331,7 +331,7 @@ const CourseDetailsPage = () => {
                 answers: quiz.questions.map((question) => ({
                     questionId: question.id,
                     optionId: currentAnswers[question.id],
-                }))
+                })),
             };
         }
 
@@ -346,9 +346,7 @@ const CourseDetailsPage = () => {
 
             // На клиенте добавим пропущенные вопросы как неправильные
             if (preparedAnswers) {
-                const skippedQuestions = preparedAnswers.filter(answer =>
-                    answer.isSkipped
-                );
+                const skippedQuestions = preparedAnswers.filter((answer) => answer.isSkipped);
 
                 if (skippedQuestions.length > 0) {
                     // Обновляем результат на клиенте
@@ -363,13 +361,15 @@ const CourseDetailsPage = () => {
 
                     // Помечаем пропущенные как неправильные
                     const updatedAnswers = [...(result.answers || [])];
-                    skippedQuestions.forEach(skipped => {
+                    skippedQuestions.forEach((skipped) => {
                         updatedAnswers.push({
                             questionId: skipped.questionId,
                             selectedOptionId: null,
                             isCorrect: false,
-                            correctOptionId: quiz.questions.find(q => q.id === skipped.questionId)?.options
-                                ?.find(opt => opt.isCorrect)?.id || null
+                            correctOptionId:
+                                quiz.questions
+                                    .find((q) => q.id === skipped.questionId)
+                                    ?.options?.find((opt) => opt.isCorrect)?.id || null,
                         });
                     });
 
@@ -379,12 +379,12 @@ const CourseDetailsPage = () => {
                         correctAnswers: totalCorrect,
                         totalQuestions: actualTotal,
                         passed: newScore >= (result.passingScore || 70),
-                        answers: updatedAnswers
+                        answers: updatedAnswers,
                     };
 
                     setLessonQuizResults((prev) => ({
                         ...prev,
-                        [activeLesson.id]: updatedResult
+                        [activeLesson.id]: updatedResult,
                     }));
 
                     toast.success(
@@ -684,7 +684,8 @@ const CourseDetailsPage = () => {
 
     const { prev: prevLesson, next: nextLesson } = findPrevNextLessons();
     const totalLessons =
-        course?.lessonCount || sections.reduce((count, sec) => count + (sec.lessons?.length || 0), 0);
+        course?.lessonCount ||
+        sections.reduce((count, sec) => count + (sec.lessons?.length || 0), 0);
     const progress =
         totalLessons > 0 ? Math.round((completedLessons.length / totalLessons) * 100) : 0;
 
@@ -717,8 +718,9 @@ const CourseDetailsPage = () => {
                     key={tab.id}
                     type="button"
                     onClick={() => handleTabChange(tab)}
-                    className={`flex-1 min-w-[140px] px-4 py-2 rounded-xl text-sm font-medium transition ${activeTab === tab.id ? 'bg-white text-gray-900 shadow' : 'text-gray-600'
-                        } ${tab.disabled ? 'opacity-60 cursor-not-allowed' : 'hover:text-gray-900'}`}
+                    className={`flex-1 min-w-[140px] px-4 py-2 rounded-xl text-sm font-medium transition ${
+                        activeTab === tab.id ? 'bg-white text-gray-900 shadow' : 'text-gray-600'
+                    } ${tab.disabled ? 'opacity-60 cursor-not-allowed' : 'hover:text-gray-900'}`}
                 >
                     {tab.label}
                 </button>
@@ -726,7 +728,9 @@ const CourseDetailsPage = () => {
         </div>
     );
 
-    const lessonCount = course?.lessonCount ?? sections.reduce((count, sec) => count + (sec.lessons?.length || 0), 0);
+    const lessonCount =
+        course?.lessonCount ??
+        sections.reduce((count, sec) => count + (sec.lessons?.length || 0), 0);
 
     return (
         <div className="min-h-screen pt-24 bg-[#f8f9fb]">

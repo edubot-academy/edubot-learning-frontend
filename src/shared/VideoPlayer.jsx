@@ -16,7 +16,9 @@ const VideoPlayer = ({
     const [hasError, setHasError] = useState(false);
     const [isHls, setIsHls] = useState(false);
     const [hlsInstance, setHlsInstance] = useState(null);
-    const [qualityOptions, setQualityOptions] = useState([{ id: 'auto', label: 'Auto', index: -1 }]);
+    const [qualityOptions, setQualityOptions] = useState([
+        { id: 'auto', label: 'Auto', index: -1 },
+    ]);
     const [currentQuality, setCurrentQuality] = useState('auto');
 
     const handleError = () => {
@@ -32,11 +34,9 @@ const VideoPlayer = ({
         if (!videoRef?.current) return;
         setHasError(false);
         videoRef.current.load();
-        videoRef.current
-            .play()
-            .catch(() => {
-                /* ignore autoplay failure */
-            });
+        videoRef.current.play().catch(() => {
+            /* ignore autoplay failure */
+        });
     };
 
     useEffect(() => {

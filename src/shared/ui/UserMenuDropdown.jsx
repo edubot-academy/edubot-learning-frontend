@@ -115,7 +115,11 @@ function UserMenuDropdown({ user, onClose }) {
                                         rounded-lg
                                     "
                                 >
-                                    <img src={item.icon} alt="" className="w-[1.2rem] sm:w-[1.1rem]" />
+                                    <img
+                                        src={item.icon}
+                                        alt=""
+                                        className="w-[1.2rem] sm:w-[1.1rem]"
+                                    />
                                     <span className="whitespace-nowrap overflow-hidden text-ellipsis">
                                         {item.label}
                                     </span>
@@ -129,11 +133,7 @@ function UserMenuDropdown({ user, onClose }) {
                                     </Link>
                                 );
                             }
-                            return (
-                                <div key={index}>
-                                    {content}
-                                </div>
-                            );
+                            return <div key={index}>{content}</div>;
                         })}
                     </div>
 

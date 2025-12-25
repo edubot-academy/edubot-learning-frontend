@@ -1,11 +1,10 @@
 import React, { useState, useRef } from 'react';
-import { IoIosArrowDown, IoIosArrowUp } from "react-icons/io";
+import { IoIosArrowDown, IoIosArrowUp } from 'react-icons/io';
 import ReelsIcon from '@assets/icons/reelsIcon.svg';
 import VideoIcon from '@assets/icons/video.svg';
 import { formatMinutesToTime, formatSecondsToTime } from '../../../utils/timeUtils';
 
 const CourseContent = ({ sections }) => {
-
     const [openIds, setOpenIds] = useState([]);
     const contentRefs = useRef({});
 
@@ -29,7 +28,10 @@ const CourseContent = ({ sections }) => {
                             {openIds.includes(section.id) ? <IoIosArrowUp /> : <IoIosArrowDown />}
                             {section.title}
                         </div>
-                        <span className="text-gray-500 text-sm">{section.lessons.length} сабак {section.durationMinutes ? '• ' : ''}{formatMinutesToTime(section.durationMinutes)}</span>
+                        <span className="text-gray-500 text-sm">
+                            {section.lessons.length} сабак {section.durationMinutes ? '• ' : ''}
+                            {formatMinutesToTime(section.durationMinutes)}
+                        </span>
                     </button>
 
                     <div
