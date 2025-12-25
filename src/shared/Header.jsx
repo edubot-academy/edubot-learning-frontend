@@ -8,16 +8,16 @@ import { BsChevronDown, BsSun, BsMoon } from 'react-icons/bs';
 import { CiSearch } from 'react-icons/ci';
 import EduBotLogo from '@assets/images/edubot-signup.png';
 
-import { IoHeartOutline } from "react-icons/io5";
-import { BsCart2 } from "react-icons/bs";
-import { FaRegUser } from "react-icons/fa";
+import { IoHeartOutline, IoHeart } from 'react-icons/io5';
+import { BsCart2 } from 'react-icons/bs';
+import { FaRegUser } from 'react-icons/fa';
 
 import { AuthContext } from '@app/providers';
 import { searchCourses } from '@services/api';
 import SideBar from '@shared-ui/SideBar';
 import SidebarOverlay from '@shared-ui/SidebarOverlay';
 import UserMenuDropdown from '@shared-ui/UserMenuDropdown';
-// import { useCart } from "../../../context/CartContext"
+import { useFavourites } from '../context/FavouritesContext';
 
 // NavLinks компонент
 const NavLinks = ({ isMobile, user }) => {
@@ -30,9 +30,7 @@ const NavLinks = ({ isMobile, user }) => {
     return (
         <div
             className={
-                isMobile
-                    ? 'flex flex-col space-y-4 mt-4'
-                    : 'flex space-x-14 items-center mr-[70px]'
+                isMobile ? 'flex flex-col space-y-4 mt-4' : 'flex space-x-14 items-center mr-[70px]'
             }
         >
             <Link to="/courses" className={`${active('/courses')} ${linkClass}`}>
@@ -44,7 +42,7 @@ const NavLinks = ({ isMobile, user }) => {
             <Link to="/contact" className={`${active('/contact')} ${linkClass}`}>
                 Байланыш
             </Link>
-            
+
             {/* Безопасная проверка */}
             {user && user.role === 'instructor' && (
                 <Link to="/instructor" className={`${active('/instructor')} ${linkClass}`}>
@@ -71,11 +69,11 @@ const NavLinks = ({ isMobile, user }) => {
 };
 
 const Header = () => {
-//   const { getCartItemsCount } = useCart(); // Используем контекст корзины
-//   const cartItemsCount = getCartItemsCount(); // Получаем количество товаров
     const { user } = useContext(AuthContext);
     const location = useLocation();
     const navigate = useNavigate();
+
+    const { favourites } = useFavourites();
 
     const [menuOpen, setMenuOpen] = useState(false);
     const [positionBar, setPositionBar] = useState(false);
@@ -86,7 +84,6 @@ const Header = () => {
     const [searchOpen, setSearchOpen] = useState(false);
     const [userMenuOpen, setUserMenuOpen] = useState(false);
 
-    // Активная иконка (может быть только одна): 'heart', 'cart', 'user' или null
     const [activeIcon, setActiveIcon] = useState(null);
 
     const langRef = useRef(null);
@@ -95,10 +92,11 @@ const Header = () => {
     const [showDropdown, setShowDropdown] = useState(false);
     const searchContainerRef = useRef(null);
 
-    // При загрузке проверяем, если мы на странице /cart, устанавливаем активную иконку корзины
     useEffect(() => {
         if (location.pathname === '/cart') {
             setActiveIcon('cart');
+        } else if (location.pathname === '/favourite') {
+            setActiveIcon('heart');
         } else {
             setActiveIcon(null);
         }
@@ -162,11 +160,17 @@ const Header = () => {
     };
 
     const handleIconClick = (iconName, callback) => {
-          setActiveIcon(iconName);
-    
-    // Выполняем callback если есть
-    if (callback) callback();
+        setActiveIcon(iconName);
+
+        if (callback) callback();
     };
+
+    const handleFavouriteClick = () => {
+        navigate('/favourite');
+        setActiveIcon('heart');
+    };
+
+    const isFavouritesPage = location.pathname === '/favourite';
 
     return (
         <header className="sticky top-0 w-full bg-white dark:bg-white shadow z-50">
@@ -258,7 +262,6 @@ const Header = () => {
                                     className={`w-4 h-4 text-gray-700 dark:text-gray-700 transform transition-transform duration-300 ${
                                         langOpen ? 'rotate-180' : ''
                                     }`}
-
                                 />
                             </button>
                             {langOpen && (
@@ -286,44 +289,63 @@ const Header = () => {
                         {/* User Actions  */}
                         {user ? (
                             <div className="flex items-center gap-3">
-                                {/* Иконка сердца - черный бордер, активна только если activeIcon === 'heart' */}
                                 <button
-                                    className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-300 ${activeIcon === 'heart'
+                                    className={`relative w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-300 ${
+                                        isFavouritesPage || activeIcon === 'heart'
                                             ? 'bg-orange-500 border-orange-500'
                                             : 'border-black hover:border-gray-600'
-                                        }`}
-                                    onClick={() => handleIconClick('heart')}
+                                    }`}
+                                    onClick={handleFavouriteClick}
                                 >
-                                    <IoHeartOutline className={`w-5 h-5 transition-colors duration-300 ${activeIcon === 'heart' ? 'text-white' : 'text-black'
-                                        }`} />
+                                    {favourites.length > 0 && (
+                                        <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                                            {favourites.length}
+                                        </span>
+                                    )}
+
+                                    {isFavouritesPage || activeIcon === 'heart' ? (
+                                        <IoHeart className="w-5 h-5 text-white" />
+                                    ) : (
+                                        <IoHeartOutline className="w-5 h-5 text-black" />
+                                    )}
                                 </button>
 
                                 {/* Иконка корзины - черный бордер, активна только если activeIcon === 'cart' */}
                                 <button
-                                    className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-300 ${activeIcon === 'cart'
+                                    className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-300 ${
+                                        activeIcon === 'cart'
                                             ? 'bg-orange-500 border-orange-500'
                                             : 'border-black hover:border-gray-600'
-                                        }`}
+                                    }`}
                                     onClick={() => handleIconClick('cart', () => navigate('/cart'))}
                                 >
-                                    <BsCart2 className={`w-5 h-5 transition-colors duration-300 ${activeIcon === 'cart' ? 'text-white' : 'text-black'
-                                        }`} />
+                                    <BsCart2
+                                        className={`w-5 h-5 transition-colors duration-300 ${
+                                            activeIcon === 'cart' ? 'text-white' : 'text-black'
+                                        }`}
+                                    />
                                 </button>
 
                                 {/* Иконка пользователя - черный бордер, активна только если activeIcon === 'user' */}
                                 <div className="relative group">
                                     <button
-                                        className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-300 ${activeIcon === 'user' || userMenuOpen
+                                        className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-300 ${
+                                            activeIcon === 'user' || userMenuOpen
                                                 ? 'bg-orange-500 border-orange-500'
                                                 : 'border-black hover:border-gray-600'
-                                            }`}
+                                        }`}
                                         onClick={() => {
                                             handleIconClick('user');
                                             setUserMenuOpen(!userMenuOpen);
                                         }}
                                     >
-                                        <FaRegUser className={`w-5 h-5 transition-colors duration-300 ${activeIcon === 'user' || userMenuOpen ? 'text-white' : 'text-black'
-                                            }`} />
+                                        <FaRegUser
+                                            className={`w-5 h-5 transition-colors duration-300 ${
+                                                activeIcon === 'user' || userMenuOpen
+                                                    ? 'text-white'
+                                                    : 'text-black'
+                                            }`}
+                                        />
                                     </button>
 
                                     {/* Dropdown меню */}
@@ -392,14 +414,18 @@ const Header = () => {
                             {user && (
                                 <div className="relative">
                                     <button
-                                        className={`w-9 h-9 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${userMenuOpen
+                                        className={`w-9 h-9 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${
+                                            userMenuOpen
                                                 ? 'bg-orange-500 border-orange-500'
                                                 : 'border-black hover:border-gray-600'
-                                            }`}
+                                        }`}
                                         onClick={() => setUserMenuOpen(!userMenuOpen)}
                                     >
-                                        <FaRegUser className={`w-4 h-4 transition-colors duration-300 ${userMenuOpen ? 'text-white' : 'text-black'
-                                            }`} />
+                                        <FaRegUser
+                                            className={`w-4 h-4 transition-colors duration-300 ${
+                                                userMenuOpen ? 'text-white' : 'text-black'
+                                            }`}
+                                        />
                                     </button>
 
                                     {/* Mobile User Dropdown */}
@@ -471,28 +497,43 @@ const Header = () => {
                     {/* Mobile Icons Row - только если пользователь авторизован */}
                     {user && searchOpen === false && (
                         <div className="flex justify-center gap-4 mt-3">
-                            {/* Иконка сердца для мобильной версии */}
+                            {/* Иконка сердца для мобильной версии - переходит на /favourite */}
                             <button
-                                className={`w-10 h-10 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${activeIcon === 'heart'
+                                className={`relative w-10 h-10 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${
+                                    isFavouritesPage || activeIcon === 'heart'
                                         ? 'bg-orange-500 border-orange-500'
                                         : 'border-black hover:border-gray-600'
-                                    }`}
-                                onClick={() => handleIconClick('heart')}
+                                }`}
+                                onClick={handleFavouriteClick}
                             >
-                                <IoHeartOutline className={`w-5 h-5 transition-colors duration-300 ${activeIcon === 'heart' ? 'text-white' : 'text-black'
-                                    }`} />
+                                {/* Показываем счетчик избранных курсов на мобильной версии */}
+                                {favourites.length > 0 && (
+                                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                                        {favourites.length}
+                                    </span>
+                                )}
+
+                                {isFavouritesPage || activeIcon === 'heart' ? (
+                                    <IoHeart className="w-5 h-5 text-white" />
+                                ) : (
+                                    <IoHeartOutline className="w-5 h-5 text-black" />
+                                )}
                             </button>
 
                             {/* Иконка корзины для мобильной версии с переходом на /cart */}
                             <button
-                                className={`w-10 h-10 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${activeIcon === 'cart'
+                                className={`w-10 h-10 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${
+                                    activeIcon === 'cart'
                                         ? 'bg-orange-500 border-orange-500'
                                         : 'border-black hover:border-gray-600'
-                                    }`}
+                                }`}
                                 onClick={() => handleIconClick('cart', () => navigate('/cart'))}
                             >
-                                <BsCart2 className={`w-5 h-5 transition-colors duration-300 ${activeIcon === 'cart' ? 'text-white' : 'text-black'
-                                    }`} />
+                                <BsCart2
+                                    className={`w-5 h-5 transition-colors duration-300 ${
+                                        activeIcon === 'cart' ? 'text-white' : 'text-black'
+                                    }`}
+                                />
                             </button>
                         </div>
                     )}
@@ -504,7 +545,7 @@ const Header = () => {
                 <SideBar
                     setMenuOpen={setMenuOpen}
                     setPosition={setPositionBar}
-                    handleIconClick={handleIconClick} // ← ДОБАВЬТЕ ЭТО
+                    handleIconClick={handleIconClick}
                 />
             </SidebarOverlay>
 
@@ -516,7 +557,7 @@ const Header = () => {
                 <SideBar
                     setMenuOpen={setMenuOpen}
                     setPosition={setPositionBar}
-                    handleIconClick={handleIconClick} // ← ДОБАВЬТЕ ЭТО
+                    handleIconClick={handleIconClick}
                 />
             </SidebarOverlay>
         </header>
