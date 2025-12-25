@@ -1,4 +1,3 @@
-// context/CartContext.js
 import React, { createContext, useState, useContext, useCallback, useMemo, useEffect } from 'react';
 import { AuthContext } from './AuthContext';
 import {
@@ -7,10 +6,8 @@ import {
     removeCourseFromCart,
 } from '@services/api';
 
-// Создаем контекст
 const CartContext = createContext();
 
-// Кастомный хук для использования контекста
 export const useCart = () => {
   const context = useContext(CartContext);
   if (!context) {
@@ -19,9 +16,7 @@ export const useCart = () => {
   return context;
 };
 
-// Провайдер корзины
 export const CartProvider = ({ children }) => {
-  // Состояние корзины
   const [cartItems, setCartItems] = useState([]);
   const [loading, setLoading] = useState(false);
   const [initialized, setInitialized] = useState(false);
@@ -51,14 +46,14 @@ export const CartProvider = ({ children }) => {
   }, []);
 
   const mergeGuestCartIntoBackend = useCallback(
-    async (guestCart, serverData) => {
-      if (!user || !guestCart?.length) return serverData;
+    async (guestCart) => {
+      if (!user || !guestCart?.length) return;
 
-      const serverNormalized = normalizeCartItems(serverData);
-      const serverCourseIds = new Set(serverNormalized.map((item) => item.id));
-      const toAdd = guestCart.filter((item) => !serverCourseIds.has(item.id));
-
-        if (toAdd.length === 0) return serverData;
+      try {
+        const serverData = await fetchCartApi();
+        const serverNormalized = normalizeCartItems(serverData);
+        const serverCourseIds = new Set(serverNormalized.map((item) => item.id));
+        const toAdd = guestCart.filter((item) => !serverCourseIds.has(item.id));
 
         for (const item of toAdd) {
           try {
@@ -68,39 +63,43 @@ export const CartProvider = ({ children }) => {
           }
         }
 
-      // Reload cart after merge
-      try {
         const refreshed = await fetchCartApi();
-        localStorage.removeItem('cart');
-        return refreshed;
+        const normalized = normalizeCartItems(refreshed);
+        setCartItems(normalized);
+        localStorage.setItem('cart', JSON.stringify(normalized));
       } catch (error) {
-        console.error('Failed to reload cart after merge', error);
-        return serverData;
+        console.error('Failed to merge cart', error);
       }
     },
     [normalizeCartItems, user]
   );
 
-  // Инициализация при монтировании (можно добавить загрузку из localStorage или API)
   useEffect(() => {
     const loadCart = async () => {
       setLoading(true);
       try {
         const savedCart = parseSavedCart();
 
-        // if authenticated, sync with backend (merge guest cart if exists)
         if (user) {
           let serverData = await fetchCartApi();
-          serverData = await mergeGuestCartIntoBackend(savedCart, serverData);
-          const normalized = normalizeCartItems(serverData);
-          setCartItems(normalized);
-          localStorage.setItem('cart', JSON.stringify(normalized));
+          const serverNormalized = normalizeCartItems(serverData);
+          
+          if (savedCart.length > 0) {
+            await mergeGuestCartIntoBackend(savedCart);
+          } else {
+            setCartItems(serverNormalized);
+            localStorage.setItem('cart', JSON.stringify(serverNormalized));
+          }
         } else {
-          // guests: use local storage snapshot
           setCartItems(savedCart);
         }
       } catch (error) {
         console.error('Failed to load cart:', error);
+        if (error.response?.status === 401 || error.response?.status === 403) {
+          // Для гостей используем только localStorage
+          const savedCart = parseSavedCart();
+          setCartItems(savedCart);
+        }
       } finally {
         setLoading(false);
         setInitialized(true);
@@ -110,110 +109,109 @@ export const CartProvider = ({ children }) => {
     loadCart();
   }, [user, normalizeCartItems, parseSavedCart, mergeGuestCartIntoBackend]);
 
-  // Сохранение в localStorage при изменении корзины
   useEffect(() => {
-    if (initialized && cartItems.length > 0) {
+    if (!initialized) return;
+    if (cartItems.length > 0) {
       localStorage.setItem('cart', JSON.stringify(cartItems));
+    } else {
+      localStorage.removeItem('cart');
     }
   }, [cartItems, initialized]);
 
-  // Добавить курс в корзину
+  useEffect(() => {
+    if (!user) {
+      setCartItems([]);
+      localStorage.removeItem('cart');
+    }
+  }, [user]);
+
   const addToCart = useCallback(async (course) => {
-    // Проверяем, нет ли уже курса в корзине
-    const alreadyInCart = cartItems.some(item => item.id === course.id);
-    
+    const alreadyInCart = cartItems.some((item) => item.id === course.id);
     if (alreadyInCart) {
-      return { 
-        success: false, 
-        message: 'Курс уже в корзине',
-        course 
-      };
+      return { success: false, message: 'Курс уже в корзине' };
     }
 
-    // Создаем объект для корзины
     const cartItem = {
       ...course,
-      cartItemId: `${course.id}_${Date.now()}`, // Уникальный ID для элемента корзины
+      cartItemId: `${course.id}_${Date.now()}`,
       addedAt: new Date().toISOString(),
-      quantity: 1
+      quantity: 1,
     };
 
-    // Добавляем в корзину (API для авторизованных)
+    setCartItems((prev) => {
+      const newCart = [...prev, cartItem];
+      localStorage.setItem('cart', JSON.stringify(newCart));
+      return newCart;
+    });
+
     if (user) {
       try {
-        const data = await addCourseToCart({ courseId: course.id });
+        await addCourseToCart({ courseId: course.id });
+        const data = await fetchCartApi();
         const normalized = normalizeCartItems(data);
-        if (normalized.length) {
-          setCartItems(normalized);
-          localStorage.setItem('cart', JSON.stringify(normalized));
-        } else {
-          setCartItems(prev => [...prev, cartItem]);
-        }
+        setCartItems(normalized);
+        localStorage.setItem('cart', JSON.stringify(normalized));
       } catch (error) {
-        console.error('Failed to add to cart', error);
-        if (error?.response?.data?.message?.includes?.('Already enrolled')) {
-          setCartItems(prev => prev.filter(item => item.id !== course.id));
-          localStorage.setItem('cart', JSON.stringify(cartItems.filter(item => item.id !== course.id)));
-          return { success: false, message: 'Сиз бул курсга жазылгансыз' };
-        }
+        console.error('Failed to add to cart via API', error);
+        setCartItems((prev) => {
+          const updated = prev.filter((item) => item.id !== course.id);
+          localStorage.setItem('cart', JSON.stringify(updated));
+          return updated;
+        });
         return { success: false, message: 'Курс корзинага кошулган жок' };
       }
-    } else {
-      setCartItems(prev => [...prev, cartItem]);
-      localStorage.setItem('cart', JSON.stringify([...cartItems, cartItem]));
     }
     
     return { 
       success: true, 
-      message: 'Курс добавлен в корзину',
-      course: cartItem
+      message: 'Курс добавлен в корзину'
     };
-  }, [cartItems, user, normalizeCartItems]);
+  }, [user, normalizeCartItems, cartItems]);
 
-  // Удалить курс из корзины
   const removeFromCart = useCallback(async (courseId) => {
-    try {
-      if (user) {
-        await removeCourseFromCart({ courseId });
-      }
-    } catch (error) {
-      console.error('Failed to remove from cart', error);
-    }
     setCartItems(prev => {
       const updated = prev.filter(item => item.id !== courseId);
       localStorage.setItem('cart', JSON.stringify(updated));
       return updated;
     });
+
+    // Для авторизованных - удаляем через API
+    if (user) {
+      try {
+        await removeCourseFromCart({ courseId });
+      } catch (error) {
+        console.error('Failed to remove from cart via API', error);
+      }
+    }
+    
     return { success: true };
   }, [user]);
 
-  // Удалить по cartItemId (если нужно точное удаление)
   const removeCartItem = useCallback(async (cartItemId) => {
-    // remove by courseId since backend expects it
-    const item = cartItems.find((c) => c.cartItemId === cartItemId);
-    const courseId = item?.id;
-    if (!courseId) return { success: false };
-    try {
-      if (user) {
-        await removeCourseFromCart({ courseId });
-      }
-    } catch (error) {
-      console.error('Failed to remove cart item', error);
-    }
     setCartItems(prev => {
-      const updated = prev.filter(item => item.cartItemId !== cartItemId);
+      const item = prev.find(c => c.cartItemId === cartItemId);
+      if (!item) return prev;
+      
+      // Для авторизованных - удаляем через API
+      if (user) {
+        removeCourseFromCart({ courseId: item.id }).catch(err => {
+          console.error('Failed to remove from API', err);
+        });
+      }
+      
+      const updated = prev.filter(i => i.cartItemId !== cartItemId);
       localStorage.setItem('cart', JSON.stringify(updated));
       return updated;
     });
+    
     return { success: true };
-  }, [user, cartItems]);
+  }, [user]);
 
-  // Очистить корзину
   const clearCart = useCallback(async () => {
-    try {
-      if (user) {
-        // backend has no clear-all endpoint; remove items one by one
-        const uniqueCourseIds = [...new Set(cartItems.map((item) => item.id))];
+    if (user) {
+      try {
+        const currentItems = [...cartItems];
+        const uniqueCourseIds = [...new Set(currentItems.map((item) => item.id))];
         for (const cid of uniqueCourseIds) {
           try {
             await removeCourseFromCart({ courseId: cid });
@@ -221,41 +219,24 @@ export const CartProvider = ({ children }) => {
             console.error('Failed to remove course from cart', cid, err);
           }
         }
+      } catch (error) {
+        console.error('Failed to clear cart', error);
       }
-    } catch (error) {
-      console.error('Failed to clear cart', error);
     }
+    
     setCartItems([]);
     localStorage.removeItem('cart');
     return { success: true };
   }, [user, cartItems]);
 
-  // Обновить количество (если в будущем понадобится)
-  const updateQuantity = useCallback((cartItemId, quantity) => {
-    if (quantity <= 0) {
-      return removeCartItem(cartItemId);
-    }
-    
-    setCartItems(prev => prev.map(item => 
-      item.cartItemId === cartItemId 
-        ? { ...item, quantity }
-        : item
-    ));
-    
-    return { success: true };
-  }, [removeCartItem]);
-
-  // Получить количество товаров в корзине
   const getCartItemsCount = useCallback(() => {
     return cartItems.reduce((total, item) => total + (item.quantity || 1), 0);
   }, [cartItems]);
 
-  // Получить количество уникальных курсов
   const getUniqueItemsCount = useCallback(() => {
     return cartItems.length;
   }, [cartItems]);
 
-  // Получить общую сумму
   const getTotalPrice = useCallback(() => {
     return cartItems.reduce((total, item) => {
       const price = parseFloat(item.price) || 0;
@@ -264,86 +245,36 @@ export const CartProvider = ({ children }) => {
     }, 0);
   }, [cartItems]);
 
-  // Проверить, есть ли курс в корзине
   const isInCart = useCallback((courseId) => {
     return cartItems.some(item => item.id === courseId);
   }, [cartItems]);
 
-  // Получить элемент корзины по ID курса
-  const getCartItem = useCallback((courseId) => {
-    return cartItems.find(item => item.id === courseId);
-  }, [cartItems]);
-
-  // Загрузить корзину из localStorage (если нужно)
-  const loadCartFromStorage = useCallback(() => {
-    try {
-      const savedCart = localStorage.getItem('cart');
-      if (savedCart) {
-        const parsedCart = JSON.parse(savedCart);
-        setCartItems(parsedCart);
-        return { success: true, items: parsedCart };
-      }
-      return { success: false, message: 'Корзина пуста' };
-    } catch (error) {
-      console.error('Ошибка при загрузке корзины:', error);
-      return { success: false, message: 'Ошибка загрузки' };
-    }
-  }, []);
-
-  // Значение контекста
   const value = useMemo(() => ({
-    // Состояние
     cartItems,
     loading,
     initialized,
-    
-    // Основные действия
     addToCart,
     removeFromCart,
-    removeCartItem,
+    removeCartItem, // Добавлена обратно для совместимости
     clearCart,
-    updateQuantity,
-    
-    // Геттеры
     getCartItemsCount,
     getUniqueItemsCount,
     getTotalPrice,
     isInCart,
-    getCartItem,
-    
-    // Утилиты
-    loadCartFromStorage,
-    
-    // Синхронизация (для будущего API)
-    syncCartWithAPI: async () => {
-      if (!user) return { success: true };
-      try {
-        const data = await fetchCartApi();
-        const normalized = normalizeCartItems(data);
-        setCartItems(normalized);
-        localStorage.setItem('cart', JSON.stringify(normalized));
-        return { success: true, items: normalized };
-      } catch (error) {
-        console.error('Failed to sync cart', error);
-        return { success: false };
-      }
-    }
+    user,
   }), [
     cartItems,
     loading,
     initialized,
-    user,
     addToCart,
     removeFromCart,
     removeCartItem,
     clearCart,
-    updateQuantity,
     getCartItemsCount,
     getUniqueItemsCount,
     getTotalPrice,
     isInCart,
-    getCartItem,
-    loadCartFromStorage
+    user
   ]);
 
   return (
@@ -353,5 +284,4 @@ export const CartProvider = ({ children }) => {
   );
 };
 
-// Экспорт по умолчанию для удобства
 export default CartContext;

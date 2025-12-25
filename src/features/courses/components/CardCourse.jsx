@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import CardIcon from '@assets/icons/cardvektor.svg';
 import Button from '@shared-ui/Button';
 import { useCart } from '../../../context/CartContext';
+
 const CardCourse = ({
     coverImageUrl,
     title,
@@ -17,7 +18,7 @@ const CardCourse = ({
 }) => {
     const [showPopup, setShowPopup] = useState(false);
     const navigate = useNavigate();
-    const { addToCart, isInCart } = useCart(); // Теперь useCart определен
+    const { addToCart, isInCart } = useCart();
     const courseAlreadyInCart = isInCart(id);
 
     const handleButtonClick = (e) => {
@@ -68,17 +69,11 @@ const CardCourse = ({
             <Link to={`/courses/${id}`} className="block relative">
                 <div className="max-w-md bg-white border border-gray-200 rounded flex flex-col hover:shadow-lg transition-shadow duration-300">
                     <div className="p-3">
-                        <div className="w-full h-48 bg-gray-100 rounded overflow-hidden flex items-center justify-center">
-                            {coverImageUrl ? (
-                                <img
-                                    src={coverImageUrl}
-                                    alt={title}
-                                    className="object-cover w-full h-full"
-                                />
-                            ) : (
-                                <span className="text-gray-400 text-sm">No image</span>
-                            )}
-                        </div>
+                        <img
+                            src={coverImageUrl}
+                            alt={title}
+                            className="object-cover rounded max-h-64 w-full"
+                        />
                         <div className="flex flex-col flex-grow py-4">
                             <h3 className="font-suisse font-medium text-lg">{title}</h3>
                             <p className="text-gray-500 text-sm my-1">{instructor.fullName}</p>
@@ -133,7 +128,6 @@ const CardCourse = ({
                 </div>
             </Link>
 
-            {/* Попап */}
             {showPopup && (
                 <>
                     <div
