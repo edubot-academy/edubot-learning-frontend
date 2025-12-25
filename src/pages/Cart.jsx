@@ -2,67 +2,9 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { BsTrash, BsCartX } from 'react-icons/bs';
-import { FaArrowRight, FaShoppingCart } from 'react-icons/fa';
+import { FaShoppingCart } from 'react-icons/fa';
 import Button from '@shared-ui/Button';
-
-// Модалка регистрации
-const RegisterModal = ({ isOpen, onClose, onRegister }) => {
-  if (!isOpen) return null;
-
-  return (
-    <>
-      <div
-        className="fixed inset-0 bg-black bg-opacity-50 z-50"
-        onClick={onClose}
-      />
-
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <div
-          className="bg-white rounded-xl shadow-2xl w-full max-w-md"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <div className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
-                  <FaShoppingCart className="w-5 h-5 text-orange-500" />
-                </div>
-                <h3 className="text-lg font-bold text-gray-900">Корзина</h3>
-              </div>
-              <button
-                onClick={onClose}
-                className="text-gray-400 hover:text-gray-600 text-2xl"
-              >
-                ×
-              </button>
-            </div>
-
-            <p className="text-gray-600 mb-6">
-              Сатып алууну аяктоо үчүн аккаунт түзүшүңүз керек. Ал учурда сиздин корзинадагы курстар сакталып калат.
-            </p>
-
-            <div className="space-y-3">
-              <Button
-                variant="primary"
-                onClick={onRegister}
-                className="w-full py-3"
-              >
-                Аккаунт түзүү
-              </Button>
-
-              <button
-                onClick={onClose}
-                className="w-full text-gray-500 hover:text-gray-700 py-2 text-sm"
-              >
-                Кийинчерээк
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </>
-  );
-};
+import Modal from '@shared-ui/Modal'; // Используем существующую модалку
 
 const Cart = () => {
   const {
@@ -125,11 +67,45 @@ const Cart = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
-      <RegisterModal
+      {/* Используем существующую Modal компоненту */}
+      <Modal
         isOpen={showRegisterModal}
         onClose={() => setShowRegisterModal(false)}
-        onRegister={handleRegister}
-      />
+        title="Корзина"
+        size="md"
+      >
+        <div className="space-y-4">
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
+              <FaShoppingCart className="w-5 h-5 text-orange-500" />
+            </div>
+            <div>
+              <h3 className="font-bold text-gray-900">Регистрация керек</h3>
+            </div>
+          </div>
+
+          <p className="text-gray-600">
+            Сатып алууну аяктоо үчүн аккаунт түзүшүңүз керек. Ал учурда сиздин корзинадагы курстар сакталып калат.
+          </p>
+
+          <div className="space-y-3 pt-2">
+            <Button
+              variant="primary"
+              onClick={handleRegister}
+              className="w-full py-3"
+            >
+              Аккаунт түзүү
+            </Button>
+
+            <button
+              onClick={() => setShowRegisterModal(false)}
+              className="w-full text-gray-500 hover:text-gray-700 py-2 text-sm text-center"
+            >
+              Кийинчерээк
+            </button>
+          </div>
+        </div>
+      </Modal>
 
       <div className="container mx-auto px-4">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
@@ -138,13 +114,11 @@ const Cart = () => {
           <div className="flex items-center gap-3">
             <button
               onClick={clearCart}
-              className="flex items-center text-red-500 hover:text-red-700 text-sm font-medium px-3 py-2 border border-red-200 rounded-lg hover:bg-red-50"
+              className="flex items-center text-red-500 hover:text-red-700 text-sm font-medium px-3 py-2 border border-red-200 rounded-lg hover:bg-red-50 transition-colors"
             >
               <BsTrash className="w-4 h-4 mr-2" />
               Бардыгын өчүрүү
             </button>
-
-
           </div>
         </div>
 
@@ -159,11 +133,17 @@ const Cart = () => {
                 <Link to={`/courses/${item.id}`} className="block">
                   <div className="flex flex-col sm:flex-row">
                     <div className="sm:w-40 h-48 sm:h-auto">
-                      <img
-                        src={item.coverImageUrl}
-                        alt={item.title}
-                        className="w-full h-full object-cover"
-                      />
+                      {item.coverImageUrl ? (
+                        <img
+                          src={item.coverImageUrl}
+                          alt={item.title}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-gray-100 flex items-center justify-center">
+                          <span className="text-gray-400">Изображение отсутствует</span>
+                        </div>
+                      )}
                     </div>
 
                     <div className="flex-1 p-4 sm:p-6">
@@ -199,7 +179,7 @@ const Cart = () => {
                               e.stopPropagation();
                               removeFromCart(item.id);
                             }}
-                            className="text-red-500 hover:text-red-700 text-sm font-medium flex items-center px-3 py-1 border border-red-200 rounded hover:bg-red-50"
+                            className="text-red-500 hover:text-red-700 text-sm font-medium flex items-center px-3 py-1 border border-red-200 rounded hover:bg-red-50 transition-colors"
                           >
                             <BsTrash className="w-3 h-3 mr-1" />
                             Өчүрүү
@@ -236,14 +216,11 @@ const Cart = () => {
                 <Button
                   variant="primary"
                   onClick={handleCheckout}
-                className="w-full py-2 text-sm flex items-center justify-start"
-
+                  className="w-full py-3"
                 >
                   Сатып алуу
                 </Button>
               </div>
-
-
             </div>
           </div>
         </div>

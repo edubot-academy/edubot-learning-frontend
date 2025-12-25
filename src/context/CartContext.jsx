@@ -1,4 +1,3 @@
-// context/CartContext.js
 import React, { createContext, useState, useContext, useCallback, useMemo, useEffect } from 'react';
 import { AuthContext } from './AuthContext';
 import {
@@ -110,34 +109,25 @@ export const CartProvider = ({ children }) => {
     loadCart();
   }, [user, normalizeCartItems, parseSavedCart, mergeGuestCartIntoBackend]);
 
-  useEffect(() => {
-    if (initialized && cartItems.length > 0) {
-      localStorage.setItem('cart', JSON.stringify(cartItems));
-    }
-  }, [cartItems, initialized]);
-
   const addToCart = useCallback(async (course) => {
-    const alreadyInCart = cartItems.some(item => item.id === course.id);
-    
-    if (alreadyInCart) {
-      return { 
-        success: false, 
-        message: 'Курс уже в корзине',
-        course 
+    setCartItems(prev => {
+      const alreadyInCart = prev.some(item => item.id === course.id);
+      
+      if (alreadyInCart) {
+        return prev;
+      }
+
+      const cartItem = {
+        ...course,
+        cartItemId: `${course.id}_${Date.now()}`,
+        addedAt: new Date().toISOString(),
+        quantity: 1
       };
-    }
 
-    const cartItem = {
-      ...course,
-      cartItemId: `${course.id}_${Date.now()}`,
-      addedAt: new Date().toISOString(),
-      quantity: 1
-    };
-
-    // Для гостей и авторизованных - одинаково в localStorage
-    const newCart = [...cartItems, cartItem];
-    setCartItems(newCart);
-    localStorage.setItem('cart', JSON.stringify(newCart));
+      const newCart = [...prev, cartItem];
+      localStorage.setItem('cart', JSON.stringify(newCart));
+      return newCart;
+    });
 
     // Для авторизованных - дополнительно API запрос
     if (user) {
@@ -156,16 +146,16 @@ export const CartProvider = ({ children }) => {
     
     return { 
       success: true, 
-      message: 'Курс добавлен в корзину',
-      course: cartItem
+      message: 'Курс добавлен в корзину'
     };
-  }, [cartItems, user, normalizeCartItems]);
+  }, [user, normalizeCartItems]);
 
   const removeFromCart = useCallback(async (courseId) => {
-    // Сначала удаляем из локального состояния
-    const updated = cartItems.filter(item => item.id !== courseId);
-    setCartItems(updated);
-    localStorage.setItem('cart', JSON.stringify(updated));
+    setCartItems(prev => {
+      const updated = prev.filter(item => item.id !== courseId);
+      localStorage.setItem('cart', JSON.stringify(updated));
+      return updated;
+    });
 
     // Для авторизованных - удаляем через API
     if (user) {
@@ -177,12 +167,33 @@ export const CartProvider = ({ children }) => {
     }
     
     return { success: true };
-  }, [cartItems, user]);
+  }, [user]);
+
+  const removeCartItem = useCallback(async (cartItemId) => {
+    setCartItems(prev => {
+      const item = prev.find(c => c.cartItemId === cartItemId);
+      if (!item) return prev;
+      
+      // Для авторизованных - удаляем через API
+      if (user) {
+        removeCourseFromCart({ courseId: item.id }).catch(err => {
+          console.error('Failed to remove from API', err);
+        });
+      }
+      
+      const updated = prev.filter(i => i.cartItemId !== cartItemId);
+      localStorage.setItem('cart', JSON.stringify(updated));
+      return updated;
+    });
+    
+    return { success: true };
+  }, [user]);
 
   const clearCart = useCallback(async () => {
     if (user) {
       try {
-        const uniqueCourseIds = [...new Set(cartItems.map((item) => item.id))];
+        const currentItems = [...cartItems];
+        const uniqueCourseIds = [...new Set(currentItems.map((item) => item.id))];
         for (const cid of uniqueCourseIds) {
           try {
             await removeCourseFromCart({ courseId: cid });
@@ -226,18 +237,20 @@ export const CartProvider = ({ children }) => {
     initialized,
     addToCart,
     removeFromCart,
+    removeCartItem, // Добавлена обратно для совместимости
     clearCart,
     getCartItemsCount,
     getUniqueItemsCount,
     getTotalPrice,
     isInCart,
-    user, // Добавляем user в контекст
+    user,
   }), [
     cartItems,
     loading,
     initialized,
     addToCart,
     removeFromCart,
+    removeCartItem,
     clearCart,
     getCartItemsCount,
     getUniqueItemsCount,
