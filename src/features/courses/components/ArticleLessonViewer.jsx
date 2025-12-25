@@ -18,13 +18,20 @@ const ArticleLessonViewer = ({ lesson }) => {
             : null;
 
     return (
-        <div className="mb-6 bg-white rounded-lg shadow-md p-6 min-h-[320px]">
+        <div className="mb-6 bg-white rounded-lg shadow-md p-6 min-h-[320px] w-full max-w-full">
             {lesson.locked ? (
                 <div className="text-center text-gray-600 py-12">
                     Бул макаланы окуу үчүн курска катталыңыз.
                 </div>
             ) : content ? (
-                <div className="article-content" dangerouslySetInnerHTML={{ __html: content }} />
+                <div 
+                    className="article-content overflow-y-auto 
+                               max-h-[40vh] md:max-h-[70vh]
+                               pr-4
+                               scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100
+                               hover:scrollbar-thumb-gray-400"
+                    dangerouslySetInnerHTML={{ __html: content }}
+                />
             ) : (
                 <p className="text-gray-500">Макала тексти кошула элек.</p>
             )}
@@ -32,18 +39,19 @@ const ArticleLessonViewer = ({ lesson }) => {
             {resourceMeta && (
                 <button
                     type="button"
-                    className="mt-4 inline-flex items-center gap-2 text-sm text-edubot-orange underline decoration-2"
+                    className="mt-4 inline-flex items-center gap-2 text-sm text-edubot-orange 
+                               underline decoration-2 truncate max-w-full"
                     onClick={() => {
                         if (typeof window !== 'undefined') {
                             window.open(lesson.resourceUrl, '_blank', 'noopener');
                         }
                     }}
                 >
-                    <FiDownload className="text-base" />
-                    <span className="font-medium truncate max-w-[220px]">
+                    <FiDownload className="text-base flex-shrink-0" />
+                    <span className="font-medium truncate">
                         {resourceMeta.fileName}
                     </span>
-                    <span className="text-xs uppercase text-gray-500">
+                    <span className="text-xs uppercase text-gray-500 flex-shrink-0 ml-1">
                         {resourceMeta.typeLabel}
                     </span>
                 </button>
