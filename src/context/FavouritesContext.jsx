@@ -8,11 +8,7 @@ export const FavouritesProvider = ({ children }) => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    useEffect(() => {
-        loadFavorites();
-    }, []);
-
-    const loadFavorites = async () => {
+    const loadFavorites = useCallback(async () => {
         try {
             setLoading(true);
             const data = await fetchFavorites();
@@ -31,7 +27,11 @@ export const FavouritesProvider = ({ children }) => {
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
+
+    useEffect(() => {
+        loadFavorites();
+    }, [loadFavorites]);
 
     const toggleFavourite = useCallback(
         async (course) => {
@@ -82,9 +82,9 @@ export const FavouritesProvider = ({ children }) => {
         [favourites]
     );
 
-    // const refreshFavourites = useCallback(() => {
-    //     loadFavorites();
-    // }, []);
+    const refreshFavourites = useCallback(() => {
+        loadFavorites();
+    }, [loadFavorites]); 
 
     return (
         <FavouritesContext.Provider

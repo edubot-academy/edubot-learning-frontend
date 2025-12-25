@@ -1,17 +1,13 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect } from 'react';
 import { useFavourites } from '../context/FavouritesContext';
 import CardCourse from '../features/courses/components/CardCourse';
 
 const Favourite = () => {
     const { favourites, loading, error, refreshFavourites } = useFavourites();
 
-    const memoizedRefresh = useCallback(() => {
+    useEffect(() => {
         refreshFavourites();
     }, [refreshFavourites]);
-
-    useEffect(() => {
-        memoizedRefresh();
-    }, [memoizedRefresh]);
 
     if (loading) {
         return (
@@ -95,4 +91,3 @@ const Favourite = () => {
 };
 
 export default Favourite;
-s;
