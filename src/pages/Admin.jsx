@@ -21,6 +21,7 @@ import {
     addCourseAiPrompt,
     updateCourseAiPrompt,
     deleteCourseAiPrompt,
+    transcodeLessonHls,
 } from '@services/api';
 import { Link, useSearchParams } from 'react-router-dom';
 import { FiUsers, FiBookOpen, FiMail, FiClock, FiBriefcase, FiCpu, FiBell } from 'react-icons/fi';
@@ -56,6 +57,10 @@ const AdminPanel = () => {
     const [newPromptIsActive, setNewPromptIsActive] = useState(true);
     const [newPromptIsGlobal, setNewPromptIsGlobal] = useState(false);
     const [editingPromptId, setEditingPromptId] = useState(null);
+    const [transcodeCourseId, setTranscodeCourseId] = useState('');
+    const [transcodeSectionId, setTranscodeSectionId] = useState('');
+    const [transcodeLessonId, setTranscodeLessonId] = useState('');
+    const [transcodeLoading, setTranscodeLoading] = useState(false);
 
     const [searchParams, setSearchParams] = useSearchParams();
     const page = Number(searchParams.get('page')) || 1;
@@ -137,6 +142,28 @@ const AdminPanel = () => {
             toast.error('Каралуудагы курстарды жүктөө катасы.');
         }
     }, []);
+
+    const handleTranscode = useCallback(async () => {
+        if (!transcodeCourseId || !transcodeSectionId || !transcodeLessonId) {
+            toast.error('Course, section, жана lesson ID киргизиңиз');
+            return;
+        }
+        setTranscodeLoading(true);
+        try {
+            await transcodeLessonHls({
+                courseId: Number(transcodeCourseId),
+                sectionId: Number(transcodeSectionId),
+                lessonId: Number(transcodeLessonId),
+            });
+            toast.success('HLS транс коддоо башталды');
+        } catch (error) {
+            const message =
+                error?.response?.data?.message || error?.message || 'Транс коддоо катасы';
+            toast.error(Array.isArray(message) ? message.join(', ') : message);
+        } finally {
+            setTranscodeLoading(false);
+        }
+    }, [transcodeCourseId, transcodeSectionId, transcodeLessonId]);
 
     // ✅ Companies loader
     const loadCompanies = useCallback(
@@ -610,6 +637,47 @@ const AdminPanel = () => {
                                         </li>
                                     ))}
                                 </ul>
+                            </div>
+
+                            <div className="bg-white shadow rounded p-4">
+                                <h2 className="text-2xl font-semibold mb-4">HLS транс коддоо</h2>
+                                <p className="text-sm text-gray-600 mb-3">
+                                    MP4 сабакты HLSке айландыруу үчүн Course / Section / Lesson ID
+                                    киргизиңиз.
+                                </p>
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
+                                    <input
+                                        type="number"
+                                        placeholder="Course ID"
+                                        value={transcodeCourseId}
+                                        onChange={(e) => setTranscodeCourseId(e.target.value)}
+                                        className="border rounded px-3 py-2"
+                                    />
+                                    <input
+                                        type="number"
+                                        placeholder="Section ID"
+                                        value={transcodeSectionId}
+                                        onChange={(e) => setTranscodeSectionId(e.target.value)}
+                                        className="border rounded px-3 py-2"
+                                    />
+                                    <input
+                                        type="number"
+                                        placeholder="Lesson ID"
+                                        value={transcodeLessonId}
+                                        onChange={(e) => setTranscodeLessonId(e.target.value)}
+                                        className="border rounded px-3 py-2"
+                                    />
+                                </div>
+                                <button
+                                    onClick={handleTranscode}
+                                    disabled={transcodeLoading}
+                                    className="px-4 py-2 bg-orange-500 text-white rounded disabled:opacity-60"
+                                >
+                                    {transcodeLoading ? 'Жүктөлүүдө...' : 'Транс коддоо'}
+                                </button>
+                                <p className="text-xs text-gray-500 mt-2">
+                                    ffmpeg серверде орнотулган болушу керек.
+                                </p>
                             </div>
                         </div>
                     )}
