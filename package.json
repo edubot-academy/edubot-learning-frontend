@@ -11,11 +11,12 @@
         "format": "prettier --write ."
     },
     "dependencies": {
-      "@chepchik/react-rating": "^0.0.5",
+        "@chepchik/react-rating": "^0.0.5",
         "@fontsource/inter": "^5.2.5",
         "autoprefixer": "^10.4.20",
         "axios": "^1.7.9",
-          "embla-carousel-react": "^8.6.0",
+        "embla-carousel-react": "^8.6.0",
+        "hls.js": "^1.6.15",
         "lodash.debounce": "^4.0.8",
         "postcss": "^8.5.1",
         "react": "^19.0.0",
@@ -32,12 +33,12 @@
         "@types/react": "^19.0.8",
         "@types/react-dom": "^19.0.3",
         "@vitejs/plugin-react": "^4.3.4",
-        "prettier": "^3.4.1",
         "eslint": "^9.19.0",
         "eslint-plugin-react": "^7.37.4",
         "eslint-plugin-react-hooks": "^5.0.0",
         "eslint-plugin-react-refresh": "^0.4.18",
         "globals": "^15.14.0",
+        "prettier": "^3.4.1",
         "tailwindcss": "^3.4.17",
         "vite": "^6.1.0"
     }

@@ -1,12 +1,17 @@
 .theme-switch {
-    --toggle-size: 14px; /* Уменьшил размер с 16px до 12px */
-    --container-width: 4.5em; /* Уменьшил ширину */
-    --container-height: 2em; /* Уменьшил высоту */
+    --toggle-size: 14px;
+    /* Уменьшил размер с 16px до 12px */
+    --container-width: 4.5em;
+    /* Уменьшил ширину */
+    --container-height: 2em;
+    /* Уменьшил высоту */
     --container-radius: 6.25em;
     --container-light-bg: #3d7eae;
     --container-night-bg: #1d1f2c;
-    --circle-container-diameter: 2.7em; /* Уменьшил диаметр круга */
-    --sun-moon-diameter: 1.7em; /* Уменьшил солнце/луну */
+    --circle-container-diameter: 2.7em;
+    /* Уменьшил диаметр круга */
+    --sun-moon-diameter: 1.7em;
+    /* Уменьшил солнце/луну */
     --sun-bg: #ecca2f;
     --moon-bg: #c4c9d1;
     --spot-color: #959db1;

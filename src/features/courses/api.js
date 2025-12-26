@@ -12,6 +12,29 @@ export const fetchCourses = async ({ q = '', limit = 20, excludeIds = '' } = {})
     }
 };
 
+export const fetchCatalogCourses = async ({ page = 1, limit = 20, q = '' } = {}) => {
+    try {
+        const response = await api.get('/courses/catalog', {
+            params: clean({ page, limit, q }),
+        });
+        return response.data;
+    } catch (error) {
+        console.error('Error fetching catalog courses:', error);
+        throw error;
+    }
+};
+
+export const fetchCoursePreview = async (courseId) => {
+    const response = await api.get(`/courses/${courseId}/preview`);
+    return response.data;
+};
+
+export const fetchTopReviews = async ({ courseId, limit = 3 }) => {
+    console.log('courseId', courseId);
+    const response = await api.get(`/courses/${courseId}/reviews/top`, { params: { limit } });
+    return response.data;
+};
+
 export const fetchCourseDetails = async (courseId) => {
     const response = await api.get(`/courses/${courseId}`);
     return response.data;
@@ -118,6 +141,12 @@ export async function updateLesson(courseId, sectionId, lessonId, lessonData) {
     return response.data;
 }
 
+export const transcodeLessonHls = async ({ courseId, sectionId, lessonId }) => {
+    const response = await api.post(
+        `/courses/${courseId}/sections/${sectionId}/lessons/${lessonId}/transcode-hls`
+    );
+    return response.data;
+};
 export async function deleteLesson(courseId, sectionId, lessonId) {
     await api.delete(`/courses/${courseId}/sections/${sectionId}/lessons/${lessonId}`);
 }

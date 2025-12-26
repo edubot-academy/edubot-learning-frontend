@@ -54,22 +54,8 @@ const CardVideo = ({ coverImageUrl, course, lessonCount }) => {
 
     return (
         <>
-            <div className="border border-gray-200 rounded-md overflow-hidden bg-white w-[90vw] sm:w-[70vw] md:w-[40vw] lg:w-[30vw] max-w-[420px] px-4 py-5 m-5">
-                <div className="relative w-full">
-                    <button
-                        onClick={handleFavoriteClick}
-                        className="absolute top-2 right-2 z-10 bg-white p-2 rounded-full shadow-md hover:shadow-lg transition-shadow"
-                        aria-label={
-                            isCourseFavourite ? 'Удалить из избранного' : 'Добавить в избранное'
-                        }
-                    >
-                        {isCourseFavourite ? (
-                            <FaHeart className="text-red-500 text-lg" />
-                        ) : (
-                            <FaRegHeart className="text-gray-400 hover:text-red-500 text-lg" />
-                        )}
-                    </button>
-
+            <div className="border border-gray-200 rounded-md overflow-hidden bg-white w-full max-w-full px-6 py-5">
+                <div className="relative w-full ">
                     <img
                         src={coverImageUrl}
                         className="max-h-52 w-full object-cover rounded"

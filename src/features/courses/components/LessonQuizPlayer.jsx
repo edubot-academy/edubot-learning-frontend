@@ -1,7 +1,7 @@
-import Button from "@shared/ui/Button";
-import React, { useEffect, useMemo, useState } from "react";
-import { FiCheckCircle, FiClock, FiXCircle } from "react-icons/fi";
-import { IoIosArrowUp, IoIosArrowDown } from "react-icons/io";
+import Button from '@shared/ui/Button';
+import React, { useEffect, useMemo, useState } from 'react';
+import { FiCheckCircle, FiClock, FiXCircle } from 'react-icons/fi';
+import { IoIosArrowUp, IoIosArrowDown } from 'react-icons/io';
 import grade_A from '../../../assets/images/grade_A.png';
 import grade_B from '../../../assets/images/grade_B.png';
 import grade_C from '../../../assets/images/grade_C.png';
@@ -17,7 +17,6 @@ const LessonQuizPlayer = ({
     result = null,
     loading = false,
 }) => {
-
     const [activeQuestionIndex, setActiveQuestionIndex] = useState(0);
     const [startQuiz, setStartQuiz] = useState(false);
     const [isShowAnswers, setIsShowAnswers] = useState(false);
@@ -40,8 +39,8 @@ const LessonQuizPlayer = ({
                 correctIds: Array.isArray(ans.correctOptionIds)
                     ? ans.correctOptionIds
                     : ans.correctOptionId
-                        ? [ans.correctOptionId]
-                        : [],
+                      ? [ans.correctOptionId]
+                      : [],
             };
             return acc;
         }, {});
@@ -53,20 +52,13 @@ const LessonQuizPlayer = ({
         return quiz.questions[activeQuestionIndex];
     }, [quiz?.questions, activeQuestionIndex]);
 
-    const currentAnswerInfo = currentQuestion
-        ? resultAnswersMap[currentQuestion.id]
-        : null;
+    const currentAnswerInfo = currentQuestion ? resultAnswersMap[currentQuestion.id] : null;
 
-    const selectedOption = currentQuestion
-        ? answers[currentQuestion.id]
-        : null;
+    const selectedOption = currentQuestion ? answers[currentQuestion.id] : null;
 
-    const allAnswered =
-        quiz?.questions?.every((q) => answers[q.id]) ?? false;
+    const allAnswered = quiz?.questions?.every((q) => answers[q.id]) ?? false;
 
-    const isLastQuestion =
-        quiz?.questions &&
-        activeQuestionIndex === quiz.questions.length - 1;
+    const isLastQuestion = quiz?.questions && activeQuestionIndex === quiz.questions.length - 1;
 
     // Function to handle skip question
     const handleSkipQuestion = () => {
@@ -74,11 +66,11 @@ const LessonQuizPlayer = ({
 
         // Mark this question as skipped
         const questionId = currentQuestion.id;
-        setSkippedQuestions(prev => [...prev, questionId]);
+        setSkippedQuestions((prev) => [...prev, questionId]);
 
         // Move to next question
         if (!isLastQuestion) {
-            setActiveQuestionIndex(prev => prev + 1);
+            setActiveQuestionIndex((prev) => prev + 1);
         }
     };
 
@@ -129,19 +121,15 @@ const LessonQuizPlayer = ({
         return quiz.questions.map((question) => {
             const answerInfo = resultAnswersMap[question.id];
             const selected = answerInfo
-                ? question.options.find(
-                    (opt) => opt.id === answerInfo.selectedOptionId
-                )
+                ? question.options.find((opt) => opt.id === answerInfo.selectedOptionId)
                 : undefined;
             const correctOptions = answerInfo
-                ? question.options.filter((opt) =>
-                    answerInfo.correctIds.includes(opt.id)
-                )
+                ? question.options.filter((opt) => answerInfo.correctIds.includes(opt.id))
                 : [];
             const answeredCorrect =
-                typeof answerInfo?.isCorrect === "boolean"
+                typeof answerInfo?.isCorrect === 'boolean'
                     ? answerInfo.isCorrect
-                    : answerInfo?.correct ?? null;
+                    : (answerInfo?.correct ?? null);
 
             return {
                 question,
@@ -196,7 +184,6 @@ const LessonQuizPlayer = ({
         return (
             <div className="mb-6 bg-white rounded-lg shadow-md p-6 space-y-4">
                 <div className="flex flex-col items-center gap-3 text-center">
-
                     {result.passed ? (
                         <img src={grade_A} alt="grade" className="w-24" />
                     ) : result.score >= 70 ? (
@@ -206,14 +193,13 @@ const LessonQuizPlayer = ({
                     )}
 
                     <p className="text-2xl font-bold">
-                        {result.score}% ({result.correctAnswers}/
-                        {result.totalQuestions}) правильно
+                        {result.score}% ({result.correctAnswers}/{result.totalQuestions}) правильно
                     </p>
 
                     <p className="text-gray-600">
                         {result.passed
-                            ? "Вы показали глубокие знания!"
-                            : "Не удалось пройти. Попробуйте снова."}
+                            ? 'Вы показали глубокие знания!'
+                            : 'Не удалось пройти. Попробуйте снова.'}
                     </p>
 
                     <div className="flex gap-4">
@@ -238,12 +224,13 @@ const LessonQuizPlayer = ({
                             ({ question, selected, correctOptions, answeredCorrect }, i) => (
                                 <div
                                     key={question.id}
-                                    className={`border rounded p-3 text-sm ${answeredCorrect
-                                        ? "border-green-500 bg-green-50"
-                                        : answeredCorrect === false
-                                            ? "border-red-500 bg-red-50"
-                                            : "border-gray-200 bg-gray-50"
-                                        }`}
+                                    className={`border rounded p-3 text-sm ${
+                                        answeredCorrect
+                                            ? 'border-green-500 bg-green-50'
+                                            : answeredCorrect === false
+                                              ? 'border-red-500 bg-red-50'
+                                              : 'border-gray-200 bg-gray-50'
+                                    }`}
                                 >
                                     <p className="font-medium flex items-center gap-2">
                                         {answeredCorrect ? (
@@ -257,9 +244,9 @@ const LessonQuizPlayer = ({
                                     </p>
 
                                     <p>
-                                        Ваш ответ:{" "}
+                                        Ваш ответ:{' '}
                                         <span className="font-semibold bg-gray-100 px-1 rounded">
-                                            {selected?.text || "Пропущено"}
+                                            {selected?.text || 'Пропущено'}
                                         </span>
                                     </p>
 
@@ -299,11 +286,8 @@ const LessonQuizPlayer = ({
                                 <label
                                     key={option.id}
                                     className={`flex items-center gap-2 border rounded-xl p-4 cursor-pointer 
-                                        ${isSelected
-                                            ? "border-edubot-orange"
-                                            : "border-gray-200"
-                                        }
-                                        ${disabled ? "opacity-70 cursor-not-allowed" : ""}
+                                        ${isSelected ? 'border-edubot-orange' : 'border-gray-200'}
+                                        ${disabled ? 'opacity-70 cursor-not-allowed' : ''}
                                     `}
                                 >
                                     <input
@@ -312,10 +296,7 @@ const LessonQuizPlayer = ({
                                         value={option.id}
                                         checked={isSelected}
                                         onChange={() =>
-                                            onAnswerChange?.(
-                                                currentQuestion.id,
-                                                option.id
-                                            )
+                                            onAnswerChange?.(currentQuestion.id, option.id)
                                         }
                                     />
                                     <span>{option.text}</span>
@@ -326,25 +307,16 @@ const LessonQuizPlayer = ({
 
                     {isLastQuestion ? (
                         <div className="flex gap-4">
-                            <Button
-                                variant="secondary"
-                                onClick={handleSkipQuestion}
-                            >
+                            <Button variant="secondary" onClick={handleSkipQuestion}>
                                 Пропустить
                             </Button>
-                            <Button
-                                onClick={handleSubmit}
-                                disabled={submitting}
-                            >
-                                {submitting ? "Загрузка..." : "Завершить"}
+                            <Button onClick={handleSubmit} disabled={submitting}>
+                                {submitting ? 'Загрузка...' : 'Завершить'}
                             </Button>
                         </div>
                     ) : (
                         <div className="flex gap-4">
-                            <Button
-                                variant="secondary"
-                                onClick={handleSkipQuestion}
-                            >
+                            <Button variant="secondary" onClick={handleSkipQuestion}>
                                 Пропустить
                             </Button>
                             <Button
@@ -361,7 +333,8 @@ const LessonQuizPlayer = ({
                     )}
 
                     <div className="text-sm text-gray-500 mt-2">
-                        Пропущенные вопросы: {skippedQuestions.length} из {quiz.questions?.length || 0}
+                        Пропущенные вопросы: {skippedQuestions.length} из{' '}
+                        {quiz.questions?.length || 0}
                     </div>
                 </div>
             ) : (

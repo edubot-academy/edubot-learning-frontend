@@ -18,8 +18,8 @@ import SideBar from '@shared-ui/SideBar';
 import SidebarOverlay from '@shared-ui/SidebarOverlay';
 import UserMenuDropdown from '@shared-ui/UserMenuDropdown';
 import { useFavourites } from '../context/FavouritesContext';
+import { useCart } from '../context/CartContext';
 
-// NavLinks компонент
 const NavLinks = ({ isMobile, user }) => {
     const location = useLocation();
     const active = (path) => (location.pathname === path ? 'text-orange-500' : '');
@@ -69,6 +69,9 @@ const NavLinks = ({ isMobile, user }) => {
 };
 
 const Header = () => {
+    const { getUniqueItemsCount } = useCart();
+    const cartItemsCount = getUniqueItemsCount();
+
     const { user } = useContext(AuthContext);
     const location = useLocation();
     const navigate = useNavigate();
@@ -83,11 +86,9 @@ const Header = () => {
     const [dark, setDark] = useState(false);
     const [searchOpen, setSearchOpen] = useState(false);
     const [userMenuOpen, setUserMenuOpen] = useState(false);
-
     const [activeIcon, setActiveIcon] = useState(null);
 
     const langRef = useRef(null);
-
     const [results, setResults] = useState([]);
     const [showDropdown, setShowDropdown] = useState(false);
     const searchContainerRef = useRef(null);
@@ -102,7 +103,6 @@ const Header = () => {
         }
     }, [location.pathname]);
 
-    // Close dropdown on outside click
     useEffect(() => {
         const handleClickOutside = (e) => {
             if (searchContainerRef.current && !searchContainerRef.current.contains(e.target)) {
@@ -161,7 +161,6 @@ const Header = () => {
 
     const handleIconClick = (iconName, callback) => {
         setActiveIcon(iconName);
-
         if (callback) callback();
     };
 
@@ -197,7 +196,7 @@ const Header = () => {
 
                         {/* Search Bar - Desktop */}
                         <div
-                            className="flex items-center border rounded overflow-hidden hover:border-[#F06743]  flex-1 max-w-xs ml-6 border-[#7B818C] dark:border-[#7B818C]"
+                            className="relative flex items-center border rounded overflow-hidden hover:border-[#F06743] flex-1 max-w-xs ml-6 border-[#7B818C] dark:border-[#7B818C]"
                             ref={searchContainerRef}
                         >
                             <IoSearch className="w-5 h-5 ml-2 text-[#7B818C] dark:text-[#7B818C]" />
@@ -212,7 +211,7 @@ const Header = () => {
 
                             {/* Search Dropdown */}
                             {showDropdown && (
-                                <div className="absolute top-full mt-2 w-full mt-[-24px] max-w-xs bg-white border-[border: 1px solid oklch(86.72% .0192 282.72deg);] dark:bg-white shadow-xl   z-50 max-h-64 overflow-y-auto">
+                                <div className="absolute top-full mt-1 w-full bg-white border border-gray-300 dark:bg-white shadow-xl z-50 max-h-64 overflow-y-auto">
                                     {results.length > 0 ? (
                                         results.map((course) => (
                                             <button
@@ -286,9 +285,10 @@ const Header = () => {
                             <ThemeToggle dark={dark} setDark={setDark} />
                         </div>
 
-                        {/* User Actions  */}
+                        {/* User Actions */}
                         {user ? (
                             <div className="flex items-center gap-3">
+                                {/* Иконка сердца */}
                                 <button
                                     className={`relative w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-300 ${
                                         isFavouritesPage || activeIcon === 'heart'
@@ -310,23 +310,33 @@ const Header = () => {
                                     )}
                                 </button>
 
-                                {/* Иконка корзины - черный бордер, активна только если activeIcon === 'cart' */}
-                                <button
-                                    className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-300 ${
-                                        activeIcon === 'cart'
-                                            ? 'bg-orange-500 border-orange-500'
-                                            : 'border-black hover:border-gray-600'
-                                    }`}
-                                    onClick={() => handleIconClick('cart', () => navigate('/cart'))}
-                                >
-                                    <BsCart2
-                                        className={`w-5 h-5 transition-colors duration-300 ${
-                                            activeIcon === 'cart' ? 'text-white' : 'text-black'
+                                {/* Иконка корзины */}
+                                <div className="relative">
+                                    <button
+                                        className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-300 ${
+                                            activeIcon === 'cart'
+                                                ? 'bg-orange-500 border-orange-500'
+                                                : 'border-black hover:border-gray-600'
                                         }`}
-                                    />
-                                </button>
+                                        onClick={() =>
+                                            handleIconClick('cart', () => navigate('/cart'))
+                                        }
+                                    >
+                                        <BsCart2
+                                            className={`w-5 h-5 transition-colors duration-300 ${
+                                                activeIcon === 'cart' ? 'text-white' : 'text-black'
+                                            }`}
+                                        />
+                                        {/* Бейдж с количеством - показывается всегда если есть товары */}
+                                        {cartItemsCount > 0 && (
+                                            <span className="absolute -top-1 -right-1 bg-orange-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-medium">
+                                                {cartItemsCount}
+                                            </span>
+                                        )}
+                                    </button>
+                                </div>
 
-                                {/* Иконка пользователя - черный бордер, активна только если activeIcon === 'user' */}
+                                {/* Иконка пользователя */}
                                 <div className="relative group">
                                     <button
                                         className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-300 ${
@@ -348,22 +358,51 @@ const Header = () => {
                                         />
                                     </button>
 
-                                    {/* Dropdown меню */}
                                     <div className="absolute top-full right-0 pt-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible lg:group-hover:opacity-100 lg:group-hover:visible transform translate-y-2 group-hover:translate-y-0 transition-all duration-300 ease-out z-50">
                                         <div className="relative">
                                             <div className="absolute -top-2 left-0 right-0 h-2 bg-transparent"></div>
-
                                             <UserMenuDropdown user={user} onClose={() => {}} />
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         ) : (
-                            <Link to="/register">
-                                <button className="bg-orange-500 text-white px-4 py-2 rounded hover:bg-orange-600 transition-colors">
-                                    Катталуу
-                                </button>
-                            </Link>
+                            <div className="flex items-center gap-3">
+                                {/* Иконка корзины для неавторизованных */}
+                                <div className="relative">
+                                    <button
+                                        className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-300 ${
+                                            activeIcon === 'cart' || location.pathname === '/cart'
+                                                ? 'bg-orange-500 border-orange-500'
+                                                : 'border-black hover:border-gray-600'
+                                        }`}
+                                        onClick={() =>
+                                            handleIconClick('cart', () => navigate('/cart'))
+                                        }
+                                    >
+                                        <BsCart2
+                                            className={`w-5 h-5 transition-colors duration-300 ${
+                                                activeIcon === 'cart' ||
+                                                location.pathname === '/cart'
+                                                    ? 'text-white'
+                                                    : 'text-black'
+                                            }`}
+                                        />
+
+                                        {cartItemsCount > 0 && (
+                                            <span className="absolute -top-1 -right-1 bg-orange-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-medium">
+                                                {cartItemsCount}
+                                            </span>
+                                        )}
+                                    </button>
+                                </div>
+
+                                <Link to="/login">
+                                    <button className="bg-orange-500 text-white px-4 py-2 rounded hover:bg-orange-600 transition-colors">
+                                        Кирүү
+                                    </button>
+                                </Link>
+                            </div>
                         )}
                     </div>
                 </div>
@@ -400,7 +439,7 @@ const Header = () => {
                             </div>
                         </Link>
 
-                        {/* Right Side - Search + User */}
+                        {/* Right Side - Search */}
                         <div className="flex items-center gap-3">
                             {/* Search Icon */}
                             <button
@@ -521,20 +560,27 @@ const Header = () => {
                             </button>
 
                             {/* Иконка корзины для мобильной версии с переходом на /cart */}
-                            <button
-                                className={`w-10 h-10 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${
-                                    activeIcon === 'cart'
-                                        ? 'bg-orange-500 border-orange-500'
-                                        : 'border-black hover:border-gray-600'
-                                }`}
-                                onClick={() => handleIconClick('cart', () => navigate('/cart'))}
-                            >
-                                <BsCart2
-                                    className={`w-5 h-5 transition-colors duration-300 ${
-                                        activeIcon === 'cart' ? 'text-white' : 'text-black'
+                            <div className="relative">
+                                <button
+                                    className={`w-10 h-10 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${
+                                        activeIcon === 'cart'
+                                            ? 'bg-orange-500 border-orange-500'
+                                            : 'border-black hover:border-gray-600'
                                     }`}
-                                />
-                            </button>
+                                    onClick={() => handleIconClick('cart', () => navigate('/cart'))}
+                                >
+                                    <BsCart2
+                                        className={`w-5 h-5 transition-colors duration-300 ${
+                                            activeIcon === 'cart' ? 'text-white' : 'text-black'
+                                        }`}
+                                    />
+                                </button>
+                                {cartItemsCount > 0 && (
+                                    <span className="absolute -top-1 -right-1 bg-orange-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-medium">
+                                        {cartItemsCount}
+                                    </span>
+                                )}
+                            </div>
                         </div>
                     )}
                 </div>

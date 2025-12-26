@@ -36,9 +36,11 @@ const SideBar = ({ setMenuOpen, setPosition }) => {
         'relative hover:text-white hover:bg-[#EA580C]  m-0 pt-4 pb-4 pl-3 sm:text-lg md:text-xl rounded-md flex justify-start gap-[10px] w-full items-center ';
 
     const handleProfileClick = () => {
-        navigate(getDashboardPath());
-        setMenuOpen(false);
-        setPosition(false);
+        if (user) {
+            navigate(getDashboardPath());
+            setMenuOpen(false);
+            setPosition(false);
+        }
     };
 
     const logout = () => {
@@ -62,35 +64,38 @@ const SideBar = ({ setMenuOpen, setPosition }) => {
             </div>
 
             <div className="mt-8">
-                <div
-                    className="flex justify-between gap-1 pb-6 border-b border-gray-300 cursor-pointer hover:bg-gray-50 rounded-lg p-2"
-                    onClick={handleProfileClick}
-                >
-                    <div className="flex ">
+                <div className="flex justify-between gap-1 pb-6 border-b border-gray-300 rounded-lg p-2">
+                    <div className="flex">
                         <img src={Person} alt="Person" />
                     </div>
 
                     {user !== null ? (
-                        <div className="w-full flex items-center justify-between ml-5">
+                        <div
+                            className="w-full flex items-center justify-between ml-5 cursor-pointer hover:bg-gray-50 rounded-lg p-2"
+                            onClick={handleProfileClick}
+                            role="button"
+                            tabIndex={0}
+                            onKeyDown={(e) => e.key === 'Enter' && handleProfileClick()}
+                        >
                             <div className="flex flex-col items-start">
                                 <h2 className="text-xl font-semibold">{user.fullName}</h2>
                                 <span className="text-[#208D28]">Идентифицированный</span>
-                                {/* Показываем роль пользователя */}
                                 <span className="text-sm text-gray-500 capitalize">
                                     {user.role}
                                 </span>
                             </div>
                         </div>
                     ) : (
-                        <div className="w-full flex  items-center justify-center">
-                            <Button variant="primary">
-                                <Link
-                                    to="/register"
-                                    className="block w-full px-5 text-left text-gray-700 dark:text-gray-200 rounded-md transition-colors"
-                                >
-                                    Катталуу
-                                </Link>
-                            </Button>
+                        <div className="w-full flex items-center justify-between ml-5">
+                            <Link
+                                to="/login"
+                                onClick={() => {
+                                    setMenuOpen(false);
+                                    setPosition(false);
+                                }}
+                            >
+                                <Button variant="primary">Кирүү</Button>
+                            </Link>
                         </div>
                     )}
                 </div>
@@ -102,14 +107,14 @@ const SideBar = ({ setMenuOpen, setPosition }) => {
                                 <img src={BellIcon} alt="" className="max-w-6 pb-1" />
                                 Билдирүүлөр
                             </div>
-                            <div className={`${linkClass}`}>
+                            <Link to="/cart" className={`${linkClass}`}>
                                 <img src={BasketIcon} alt="" className="max-w-6 pb-1" />
                                 Корзина
-                            </div>
-                            <div className={`${linkClass}`}>
+                            </Link>
+                            <Link to="/favourite" className={`${linkClass}`}>
                                 <img src={BlackHeart} alt="" className="max-w-6 pb-1" />
                                 Избранные
-                            </div>
+                            </Link>
                             <div className={`${linkClass}`}>
                                 <img src={SettingIcon} alt="" className="max-w-6 pb-1" />
                                 Настройка
@@ -140,9 +145,14 @@ const SideBar = ({ setMenuOpen, setPosition }) => {
                             </button>
                         </>
                     ) : (
-                        <Link to="/register" className={`${active('/register')} ${linkClass}`}>
-                            Катталуу
-                        </Link>
+                        <>
+                            <Link to="/cart" className={`${active('/cart')} ${linkClass}`}>
+                                Корзина
+                            </Link>
+                            <Link to="/register" className={`${active('/register')} ${linkClass}`}>
+                                Катталуу
+                            </Link>
+                        </>
                     )}
                 </div>
             </div>

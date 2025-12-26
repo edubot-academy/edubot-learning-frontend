@@ -1,6 +1,5 @@
 import { useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import DashboardSidebar from '@features/dashboard/components/DashboardSidebar';
-import NotificationsWidget from '@features/notifications/components/NotificationsWidget';
 import {
     fetchStudentCourses,
     fetchStudentDashboardSummary,
@@ -13,7 +12,15 @@ import {
 } from '@services/api';
 import { AuthContext } from '../context/AuthContext';
 import toast from 'react-hot-toast';
-import { FiHome, FiBookOpen, FiCalendar, FiCheckCircle, FiBarChart2, FiUser, FiBell } from 'react-icons/fi';
+import {
+    FiHome,
+    FiBookOpen,
+    FiCalendar,
+    FiCheckCircle,
+    FiBarChart2,
+    FiUser,
+    FiBell,
+} from 'react-icons/fi';
 import NotificationsWidget from '@features/notifications/components/NotificationsWidget';
 import NotificationsTab from '@features/notifications/components/NotificationsTab';
 import { useSearchParams } from 'react-router-dom';

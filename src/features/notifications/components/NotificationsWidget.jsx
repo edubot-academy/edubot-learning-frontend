@@ -71,11 +71,11 @@ const NotificationsWidget = ({ title = 'Билдирүүлөр', limit = 5, link
                 <ul className="divide-y divide-gray-100">
                     {items.map((item) => (
                         <li key={item.id} className="py-2 text-sm">
-                            <p className="text-gray-800 line-clamp-2">{item.message || item.subject}</p>
+                            <p className="text-gray-800 line-clamp-2">
+                                {item.message || item.subject}
+                            </p>
                             <p className="text-xs text-gray-500 mt-1">
-                                {item.createdAt
-                                    ? new Date(item.createdAt).toLocaleString()
-                                    : ''}
+                                {item.createdAt ? new Date(item.createdAt).toLocaleString() : ''}
                             </p>
                         </li>
                     ))}
