@@ -11,7 +11,7 @@ const CardVideo = ({ coverImageUrl, course, lessonCount }) => {
 
     return (
         <>
-            <div className="border border-gray-200 rounded-md overflow-hidden bg-white w-[90vw] sm:w-[70vw] md:w-[40vw] lg:w-[30vw] max-w-[420px] px-4 py-5 m-5">
+            <div className="border border-gray-200 rounded-md overflow-hidden bg-white w-full max-w-full px-6 py-5">
                 <div className="relative w-full ">
                     <img
                         src={coverImageUrl}
