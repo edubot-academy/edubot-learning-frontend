@@ -15,8 +15,7 @@ export const FavouritesProvider = ({ children }) => {
             setFavourites(data);
             setError(null);
             localStorage.setItem('favourites', JSON.stringify(data));
-        } catch (err) {
-            console.error('Ошибка при загрузке избранного:', err);
+        } catch {
             setError('Не удалось загрузить избранное');
             try {
                 const localFavs = JSON.parse(localStorage.getItem('favourites')) || [];
@@ -35,9 +34,9 @@ export const FavouritesProvider = ({ children }) => {
 
     const toggleFavourite = useCallback(
         async (course) => {
-            try {
-                const isCurrentlyFav = favourites.some((item) => item.id === course.id);
+            const isCurrentlyFav = favourites.some((item) => item.id === course.id);
 
+            try {
                 if (isCurrentlyFav) {
                     await removeFavorite(course.id);
                     const newFavourites = favourites.filter((item) => item.id !== course.id);
@@ -49,25 +48,19 @@ export const FavouritesProvider = ({ children }) => {
                     setFavourites(newFavourites);
                     localStorage.setItem('favourites', JSON.stringify(newFavourites));
                 }
+
                 return { success: true };
             } catch (err) {
-                console.error('Ошибка при обновлении избранного:', err);
-
-                const isCurrentlyFav = favourites.some((item) => item.id === course.id);
-                let newFavourites;
-
-                if (isCurrentlyFav) {
-                    newFavourites = favourites.filter((item) => item.id !== course.id);
-                } else {
-                    newFavourites = [...favourites, course];
-                }
+                const newFavourites = isCurrentlyFav
+                    ? favourites.filter((item) => item.id !== course.id)
+                    : [...favourites, course];
 
                 setFavourites(newFavourites);
                 localStorage.setItem('favourites', JSON.stringify(newFavourites));
 
                 return {
                     success: false,
-                    error: err.message,
+                    error: err?.message,
                     fallback: true,
                 };
             }
@@ -76,15 +69,13 @@ export const FavouritesProvider = ({ children }) => {
     );
 
     const isFavourite = useCallback(
-        (courseId) => {
-            return favourites.some((item) => item.id === courseId);
-        },
+        (courseId) => favourites.some((item) => item.id === courseId),
         [favourites]
     );
 
     const refreshFavourites = useCallback(() => {
         loadFavorites();
-    }, [loadFavorites]); 
+    }, [loadFavorites]);
 
     return (
         <FavouritesContext.Provider
