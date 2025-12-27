@@ -26,7 +26,8 @@ const VideoPlayerUI = ({
   const [openMenu, setOpenMenu] = useState(false);
   const [fullScreen, setFullScreen] = useState(false);
   const [showVolumeSlider, setShowVolumeSlider] = useState(false);
-  const [showFeedback, setShowFeedback] = useState(false);
+
+  const [showFeedback, setShowFeedback] = useState(true);
   const [iconType, setIconType] = useState('play');
 
   const seek = (sec) => {
@@ -113,17 +114,12 @@ const VideoPlayerUI = ({
     };
 
     const handlePlayEvent = () => setIsPlaying(true);
-
-    const handlePauseEvent = () => {
-      setIsPlaying(false);
-    };
-
+    const handlePauseEvent = () => setIsPlaying(false);
     const handleTimeUpdateEvent = () => {
       setCurrentTime(v.currentTime);
       onProgress?.(v.currentTime);
       onTimeUpdate?.(v.currentTime);
     };
-
     const handleEndedEvent = () => onEnded?.();
 
     v.addEventListener('loadedmetadata', handleLoadedMetadata);
@@ -140,7 +136,6 @@ const VideoPlayerUI = ({
       v.removeEventListener('ended', handleEndedEvent);
     };
   }, [videoRef, onProgress, onTimeUpdate, onEnded, onPause]);
-
 
   useEffect(() => {
     const handleFullscreenChange = () => {
@@ -240,19 +235,11 @@ const VideoPlayerUI = ({
               {isPlaying ? <CiPause1 className="w-4 h-4 sm:w-5 sm:h-5" /> : <CiPlay1 className="w-4 h-4 sm:w-5 sm:h-5" />}
             </button>
 
-            <button
-              type="button"
-              onClick={() => { seek(-15); }}
-              className="hover:opacity-80"
-            >
+            <button type="button" onClick={() => { seek(-15); }} className="hover:opacity-80">
               <img src={Rewind15sekBack} alt="rewind 15" className="w-4 h-4 sm:w-5 sm:h-5" />
             </button>
 
-            <button
-              type="button"
-              onClick={() => { seek(15); }}
-              className="hover:opacity-80"
-            >
+            <button type="button" onClick={() => { seek(15); }} className="hover:opacity-80">
               <img src={Rewind15sekForward} alt="forward 15" className="w-4 h-4 sm:w-5 sm:h-5" />
             </button>
 
@@ -275,8 +262,7 @@ const VideoPlayerUI = ({
               </button>
 
               <div
-                className={`overflow-hidden transition-all duration-150 flex items-center ${showVolumeSlider ? (isMuted || volume === 0 ? 'w-0' : 'w-24') : 'w-0'
-                  }`}
+                className={`overflow-hidden transition-all duration-150 flex items-center ${showVolumeSlider ? (isMuted || volume === 0 ? 'w-0' : 'w-24') : 'w-0'}`}
               >
                 <input
                   type="range"
@@ -285,14 +271,10 @@ const VideoPlayerUI = ({
                   step="0.01"
                   value={volume}
                   onClick={(e) => e.stopPropagation()}
-                  onChange={(e) => {
-                    e.stopPropagation();
-                    handleVolumeChange(Number(e.target.value));
-                  }}
-                  className={`h-1 w-full cursor-pointer ${isMuted || volume === 0 ? 'accent-transparent' : 'accent-orange-500'}`}
+                  onChange={(e) => { e.stopPropagation(); handleVolumeChange(Number(e.target.value)); }}
+                  className={`h-4 w-full cursor-pointer rounded-full ${isMuted || volume === 0 ? 'accent-transparent' : 'accent-orange-500'}`}
                 />
               </div>
-
             </div>
 
             <span className="ml-1 tabular-nums">

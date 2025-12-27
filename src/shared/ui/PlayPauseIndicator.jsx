@@ -1,6 +1,6 @@
 import React from 'react';
-import { CiPause1 } from 'react-icons/ci';
-import { BsFillPlayFill } from 'react-icons/bs';
+import { BsPauseFill, BsFillPlayFill } from 'react-icons/bs';
+
 const PlayPauseIndicator = ({ showFeedback, isPlaying }) => {
   if (!showFeedback) return null;
 
@@ -23,12 +23,11 @@ const PlayPauseIndicator = ({ showFeedback, isPlaying }) => {
       >
         <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 flex items-center justify-center">
           {isPlaying ? (
-            <CiPause1 className="text-orange-500 w-full h-full scale-90" />
+            <BsPauseFill className="text-orange-500 w-full h-full scale-110" />
           ) : (
             <BsFillPlayFill className="text-orange-500 w-full h-full scale-110 translate-x-0.5" />
           )}
         </div>
-
       </div>
     </div>
   );
