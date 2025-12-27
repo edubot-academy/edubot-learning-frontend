@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useMemo } from 'react';
 
 /**
  * Read-only course review summary that matches the provided design.
@@ -67,9 +67,7 @@ const CourseReview = ({ ratingAverage = 0, ratingCount, ratingBreakdown = {}, on
     return (
         <div className="w-full bg-white border border-gray-200 rounded-2xl p-6 sm:p-8 space-y-6">
             <div className="flex items-center justify-between">
-                <h2 className="text-3xl font-black text-gray-900">
-                    Отзывы ({totalRatings || 0})
-                </h2>
+                <h2 className="text-3xl font-black text-gray-900">Отзывы ({totalRatings || 0})</h2>
                 <button
                     type="button"
                     className="text-sm text-[#5A5F69] hover:text-[#7B818C]"
@@ -110,7 +108,7 @@ const CourseReview = ({ ratingAverage = 0, ratingCount, ratingBreakdown = {}, on
 
                 <div className="flex flex-col items-start gap-2">
                     <p className="text-[48px] font-black text-[#C2410C] leading-none">
-                        {ratingAverage ? ratingAverage.toFixed(1) : "0.0"}
+                        {ratingAverage ? ratingAverage.toFixed(1) : '0.0'}
                     </p>
                     <div className="flex items-center gap-1 text-yellow-500">
                         {[1, 2, 3, 4, 5].map((star) => renderStar(star))}

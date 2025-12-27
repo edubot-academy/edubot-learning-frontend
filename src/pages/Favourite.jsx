@@ -1,5 +1,5 @@
-import { useFavourites } from "../context/FavouritesContext";
-import CardCourse from "../features/courses/components/CardCourse.jsx";
+import { useFavourites } from '../context/FavouritesContext';
+import CardCourse from '../features/courses/components/CardCourse.jsx';
 
 function Favourite() {
     const { favourites } = useFavourites();
@@ -14,9 +14,7 @@ function Favourite() {
                 {favourites.length === 0 ? (
                     <p>Азырынча эч нерсе сакталбады...</p>
                 ) : (
-                    favourites.map((course) => (
-                        <CardCourse key={course.id} {...course} />
-                    ))
+                    favourites.map((course) => <CardCourse key={course.id} {...course} />)
                 )}
             </div>
         </div>

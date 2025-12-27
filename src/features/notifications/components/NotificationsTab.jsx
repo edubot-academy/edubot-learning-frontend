@@ -52,9 +52,7 @@ const NotificationsTab = () => {
     const handleMarkAsRead = async (id) => {
         try {
             await markNotificationRead(id);
-            setItems((prev) =>
-                prev.map((n) => (n.id === id ? { ...n, read: true } : n))
-            );
+            setItems((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)));
             setUnreadCount((c) => Math.max(0, c - 1));
         } catch (error) {
             console.error('Failed to mark as read', error);
@@ -112,9 +110,7 @@ const NotificationsTab = () => {
                                             key={notif.id}
                                             className={`p-3 sm:p-4 flex items-start gap-3 ${isUnread ? 'bg-orange-50' : 'bg-white'}`}
                                         >
-                                            <div className="text-lg">
-                                                {notif.icon || '💬'}
-                                            </div>
+                                            <div className="text-lg">{notif.icon || '💬'}</div>
                                             <div className="flex-1 min-w-0">
                                                 <div className="flex items-start justify-between gap-2">
                                                     <p className="font-semibold text-gray-800 line-clamp-2">
@@ -124,7 +120,9 @@ const NotificationsTab = () => {
                                                         <button
                                                             type="button"
                                                             className="text-xs text-blue-600"
-                                                            onClick={() => handleMarkAsRead(notif.id)}
+                                                            onClick={() =>
+                                                                handleMarkAsRead(notif.id)
+                                                            }
                                                         >
                                                             Окулду
                                                         </button>

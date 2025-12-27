@@ -7,13 +7,13 @@ import { FaPlay } from 'react-icons/fa';
 import ContactCourseModal from './ContactCourseModal';
 import ModalCourses from './ModalCourses';
 
-const CardVideo = ({ coverImageUrl, course, lessonCount, activeLesson, videoRef, sections }) => {
+const CardVideo = ({ coverImageUrl, course, lessonCount, activeLesson }) => {
     const [isContactOpen, setIsContactOpen] = useState(false);
-    const [openModal, setOpenModal] = useState(false);
+    const [isModalOpen, setIsModalOpen] = useState(false);
 
     return (
         <>
-            <div onClick={() => setOpenModal(true)} className="border border-gray-200 rounded-md overflow-hidden bg-white w-[90vw] sm:w-[70vw] md:w-[40vw] lg:w-[30vw] max-w-[420px] px-4 py-5">
+            <div onClick={() => setIsModalOpen(true)} className="border border-gray-200 rounded-md overflow-hidden bg-white w-full max-w-full px-6 py-5">
                 <div className="relative w-full ">
                     <img
                         src={coverImageUrl}
@@ -47,7 +47,14 @@ const CardVideo = ({ coverImageUrl, course, lessonCount, activeLesson, videoRef,
 
                     <div className="flex flex-col gap-3 mt-3">
                         <div>
-                            <Button onClick={() => setIsContactOpen(true)}>Байланышуу</Button>
+                            <Button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setIsContactOpen(true);
+                                }}
+                            >
+                                Байланышуу
+                            </Button>
                         </div>
                         <div>
                             <Button variant="secondary">Добавить в избранное</Button>
@@ -61,13 +68,11 @@ const CardVideo = ({ coverImageUrl, course, lessonCount, activeLesson, videoRef,
                 course={course}
                 lessonCount={lessonCount}
             />
-            {openModal && activeLesson?.videoUrl && (
-                <ModalCourses
-                    course={course}
-                    onClose={() => setOpenModal(false)}
-                    courseId={course.id}
-                />
-            )}
+            <ModalCourses
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                courseId={course.id}
+            />
         </>
     );
 };

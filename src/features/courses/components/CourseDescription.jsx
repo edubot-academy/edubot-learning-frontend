@@ -16,85 +16,77 @@ const CourseDescription = ({ course }) => {
         return false;
     };
 
+    const outcomes =
+        course.learningOutcomes && course.learningOutcomes.length > 0
+            ? course.learningOutcomes
+            : course.description
+            ? [course.description]
+            : [];
+
     return (
-        <div
-            className="
-        max-w-4xl 
-        mx-auto 
-        px-4 
-        sm:px-6 
-        lg:px-8 
-        py-6 
-        sm:py-8
-        border 
-        border-[#C5C9D1]
-        rounded-xl
-        mb-6
-    "
-        >
-            <div className="mb-6 sm:mb-8">
-                <h1
-                    className="
-        whitespace-nowrap
-        text-lg
-        sm:text-xl
-        md:text-2xl
-        lg:text-3xl
-        xl:text-4xl
-        font-bold
-        text-gray-900
-        mb-4
-        leading-tight
-    "
-                >
+        <div className="w-full border border-[#C5C9D1] rounded-xl px-4 sm:px-6 lg:px-8 py-6 sm:py-8 bg-white">
+            <div className="mb-4 sm:mb-6 space-y-3">
+                <h1 className="text-xl sm:text-2xl md:text-3xl xl:text-4xl font-bold text-gray-900 leading-tight break-words">
                     {course.title}
                 </h1>
+                {course.subtitle && (
+                    <p className="text-base sm:text-lg text-gray-700 leading-relaxed break-words">
+                        {course.subtitle}
+                    </p>
+                )}
 
-                <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6">
+                <div className="flex flex-wrap items-center gap-3 sm:gap-4 text-sm">
                     {isNew() && (
-                        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs sm:text-sm font-medium bg-red-100 text-red-800 w-fit">
+                        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs sm:text-sm font-medium bg-red-100 text-red-800">
                             Новый выпуск
                         </span>
                     )}
 
-                    <div className="flex flex-wrap gap-3 sm:gap-6 text-sm">
-                        {(course.updatedAt || course.createdAt) && (
-                            <div className="flex items-center gap-2 text-gray-600">
-                                <RiSpam2Line size={18} />
-                                {course.updatedAt
-                                    ? `обновлен ${new Date(course.updatedAt).toLocaleDateString('ru-RU')}`
-                                    : `создан ${new Date(course.createdAt).toLocaleDateString('ru-RU')}`}
-                            </div>
-                        )}
-
+                    {(course.updatedAt || course.createdAt) && (
                         <div className="flex items-center gap-2 text-gray-600">
-                            <GrLanguage />
-                            {course.language || 'Русский'}
+                            <RiSpam2Line size={18} />
+                            {course.updatedAt
+                                ? `последнее обновление ${new Date(course.updatedAt).toLocaleDateString('ru-RU')}`
+                                : `создан ${new Date(course.createdAt).toLocaleDateString('ru-RU')}`}
                         </div>
+                    )}
 
-                        {course.category && (
-                            <div className="flex items-center gap-2 text-gray-600">
-                                <span className="text-blue-500">📁</span>
-                                {course.category.name || course.category}
-                            </div>
-                        )}
+                    <div className="flex items-center gap-2 text-gray-600">
+                        <GrLanguage />
+                        {course.language || 'Русский'}
                     </div>
+
+                    {course.category && (
+                        <div className="flex items-center gap-2 text-gray-600">
+                            <span className="text-blue-500">📁</span>
+                            {course.category.name || course.category}
+                        </div>
+                    )}
                 </div>
             </div>
 
-            {/* DESCRIPTION — всегда центрируется по вертикали */}
-            <div className="flex items-center gap-3">
-                <RiCheckboxCircleFill color="#EA580C" size={22} className="flex-shrink-0" />
-
-                <p
-                    className="
-        text-sm sm:text-base md:text-lg
-        text-gray-600 leading-relaxed
-        line-clamp-2 break-words
-    "
-                >
-                    {course.description || 'Описание курса скоро будет добавлено...'}
-                </p>
+            <div className="space-y-3">
+                {outcomes.length === 0 ? (
+                    <div className="flex items-center gap-3">
+                        <RiCheckboxCircleFill color="#EA580C" size={20} className="flex-shrink-0" />
+                        <p className="text-sm sm:text-base text-gray-600">
+                            Описание курса скоро будет добавлено...
+                        </p>
+                    </div>
+                ) : (
+                    outcomes.map((item, idx) => (
+                        <div key={idx} className="flex items-start gap-3">
+                            <RiCheckboxCircleFill
+                                color="#EA580C"
+                                size={20}
+                                className="flex-shrink-0 mt-1"
+                            />
+                            <p className="text-sm sm:text-base md:text-lg text-gray-700 leading-relaxed break-words">
+                                {item}
+                            </p>
+                        </div>
+                    ))
+                )}
             </div>
         </div>
     );

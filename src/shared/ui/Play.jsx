@@ -13,6 +13,9 @@ const VideoPlayerUI = ({
     onPause,
     allowPlay = true,
     onEnded,
+    qualityOptions = [],
+    currentQuality,
+    onQualityChange,
 }) => {
     const [isPlaying, setIsPlaying] = useState(false);
     const [isMuted, setIsMuted] = useState(false);
@@ -70,6 +73,9 @@ const VideoPlayerUI = ({
     const onLoadedMetadata = () => {
         if (videoRef.current) {
             setDuration(videoRef.current.duration || 0);
+            if (resumeTime) {
+                videoRef.current.currentTime = resumeTime;
+            }
         }
     };
 
@@ -98,10 +104,10 @@ const VideoPlayerUI = ({
 
     // Restore progress
     useEffect(() => {
-        if (resumeTime && videoRef.current) {
+        if (resumeTime && videoRef.current && duration) {
             videoRef.current.currentTime = resumeTime;
         }
-    }, [resumeTime, videoRef]);
+    }, [resumeTime, videoRef, duration]);
 
     // Добавляем обработчики событий к видео элементу
     useEffect(() => {
@@ -124,7 +130,7 @@ const VideoPlayerUI = ({
     }, [videoRef, onEnded]);
 
     const changeQuality = (q) => {
-        console.log('Quality changed:', q);
+        onQualityChange?.(q);
         setOpenMenu(false);
     };
 
@@ -155,7 +161,7 @@ const VideoPlayerUI = ({
                 >
                     <div
                         className="h-full bg-orange-500 rounded-full"
-                        style={{ width: `${(currentTime / duration) * 100}%` }}
+                        style={{ width: `${duration ? (currentTime / duration) * 100 : 0}%` }}
                     />
                 </div>
 
@@ -209,13 +215,18 @@ const VideoPlayerUI = ({
 
                             {openMenu && (
                                 <div className="absolute bottom-10 right-0 bg-black/90 text-white rounded-lg py-2 px-4 shadow-xl w-24">
-                                    {['1080p', '720p', '480p', '360p', '240p'].map((item) => (
+                                    {(qualityOptions?.length
+                                        ? qualityOptions
+                                        : [{ id: 'auto', label: 'Auto' }]
+                                    ).map((item) => (
                                         <div
-                                            key={item}
-                                            onClick={() => changeQuality(item)}
-                                            className="py-1 cursor-pointer hover:text-orange-400"
+                                            key={item.id}
+                                            onClick={() => changeQuality(item.id)}
+                                            className={`py-1 cursor-pointer hover:text-orange-400 ${
+                                                currentQuality === item.id ? 'text-orange-400' : ''
+                                            }`}
                                         >
-                                            {item}
+                                            {item.label}
                                         </div>
                                     ))}
                                 </div>

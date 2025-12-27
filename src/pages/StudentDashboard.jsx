@@ -12,7 +12,15 @@ import {
 } from '@services/api';
 import { AuthContext } from '../context/AuthContext';
 import toast from 'react-hot-toast';
-import { FiHome, FiBookOpen, FiCalendar, FiCheckCircle, FiBarChart2, FiUser, FiBell } from 'react-icons/fi';
+import {
+    FiHome,
+    FiBookOpen,
+    FiCalendar,
+    FiCheckCircle,
+    FiBarChart2,
+    FiUser,
+    FiBell,
+} from 'react-icons/fi';
 import NotificationsWidget from '@features/notifications/components/NotificationsWidget';
 import NotificationsTab from '@features/notifications/components/NotificationsTab';
 import { useSearchParams } from 'react-router-dom';
@@ -497,11 +505,11 @@ const ScheduleTab = ({ offerings }) => {
                         offering.date ||
                         (offering.startAt
                             ? new Date(offering.startAt).toLocaleString('ru-RU', {
-                                day: '2-digit',
-                                month: 'short',
-                                hour: '2-digit',
-                                minute: '2-digit',
-                            })
+                                  day: '2-digit',
+                                  month: 'short',
+                                  hour: '2-digit',
+                                  minute: '2-digit',
+                              })
                             : 'Белгисиз убакыт');
                     const modality = offering.modality || offering.modalityLabel || '';
                     return (
@@ -561,10 +569,11 @@ const TasksTab = ({ tasks }) => (
                                 </td>
                                 <td className="px-4 py-3">
                                     <span
-                                        className={`px-3 py-1 rounded-full text-xs ${task.status === 'completed'
+                                        className={`px-3 py-1 rounded-full text-xs ${
+                                            task.status === 'completed'
                                                 ? 'bg-green-100 text-green-700'
                                                 : 'bg-amber-100 text-amber-700'
-                                            }`}
+                                        }`}
                                     >
                                         {task.status === 'completed' ? 'Жабылган' : 'Күтүүдө'}
                                     </span>

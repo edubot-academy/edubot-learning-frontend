@@ -13,7 +13,7 @@ createRoot(document.getElementById('root')).render(
         <BrowserRouter>
             <AppProviders>
                 <FavouritesProvider>
-                    <CartProvider> 
+                    <CartProvider>
                         <App />
                     </CartProvider>
                 </FavouritesProvider>
