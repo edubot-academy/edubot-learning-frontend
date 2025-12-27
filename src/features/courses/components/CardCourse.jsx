@@ -67,7 +67,7 @@ const CardCourse = ({
     return (
         <>
             <Link to={`/courses/${id}`} className="block relative">
-                <div className="max-w-md bg-white border border-gray-200 rounded flex flex-col hover:shadow-lg transition-shadow duration-300">
+                <div className="max-w-md bg-white text-[#141619] border border-gray-200 dark:bg-[#141619] dark:text-[#E8ECF3] dark:border-[#2A2E35] rounded flex flex-col hover:shadow-lg transition-shadow duration-300">
                     <div className="p-3">
                         <img
                             src={coverImageUrl}
@@ -76,7 +76,9 @@ const CardCourse = ({
                         />
                         <div className="flex flex-col flex-grow py-4">
                             <h3 className="font-suisse font-medium text-lg">{title}</h3>
-                            <p className="text-gray-500 text-sm my-1">{instructor.fullName}</p>
+                            <p className="text-gray-500 dark:text-[#a6adba] text-sm my-1">
+                                {instructor.fullName}
+                            </p>
                             <div className="flex items-center gap-2 mb-3 mt-3">
                                 <div className="flex text-yellow-400">
                                     {Array.from({ length: 5 }).map((_, i) => (
@@ -85,26 +87,26 @@ const CardCourse = ({
                                         </span>
                                     ))}
                                 </div>
-                                <span className="text-gray-600 text-sm">
+                                <span className="text-gray-600 dark:text-[#a6adba] text-sm">
                                     ({ratingCount} рейтингов)
                                 </span>
                             </div>
                             <div className="flex gap-2 mb-4">
                                 {level && (
                                     <div className="flex">
-                                        <span className="px-3 py-2 text-xs rounded-full border flex gap-1">
+                                        <span className="px-3 py-2 text-xs rounded-full border border-gray-300 dark:border-[#2A2E35] flex gap-1">
                                             <img className="w-4" src={CardIcon} alt="" />
                                             {level}
                                         </span>
                                     </div>
                                 )}
                                 {durationInHours && (
-                                    <span className="px-3 py-2 text-xs rounded-full border">
+                                    <span className="px-3 py-2 text-xs rounded-full border border-gray-300 dark:border-[#2A2E35]">
                                         {durationInHours} всего часа
                                     </span>
                                 )}
                                 {lessonCount && (
-                                    <span className="px-3 py-2 text-xs rounded-full border">
+                                    <span className="px-3 py-2 text-xs rounded-full border border-gray-300 dark:border-[#2A2E35]">
                                         {lessonCount} лекций
                                     </span>
                                 )}
@@ -112,8 +114,10 @@ const CardCourse = ({
                             <div>
                                 <div className="flex justify-between items-end gap-6 mt-6">
                                     <div>
-                                        <p className="text-sm text-[#333333]">Цена</p>
-                                        <p className="text-base color-[#333333] font-bold">
+                                        <p className="text-sm text-gray-600 dark:text-[#a6adba]">
+                                            Цена
+                                        </p>
+                                        <p className="text-base text-[#141619] dark:text-white font-bold">
                                             {price} сом
                                         </p>
                                     </div>

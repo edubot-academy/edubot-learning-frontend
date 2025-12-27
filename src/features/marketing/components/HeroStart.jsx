@@ -52,17 +52,17 @@ const HeroStart = () => {
                     >
                         {/* ---------- СЛАЙД 1 ---------- */}
                         {index === 0 && (
-                            <section className="w-full relative mx-auto flex flex-col lg:flex-row items-center justify-between px-10 py-12 text-black">
+                            <section className="w-full relative mx-auto flex flex-col lg:flex-row items-center justify-between px-10 py-12 text-black dark:text-white bg-white dark:bg-[#0F1013]">
                                 <div className="lg:w-[600px] text-center lg:text-left space-y-6 h-[50%] lg:h-[454px]">
-                                    <h1 className="font-inter 2xl:font-bold text-[30px] 2xl:text-[38px] 2xl:leading-tight font-semibold leading-[100%] ">
+                                    <h1 className="font-inter 2xl:font-bold text-[30px] 2xl:text-[38px] 2xl:leading-tight font-semibold leading-[100%] text-black dark:text-white">
                                         {slide.title}
                                     </h1>
-                                    <p className="font-normal text-[#3E424A] text-[18px]">
+                                    <p className="font-normal text-[#3E424A] dark:text-[#D7DBE3] text-[18px]">
                                         {slide.description}
                                     </p>
 
                                     <div className="flex justify-center lg:justify-start gap-[12px] pt-[32px] md:pt-[60px]">
-                                        <button className="border border-[#141619] rounded-lg text-gray-800 hover:bg-gray-100 transition font-semibold h-[52px] w-[197px] md:w-[220px] md:h-[54px] font-normal text-[14px]">
+                                        <button className="border border-[#141619] dark:border-white/70 rounded-lg text-gray-800 dark:text-white hover:bg-gray-100 dark:hover:bg-white/10 transition font-semibold h-[52px] w-[197px] md:w-[220px] md:h-[54px] font-normal text-[14px]">
                                             Толук маалымат алуу
                                         </button>
                                         <button className="rounded-lg bg-gradient-to-b from-[#FF8C6E] to-[#E14219] text-white shadow-[0px_5px_21.3px_0px_#E14219BF] font-semibold h-[52px] w-[197px] md:w-[220px] md:h-[54px] font-normal text-[14px]">
@@ -72,20 +72,20 @@ const HeroStart = () => {
                                 </div>
 
                                 <div className="flex justify-center lg:justify-end relative lg:mt-10 mt-0">
-                                    <div className="absolute bg-gray-100 bg-[var(--Gray-Gray-50,#F3F4F6)] border border-[var(--Gray-Gray-50,#F3F4F6)] left-[-105px] top-[180px] z-[0] w-[228px] h-[117px] rounded-[4.73px] py-[18.91px] px-[19.51px]">
-                                        <span className=" font-normal leading-[100%] tracking-[0%] text-[28px]">
+                                    <div className="absolute bg-gray-100 dark:bg-white/10 bg-[var(--Gray-Gray-50,#F3F4F6)] border border-[var(--Gray-Gray-50,#F3F4F6)] dark:border-white/20 left-[-105px] top-[180px] z-[0] w-[228px] h-[117px] rounded-[4.73px] py-[18.91px] px-[19.51px]">
+                                        <span className=" font-normal leading-[100%] tracking-[0%] text-[28px] text-[#141619] dark:text-white">
                                             200+
                                         </span>
-                                        <p className="leading-[100%] tracking-[0%] text-[#141619] font-normal text-[12px] mt-[5.91px]">
+                                        <p className="leading-[100%] tracking-[0%] text-[#141619] dark:text-[#E8ECF3] font-normal text-[12px] mt-[5.91px]">
                                             Тажрыйбалуу менторлордон онлайн сабактар
                                         </p>
                                     </div>
 
-                                    <div className="absolute bg-white/30 backdrop-blur-lg border border-[var(--Gray-Gray-50,#F3F4F6)] left-[110px] top-[340px] z-[2] w-[205px] h-[129px] rounded-[5.23px] py-[20.9px] px-[21.56px]">
-                                        <span className=" font-[Suisse_Intl] font-normal leading-[100%] tracking-[0%] text-[28px]">
+                                    <div className="absolute bg-white/30 dark:bg-white/15 backdrop-blur-lg border border-[var(--Gray-Gray-50,#F3F4F6)] dark:border-white/25 left-[110px] top-[340px] z-[2] w-[205px] h-[129px] rounded-[5.23px] py-[20.9px] px-[21.56px]">
+                                        <span className=" font-[Suisse_Intl] font-normal leading-[100%] tracking-[0%] text-[28px] text-[#141619] dark:text-white">
                                             10k+
                                         </span>
-                                        <p className="font-[Suisse_Intl] font-normal text-[12px] leading-[100%] tracking-[0%] text-[#141619] mt-[6.53px]">
+                                        <p className="font-[Suisse_Intl] font-normal text-[12px] leading-[100%] tracking-[0%] text-[#141619] dark:text-[#E8ECF3] mt-[6.53px]">
                                             Азыркы күнгө чейинки колдонуучулар
                                         </p>
                                     </div>

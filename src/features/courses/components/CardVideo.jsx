@@ -11,7 +11,7 @@ const CardVideo = ({ coverImageUrl, course, lessonCount }) => {
 
     return (
         <>
-            <div className="border border-gray-200 rounded-md overflow-hidden bg-white w-full max-w-full px-6 py-5">
+            <div className="border border-gray-200 dark:border-[#2A2E35] rounded-md overflow-hidden bg-white dark:bg-[#141619] text-[#141619] dark:text-[#E8ECF3] w-full max-w-full px-6 py-5">
                 <div className="relative w-full ">
                     <img
                         src={coverImageUrl}
@@ -26,12 +26,16 @@ const CardVideo = ({ coverImageUrl, course, lessonCount }) => {
                 </div>
 
                 <div className="flex flex-col gap-3 py-4">
-                    <div className="flex items-center justify-between text-gray-700">
-                        <p className="text-lg text-[#5A5F69] font-normal">Price per Lesson</p>
-                        <span className="text-3xl font-bold text-black">{course.price}$</span>
+                    <div className="flex items-center justify-between text-[#141619] dark:text-[#E8ECF3]">
+                        <p className="text-lg text-[#3E424A] dark:text-[#a6adba] font-normal">
+                            Price per Lesson
+                        </p>
+                        <span className="text-3xl font-bold text-[#141619] dark:text-white">
+                            {course.price}$
+                        </span>
                     </div>
 
-                    <div className="flex flex-col gap-2 text-[#3E424A]">
+                    <div className="flex flex-col gap-2 text-[#141619] dark:text-[#E8ECF3]">
                         <p className="flex items-center gap-2 text-base font-semibold">
                             <FiBook /> {lessonCount} уроков
                         </p>
