@@ -1,55 +1,57 @@
-import React, { useEffect } from 'react';
+import React, { useRef } from 'react';
 import VideoPlayer from '@shared/VideoPlayer';
 
 const CourseVideoPlayer = ({
-    activeLesson,
-    resumeVideoTime,
-    handleVideoProgress,
-    handleTimeUpdate,
-    handlePause,
-    videoRef,
-    nextLesson,
-    prevLesson,
-    handleLessonClick,
-    onEnded,
+  activeLesson,
+  resumeVideoTime,
+  handleVideoProgress,
+  handleTimeUpdate,
+  handlePause,
+  nextLesson,
+  prevLesson,
+  handleLessonClick,
 }) => {
-    // restore where the learner left off
-    useEffect(() => {
-        if (videoRef.current && resumeVideoTime) {
-            videoRef.current.currentTime = resumeVideoTime;
-        }
-    }, [resumeVideoTime, videoRef]);
+  const videoRef = useRef(null);
+  const containerRef = useRef(null);
 
-    return (
-        <div className="mb-6 relative">
-            <VideoPlayer
-                key={activeLesson.id}
-                videoUrl={activeLesson.videoUrl}
-                resumeTime={resumeVideoTime}
-                onProgress={(p) => handleVideoProgress(p, activeLesson)}
-                onTimeUpdate={handleTimeUpdate}
-                onPause={handlePause}
-                allowPlay={!activeLesson.locked}
-                videoRef={videoRef}
-                onEnded={onEnded}
-            />
+  const handleEnded = () => {
+    if (nextLesson) handleLessonClick(nextLesson);
+  };
 
-            <button
-                onClick={() => prevLesson && handleLessonClick(prevLesson)}
-                disabled={!prevLesson}
-                className="absolute top-1/2 left-2 transform -translate-y-1/2 text-3xl bg-white bg-opacity-50 rounded-full px-3 py-1 hover:bg-opacity-80 disabled:opacity-30"
-            >
-                ←
-            </button>
-            <button
-                onClick={() => nextLesson && handleLessonClick(nextLesson)}
-                disabled={!nextLesson}
-                className="absolute top-1/2 right-2 transform -translate-y-1/2 text-3xl bg-white bg-opacity-50 rounded-full px-3 py-1 hover:bg-opacity-80 disabled:opacity-30"
-            >
-                →
-            </button>
-        </div>
-    );
+  return (
+    <div ref={containerRef} tabIndex={0} className="mb-6 relative w-full">
+      <VideoPlayer
+        key={activeLesson.id}
+        videoUrl={activeLesson.videoUrl}
+        resumeTime={resumeVideoTime}
+        allowPlay={!activeLesson.locked}
+        videoRef={videoRef}
+        containerRef={containerRef}
+        onEnded={handleEnded}
+        onProgress={(p) => handleVideoProgress(p, activeLesson)}
+        onTimeUpdate={handleTimeUpdate}
+        onPause={handlePause}
+      />
+
+      <button
+        onClick={() => prevLesson && handleLessonClick(prevLesson)}
+        disabled={!prevLesson}
+        title="Предыдущий урок"
+        className="absolute top-1/2 left-2 -translate-y-1/2 text-3xl bg-white/50 rounded-full px-3 py-1 hover:bg-white/80 disabled:opacity-30"
+      >
+        ←
+      </button>
+
+      <button
+        onClick={() => nextLesson && handleLessonClick(nextLesson)}
+        disabled={!nextLesson}
+        title="Следующий урок"
+        className="absolute top-1/2 right-2 -translate-y-1/2 text-3xl bg-white/50 rounded-full px-3 py-1 hover:bg-white/80 disabled:opacity-30"
+      >
+        →
+      </button>
+    </div>
+  );
 };
 
 export default CourseVideoPlayer;
