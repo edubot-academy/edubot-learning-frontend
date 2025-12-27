@@ -1,12 +1,25 @@
 import PropTypes from 'prop-types';
 import { useRef, useEffect, useState } from 'react';
-import DOMPurify from 'dompurify';
 import { FiDownload } from 'react-icons/fi';
 import { getResourceMeta } from '../../../utils/lessonUtils';
 
-const sanitizeHtml = (html = '') => {
+const sanitizeHtml = async (html = '') => {
     if (typeof window === 'undefined' || !html) return '';
-    return DOMPurify.sanitize(html, {
+    const mod = await import('dompurify');
+    const dp = mod.default || mod;
+    dp.addHook('afterSanitizeAttributes', (node) => {
+        if (node.tagName === 'A') {
+            const existingRel = (node.getAttribute('rel') || '').trim();
+            const relParts = new Set(
+                existingRel
+                    .split(/\s+/)
+                    .filter(Boolean)
+                    .concat(['noopener', 'noreferrer'])
+            );
+            node.setAttribute('rel', Array.from(relParts).join(' '));
+        }
+    });
+    return dp.sanitize(html, {
         ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto|tel):|data:image\/)/i,
     });
 };
@@ -23,12 +36,22 @@ const ArticleLessonViewer = ({ lesson }) => {
 
   
     useEffect(() => {
-        if (typeof window === 'undefined') return;
-        if (!lesson?.content) {
-            setSanitizedContent('');
-            return;
-        }
-        setSanitizedContent(sanitizeHtml(lesson.content));
+        let cancelled = false;
+        const run = async () => {
+            if (typeof window === 'undefined') return;
+            if (!lesson?.content) {
+                setSanitizedContent('');
+                return;
+            }
+            const sanitized = await sanitizeHtml(lesson.content);
+            if (!cancelled) {
+                setSanitizedContent(sanitized);
+            }
+        };
+        run();
+        return () => {
+            cancelled = true;
+        };
     }, [lesson?.content]);
 
     const checkOverflow = () => {
