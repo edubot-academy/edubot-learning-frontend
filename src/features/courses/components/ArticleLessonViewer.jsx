@@ -3,14 +3,11 @@ import { useMemo, useRef, useEffect, useState } from 'react';
 import { FiDownload } from 'react-icons/fi';
 import { getResourceMeta } from '../../../utils/lessonUtils';
 
-// Импортируем DOMPurify, если используется
-// import DOMPurify from 'dompurify';
-
 const sanitizeHtml = (html = '') => {
     if (typeof window === 'undefined' || !html) return '';
     const parser = new DOMParser();
     const doc = parser.parseFromString(html, 'text/html');
-    
+
 
     const dangerousTags = ['script', 'style', 'iframe', 'object', 'embed', 'form', 'input', 'button'];
     dangerousTags.forEach((tag) => {
@@ -22,11 +19,13 @@ const sanitizeHtml = (html = '') => {
         const attributes = node.attributes;
         for (let i = attributes.length - 1; i >= 0; i--) {
             const attr = attributes[i];
-            const value = attr.value || '';
+            const name = attr.name.toLowerCase();
+            const value = (attr.value || '').trim().toLowerCase();
             if (
-                attr.name.startsWith('on') || // onclick, onload и т.д.
-                value.toLowerCase().startsWith('javascript:') ||
-                value.toLowerCase().startsWith('data:')
+                name.startsWith('on') || // onclick, onload и т.д.
+                ((name === 'href' || name === 'src') &&
+                    (value.startsWith('javascript:') || value.startsWith('vbscript:'))) ||
+                (value.startsWith('data:') && !value.startsWith('data:image/'))
             ) {
                 node.removeAttribute(attr.name);
             }
@@ -37,7 +36,7 @@ const sanitizeHtml = (html = '') => {
 };
 
 const ArticleLessonViewer = ({ lesson }) => {
-    const content = useMemo(() => sanitizeHtml(lesson?.content || ''), [lesson?.content]);
+    const [sanitizedContent, setSanitizedContent] = useState('');
     const contentRef = useRef(null);
     const [hasScroll, setHasScroll] = useState(false);
     
@@ -48,19 +47,36 @@ const ArticleLessonViewer = ({ lesson }) => {
 
   
     useEffect(() => {
+        if (typeof window === 'undefined') return;
+        if (!lesson?.content) {
+            setSanitizedContent('');
+            return;
+        }
+        setSanitizedContent(sanitizeHtml(lesson.content));
+    }, [lesson?.content]);
+
+    const checkOverflow = () => {
         if (contentRef.current) {
             const hasOverflow = contentRef.current.scrollHeight > contentRef.current.clientHeight;
             setHasScroll(hasOverflow);
         }
-    }, [content]);
-
-    const handleResourceClick = (e) => {
-        e.preventDefault();
-        if (lesson.resourceUrl) {
-            const newWindow = window.open(lesson.resourceUrl, '_blank', 'noopener,noreferrer');
-            if (newWindow) newWindow.opener = null;
-        }
     };
+
+    useEffect(() => {
+        checkOverflow();
+        if (!contentRef.current || typeof ResizeObserver === 'undefined') return undefined;
+
+        const ro = new ResizeObserver(checkOverflow);
+        ro.observe(contentRef.current);
+
+        const imgs = contentRef.current.querySelectorAll('img');
+        imgs.forEach((img) => img.addEventListener('load', checkOverflow));
+
+        return () => {
+            ro.disconnect();
+            imgs.forEach((img) => img.removeEventListener('load', checkOverflow));
+        };
+    }, [sanitizedContent]);
 
     return (
         <div className="mb-6 bg-white rounded-lg shadow-md p-6 min-h-[320px] w-full max-w-full">
@@ -85,7 +101,7 @@ const ArticleLessonViewer = ({ lesson }) => {
                                    scrollbar-thumb-rounded-full
                                    scrollbar-track-rounded-full
                                    pb-8"
-                        dangerouslySetInnerHTML={{ __html: content }}
+                        dangerouslySetInnerHTML={{ __html: sanitizedContent }}
                         role="article"
                         aria-label="Содержимое статьи"
                     />
@@ -114,7 +130,6 @@ const ArticleLessonViewer = ({ lesson }) => {
                 <div className="mt-6">
                     <a
                         href={lesson.resourceUrl}
-                        onClick={handleResourceClick}
                         className="inline-flex items-center gap-2 text-sm text-edubot-orange 
                                    underline decoration-2 hover:decoration-4 transition-all
                                    group max-w-full"
