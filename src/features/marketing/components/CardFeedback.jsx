@@ -10,24 +10,24 @@ const CardFeedback = ({ comment, user }) => {
                 key={''}
                 className="bg-white p-6 rounded-xl border shadow-sm text-left flex flex-col h-96"
             >
-                <div className="flex gap-3 text-yellow-400">
-                    <div className="">
+                <div className="flex gap-3 text-[#FACC15]">
+                    <div>
                         <Rating
-                            value={3}
-                            placeholderValue={2}
-                            readonly={false}
-                            className=" [&>span]:!mx-0.5"
+                            value={3.5}
+                            readonly
+                            className="[&>span]:!mx-0.5"
                             emptySymbol={
-                                <span className="" style={{ color: '#ffcc00' }}>
+                                <span style={{ color: '#FACC15' }}>
                                     <Wicon />
                                 </span>
                             }
                             fullSymbol={
-                                <span style={{ color: '#ffcc00' }}>
+                                <span style={{ color: '#FACC15' }}>
                                     <Yicon />
                                 </span>
                             }
                         />
+
                     </div>
                 </div>
                 <div className="flex justify-start items-start w-full mt-4">

@@ -1,6 +1,6 @@
 import FeedbackSlider from './FeedbackSlider';
 
-const FeedbackSection = ({ title, subtitle, CardComponent, rightContent = null }) => {
+const FeedbackSection = ({ title, subtitle, rightContent = null }) => {
     return (
         <div className="px-4 py-16 sm:px-6 lg:px-12 bg-white relative">
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-12">
@@ -12,7 +12,7 @@ const FeedbackSection = ({ title, subtitle, CardComponent, rightContent = null }
                 </div>
             </div>
 
-            <FeedbackSlider CardComponent={CardComponent} arrows={rightContent} />
+            <FeedbackSlider arrows={rightContent} />
         </div>
     );
 };
