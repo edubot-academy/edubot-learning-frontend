@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import VideoPlayerUI from './ui/Play.jsx'; 
 import toast from 'react-hot-toast';
 import Hls from 'hls.js';
+import { useTranslation } from 'react-i18next';
 
 const VideoPlayer = ({
   videoUrl,
@@ -14,26 +15,37 @@ const VideoPlayer = ({
   containerRef,
   onEnded,
 }) => {
+  const { t } = useTranslation();
   const hlsRef = useRef(null);
   const [hasError, setHasError] = useState(false);
   const [isLoading, setIsLoading] = useState(true); 
   const [qualityOptions, setQualityOptions] = useState([{ id: 'auto', label: 'Auto' }]);
   const [currentQuality, setCurrentQuality] = useState('auto');
 
+  const handleQualityChange = useCallback((id) => {
+    if (!hlsRef.current) return;
+    hlsRef.current.currentLevel = id === 'auto' ? -1 : Number(id);
+    setCurrentQuality(id);
+  }, []);
+
+  const retryLoad = useCallback(() => {
+    setHasError(false);
+    setIsLoading(true);
+  }, []);
+
   useEffect(() => {
     const videoEl = videoRef.current;
     if (!videoEl || !videoUrl) return;
 
- 
     if (hlsRef.current) {
       hlsRef.current.destroy();
       hlsRef.current = null;
     }
-  
+
     videoEl.pause();
     videoEl.removeAttribute('src');
     videoEl.load();
-    setIsLoading(true); 
+    setIsLoading(true);
 
     const isHlsSource = videoUrl.includes('.m3u8');
 
@@ -56,7 +68,7 @@ const VideoPlayer = ({
         if (data.fatal) {
           setHasError(true);
           setIsLoading(false);
-          toast.error('Ошибка загрузки видео');
+          toast.error(t('video.error'));
         }
       });
 
@@ -67,7 +79,7 @@ const VideoPlayer = ({
     } else {
       videoEl.src = videoUrl;
     }
-  }, [videoUrl, videoRef]);
+  }, [videoUrl, videoRef, setIsLoading, setHasError, t]);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -99,12 +111,6 @@ const VideoPlayer = ({
     else video.addEventListener('loadedmetadata', setTime, { once: true });
   }, [resumeTime, videoRef]);
 
-  const handleQualityChange = (id) => {
-    if (!hlsRef.current) return;
-    hlsRef.current.currentLevel = id === 'auto' ? -1 : Number(id);
-    setCurrentQuality(id);
-  };
-
   return (
     <div className="relative w-full bg-black rounded-xl overflow-hidden">
       <video
@@ -120,13 +126,25 @@ const VideoPlayer = ({
 
       {isLoading && allowPlay && !hasError && (
         <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-10">
-          <div className="w-12 h-12 border-4 border-t-orange-500 border-gray-200 rounded-full animate-spin"></div> {/* Простой CSS спиннер */}
+          <div className="w-12 h-12 border-4 border-t-orange-500 border-gray-200 rounded-full animate-spin" />
         </div>
       )}
 
       {!allowPlay && (
         <div className="absolute inset-0 bg-black/70 z-20 flex items-center justify-center text-white">
-          Урок заблокирован
+          {t('video.locked')}
+        </div>
+      )}
+
+      {hasError && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/70 z-20 text-white">
+          <p>{t('video.loadError')}</p>
+          <button
+            className="mt-4 px-4 py-2 bg-orange-500 rounded hover:bg-orange-600"
+            onClick={retryLoad}
+          >
+            {t('video.retry')}
+          </button>
         </div>
       )}
 

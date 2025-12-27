@@ -36,7 +36,7 @@ const CourseVideoPlayer = ({
       <button
         onClick={() => prevLesson && handleLessonClick(prevLesson)}
         disabled={!prevLesson}
-        title="Предыдущий урок"
+        aria-label="Предыдущий урок"
         className="absolute top-1/2 left-2 -translate-y-1/2 text-3xl bg-white/50 rounded-full px-3 py-1 hover:bg-white/80 disabled:opacity-30"
       >
         ←
@@ -45,7 +45,7 @@ const CourseVideoPlayer = ({
       <button
         onClick={() => nextLesson && handleLessonClick(nextLesson)}
         disabled={!nextLesson}
-        title="Следующий урок"
+        aria-label="Следующий урок"
         className="absolute top-1/2 right-2 -translate-y-1/2 text-3xl bg-white/50 rounded-full px-3 py-1 hover:bg-white/80 disabled:opacity-30"
       >
         →
