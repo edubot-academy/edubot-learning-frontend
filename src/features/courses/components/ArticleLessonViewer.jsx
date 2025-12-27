@@ -1,4 +1,5 @@
-import React, { useMemo, useRef, useEffect, useState } from 'react';
+import PropTypes from 'prop-types';
+import { useMemo, useRef, useEffect, useState } from 'react';
 import { FiDownload } from 'react-icons/fi';
 import { getResourceMeta } from '../../../utils/lessonUtils';
 
@@ -12,18 +13,21 @@ const sanitizeHtml = (html = '') => {
     
 
     const dangerousTags = ['script', 'style', 'iframe', 'object', 'embed', 'form', 'input', 'button'];
-    dangerousTags.forEach(tag => {
-        doc.querySelectorAll(tag).forEach(node => node.remove());
+    dangerousTags.forEach((tag) => {
+        doc.querySelectorAll(tag).forEach((node) => node.remove());
     });
     
 
-    doc.querySelectorAll('*').forEach(node => {
+    doc.querySelectorAll('*').forEach((node) => {
         const attributes = node.attributes;
         for (let i = attributes.length - 1; i >= 0; i--) {
             const attr = attributes[i];
-            if (attr.name.startsWith('on') || // onclick, onload и т.д.
-                attr.name.startsWith('javascript:') ||
-                attr.name.startsWith('data:')) {
+            const value = attr.value || '';
+            if (
+                attr.name.startsWith('on') || // onclick, onload и т.д.
+                value.toLowerCase().startsWith('javascript:') ||
+                value.toLowerCase().startsWith('data:')
+            ) {
                 node.removeAttribute(attr.name);
             }
         }
@@ -33,10 +37,9 @@ const sanitizeHtml = (html = '') => {
 };
 
 const ArticleLessonViewer = ({ lesson }) => {
-    const content = useMemo(() => sanitizeHtml(lesson.content), [lesson.content]);
+    const content = useMemo(() => sanitizeHtml(lesson?.content || ''), [lesson?.content]);
     const contentRef = useRef(null);
     const [hasScroll, setHasScroll] = useState(false);
-    const [isIOS, setIsIOS] = useState(false);
     
     const resourceMeta =
         !lesson.locked && lesson.resourceUrl
@@ -50,12 +53,6 @@ const ArticleLessonViewer = ({ lesson }) => {
             setHasScroll(hasOverflow);
         }
     }, [content]);
-
-    useEffect(() => {
-        if (typeof window !== 'undefined') {
-            setIsIOS(/iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream);
-        }
-    }, []);
 
     const handleResourceClick = (e) => {
         e.preventDefault();
@@ -123,16 +120,17 @@ const ArticleLessonViewer = ({ lesson }) => {
                                    group max-w-full"
                         target="_blank"
                         rel="noopener noreferrer"
+                        download
                         aria-label={`Скачать файл ${resourceMeta.fileName}, формат ${resourceMeta.typeLabel}`}
                     >
-                        <FiDownload 
-                            className="text-base flex-shrink-0 group-hover:scale-110 transition-transform" 
+                        <FiDownload
+                            className="text-base flex-shrink-0 group-hover:scale-110 transition-transform"
                             aria-hidden="true"
                         />
                         <span className="font-medium truncate max-w-[calc(100%-120px)]">
                             {resourceMeta.fileName}
                         </span>
-                        <span 
+                        <span
                             className="text-xs uppercase text-gray-500 flex-shrink-0 ml-1"
                             aria-label={`формат ${resourceMeta.typeLabel}`}
                         >
@@ -143,6 +141,17 @@ const ArticleLessonViewer = ({ lesson }) => {
             )}
         </div>
     );
+};
+
+ArticleLessonViewer.propTypes = {
+    lesson: PropTypes.shape({
+        id: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
+        content: PropTypes.string,
+        locked: PropTypes.bool,
+        resourceUrl: PropTypes.string,
+        resourceKey: PropTypes.string,
+        resourceName: PropTypes.string,
+    }).isRequired,
 };
 
 export default ArticleLessonViewer;
