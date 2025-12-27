@@ -1,8 +1,9 @@
 import { getTopRatings } from '@services/api';
 import useEmblaCarousel from 'embla-carousel-react';
 import { useEffect, useCallback, useState } from 'react';
+import CardFeedback from '../../marketing/components/CardFeedback';
 
-const FeedbackSlider = ({ CardComponent, arrows }) => {
+const FeedbackSlider = ({ arrows }) => {
     const [emblaRef, emblaApi] = useEmblaCarousel({
         align: 'start',
         dragFree: false,
@@ -58,7 +59,7 @@ const FeedbackSlider = ({ CardComponent, arrows }) => {
                                 key={index}
                                 className="px-3 min-w-[100%] sm:min-w-[50%] lg:min-w-[33.33%]"
                             >
-                                <CardComponent {...item} />
+                                <CardFeedback {...item} />
                             </div>
                         ))
                     ) : (
