@@ -1,38 +1,14 @@
 import PropTypes from 'prop-types';
-import { useMemo, useRef, useEffect, useState } from 'react';
+import { useRef, useEffect, useState } from 'react';
+import DOMPurify from 'dompurify';
 import { FiDownload } from 'react-icons/fi';
 import { getResourceMeta } from '../../../utils/lessonUtils';
 
 const sanitizeHtml = (html = '') => {
     if (typeof window === 'undefined' || !html) return '';
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(html, 'text/html');
-
-
-    const dangerousTags = ['script', 'style', 'iframe', 'object', 'embed', 'form', 'input', 'button'];
-    dangerousTags.forEach((tag) => {
-        doc.querySelectorAll(tag).forEach((node) => node.remove());
+    return DOMPurify.sanitize(html, {
+        ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto|tel):|data:image\/)/i,
     });
-    
-
-    doc.querySelectorAll('*').forEach((node) => {
-        const attributes = node.attributes;
-        for (let i = attributes.length - 1; i >= 0; i--) {
-            const attr = attributes[i];
-            const name = attr.name.toLowerCase();
-            const value = (attr.value || '').trim().toLowerCase();
-            if (
-                name.startsWith('on') || // onclick, onload и т.д.
-                ((name === 'href' || name === 'src') &&
-                    (value.startsWith('javascript:') || value.startsWith('vbscript:'))) ||
-                (value.startsWith('data:') && !value.startsWith('data:image/'))
-            ) {
-                node.removeAttribute(attr.name);
-            }
-        }
-    });
-    
-    return doc.body.innerHTML;
 };
 
 const ArticleLessonViewer = ({ lesson }) => {
@@ -64,16 +40,22 @@ const ArticleLessonViewer = ({ lesson }) => {
 
     useEffect(() => {
         checkOverflow();
-        if (!contentRef.current || typeof ResizeObserver === 'undefined') return undefined;
-
-        const ro = new ResizeObserver(checkOverflow);
-        ro.observe(contentRef.current);
+        if (!contentRef.current) return undefined;
 
         const imgs = contentRef.current.querySelectorAll('img');
         imgs.forEach((img) => img.addEventListener('load', checkOverflow));
 
+        let ro;
+        if (typeof ResizeObserver !== 'undefined') {
+            ro = new ResizeObserver(checkOverflow);
+            ro.observe(contentRef.current);
+        } else {
+            window.addEventListener('resize', checkOverflow);
+        }
+
         return () => {
-            ro.disconnect();
+            if (ro) ro.disconnect();
+            else window.removeEventListener('resize', checkOverflow);
             imgs.forEach((img) => img.removeEventListener('load', checkOverflow));
         };
     }, [sanitizedContent]);
@@ -88,7 +70,7 @@ const ArticleLessonViewer = ({ lesson }) => {
                 >
                     Бул макаланы окуу үчүн курска катталыңыз.
                 </div>
-            ) : content ? (
+            ) : sanitizedContent ? (
                 <div className="relative">
                     <div 
                         ref={contentRef}
