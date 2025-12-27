@@ -29,7 +29,6 @@ import AiAssistantPanel from '@features/assistant/components/AiAssistantPanel';
 import InstructorsInfo from '@features/courses/components/InstructorsInfo';
 import CourseReview from '@features/courses/components/CourseReview';
 import CourseContent from '@features/courses/components/CourseContent';
-import ContactCourseModal from '@features/courses/components/ContactCourseModal';
 
 const CHALLENGE_STORAGE_PREFIX = 'lessonChallengeState';
 
