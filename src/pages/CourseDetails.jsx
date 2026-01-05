@@ -31,6 +31,8 @@ import AiAssistantPanel from '@features/assistant/components/AiAssistantPanel';
 import InstructorsInfo from '@features/courses/components/InstructorsInfo';
 import CourseReview from '@features/courses/components/CourseReview';
 import CourseContent from '@features/courses/components/CourseContent';
+import { FaSignalMessenger } from "react-icons/fa6";
+import InstructorChat from '@features/instructorChat/InstructorChat';
 
 const CHALLENGE_STORAGE_PREFIX = 'lessonChallengeState';
 
@@ -87,6 +89,7 @@ const CourseDetailsPage = () => {
     const [lessonChallengeResults, setLessonChallengeResults] = useState({});
     const [challengeLoading, setChallengeLoading] = useState(false);
     const [challengeSubmitting, setChallengeSubmitting] = useState(false);
+    const [instructorChat, setInstructorChat] = useState(false)
 
     useEffect(() => {
         hasPlayedRef.current = false;
@@ -729,7 +732,32 @@ const CourseDetailsPage = () => {
     const lessonCount = course?.lessonCount ?? sections.reduce((count, sec) => count + (sec.lessons?.length || 0), 0);
 
     return (
-        <div className="min-h-screen pt-24 bg-[#f8f9fb]">
+        <div className="min-h-screen pt-10 bg-[#f8f9fb]">
+
+            <div className="relative max-w-6xl mx-auto flex justify-end mb-10">
+                <button
+                    className="flex w-[265px] h-[61px] opacity-100 rounded-[8px] border border-[1px] p-[18px] gap-[10px] border-[#FB923C] bg-[#FFF7ED]"
+                    onClick={() => setInstructorChat(true)}
+                >
+                    <FaSignalMessenger className="text-[#EA580C]" /> Инструктор менен чат
+                </button>
+
+                {instructorChat && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-end">
+                        {/* Полупрозрачный фон */}
+                        <div
+                            className="absolute inset-0 bg-black opacity-50"
+                            onClick={() => setInstructorChat(false)}
+                        ></div>
+
+                        {/* Модалка чата */}
+                        <div className="relative z-10 w-[50%] max-w-3xl ri bg-white rounded-lg shadow-lg">
+                            <InstructorChat course={course} />
+                        </div>
+                    </div>
+                )}
+            </div>
+
             <CourseHeader course={course} progress={progress} enrolled={enrolled} />
             <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
                 <CourseDescription course={course} />
