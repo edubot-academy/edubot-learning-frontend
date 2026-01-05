@@ -25,7 +25,7 @@ const HomePage = () => {
     }, []);
 
     return (
-        <div>
+        <div className="bg-white text-[#141619] dark:bg-[#222222] dark:text-[#E8ECF3]">
             <HeroStart />
             <StickyButton />
             <Benefits />

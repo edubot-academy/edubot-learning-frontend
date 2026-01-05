@@ -22,7 +22,7 @@ export const AuthProvider = ({ children }) => {
             localStorage.setItem('user', JSON.stringify(response.data));
         } catch (error) {
             console.error('Failed to fetch user profile', error);
-            logout();
+            logout(false); // just clear session; don't force redirect on initial load
         }
     };
 
@@ -32,11 +32,13 @@ export const AuthProvider = ({ children }) => {
         localStorage.setItem('user', JSON.stringify(userData));
     };
 
-    const logout = () => {
+    const logout = (redirect = true) => {
         setUser(null);
         localStorage.removeItem('token');
         localStorage.removeItem('user');
-        window.location.href = '/login';
+        if (redirect) {
+            window.location.href = '/login';
+        }
     };
 
     return (
