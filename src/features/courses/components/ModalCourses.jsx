@@ -2,19 +2,34 @@ import React, { useEffect, useState } from 'react';
 import Modal from '@shared-ui/Modal';
 import { fetchCoursePreview } from '../api';
 
-function ModalCourses({ isOpen, onClose, courseId }) {
-    const [previewData, setPreviewData] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [activeVideo, setActiveVideo] = useState(null);
+function ModalCourses({ isOpen, onClose, courseId, previewData: previewDataProp = null, initialVideo = null }) {
+    const [previewData, setPreviewData] = useState(previewDataProp || null);
+    const [loading, setLoading] = useState(previewDataProp ? false : true);
+    const [activeVideo, setActiveVideo] = useState(initialVideo || previewDataProp?.previewVideos?.[0] || null);
 
     useEffect(() => {
-        if (!isOpen || !courseId) return;
+        if (!isOpen) {
+            setPreviewData(previewDataProp || null);
+            setActiveVideo(initialVideo || previewDataProp?.previewVideos?.[0] || null);
+            setLoading(previewDataProp ? false : true);
+            return;
+        }
 
+        if (previewDataProp) {
+            setPreviewData(previewDataProp);
+            setActiveVideo(initialVideo || previewDataProp.previewVideos?.[0] || null);
+            setLoading(false);
+            return;
+        }
+
+        if (!courseId) return;
+
+        setLoading(true);
         const loadPreview = async () => {
             try {
                 const data = await fetchCoursePreview(courseId);
                 setPreviewData(data);
-                setActiveVideo(data?.previewVideos?.[0] || null);
+                setActiveVideo(initialVideo || data?.previewVideos?.[0] || null);
             } catch (e) {
                 console.error('Failed to load course preview:', e);
             } finally {
@@ -23,7 +38,7 @@ function ModalCourses({ isOpen, onClose, courseId }) {
         };
 
         loadPreview();
-    }, [isOpen, courseId]);
+    }, [isOpen, courseId, previewDataProp, initialVideo]);
 
     if (!isOpen) return null;
 

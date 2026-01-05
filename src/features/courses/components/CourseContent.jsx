@@ -7,6 +7,7 @@ import { MdQuiz } from 'react-icons/md';
 import { HiOutlineFolderOpen } from 'react-icons/hi2';
 import ReelsIcon from '@assets/icons/reelsIcon.svg';
 import { formatMinutesToTime, formatSecondsToTime } from '../../../utils/timeUtils';
+import ModalCourses from './ModalCourses';
 
 const CourseContent = ({
     sections,
@@ -20,6 +21,14 @@ const CourseContent = ({
 }) => {
     const [openIds, setOpenIds] = useState([]);
     const contentRefs = useRef({});
+
+    // preview modal state for lesson previews
+    const [previewOpen, setPreviewOpen] = useState(false);
+    const [previewLesson, setPreviewLesson] = useState(null);
+    const closePreview = () => {
+        setPreviewOpen(false);
+        setPreviewLesson(null);
+    };
 
     useEffect(() => {
         if (sections?.length > 0 && openIds.length === 0) {
@@ -56,7 +65,18 @@ const CourseContent = ({
         return <RiPlayCircleFill className="text-[#4b4b4b]" size={22} />;
     };
 
+    const getLessonPreviewVideoUrl = (lesson) => {
+        if (!lesson) return null;
+        if (lesson.videoUrl) return lesson.videoUrl;
+        if (lesson.previewUrl) return lesson.previewUrl;
+        if (lesson.previewVideo && typeof lesson.previewVideo === 'string') return lesson.previewVideo;
+        if (lesson.previewVideo && lesson.previewVideo.videoUrl) return lesson.previewVideo.videoUrl;
+        if (lesson.previewVideos?.[0]?.videoUrl) return lesson.previewVideos[0].videoUrl;
+        return null;
+    };
+
     return (
+        <>
         <div className="w-full bg-white rounded-2xl border border-[#E6E8EC] overflow-hidden">
             {showHeader && (
                 <div className="px-4 sm:px-6 py-4 border-b border-[#DFE1E5]">
@@ -112,7 +132,17 @@ const CourseContent = ({
                                                 }
                                             }}
                                             type="button"
-                                            onClick={() => !locked && onLessonClick?.(lesson)}
+                                            onClick={(e) => {
+                                                if (locked) return;
+                                                // If not enrolled and lesson has a preview video, open preview modal
+                                                if (!enrolled && lesson.previewVideo && lesson.kind !== 'article') {
+                                                    e.stopPropagation();
+                                                    setPreviewLesson(lesson);
+                                                    setPreviewOpen(true);
+                                                    return;
+                                                }
+                                                onLessonClick?.(lesson);
+                                            }}
                                             disabled={locked}
                                             className={`w-full text-left px-3 sm:px-4 py-4 transition border-b border-[#E6E8EC] last:border-b-0 ${locked
                                                 ? 'bg-gray-50 cursor-not-allowed'
@@ -205,6 +235,31 @@ const CourseContent = ({
                 ))}
             </div>
         </div>
+        {previewOpen && (
+            <ModalCourses
+                isOpen={previewOpen}
+                onClose={closePreview}
+                previewData={{
+                    title: previewLesson?.title,
+                    description: previewLesson?.description,
+                    coverImageUrl: previewLesson?.coverImageUrl || previewLesson?.thumbnailUrl || '',
+                    durationInHours: Math.ceil((previewLesson?.duration || 0) / 3600),
+                    previewVideos: [
+                        {
+                            id: previewLesson?.id,
+                            title: previewLesson?.title,
+                            videoUrl: getLessonPreviewVideoUrl(previewLesson),
+                        },
+                    ],
+                }}
+                initialVideo={{
+                    id: previewLesson?.id,
+                    title: previewLesson?.title,
+                    videoUrl: getLessonPreviewVideoUrl(previewLesson),
+                }}
+            />
+        )}
+        </>
     );
 };
 
