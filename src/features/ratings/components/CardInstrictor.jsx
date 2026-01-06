@@ -1,6 +1,7 @@
 import PropTypes from 'prop-types';
+import { AiFillStar, AiOutlineStar } from "react-icons/ai";
 
-const CardInstructor = ({ avatarUrl, fullName, title, totalStudents }) => {
+const CardInstructor = ({ avatarUrl, fullName, title, totalStudents, }) => {
     return (
         <div className="bg-white text-[#141619] dark:bg-[#141619] dark:text-[#E8ECF3] rounded flex flex-col overflow-hidden p-3 border border-gray-200 dark:border-[#2A2E35]">
             <img src={avatarUrl} alt={fullName} className="w-full h-96 object-cover rounded" />
@@ -8,10 +9,20 @@ const CardInstructor = ({ avatarUrl, fullName, title, totalStudents }) => {
             <p className="text-sm text-gray-500 dark:text-[#a6adba]">{title}</p>
             <div className="flex mt-4 gap-2 items-center">
                 <div className="flex items-center gap-1">
-                    <div className="flex text-yellow-400">
-                        {Array.from({ length: 5 }).map((_, i) => (
-                            <span className="text-2xl" key={i}>
-                                ★
+                    <div style={{ display: "flex", gap: "5px" }}>
+                        {[1, 2, 3, 4, 5].map((star) => (
+                            <span
+                                key={star}
+                                onClick={() => setRating(star)}
+                                onMouseEnter={() => setHover(star)}
+                                onMouseLeave={() => setHover(0)}
+                                style={{ cursor: "pointer" }}
+                            >
+                                {star <= (totalStudents) ? (
+                                    <AiFillStar color="#ffc107" size={25} />
+                                ) : (
+                                    <AiOutlineStar color="#ccc" size={25} />
+                                )}
                             </span>
                         ))}
                     </div>

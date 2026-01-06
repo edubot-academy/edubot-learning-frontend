@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import CardIcon from '@assets/icons/cardvektor.svg';
 import Button from '@shared-ui/Button';
 import { useCart } from '../../../context/CartContext';
+import { AiFillStar, AiOutlineStar } from "react-icons/ai";
 
 const CardCourse = ({
     coverImageUrl,
@@ -63,6 +64,7 @@ const CardCourse = ({
         closePopup();
         navigate('/cart');
     };
+    const [rating, setRating] = useState(0);
 
     return (
         <>
@@ -80,10 +82,20 @@ const CardCourse = ({
                                 {instructor.fullName}
                             </p>
                             <div className="flex items-center gap-2 mb-3 mt-3">
-                                <div className="flex text-yellow-400">
-                                    {Array.from({ length: 5 }).map((_, i) => (
-                                        <span className="text-2xl" key={i}>
-                                            ★
+                                <div style={{ display: "flex", gap: "5px" }}>
+                                    {[1, 2, 3, 4, 5].map((star) => (
+                                        <span
+                                            key={star}
+                                            onClick={() => setRating(star)}
+                                            onMouseEnter={() => setHover(star)}
+                                            onMouseLeave={() => setHover(0)}
+                                            style={{ cursor: "pointer" }}
+                                        >
+                                            {star <= (ratingCount) ? (
+                                                <AiFillStar color="#ffc107" size={25} />
+                                            ) : (
+                                                <AiOutlineStar color="#ccc" size={25} />
+                                            )}
                                         </span>
                                     ))}
                                 </div>
