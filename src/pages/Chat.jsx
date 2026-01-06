@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useContext } from "react";
 import {
   fetchInstructorChats,
   fetchInstructorChatMessages,
-  replyInstructorChatMessage,
+  sendInstructorChatMessage,
 } from "@services/api";
 import { AuthContext } from "../context/AuthContext";
 import toast from "react-hot-toast";
@@ -21,6 +21,7 @@ export default function Chat() {
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(true);
   const [actionsOpen, setActionsOpen] = useState(false);
+  const [sending, setSending] = useState(false);
 
   const messagesRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -81,7 +82,7 @@ export default function Chat() {
 
   /* ================= SEND TEXT ================= */
   const sendMessage = async () => {
-    if (!message.trim() || !activeChat) return;
+    if (!message.trim() || !activeChat || sending) return;
 
     const optimistic = {
       id: Date.now(),
@@ -89,19 +90,34 @@ export default function Chat() {
       content: message,
       createdAt: new Date(),
       type: "text",
+      isOptimistic: true,
     };
 
     setMessages((p) => [...p, optimistic]);
+    const originalMessage = message;
     setMessage("");
     setActionsOpen(false);
+    setSending(true);
 
     try {
-      await replyInstructorChatMessage({
-        chatId: activeChat.id,
+      await sendInstructorChatMessage({
         content: optimistic.content,
+        chatId: activeChat.id,
+        courseId: activeChat.course.id,
+        instructorId: activeChat.instructor.id,
       });
+
+      // Обновляем сообщения после отправки
+      const res = await fetchInstructorChatMessages(activeChat.id);
+      setMessages(res?.messages ?? []);
+
     } catch {
       toast.error("Ошибка отправки");
+      // Удаляем оптимистичное сообщение при ошибке
+      setMessages((p) => p.filter(m => !m.isOptimistic));
+      setMessage(originalMessage);
+    } finally {
+      setSending(false);
     }
   };
 
@@ -115,6 +131,7 @@ export default function Chat() {
       createdAt: new Date(),
       type,
       file,
+      isOptimistic: true,
     };
 
     setMessages((p) => [...p, optimistic]);
@@ -122,13 +139,34 @@ export default function Chat() {
 
     try {
       const formData = new FormData();
+      formData.append("content", ""); // пустой текст для файла
       formData.append("chatId", activeChat.id);
-      formData.append("file", file);
+      formData.append("courseId", activeChat.course.id);
+      formData.append("instructorId", activeChat.instructor.id);
       formData.append("type", type);
 
-      await replyInstructorChatMessage(formData);
+      // Если это файл или изображение
+      if (type === "image" || type === "file") {
+        formData.append("file", file);
+      }
+
+      await sendInstructorChatMessage(formData);
+
+      // Обновляем сообщения после отправки
+      const res = await fetchInstructorChatMessages(activeChat.id);
+      setMessages(res?.messages ?? []);
+
     } catch {
       toast.error("Ошибка отправки файла");
+      // Удаляем оптимистичное сообщение при ошибке
+      setMessages((p) => p.filter(m => !m.isOptimistic));
+    }
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
     }
   };
 
@@ -229,24 +267,27 @@ export default function Chat() {
                     <div className="max-w-[260px]">
                       <div
                         className={`px-3 py-2 text-[13px] rounded-xl
-                          ${
-                            isMe
-                              ? "bg-white shadow rounded-br-sm"
-                              : "bg-orange-500 text-white rounded-bl-sm"
+                          ${m.isOptimistic ? 'opacity-70' : ''}
+                          ${isMe
+                            ? "bg-white shadow rounded-br-sm"
+                            : "bg-orange-500 text-white rounded-bl-sm"
                           }`}
                       >
                         {m.type === "image" ? (
                           <img
-                            src={URL.createObjectURL(m.file)}
+                            src={m.url || URL.createObjectURL(m.file)}
                             className="rounded-lg max-w-[200px]"
                             alt=""
                           />
                         ) : m.type === "file" ? (
                           <span className="underline">
-                            📎 {m.file.name}
+                            📎 {m.file?.name || 'Файл'}
                           </span>
                         ) : (
                           m.content
+                        )}
+                        {m.isOptimistic && (
+                          <span className="ml-1 text-xs">(отправка...)</span>
                         )}
                       </div>
 
@@ -294,16 +335,26 @@ export default function Chat() {
               <input
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+                onKeyDown={handleKeyDown}
                 className="flex-1 h-10 px-4 rounded-full focus:outline-none"
                 placeholder="Напишите сообщение"
+                disabled={sending}
               />
 
               <button
                 onClick={sendMessage}
-                className="w-10 h-10 rounded-full bg-gradient-to-t from-[#FF8C6E] to-[#E14219] flex items-center justify-center"
+                disabled={!message.trim() || sending}
+                className={`w-10 h-10 rounded-full flex items-center justify-center
+                  ${message.trim() && !sending
+                    ? "bg-gradient-to-t from-[#FF8C6E] to-[#E14219] cursor-pointer"
+                    : "bg-gray-300 cursor-not-allowed"
+                  }`}
               >
-                <img src={sendSvg} className="w-4 h-4" />
+                {sending ? (
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                ) : (
+                  <img src={sendSvg} className="w-4 h-4" />
+                )}
               </button>
 
               {/* hidden inputs */}

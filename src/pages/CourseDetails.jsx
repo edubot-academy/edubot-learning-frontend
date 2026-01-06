@@ -751,8 +751,10 @@ const CourseDetailsPage = () => {
                         ></div>
 
                         {/* Модалка чата */}
-                        <div className="relative z-10 w-[50%] max-w-3xl ri bg-white rounded-lg shadow-lg">
-                            <InstructorChat course={course} />
+                        <div className="relative xl:w-10xl m-auto ">
+                            <div className="z-10 xl:ml-[550px] xl:w-[600px] sm:h-[600px] h-[400px] md:w-[381px] w-[300px]  bg-white rounded-lg shadow-lg">
+                                <InstructorChat course={course} />
+                            </div>
                         </div>
                     </div>
                 )}
