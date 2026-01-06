@@ -64,24 +64,24 @@ function UserMenuDropdown({ user, onClose }) {
 
     return (
         <div className="group/dropdown">
-            <div className="w-[17rem] sm:w-[15rem] bg-white mt-[30px] ml-[20px] rounded-[0.50rem] shadow-xl border border-gray-200 transition-all duration-300 ease-in-out">
+            <div className="w-[17rem] sm:w-[15rem] bg-white dark:bg-[#141619] mt-[30px] ml-[20px] rounded-[0.50rem] shadow-xl border border-gray-200 dark:border-[#2A2E35] transition-all duration-300 ease-in-out">
                 <Link to={dashboardPath} onClick={handleItemClick} className="block">
-                    <div className="flex items-center justify-between px-[1.25rem] py-[1rem] hover:bg-gray-50 transition-colors cursor-pointer">
+                    <div className="flex items-center justify-between px-[1.25rem] py-[1rem] hover:bg-gray-50 dark:hover:bg-[#1F2229] transition-colors cursor-pointer">
                         <div className="flex items-center gap-[0.75rem]">
                             <img
                                 src={Profile}
                                 alt="Profile"
-                                className="w-[2.9rem] h-[2.9rem] sm:w-[2.5rem] sm:h-[2.5rem] rounded-full"
+                                className="w-[2.9rem] h-[2.9rem] sm:w-[2.5rem] sm:h-[2.5rem] rounded-full dark:invert dark:brightness-200"
                             />
                             <div>
-                                <h3 className="text-[1rem] sm:text-[0.9rem] font-semibold text-[#141619]">
+                                <h3 className="text-[1rem] sm:text-[0.9rem] font-semibold text-[#141619] dark:text-[#E8ECF3]">
                                     {user.fullName}
                                 </h3>
                                 <p className="text-[0.80rem] sm:text-[0.75rem] text-[#208D28]">
                                     Идентифицированный
                                 </p>
                                 {user?.role && (
-                                    <p className="text-[0.70rem] text-gray-500 capitalize">
+                                    <p className="text-[0.70rem] text-gray-500 dark:text-gray-300 capitalize">
                                         {user.role}
                                     </p>
                                 )}
@@ -95,7 +95,7 @@ function UserMenuDropdown({ user, onClose }) {
                     </div>
                 </Link>
 
-                <div className="w-full h-[0.06rem] bg-gray-200 my-[0.4rem]" />
+                <div className="w-full h-[0.06rem] bg-gray-200 dark:bg-[#2A2E35] my-[0.4rem]" />
 
                 <div className="w-[18rem] sm:w-[16rem] items-center ml-[30px] mb-6">
                     <div>
@@ -109,13 +109,18 @@ function UserMenuDropdown({ user, onClose }) {
                                         px-[1.25rem] sm:px-[1rem] py-[0.85rem] sm:py-[0.7rem]
                                         cursor-pointer
                                         text-[0.85rem] sm:text-[0.8rem]
-                                        text-gray-800
+                                        text-gray-800 dark:text-[#E8ECF3]
                                         hover:bg-[#EA580C] hover:text-white
+                                        dark:hover:bg-[#EA580C]
                                         transition-colors duration-200
                                         rounded-lg
                                     "
                                 >
-                                    <img src={item.icon} alt="" className="w-[1.2rem] sm:w-[1.1rem]" />
+                                    <img
+                                        src={item.icon}
+                                        alt=""
+                                        className="w-[1.2rem] sm:w-[1.1rem] dark:invert dark:brightness-200"
+                                    />
                                     <span className="whitespace-nowrap overflow-hidden text-ellipsis">
                                         {item.label}
                                     </span>
@@ -129,15 +134,11 @@ function UserMenuDropdown({ user, onClose }) {
                                     </Link>
                                 );
                             }
-                            return (
-                                <div key={index}>
-                                    {content}
-                                </div>
-                            );
+                            return <div key={index}>{content}</div>;
                         })}
                     </div>
 
-                    <div className="mt-[0.35rem] border-t border-gray-200 pt-2">
+                    <div className="mt-[0.35rem] border-t border-gray-200 dark:border-[#2A2E35] pt-2">
                         <button
                             onClick={handleLogout}
                             className="
@@ -147,8 +148,8 @@ function UserMenuDropdown({ user, onClose }) {
                                 px-[1.25rem] sm:px-[1rem] py-[0.85rem] sm:py-[0.7rem]
                                 cursor-pointer
                                 text-[0.85rem] sm:text-[0.8rem]
-                                text-red-600
-                                hover:bg-red-50
+                                text-red-600 dark:text-red-400
+                                hover:bg-red-50 dark:hover:bg-[#2A2E35]
                                 rounded-lg
                             "
                         >

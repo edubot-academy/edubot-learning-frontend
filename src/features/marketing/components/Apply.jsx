@@ -9,8 +9,8 @@ function Apply({ user }) {
     if (user) return null;
 
     return (
-        <div className="flex items-center justify-center gap-[130px] mt-20">
-            <div className="relative hidden md:flex items-center left-[80px] h-[650px] ">
+        <div className="flex items-center justify-center gap-[130px] mt-20 bg-white dark:bg-[#1A1A1A] py-12 px-4 sm:px-6 lg:px-12 text-[#141619] dark:text-[#E8ECF3]">
+            <div className="relative hidden md:flex items-center left-[80px] h-[650px]">
                 <img src={Background} alt="Background" className="" />
 
                 <img
@@ -20,7 +20,7 @@ function Apply({ user }) {
                 />
             </div>
 
-            <div className="relative w-[500px] h-[270px] mx-auto bg-white rounded-lg border border-2 p-6 text-center">
+            <div className="relative w-[500px] h-[270px] mx-auto bg-white dark:bg-[#141619] rounded-lg border border-gray-200 dark:border-[#2A2E35] p-6 text-center">
                 <div className="absolute -top-[90px] left-1/2 -translate-x-1/2">
                     <img
                         src={LogoStudies}
@@ -29,10 +29,12 @@ function Apply({ user }) {
                     />
                 </div>
 
-                <h2 className="text-xl font-semibold text-[#141619] mb-2 mt-10">
+                <h2 className="text-xl font-semibold text-[#141619] dark:text-[#E8ECF3] mb-2 mt-10">
                     Окууга азыр катталыныз
                 </h2>
-                <p className="text-[#3E424A] mb-4">Edubot Learning кошулуу үчүн азыр баштаңыз</p>
+                <p className="text-[#3E424A] dark:text-[#a6adba] mb-4">
+                    Edubot Learning кошулуу үчүн азыр баштаңыз
+                </p>
                 <Link to="/register">
                     <Button>Сабакты азыр баштоо</Button>
                 </Link>

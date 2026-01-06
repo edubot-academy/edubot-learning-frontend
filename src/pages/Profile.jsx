@@ -596,8 +596,8 @@ const ProfilePage = () => {
                                                     {course.studentsCount
                                                         ? `${course.studentsCount} студент`
                                                         : course.status
-                                                            ? `Статус: ${course.status}`
-                                                            : ''}
+                                                          ? `Статус: ${course.status}`
+                                                          : ''}
                                                 </div>
                                             </div>
                                         ))}

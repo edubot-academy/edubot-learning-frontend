@@ -27,8 +27,6 @@ export async function fetchCourseReviews(courseId, page = 1, limit = 10) {
     return data;
 }
 
-
-
 export async function fetchTopInstructors(limit = 3) {
     const { data } = await api.get(`/users/top-instructors`, {
         params: { limit },

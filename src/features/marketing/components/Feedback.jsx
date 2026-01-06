@@ -1,6 +1,6 @@
 import arrowLeft from '@assets/icons/leftArrow.svg';
 import arrowRight from '@assets/icons/rightArrow.svg';
-import CardFeedback from './CardFeedback';
+// import CardFeedback from './CardFeedback';
 import { getTopRatings } from '@features/ratings/api';
 import { useEffect, useState } from 'react';
 import FeedbackSection from '@features/courses/components/FeedbackSection';
@@ -41,7 +41,7 @@ function Feedback() {
                 subtitle="Тут вы можете посмотреть все отзывы наших студентов которые прошли  все наши онлайн уроки"
                 data={newDate}
                 rightContent={arrows}
-                CardComponent={CardFeedback}
+                // CardComponent={CardFeedback}
             />
         </>
     );

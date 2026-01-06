@@ -141,6 +141,12 @@ export async function updateLesson(courseId, sectionId, lessonId, lessonData) {
     return response.data;
 }
 
+export const transcodeLessonHls = async ({ courseId, sectionId, lessonId }) => {
+    const response = await api.post(
+        `/courses/${courseId}/sections/${sectionId}/lessons/${lessonId}/transcode-hls`
+    );
+    return response.data;
+};
 export async function deleteLesson(courseId, sectionId, lessonId) {
     await api.delete(`/courses/${courseId}/sections/${sectionId}/lessons/${lessonId}`);
 }
