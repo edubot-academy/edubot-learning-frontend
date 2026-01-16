@@ -733,7 +733,7 @@ const CourseDetailsPage = () => {
     };
 
     const renderTabButtons = () => (
-        <div className="flex flex-wrap gap-2 bg-gray-100 rounded-2xl p-1">
+        <div className="flex flex-wrap gap-2 rounded-2xl p-1">
             {tabs.map((tab) => (
                 <button
                     key={tab.id}
@@ -753,7 +753,7 @@ const CourseDetailsPage = () => {
         sections.reduce((count, sec) => count + (sec.lessons?.length || 0), 0);
 
     return (
-        <div className="min-h-screen bg-[#f8f9fb]">
+        <div className="min-h-screen">
             <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-10 py-6 space-y-8">
                 {/* Mobile layouts */}
                 {enrolled ? (
@@ -911,7 +911,7 @@ const CourseDetailsPage = () => {
                             </div>
 
                             <div className="space-y-4 md:sticky md:top-6 md:self-start h-fit">
-                                <div className="bg-white p-4 sm:p-5 rounded-xl shadow-sm">
+                                <div className="p-4 sm:p-5 rounded-xl shadow-sm">
                                     <div className="mb-4">{renderTabButtons()}</div>
                                     {activeTab === 'program' ? (
                                         <CourseContent

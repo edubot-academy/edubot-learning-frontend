@@ -28,7 +28,7 @@ const Cart = () => {
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+            <div className="min-h-screen flex items-center justify-center p-4">
                 <div className="text-center">
                     <div className="inline-block animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-orange-500"></div>
                     <p className="mt-4 text-gray-600">Корзина жүктөлүүдө...</p>
@@ -39,9 +39,9 @@ const Cart = () => {
 
     if (cartItems.length === 0) {
         return (
-            <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
+            <div className="min-h-screen flex flex-col items-center justify-center p-4">
                 <BsCartX className="w-24 h-24 text-gray-300 mb-6" />
-                <h2 className="text-2xl font-bold text-gray-800 mb-4">Корзинаңыз бош</h2>
+                <h2 className="text-2xl font-bold mb-4">Корзинаңыз бош</h2>
                 <p className="text-gray-600 mb-8 text-center max-w-md">
                     Сиздин корзинаңызда эч кандай курс жок. Биздин курстарды изилдеп, биринчисин
                     кошуңуз!
@@ -60,7 +60,7 @@ const Cart = () => {
     const totalPrice = getTotalPrice();
 
     return (
-        <div className="min-h-screen bg-gray-50 py-8">
+        <div className="min-h-screen py-8">
             {/* Используем существующую Modal компоненту */}
             <Modal
                 isOpen={showRegisterModal}
@@ -74,7 +74,7 @@ const Cart = () => {
                             <FaShoppingCart className="w-5 h-5 text-orange-500" />
                         </div>
                         <div>
-                            <h3 className="font-bold text-gray-900">Регистрация керек</h3>
+                            <h3 className="font-bold ">Регистрация керек</h3>
                         </div>
                     </div>
 
@@ -100,7 +100,7 @@ const Cart = () => {
 
             <div className="container mx-auto px-4">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
-                    <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Менин корзинам</h1>
+                    <h1 className="text-2xl sm:text-3xl font-bold">Менин корзинам</h1>
 
                     <div className="flex items-center gap-3">
                         <button
@@ -119,7 +119,7 @@ const Cart = () => {
                         {cartItems.map((item) => (
                             <div
                                 key={item.cartItemId || item.id}
-                                className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow duration-300"
+                                className="rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow duration-300"
                             >
                                 <Link to={`/courses/${item.id}`} className="block">
                                     <div className="flex flex-col sm:flex-row">
@@ -142,7 +142,7 @@ const Cart = () => {
                                         <div className="flex-1 p-4 sm:p-6">
                                             <div className="flex flex-col sm:flex-row justify-between">
                                                 <div className="flex-1 mb-4 sm:mb-0">
-                                                    <h3 className="text-lg font-semibold text-gray-900 mb-2 hover:text-orange-500 transition-colors">
+                                                    <h3 className="text-lg font-semibold mb-2 hover:text-orange-500 transition-colors">
                                                         {item.title}
                                                     </h3>
                                                     <p className="text-gray-600 text-sm mb-2">
@@ -164,7 +164,7 @@ const Cart = () => {
                                                 </div>
 
                                                 <div className="flex flex-col items-start sm:items-end justify-between">
-                                                    <p className="text-xl font-bold text-gray-900 mb-3 sm:mb-0">
+                                                    <p className="text-xl font-bold mb-3 sm:mb-0">
                                                         {item.price} сом
                                                     </p>
                                                     <button
@@ -189,8 +189,8 @@ const Cart = () => {
 
                     {/* Сумма заказа */}
                     <div className="lg:col-span-1">
-                        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 sticky top-6">
-                            <h3 className="text-xl font-bold text-gray-900 mb-6">
+                        <div className="rounded-xl shadow-sm border border-gray-200 p-6 sticky top-6">
+                            <h3 className="text-xl font-bold mb-6">
                                 Заказды жыйынтыктоо
                             </h3>
 
@@ -202,7 +202,7 @@ const Cart = () => {
 
                                 <div className="pt-4 border-t border-gray-200">
                                     <div className="flex justify-between items-center">
-                                        <span className="text-lg font-semibold text-gray-900">
+                                        <span className="text-lg font-semibold">
                                             Жалпы сумма:
                                         </span>
                                         <span className="text-2xl font-bold text-orange-500">

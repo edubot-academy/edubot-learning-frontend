@@ -50,14 +50,14 @@ const CourseContent = ({
     const isActive = (lesson) => activeLesson && activeLesson.id === lesson.id;
     const isCompleted = (lesson) => completedLessons.includes(lesson.id);
     const getIcon = (lesson) => {
-        if (lesson.kind === 'article') return <FiBookOpen className="text-[#4b4b4b]" size={18} />;
-        if (lesson.kind === 'code') return <FiCode className="text-[#4b4b4b]" size={18} />;
-        if (lesson.kind === 'quiz') return <MdQuiz className="text-[#4b4b4b]" size={18} />;
-        return <RiPlayCircleFill className="text-[#4b4b4b]" size={22} />;
+        if (lesson.kind === 'article') return <FiBookOpen size={18} />;
+        if (lesson.kind === 'code') return <FiCode size={18} />;
+        if (lesson.kind === 'quiz') return <MdQuiz size={18} />;
+        return <RiPlayCircleFill size={22} />;
     };
 
     return (
-        <div className="w-full bg-white rounded-2xl border border-[#E6E8EC] overflow-hidden">
+        <div className="w-full rounded-2xl border border-[#E6E8EC] overflow-hidden">
             {showHeader && (
                 <div className="px-4 sm:px-6 py-4 border-b border-[#DFE1E5]">
                     <h3 className="text-xl sm:text-2xl font-semibold text-gray-900">
@@ -77,11 +77,11 @@ const CourseContent = ({
                             onClick={() => toggleOpen(section.id)}
                             className="flex justify-between items-center w-full px-4 sm:px-6 py-3 text-left transition hover:bg-gray-50"
                         >
-                            <div className="flex items-center gap-2 text-[#EA580C] font-semibold">
+                            <div className="flex items-center gap-2 font-semibold">
                                 {openIds.includes(section.id) ? <IoIosArrowUp /> : <IoIosArrowDown />}
                                 <span className="truncate">{section.title}</span>
                             </div>
-                            <span className="text-gray-500 text-sm">
+                            <span className="text-sm">
                                 {section.lessons.length} лекций •{' '}
                                 {formatMinutesToTime(section.durationMinutes)}
                             </span>
@@ -97,7 +97,7 @@ const CourseContent = ({
                                 overflow: 'hidden',
                             }}
                         >
-                            <div className="bg-white px-4 sm:px-6 pb-4 space-y-2">
+                            <div className="px-4 sm:px-6 pb-4 space-y-2">
                                 {section.lessons.map((lesson) => {
                                     const locked = isLocked(lesson);
                                     const active = isActive(lesson);
@@ -116,8 +116,8 @@ const CourseContent = ({
                                             disabled={locked}
                                             className={`w-full text-left px-3 sm:px-4 py-4 transition border-b border-[#E6E8EC] last:border-b-0 ${locked
                                                 ? 'bg-gray-50 cursor-not-allowed'
-                                                : 'hover:bg-gray-50 cursor-pointer'
-                                                } ${enrolled && active ? 'bg-orange-50' : ''}`}
+                                                : 'hover:bg-gray-50 cursor-pointer hover:text-[#4b4b4b]'
+                                                } ${enrolled && active ? 'bg-orange-50 text-[#4b4b4b]' : ''}`}
                                         >
                                             {enrolled ? (
                                                 <div className="flex items-center gap-3">
@@ -136,15 +136,15 @@ const CourseContent = ({
                                                         disabled={locked}
                                                     />
                                                     <div className="flex-1 flex flex-col gap-2">
-                                                        <p className="text-sm sm:text-base text-gray-800 leading-snug break-words">
+                                                        <p className="text-sm sm:text-base leading-snug break-words">
                                                             {lesson.title}
                                                         </p>
-                                                        <div className="flex items-center gap-2 text-sm text-gray-700">
+                                                        <div className="flex items-center gap-2 text-sm">
                                                             {getIcon(lesson)}
-                                                            <span className="text-gray-700">
+                                                            <span className="">
                                                                 {formatSecondsToTime(lesson.duration)}
                                                             </span>
-                                                            {locked && <TbLock className="text-gray-400" size={16} />}
+                                                            {locked && <TbLock className="" size={16} />}
                                                         </div>
                                                     </div>
                                                     {lesson.resourceUrl && (
@@ -189,7 +189,7 @@ const CourseContent = ({
                                                                     </span>
                                                                 </>
                                                             )}
-                                                            <span className="text-gray-700">
+                                                            <span className="">
                                                                 {formatSecondsToTime(lesson.duration)}
                                                             </span>
                                                         </div>

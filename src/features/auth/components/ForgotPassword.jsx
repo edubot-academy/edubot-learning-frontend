@@ -59,7 +59,7 @@ const ForgotPassword = ({ onClose }) => {
                 </button>
 
                 {/* Заголовок */}
-                <h2 className="text-2xl font-bold text-left mb-6">Сырсөздү унуттуңузбу?</h2>
+                <h2 className="text-2xl font-bold text-left mb-6 text-black">Сырсөздү унуттуңузбу?</h2>
 
                 {/* Шаг 1 */}
                 {!otpSent ? (
@@ -67,7 +67,7 @@ const ForgotPassword = ({ onClose }) => {
                         <select
                             value={method}
                             onChange={(e) => setMethod(e.target.value)}
-                            className="w-full px-4 py-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
+                            className="w-full px-4 py-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 text-black"
                         >
                             <option value="method">Методду тандаңыз</option>
                             <option value="email">Email</option>

@@ -220,7 +220,7 @@ const InstructorDashboard = () => {
     };
 
     return (
-        <div className="pt-24 min-h-screen bg-gray-50">
+        <div className="pt-24 min-h-screen">
             <div className="max-w-7xl mx-auto flex gap-6 px-4 pb-12">
                 <DashboardSidebar
                     items={NAV_ITEMS}
@@ -237,7 +237,7 @@ const InstructorDashboard = () => {
                             <p className="text-sm uppercase tracking-wide text-gray-400">
                                 Инструктор
                             </p>
-                            <h1 className="text-3xl font-bold text-gray-900">
+                            <h1 className="text-3xl font-bold">
                                 {user.fullName || user.email}
                             </h1>
                             <p className="text-sm text-gray-500">
@@ -289,9 +289,9 @@ const OverviewSection = ({
 
     return (
         <>
-            <div className="bg-white rounded-3xl p-6 shadow-sm">
+            <div className="rounded-3xl p-6 shadow-sm">
                 <p className="text-sm text-gray-500">Кош келиңиз</p>
-                <h2 className="text-2xl font-semibold text-gray-900">
+                <h2 className="text-2xl font-semibold">
                     {user.fullName || user.email}
                 </h2>
                 <p className="mt-2 text-gray-600">
@@ -340,7 +340,7 @@ const CoursesSection = ({
     loadingOfferings,
     onViewOfferings,
 }) => (
-    <div className="bg-white rounded-3xl p-6 shadow-sm">
+    <div className="rounded-3xl p-6 shadow-sm">
         <div className="flex items-center justify-between flex-wrap gap-3 mb-4">
             <div>
                 <h2 className="text-2xl font-semibold">Курстарым</h2>
@@ -370,11 +370,10 @@ const CoursesSection = ({
                                 )}
                             </div>
                             <span
-                                className={`text-xs px-2 py-1 rounded-full ${
-                                    course.isPublished
-                                        ? 'bg-green-100 text-green-700'
-                                        : 'bg-yellow-100 text-yellow-700'
-                                }`}
+                                className={`text-xs px-2 py-1 rounded-full ${course.isPublished
+                                    ? 'bg-green-100 text-green-700'
+                                    : 'bg-yellow-100 text-yellow-700'
+                                    }`}
                             >
                                 {course.isPublished ? 'Жарыяланды' : 'Каралууда'}
                             </span>
@@ -426,7 +425,7 @@ const CoursesSection = ({
 
 const StudentsSection = ({ total, courses }) => (
     <div className="space-y-4">
-        <div className="bg-white rounded-3xl p-6 shadow-sm">
+        <div className="rounded-3xl p-6 shadow-sm">
             <h2 className="text-2xl font-semibold mb-2">Студенттер</h2>
             <p className="text-gray-500 text-sm">
                 Жалпы студенттердин саны (бардык курстар боюнча).
@@ -435,7 +434,7 @@ const StudentsSection = ({ total, courses }) => (
                 <StatCard label="Студенттер" value={total ?? '—'} />
             </div>
         </div>
-        <div className="bg-white rounded-3xl p-6 shadow-sm">
+        <div className="rounded-3xl p-6 shadow-sm">
             <h3 className="text-lg font-semibold mb-3">Курс боюнча бөлүштүрүү</h3>
             {courses.length ? (
                 <div className="space-y-3">
@@ -465,7 +464,7 @@ const StudentsSection = ({ total, courses }) => (
         <div className="bg-gradient-to-r from-[#FFEDD5] via-[#FFEAD1] to-[#FFDACC] rounded-3xl p-6 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div>
                 <p className="text-sm uppercase tracking-wide text-orange-600">Кеңеш</p>
-                <h3 className="text-xl font-semibold text-gray-900">Катталууларды башкарыңыз</h3>
+                <h3 className="text-xl font-semibold">Катталууларды башкарыңыз</h3>
                 <p className="text-sm text-gray-600">
                     Курстар боюнча студенттерди кошуу же алып салуу үчүн админ панелиндеги
                     "Катталуулар" бөлүмүн колдонууга болот.
@@ -483,7 +482,7 @@ const StudentsSection = ({ total, courses }) => (
 );
 
 const ProfileSection = ({ profile, expertiseTags, socialLinks }) => (
-    <div className="bg-white rounded-3xl p-6 shadow-sm space-y-6">
+    <div className="rounded-3xl p-6 shadow-sm space-y-6">
         <div className="flex items-center justify-between gap-3 flex-wrap">
             <div>
                 <h2 className="text-2xl font-semibold">Профиль</h2>
@@ -557,7 +556,7 @@ const ProfileSection = ({ profile, expertiseTags, socialLinks }) => (
 );
 
 const AiSection = ({ aiCourses, totalCourses }) => (
-    <div className="bg-white rounded-3xl p-6 shadow-sm space-y-5">
+    <div className="rounded-3xl p-6 shadow-sm space-y-5">
         <div className="flex items-center justify-between gap-3 flex-wrap">
             <div>
                 <h2 className="text-2xl font-semibold">EDU AI ассистент</h2>
@@ -636,8 +635,8 @@ const OfferingsSection = ({ courses, offerings, loading, refreshOfferings }) => 
             courseId: base?.courseId
                 ? String(base.courseId)
                 : courses[0]?.id
-                  ? String(courses[0].id)
-                  : '',
+                    ? String(courses[0].id)
+                    : '',
             title: base?.title || '',
             modality: base?.modality || 'ONLINE',
             visibility: base?.visibility || 'PRIVATE',
@@ -646,10 +645,10 @@ const OfferingsSection = ({ courses, offerings, loading, refreshOfferings }) => 
             scheduleNote: base?.scheduleNote || '',
             scheduleBlocks: base?.scheduleBlocks
                 ? base.scheduleBlocks.map((block) => ({
-                      day: block.day || '',
-                      startTime: block.startTime || '',
-                      endTime: block.endTime || '',
-                  }))
+                    day: block.day || '',
+                    startTime: block.startTime || '',
+                    endTime: block.endTime || '',
+                }))
                 : [],
             capacity: base?.capacity ? String(base.capacity) : '',
             priceOverride: base?.priceOverride || '',
@@ -759,8 +758,8 @@ const OfferingsSection = ({ courses, offerings, loading, refreshOfferings }) => 
                 scheduleBlocks:
                     createForm.scheduleBlocks && createForm.scheduleBlocks.length
                         ? createForm.scheduleBlocks.filter(
-                              (block) => block.day && block.startTime && block.endTime
-                          )
+                            (block) => block.day && block.startTime && block.endTime
+                        )
                         : null,
                 capacity: createForm.capacity ? Number(createForm.capacity) : null,
                 priceOverride: createForm.priceOverride.trim() || null,
@@ -911,7 +910,7 @@ const OfferingsSection = ({ courses, offerings, loading, refreshOfferings }) => 
                     <p className="text-sm uppercase tracking-wide text-gray-400">
                         Offering башкаруу
                     </p>
-                    <h2 className="text-2xl font-bold text-gray-900">Курс сунуштары</h2>
+                    <h2 className="text-2xl font-bold">Курс сунуштары</h2>
                     <p className="text-sm text-gray-500">
                         Курстарыңызга арналган корпоративдик же атайын сунуштарды көзөмөлдөңүз.
                     </p>
@@ -937,7 +936,7 @@ const OfferingsSection = ({ courses, offerings, loading, refreshOfferings }) => 
                 <StatCard label="Жабылган/аякталган" value={summary.completed} />
             </div>
 
-            <div className="bg-white rounded-3xl p-4 shadow-sm flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <div className="rounded-3xl p-4 shadow-sm flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                 <div className="flex items-center gap-3 flex-wrap">
                     <div className="flex items-center gap-2 border rounded-full px-3 py-1 text-sm text-gray-600">
                         <FiFilter />
@@ -974,7 +973,7 @@ const OfferingsSection = ({ courses, offerings, loading, refreshOfferings }) => 
                 />
             </div>
 
-            <div className="bg-white rounded-3xl p-6 shadow-sm">
+            <div className="rounded-3xl p-6 shadow-sm">
                 {loading ? (
                     <p className="text-center text-gray-500">Offeringдер жүктөлүүдө...</p>
                 ) : filteredOfferings.length ? (
@@ -1053,7 +1052,7 @@ const OfferingsSection = ({ courses, offerings, loading, refreshOfferings }) => 
 const StatCard = ({ label, value }) => (
     <div className="border border-gray-200 rounded-2xl p-4">
         <p className="text-sm text-gray-500">{label}</p>
-        <p className="text-2xl font-semibold text-gray-900 mt-1">{value}</p>
+        <p className="text-2xl font-semibold mt-1">{value}</p>
     </div>
 );
 
@@ -1065,7 +1064,7 @@ const QuickActionCard = ({ title, description, link, buttonText, accent = 'blue'
     }[accent];
 
     return (
-        <div className="bg-white rounded-3xl p-5 shadow-sm flex flex-col gap-3">
+        <div className="rounded-3xl p-5 shadow-sm flex flex-col gap-3">
             <div>
                 <h3 className="text-lg font-semibold">{title}</h3>
                 <p className="text-sm text-gray-500">{description}</p>
@@ -1082,7 +1081,7 @@ const QuickActionCard = ({ title, description, link, buttonText, accent = 'blue'
 
 const EmptyState = ({ title, description, actionLabel, actionLink }) => (
     <div className="flex flex-col items-center text-center gap-3 border border-dashed border-gray-300 rounded-2xl p-8">
-        <p className="text-lg font-semibold text-gray-900">{title}</p>
+        <p className="text-lg font-semibold">{title}</p>
         <p className="text-sm text-gray-500">{description}</p>
         {actionLabel && actionLink && (
             <Link to={actionLink} className="px-4 py-2 rounded-full bg-blue-600 text-white text-sm">
@@ -1155,13 +1154,13 @@ const CreateOfferingModal = ({ courses, form, onChange, onClose, onSubmit, creat
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 px-4">
-            <div className="bg-white rounded-3xl shadow-xl max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
+            <div className="rounded-3xl shadow-xl max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
                 <div className="flex items-center justify-between mb-4">
                     <div>
                         <p className="text-sm uppercase tracking-wide text-gray-400">
                             {mode === 'edit' ? 'Offering өзгөртүү' : 'Жаңы offering'}
                         </p>
-                        <h2 className="text-2xl font-semibold text-gray-900">
+                        <h2 className="text-2xl font-semibold">
                             {mode === 'edit' ? 'Offeringди өзгөртүү' : 'Курс сунушун түзүү'}
                         </h2>
                     </div>
@@ -1415,8 +1414,8 @@ const CreateOfferingModal = ({ courses, form, onChange, onClose, onSubmit, creat
                             {creating
                                 ? 'Сакталууда...'
                                 : mode === 'edit'
-                                  ? 'Өзгөртүүлөрдү сактоо'
-                                  : 'Offering түзүү'}
+                                    ? 'Өзгөртүүлөрдү сактоо'
+                                    : 'Offering түзүү'}
                         </button>
                     </div>
                 </form>
@@ -1446,15 +1445,14 @@ const OfferingCard = ({ offering, onEdit, onEnroll }) => {
         <div className="border border-gray-200 rounded-2xl p-4 space-y-3">
             <div className="flex items-start justify-between gap-3">
                 <div>
-                    <p className="text-lg font-semibold text-gray-900">{title}</p>
+                    <p className="text-lg font-semibold">{title}</p>
                     <p className="text-sm text-gray-500">Курс: {offering.course.title}</p>
                 </div>
                 <span
-                    className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                        visibility === 'PUBLIC'
-                            ? 'bg-green-100 text-green-700'
-                            : 'bg-gray-100 text-gray-600'
-                    }`}
+                    className={`px-3 py-1 rounded-full text-xs font-semibold ${visibility === 'PUBLIC'
+                        ? 'bg-green-100 text-green-700'
+                        : 'bg-gray-100 text-gray-600'
+                        }`}
                 >
                     {visibility === 'PUBLIC' ? 'Публичный' : 'Жабык'}
                 </span>
@@ -1555,11 +1553,11 @@ const EnrollStudentModal = ({
     setShowDropdown,
 }) => (
     <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 px-4">
-        <div className="bg-white rounded-3xl shadow-xl max-w-md w-full p-6">
+        <div className="rounded-3xl shadow-xl max-w-md w-full p-6">
             <div className="flex items-center justify-between mb-4">
                 <div>
                     <p className="text-sm uppercase tracking-wide text-gray-400">Студент кошуу</p>
-                    <h2 className="text-2xl font-semibold text-gray-900">
+                    <h2 className="text-2xl font-semibold">
                         {offering.course.title}
                     </h2>
                     <p className="text-sm text-gray-500">{offering.title || 'Offering'}</p>
@@ -1593,16 +1591,15 @@ const EnrollStudentModal = ({
                             onFocus={() => setShowDropdown(true)}
                         />
                         {showDropdown && studentOptions?.length > 0 && (
-                            <div className="absolute mt-1 w-full bg-white border border-gray-200 rounded-2xl shadow-lg max-h-48 overflow-auto z-10">
+                            <div className="absolute mt-1 w-full border border-gray-200 rounded-2xl shadow-lg max-h-48 overflow-auto z-10">
                                 {studentOptions.map((student) => (
                                     <button
                                         key={student.id}
                                         type="button"
-                                        className={`w-full text-left px-3 py-2 text-sm ${
-                                            String(student.id) === form.userId
-                                                ? 'bg-blue-50 text-blue-700'
-                                                : 'hover:bg-gray-50'
-                                        }`}
+                                        className={`w-full text-left px-3 py-2 text-sm ${String(student.id) === form.userId
+                                            ? 'bg-blue-50 text-blue-700'
+                                            : 'hover:bg-gray-50'
+                                            }`}
                                         onClick={() => {
                                             onChange('userId', String(student.id));
                                             onSearchChange(student.name || student.email || '');

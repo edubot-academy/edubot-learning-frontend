@@ -164,23 +164,23 @@ input[type='radio']:checked::after {
 }
 
 .article-content {
-    @apply space-y-4 leading-relaxed text-gray-800;
+    @apply space-y-4 leading-relaxed;
 }
 
 .article-content h1 {
-    @apply text-3xl font-bold text-gray-900 mt-6 mb-3;
+    @apply text-3xl font-bold mt-6 mb-3;
 }
 
 .article-content h2 {
-    @apply text-2xl font-semibold text-gray-900 mt-5 mb-2;
+    @apply text-2xl font-semibold mt-5 mb-2;
 }
 
 .article-content h3 {
-    @apply text-xl font-semibold text-gray-900 mt-4 mb-2;
+    @apply text-xl font-semibold mt-4 mb-2;
 }
 
 .article-content p {
-    @apply text-base text-gray-800;
+    @apply text-base;
 }
 
 .article-content ul {
