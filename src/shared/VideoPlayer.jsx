@@ -2,7 +2,6 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import VideoPlayerUI from './ui/Play.jsx'; 
 import toast from 'react-hot-toast';
 import Hls from 'hls.js';
-import { useTranslation } from 'react-i18next';
 
 const VideoPlayer = ({
   videoUrl,
@@ -15,7 +14,6 @@ const VideoPlayer = ({
   containerRef,
   onEnded,
 }) => {
-  const { t } = useTranslation();
   const hlsRef = useRef(null);
   const [hasError, setHasError] = useState(false);
   const [isLoading, setIsLoading] = useState(true); 
@@ -79,7 +77,7 @@ const VideoPlayer = ({
     } else {
       videoEl.src = videoUrl;
     }
-  }, [videoUrl, videoRef, setIsLoading, setHasError, t]);
+  }, [videoUrl, videoRef, setIsLoading, setHasError,]);
 
   useEffect(() => {
     const video = videoRef.current;
