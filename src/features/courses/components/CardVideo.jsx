@@ -5,7 +5,7 @@ import { TbLock } from 'react-icons/tb';
 import Button from '@shared/ui/Button';
 import { FaPlay } from 'react-icons/fa';
 import ContactCourseModal from './ContactCourseModal';
-import ModalCourses from './ModalCourses';
+import ModalPreviewVideo from './ModalPreviewVideo';
 
 const CardVideo = ({ coverImageUrl, course, lessonCount, activeLesson }) => {
     const [isContactOpen, setIsContactOpen] = useState(false);
@@ -72,7 +72,7 @@ const CardVideo = ({ coverImageUrl, course, lessonCount, activeLesson }) => {
                 course={course}
                 lessonCount={lessonCount}
             />
-            <ModalCourses
+            <ModalPreviewVideo
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
                 courseId={course.id}

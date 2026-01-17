@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import Modal from '@shared-ui/Modal';
 import { fetchCoursePreview } from '../api';
 
-function ModalCourses({ isOpen, onClose, courseId, previewData: previewDataProp = null, initialVideo = null }) {
+function ModalPreviewVideo({ isOpen, onClose, courseId, previewData: previewDataProp = null, initialVideo = null }) {
     const [previewData, setPreviewData] = useState(previewDataProp || null);
     const [loading, setLoading] = useState(previewDataProp ? false : true);
     const [activeVideo, setActiveVideo] = useState(initialVideo || previewDataProp?.previewVideos?.[0] || null);
@@ -102,4 +102,4 @@ function ModalCourses({ isOpen, onClose, courseId, previewData: previewDataProp 
     );
 }
 
-export default ModalCourses;
+export default ModalPreviewVideo;
