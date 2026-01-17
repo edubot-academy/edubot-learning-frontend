@@ -5,13 +5,15 @@ import { TbLock } from 'react-icons/tb';
 import Button from '@shared/ui/Button';
 import { FaPlay } from 'react-icons/fa';
 import ContactCourseModal from './ContactCourseModal';
+import ModalPreviewVideo from './ModalPreviewVideo';
 
-const CardVideo = ({ coverImageUrl, course, lessonCount }) => {
+const CardVideo = ({ coverImageUrl, course, lessonCount, activeLesson }) => {
     const [isContactOpen, setIsContactOpen] = useState(false);
+    const [isModalOpen, setIsModalOpen] = useState(false);
 
     return (
         <>
-            <div className="border border-gray-200 dark:border-[#2A2E35] rounded-md overflow-hidden bg-white dark:bg-[#141619] text-[#141619] dark:text-[#E8ECF3] w-full max-w-full px-6 py-5">
+            <div onClick={() => setIsModalOpen(true)} className="border border-gray-200 rounded-md overflow-hidden bg-white w-full max-w-full px-6 py-5">
                 <div className="relative w-full ">
                     <img
                         src={coverImageUrl}
@@ -24,7 +26,6 @@ const CardVideo = ({ coverImageUrl, course, lessonCount }) => {
                         </button>
                     </div>
                 </div>
-
                 <div className="flex flex-col gap-3 py-4">
                     <div className="flex items-center justify-between text-[#141619] dark:text-[#E8ECF3]">
                         <p className="text-lg text-[#3E424A] dark:text-[#a6adba] font-normal">
@@ -34,8 +35,7 @@ const CardVideo = ({ coverImageUrl, course, lessonCount }) => {
                             {course.price}$
                         </span>
                     </div>
-
-                    <div className="flex flex-col gap-2 text-[#141619] dark:text-[#E8ECF3]">
+                    <div className="flex flex-col gap-2 text-[#3E424A]">
                         <p className="flex items-center gap-2 text-base font-semibold">
                             <FiBook /> {lessonCount} уроков
                         </p>
@@ -51,7 +51,14 @@ const CardVideo = ({ coverImageUrl, course, lessonCount }) => {
 
                     <div className="flex flex-col gap-3 mt-3">
                         <div>
-                            <Button onClick={() => setIsContactOpen(true)}>Байланышуу</Button>
+                            <Button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setIsContactOpen(true);
+                                }}
+                            >
+                                Байланышуу
+                            </Button>
                         </div>
                         <div>
                             <Button variant="secondary">Добавить в избранное</Button>
@@ -59,12 +66,16 @@ const CardVideo = ({ coverImageUrl, course, lessonCount }) => {
                     </div>
                 </div>
             </div>
-
             <ContactCourseModal
                 isOpen={isContactOpen}
                 onClose={() => setIsContactOpen(false)}
                 course={course}
                 lessonCount={lessonCount}
+            />
+            <ModalPreviewVideo
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                courseId={course.id}
             />
         </>
     );

@@ -1,11 +1,10 @@
 import React, { useState, useContext, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { FaBars, FaTimes } from 'react-icons/fa';
+import { FaBars } from 'react-icons/fa';
 import { IoSearch } from 'react-icons/io5';
 import { GrLanguage } from 'react-icons/gr';
 import ThemeToggle from '@shared-ui/ThemeToggle';
-import { BsChevronDown, BsSun, BsMoon } from 'react-icons/bs';
-import { CiSearch } from 'react-icons/ci';
+import { BsChevronDown } from 'react-icons/bs';
 import EduBotLogo from '@assets/images/edubot-signup.png';
 
 import { IoHeartOutline } from 'react-icons/io5';
