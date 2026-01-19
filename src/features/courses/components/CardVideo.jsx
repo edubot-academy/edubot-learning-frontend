@@ -7,9 +7,11 @@ import { FaPlay, FaHeart, FaRegHeart } from 'react-icons/fa';
 import Button from '@shared/ui/Button';
 import ContactCourseModal from './ContactCourseModal';
 import { useFavourites } from '../../../context/FavouritesContext';
+import ModalPreviewVideo from './ModalPreviewVideo';
 
-const CardVideo = ({ coverImageUrl, course, lessonCount }) => {
+const CardVideo = ({ coverImageUrl, course, lessonCount, activeLesson }) => {
     const [isContactOpen, setIsContactOpen] = useState(false);
+    const [isModalOpen, setIsModalOpen] = useState(false);
     const [showFavoritePopup, setShowFavoritePopup] = useState(false);
     const { toggleFavourite, isFavourite } = useFavourites();
     const navigate = useNavigate(); 
@@ -54,7 +56,7 @@ const CardVideo = ({ coverImageUrl, course, lessonCount }) => {
 
     return (
         <>
-            <div className="border border-gray-200 rounded-md overflow-hidden bg-white w-full max-w-full px-6 py-5">
+            <div onClick={() => setIsModalOpen(true)} className="border border-gray-200 rounded-md overflow-hidden bg-white w-full max-w-full px-6 py-5">
                 <div className="relative w-full ">
                     <img
                         src={coverImageUrl}
@@ -67,13 +69,15 @@ const CardVideo = ({ coverImageUrl, course, lessonCount }) => {
                         </button>
                     </div>
                 </div>
-
                 <div className="flex flex-col gap-3 py-4">
-                    <div className="flex items-center justify-between text-gray-700">
-                        <p className="text-lg text-[#5A5F69] font-normal">Price per Lesson</p>
-                        <span className="text-3xl font-bold text-black">{course.price}$</span>
+                    <div className="flex items-center justify-between text-[#141619] dark:text-[#E8ECF3]">
+                        <p className="text-lg text-[#3E424A] dark:text-[#a6adba] font-normal">
+                            Price per Lesson
+                        </p>
+                        <span className="text-3xl font-bold text-[#141619] dark:text-white">
+                            {course.price}$
+                        </span>
                     </div>
-
                     <div className="flex flex-col gap-2 text-[#3E424A]">
                         <p className="flex items-center gap-2 text-base font-semibold">
                             <FiBook /> {lessonCount} уроков
@@ -90,7 +94,14 @@ const CardVideo = ({ coverImageUrl, course, lessonCount }) => {
 
                     <div className="flex flex-col gap-3 mt-3">
                         <div>
-                            <Button onClick={() => setIsContactOpen(true)}>Байланышуу</Button>
+                            <Button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setIsContactOpen(true);
+                                }}
+                            >
+                                Байланышуу
+                            </Button>
                         </div>
                         <div>
                             <Button
@@ -190,6 +201,11 @@ const CardVideo = ({ coverImageUrl, course, lessonCount }) => {
                 onClose={() => setIsContactOpen(false)}
                 course={course}
                 lessonCount={lessonCount}
+            />
+            <ModalPreviewVideo
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                courseId={course.id}
             />
         </>
     );

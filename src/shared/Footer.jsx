@@ -5,7 +5,7 @@ import { IoIosCall } from 'react-icons/io';
 
 const Footer = () => {
     return (
-        <footer className="bg-white text-black py-12 px-4 sm:px-6 lg:px-12 border-t border-gray-300 p-5">
+        <footer className="bg-white text-black dark:bg-[#141619] dark:text-[#E8ECF3] py-12 px-4 sm:px-6 lg:px-12 border-t border-gray-300 dark:border-[#2A2E35] p-5">
             <div className=" mx-auto flex flex-col items-start space-y-12">
                 <h2 className="hidden md:block text-5xl font-normal text-center tracking-wide w-full">
                     <span className="font-extrabold text-[#EA580C]">EDUBOT </span>
@@ -15,8 +15,10 @@ const Footer = () => {
                 <div className="w-full flex flex-col md:flex-row justify-between items-start md:items-center gap-20">
                     <div className="flex flex-col md:flex-row gap-16">
                         <div>
-                            <h3 className="font-bold text-base mb-3 text-black">НАВИГАЦИЯ</h3>
-                            <ul className="space-y-1 text-gray-700 text-sm">
+                            <h3 className="font-bold text-base mb-3 text-black dark:text-[#E8ECF3]">
+                                НАВИГАЦИЯ
+                            </h3>
+                            <ul className="space-y-1 text-gray-700 dark:text-[#a6adba] text-sm">
                                 <li>
                                     <Link to="/courses">Курстар жөнүндө</Link>
                                 </li>
@@ -30,10 +32,10 @@ const Footer = () => {
                         </div>
 
                         <div>
-                            <h3 className="font-bold text-base mb-3 text-black">
+                            <h3 className="font-bold text-base mb-3 text-black dark:text-[#E8ECF3]">
                                 КОНТАКТНАЯ ИНФОРМАЦИЯ
                             </h3>
-                            <ul className="space-y-1 text-gray-700 text-sm">
+                            <ul className="space-y-1 text-gray-700 dark:text-[#a6adba] text-sm">
                                 <li>
                                     <Link className="flex items-center gap-1 ">
                                         {' '}
@@ -54,8 +56,12 @@ const Footer = () => {
                         </div>
 
                         <div>
-                            <h3 className="font-bold text-base mb-3 text-black">НАШ АДРЕС</h3>
-                            <p className="text-sm text-gray-700">г.Бишкек, ул.Турусбекова 109/1</p>
+                            <h3 className="font-bold text-base mb-3 text-black dark:text-[#E8ECF3]">
+                                НАШ АДРЕС
+                            </h3>
+                            <p className="text-sm text-gray-700 dark:text-[#a6adba]">
+                                г.Бишкек, ул.Турусбекова 109/1
+                            </p>
                         </div>
                     </div>
 
@@ -68,7 +74,7 @@ const Footer = () => {
                     </div>
                 </div>
 
-                <p className="w-full text-center text-xs text-gray-600 mt-16">
+                <p className="w-full text-center text-xs text-gray-600 dark:text-[#a6adba] mt-16">
                     © 2025 Edubot Learning. Все права защищены.
                 </p>
             </div>
