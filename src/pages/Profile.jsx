@@ -696,7 +696,7 @@ const ProfilePage = () => {
                                     placeholder="мисалы: Frontend, UI/UX, Product Design"
                                 />
                                 <p className="text-xs text-gray-500 mt-1">
-                                    Запятая менен бөлүп жазыңыз.
+                                    Үтүр менен бөлүп жазыңыз.
                                 </p>
                             </div>
 

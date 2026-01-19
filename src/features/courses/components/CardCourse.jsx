@@ -100,7 +100,7 @@ const CardCourse = ({
                                     ))}
                                 </div>
                                 <span className="text-gray-600 dark:text-[#a6adba] text-sm">
-                                    ({ratingCount} рейтингов)
+                                    ({ratingCount} рейтинг)
                                 </span>
                             </div>
                             <div className="flex gap-2 mb-4">
@@ -114,12 +114,12 @@ const CardCourse = ({
                                 )}
                                 {durationInHours && (
                                     <span className="px-3 py-2 text-xs rounded-full border border-gray-300 dark:border-[#2A2E35]">
-                                        {durationInHours} всего часа
+                                        {durationInHours} саат
                                     </span>
                                 )}
                                 {lessonCount && (
                                     <span className="px-3 py-2 text-xs rounded-full border border-gray-300 dark:border-[#2A2E35]">
-                                        {lessonCount} лекций
+                                        {lessonCount} лекция
                                     </span>
                                 )}
                             </div>
@@ -127,7 +127,7 @@ const CardCourse = ({
                                 <div className="flex justify-between items-end gap-6 mt-6">
                                     <div>
                                         <p className="text-sm text-gray-600 dark:text-[#a6adba]">
-                                            Цена
+                                            Баасы
                                         </p>
                                         <p className="text-base text-[#141619] dark:text-white font-bold">
                                             {price} сом
@@ -139,7 +139,7 @@ const CardCourse = ({
                                         className="whitespace-nowrap"
                                         disabled={courseAlreadyInCart}
                                     >
-                                        {courseAlreadyInCart ? 'Корзинада ✓' : 'Себетке кошуу'}
+                                        {courseAlreadyInCart ? 'Себетте ✓' : 'Себетке кошуу'}
                                     </Button>
                                 </div>
                             </div>
@@ -165,20 +165,19 @@ const CardCourse = ({
                         <div className="p-4 sm:p-6">
                             <div className="flex items-center justify-between mb-4">
                                 <h3 className="text-lg font-bold text-gray-800">
-                                    Успешно добавлено!
+                                    Ийгиликтүү кошулду!
                                 </h3>
                                 <button
                                     onClick={closePopup}
                                     className="text-gray-400 hover:text-gray-600 text-2xl leading-none w-8 h-8 flex items-center justify-center"
-                                    aria-label="Закрыть"
+                                    aria-label="Жабуу"
                                 >
                                     ×
                                 </button>
                             </div>
 
                             <p className="text-gray-600 mb-4 text-sm sm:text-base">
-                                Курс "<span className="font-semibold">{title}</span>" добавлен в
-                                вашу корзину.
+                                Курс "<span className="font-semibold">{title}</span>" себетке кошулду
                             </p>
 
                             <div className="mb-4 p-3 border rounded-lg bg-gray-50">
@@ -204,7 +203,7 @@ const CardCourse = ({
                                     onClick={closePopup}
                                     className="text-sm px-4 py-2 w-full sm:w-auto"
                                 >
-                                    Продолжить покупки
+                                    Сатып алууну улантыңыз
                                 </Button>
 
                                 <Button
@@ -212,7 +211,7 @@ const CardCourse = ({
                                     onClick={goToCart}
                                     className="text-sm px-4 py-2 w-full sm:w-auto"
                                 >
-                                    Перейти в корзину
+                                    Себетке өтүү
                                 </Button>
                             </div>
                         </div>
