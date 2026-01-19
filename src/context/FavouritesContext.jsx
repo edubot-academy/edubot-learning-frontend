@@ -7,6 +7,7 @@ export const FavouritesProvider = ({ children }) => {
     const [favourites, setFavourites] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [pendingRequests, setPendingRequests] = useState(new Map());
 
     const loadFavorites = useCallback(async () => {
         try {
@@ -15,7 +16,8 @@ export const FavouritesProvider = ({ children }) => {
             setFavourites(data);
             setError(null);
             localStorage.setItem('favourites', JSON.stringify(data));
-        } catch {
+        } catch (err) {
+            console.error('Ошибка загрузки избранного:', err);
             setError('Не удалось загрузить избранное');
             try {
                 const localFavs = JSON.parse(localStorage.getItem('favourites')) || [];
@@ -34,38 +36,62 @@ export const FavouritesProvider = ({ children }) => {
 
     const toggleFavourite = useCallback(
         async (course) => {
-            const isCurrentlyFav = favourites.some((item) => item.id === course.id);
+            const courseId = course.id;
+            const requestId = `${courseId}-${Date.now()}`;
+
+            if (pendingRequests.has(courseId)) {
+                return { success: false, error: 'Запрос уже выполняется' };
+            }
+
+            const isCurrentlyFav = favourites.some((item) => item.id === courseId);
+            const previousFavourites = [...favourites];
+
+            if (isCurrentlyFav) {
+                const optimisticFavourites = favourites.filter((item) => item.id !== courseId);
+                setFavourites(optimisticFavourites);
+                localStorage.setItem('favourites', JSON.stringify(optimisticFavourites));
+            } else {
+                const optimisticFavourites = [...favourites, course];
+                setFavourites(optimisticFavourites);
+                localStorage.setItem('favourites', JSON.stringify(optimisticFavourites));
+            }
+
+            setPendingRequests((prev) => new Map(prev).set(courseId, requestId));
 
             try {
                 if (isCurrentlyFav) {
-                    await removeFavorite(course.id);
-                    const newFavourites = favourites.filter((item) => item.id !== course.id);
-                    setFavourites(newFavourites);
-                    localStorage.setItem('favourites', JSON.stringify(newFavourites));
+                    await removeFavorite(courseId);
                 } else {
-                    await addFavorite(course.id);
-                    const newFavourites = [...favourites, course];
-                    setFavourites(newFavourites);
-                    localStorage.setItem('favourites', JSON.stringify(newFavourites));
+                    await addFavorite(courseId);
                 }
 
-                return { success: true };
-            } catch (err) {
-                const newFavourites = isCurrentlyFav
-                    ? favourites.filter((item) => item.id !== course.id)
-                    : [...favourites, course];
+                setPendingRequests((prev) => {
+                    const newMap = new Map(prev);
+                    newMap.delete(courseId);
+                    return newMap;
+                });
 
-                setFavourites(newFavourites);
-                localStorage.setItem('favourites', JSON.stringify(newFavourites));
+                return { success: true, added: !isCurrentlyFav };
+            } catch (err) {
+                console.error('Ошибка при изменении избранного:', err);
+
+                setFavourites(previousFavourites);
+                localStorage.setItem('favourites', JSON.stringify(previousFavourites));
+
+                setPendingRequests((prev) => {
+                    const newMap = new Map(prev);
+                    newMap.delete(courseId);
+                    return newMap;
+                });
 
                 return {
                     success: false,
-                    error: err?.message,
-                    fallback: true,
+                    error: err?.message || 'Не удалось изменить избранное',
+                    added: !isCurrentlyFav,
                 };
             }
         },
-        [favourites]
+        [favourites, pendingRequests]
     );
 
     const isFavourite = useCallback(
@@ -93,4 +119,10 @@ export const FavouritesProvider = ({ children }) => {
     );
 };
 
-export const useFavourites = () => useContext(FavouritesContext);
+export const useFavourites = () => {
+    const context = useContext(FavouritesContext);
+    if (!context) {
+        throw new Error('useFavourites must be used within FavouritesProvider');
+    }
+    return context;
+};

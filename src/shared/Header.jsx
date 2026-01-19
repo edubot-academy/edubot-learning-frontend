@@ -18,6 +18,7 @@ import SidebarOverlay from '@shared-ui/SidebarOverlay';
 import UserMenuDropdown from '@shared-ui/UserMenuDropdown';
 import { useFavourites } from '../context/FavouritesContext';
 import { useCart } from '../context/CartContext';
+import Button from '@shared/ui/Button';
 
 const NavLinks = ({ isMobile, user }) => {
     const location = useLocation();
@@ -277,8 +278,9 @@ const Header = () => {
                             >
                                 <GrLanguage className="text-gray-700 dark:text-[#E8ECF3] w-5 h-5" />
                                 <BsChevronDown
-                                    className={`w-4 h-4 text-gray-700 dark:text-[#E8ECF3] transform transition-transform duration-300 ${langOpen ? 'rotate-180' : ''
-                                        }`}
+                                    className={`w-4 h-4 text-gray-700 dark:text-[#E8ECF3] transform transition-transform duration-300 ${
+                                        langOpen ? 'rotate-180' : ''
+                                    }`}
                                 />
                             </button>
                             {langOpen && (
@@ -308,42 +310,45 @@ const Header = () => {
                             <div className="flex items-center gap-3">
                                 {/* Иконка сердца */}
                                 <button
-                                    className={`relative w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-300 ${isFavouritesPage || activeIcon === 'heart'
+                                    className={`relative w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-300 ${
+                                        isFavouritesPage || activeIcon === 'heart'
                                             ? 'bg-orange-500 border-orange-500'
                                             : 'border-black dark:border-[#E8ECF3] hover:border-gray-600 dark:hover:border-[#E8ECF3]/70'
-                                        }`}
+                                    }`}
                                     onClick={handleFavouriteClick}
+                                    aria-label="Избранное"
+                                    aria-current={isFavouritesPage ? 'page' : undefined}
                                 >
                                     {favourites.length > 0 && (
                                         <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                                            {favourites.length}
+                                            {Math.min(favourites.length, 99)}
                                         </span>
                                     )}
-
                                     {isFavouritesPage || activeIcon === 'heart' ? (
                                         <IoHeart className="w-5 h-5 text-white" />
                                     ) : (
                                         <IoHeartOutline className="w-5 h-5 text-black dark:text-[#E8ECF3]" />
                                     )}
                                 </button>
-
                                 {/* Иконка корзины */}
                                 <div className="relative">
                                     <button
-                                        className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-300 ${activeIcon === 'cart' || location.pathname === '/cart'
+                                        className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-300 ${
+                                            activeIcon === 'cart' || location.pathname === '/cart'
                                                 ? 'bg-orange-500 border-orange-500'
                                                 : 'border-black dark:border-[#E8ECF3] hover:border-gray-600 dark:hover:border-[#E8ECF3]/70'
-                                            }`}
+                                        }`}
                                         onClick={() =>
                                             handleIconClick('cart', () => navigate('/cart'))
                                         }
                                     >
                                         <BsCart2
-                                            className={`w-5 h-5 transition-colors duration-300 ${activeIcon === 'cart' ||
-                                                    location.pathname === '/cart'
+                                            className={`w-5 h-5 transition-colors duration-300 ${
+                                                activeIcon === 'cart' ||
+                                                location.pathname === '/cart'
                                                     ? 'text-white'
                                                     : 'text-black dark:text-[#E8ECF3]'
-                                                }`}
+                                            }`}
                                         />
                                         {/* Бейдж с количеством - показывается всегда если есть товары */}
                                         {cartItemsCount > 0 && (
@@ -357,20 +362,22 @@ const Header = () => {
                                 {/* Иконка пользователя */}
                                 <div className="relative group">
                                     <button
-                                        className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-300 ${activeIcon === 'user' || userMenuOpen
+                                        className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-300 ${
+                                            activeIcon === 'user' || userMenuOpen
                                                 ? 'bg-orange-500 border-orange-500'
                                                 : 'border-black dark:border-[#E8ECF3] hover:border-gray-600 dark:hover:border-[#E8ECF3]/70'
-                                            }`}
+                                        }`}
                                         onClick={() => {
                                             handleIconClick('user');
                                             setUserMenuOpen(!userMenuOpen);
                                         }}
                                     >
                                         <FaRegUser
-                                            className={`w-5 h-5 transition-colors duration-300 ${activeIcon === 'user' || userMenuOpen
+                                            className={`w-5 h-5 transition-colors duration-300 ${
+                                                activeIcon === 'user' || userMenuOpen
                                                     ? 'text-white'
                                                     : 'text-black dark:text-[#E8ECF3]'
-                                                }`}
+                                            }`}
                                         />
                                     </button>
 
@@ -387,20 +394,22 @@ const Header = () => {
                                 {/* Иконка корзины для неавторизованных */}
                                 <div className="relative">
                                     <button
-                                        className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-300 ${activeIcon === 'cart' || location.pathname === '/cart'
+                                        className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-300 ${
+                                            activeIcon === 'cart' || location.pathname === '/cart'
                                                 ? 'bg-orange-500 border-orange-500'
                                                 : 'border-black dark:border-[#E8ECF3] hover:border-gray-600 dark:hover:border-[#E8ECF3]/70'
-                                            }`}
+                                        }`}
                                         onClick={() =>
                                             handleIconClick('cart', () => navigate('/cart'))
                                         }
                                     >
                                         <BsCart2
-                                            className={`w-5 h-5 transition-colors duration-300 ${activeIcon === 'cart' ||
+                                            className={`w-5 h-5 transition-colors duration-300 ${
+                                                activeIcon === 'cart' ||
                                                 location.pathname === '/cart'
                                                     ? 'text-white'
                                                     : 'text-black dark:text-[#E8ECF3]'
-                                                }`}
+                                            }`}
                                         />
 
                                         {cartItemsCount > 0 && (
@@ -467,15 +476,17 @@ const Header = () => {
                             {user && (
                                 <div className="relative">
                                     <button
-                                        className={`w-9 h-9 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${userMenuOpen
+                                        className={`w-9 h-9 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${
+                                            userMenuOpen
                                                 ? 'bg-orange-500 border-orange-500'
                                                 : 'border-black hover:border-gray-600'
-                                            }`}
+                                        }`}
                                         onClick={() => setUserMenuOpen(!userMenuOpen)}
                                     >
                                         <FaRegUser
-                                            className={`w-4 h-4 transition-colors duration-300 ${userMenuOpen ? 'text-white' : 'text-black'
-                                                }`}
+                                            className={`w-4 h-4 transition-colors duration-300 ${
+                                                userMenuOpen ? 'text-white' : 'text-black'
+                                            }`}
                                         />
                                     </button>
 
@@ -550,10 +561,11 @@ const Header = () => {
                         <div className="flex justify-center gap-4 mt-3">
                             {/* Иконка сердца для мобильной версии - переходит на /favourite */}
                             <button
-                                className={`relative w-10 h-10 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${isFavouritesPage || activeIcon === 'heart'
+                                className={`relative w-10 h-10 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${
+                                    isFavouritesPage || activeIcon === 'heart'
                                         ? 'bg-orange-500 border-orange-500'
                                         : 'border-black hover:border-gray-600'
-                                    }`}
+                                }`}
                                 onClick={handleFavouriteClick}
                             >
                                 {/* Показываем счетчик избранных курсов на мобильной версии */}
@@ -573,15 +585,17 @@ const Header = () => {
                             {/* Иконка корзины для мобильной версии с переходом на /cart */}
                             <div className="relative">
                                 <button
-                                    className={`w-10 h-10 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${activeIcon === 'cart'
+                                    className={`w-10 h-10 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${
+                                        activeIcon === 'cart'
                                             ? 'bg-orange-500 border-orange-500'
                                             : 'border-black hover:border-gray-600'
-                                        }`}
+                                    }`}
                                     onClick={() => handleIconClick('cart', () => navigate('/cart'))}
                                 >
                                     <BsCart2
-                                        className={`w-5 h-5 transition-colors duration-300 ${activeIcon === 'cart' ? 'text-white' : 'text-black'
-                                            }`}
+                                        className={`w-5 h-5 transition-colors duration-300 ${
+                                            activeIcon === 'cart' ? 'text-white' : 'text-black'
+                                        }`}
                                     />
                                 </button>
                                 {cartItemsCount > 0 && (
