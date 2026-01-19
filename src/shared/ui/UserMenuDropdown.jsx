@@ -97,7 +97,7 @@ function UserMenuDropdown({ user, onClose }) {
 
                 <div className="w-full h-[0.06rem] bg-gray-200 dark:bg-[#2A2E35] my-[0.4rem]" />
 
-                <div className="w-[18rem] sm:w-[16rem] items-center ml-[30px] mb-6">
+                <div className="w-[18rem] sm:w-[10rem] items-center ml-[30px] mb-6">
                     <div>
                         {menuItemsTop.map((item, index) => {
                             const content = (
