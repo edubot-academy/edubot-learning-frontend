@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import SectionContainer from '@features/marketing/components/SectionContainer';
 import CardInstructor from './CardInstrictor';
-import Button from '@shared/ui/Button';
 import { fetchTopInstructors } from '@services/api';
 
 const TopInstructors = () => {
@@ -16,7 +15,7 @@ const TopInstructors = () => {
                 const res = await fetchTopInstructors(3);
                 setInstructors(res.items);
             } catch (err) {
-                setError('Ошибка загрузки инструкторов');
+                setError('Инструкторду жүктөөдө ката кетти');
             } finally {
                 setLoading(false);
             }
@@ -25,13 +24,13 @@ const TopInstructors = () => {
         load();
     }, []);
 
-    if (loading) return <div>Загрузка...</div>;
+    if (loading) return <div>Жүктөлүүдө...</div>;
     if (error) return <div>{error}</div>;
 
     return (
         <SectionContainer
             title="Топ Инструктор"
-            subtitle="Подборка самых востребованных и эффективных обучающих программ."
+            subtitle="Эң таанымал жана эффективдүү окуу программаларынын тандоосу."
             // rightContent={<Button variant="secondary">Бардыгын көрүү</Button>}
             items={instructors}
             CardComponent={CardInstructor}

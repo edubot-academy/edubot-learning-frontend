@@ -17,9 +17,9 @@ const HeroStart = () => {
             color: 'from-white to-gray-50',
         },
         {
-            title: 'НАШИ КУРСЫ ПОМОГУТ ПОНЯТЬ, КАК РАБОТАЕТ DIGITAL-МИР.',
+            title: 'БИЗДИН КУРСТАР DIGITAL-ДҮЙНӨСҮ КАНТИП ИШТЕЙТ ЭКЕНДИГИН ТУШУНУУГО ЖАРДАМ БЕРЕТ.',
             description:
-                'Обучаем с нуля, шаг за шагом — от простого к профессиональному. Твоя новая профессия ближе, чем кажется!',
+                'Биз баштан-аяк, этап-этабы менен – баштапкыдан жогорку деңгээлге чейин үйрөтөбүз. Жаңы кесибиңиз сиз ойлогондон да жакын!',
             image: bannerImg2,
             color: 'from-teal-900 to-teal-700',
         },
@@ -44,48 +44,47 @@ const HeroStart = () => {
                 {slides.map((slide, index) => (
                     <div
                         key={index}
-                        className={`absolute inset-0 transition-all duration-1000 ease-in-out  ${
-                            index === currentSlide
+                        className={`absolute inset-0 transition-all duration-1000 ease-in-out  ${index === currentSlide
                                 ? 'opacity-100 z-10 translate-x-0'
                                 : 'opacity-0 z-0 translate-x-full'
-                        }`}
+                            }`}
                     >
                         {/* ---------- СЛАЙД 1 ---------- */}
                         {index === 0 && (
-                            <section className="w-full relative mx-auto flex flex-col lg:flex-row items-center justify-between px-10 py-12 text-black">
+                            <section className="w-full relative mx-auto flex flex-col lg:flex-row items-center justify-between px-10 py-12 text-black dark:text-white bg-white dark:bg-[#0F1013]">
                                 <div className="lg:w-[600px] text-center lg:text-left space-y-6 h-[50%] lg:h-[454px]">
-                                    <h1 className="font-inter 2xl:font-bold text-[30px] 2xl:text-[38px] 2xl:leading-tight font-semibold leading-[100%] ">
+                                    <h1 className="font-inter 2xl:font-bold text-[30px] 2xl:text-[38px] 2xl:leading-tight font-semibold leading-[100%] text-black dark:text-white">
                                         {slide.title}
                                     </h1>
-                                    <p className="font-normal text-[#3E424A] text-[18px]">
+                                    <p className="font-normal text-[#3E424A] dark:text-[#D7DBE3] text-[18px]">
                                         {slide.description}
                                     </p>
 
                                     <div className="flex justify-center lg:justify-start gap-[12px] pt-[32px] md:pt-[60px]">
-                                        <button className="border border-[#141619] rounded-lg text-gray-800 hover:bg-gray-100 transition font-semibold h-[52px] w-[197px] md:w-[220px] md:h-[54px] font-normal text-[14px]">
+                                        <button className="border border-[#141619] dark:border-white/70 rounded-lg text-gray-800 dark:text-white hover:bg-gray-100 dark:hover:bg-white/10 transition font-semibold h-[52px] w-[197px] md:w-[220px] md:h-[54px] text-[14px]">
                                             Толук маалымат алуу
                                         </button>
-                                        <button className="rounded-lg bg-gradient-to-b from-[#FF8C6E] to-[#E14219] text-white shadow-[0px_5px_21.3px_0px_#E14219BF] font-semibold h-[52px] w-[197px] md:w-[220px] md:h-[54px] font-normal text-[14px]">
+                                        <button className="rounded-lg bg-gradient-to-b from-[#FF8C6E] to-[#E14219] text-white shadow-[0px_5px_21.3px_0px_#E14219BF] font-semibold h-[52px] w-[197px] md:w-[220px] md:h-[54px] text-[14px]">
                                             Сабакты азыр баштоо
                                         </button>
                                     </div>
                                 </div>
 
                                 <div className="flex justify-center lg:justify-end relative lg:mt-10 mt-0">
-                                    <div className="absolute bg-gray-100 bg-[var(--Gray-Gray-50,#F3F4F6)] border border-[var(--Gray-Gray-50,#F3F4F6)] left-[-105px] top-[180px] z-[0] w-[228px] h-[117px] rounded-[4.73px] py-[18.91px] px-[19.51px]">
-                                        <span className=" font-normal leading-[100%] tracking-[0%] text-[28px]">
+                                    <div className="absolute bg-gray-100 dark:bg-white/10 bg-[var(--Gray-Gray-50,#F3F4F6)] border border-[var(--Gray-Gray-50,#F3F4F6)] dark:border-white/20 left-[-105px] top-[180px] z-[0] w-[228px] h-[117px] rounded-[4.73px] py-[18.91px] px-[19.51px]">
+                                        <span className=" font-normal leading-[100%] tracking-[0%] text-[28px] text-[#141619] dark:text-white">
                                             200+
                                         </span>
-                                        <p className="leading-[100%] tracking-[0%] text-[#141619] font-normal text-[12px] mt-[5.91px]">
+                                        <p className="leading-[100%] tracking-[0%] text-[#141619] dark:text-[#E8ECF3] font-normal text-[12px] mt-[5.91px]">
                                             Тажрыйбалуу менторлордон онлайн сабактар
                                         </p>
                                     </div>
 
-                                    <div className="absolute bg-white/30 backdrop-blur-lg border border-[var(--Gray-Gray-50,#F3F4F6)] left-[110px] top-[340px] z-[2] w-[205px] h-[129px] rounded-[5.23px] py-[20.9px] px-[21.56px]">
-                                        <span className=" font-[Suisse_Intl] font-normal leading-[100%] tracking-[0%] text-[28px]">
+                                    <div className="absolute bg-white/30 dark:bg-white/15 backdrop-blur-lg border border-[var(--Gray-Gray-50,#F3F4F6)] dark:border-white/25 left-[110px] top-[340px] z-[2] w-[205px] h-[129px] rounded-[5.23px] py-[20.9px] px-[21.56px]">
+                                        <span className=" font-[Suisse_Intl] leading-[100%] tracking-[0%] text-[28px] text-[#141619] dark:text-white">
                                             10k+
                                         </span>
-                                        <p className="font-[Suisse_Intl] font-normal text-[12px] leading-[100%] tracking-[0%] text-[#141619] mt-[6.53px]">
+                                        <p className="font-[Suisse_Intl] text-[12px] leading-[100%] tracking-[0%] text-[#141619] dark:text-[#E8ECF3] mt-[6.53px]">
                                             Азыркы күнгө чейинки колдонуучулар
                                         </p>
                                     </div>
@@ -155,11 +154,10 @@ const HeroStart = () => {
                                 {/* Оранжевый блок с текстом */}
                                 <div className="relative bg-[linear-gradient(93.72deg,#F06743_11.31%,#D27A3B_67.42%)] text-white px-[4%] py-[4%] md:px-[2%] md:py-[2%] flex flex-col lg:flex-row h-[80%] w-[90%] rounded-3xl m-auto justify-between">
                                     <div className="">
-                                        <h1 className="font-[Suisse_Intl] font-bold text-[30px] leading-[120%] tracking-[1%]">
-                                            Купи годовой тариф <br /> и получи 50% скидку <br /> на
-                                            все курсы
+                                        <h1 className="font-[Suisse_Intl] text-[30px] leading-[120%] tracking-[1%]">
+                                            Жылдык планды сатып алыңыз <br /> жана бардык курстарга 50% <br/> арзандатуу алыңыз.
                                         </h1>
-                                        <p className="font-[Suisse_Intl] font-normal text-[18px] leading-[120%] tracking-[0%] mt-[26px] ">
+                                        <p className="font-[Suisse_Intl] text-[18px] leading-[120%] tracking-[0%] mt-[26px] ">
                                             Программалоо тилдерин жана код жазуу <br /> жөндөмдөрүн
                                             интерактивдүү сабактар аркылуу <br /> өздөштүрүңүз
                                         </p>
@@ -169,7 +167,7 @@ const HeroStart = () => {
                                         alt="Student"
                                         className="lg:h-[120%] -scale-x-100 absolute lg:left-[26%] bottom-0 h-[55%] md:h-[70%] "
                                     />
-                                    <div className="flex flex-col justify-between hidden lg:flex">
+                                    <div className="flex-col justify-between hidden lg:flex">
                                         <p className="text-[#FFFFFF73] font-normal text-[26px] leading-[120%] tracking-[0%]">
                                             болуп коробогондой арзандатуу!
                                         </p>
@@ -194,9 +192,8 @@ const HeroStart = () => {
                             className="h-1 w-12 bg-white/30 rounded-full overflow-hidden"
                         >
                             <div
-                                className={`h-full bg-white rounded-full transition-all duration-5000 ease-linear ${
-                                    isActive ? 'animate-progress' : ''
-                                }`}
+                                className={`h-full bg-white rounded-full transition-all duration-5000 ease-linear ${isActive ? 'animate-progress' : ''
+                                    }`}
                                 style={{ width: isActive ? '100%' : '0%' }}
                             ></div>
                         </div>

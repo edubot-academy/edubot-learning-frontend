@@ -1,6 +1,6 @@
 import arrowLeft from '@assets/icons/leftArrow.svg';
 import arrowRight from '@assets/icons/rightArrow.svg';
-import CardFeedback from './CardFeedback';
+// import CardFeedback from './CardFeedback';
 import { getTopRatings } from '@features/ratings/api';
 import { useEffect, useState } from 'react';
 import FeedbackSection from '@features/courses/components/FeedbackSection';
@@ -38,10 +38,10 @@ function Feedback() {
         <>
             <FeedbackSection
                 title="Биздин окуучулар эмне дейт"
-                subtitle="Тут вы можете посмотреть все отзывы наших студентов которые прошли  все наши онлайн уроки"
+                subtitle="Бул жерде сиз биздин онлайн сабактарыбызды бүтүргөн студенттерибиздин бардык сын-пикирлерин көрө аласыз."
                 data={newDate}
                 rightContent={arrows}
-                CardComponent={CardFeedback}
+                // CardComponent={CardFeedback}
             />
         </>
     );

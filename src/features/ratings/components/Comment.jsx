@@ -162,7 +162,7 @@ function Comment({ courseId }) {
                 />
 
                 <div className="flex items-center justify-between w-full text-xs md:text-sm text-gray-500">
-                    <span>Минималдуу: 5 символ. Сиз жаздыңыз: {comment.trim().length}.</span>
+                    <span>Кеминде: 5 символ. Сиз жаздыңыз: {comment.trim().length}.</span>
                     {rating > 0 && (
                         <span className="font-medium text-amber-500">Баа: {rating} / 5</span>
                     )}

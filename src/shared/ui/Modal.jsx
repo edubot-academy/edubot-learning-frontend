@@ -64,62 +64,56 @@ const Modal = ({
     if (!localIsOpen) return null;
 
     return (
-        <div
-            className="fixed inset-0 z-50 flex items-center justify-center p-4"
-            onClick={handleBackdropClick}
-        >
+        <div className="fixed inset-0 z-50 overflow-y-auto min-h-screen px-4 pt-28 pb-10">
             {showBackdrop && (
-                <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" aria-hidden="true" />
+                <div
+                    className="fixed inset-0 bg-black/50 backdrop-blur-sm"
+                    aria-hidden="true"
+                    onClick={handleBackdropClick}
+                />
             )}
 
-            <div
-                ref={modalRef}
-                className={`
-          relative w-full ${sizeClasses[size] || sizeClasses.md}
-          max-h-[90vh] overflow-y-auto
-          bg-white rounded-xl shadow-2xl
-          focus:outline-none
-        `}
-                role="dialog"
-                aria-modal="true"
-                aria-labelledby={title ? 'modal-title' : undefined}
-                tabIndex={-1}
-            >
-                <div className="p-6">
-                    {(title || showCloseButton) && (
-                        <div className="flex items-start justify-between gap-4 mb-6">
-                            {title && (
-                                <h2 id="modal-title" className="text-2xl font-bold text-gray-900">
-                                    {title}
-                                </h2>
-                            )}
+            <div className="relative z-10 flex justify-center">
+                <div
+                    ref={modalRef}
+                    className={`
+        w-full ${sizeClasses[size] || sizeClasses.md}
+        bg-white rounded-xl shadow-2xl
+        focus:outline-none
+      `}
+                    role="dialog"
+                    aria-modal="true"
+                    tabIndex={-1}
+                >
+                    <div className="p-6">
+                        {(title || showCloseButton) && (
+                            <div className="flex items-start justify-between gap-4 mb-6">
+                                {title && (
+                                    <h2 className="text-2xl font-bold text-gray-900">
+                                        {title}
+                                    </h2>
+                                )}
 
-                            {showCloseButton && (
-                                <button
-                                    type="button"
-                                    onClick={handleCloseClick}
-                                    className="
-                    text-gray-500 hover:text-black
-                    font-bold text-2xl leading-none
-                    transition-colors duration-200
-                    focus:outline-none focus:ring-2 focus:ring-blue-500
-                    rounded-full p-1
-                    hover:bg-gray-100
-                  "
-                                    aria-label="Закрыть"
-                                >
-                                    ×
-                                </button>
-                            )}
+                                {showCloseButton && (
+                                    <button
+                                        type='button'
+                                        onClick={handleCloseClick}
+                                        className='text-gray-500 hover:text-black font-bold text-3xl leading-none transition-colors duration-200 rounded-full p-1 px-2 hover:bg-gray-100'
+                                    >×</button>
+                                )}
+                            </div>
+                        )}
+
+                        <div className="modal-content">
+                            {children}
                         </div>
-                    )}
-
-                    <div className="modal-content">{children}</div>
+                    </div>
                 </div>
             </div>
         </div>
     );
 };
+
 
 Modal.propTypes = {
     isOpen: PropTypes.bool.isRequired,

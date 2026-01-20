@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import CardIcon from '@assets/icons/cardvektor.svg';
 import Button from '@shared-ui/Button';
 import { useCart } from '../../../context/CartContext';
+import { AiFillStar, AiOutlineStar } from "react-icons/ai";
 
 const CardCourse = ({
     coverImageUrl,
@@ -63,11 +64,12 @@ const CardCourse = ({
         closePopup();
         navigate('/cart');
     };
+    const [rating, setRating] = useState(0);
 
     return (
         <>
             <Link to={`/courses/${id}`} className="block relative">
-                <div className="max-w-md bg-white border border-gray-200 rounded flex flex-col hover:shadow-lg transition-shadow duration-300">
+                <div className="max-w-md bg-white text-[#141619] border border-gray-200 dark:bg-[#141619] dark:text-[#E8ECF3] dark:border-[#2A2E35] rounded flex flex-col hover:shadow-lg transition-shadow duration-300">
                     <div className="p-3">
                         <img
                             src={coverImageUrl}
@@ -76,44 +78,58 @@ const CardCourse = ({
                         />
                         <div className="flex flex-col flex-grow py-4">
                             <h3 className="font-suisse font-medium text-lg">{title}</h3>
-                            <p className="text-gray-500 text-sm my-1">{instructor.fullName}</p>
+                            <p className="text-gray-500 dark:text-[#a6adba] text-sm my-1">
+                                {instructor.fullName}
+                            </p>
                             <div className="flex items-center gap-2 mb-3 mt-3">
-                                <div className="flex text-yellow-400">
-                                    {Array.from({ length: 5 }).map((_, i) => (
-                                        <span className="text-2xl" key={i}>
-                                            ★
+                                <div style={{ display: "flex", gap: "5px" }}>
+                                    {[1, 2, 3, 4, 5].map((star) => (
+                                        <span
+                                            key={star}
+                                            onClick={() => setRating(star)}
+                                            onMouseEnter={() => setHover(star)}
+                                            onMouseLeave={() => setHover(0)}
+                                            style={{ cursor: "pointer" }}
+                                        >
+                                            {star <= (ratingCount) ? (
+                                                <AiFillStar color="#ffc107" size={25} />
+                                            ) : (
+                                                <AiOutlineStar color="#ccc" size={25} />
+                                            )}
                                         </span>
                                     ))}
                                 </div>
-                                <span className="text-gray-600 text-sm">
-                                    ({ratingCount} рейтингов)
+                                <span className="text-gray-600 dark:text-[#a6adba] text-sm">
+                                    ({ratingCount} рейтинг)
                                 </span>
                             </div>
                             <div className="flex gap-2 mb-4">
                                 {level && (
                                     <div className="flex">
-                                        <span className="px-3 py-2 text-xs rounded-full border flex gap-1">
+                                        <span className="px-3 py-2 text-xs rounded-full border border-gray-300 dark:border-[#2A2E35] flex gap-1">
                                             <img className="w-4" src={CardIcon} alt="" />
                                             {level}
                                         </span>
                                     </div>
                                 )}
                                 {durationInHours && (
-                                    <span className="px-3 py-2 text-xs rounded-full border">
-                                        {durationInHours} всего часа
+                                    <span className="px-3 py-2 text-xs rounded-full border border-gray-300 dark:border-[#2A2E35]">
+                                        {durationInHours} саат
                                     </span>
                                 )}
                                 {lessonCount && (
-                                    <span className="px-3 py-2 text-xs rounded-full border">
-                                        {lessonCount} лекций
+                                    <span className="px-3 py-2 text-xs rounded-full border border-gray-300 dark:border-[#2A2E35]">
+                                        {lessonCount} лекция
                                     </span>
                                 )}
                             </div>
                             <div>
                                 <div className="flex justify-between items-end gap-6 mt-6">
                                     <div>
-                                        <p className="text-sm text-[#333333]">Цена</p>
-                                        <p className="text-base color-[#333333] font-bold">
+                                        <p className="text-sm text-gray-600 dark:text-[#a6adba]">
+                                            Баасы
+                                        </p>
+                                        <p className="text-base text-[#141619] dark:text-white font-bold">
                                             {price} сом
                                         </p>
                                     </div>
@@ -123,7 +139,7 @@ const CardCourse = ({
                                         className="whitespace-nowrap"
                                         disabled={courseAlreadyInCart}
                                     >
-                                        {courseAlreadyInCart ? 'Корзинада ✓' : 'Себетке кошуу'}
+                                        {courseAlreadyInCart ? 'Себетте ✓' : 'Себетке кошуу'}
                                     </Button>
                                 </div>
                             </div>
@@ -149,20 +165,19 @@ const CardCourse = ({
                         <div className="p-4 sm:p-6">
                             <div className="flex items-center justify-between mb-4">
                                 <h3 className="text-lg font-bold text-gray-800">
-                                    Успешно добавлено!
+                                    Ийгиликтүү кошулду!
                                 </h3>
                                 <button
                                     onClick={closePopup}
                                     className="text-gray-400 hover:text-gray-600 text-2xl leading-none w-8 h-8 flex items-center justify-center"
-                                    aria-label="Закрыть"
+                                    aria-label="Жабуу"
                                 >
                                     ×
                                 </button>
                             </div>
 
                             <p className="text-gray-600 mb-4 text-sm sm:text-base">
-                                Курс "<span className="font-semibold">{title}</span>" добавлен в
-                                вашу корзину.
+                                Курс "<span className="font-semibold">{title}</span>" себетке кошулду
                             </p>
 
                             <div className="mb-4 p-3 border rounded-lg bg-gray-50">
@@ -188,7 +203,7 @@ const CardCourse = ({
                                     onClick={closePopup}
                                     className="text-sm px-4 py-2 w-full sm:w-auto"
                                 >
-                                    Продолжить покупки
+                                    Сатып алууну улантыңыз
                                 </Button>
 
                                 <Button
@@ -196,7 +211,7 @@ const CardCourse = ({
                                     onClick={goToCart}
                                     className="text-sm px-4 py-2 w-full sm:w-auto"
                                 >
-                                    Перейти в корзину
+                                    Себетке өтүү
                                 </Button>
                             </div>
                         </div>

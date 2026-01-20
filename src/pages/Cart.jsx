@@ -31,7 +31,7 @@ const Cart = () => {
             <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
                 <div className="text-center">
                     <div className="inline-block animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-orange-500"></div>
-                    <p className="mt-4 text-gray-600">Корзина жүктөлүүдө...</p>
+                    <p className="mt-4 text-gray-600">Себет жүктөлүүдө...</p>
                 </div>
             </div>
         );
@@ -41,9 +41,9 @@ const Cart = () => {
         return (
             <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
                 <BsCartX className="w-24 h-24 text-gray-300 mb-6" />
-                <h2 className="text-2xl font-bold text-gray-800 mb-4">Корзинаңыз бош</h2>
+                <h2 className="text-2xl font-bold text-gray-800 mb-4">Себетиңиз бош</h2>
                 <p className="text-gray-600 mb-8 text-center max-w-md">
-                    Сиздин корзинаңызда эч кандай курс жок. Биздин курстарды изилдеп, биринчисин
+                    Сиздин себетиңизде эч кандай курс жок. Биздин курстарды изилдеп, биринчисин
                     кошуңуз!
                 </p>
                 <Button
@@ -65,7 +65,7 @@ const Cart = () => {
             <Modal
                 isOpen={showRegisterModal}
                 onClose={() => setShowRegisterModal(false)}
-                title="Корзина"
+                title="Себет"
                 size="md"
             >
                 <div className="space-y-4">
@@ -74,13 +74,13 @@ const Cart = () => {
                             <FaShoppingCart className="w-5 h-5 text-orange-500" />
                         </div>
                         <div>
-                            <h3 className="font-bold text-gray-900">Регистрация керек</h3>
+                            <h3 className="font-bold text-gray-900">Катталуу керек</h3>
                         </div>
                     </div>
 
                     <p className="text-gray-600">
                         Сатып алууну аяктоо үчүн аккаунт түзүшүңүз керек. Ал учурда сиздин
-                        корзинадагы курстар сакталып калат.
+                        себетиңиздеги курстар сакталып калат.
                     </p>
 
                     <div className="space-y-3 pt-2">
@@ -100,7 +100,7 @@ const Cart = () => {
 
             <div className="container mx-auto px-4">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
-                    <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Менин корзинам</h1>
+                    <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Менин себетим</h1>
 
                     <div className="flex items-center gap-3">
                         <button
@@ -133,7 +133,7 @@ const Cart = () => {
                                             ) : (
                                                 <div className="w-full h-full bg-gray-100 flex items-center justify-center">
                                                     <span className="text-gray-400">
-                                                        Изображение отсутствует
+                                                        Сүрөт жок
                                                     </span>
                                                 </div>
                                             )}
@@ -191,7 +191,7 @@ const Cart = () => {
                     <div className="lg:col-span-1">
                         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 sticky top-6">
                             <h3 className="text-xl font-bold text-gray-900 mb-6">
-                                Заказды жыйынтыктоо
+                                Буйрутманы жыйынтыктоо
                             </h3>
 
                             <div className="space-y-4 mb-6">
