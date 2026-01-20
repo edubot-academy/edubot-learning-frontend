@@ -38,7 +38,7 @@ function Feedback() {
         <>
             <FeedbackSection
                 title="Биздин окуучулар эмне дейт"
-                subtitle="Тут вы можете посмотреть все отзывы наших студентов которые прошли  все наши онлайн уроки"
+                subtitle="Бул жерде сиз биздин онлайн сабактарыбызды бүтүргөн студенттерибиздин бардык сын-пикирлерин көрө аласыз."
                 data={newDate}
                 rightContent={arrows}
                 // CardComponent={CardFeedback}

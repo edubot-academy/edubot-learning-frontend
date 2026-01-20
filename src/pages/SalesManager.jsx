@@ -42,7 +42,7 @@ const SalesDashboard = () => {
 
     const formatCurrency = (value) => `${Number(value).toFixed(2)} сом`;
 
-    if (loading) return <div className="p-6">Loading students...</div>;
+    if (loading) return <div className="p-6">Студенттер жүктөлүүдө...</div>;
 
     return (
         <div className="pt-20 p-6">

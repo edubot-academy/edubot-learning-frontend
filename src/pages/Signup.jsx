@@ -118,14 +118,14 @@ const SignupPage = () => {
             {/* Правая часть с формой */}
             <div className="flex-1 flex items-center justify-center px-6">
                 <div className="w-full max-w-md">
-                    <h2 className="text-2xl font-bold mb-6">Регистрация</h2>
+                    <h2 className="text-2xl font-bold text-black mb-6">Катталуу</h2>
 
                     {error && <p className="text-red-500 mb-4">{error}</p>}
 
                     <form onSubmit={handleSubmit} className="space-y-2">
                         {/* Фамилия */}
                         <DefaultLabel
-                            label="Введите фамилию"
+                            label="Фамилияңызды жазыңыз"
                             name="lastName"
                             value={formData.lastName}
                             onChange={handleChange}
@@ -137,7 +137,7 @@ const SignupPage = () => {
 
                         {/* Имя */}
                         <DefaultLabel
-                            label="Введите имя"
+                            label="Атыңызды жазыңыз"
                             name="firstName"
                             value={formData.firstName}
                             onChange={handleChange}
@@ -149,7 +149,7 @@ const SignupPage = () => {
 
                         {/* Email */}
                         <DefaultLabel
-                            label="Введите email"
+                            label="Email почтаңызды жазыңыз"
                             name="email"
                             value={formData.email}
                             onChange={handleChange}
@@ -167,7 +167,7 @@ const SignupPage = () => {
                         {/* Пароль */}
                         <div className="relative py-2">
                             <LabelPassword
-                                label="Придумайте пароль"
+                                label="Сырсөз ойлоп табыңыз"
                                 name="password"
                                 value={formData.password}
                                 onChange={handleChange}
@@ -187,7 +187,7 @@ const SignupPage = () => {
                                                 : 'text-gray-400'
                                         }
                                     >
-                                        ✔ Длина 8 знаков
+                                        ✔ 8 белгиден турат
                                     </li>
                                     <li
                                         className={
@@ -196,7 +196,7 @@ const SignupPage = () => {
                                                 : 'text-gray-400'
                                         }
                                     >
-                                        ✔ Строчная буква
+                                        ✔ Кичине тамга
                                     </li>
                                     <li
                                         className={
@@ -205,7 +205,7 @@ const SignupPage = () => {
                                                 : 'text-gray-400'
                                         }
                                     >
-                                        ✔ Заглавная буква
+                                        ✔ Баш тамга
                                     </li>
                                     <li
                                         className={
@@ -214,7 +214,7 @@ const SignupPage = () => {
                                                 : 'text-gray-400'
                                         }
                                     >
-                                        ✔ Цифра
+                                        ✔ Сан түрүндө
                                     </li>
                                     <li
                                         className={
@@ -223,7 +223,7 @@ const SignupPage = () => {
                                                 : 'text-gray-400'
                                         }
                                     >
-                                        ✔ Символ
+                                        ✔ Белги
                                     </li>
                                 </ul>
                             )}
@@ -245,16 +245,16 @@ const SignupPage = () => {
                         <button
                             type="submit"
                             disabled={loading}
-                            className="w-full mt-4 shadow-[0px_5px_21.3px_0px_#E14219BF] bg-[linear-gradient(180deg,#FF8C6E_0%,#E14219_100%)] text-white py-3 rounded text-lg font-semibold shadow-md hover:opacity-90 transition"
+                            className="w-full mt-4 shadow-[0px_5px_21.3px_0px_#E14219BF] bg-[linear-gradient(180deg,#FF8C6E_0%,#E14219_100%)] text-white py-3 rounded text-lg font-semibold hover:opacity-90 transition"
                         >
-                            {loading ? 'Загрузка...' : 'Зарегистрироваться'}
+                            {loading ? 'Жүктөлүүдө...' : 'Катталуу'}
                         </button>
                     </form>
 
                     <p className="mt-4 text-sm text-gray-600 text-center">
-                        Уже есть аккаунт?{' '}
+                        Каттоо эсебиңиз бар?{' '}
                         <Link to="/login" className="text-blue-500 hover:underline">
-                            Войти
+                            Кирүү
                         </Link>
                     </p>
                 </div>

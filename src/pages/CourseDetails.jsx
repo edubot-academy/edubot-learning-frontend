@@ -334,7 +334,7 @@ const CourseDetailsPage = () => {
 
             // Проверяем, что есть хотя бы один ответ
             if (answeredQuestions.length === 0) {
-                toast.error('Пожалуйста, ответьте хотя бы на один вопрос');
+                toast.error('Сураныч, жок дегенде бир суроого жооп бериңиз.');
                 return;
             }
 
@@ -417,7 +417,7 @@ const CourseDetailsPage = () => {
                     toast.success(
                         updatedResult.passed
                             ? 'Куттуктайбыз! Квиз ийгиликтүү тапшырылды.'
-                            : `Кайра аракет кылып көрүңүз. Сиз ${newScore}% туздук.`
+                            : `Кайра аракет кылып көрүңүз. Сиз ${newScore}% түздүңүз.`
                     );
 
                     if (updatedResult.passed) {
@@ -720,11 +720,11 @@ const CourseDetailsPage = () => {
         course.aiAssistantEnabled && (enrolled || isCourseInstructor || isAdmin)
     );
     const assistantAvailableMessage = course.aiAssistantEnabled
-        ? 'Ассистентти колдонуу үчүн курсга жазылуу керек.'
+        ? 'Ассистентти колдонуу үчүн курска жазылуу керек.'
         : 'EDU AI ассистенти бул курста өчүрүлгөн.';
 
     const tabs = [
-        { id: 'program', label: 'Программа курса', disabled: false },
+        { id: 'program', label: 'Курстун программасы', disabled: false },
         { id: 'assistant', label: 'Edu AI Assistent', disabled: !isAiAvailable },
     ];
 
@@ -761,7 +761,7 @@ const CourseDetailsPage = () => {
 
             <div className="relative max-w-6xl mx-auto flex justify-end mb-10">
                 <button
-                    className="flex w-[265px] h-[61px] opacity-100 rounded-[8px] border border-[1px] p-[18px] gap-[10px] border-[#FB923C] bg-[#FFF7ED]"
+                    className="flex w-[265px] h-[61px] opacity-100 rounded-[8px] border-[1px] p-[18px] gap-[10px] border-[#FB923C] bg-[#FFF7ED]"
                     onClick={() => setInstructorChat(true)}
                 >
                     <FaSignalMessenger className="text-[#EA580C]" /> Инструктор менен чат
@@ -785,7 +785,7 @@ const CourseDetailsPage = () => {
                 )}
             </div>
 
-            <CourseHeader course={course} progress={progress} enrolled={enrolled} />
+            {/* <CourseHeader course={course} progress={progress} enrolled={enrolled} /> */}
             <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
                 <CourseDescription course={course} />
 

@@ -114,7 +114,7 @@ const ArticleEditor = ({
                 selection.addRange(textRange);
             }
 
-            const url = window.prompt('Ссылка кошуу (https:// менен):');
+            const url = window.prompt('Шилтеме кошуу (https:// менен):');
             if (!url) return;
             document.execCommand('createLink', false, url);
         } else {

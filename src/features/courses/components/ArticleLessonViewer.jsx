@@ -89,7 +89,7 @@ const ArticleLessonViewer = ({ lesson }) => {
                 <div 
                     className="text-center text-gray-600 py-12"
                     role="status"
-                    aria-label="Контент заблокирован"
+                    aria-label="Мазмун бөгөттөлгөн"
                 >
                     Бул макаланы окуу үчүн курска катталыңыз.
                 </div>
@@ -108,7 +108,7 @@ const ArticleLessonViewer = ({ lesson }) => {
                                    pb-8"
                         dangerouslySetInnerHTML={{ __html: sanitizedContent }}
                         role="article"
-                        aria-label="Содержимое статьи"
+                        aria-label="Макаланын мазмуну"
                     />
                 </div>
             ) : (
@@ -131,7 +131,7 @@ const ArticleLessonViewer = ({ lesson }) => {
                         target="_blank"
                         rel="noopener noreferrer"
                         download
-                        aria-label={`Скачать файл ${resourceMeta.fileName}, формат ${resourceMeta.typeLabel}`}
+                        aria-label={`${resourceMeta.typeLabel} форматындагы, файл жуктоо ${resourceMeta.fileName}`}
                     >
                         <FiDownload
                             className="text-base flex-shrink-0 group-hover:scale-110 transition-transform"
@@ -142,7 +142,7 @@ const ArticleLessonViewer = ({ lesson }) => {
                         </span>
                         <span
                             className="text-xs uppercase text-gray-500 flex-shrink-0 ml-1"
-                            aria-label={`формат ${resourceMeta.typeLabel}`}
+                            aria-label={`${resourceMeta.typeLabel} форматы`}
                         >
                             {resourceMeta.typeLabel}
                         </span>

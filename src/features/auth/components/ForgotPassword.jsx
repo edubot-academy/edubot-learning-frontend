@@ -76,7 +76,7 @@ const ForgotPassword = ({ onClose }) => {
 
                         <input
                             type="text"
-                            placeholder="Введите данные"
+                            placeholder="Маалыматтарды киргизиңиз"
                             value={identifier}
                             onChange={(e) => setIdentifier(e.target.value)}
                             className="w-full px-4 py-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 mb-[50px] mt-[10px]"

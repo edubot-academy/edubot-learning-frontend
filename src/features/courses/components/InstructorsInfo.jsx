@@ -54,7 +54,7 @@ function InstructorsInfo({ instructorData }) {
         avatarUrl,
         fullName = 'Инструктор',
         title,
-        bio = 'Информация об инструкторе отсутствует',
+        bio = 'Информация тууралуу маалымат жок',
         expertiseTags = [],
         yearsOfExperience,
         coursesCount = 0,

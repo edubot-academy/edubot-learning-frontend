@@ -810,7 +810,7 @@ const OfferingsSection = ({ courses, offerings, loading, refreshOfferings }) => 
             setEnrollStudents(list);
         } catch (error) {
             console.error('Failed to load offering students', error);
-            toast.error('Студенттердин тизмесин жүктөө мүмкүн болбodu');
+            toast.error('Студенттердин тизмесин жүктөө мүмкүн болбoду');
             setEnrollStudents([]);
         } finally {
             setLoadingEnrollStudents(false);
@@ -896,7 +896,7 @@ const OfferingsSection = ({ courses, offerings, loading, refreshOfferings }) => 
             const message =
                 error.response?.data?.message ||
                 error.message ||
-                'Студентти offeringге кошууда ката';
+                'Студентти offeringге кошууда ката кетти';
             toast.error(Array.isArray(message) ? message.join(', ') : message);
         } finally {
             setEnrolling(false);
@@ -1492,7 +1492,7 @@ const OfferingCard = ({ offering, onEdit, onEnroll }) => {
             </div>
             {offering.scheduleBlocks?.length ? (
                 <div className="text-sm text-gray-600">
-                    <p className="font-semibold text-gray-700 mb-1">Расписание:</p>
+                    <p className="font-semibold text-gray-700 mb-1">Жүгүртмө:</p>
                     <ul className="space-y-1">
                         {offering.scheduleBlocks.map((block, idx) => (
                             <li key={idx}>

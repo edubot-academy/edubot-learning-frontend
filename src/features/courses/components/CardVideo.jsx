@@ -29,23 +29,23 @@ const CardVideo = ({ coverImageUrl, course, lessonCount, activeLesson }) => {
                 <div className="flex flex-col gap-3 py-4">
                     <div className="flex items-center justify-between text-[#141619] dark:text-[#E8ECF3]">
                         <p className="text-lg text-[#3E424A] dark:text-[#a6adba] font-normal">
-                            Price per Lesson
+                            Баасы
                         </p>
                         <span className="text-3xl font-bold text-[#141619] dark:text-white">
-                            {course.price}$
+                            {course.price} сом
                         </span>
                     </div>
                     <div className="flex flex-col gap-2 text-[#3E424A]">
                         <p className="flex items-center gap-2 text-base font-semibold">
-                            <FiBook /> {lessonCount} уроков
+                            <FiBook /> {lessonCount} сабак
                         </p>
 
                         <p className="flex items-center gap-2 text-base font-semibold">
-                            <IoMdTime /> {course.durationInHours} часа
+                            <IoMdTime /> {course.durationInHours} саат
                         </p>
 
                         <p className="flex items-center gap-2 text-base font-semibold">
-                            <TbLock /> Доступ {course.isPaid ? 'Платный' : 'Бесплатный'}
+                            <TbLock /> Мүмкүнчүлүк: {course.isPaid ? 'Төлөм керектелет' : 'Бекер'}
                         </p>
                     </div>
 
@@ -61,7 +61,7 @@ const CardVideo = ({ coverImageUrl, course, lessonCount, activeLesson }) => {
                             </Button>
                         </div>
                         <div>
-                            <Button variant="secondary">Добавить в избранное</Button>
+                            <Button variant="secondary">Избранныйга кошуу</Button>
                         </div>
                     </div>
                 </div>

@@ -81,10 +81,10 @@ const CourseContent = ({
                 {showHeader && (
                     <div className="px-4 sm:px-6 py-4 border-b border-[#DFE1E5]">
                         <h3 className="text-xl sm:text-2xl font-semibold text-gray-900">
-                            Содержание курса
+                            Курстун мазмуну
                         </h3>
                         <p className="text-sm sm:text-base text-gray-600 mt-1">
-                            {sections.length} sections • {totalLessons} lectures •{' '}
+                            {sections.length} бөлүм • {totalLessons} лекция •{' '}
                             {formatMinutesToTime(totalMinutes)}
                         </p>
                     </div>
@@ -102,7 +102,7 @@ const CourseContent = ({
                                     <span className="truncate">{section.title}</span>
                                 </div>
                                 <span className="text-gray-500 text-sm">
-                                    {section.lessons.length} лекций •{' '}
+                                    {section.lessons.length} лекция •{' '}
                                     {formatMinutesToTime(section.durationMinutes)}
                                 </span>
                             </button>
@@ -187,7 +187,7 @@ const CourseContent = ({
                                                                     target="_blank"
                                                                 >
                                                                     <HiOutlineFolderOpen />
-                                                                    Ресурсы
+                                                                    Ресурстар
                                                                 </a>
                                                             </div>
                                                         )}
