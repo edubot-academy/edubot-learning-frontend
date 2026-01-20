@@ -31,6 +31,7 @@ import CourseReview from '@features/courses/components/CourseReview';
 import CourseContent from '@features/courses/components/CourseContent';
 import { FaSignalMessenger } from "react-icons/fa6";
 import InstructorChat from '@features/instructorChat/InstructorChat';
+import CourseHeader from '@features/courses/components/CourseHeader';
 
 const CHALLENGE_STORAGE_PREFIX = 'lessonChallengeState';
 
@@ -736,7 +737,7 @@ const CourseDetailsPage = () => {
     };
 
     const renderTabButtons = () => (
-        <div className="flex flex-wrap gap-2 rounded-2xl p-1">
+        <div className="flex flex-wrap gap-2 bg-gray-100 rounded-2xl p-1">
             {tabs.map((tab) => (
                 <button
                     key={tab.id}
@@ -756,7 +757,7 @@ const CourseDetailsPage = () => {
         sections.reduce((count, sec) => count + (sec.lessons?.length || 0), 0);
 
     return (
-        <div className="min-h-screen pt-10 bg-[#f8f9fb]">
+        <div className="min-h-screen pt-10 bg-[#f8f9fb] dark:bg-[#1A1A1A]">
 
             <div className="relative max-w-6xl mx-auto flex justify-end mb-10">
                 <button
@@ -788,7 +789,7 @@ const CourseDetailsPage = () => {
             <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
                 <CourseDescription course={course} />
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="md:col-span-2">
                         <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-10 py-6 space-y-8">
                             {/* Mobile layouts */}
@@ -946,32 +947,35 @@ const CourseDetailsPage = () => {
                                             <CourseDescription course={course} />
                                         </div>
 
-                            <div className="space-y-4 md:sticky md:top-6 md:self-start h-fit">
-                                <div className="p-4 sm:p-5 rounded-xl shadow-sm">
-                                    <div className="mb-4">{renderTabButtons()}</div>
-                                    {activeTab === 'program' ? (
-                                        <CourseContent
-                                            sections={sections}
-                                            enrolled={enrolled}
-                                            onLessonClick={handleLessonClick}
-                                            activeLesson={activeLesson}
-                                            completedLessons={completedLessons}
-                                            lessonRefs={lessonRefs}
-                                            showHeader={false}
-                                            handleCheckboxToggle={handleCheckboxToggle}
-                                        />
-                                    ) : (
-                                        <div className="bg-white">
-                                            {isAiAvailable ? (
-                                                <AiAssistantPanel
-                                                    courseId={Number(id)}
-                                                    languageCode={course.languageCode}
-                                                />
-                                            ) : (
-                                                <div className="text-center text-gray-500 text-sm">
-                                                    {assistantAvailableMessage}
-                                                </div>
-                                            )}
+                                        <div className="space-y-4 md:sticky md:top-6 md:self-start h-fit">
+                                            <div className="bg-white p-4 sm:p-5 rounded-xl shadow-sm">
+                                                <div className="mb-4">{renderTabButtons()}</div>
+                                                {activeTab === 'program' ? (
+                                                    <CourseContent
+                                                        sections={sections}
+                                                        enrolled={enrolled}
+                                                        onLessonClick={handleLessonClick}
+                                                        activeLesson={activeLesson}
+                                                        completedLessons={completedLessons}
+                                                        lessonRefs={lessonRefs}
+                                                        showHeader={false}
+                                                        handleCheckboxToggle={handleCheckboxToggle}
+                                                    />
+                                                ) : (
+                                                    <div className="bg-white">
+                                                        {isAiAvailable ? (
+                                                            <AiAssistantPanel
+                                                                courseId={Number(id)}
+                                                                languageCode={course.languageCode}
+                                                            />
+                                                        ) : (
+                                                            <div className="text-center text-gray-500 text-sm">
+                                                                {assistantAvailableMessage}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                )}
+                                            </div>
                                         </div>
                                     </div>
                                 ) : (
