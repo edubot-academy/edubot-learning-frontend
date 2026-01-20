@@ -169,11 +169,11 @@ const LessonQuizPlayer = ({
         return (
             <div className="mb-6 bg-white rounded-lg shadow-md py-[20%] text-center">
                 <h2 className="font-bold text-[200%] leading-[44px] tracking-[0.01em] mb-[5%]">
-                    Начнем тест! Ты готов?
+                    Тестти баштайбыз! Даярсыңбы?
                 </h2>
                 <div className="flex justify-center gap-[16px]">
-                    <Button variant="secondary">Назад</Button>
-                    <Button onClick={() => setStartQuiz(true)}>Начать тест</Button>
+                    <Button variant="secondary">Артка</Button>
+                    <Button onClick={() => setStartQuiz(true)}>Тестти баштоо</Button>
                 </div>
             </div>
         );
@@ -193,20 +193,20 @@ const LessonQuizPlayer = ({
                     )}
 
                     <p className="text-2xl font-bold">
-                        {result.score}% ({result.correctAnswers}/{result.totalQuestions}) правильно
+                        {result.score}% ({result.correctAnswers}/{result.totalQuestions}) туура
                     </p>
 
                     <p className="text-gray-600">
                         {result.passed
-                            ? 'Вы показали глубокие знания!'
-                            : 'Не удалось пройти. Попробуйте снова.'}
+                            ? 'Сиз терең билим көрсөттүңүз!'
+                            : 'Өтө албай калдыңыз. Кайра аракет кылуу.'}
                     </p>
 
                     <div className="flex gap-4">
                         <Button onClick={handleRetake} variant="secondary">
-                            Пройти заново
+                            Кайрадан өтүү.
                         </Button>
-                        <Button>Вернуться на главную</Button>
+                        <Button>Башкы бетке кайтуу</Button>
                     </div>
                 </div>
 
@@ -214,7 +214,7 @@ const LessonQuizPlayer = ({
                     onClick={() => setIsShowAnswers(!isShowAnswers)}
                     className="flex items-center gap-1 cursor-pointer mt-6 text-lg font-medium"
                 >
-                    <span>Посмотреть ответ</span>
+                    <span>Жоопторун көрүү</span>
                     {isShowAnswers ? <IoIosArrowUp /> : <IoIosArrowDown />}
                 </div>
 
@@ -244,16 +244,16 @@ const LessonQuizPlayer = ({
                                     </p>
 
                                     <p>
-                                        Ваш ответ:{' '}
+                                        Сиздин жооп:{' '}
                                         <span className="font-semibold bg-gray-100 px-1 rounded">
-                                            {selected?.text || 'Пропущено'}
+                                            {selected?.text || 'Калтырылды'}
                                         </span>
                                     </p>
 
                                     {(answeredCorrect === false || !selected) &&
                                         correctOptions.length > 0 && (
                                             <div className="text-sm text-green-700">
-                                                <p>Правильный ответ:</p>
+                                                <p>Туура жооп:</p>
                                                 <ul className="list-disc list-inside">
                                                     {correctOptions.map((opt) => (
                                                         <li key={opt.id}>{opt.text}</li>
@@ -308,16 +308,16 @@ const LessonQuizPlayer = ({
                     {isLastQuestion ? (
                         <div className="flex gap-4">
                             <Button variant="secondary" onClick={handleSkipQuestion}>
-                                Пропустить
+                                Өткөрүү
                             </Button>
                             <Button onClick={handleSubmit} disabled={submitting}>
-                                {submitting ? 'Загрузка...' : 'Завершить'}
+                                {submitting ? 'Жүктөлүүдө...' : 'Жыйынтыктоо'}
                             </Button>
                         </div>
                     ) : (
                         <div className="flex gap-4">
                             <Button variant="secondary" onClick={handleSkipQuestion}>
-                                Пропустить
+                                Өткөрүү
                             </Button>
                             <Button
                                 onClick={() =>
@@ -327,18 +327,18 @@ const LessonQuizPlayer = ({
                                 }
                                 disabled={!selectedOption}
                             >
-                                Далее
+                                Кийинкиси
                             </Button>
                         </div>
                     )}
 
                     <div className="text-sm text-gray-500 mt-2">
-                        Пропущенные вопросы: {skippedQuestions.length} из{' '}
+                        Калтырылкан суроолор: {skippedQuestions.length} из{' '}
                         {quiz.questions?.length || 0}
                     </div>
                 </div>
             ) : (
-                <p>Вопросы не найдены.</p>
+                <p>Суроолор табылган жок.</p>
             )}
         </div>
     );

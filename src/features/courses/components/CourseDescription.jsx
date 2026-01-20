@@ -4,7 +4,7 @@ import { GrLanguage } from 'react-icons/gr';
 import { RiSpam2Line } from 'react-icons/ri';
 
 const CourseDescription = ({ course }) => {
-    if (!course) return <div>Загрузка...</div>;
+    if (!course) return <div>Жүктөлүүдө...</div>;
 
     const isNew = () => {
         if (course.createdAt) {
@@ -38,7 +38,7 @@ const CourseDescription = ({ course }) => {
                 <div className="flex flex-wrap items-center gap-3 sm:gap-4 text-sm">
                     {isNew() && (
                         <span className="inline-flex items-center px-3 py-1 rounded-full text-xs sm:text-sm font-medium bg-red-100 text-red-800">
-                            Новый выпуск
+                            Жаңы чыгарылыш
                         </span>
                     )}
 
@@ -46,14 +46,14 @@ const CourseDescription = ({ course }) => {
                         <div className="flex items-center gap-2 text-gray-600">
                             <RiSpam2Line size={18} />
                             {course.updatedAt
-                                ? `последнее обновление ${new Date(course.updatedAt).toLocaleDateString('ru-RU')}`
-                                : `создан ${new Date(course.createdAt).toLocaleDateString('ru-RU')}`}
+                                ? `акыркы жаңыртуу: ${new Date(course.updatedAt).toLocaleDateString('kg-KG')}`
+                                : `түзүлгөн ${new Date(course.createdAt).toLocaleDateString('kg-Kg')}`}
                         </div>
                     )}
 
                     <div className="flex items-center gap-2 text-gray-600">
                         <GrLanguage />
-                        {course.language || 'Русский'}
+                        {course.language || 'Кыргызча'}
                     </div>
 
                     {course.category && (
@@ -70,7 +70,7 @@ const CourseDescription = ({ course }) => {
                     <div className="flex items-center gap-3">
                         <RiCheckboxCircleFill color="#EA580C" size={20} className="flex-shrink-0" />
                         <p className="text-sm sm:text-base text-gray-600">
-                            Описание курса скоро будет добавлено...
+                           Курс жөнүндө маалымат жакында кошулат...
                         </p>
                     </div>
                 ) : (

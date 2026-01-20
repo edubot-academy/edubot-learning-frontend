@@ -239,7 +239,7 @@ const AiAssistantPanel = ({ courseId, languageCode = 'ru' }) => {
                             onClick={() => handleCreateChat(false)}
                             className="w-full text-left px-4 py-2 hover:bg-gray-50 text-sm"
                         >
-                            Новый чат
+                            Жаңы баарлашуу
                         </button>
                         <button
                             type="button"
@@ -247,7 +247,7 @@ const AiAssistantPanel = ({ courseId, languageCode = 'ru' }) => {
                             className="w-full text-left px-4 py-2 hover:bg-gray-50 text-sm text-red-500"
                             disabled={!activeChatId}
                         >
-                            Удалить чат
+                            Баарлашууну өчүрүү
                         </button>
                     </div>
                 )}
@@ -260,8 +260,7 @@ const AiAssistantPanel = ({ courseId, languageCode = 'ru' }) => {
                         <span className="text-[#FF6B00]">EDU</span> AI Assistent
                     </h2>
                     <p className="text-gray-600 mt-2 max-w-2xl">
-                        Наш искусственный интеллект помогает быстро находить ответы, учиться
-                        эффективнее и развиваться каждый день.
+                        Биздин жасалма интеллект сизге жоопторду тез табууга, натыйжалуураак үйрөнүүгө жана күн сайын өсүүгө жардам берет.
                     </p>
                 </div>
             </div>
@@ -269,10 +268,10 @@ const AiAssistantPanel = ({ courseId, languageCode = 'ru' }) => {
             <div className="flex flex-col items-center text-center py-6">
                 <div className="w-40 h-40 rounded-full bg-gradient-to-br from-[#FF8008] to-[#FF4B1F] shadow-inner" />
                 <p className="mt-4 text-sm text-gray-500">
-                    Чат: {activeChat?.title || 'Без названия'}
+                    Чат: {activeChat?.title || 'Аталышы жок'}
                 </p>
                 <p className="mt-2 text-lg font-semibold text-[#FF6B00]">
-                    Привет! Чем могу помочь?
+                    Салам! Кандай жардам керек?
                 </p>
             </div>
 
@@ -314,14 +313,14 @@ const AiAssistantPanel = ({ courseId, languageCode = 'ru' }) => {
                             <button
                                 type="button"
                                 className="w-11 h-11 rounded-full border border-gray-200 flex items-center justify-center text-gray-500 hover:text-gray-800"
-                                title="Прикрепить файл"
+                                title="Файлды тиркөө"
                             >
                                 <FiPaperclip />
                             </button>
                             <button
                                 type="button"
                                 className="w-11 h-11 rounded-full border border-gray-200 flex items-center justify-center text-gray-500 hover:text-gray-800"
-                                title="Голосовой ввод (скоро)"
+                                title="Үн киргизүү (жакында)"
                             >
                                 <FiMic />
                             </button>
@@ -332,7 +331,7 @@ const AiAssistantPanel = ({ courseId, languageCode = 'ru' }) => {
                             disabled={sending || !inputValue.trim()}
                             className="px-6 py-3 rounded-2xl bg-gradient-to-r from-[#FF7E21] to-[#FF5F3D] text-white text-sm font-semibold shadow disabled:opacity-60 disabled:cursor-not-allowed"
                         >
-                            {sending ? 'Отправляем...' : 'Отправить'}
+                            {sending ? 'Жүктөлүдөө' : 'Жүктөө'}
                         </button>
                     </div>
                 </div>
