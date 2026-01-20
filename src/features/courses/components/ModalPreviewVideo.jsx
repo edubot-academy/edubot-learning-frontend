@@ -49,12 +49,12 @@ function ModalPreviewVideo({ isOpen, onClose, courseId, previewData: previewData
             title={previewData?.title}
             size="lg"
         >
-            {loading && <p>Загрузка...</p>}
+            {loading && <p>Жүктөлүүдө...</p>}
 
             {!loading && previewData && (
                 <>
                     <p className="text-sm text-gray-500 mb-4">
-                        {previewData.description || 'Описание курса скоро будет добавлено...'}
+                        {previewData.description || 'Курс жөнүндө маалымат жакында кошулат...'}
                     </p>
 
                     {activeVideo?.videoUrl && (

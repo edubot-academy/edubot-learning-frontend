@@ -40,7 +40,7 @@ export default function InstructorChat({ course }) {
           setActiveChat(null);
         }
       } catch (e) {
-        console.error("Ошибка загрузки чата", e);
+        console.error("Баарлашууну жүктөөдө ката кетти", e);
       }
     })();
   }, [course]);
@@ -55,7 +55,7 @@ export default function InstructorChat({ course }) {
         const res = await fetchInstructorChatMessages(activeChat.id);
         setMessages(res?.messages ?? []);
       } catch {
-        console.error("Ошибка загрузки сообщений");
+        console.error("Билдирүүлөрдү жүктөөдө ката кетти");
       } finally {
         setLoading(false);
       }
@@ -125,7 +125,7 @@ export default function InstructorChat({ course }) {
       }
 
     } catch (error) {
-      console.error("Ошибка отправки", error);
+      console.error("Жүктөөдө ката кетти", error);
 
       // Удаляем оптимистичное сообщение при ошибке
       setMessages((prev) => prev.filter(m => !m.isOptimistic));
@@ -169,13 +169,13 @@ export default function InstructorChat({ course }) {
       >
         {loading && (
           <p className="text-center text-xs text-gray-400">
-            Загрузка сообщений...
+            Билдирүү жүктөлүүдө...
           </p>
         )}
 
         {!loading && messages.length === 0 && activeChat?.id && (
           <p className="text-center text-xs text-gray-400">
-            Нет сообщений. Начните диалог!
+            Билдирүү жок. Баарлашууну баштаныз!
           </p>
         )}
 
@@ -253,7 +253,7 @@ export default function InstructorChat({ course }) {
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Напишите сообщение"
+          placeholder="Билдирүү жазыңыз"
           className="flex-1 h-10 px-4 rounded-full text-sm focus:outline-none bg-transparent"
         />
 

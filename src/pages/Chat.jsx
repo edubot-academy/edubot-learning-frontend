@@ -7,8 +7,6 @@ import {
 import { AuthContext } from "../context/AuthContext";
 import toast from "react-hot-toast";
 import { FaPlus } from "react-icons/fa6";
-import { SlPicture } from "react-icons/sl";
-import { CgFileDocument } from "react-icons/cg";
 import sendSvg from "../assets/icons/send.svg";
 
 export default function Chat() {
@@ -41,7 +39,7 @@ export default function Chat() {
         setChats(res ?? []);
         setActiveChat(res?.[0] ?? null);
       } catch {
-        toast.error("Ошибка загрузки чатов");
+        toast.error("Чатты жүктөөдө ката кетти");
       } finally {
         setLoading(false);
       }
@@ -57,7 +55,7 @@ export default function Chat() {
         const res = await fetchInstructorChatMessages(activeChat.id);
         setMessages(res?.messages ?? []);
       } catch {
-        toast.error("Ошибка загрузки сообщений");
+        toast.error("Баарлашууну жүктөөдө ката кетти");
       }
     })();
   }, [activeChat?.id]);
@@ -113,7 +111,7 @@ export default function Chat() {
       const res = await fetchInstructorChatMessages(activeChat.id);
       setMessages(res?.messages ?? []);
     } catch {
-      toast.error("Ошибка отправки");
+      toast.error("Жүктөө учурунда ката кетти");
       setMessages((p) => p.filter((m) => !m.isOptimistic));
       setMessage(prev);
     } finally {
@@ -149,7 +147,7 @@ export default function Chat() {
       const res = await fetchInstructorChatMessages(activeChat.id);
       setMessages(res?.messages ?? []);
     } catch {
-      toast.error("Ошибка отправки файла");
+      toast.error("Файлды жүктөөдө ката кетти");
       setMessages((p) => p.filter((m) => !m.isOptimistic));
     }
   };
@@ -162,7 +160,7 @@ export default function Chat() {
   };
 
   if (loading) {
-    return <div className="p-10 text-center">Загрузка...</div>;
+    return <div className="p-10 text-center">Жүктөлүүдө...</div>;
   }
 
   return (
@@ -287,7 +285,7 @@ export default function Chat() {
                 onChange={(e) => setMessage(e.target.value)}
                 onKeyDown={handleKeyDown}
                 className="flex-1 h-10 px-4 rounded-full outline-none bg-gray-100"
-                placeholder="Напишите сообщение"
+                placeholder="Баарлашууну баштаныз"
               />
 
               <button

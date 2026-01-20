@@ -58,7 +58,7 @@ const LoginPage = () => {
             {/* Правая часть с формой */}
             <div className="flex-1 flex items-center justify-center px-6">
                 <div className="w-full max-w-md">
-                    <h2 className="text-2xl font-bold text-black mb-6">Вход</h2>
+                    <h2 className="text-2xl font-bold text-black mb-6">Кирүү</h2>
 
                     {error && <p className="text-red-500 mb-4">{error}</p>}
 
@@ -91,22 +91,22 @@ const LoginPage = () => {
                             className="flex justify-center text-sm text-blue-500 hover:underline cursor-pointer mt-2"
                             onClick={() => setForgotPassword(!forgotPassword)}
                         >
-                            Забыли пароль?
+                            Сырсөздү унуттуңузбу?
                         </div>
 
                         <button
                             type="submit"
                             disabled={loading}
-                            className="w-full mt-4 shadow-[0px_5px_21.3px_0px_#E14219BF] bg-[linear-gradient(180deg,#FF8C6E_0%,#E14219_100%)] text-white py-3 rounded text-lg font-semibold shadow-md hover:opacity-90 transition"
+                            className="w-full mt-4 shadow-[0px_5px_21.3px_0px_#E14219BF] bg-[linear-gradient(180deg,#FF8C6E_0%,#E14219_100%)] text-white py-3 rounded text-lg font-semibold hover:opacity-90 transition"
                         >
-                            {loading ? 'Вход...' : 'Войти'}
+                            {loading ? 'Кирүүдө...' : 'Ийгиликтүү кирди'}
                         </button>
                     </form>
 
                     <p className="mt-4 text-sm text-gray-600 text-center">
-                        Нет аккаунта?{' '}
+                        Аккаунтуңуз жокпу?{' '}
                         <Link to="/register" className="text-blue-500 hover:underline">
-                            Зарегистрироваться
+                            Катталуу
                         </Link>
                     </p>
                 </div>
