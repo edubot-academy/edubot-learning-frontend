@@ -22,13 +22,13 @@ function Feedback() {
             <img
                 src={arrowLeft}
                 alt="prev"
-                className="w-10 cursor-pointer opacity-70 hover:opacity-100"
+                className="w-8 md:w-14 cursor-pointer opacity-70 hover:opacity-100"
                 data-arrow="prev"
             />
             <img
                 src={arrowRight}
                 alt="next"
-                className="w-10 cursor-pointer opacity-70 hover:opacity-100"
+                className="w-8 md:w-14 cursor-pointer opacity-70 hover:opacity-100"
                 data-arrow="next"
             />
         </div>
