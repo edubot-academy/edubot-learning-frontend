@@ -28,7 +28,7 @@ import { useSearchParams } from 'react-router-dom';
 const NAV_ITEMS = [
     { id: 'overview', label: 'Кыскача', icon: FiHome },
     { id: 'courses', label: 'Курстарым', icon: FiBookOpen },
-    { id: 'schedule', label: 'Расписание', icon: FiCalendar },
+    { id: 'schedule', label: 'Жүгүртмө', icon: FiCalendar },
     { id: 'tasks', label: 'Тапшырмалар', icon: FiCheckCircle },
     { id: 'progress', label: 'Прогресс', icon: FiBarChart2 },
     { id: 'notifications', label: 'Билдирүүлөр', icon: FiBell },
@@ -57,7 +57,7 @@ const NOTIFICATION_LABELS = {
         description: 'Квиз жана чакырыктар боюнча эскертмелерди алыңыз.',
     },
     smsAlerts: {
-        label: 'SMS оповещениелери',
+        label: 'SMS эскертүүлөр',
         description: 'Маанилүү окуялар боюнча SMS кабыл алыңыз.',
     },
     pushNotifications: {
@@ -140,7 +140,7 @@ const StudentDashboard = () => {
             );
         } catch (error) {
             console.error('Failed to load schedule', error);
-            toast.error('Расписание жүктөлгөн жок');
+            toast.error('Жүгүртмө жүктөлгөн жок');
         } finally {
             setTabLoading(null);
             setLoadedTabs((prev) => ({ ...prev, schedule: true }));
@@ -498,7 +498,7 @@ const ScheduleTab = ({ offerings }) => {
     }
     return (
         <div className="space-y-4">
-            <h2 className="text-2xl font-semibold text-gray-900">Расписание</h2>
+            <h2 className="text-2xl font-semibold text-gray-900">Жүгүртмө</h2>
             <div className="space-y-3">
                 {offerings.map((offering) => {
                     const date =

@@ -51,7 +51,7 @@ const ContactCourseModal = ({ isOpen, onClose, course, lessonCount }) => {
             onClose?.();
             setFormData({ name: '', email: '', phone: '', message: '' });
         } catch (error) {
-            console.error('Ошибка отправки:', error);
+            console.error('Жөнөтүүдө ката кетти:', error);
             toast.error('Жөнөтүүдө ката кетти');
         } finally {
             setIsSubmitting(false);
@@ -69,7 +69,7 @@ const ContactCourseModal = ({ isOpen, onClose, course, lessonCount }) => {
                             <span className="font-bold text-gray-800 ml-2">${course?.price}</span>
                         </div>
                         <div>
-                            <span className="text-gray-600">Урок саны:</span>
+                            <span className="text-gray-600">Сыбактын саны:</span>
                             <span className="font-bold text-gray-800 ml-2">{lessonCount}</span>
                         </div>
                     </div>
@@ -86,9 +86,8 @@ const ContactCourseModal = ({ isOpen, onClose, course, lessonCount }) => {
                             value={formData.name}
                             onChange={handleChange}
                             disabled={isSubmitting}
-                            className={`w-full border rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#EA580C] transition-all duration-200 ${
-                                errors.name ? 'border-red-500' : 'border-gray-300'
-                            } ${isSubmitting ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                            className={`w-full border rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#EA580C] transition-all duration-200 ${errors.name ? 'border-red-500' : 'border-gray-300'
+                                } ${isSubmitting ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                             placeholder="Сиздин толук атыңыз"
                         />
                         {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
@@ -104,9 +103,8 @@ const ContactCourseModal = ({ isOpen, onClose, course, lessonCount }) => {
                             value={formData.phone}
                             onChange={handleChange}
                             disabled={isSubmitting}
-                            className={`w-full border rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#EA580C] transition-all duration-200 ${
-                                errors.phone ? 'border-red-500' : 'border-gray-300'
-                            } ${isSubmitting ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                            className={`w-full border rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#EA580C] transition-all duration-200 ${errors.phone ? 'border-red-500' : 'border-gray-300'
+                                } ${isSubmitting ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                             placeholder="+996 _ _ _"
                         />
                         {errors.phone && (
@@ -124,9 +122,8 @@ const ContactCourseModal = ({ isOpen, onClose, course, lessonCount }) => {
                             value={formData.email}
                             onChange={handleChange}
                             disabled={isSubmitting}
-                            className={`w-full border rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#EA580C] transition-all duration-200 ${
-                                errors.email ? 'border-red-500' : 'border-gray-300'
-                            } ${isSubmitting ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                            className={`w-full border rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#EA580C] transition-all duration-200 ${errors.email ? 'border-red-500' : 'border-gray-300'
+                                } ${isSubmitting ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                             placeholder="example@mail.com"
                         />
                         {errors.email && (
@@ -161,11 +158,10 @@ const ContactCourseModal = ({ isOpen, onClose, course, lessonCount }) => {
                         <button
                             type="submit"
                             disabled={isSubmitting}
-                            className={`px-6 py-2.5 text-sm font-medium text-white rounded-lg transition-all duration-200 ${
-                                isSubmitting
+                            className={`px-6 py-2.5 text-sm font-medium text-white rounded-lg transition-all duration-200 ${isSubmitting
                                     ? 'bg-[#FF8C6E] cursor-not-allowed'
                                     : 'bg-gradient-to-r from-[#EA580C] to-[#E14219] hover:from-[#d64d0b] hover:to-[#c13613]'
-                            }`}
+                                }`}
                         >
                             {isSubmitting ? 'Жөнөтүлүүдө...' : 'Жөнөтүү'}
                         </button>

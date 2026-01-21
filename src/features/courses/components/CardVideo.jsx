@@ -101,7 +101,7 @@ const CardVideo = ({ coverImageUrl, course, lessonCount, activeLesson }) => {
                             </div>
                             <div className="text-right">
                                 <p className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">
-                                    {formatPrice(course.price, 'KGS')} {/* Исправлено */}
+                                    {formatPrice(course.price, 'KGS')}
                                 </p>
                                 <p className="text-sm text-gray-500 dark:text-gray-400">
                                     {lessonCount} уроков • {course.durationInHours} часов

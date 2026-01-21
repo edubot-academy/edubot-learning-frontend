@@ -1,11 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import CardIcon from '@assets/icons/cardvektor.svg';
 import Button from '../../../shared/ui/Button';
 import { useCart } from '../../../context/CartContext';
 import { useFavourites } from '../../../context/FavouritesContext';
 import { AiFillStar, AiOutlineStar } from 'react-icons/ai';
-
 import { IoMdTime } from 'react-icons/io';
 import { FiBook } from 'react-icons/fi';
 
@@ -105,6 +104,19 @@ const CardCourse = ({
                 setShowPopup(true);
             }
         }
+    };
+
+    const closePopup = () => {
+        setShowPopup(false);
+    };
+
+    const goToCart = () => {
+        closePopup();
+        navigate('/cart');
+    };
+
+    const handlePopupClick = (e) => {
+        e.stopPropagation();
     };
 
     return (
@@ -223,17 +235,57 @@ const CardCourse = ({
             />
 
             {showPopup && (
-                <CartPopupModal
-                    isOpen={showPopup}
-                    onClose={() => setShowPopup(false)}
-                    course={{
-                        title,
-                        instructor: instructor?.fullName,
-                        price,
-                        coverImageUrl,
-                    }}
-                    onGoToCart={() => navigate('/cart')}
-                />
+                <>
+                    <div
+                        className="fixed inset-0 bg-black bg-opacity-50 z-40"
+                        onClick={closePopup}
+                    />
+
+                    <div
+                        className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white rounded-lg shadow-2xl z-50 
+                       w-[calc(100%-2rem)] max-w-lg mx-4
+                       md:w-auto md:min-w-[32rem]
+                       sm:max-w-md"
+                        onClick={handlePopupClick}
+                    >
+                        <div className="p-4 sm:p-6">
+                            <div className="flex items-center justify-between mb-4">
+                                <h3 className="text-lg font-bold text-gray-800">
+                                    Ийгиликтүү кошулду!
+                                </h3>
+                                <button
+                                    onClick={closePopup}
+                                    className="text-gray-400 hover:text-gray-600 text-2xl leading-none w-8 h-8 flex items-center justify-center"
+                                    aria-label="Жабуу"
+                                >
+                                    ×
+                                </button>
+                            </div>
+
+                            <p className="text-gray-600 mb-4 text-sm sm:text-base">
+                                Курс "<span className="font-semibold">{title}</span>" себетке кошулду
+                            </p>
+
+                            <div className="mt-6 flex flex-col-reverse sm:flex-row justify-between gap-3 sm:gap-4">
+                                <Button
+                                    variant="secondary"
+                                    onClick={closePopup}
+                                    className="text-sm px-4 py-2 w-full sm:w-auto"
+                                >
+                                    Сатып алууну улантыңыз
+                                </Button>
+
+                                <Button
+                                    variant="primary"
+                                    onClick={goToCart}
+                                    className="text-sm px-4 py-2 w-full sm:w-auto"
+                                >
+                                    Себетке өтүү
+                                </Button>
+                            </div>
+                        </div>
+                    </div>
+                </>
             )}
         </>
     );
@@ -307,17 +359,6 @@ const FavoritePopupModal = ({ isOpen, onClose, onGoToFavourites, course }) => {
                     </div>
                 </div>
             </div>
-        </div>
-    );
-};
-
-const CartPopupModal = ({ isOpen, onClose, course, onGoToCart }) => {
-    if (!isOpen) return null;
-
-    return (
-        <div className="fixed inset-0 z-50">
-            <div className="fixed inset-0 bg-black bg-opacity-50" onClick={onClose} />
-            <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white rounded-lg shadow-2xl w-[calc(100%-2rem)] max-w-lg"></div>
         </div>
     );
 };
