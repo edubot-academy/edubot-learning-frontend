@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
-import VideoPlayerUI from './ui/Play.jsx'; 
+import VideoPlayerUI from './ui/Play.jsx';
 import toast from 'react-hot-toast';
 import Hls from 'hls.js';
 
@@ -16,7 +16,7 @@ const VideoPlayer = ({
 }) => {
   const hlsRef = useRef(null);
   const [hasError, setHasError] = useState(false);
-  const [isLoading, setIsLoading] = useState(true); 
+  const [isLoading, setIsLoading] = useState(true);
   const [qualityOptions, setQualityOptions] = useState([{ id: 'auto', label: 'Auto' }]);
   const [currentQuality, setCurrentQuality] = useState('auto');
 
@@ -111,16 +111,18 @@ const VideoPlayer = ({
 
   return (
     <div className="relative w-full bg-black rounded-xl overflow-hidden">
-      <video
-        ref={videoRef}
-        className="w-full aspect-video object-cover"
-        preload="metadata"
-        playsInline
-        onError={() => {
-          setHasError(true);
-          setIsLoading(false);
-        }}
-      />
+      {allowPlay && !hasError && (
+        <video
+          ref={videoRef}
+          className="w-full aspect-video object-cover"
+          preload="metadata"
+          playsInline
+          onError={() => {
+            setHasError(true);
+            setIsLoading(false);
+          }}
+        />
+      )}
 
       {isLoading && allowPlay && !hasError && (
         <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-10">
@@ -130,23 +132,23 @@ const VideoPlayer = ({
 
       {!allowPlay && (
         <div className="absolute inset-0 bg-black/70 z-20 flex items-center justify-center text-white">
-          {t('video.locked')}
+          Видео табылган жок
         </div>
       )}
 
       {hasError && (
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/70 z-20 text-white">
-          <p>{t('video.loadError')}</p>
+          <p>Видео жүктөлбөй калды.</p>
           <button
             className="mt-4 px-4 py-2 bg-orange-500 rounded hover:bg-orange-600"
             onClick={retryLoad}
           >
-            {t('video.retry')}
+            Кайра аракет кылуу
           </button>
         </div>
       )}
-
-      {!hasError && (
+      
+      {!hasError && allowPlay && !isLoading && (
         <VideoPlayerUI
           videoRef={videoRef}
           containerRef={containerRef}
