@@ -5,8 +5,7 @@ import { BsTrash, BsCartX } from 'react-icons/bs';
 import { FaShoppingCart } from 'react-icons/fa';
 import Button from '@shared-ui/Button';
 import Modal from '@shared-ui/Modal'; // Используем существующую модалку
-import { submitContactMessage } from '@services/api';
-import toast from 'react-hot-toast';
+import ContactCourseModal from '@features/courses/components/ContactCourseModal';
 
 const Cart = () => {
     const { cartItems, loading, removeFromCart, getTotalPrice, clearCart, user } = useCart();
@@ -14,62 +13,6 @@ const Cart = () => {
     const navigate = useNavigate();
     const [showRegisterModal, setShowRegisterModal] = useState(false);
     const [showContactModal, setShowContactModal] = useState(false);
-    const [formData, setFormData] = useState({
-        name: '',
-        email: '',
-        phone: '',
-        message: '',
-    });
-
-    const [errors, setErrors] = useState({});
-    const validate = () => {
-        const newErrors = {};
-
-        if (formData.name.trim().length < 2) {
-            newErrors.name = 'Атыңыз кеминде 2 белгиден турушу керек.';
-        }
-
-        if (!/^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$/.test(formData.email)) {
-            newErrors.email = 'Туура электрондук почта киргизиңиз.';
-        }
-
-        if (!/^\d{9,13}$/.test(formData.phone)) {
-            newErrors.phone = 'Телефон номери 9–13 цифрадан турушу керек.';
-        }
-
-        if (!formData.message.trim()) {
-            newErrors.message = 'Билдирүү бош болбошу керек.';
-        }
-
-        setErrors(newErrors);
-        return Object.keys(newErrors).length === 0;
-    };
-
-    const handleChange = (e) => {
-        const { name, value } = e.target;
-
-        if (name === 'phone') {
-            if (!/^\d*$/.test(value)) return;
-            if (value.length > 13) return;
-        }
-
-        setFormData((prev) => ({ ...prev, [name]: value }));
-    };
-
-    const handleSubmitContact = async (e) => {
-        e.preventDefault();
-        if (!validate()) return;
-
-        try {
-            await submitContactMessage(formData);
-            toast.success('Билдирүү ийгиликтүү жөнөтүлдү!');
-            setFormData({ name: '', email: '', phone: '', message: '' });
-            setErrors({});
-            setShowContactModal(false); // 👈 закрываем модалку
-        } catch {
-            toast.error('Билдирүү жөнөтүлбөй калды.');
-        }
-    };
 
 
     const handleCheckout = () => {
@@ -159,57 +102,10 @@ const Cart = () => {
                     </div>
                 </div>
             </Modal>
-            <Modal
+            <ContactCourseModal
                 isOpen={showContactModal}
                 onClose={() => setShowContactModal(false)}
-                title="Байланыш"
-                size="md"
-            >
-                <form onSubmit={handleSubmitContact} className="space-y-4">
-                    {errors.name && <p className="text-red-500 text-sm">{errors.name}</p>}
-                    <input
-                        name="name"
-                        value={formData.name}
-                        onChange={handleChange}
-                        placeholder="Атыңыз"
-                        className="w-full border rounded-lg px-4 py-2"
-                    />
-
-                    {errors.phone && <p className="text-red-500 text-sm">{errors.phone}</p>}
-                    <input
-                        name="phone"
-                        value={formData.phone}
-                        onChange={handleChange}
-                        placeholder="Телефон"
-                        className="w-full border rounded-lg px-4 py-2"
-                    />
-
-                    {errors.email && <p className="text-red-500 text-sm">{errors.email}</p>}
-                    <input
-                        name="email"
-                        value={formData.email}
-                        onChange={handleChange}
-                        placeholder="Email"
-                        className="w-full border rounded-lg px-4 py-2"
-                    />
-
-                    {errors.message && <p className="text-red-500 text-sm">{errors.message}</p>}
-                    <textarea
-                        name="message"
-                        value={formData.message}
-                        onChange={handleChange}
-                        placeholder="Билдирүү"
-                        rows={3}
-                        className="w-full border rounded-lg px-4 py-2"
-                    />
-
-                    <Button type="submit" variant="primary" className="w-full py-3">
-                        Жөнөтүү
-                    </Button>
-                </form>
-            </Modal>
-
-
+            />
             <div className="container mx-auto px-4">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
                     <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Менин себетим</h1>
