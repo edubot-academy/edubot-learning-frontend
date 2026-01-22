@@ -202,11 +202,11 @@ const AssistantDashboard = () => {
                 <h2 className="text-2xl font-bold mb-4">📘 Assistant Dashboard</h2>
                 <div className="rounded-xl border border-amber-300 bg-amber-50 p-6 max-w-2xl">
                     <div className="text-lg font-semibold mb-1">Компания дайындалган эмес</div>
-                    <p className="text-gray-700">
+                    <p className="text-gray-700 dark:text-[#a6adba]">
                         Сиз азырынча эч бир компанияга байланыштырылган жоксуз. Иштей баштоо үчүн
                         администраторго же компанияңыздын жетекчисине кайрылыңыз.
                     </p>
-                    <p className="text-gray-500 mt-2 text-sm">
+                    <p className="text-gray-500 dark:text-[#a6adba] mt-2 text-sm">
                         (RU) Вы не привязаны ни к одной компании. Обратитесь к администратору или
                         руководителю компании для доступа.
                     </p>
@@ -221,15 +221,15 @@ const AssistantDashboard = () => {
             <div className="pt-20 p-6">
                 <h2 className="text-2xl font-bold mb-4">📘 Assistant Dashboard</h2>
 
-                <div className="max-w-xl rounded-xl border bg-white p-6 space-y-4">
-                    <div className="text-sm text-gray-700">
+                <div className="max-w-xl rounded-xl border bg-white dark:bg-[#222222] p-6 space-y-4">
+                    <div className="text-sm text-gray-700 dark:text-[#a6adba]">
                         Сураныч, компанияны тандаңыз (сиз бир нече компанияга байланыштырылгансыз).
                         <br />
                         (RU) Вы привязаны к нескольким компаниям — выберите, с какой работать.
                     </div>
 
                     <select
-                        className="w-full border rounded px-3 py-2"
+                        className="w-full border rounded px-3 py-2 text-black dark:text-white bg-white dark:bg-[#222222]"
                         value={activeCompanyId ?? ''}
                         onChange={(e) => setActiveCompanyId(Number(e.target.value))}
                     >
@@ -253,7 +253,7 @@ const AssistantDashboard = () => {
             <h2 className="text-2xl font-bold mb-4">📘 Assistant Dashboard</h2>
 
             {isAssistant && activeCompanyId && (
-                <div className="mb-3 text-xs text-gray-600">
+                <div className="mb-3 text-xs text-gray-600 dark:text-[#a6adba]">
                     Ассистент катары сиз{' '}
                     <span className="font-semibold">компания #{activeCompanyId}</span> курстарын
                     көрүп жатасыз.
@@ -266,14 +266,14 @@ const AssistantDashboard = () => {
                 <div>🎓 Курстар: {courses.length}</div>
             </div>
 
-            <div className="mb-4 flex flex-wrap gap-4 text-sm text-gray-700">
+            <div className="mb-4 flex flex-wrap gap-4 text-sm text-gray-700 dark:text-[#a6adba]">
                 {courses.map((course) => (
                     <div key={course.id} className="bg-gray-100 px-3 py-1 rounded">
                         {course.title}: {courseCounts[course.id] || 0} студент
                     </div>
                 ))}
                 {!courses.length && !loading && (
-                    <div className="text-gray-500 italic">Курс табылган жок.</div>
+                    <div className="text-gray-500 dark:text-[#a6adba] italic">Курс табылган жок.</div>
                 )}
             </div>
 
@@ -301,7 +301,7 @@ const AssistantDashboard = () => {
                     <tbody>
                         {filteredStudents.length === 0 && !loading ? (
                             <tr>
-                                <td colSpan="4" className="p-4 text-center text-gray-500 italic">
+                                <td colSpan="4" className="p-4 text-center text-gray-500 dark:text-[#a6adba] italic">
                                     Студент табылган жок
                                 </td>
                             </tr>
@@ -320,11 +320,11 @@ const AssistantDashboard = () => {
                                         <td className="p-2 border">
                                             {student.fullName}
                                             <br />
-                                            <span className="text-xs text-gray-500">
+                                            <span className="text-xs text-gray-500 dark:text-[#a6adba]">
                                                 {student.email}
                                             </span>
                                             <br />
-                                            <span className="text-xs text-gray-500">
+                                            <span className="text-xs text-gray-500 dark:text-[#a6adba]">
                                                 {student.phoneNumber || '—'}
                                             </span>
                                         </td>
@@ -365,7 +365,7 @@ const AssistantDashboard = () => {
                                         <td className="p-2 border">
                                             {availableCourses.length > 0 ? (
                                                 <select
-                                                    className="w-full border p-1 rounded"
+                                                    className="w-full border p-1 rounded text-black dark:text-white bg-white dark:bg-[#222222]"
                                                     value={selectedCourseId}
                                                     onChange={(e) =>
                                                         setCourseSelections((prev) => ({
@@ -383,7 +383,7 @@ const AssistantDashboard = () => {
                                                     ))}
                                                 </select>
                                             ) : (
-                                                <span className="text-gray-500 italic">
+                                                <span className="text-gray-500 dark:text-[#a6adba] italic">
                                                     Бардык курстарга катталган
                                                 </span>
                                             )}
@@ -508,7 +508,7 @@ const AssistantDashboard = () => {
                                     className={`px-3 py-1 rounded border ${
                                         currentPage === p + 1
                                             ? 'bg-blue-600 text-white'
-                                            : 'bg-white text-gray-700'
+                                            : 'bg-white text-gray-700 dark:text-[#a6adba]'
                                     }`}
                                 >
                                     {p + 1}

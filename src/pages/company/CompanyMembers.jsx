@@ -147,13 +147,13 @@ export default function CompanyMembers({ companyId }) {
     };
 
     return (
-        <div className="bg-white rounded shadow p-4 space-y-4">
+        <div className="bg-white dark:bg-[#141619] rounded shadow p-4 space-y-4">
             {/* Add member */}
             <form onSubmit={onAdd} className="space-y-2">
                 <div className="grid md:grid-cols-3 gap-2">
                     <div className="relative">
                         <input
-                            className="border rounded px-3 py-2 w-full"
+                            className="border rounded px-3 py-2 w-full text-black dark:text-white bg-white dark:bg-[#222222]"
                             placeholder="Аты же Email боюнча издөө…"
                             value={q}
                             onChange={(e) => {
@@ -214,7 +214,7 @@ export default function CompanyMembers({ companyId }) {
                     </div>
 
                     <select
-                        className="border rounded px-3 py-2"
+                        className="border rounded px-3 py-2 text-black dark:text-white bg-white dark:bg-[#222222]"
                         value={role}
                         onChange={(e) => setRole(e.target.value)}
                     >
@@ -268,7 +268,7 @@ export default function CompanyMembers({ companyId }) {
                                 <td className="p-2">{m.email || '—'}</td>
                                 <td className="p-2">
                                     <select
-                                        className="border rounded px-2 py-1"
+                                        className="border rounded px-2 py-1 text-black dark:text-white bg-white dark:bg-[#222222]"
                                         value={m.role}
                                         onChange={(e) => onSetRole(m.userId, e.target.value)}
                                     >

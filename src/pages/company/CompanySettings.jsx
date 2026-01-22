@@ -180,7 +180,7 @@ export default function CompanySettings({
             const url = val || '';
             return (
                 <div className="border rounded p-3 flex items-center gap-3">
-                    <div className="text-xs text-gray-500 w-40 shrink-0">{meta.label}</div>
+                    <div className="text-xs text-gray-500 dark:text-[#a6adba] w-40 shrink-0">{meta.label}</div>
                     {url ? (
                         /^https?:\/\//i.test(String(url)) ? (
                             <img
@@ -203,7 +203,7 @@ export default function CompanySettings({
             const href = String(val).startsWith('http') ? val : `https://${val}`;
             return (
                 <div className="border rounded p-3 flex items-center gap-3">
-                    <div className="text-xs text-gray-500 w-40 shrink-0">{meta.label}</div>
+                    <div className="text-xs text-gray-500 dark:text-[#a6adba] w-40 shrink-0">{meta.label}</div>
                     <a
                         href={href}
                         target="_blank"
@@ -218,7 +218,7 @@ export default function CompanySettings({
         if (k === 'email' && val) {
             return (
                 <div className="border rounded p-3 flex items-center gap-3">
-                    <div className="text-xs text-gray-500 w-40 shrink-0">{meta.label}</div>
+                    <div className="text-xs text-gray-500 dark:text-[#a6adba] w-40 shrink-0">{meta.label}</div>
                     <a href={`mailto:${val}`} className="text-blue-600 hover:underline break-all">
                         {val}
                     </a>
@@ -229,7 +229,7 @@ export default function CompanySettings({
             const phone = String(val);
             return (
                 <div className="border rounded p-3 flex items-center gap-3">
-                    <div className="text-xs text-gray-500 w-40 shrink-0">{meta.label}</div>
+                    <div className="text-xs text-gray-500 dark:text-[#a6adba] w-40 shrink-0">{meta.label}</div>
                     <a href={`tel:${phone}`} className="text-blue-600 hover:underline">
                         {phone}
                     </a>
@@ -241,7 +241,7 @@ export default function CompanySettings({
             const href = String(val).startsWith('http') ? String(val) : `https://t.me/${v}`;
             return (
                 <div className="border rounded p-3 flex items-center gap-3">
-                    <div className="text-xs text-gray-500 w-40 shrink-0">{meta.label}</div>
+                    <div className="text-xs text-gray-500 dark:text-[#a6adba] w-40 shrink-0">{meta.label}</div>
                     <a
                         href={href}
                         target="_blank"
@@ -260,7 +260,7 @@ export default function CompanySettings({
                 : `https://instagram.com/${v}`;
             return (
                 <div className="border rounded p-3 flex items-center gap-3">
-                    <div className="text-xs text-gray-500 w-40 shrink-0">{meta.label}</div>
+                    <div className="text-xs text-gray-500 dark:text-[#a6adba] w-40 shrink-0">{meta.label}</div>
                     <a
                         href={href}
                         target="_blank"
@@ -277,7 +277,7 @@ export default function CompanySettings({
         if (meta.type === 'textarea') {
             return (
                 <div className="border rounded p-3 md:col-span-2">
-                    <div className="text-xs text-gray-500 mb-1">{meta.label}</div>
+                    <div className="text-xs text-gray-500 dark:text-[#a6adba] mb-1">{meta.label}</div>
                     <div className="whitespace-pre-wrap break-words text-sm">
                         {val || <span className="text-gray-400">—</span>}
                     </div>
@@ -288,7 +288,7 @@ export default function CompanySettings({
         // Default text cell
         return (
             <div className="border rounded p-3">
-                <div className="text-xs text-gray-500 mb-1">{meta.label}</div>
+                <div className="text-xs text-gray-500 dark:text-[#a6adba] mb-1">{meta.label}</div>
                 <div className="break-words text-sm">
                     {val || <span className="text-gray-400">—</span>}
                 </div>
@@ -298,7 +298,7 @@ export default function CompanySettings({
 
     // ---------- UI ----------
     return (
-        <div className="bg-white rounded shadow p-4 space-y-4">
+        <div className="bg-white dark:bg-[#141619] rounded shadow p-4 space-y-4">
             <div className="flex items-center justify-between">
                 <h2 className="text-lg font-semibold">Компания</h2>
                 <div className="flex items-center gap-2">
@@ -395,7 +395,7 @@ export default function CompanySettings({
                                             className="h-14 w-auto object-contain rounded"
                                         />
                                     ) : (
-                                        <div className="h-14 border rounded flex items-center justify-center text-gray-500">
+                                        <div className="h-14 border rounded flex items-center justify-center text-gray-500 dark:text-[#a6adba]">
                                             —
                                         </div>
                                     )}

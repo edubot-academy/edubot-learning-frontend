@@ -169,7 +169,7 @@ export default function Chat() {
       {/* ================= SIDEBAR ================= */}
       <div
         className={`
-          bg-white flex flex-col
+        bg-white dark:bg-[#141619] flex flex-col
           md:w-[50%]
           ${isMobileChatOpen ? "hidden md:flex" : "flex"}
         `}
@@ -193,7 +193,7 @@ export default function Chat() {
                   setActiveChat(chat);
                   setIsMobileChatOpen(true);
                 }}
-                className="p-4 border rounded-lg hover:bg-gray-50 cursor-pointer"
+                className="p-4 border rounded-lg hover:bg-gray-50 dark:hover:bg-[#222222] cursor-pointer"
               >
                 <p className="text-xs">{chat.course.title}</p>
                 <p className="font-medium text-sm">{companion.fullName}</p>
@@ -207,7 +207,7 @@ export default function Chat() {
       {/* ================= CHAT ================= */}
       <div
         className={`
-          flex-1 bg-white border rounded-lg flex flex-col
+          flex-1 bg-white dark:bg-[#141619] border rounded-lg flex flex-col
           ${isMobileChatOpen ? "flex" : "hidden md:flex"}
         `}
       >
@@ -251,7 +251,7 @@ export default function Chat() {
                         max-w-[260px] px-3 py-2 rounded-xl text-sm
                         ${m.isOptimistic ? "opacity-70" : ""}
                         ${isMe
-                          ? "bg-white shadow rounded-br-sm"
+                          ? "bg-white dark:bg-[#222222] shadow rounded-br-sm"
                           : "bg-orange-500 text-white rounded-bl-sm"}
                       `}
                     >
@@ -272,7 +272,7 @@ export default function Chat() {
             </div>
 
             {/* INPUT */}
-            <div className="border-t px-4 py-3 flex items-center gap-3 sticky bottom-0 bg-white">
+            <div className="border-t px-4 py-3 flex items-center gap-3 sticky bottom-0 bg-white dark:bg-[#141619]">
               <button
                 onClick={() => setActionsOpen((p) => !p)}
                 className="w-9 h-9 rounded-full bg-orange-100 flex items-center justify-center text-orange-500"
@@ -284,7 +284,7 @@ export default function Chat() {
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 onKeyDown={handleKeyDown}
-                className="flex-1 h-10 px-4 rounded-full outline-none bg-gray-100"
+                className="flex-1 h-10 px-4 rounded-full outline-none text-black dark:text-white bg-white dark:bg-[#222222]"
                 placeholder="Баарлашууну баштаныз"
               />
 

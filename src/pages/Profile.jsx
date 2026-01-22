@@ -346,7 +346,7 @@ const ProfilePage = () => {
         <div className="pt-24 max-w-4xl mx-auto p-6 min-h-screen">
             <h1 className="text-3xl font-bold mb-6 text-center">Профиль</h1>
 
-            <div className="bg-white p-6 shadow rounded-lg">
+            <div className="bg-white dark:bg-[#141619] p-6 shadow rounded-lg">
                 <div className="flex items-center gap-6 mb-4">
                     {preview || user?.avatar ? (
                         <img
@@ -357,7 +357,7 @@ const ProfilePage = () => {
                             loading="lazy"
                         />
                     ) : (
-                        <div className="w-24 h-24 rounded-full bg-gray-300 flex items-center justify-center text-xl font-bold text-white">
+                        <div className="w-24 h-24 rounded-full bg-gray-300 flex items-center justify-center text-xl font-bold text-white dark:text-black">
                             {formData.fullName
                                 ? formData.fullName.charAt(0)
                                 : user?.fullName?.charAt(0)}
@@ -366,7 +366,7 @@ const ProfilePage = () => {
 
                     {isEditing && (
                         <div>
-                            <label className="text-sm text-gray-600">Аватарды өзгөртүү</label>
+                            <label className="text-sm text-gray-600 dark:text-[#a6adba]">Аватарды өзгөртүү</label>
                             <input
                                 type="file"
                                 accept="image/*"
@@ -394,28 +394,28 @@ const ProfilePage = () => {
                     ) : (
                         <>
                             <div>
-                                <label className="text-gray-600">Толук аты</label>
+                                <label className="text-gray-600 dark:text-[#a6adba]">Толук аты</label>
                                 <input
                                     type="text"
                                     name="fullName"
                                     value={formData.fullName || ''}
                                     onChange={handleChange}
-                                    className="w-full border border-blue-600 p-2 rounded"
+                                    className="w-full border border-blue-600 p-2 rounded text-black dark:text-white bg-white dark:bg-[#222222]"
                                 />
                             </div>
                             <div>
-                                <label className="text-gray-600">Email</label>
+                                <label className="text-gray-600 dark:text-[#a6adba]">Email</label>
                                 <input
                                     type="email"
                                     value={formData.email || ''}
                                     disabled
-                                    className="w-full border border-blue-600 p-2 rounded bg-gray-100"
+                                    className="w-full border border-blue-600 p-2 rounded bg-gray-100 text-black dark:text-white bg-white dark:bg-[#222222]"
                                 />
                             </div>
                             <div>
-                                <label className="text-gray-600">
+                                <label className="text-gray-600 dark:text-[#a6adba]">
                                     Телефон номери{' '}
-                                    <span className="text-sm text-gray-500">(милдеттүү эмес)</span>
+                                    <span className="text-sm text-gray-500 dark:text-[#a6adba]">(милдеттүү эмес)</span>
                                 </label>
                                 <PhoneInput
                                     value={formData.phoneNumber}
@@ -424,23 +424,23 @@ const ProfilePage = () => {
                                 />
                             </div>
                             <div>
-                                <label className="text-gray-600">Жаңы купуя сөз</label>
+                                <label className="text-gray-600 dark:text-[#a6adba]">Жаңы купуя сөз</label>
                                 <input
                                     type="password"
                                     name="newPassword"
                                     value={passwordData.newPassword}
                                     onChange={handlePasswordChange}
-                                    className="w-full border border-blue-600 p-2 rounded"
+                                    className="w-full border border-blue-600 p-2 rounded text-black dark:text-white bg-white dark:bg-[#222222]"
                                 />
                             </div>
                             <div>
-                                <label className="text-gray-600">Купуя сөздү кайталаңыз</label>
+                                <label className="text-gray-600 dark:text-[#a6adba]">Купуя сөздү кайталаңыз</label>
                                 <input
                                     type="password"
                                     name="confirmPassword"
                                     value={passwordData.confirmPassword}
                                     onChange={handlePasswordChange}
-                                    className="w-full border border-blue-600 p-2 rounded"
+                                    className="w-full border border-blue-600 p-2 rounded text-black dark:text-white bg-white dark:bg-[#222222]"
                                 />
                             </div>
                         </>
@@ -480,23 +480,23 @@ const ProfilePage = () => {
             </div>
 
             {isInstructor && (
-                <div className="bg-white p-6 shadow rounded-lg mt-8">
+                <div className="bg-white dark:bg-[#141619] p-6 shadow rounded-lg mt-8">
                     <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
                         <div>
                             <h2 className="text-2xl font-semibold">Инструктор маалыматы</h2>
-                            <p className="text-sm text-gray-500">
+                            <p className="text-sm text-gray-500 dark:text-[#a6adba]">
                                 Курсту сатып ала турган студенттер үчүн тажрыйбаңыз жана социалдык
                                 тармактар тууралуу айтып бериңиз.
                             </p>
                         </div>
                         <div className="flex items-center gap-3">
                             {loadingInstructorProfile && (
-                                <span className="text-sm text-gray-500">Жүктөлүүдө...</span>
+                                <span className="text-sm text-gray-500 dark:text-[#a6adba]">Жүктөлүүдө...</span>
                             )}
                             {!isInstructorEditing ? (
                                 <button
                                     onClick={() => setIsInstructorEditing(true)}
-                                    className="px-4 py-2 border border-edubot-dark text-edubot-dark rounded"
+                                    className="px-4 py-2 border border-edubot-dark text-edubot-dark dark:text-blue-700 dark:border-blue-700 rounded"
                                 >
                                     Өзгөртүү
                                 </button>
@@ -507,33 +507,33 @@ const ProfilePage = () => {
                     {!isInstructorEditing ? (
                         <div className="space-y-5">
                             <div>
-                                <p className="text-gray-600 font-medium mb-1">Био / Өзүм жөнүндө</p>
-                                <p className="text-gray-800 whitespace-pre-line">
+                                <p className="text-gray-600 dark:text-[#a6adba] font-medium mb-1">Био / Өзүм жөнүндө</p>
+                                <p className="text-gray-800 dark:text-white whitespace-pre-line">
                                     {instructorProfile.bio?.trim() || 'Маалымат кошула элек'}
                                 </p>
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="border border-gray-200 rounded-lg p-4">
-                                    <p className="text-xs uppercase text-gray-500 tracking-wide">
+                                    <p className="text-xs uppercase text-gray-500 dark:text-[#a6adba] tracking-wide">
                                         Тажрыйба (жыл)
                                     </p>
-                                    <p className="text-2xl font-semibold text-gray-900">
+                                    <p className="text-2xl font-semibold text-gray-900 dark:text-[#E8ECF3]">
                                         {instructorProfile.yearsOfExperience || '—'}
                                     </p>
                                 </div>
                                 <div className="border border-gray-200 rounded-lg p-4">
-                                    <p className="text-xs uppercase text-gray-500 tracking-wide">
+                                    <p className="text-xs uppercase text-gray-500 dark:text-[#a6adba] tracking-wide">
                                         Студенттердин саны
                                     </p>
-                                    <p className="text-2xl font-semibold text-gray-900">
+                                    <p className="text-2xl font-semibold text-gray-900 dark:text-[#E8ECF3]">
                                         {instructorProfile.numberOfStudents || '—'}
                                     </p>
                                 </div>
                             </div>
 
                             <div>
-                                <p className="text-gray-600 font-medium mb-1">Экспертиза</p>
+                                <p className="text-gray-600 dark:text-[#a6adba] font-medium mb-1">Экспертиза</p>
                                 {expertiseTagsList.length ? (
                                     <div className="flex flex-wrap gap-2">
                                         {expertiseTagsList.map((tag) => (
@@ -546,12 +546,12 @@ const ProfilePage = () => {
                                         ))}
                                     </div>
                                 ) : (
-                                    <p className="text-gray-500 text-sm">Экспертиза кошула элек</p>
+                                    <p className="text-gray-500 dark:text-[#a6adba] text-sm">Экспертиза кошула элек</p>
                                 )}
                             </div>
 
                             <div>
-                                <p className="text-gray-600 font-medium mb-1">
+                                <p className="text-gray-600 dark:text-[#a6adba] font-medium mb-1">
                                     Социалдык тармактар
                                 </p>
                                 {socialLinkEntries.length ? (
@@ -569,7 +569,7 @@ const ProfilePage = () => {
                                         ))}
                                     </div>
                                 ) : (
-                                    <p className="text-gray-500 text-sm">
+                                    <p className="text-gray-500 dark:text-[#a6adba] text-sm">
                                         Социалдык шилтемелер кошула элек
                                     </p>
                                 )}
@@ -587,12 +587,12 @@ const ProfilePage = () => {
                                                 <div>
                                                     <p className="font-medium">{course.title}</p>
                                                     {course.category?.name && (
-                                                        <p className="text-sm text-gray-500">
+                                                        <p className="text-sm text-gray-500 dark:text-[#a6adba]">
                                                             {course.category.name}
                                                         </p>
                                                     )}
                                                 </div>
-                                                <div className="text-sm text-gray-500">
+                                                <div className="text-sm text-gray-500 dark:text-[#a6adba]">
                                                     {course.studentsCount
                                                         ? `${course.studentsCount} студент`
                                                         : course.status
@@ -608,20 +608,20 @@ const ProfilePage = () => {
                     ) : (
                         <div className="space-y-5">
                             <div>
-                                <label className="text-gray-600 block mb-1">Наам</label>
+                                <label className="text-gray-600 dark:text-[#a6adba] block mb-1">Наам</label>
                                 <input
                                     type="text"
                                     value={instructorProfile.title}
                                     onChange={(e) =>
                                         handleInstructorProfileChange('title', e.target.value)
                                     }
-                                    className="w-full border border-blue-600 rounded p-2"
+                                    className="w-full border border-blue-600 rounded p-2 text-black dark:text-white bg-white dark:bg-[#222222]"
                                     placeholder="мисалы: UX/UI designer"
                                 />
                             </div>
 
                             <div>
-                                <label className="text-gray-600 block mb-1">
+                                <label className="text-gray-600 dark:text-[#a6adba] block mb-1">
                                     Био / Өзүм жөнүндө
                                 </label>
                                 <textarea
@@ -636,7 +636,7 @@ const ProfilePage = () => {
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
-                                    <label className="text-gray-600 block mb-1">
+                                    <label className="text-gray-600 dark:text-[#a6adba] block mb-1">
                                         Тажрыйба (жыл)
                                     </label>
                                     <input
@@ -652,12 +652,12 @@ const ProfilePage = () => {
                                                 );
                                             }
                                         }}
-                                        className="w-full border border-blue-600 rounded p-2"
+                                        className="w-full border border-blue-600 rounded p-2 text-black dark:text-white bg-white dark:bg-[#222222]"
                                         placeholder="мисалы: 5"
                                     />
                                 </div>
                                 <div>
-                                    <label className="text-gray-600 block mb-1">
+                                    <label className="text-gray-600 dark:text-[#a6adba] block mb-1">
                                         Студенттердин саны
                                     </label>
                                     <input
@@ -673,14 +673,14 @@ const ProfilePage = () => {
                                                 );
                                             }
                                         }}
-                                        className="w-full border border-blue-600 rounded p-2"
+                                        className="w-full border border-blue-600 rounded p-2 text-black dark:text-white bg-white dark:bg-[#222222]"
                                         placeholder="мисалы: 350"
                                     />
                                 </div>
                             </div>
 
                             <div>
-                                <label className="text-gray-600 block mb-1">
+                                <label className="text-gray-600 dark:text-[#a6adba] block mb-1">
                                     Экспертиза (тегдер)
                                 </label>
                                 <input
@@ -692,10 +692,10 @@ const ProfilePage = () => {
                                             e.target.value
                                         )
                                     }
-                                    className="w-full border border-blue-600 rounded p-2"
+                                    className="w-full border border-blue-600 rounded p-2 text-black dark:text-white bg-white dark:bg-[#222222]"
                                     placeholder="мисалы: Frontend, UI/UX, Product Design"
                                 />
-                                <p className="text-xs text-gray-500 mt-1">
+                                <p className="text-xs text-gray-500 dark:text-[#a6adba] mt-1">
                                     Үтүр менен бөлүп жазыңыз.
                                 </p>
                             </div>
@@ -703,7 +703,7 @@ const ProfilePage = () => {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 {SOCIAL_LINK_FIELDS.map((field) => (
                                     <div key={field}>
-                                        <label className="text-gray-600 block mb-1">
+                                        <label className="text-gray-600 dark:text-[#a6adba] block mb-1">
                                             {SOCIAL_LABELS[field]}
                                         </label>
                                         <input
@@ -712,7 +712,7 @@ const ProfilePage = () => {
                                             onChange={(e) =>
                                                 handleSocialLinkChange(field, e.target.value)
                                             }
-                                            className="w-full border border-blue-600 rounded p-2"
+                                            className="w-full border border-blue-600 rounded p-2 text-black dark:text-white bg-white dark:bg-[#222222]"
                                             placeholder="https://..."
                                         />
                                     </div>

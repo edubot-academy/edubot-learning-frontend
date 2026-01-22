@@ -32,17 +32,17 @@ const recommendedCourses = [
 
 const DashboardPage = () => {
     return (
-        <div className="min-h-screen bg-gray-50 p-6 pt-24 max-w-5xl mx-auto">
+        <div className="min-h-screen bg-gray-50 dark:bg-[#141619] p-6 pt-24 max-w-5xl mx-auto">
             <h1 className="text-4xl font-bold mb-6 text-center">My Dashboard</h1>
 
             {/* Enrolled Courses */}
-            <div className="bg-white p-6 rounded-lg shadow-md mb-6">
+            <div className="bg-white dark:bg-[#222222] p-6 rounded-lg shadow-md mb-6">
                 <h2 className="text-2xl font-bold mb-4">Enrolled Courses</h2>
                 {enrolledCourses.map((course) => (
                     <div key={course.id} className="border-b py-4">
                         <h3 className="text-lg font-semibold">{course.title}</h3>
-                        <p className="text-gray-600">Progress: {course.progress}%</p>
-                        <p className="text-gray-600">Last Lesson: {course.lastLesson}</p>
+                        <p className="text-gray-600 dark:text-[#a6adba]">Progress: {course.progress}%</p>
+                        <p className="text-gray-600 dark:text-[#a6adba]">Last Lesson: {course.lastLesson}</p>
                         {course.certificateAvailable && (
                             <button className="mt-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition flex items-center">
                                 <FaDownload className="mr-2" /> Download Certificate
@@ -53,7 +53,7 @@ const DashboardPage = () => {
             </div>
 
             {/* Progress Tracking */}
-            <div className="bg-white p-6 rounded-lg shadow-md mb-6">
+            <div className="bg-white dark:bg-[#222222] p-6 rounded-lg shadow-md mb-6">
                 <h2 className="text-2xl font-bold mb-4">Progress Tracking</h2>
                 {enrolledCourses.map((course) => (
                     <div key={course.id} className="mb-4">
@@ -64,13 +64,13 @@ const DashboardPage = () => {
                                 style={{ width: `${course.progress}%` }}
                             ></div>
                         </div>
-                        <p className="text-gray-600 text-sm mt-2">{course.progress}% completed</p>
+                        <p className="text-gray-600 dark:text-[#a6adba] text-sm mt-2">{course.progress}% completed</p>
                     </div>
                 ))}
             </div>
 
             {/* Recommended Courses */}
-            <div className="bg-white p-6 rounded-lg shadow-md mb-6">
+            <div className="bg-white dark:bg-[#222222] p-6 rounded-lg shadow-md mb-6">
                 <h2 className="text-2xl font-bold mb-4">Recommended Courses</h2>
                 <ul>
                     {recommendedCourses.map((course) => (
