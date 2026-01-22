@@ -13,7 +13,7 @@ const CardVideo = ({ coverImageUrl, course, lessonCount, activeLesson }) => {
 
     return (
         <>
-            <div onClick={() => setIsModalOpen(true)} className="border border-gray-200 rounded-md overflow-hidden bg-white w-full max-w-full px-6 py-5">
+            <div onClick={() => setIsModalOpen(true)} className="border border-gray-200 rounded-md overflow-hidden bg-white dark:bg-[#222222] w-full max-w-full px-6 py-5">
                 <div className="relative w-full ">
                     <img
                         src={coverImageUrl}
@@ -35,7 +35,7 @@ const CardVideo = ({ coverImageUrl, course, lessonCount, activeLesson }) => {
                             {course.price} сом
                         </span>
                     </div>
-                    <div className="flex flex-col gap-2 text-[#3E424A]">
+                    <div className="flex flex-col gap-2 text-[#3E424A] dark:text-[#a6adba]">
                         <p className="flex items-center gap-2 text-base font-semibold">
                             <FiBook /> {lessonCount} сабак
                         </p>

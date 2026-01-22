@@ -47,7 +47,7 @@ const FeedbackSlider = ({ arrows }) => {
 
     return (
         <div>
-            <div className="absolute bottom-[80%] left-[88%]" onClick={handleArrowClick}>
+            <div className="absolute bottom-[86%] left-[77%] md:bottom-[80%] md:left-[88%]" onClick={handleArrowClick}>
                 {arrows}
             </div>
 
