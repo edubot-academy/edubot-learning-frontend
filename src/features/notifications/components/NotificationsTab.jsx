@@ -70,11 +70,11 @@ const NotificationsTab = () => {
     };
 
     return (
-        <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-4 sm:p-6">
+        <div className=" rounded-3xl border border-gray-100 shadow-sm p-4 sm:p-6">
             <div className="flex items-center justify-between gap-3 mb-4">
                 <div className="flex items-center gap-2">
                     <span className="text-xl">🔔</span>
-                    <h2 className="text-xl font-semibold text-gray-900">Билдирүүлөр</h2>
+                    <h2 className="text-xl font-semibold text-gray-900 dark:text-[#E8ECF3]">Билдирүүлөр</h2>
                     {unreadCount > 0 && (
                         <span className="bg-orange-500 text-white text-xs font-semibold px-2 py-1 rounded-full">
                             {unreadCount} жаңы
@@ -84,21 +84,21 @@ const NotificationsTab = () => {
                 <button
                     type="button"
                     onClick={handleMarkAll}
-                    className="text-sm text-gray-600 hover:text-gray-900"
+                    className="text-sm text-gray-600 hover:text-gray-900 dark:hover:text-[#E8ECF3]"
                 >
                     Баарын окулган деп белгилөө
                 </button>
             </div>
 
             {loading && items.length === 0 ? (
-                <p className="text-sm text-gray-500">Жүктөлүүдө...</p>
+                <p className="text-sm text-gray-500 dark:text-[#a6adba]">Жүктөлүүдө...</p>
             ) : items.length === 0 ? (
-                <p className="text-sm text-gray-500">Билдирүүлөр жок.</p>
+                <p className="text-sm text-gray-500 dark:text-[#a6adba]">Билдирүүлөр жок.</p>
             ) : (
                 <div className="space-y-4">
                     {Object.entries(grouped).map(([day, list]) => (
                         <div key={day} className="space-y-2">
-                            <div className="flex items-center gap-2 text-sm text-gray-500">
+                            <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-[#a6adba]">
                                 <span className="w-2 h-2 bg-orange-400 rounded-full" />
                                 <span>{day}</span>
                             </div>
@@ -133,7 +133,7 @@ const NotificationsTab = () => {
                                                         {notif.message}
                                                     </p>
                                                 )}
-                                                <div className="text-xs text-gray-500 mt-1 flex items-center gap-2">
+                                                <div className="text-xs text-gray-500 dark:text-[#a6adba] mt-1 flex items-center gap-2">
                                                     {notif.createdAt &&
                                                         new Date(notif.createdAt).toLocaleString()}
                                                     {notif.link && (

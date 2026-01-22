@@ -22,8 +22,8 @@ function Metrics() {
                     key={index}
                     className="flex items-center justify-center gap-5 border border-[#C5C9D1] py-4 px-2 rounded"
                 >
-                    <span className="text-[#141619] text-6xl font-normal">{x.num}</span>
-                    <p className="text-[#3E424A] font-medium text-base max-w-72">{x.title}</p>
+                    <span className="text-[#141619]dark:text-[#E8ECF3] text-6xl font-normal">{x.num}</span>
+                    <p className="text-[#3E424A] dark:text-[#a6adba] font-medium text-base max-w-72">{x.title}</p>
                 </div>
             ))}
         </div>

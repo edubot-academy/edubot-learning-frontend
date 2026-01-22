@@ -75,7 +75,7 @@ const ContactPage = () => {
                         <h1 className="text-5xl md:text-6xl font-bold">Байланышуу</h1>
                     </div>
 
-                    <p className="mb-10 text-lg text-gray-700">
+                    <p className="mb-10 text-lg text-gray-700 dark:text-[#a6adba]">
                         Lorem ipsum dolor sit amet consectetur adipisicing elit. Quaerat commodi
                         perferendis velit amet placeat! Alias voluptatem quos neque tempore rem!
                     </p>
@@ -88,7 +88,7 @@ const ContactPage = () => {
                         ].map(({ label, name, type }) => (
                             <div key={name}>
                                 {errors[name] && (
-                                    <p className="text-red-500 text-sm mb-1">{errors[name]}</p>
+                                    <p className="text-gray-500 dark:text-[#a6adba] text-sm mb-1">{errors[name]}</p>
                                 )}
                                 <label className="block font-medium mb-1">{label}</label>
                                 <input
@@ -97,14 +97,14 @@ const ContactPage = () => {
                                     value={formData[name]}
                                     onChange={handleChange}
                                     required
-                                    className="w-full border border-black rounded-[10px] px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#E14219] transition"
+                                    className="w-full border border-black rounded-[10px] px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#E14219] transition bg-white dark:bg-[#222222]"
                                 />
                             </div>
                         ))}
 
                         <div>
                             {errors.message && (
-                                <p className="text-red-500 text-sm mb-1">{errors.message}</p>
+                                <p className="text-gray-500 dark:text-[#a6adba] text-sm mb-1">{errors.message}</p>
                             )}
                             <label className="block font-medium mb-1">Билдирүү</label>
                             <textarea
@@ -113,7 +113,7 @@ const ContactPage = () => {
                                 onChange={handleChange}
                                 rows={4}
                                 required
-                                className="w-full border border-black rounded-[10px] px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#E14219] transition"
+                                className="w-full border border-black rounded-[10px] px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#E14219] transition bg-white dark:bg-[#222222]"
                             ></textarea>
                         </div>
 

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import bannerImg1 from '/banner-img1.png';
 import bannerBlure1 from '/banner-img1-blure.png';
+import bannerBlureDark from '/banner-img1-blure-dark.png';
 import bannerImg2 from '/banner-img2.png';
 import bannerImg3 from '/banner-img3.png';
 import bannerMan3 from '/banner-img-man.png';
@@ -97,7 +98,12 @@ const HeroStart = () => {
                                     <img
                                         src={bannerBlure1}
                                         alt=""
-                                        className="absolute z-[1] right-[-3%] bottom-[0px] h-[97%] lg:flex hidden"
+                                        className="absolute z-[1] right-[-3%] bottom-[0px] h-[97%] lg:flex hidden dark:hidden"
+                                    />
+                                    <img
+                                        src={bannerBlureDark}
+                                        alt=""
+                                        className="absolute z-[1] right-[-3%] bottom-[0px] h-[97%] dark:lg:flex hidden"
                                     />
                                 </div>
                             </section>

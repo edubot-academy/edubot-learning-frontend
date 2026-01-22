@@ -77,13 +77,13 @@ const CourseContent = ({
 
     return (
         <>
-            <div className="w-full bg-white rounded-2xl border border-[#E6E8EC] overflow-hidden">
+            <div className="w-full dark:bg-[#222222] bg-white rounded-2xl border border-[#E6E8EC] overflow-hidden">
                 {showHeader && (
                     <div className="px-4 sm:px-6 py-4 border-b border-[#DFE1E5]">
-                        <h3 className="text-xl sm:text-2xl font-semibold text-gray-900">
+                        <h3 className="text-xl sm:text-2xl font-semibold text-gray-900  dark:text-[#E8ECF3]">
                             Курстун мазмуну
                         </h3>
-                        <p className="text-sm sm:text-base text-gray-600 mt-1">
+                        <p className="text-sm sm:text-base dark:text-[#a6adba] text-gray-600 mt-1">
                             {sections.length} бөлүм • {totalLessons} лекция •{' '}
                             {formatMinutesToTime(totalMinutes)}
                         </p>
@@ -101,7 +101,7 @@ const CourseContent = ({
                                     {openIds.includes(section.id) ? <IoIosArrowUp /> : <IoIosArrowDown />}
                                     <span className="truncate">{section.title}</span>
                                 </div>
-                                <span className="text-gray-500 text-sm">
+                                <span className="text-gray-500 dark:text-[#a6adba] text-sm">
                                     {section.lessons.length} лекция •{' '}
                                     {formatMinutesToTime(section.durationMinutes)}
                                 </span>
@@ -117,7 +117,7 @@ const CourseContent = ({
                                     overflow: 'hidden',
                                 }}
                             >
-                                <div className="bg-white px-4 sm:px-6 pb-4 space-y-2">
+                                <div className="dark:bg-[#222222] bg-white px-4 sm:px-6 pb-4 space-y-2">
                                     {section.lessons.map((lesson) => {
                                         const locked = isLocked(lesson);
                                         const active = isActive(lesson);
@@ -145,9 +145,9 @@ const CourseContent = ({
                                                 }}
                                                 disabled={locked}
                                                 className={`w-full text-left px-3 sm:px-4 py-4 transition border-b border-[#E6E8EC] last:border-b-0 ${locked
-                                                    ? 'bg-gray-50 cursor-not-allowed'
-                                                    : 'hover:bg-gray-50 cursor-pointer'
-                                                    } ${enrolled && active ? 'bg-orange-50' : ''}`}
+                                                    ? 'bg-gray-50 dark:bg-[#141619] cursor-not-allowed'
+                                                    : 'hover:bg-gray-50 cursor-pointer hover:text-gray-800'
+                                                    } ${enrolled && active ? 'bg-orange-50 text-gray-800' : ''}`}
                                             >
                                                 {enrolled ? (
                                                     <div className="flex items-center gap-3">
@@ -166,15 +166,15 @@ const CourseContent = ({
                                                             disabled={locked}
                                                         />
                                                         <div className="flex-1 flex flex-col gap-2">
-                                                            <p className="text-sm sm:text-base text-gray-800 leading-snug break-words">
+                                                            <p className="text-sm sm:text-base leading-snug break-words">
                                                                 {lesson.title}
                                                             </p>
-                                                            <div className="flex items-center gap-2 text-sm text-gray-700">
+                                                            <div className="flex items-center gap-2 text-sm text-gray-700 dark:text-[#a6adba]">
                                                                 {getIcon(lesson)}
-                                                                <span className="text-gray-700">
+                                                                <span className="text-gray-700 dark:text-[#a6adba]">
                                                                     {formatSecondsToTime(lesson.duration)}
                                                                 </span>
-                                                                {locked && <TbLock className="text-gray-400" size={16} />}
+                                                                {locked && <TbLock className="text-gray-400 dark:text-[#a6adba]" size={16} />}
                                                             </div>
                                                         </div>
                                                         {lesson.resourceUrl && (
@@ -204,10 +204,10 @@ const CourseContent = ({
                                                             />
                                                         )}
                                                         <div className="flex-1 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                                                            <p className="text-sm sm:text-base text-gray-800 leading-snug break-words">
+                                                            <p className="text-sm sm:text-base text-gray-800 dark:text-white leading-snug break-words">
                                                                 {lesson.title}
                                                             </p>
-                                                            <div className="flex items-center gap-3 text-sm text-gray-700 whitespace-nowrap">
+                                                            <div className="flex items-center gap-3 text-sm text-gray-700 dark:text-[#a6adba] whitespace-nowrap">
                                                                 {lesson.previewVideo && lesson.kind !== 'article' && (
                                                                     <>
                                                                         <RiPlayCircleFill
@@ -219,7 +219,7 @@ const CourseContent = ({
                                                                         </span>
                                                                     </>
                                                                 )}
-                                                                <span className="text-gray-700">
+                                                                <span className="text-gray-700 dark:text-[#a6adba]">
                                                                     {formatSecondsToTime(lesson.duration)}
                                                                 </span>
                                                             </div>

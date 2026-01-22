@@ -737,13 +737,13 @@ const CourseDetailsPage = () => {
     };
 
     const renderTabButtons = () => (
-        <div className="flex flex-wrap gap-2 bg-gray-100 rounded-2xl p-1">
+        <div className="flex flex-wrap gap-2 dark:bg-white/10 bg-gray-100 rounded-2xl p-1">
             {tabs.map((tab) => (
                 <button
                     key={tab.id}
                     type="button"
                     onClick={() => handleTabChange(tab)}
-                    className={`flex-1 min-w-[140px] px-4 py-2 rounded-xl text-sm font-medium transition ${activeTab === tab.id ? 'bg-white text-gray-900 shadow' : 'text-gray-600'
+                    className={`flex-1 min-w-[140px] px-4 py-2 rounded-xl text-sm font-medium transition ${activeTab === tab.id ? 'dark:bg-[#222222] bg-white text-gray-900 dark:text-[#E8ECF3] shadow' : 'text-gray-600 dark:text-[#a6adba]'
                         } ${tab.disabled ? 'opacity-60 cursor-not-allowed' : 'hover:text-gray-900'}`}
                 >
                     {tab.label}
@@ -761,7 +761,7 @@ const CourseDetailsPage = () => {
 
             <div className="relative max-w-6xl mx-auto flex justify-end mb-10">
                 <button
-                    className="flex w-[265px] h-[61px] opacity-100 rounded-[8px] border-[1px] p-[18px] gap-[10px] border-[#FB923C] bg-[#FFF7ED]"
+                    className="flex w-[265px] h-[61px] opacity-100 rounded-[8px] border-[1px] p-[18px] gap-[10px] border-[#FB923C] bg-[#FFF7ED] text-[#141619]"
                     onClick={() => setInstructorChat(true)}
                 >
                     <FaSignalMessenger className="text-[#EA580C]" /> Инструктор менен чат
@@ -948,7 +948,7 @@ const CourseDetailsPage = () => {
                                         </div>
 
                                         <div className="space-y-4 md:sticky md:top-6 md:self-start h-fit">
-                                            <div className="bg-white p-4 sm:p-5 rounded-xl shadow-sm">
+                                            <div className="dark:bg-[#222222] bg-white p-4 sm:p-5 rounded-xl shadow-sm">
                                                 <div className="mb-4">{renderTabButtons()}</div>
                                                 {activeTab === 'program' ? (
                                                     <CourseContent
@@ -962,7 +962,7 @@ const CourseDetailsPage = () => {
                                                         handleCheckboxToggle={handleCheckboxToggle}
                                                     />
                                                 ) : (
-                                                    <div className="bg-white">
+                                                    <div className="dark:bg-[#222222] bg-white">
                                                         {isAiAvailable ? (
                                                             <AiAssistantPanel
                                                                 courseId={Number(id)}

@@ -25,7 +25,7 @@ const PhoneInput = ({ value, onChange, required = false }) => {
             onChange={handleInput}
             onPaste={handlePaste}
             placeholder="Телефон номер"
-            className="w-full px-4 py-2 rounded bg-white text-black focus:outline-none border"
+            className="w-full px-4 py-2 rounded text-black dark:text-white bg-white dark:bg-[#222222] focus:outline-none border"
             required={required}
         />
     );

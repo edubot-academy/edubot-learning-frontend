@@ -31,7 +31,7 @@ const Cart = () => {
             <div className="min-h-screen flex items-center justify-center p-4">
                 <div className="text-center">
                     <div className="inline-block animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-orange-500"></div>
-                    <p className="mt-4 text-gray-600">Корзина жүктөлүүдө...</p>
+                    <p className="mt-4 text-gray-600 dark:text-[#a6adba]">Корзина жүктөлүүдө...</p>
                 </div>
             </div>
         );
@@ -42,7 +42,7 @@ const Cart = () => {
             <div className="min-h-screen flex flex-col items-center justify-center p-4">
                 <BsCartX className="w-24 h-24 text-gray-300 mb-6" />
                 <h2 className="text-2xl font-bold mb-4">Корзинаңыз бош</h2>
-                <p className="text-gray-600 mb-8 text-center max-w-md">
+                <p className="text-gray-600 dark:text-[#a6adba] mb-8 text-center max-w-md">
                     Сиздин корзинаңызда эч кандай курс жок. Биздин курстарды изилдеп, биринчисин
                     кошуңуз!
                 </p>
@@ -145,18 +145,18 @@ const Cart = () => {
                                                     <h3 className="text-lg font-semibold mb-2 hover:text-orange-500 transition-colors">
                                                         {item.title}
                                                     </h3>
-                                                    <p className="text-gray-600 text-sm mb-2">
+                                                    <p className="text-gray-600 dark:text-[#a6adba] text-sm mb-2">
                                                         Инструктор:{' '}
                                                         {item.instructor?.fullName || 'Инструктор'}
                                                     </p>
                                                     <div className="flex flex-wrap gap-2 mb-3">
                                                         {item.level && (
-                                                            <span className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded">
+                                                            <span className="px-2 py-1 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-[#a6adba] text-xs rounded">
                                                                 {item.level}
                                                             </span>
                                                         )}
                                                         {item.durationInHours && (
-                                                            <span className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded">
+                                                            <span className="px-2 py-1 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-[#a6adba] text-xs rounded">
                                                                 {item.durationInHours} саат
                                                             </span>
                                                         )}
@@ -196,7 +196,7 @@ const Cart = () => {
 
                             <div className="space-y-4 mb-6">
                                 <div className="flex justify-between items-center">
-                                    <span className="text-gray-600">Бардык курстар:</span>
+                                    <span className="text-gray-600 dark:text-[#a6adba]">Бардык курстар:</span>
                                     <span className="font-semibold">{cartItems.length}</span>
                                 </div>
 

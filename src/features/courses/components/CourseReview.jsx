@@ -67,7 +67,7 @@ const CourseReview = ({ ratingAverage = 0, ratingCount, ratingBreakdown = {}, on
     return (
         <div className="w-full border border-gray-200 rounded-2xl p-6 sm:p-8 space-y-6">
             <div className="flex items-center justify-between">
-                <h2 className="text-3xl font-black text-gray-900">({totalRatings || 0}) пикир</h2>
+                <h2 className="text-3xl font-black text-gray-900 dark:text-[#E8ECF3]">({totalRatings || 0}) пикир</h2>
                 <button
                     type="button"
                     className="text-sm hover:text-[#7B818C]"

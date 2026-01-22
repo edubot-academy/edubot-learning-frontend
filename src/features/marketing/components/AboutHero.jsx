@@ -7,7 +7,7 @@ function AboutHero() {
         <div className="flex flex-col md:flex-row justify-between items-center">
             <div className="flex flex-col gap-6">
                 <div className="flex items-start justify-between ">
-                    <span className="text-sm text-[#3E424A] font-normal">
+                    <span className="text-sm text-[#3E424A] dark:text-[#a6adba] font-normal">
                         Lorem ipsum dolor sit amet consectetur.
                     </span>
                     <img className="h-24" src={arrowUp} alt="arrow up" />
@@ -21,7 +21,7 @@ function AboutHero() {
                     diam at mauris adipiscing gravida.
                 </p>
             </div>
-            {/* <img src={globus} alt="globus" /> */}
+            <img src={globus} alt="globus" />
         </div>
     );
 }

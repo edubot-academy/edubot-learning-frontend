@@ -30,7 +30,7 @@ function InfoCards() {
                 >
                     <img src={x.icon} alt="" />
                     <h3 className="font-bold text-lg ">{x.name}</h3>
-                    <p className="font-normal text-[#3E424A] max-w-md ">{x.title}</p>
+                    <p className="font-normal text-[#3E424A] dark:text-[#a6adba] max-w-md ">{x.title}</p>
                 </div>
             ))}
         </div>
