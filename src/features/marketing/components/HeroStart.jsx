@@ -53,7 +53,7 @@ const HeroStart = () => {
                         {index === 0 && (
                             <section className="w-full relative mx-auto flex flex-col lg:flex-row items-center justify-between px-10 py-12 text-black dark:text-white bg-white dark:bg-[#0F1013]">
                                 <div className="lg:w-[600px] text-center lg:text-left space-y-6 h-[50%] lg:h-[454px]">
-                                    <h1 className="font-inter 2xl:font-bold text-[30px] 2xl:text-[38px] 2xl:leading-tight font-semibold leading-[100%] text-black dark:text-white">
+                                    <h1 className="font-inter 2xl:font-bold text-[28px] 2xl:text-[38px] 2xl:leading-tight font-semibold leading-[100%] text-black dark:text-white">
                                         {slide.title}
                                     </h1>
                                     <p className="font-normal text-[#3E424A] dark:text-[#D7DBE3] text-[18px]">
