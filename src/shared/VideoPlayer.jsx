@@ -66,7 +66,7 @@ const VideoPlayer = ({
         if (data.fatal) {
           setHasError(true);
           setIsLoading(false);
-          toast.error(t('video.error'));
+          toast.error('Тилекке каршы, видео ойнотулбай калды.');
         }
       });
 

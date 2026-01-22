@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React from 'react';
 import VideoPlayer from '@shared/VideoPlayer';
 
 const CourseVideoPlayer = ({
@@ -7,12 +7,12 @@ const CourseVideoPlayer = ({
   handleVideoProgress,
   handleTimeUpdate,
   handlePause,
+  videoRef,
   nextLesson,
   prevLesson,
   handleLessonClick,
 }) => {
-  const videoRef = useRef(null);
-  const containerRef = useRef(null);
+  const containerRef = React.useRef(null);
 
   const handleEnded = () => {
     if (nextLesson) handleLessonClick(nextLesson);
