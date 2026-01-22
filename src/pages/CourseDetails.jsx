@@ -290,6 +290,8 @@ const CourseDetailsPage = () => {
             } else {
                 setResumeVideoTime(0);
             }
+        } else {
+            setResumeVideoTime(0);
         }
     };
 
@@ -682,6 +684,9 @@ const CourseDetailsPage = () => {
                                 setResumeVideoTime(0);
                             }
                         }
+                    } else {
+                        // Для неавторизованных всегда начинаем с начала
+                        setResumeVideoTime(0);
                     }
                 }
 
@@ -866,15 +871,37 @@ const CourseDetailsPage = () => {
                                 </div>
                             ) : (
                                 <div className="space-y-6 md:hidden">
-                                    <CardVideo
-                                        key={id}
-                                        course={course}
-                                        lessonCount={lessonCount}
-                                        coverImageUrl={course.coverImageUrl}
-                                    />
+                                    {/* Для неавторизованных на мобильных */}
+                                    {activeLesson && activeLesson.kind === 'video' ? (
+                                        <CourseVideoPlayer
+                                            key={activeLesson.id}
+                                            activeLesson={activeLesson}
+                                            resumeVideoTime={0}
+                                            handleVideoProgress={() => { }}
+                                            handleTimeUpdate={() => { }}
+                                            handlePause={() => { }}
+                                            videoRef={videoRef}
+                                            nextLesson={null}
+                                            prevLesson={null}
+                                            onEnded={() => { }}
+                                            handleLessonClick={handleLessonClick}
+                                        />
+                                    ) : (
+                                        <CardVideo
+                                            key={id}
+                                            course={course}
+                                            lessonCount={lessonCount}
+                                            coverImageUrl={course.coverImageUrl}
+                                        />
+                                    )}
                                     <CourseDescription course={course} />
                                     <InstructorsInfo instructorData={course.instructor} />
-                                    <CourseContent sections={sections} />
+                                    <CourseContent
+                                        sections={sections}
+                                        onLessonClick={handleLessonClick}
+                                        activeLesson={activeLesson}
+                                        enrolled={false}
+                                    />
                                     <CourseReview
                                         ratingAverage={course.ratingAverage}
                                         ratingCount={course.ratingCount}
@@ -979,19 +1006,51 @@ const CourseDetailsPage = () => {
                                         </div>
                                     </div>
                                 ) : (
+                                    // Для неавторизованных на десктопе
                                     <div className="grid grid-cols-1 xl:grid-cols-[minmax(320px,clamp(60%,987px,65%))_minmax(280px,clamp(35%,765px,40%))] gap-2 md:gap-3 xl:gap-[clamp(10px,0.8vw,16px)] items-start">
                                         <div className="space-y-6">
+                                            {activeLesson && activeLesson.kind === 'video' ? (
+                                                <CourseVideoPlayer
+                                                    key={activeLesson.id}
+                                                    activeLesson={activeLesson}
+                                                    resumeVideoTime={0}
+                                                    handleVideoProgress={() => { }}
+                                                    handleTimeUpdate={() => { }}
+                                                    handlePause={() => { }}
+                                                    videoRef={videoRef}
+                                                    nextLesson={null}
+                                                    prevLesson={null}
+                                                    onEnded={() => { }}
+                                                    handleLessonClick={handleLessonClick}
+                                                />
+                                            ) : (
+                                                // Если нет активного видео урока, показываем CardVideo
+                                                <CardVideo
+                                                    key={id}
+                                                    course={course}
+                                                    lessonCount={lessonCount}
+                                                    coverImageUrl={course.coverImageUrl}
+                                                />
+                                            )}
                                             <CourseDescription course={course} />
                                             <InstructorsInfo instructorData={course.instructor} />
-                                            <CourseContent sections={sections} />
+                                            <CourseContent
+                                                sections={sections}
+                                                onLessonClick={handleLessonClick}
+                                                activeLesson={activeLesson}
+                                                enrolled={false}
+                                            />
                                         </div>
                                         <div className="space-y-6 md:sticky md:top-6 md:self-start">
-                                            <CardVideo
-                                                key={id}
-                                                course={course}
-                                                lessonCount={lessonCount}
-                                                coverImageUrl={course.coverImageUrl}
-                                            />
+                                            {(!activeLesson || activeLesson.kind !== 'video') && (
+                                                // Если в левой колонке уже есть CourseVideoPlayer, не показываем CardVideo
+                                                <CardVideo
+                                                    key={id}
+                                                    course={course}
+                                                    lessonCount={lessonCount}
+                                                    coverImageUrl={course.coverImageUrl}
+                                                />
+                                            )}
                                             <CourseReview
                                                 ratingAverage={course.ratingAverage}
                                                 ratingCount={course.ratingCount}
