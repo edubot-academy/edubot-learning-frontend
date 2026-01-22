@@ -291,6 +291,8 @@ const CourseDetailsPage = () => {
             } else {
                 setResumeVideoTime(0);
             }
+        } else {
+            setResumeVideoTime(0);
         }
     };
 
@@ -673,6 +675,9 @@ const CourseDetailsPage = () => {
                                 setResumeVideoTime(0);
                             }
                         }
+                    } else {
+                        // Для неавторизованных всегда начинаем с начала
+                        setResumeVideoTime(0);
                     }
                 }
 
@@ -749,40 +754,140 @@ const CourseDetailsPage = () => {
     return (
         <div className="min-h-screen pt-10 bg-[#f8f9fb]">
             {/* Chat button - positioned absolutely in header */}
-            <div className="relative max-w-6xl mx-auto flex justify-end mb-10">
-                <button
-                    className="flex items-center justify-center w-auto min-w-[265px] h-[61px] opacity-100 rounded-lg border border-orange-400 p-4 gap-3 bg-orange-50 text-orange-600 hover:bg-orange-100 transition-colors"
-                    onClick={() => setInstructorChat(true)}
-                >
-                    <FaSignalMessenger className="text-orange-600 text-lg" />
-                    <span className="font-medium">Инструктор менен чат</span>
-                </button>
+            {enrolled && (
+                <div className="relative max-w-6xl mx-auto flex justify-end mb-10">
+                    <button
+                        className="flex w-[265px] h-[61px] opacity-100 rounded-[8px] border border-[1px] p-[18px] gap-[10px] border-[#FB923C] bg-[#FFF7ED]"
+                        onClick={() => setInstructorChat(true)}
+                    >
+                        <FaSignalMessenger className="text-[#EA580C]" /> Инструктор менен чат
+                    </button>
 
-                {instructorChat && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center md:justify-end">
-                        <div
-                            className="absolute inset-0 bg-black/50"
-                            onClick={() => setInstructorChat(false)}
-                        />
-                        <div className="relative z-10 w-full max-w-md md:max-w-lg lg:max-w-xl mx-4 md:mx-6 lg:mr-8">
-                            <div className="bg-white rounded-lg shadow-xl w-full h-[500px] md:h-[600px]">
-                                <InstructorChat course={course} />
+                    {instructorChat && (
+                        <div className="relative max-w-6xl mx-auto flex justify-end mb-10">
+                            <button
+                                className="flex w-[265px] h-[61px] opacity-100 rounded-[8px] border-[1px] p-[18px] gap-[10px] border-[#FB923C] bg-[#FFF7ED]"
+                                onClick={() => setInstructorChat(true)}
+                            >
+                                <FaSignalMessenger className="text-[#EA580C]" /> Инструктор менен чат
+                            </button>
+
+                            {/* Модалка чата */}
+                            <div className="relative xl:w-10xl m-auto ">
+                                <div className="z-10 xl:ml-[550px] xl:w-[600px] sm:h-[600px] h-[400px] md:w-[381px] w-[300px]  bg-white rounded-lg shadow-lg">
+                                    <InstructorChat course={course} />
+                                </div>
                             </div>
                         </div>
-                    </div>
-                )}
-            </div>
+                    )}
+                </div>
+            )}
 
-                {/* Main content */}
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-8">
 
-                    <div className="space-y-6 lg:space-y-0 lg:grid lg:grid-cols-3 lg:gap-6">
-                        {/* Mobile layouts */}
+            {/* Main content */}
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-8">
+
+                <div className="space-y-6 lg:space-y-0 lg:grid lg:grid-cols-3 lg:gap-6">
+                    {/* Mobile layouts */}
+                    {enrolled ? (
+                        <div className="space-y-6 lg:hidden">
+                            {activeLesson &&
+                                (activeLesson.kind === 'article' ? (
+                                    <ArticleLessonViewer key={activeLesson.id} lesson={activeLesson} />
+                                ) : activeLesson.kind === 'quiz' ? (
+                                    <LessonQuizPlayer
+                                        key={activeLesson.id}
+                                        quiz={lessonQuizData[activeLesson.id]}
+                                        answers={lessonQuizAnswers[activeLesson.id] || {}}
+                                        onAnswerChange={handleQuizAnswerChange}
+                                        onSubmit={handleQuizSubmit}
+                                        onRetake={handleQuizRetake}
+                                        submitting={quizSubmitting}
+                                        disabled={!enrolled || activeLesson.locked}
+                                        loading={quizLoading && !lessonQuizData[activeLesson.id]}
+                                        result={lessonQuizResults[activeLesson.id]}
+                                    />
+                                ) : activeLesson.kind === 'code' ? (
+                                    <LessonChallengePlayer
+                                        key={activeLesson.id}
+                                        challenge={lessonChallengeData[activeLesson.id]}
+                                        code={
+                                            lessonChallengeCode[activeLesson.id] ??
+                                            lessonChallengeData[activeLesson.id]?.starterCode ??
+                                            ''
+                                        }
+                                        onCodeChange={(newCode) =>
+                                            handleChallengeCodeChange(activeLesson.id, newCode)
+                                        }
+                                        onSubmit={handleChallengeSubmit}
+                                        submitting={challengeSubmitting}
+                                        disabled={!enrolled || activeLesson.locked}
+                                        loading={challengeLoading && !lessonChallengeData[activeLesson.id]}
+                                        result={lessonChallengeResults[activeLesson.id]}
+                                    />
+                                ) : (
+                                    <CourseVideoPlayer
+                                        key={activeLesson.id}
+                                        activeLesson={activeLesson}
+                                        resumeVideoTime={resumeVideoTime}
+                                        handleVideoProgress={(progress) =>
+                                            handleVideoProgress(progress, activeLesson)
+                                        }
+                                        handleTimeUpdate={handleTimeUpdate}
+                                        handlePause={handlePause}
+                                        videoRef={videoRef}
+                                        nextLesson={nextLesson}
+                                        prevLesson={prevLesson}
+                                        onEnded={handleEnded}
+                                        handleLessonClick={handleLessonClick}
+                                    />
+                                ))}
+                            <CourseContent
+                                sections={sections}
+                                enrolled={enrolled}
+                                onLessonClick={handleLessonClick}
+                                activeLesson={activeLesson}
+                                completedLessons={completedLessons}
+                                lessonRefs={lessonRefs}
+                                handleCheckboxToggle={handleCheckboxToggle}
+                            />
+                            <InstructorsInfo instructorData={course.instructor} />
+                            <CourseReview
+                                ratingAverage={course.ratingAverage}
+                                ratingCount={course.ratingCount}
+                                ratingBreakdown={course?.ratingBreakdown}
+                            />
+                            <Comment courseId={id} />
+                        </div>
+                    ) : (
+                        <div className="space-y-6 lg:hidden">
+                            <CardVideo
+                                key={id}
+                                course={course}
+                                lessonCount={lessonCount}
+                                coverImageUrl={course.coverImageUrl}
+                            />
+                            <CourseDescription course={course} />
+                            <InstructorsInfo instructorData={course.instructor} />
+                            <CourseContent sections={sections} />
+                            <CourseReview
+                                ratingAverage={course.ratingAverage}
+                                ratingCount={course.ratingCount}
+                                ratingBreakdown={course?.ratingBreakdown}
+                            />
+                        </div>
+                    )}
+
+                    {/* Desktop layout */}
+                    <div className="hidden lg:block lg:col-span-2">
                         {enrolled ? (
-                            <div className="space-y-6 lg:hidden">
+                            <div className="space-y-8">
                                 {activeLesson &&
                                     (activeLesson.kind === 'article' ? (
-                                        <ArticleLessonViewer key={activeLesson.id} lesson={activeLesson} />
+                                        <ArticleLessonViewer
+                                            key={activeLesson.id}
+                                            lesson={activeLesson}
+                                        />
                                     ) : activeLesson.kind === 'quiz' ? (
                                         <LessonQuizPlayer
                                             key={activeLesson.id}
@@ -811,7 +916,9 @@ const CourseDetailsPage = () => {
                                             onSubmit={handleChallengeSubmit}
                                             submitting={challengeSubmitting}
                                             disabled={!enrolled || activeLesson.locked}
-                                            loading={challengeLoading && !lessonChallengeData[activeLesson.id]}
+                                            loading={
+                                                challengeLoading && !lessonChallengeData[activeLesson.id]
+                                            }
                                             result={lessonChallengeResults[activeLesson.id]}
                                         />
                                     ) : (
@@ -831,188 +938,91 @@ const CourseDetailsPage = () => {
                                             handleLessonClick={handleLessonClick}
                                         />
                                     ))}
-                                <CourseContent
-                                    sections={sections}
-                                    enrolled={enrolled}
-                                    onLessonClick={handleLessonClick}
-                                    activeLesson={activeLesson}
-                                    completedLessons={completedLessons}
-                                    lessonRefs={lessonRefs}
-                                    handleCheckboxToggle={handleCheckboxToggle}
-                                />
-                                <InstructorsInfo instructorData={course.instructor} />
-                                <CourseReview
-                                    ratingAverage={course.ratingAverage}
-                                    ratingCount={course.ratingCount}
-                                    ratingBreakdown={course?.ratingBreakdown}
-                                />
-                                <Comment courseId={id} />
                             </div>
                         ) : (
-                            <div className="space-y-6 lg:hidden">
-                                <CardVideo
-                                    key={id}
-                                    course={course}
-                                    lessonCount={lessonCount}
-                                    coverImageUrl={course.coverImageUrl}
-                                />
+                            <div className="space-y-8">
                                 <CourseDescription course={course} />
                                 <InstructorsInfo instructorData={course.instructor} />
                                 <CourseContent sections={sections} />
-                                <CourseReview
-                                    ratingAverage={course.ratingAverage}
-                                    ratingCount={course.ratingCount}
-                                    ratingBreakdown={course?.ratingBreakdown}
-                                />
                             </div>
                         )}
-
-                        {/* Desktop layout */}
-                        <div className="hidden lg:block lg:col-span-2">
-                            {enrolled ? (
-                                <div className="space-y-8">
-                                    {activeLesson &&
-                                        (activeLesson.kind === 'article' ? (
-                                            <ArticleLessonViewer
-                                                key={activeLesson.id}
-                                                lesson={activeLesson}
-                                            />
-                                        ) : activeLesson.kind === 'quiz' ? (
-                                            <LessonQuizPlayer
-                                                key={activeLesson.id}
-                                                quiz={lessonQuizData[activeLesson.id]}
-                                                answers={lessonQuizAnswers[activeLesson.id] || {}}
-                                                onAnswerChange={handleQuizAnswerChange}
-                                                onSubmit={handleQuizSubmit}
-                                                onRetake={handleQuizRetake}
-                                                submitting={quizSubmitting}
-                                                disabled={!enrolled || activeLesson.locked}
-                                                loading={quizLoading && !lessonQuizData[activeLesson.id]}
-                                                result={lessonQuizResults[activeLesson.id]}
-                                            />
-                                        ) : activeLesson.kind === 'code' ? (
-                                            <LessonChallengePlayer
-                                                key={activeLesson.id}
-                                                challenge={lessonChallengeData[activeLesson.id]}
-                                                code={
-                                                    lessonChallengeCode[activeLesson.id] ??
-                                                    lessonChallengeData[activeLesson.id]?.starterCode ??
-                                                    ''
-                                                }
-                                                onCodeChange={(newCode) =>
-                                                    handleChallengeCodeChange(activeLesson.id, newCode)
-                                                }
-                                                onSubmit={handleChallengeSubmit}
-                                                submitting={challengeSubmitting}
-                                                disabled={!enrolled || activeLesson.locked}
-                                                loading={
-                                                    challengeLoading && !lessonChallengeData[activeLesson.id]
-                                                }
-                                                result={lessonChallengeResults[activeLesson.id]}
-                                            />
-                                        ) : (
-                                            <CourseVideoPlayer
-                                                key={activeLesson.id}
-                                                activeLesson={activeLesson}
-                                                resumeVideoTime={resumeVideoTime}
-                                                handleVideoProgress={(progress) =>
-                                                    handleVideoProgress(progress, activeLesson)
-                                                }
-                                                handleTimeUpdate={handleTimeUpdate}
-                                                handlePause={handlePause}
-                                                videoRef={videoRef}
-                                                nextLesson={nextLesson}
-                                                prevLesson={prevLesson}
-                                                onEnded={handleEnded}
-                                                handleLessonClick={handleLessonClick}
-                                            />
-                                        ))}
-                                </div>
-                            ) : (
-                                <div className="space-y-8">
-                                    <CourseDescription course={course} />
-                                    <InstructorsInfo instructorData={course.instructor} />
-                                    <CourseContent sections={sections} />
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Right sidebar - desktop */}
-                        <div className="hidden lg:block lg:col-span-1">
-                            <div className="space-y-6 sticky top-6">
-                                {enrolled ? (
-                                    <div className="bg-white p-5 rounded-xl shadow-sm">
-                                        <div className="mb-5">{renderTabButtons()}</div>
-                                        {activeTab === 'program' ? (
-                                            <CourseContent
-                                                sections={sections}
-                                                enrolled={enrolled}
-                                                onLessonClick={handleLessonClick}
-                                                activeLesson={activeLesson}
-                                                completedLessons={completedLessons}
-                                                lessonRefs={lessonRefs}
-                                                showHeader={false}
-                                                handleCheckboxToggle={handleCheckboxToggle}
-                                            />
-                                        ) : (
-                                            <div className="bg-white">
-                                                {isAiAvailable ? (
-                                                    <AiAssistantPanel
-                                                        courseId={Number(id)}
-                                                        languageCode={course.languageCode}
-                                                    />
-                                                ) : (
-                                                    <div className="text-center text-gray-500 text-sm p-4">
-                                                        {assistantAvailableMessage}
-                                                    </div>
-                                                )}
-                                            </div>
-                                        )}
-                                    </div>
-                                ) : (
-                                    <>
-                                        <CardVideo
-                                            key={id}
-                                            course={course}
-                                            lessonCount={lessonCount}
-                                            coverImageUrl={course.coverImageUrl}
-                                        />
-                                        <CourseReview
-                                            ratingAverage={course.ratingAverage}
-                                            ratingCount={course.ratingCount}
-                                            ratingBreakdown={course?.ratingBreakdown}
-                                        />
-                                    </>
-                                )}
-                            </div>
-                        </div>
                     </div>
 
-                    {/* Additional sections for enrolled users */}
-                    {enrolled && (
-                        <div className="space-y-8 lg:space-y-0 lg:grid lg:grid-cols-3 lg:gap-6">
-                            <div className="lg:col-span-2">
-                                <InstructorsInfo instructorData={course.instructor} />
-                            </div>
-                            <div className="lg:col-span-1">
-                                <CourseReview
-                                    ratingAverage={course.ratingAverage}
-                                    ratingCount={course.ratingCount}
-                                    ratingBreakdown={course?.ratingBreakdown}
-                                />
-                            </div>
+                    {/* Right sidebar - desktop */}
+                    <div className="hidden lg:block lg:col-span-1">
+                        <div className="space-y-6 sticky top-6">
+                            {enrolled ? (
+                                <div className="bg-white p-5 rounded-xl shadow-sm">
+                                    <div className="mb-5">{renderTabButtons()}</div>
+                                    {activeTab === 'program' ? (
+                                        <CourseContent
+                                            sections={sections}
+                                            enrolled={enrolled}
+                                            onLessonClick={handleLessonClick}
+                                            activeLesson={activeLesson}
+                                            completedLessons={completedLessons}
+                                            lessonRefs={lessonRefs}
+                                            showHeader={false}
+                                            handleCheckboxToggle={handleCheckboxToggle}
+                                        />
+                                    ) : (
+                                        <div className="bg-white">
+                                            {isAiAvailable ? (
+                                                <AiAssistantPanel
+                                                    courseId={Number(id)}
+                                                    languageCode={course.languageCode}
+                                                />
+                                            ) : (
+                                                <div className="text-center text-gray-500 text-sm p-4">
+                                                    {assistantAvailableMessage}
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                            ) : (
+                                <>
+                                    <CardVideo
+                                        key={id}
+                                        course={course}
+                                        lessonCount={lessonCount}
+                                        coverImageUrl={course.coverImageUrl}
+                                    />
+                                    <CourseReview
+                                        ratingAverage={course.ratingAverage}
+                                        ratingCount={course.ratingCount}
+                                        ratingBreakdown={course?.ratingBreakdown}
+                                    />
+                                </>
+                            )}
                         </div>
-                    )}
-
-                    {/* Comments section */}
-                    {enrolled && (
-                        <div className="pt-6">
-                            <Comment courseId={id} />
-                        </div>
-                    )}
+                    </div>
                 </div>
-            </div >
-            );
-};
 
-            export default CourseDetailsPage;
+                {/* Additional sections for enrolled users */}
+                {enrolled && (
+                    <div className="space-y-8 lg:space-y-0 lg:grid lg:grid-cols-3 lg:gap-6">
+                        <div className="lg:col-span-2">
+                            <InstructorsInfo instructorData={course.instructor} />
+                        </div>
+                        <div className="lg:col-span-1">
+                            <CourseReview
+                                ratingAverage={course.ratingAverage}
+                                ratingCount={course.ratingCount}
+                                ratingBreakdown={course?.ratingBreakdown}
+                            />
+                        </div>
+                    </div>
+                )}
+
+                {/* Comments section */}
+                {enrolled && (
+                    <div className="pt-6">
+                        <Comment courseId={id} />
+                    </div>
+                )}
+            </div>
+        </div >
+    );
+};
+export default CourseDetailsPage;
