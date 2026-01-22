@@ -757,38 +757,39 @@ const CourseDetailsPage = () => {
 
     return (
         <div className="min-h-screen pt-10 bg-[#f8f9fb]">
+            {enrolled && (
+                <div className="relative max-w-6xl mx-auto flex justify-end mb-10">
+                    <button
+                        className="flex w-[265px] h-[61px] opacity-100 rounded-[8px] border border-[1px] p-[18px] gap-[10px] border-[#FB923C] bg-[#FFF7ED]"
+                        onClick={() => setInstructorChat(true)}
+                    >
+                        <FaSignalMessenger className="text-[#EA580C]" /> Инструктор менен чат
+                    </button>
 
-            <div className="relative max-w-6xl mx-auto flex justify-end mb-10">
-                <button
-                    className="flex w-[265px] h-[61px] opacity-100 rounded-[8px] border-[1px] p-[18px] gap-[10px] border-[#FB923C] bg-[#FFF7ED]"
-                    onClick={() => setInstructorChat(true)}
-                >
-                    <FaSignalMessenger className="text-[#EA580C]" /> Инструктор менен чат
-                </button>
+                    {instructorChat && (
+                        <div className="relative max-w-6xl mx-auto flex justify-end mb-10">
+                            <button
+                                className="flex w-[265px] h-[61px] opacity-100 rounded-[8px] border-[1px] p-[18px] gap-[10px] border-[#FB923C] bg-[#FFF7ED]"
+                                onClick={() => setInstructorChat(true)}
+                            >
+                                <FaSignalMessenger className="text-[#EA580C]" /> Инструктор менен чат
+                            </button>
 
-                {instructorChat && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-end">
-                        {/* Полупрозрачный фон */}
-                        <div
-                            className="absolute inset-0 bg-black opacity-50"
-                            onClick={() => setInstructorChat(false)}
-                        ></div>
-
-                        {/* Модалка чата */}
-                        <div className="relative xl:w-10xl m-auto ">
-                            <div className="z-10 xl:ml-[550px] xl:w-[600px] sm:h-[600px] h-[400px] md:w-[381px] w-[300px]  bg-white rounded-lg shadow-lg">
-                                <InstructorChat course={course} />
+                            {/* Модалка чата */}
+                            <div className="relative xl:w-10xl m-auto ">
+                                <div className="z-10 xl:ml-[550px] xl:w-[600px] sm:h-[600px] h-[400px] md:w-[381px] w-[300px]  bg-white rounded-lg shadow-lg">
+                                    <InstructorChat course={course} />
+                                </div>
                             </div>
                         </div>
-                    </div>
-                )}
-            </div>
+                    )}
+                </div>
+            )}
 
-            {/* <CourseHeader course={course} progress={progress} enrolled={enrolled} /> */}
             <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
                 <CourseDescription course={course} />
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="md:col-span-2">
                         <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-10 py-6 space-y-8">
                             {/* Mobile layouts */}
@@ -1020,7 +1021,7 @@ const CourseDetailsPage = () => {
                     </div>
                 </div>
             </div>
-        </div>
+        </div >
     );
 };
 
