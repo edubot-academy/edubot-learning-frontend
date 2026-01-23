@@ -114,7 +114,7 @@ export default function CompanyCourses({ companyId, canManage = true }) {
                         value={qInput}
                         onChange={(e) => setQInput(e.target.value)}
                         placeholder="Издөө… / Поиск…"
-                        className="border rounded px-3 py-1"
+                        className="border rounded px-3 py-1 text-black dark:text-white bg-white dark:bg-[#222222]"
                     />
                     {canManage && (
                         <button
@@ -142,9 +142,9 @@ export default function CompanyCourses({ companyId, canManage = true }) {
                         className="border rounded px-3 py-1 w-full"
                     />
                     {searching ? (
-                        <div className="text-sm text-gray-500">Изделүүдө…</div>
+                        <div className="text-sm text-gray-500 dark:text-[#a6adba]">Изделүүдө…</div>
                     ) : results.length === 0 ? (
-                        <div className="text-sm text-gray-500">
+                        <div className="text-sm text-gray-500 dark:text-[#a6adba]">
                             Көрсөтүү үчүн курс табылган жок.
                         </div>
                     ) : (
@@ -158,7 +158,7 @@ export default function CompanyCourses({ companyId, canManage = true }) {
                                     >
                                         <div>
                                             <div className="font-medium">{c.title}</div>
-                                            <div className="text-xs text-gray-500">
+                                            <div className="text-xs text-gray-500 dark:text-[#a6adba]">
                                                 {c.instructor?.fullName || '—'}
                                             </div>
                                         </div>
@@ -186,7 +186,7 @@ export default function CompanyCourses({ companyId, canManage = true }) {
                 <p>Жүктөлүүдө…</p>
             ) : (
                 <>
-                    <div className="text-sm text-gray-600">
+                    <div className="text-sm text-gray-600 dark:text-[#a6adba]">
                         Бардыгы: <b>{data.total}</b>
                     </div>
 
@@ -198,7 +198,7 @@ export default function CompanyCourses({ companyId, canManage = true }) {
                             >
                                 <div>
                                     <div className="font-medium">{c.title}</div>
-                                    <div className="text-sm text-gray-600">
+                                    <div className="text-sm text-gray-600 dark:text-[#a6adba]">
                                         {c.instructor?.fullName || '—'}
                                     </div>
                                 </div>

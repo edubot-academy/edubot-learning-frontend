@@ -167,7 +167,7 @@ const InstructorDashboard = () => {
 
     const renderContent = () => {
         if ((loadingProfile && !profile) || (loadingCourses && !courses.length)) {
-            return <p className="text-center text-gray-500">Маалымат жүктөлүүдө...</p>;
+            return <p className="text-center text-gray-500 dark:text-[#a6adba]">Маалымат жүктөлүүдө...</p>;
         }
 
         switch (activeTab) {
@@ -220,7 +220,7 @@ const InstructorDashboard = () => {
     };
 
     return (
-        <div className="pt-24 min-h-screen bg-gray-50">
+        <div className="pt-24 min-h-screen">
             <div className="max-w-7xl mx-auto flex gap-6 px-4 pb-12">
                 <DashboardSidebar
                     items={NAV_ITEMS}
@@ -237,16 +237,16 @@ const InstructorDashboard = () => {
                             <p className="text-sm uppercase tracking-wide text-gray-400">
                                 Инструктор
                             </p>
-                            <h1 className="text-3xl font-bold text-gray-900">
+                            <h1 className="text-3xl font-bold">
                                 {user.fullName || user.email}
                             </h1>
-                            <p className="text-sm text-gray-500">
+                            <p className="text-sm text-gray-500 dark:text-[#a6adba]">
                                 Курстарыңызды жана студенттерди толук көзөмөлдөңүз
                             </p>
                         </div>
                         <button
                             onClick={() => setSidebarOpen((prev) => !prev)}
-                            className="hidden md:inline-flex px-4 py-2 rounded-full border text-sm text-gray-600"
+                            className="hidden md:inline-flex px-4 py-2 rounded-full border text-sm text-gray-600 dark:text-[#a6adba]"
                             type="button"
                         >
                             {sidebarOpen ? 'Менюну жашыруу' : 'Менюну көрсөтүү'}
@@ -289,12 +289,12 @@ const OverviewSection = ({
 
     return (
         <>
-            <div className="bg-white rounded-3xl p-6 shadow-sm">
-                <p className="text-sm text-gray-500">Кош келиңиз</p>
-                <h2 className="text-2xl font-semibold text-gray-900">
+            <div className="rounded-3xl p-6 shadow-sm">
+                <p className="text-sm text-gray-500 dark:text-[#a6adba]">Кош келиңиз</p>
+                <h2 className="text-2xl font-semibold">
                     {user.fullName || user.email}
                 </h2>
-                <p className="mt-2 text-gray-600">
+                <p className="mt-2 text-gray-600 dark:text-[#a6adba]">
                     Профилди толтуруңуз, курстарды жаңыртыңыз жана студенттерге баалуулук
                     тартуулаңыз.
                 </p>
@@ -340,11 +340,11 @@ const CoursesSection = ({
     loadingOfferings,
     onViewOfferings,
 }) => (
-    <div className="bg-white rounded-3xl p-6 shadow-sm">
+    <div className="rounded-3xl p-6 shadow-sm">
         <div className="flex items-center justify-between flex-wrap gap-3 mb-4">
             <div>
                 <h2 className="text-2xl font-semibold">Курстарым</h2>
-                <p className="text-sm text-gray-500">Активдүү жана каралуудагы курстар</p>
+                <p className="text-sm text-gray-500 dark:text-[#a6adba]">Активдүү жана каралуудагы курстар</p>
             </div>
             <Link
                 to="/instructor/course/create"
@@ -354,7 +354,7 @@ const CoursesSection = ({
             </Link>
         </div>
         {loading && !courses.length ? (
-            <p className="text-sm text-gray-500">Курстар жүктөлүүдө...</p>
+            <p className="text-sm text-gray-500 dark:text-[#a6adba]">Курстар жүктөлүүдө...</p>
         ) : courses.length ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {courses.map((course) => (
@@ -366,20 +366,19 @@ const CoursesSection = ({
                             <div>
                                 <p className="text-lg font-semibold">{course.title}</p>
                                 {course.category?.name && (
-                                    <p className="text-sm text-gray-500">{course.category.name}</p>
+                                    <p className="text-sm text-gray-500 dark:text-[#a6adba]">{course.category.name}</p>
                                 )}
                             </div>
                             <span
-                                className={`text-xs px-2 py-1 rounded-full ${
-                                    course.isPublished
-                                        ? 'bg-green-100 text-green-700'
-                                        : 'bg-yellow-100 text-yellow-700'
-                                }`}
+                                className={`text-xs px-2 py-1 rounded-full ${course.isPublished
+                                    ? 'bg-green-100 text-green-700'
+                                    : 'bg-yellow-100 text-yellow-700'
+                                    }`}
                             >
                                 {course.isPublished ? 'Жарыяланды' : 'Каралууда'}
                             </span>
                         </div>
-                        <div className="flex items-center justify-between text-sm text-gray-500">
+                        <div className="flex items-center justify-between text-sm text-gray-500 dark:text-[#a6adba]">
                             <span>
                                 {course.studentsCount
                                     ? `${course.studentsCount} студент`
@@ -426,16 +425,16 @@ const CoursesSection = ({
 
 const StudentsSection = ({ total, courses }) => (
     <div className="space-y-4">
-        <div className="bg-white rounded-3xl p-6 shadow-sm">
+        <div className="rounded-3xl p-6 shadow-sm">
             <h2 className="text-2xl font-semibold mb-2">Студенттер</h2>
-            <p className="text-gray-500 text-sm">
+            <p className="text-gray-500 dark:text-[#a6adba] text-sm">
                 Жалпы студенттердин саны (бардык курстар боюнча).
             </p>
             <div className="mt-4">
                 <StatCard label="Студенттер" value={total ?? '—'} />
             </div>
         </div>
-        <div className="bg-white rounded-3xl p-6 shadow-sm">
+        <div className="rounded-3xl p-6 shadow-sm">
             <h3 className="text-lg font-semibold mb-3">Курс боюнча бөлүштүрүү</h3>
             {courses.length ? (
                 <div className="space-y-3">
@@ -446,11 +445,11 @@ const StudentsSection = ({ total, courses }) => (
                         >
                             <div>
                                 <p className="font-semibold">{course.title}</p>
-                                <p className="text-sm text-gray-500">
+                                <p className="text-sm text-gray-500 dark:text-[#a6adba]">
                                     {course.category?.name || 'Категория белгисиз'}
                                 </p>
                             </div>
-                            <span className="text-sm text-gray-600">
+                            <span className="text-sm text-gray-600 dark:text-[#a6adba]">
                                 {course.studentsCount
                                     ? `${course.studentsCount} студент`
                                     : 'Маалымат жок'}
@@ -459,13 +458,13 @@ const StudentsSection = ({ total, courses }) => (
                     ))}
                 </div>
             ) : (
-                <p className="text-sm text-gray-500">Азырынча курс жок.</p>
+                <p className="text-sm text-gray-500 dark:text-[#a6adba]">Азырынча курс жок.</p>
             )}
         </div>
         <div className="bg-gradient-to-r from-[#FFEDD5] via-[#FFEAD1] to-[#FFDACC] rounded-3xl p-6 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div>
                 <p className="text-sm uppercase tracking-wide text-orange-600">Кеңеш</p>
-                <h3 className="text-xl font-semibold text-gray-900">Катталууларды башкарыңыз</h3>
+                <h3 className="text-xl font-semibold text-black">Катталууларды башкарыңыз</h3>
                 <p className="text-sm text-gray-600">
                     Курстар боюнча студенттерди кошуу же алып салуу үчүн админ панелиндеги
                     "Катталуулар" бөлүмүн колдонууга болот.
@@ -483,11 +482,11 @@ const StudentsSection = ({ total, courses }) => (
 );
 
 const ProfileSection = ({ profile, expertiseTags, socialLinks }) => (
-    <div className="bg-white rounded-3xl p-6 shadow-sm space-y-6">
+    <div className="rounded-3xl p-6 shadow-sm space-y-6">
         <div className="flex items-center justify-between gap-3 flex-wrap">
             <div>
                 <h2 className="text-2xl font-semibold">Профиль</h2>
-                <p className="text-sm text-gray-500">Өзүңүз жөнүндө маалымат</p>
+                <p className="text-sm text-gray-500 dark:text-[#a6adba]">Өзүңүз жөнүндө маалымат</p>
             </div>
             <Link
                 to="/profile"
@@ -497,44 +496,44 @@ const ProfileSection = ({ profile, expertiseTags, socialLinks }) => (
             </Link>
         </div>
         <div>
-            <p className="text-gray-600 font-medium mb-1">Био / Өзүм жөнүндө</p>
-            <p className="text-gray-800">{profile?.bio?.trim() || 'Маалымат кошула элек'}</p>
+            <p className="text-gray-600 dark:text-[#a6adba] font-medium mb-1">Био / Өзүм жөнүндө</p>
+            <p className="text-gray-800 dark:text-white">{profile?.bio?.trim() || 'Маалымат кошула элек'}</p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-                <p className="text-gray-600 font-medium mb-1">Наам</p>
-                <p className="text-gray-800">{profile?.title?.trim() || '—'}</p>
+                <p className="text-gray-600 dark:text-[#a6adba] font-medium mb-1">Наам</p>
+                <p className="text-gray-800 dark:text-white">{profile?.title?.trim() || '—'}</p>
             </div>
             <div>
-                <p className="text-gray-600 font-medium mb-1">Тажрыйба</p>
-                <p className="text-gray-800">
+                <p className="text-gray-600 dark:text-[#a6adba] font-medium mb-1">Тажрыйба</p>
+                <p className="text-gray-800 dark:text-white">
                     {profile?.yearsOfExperience ? `${profile.yearsOfExperience} жыл` : '—'}
                 </p>
             </div>
             <div>
-                <p className="text-gray-600 font-medium mb-1">Студенттер</p>
-                <p className="text-gray-800">{profile?.numberOfStudents ?? '—'}</p>
+                <p className="text-gray-600 dark:text-[#a6adba] font-medium mb-1">Студенттер</p>
+                <p className="text-gray-800 dark:text-white">{profile?.numberOfStudents ?? '—'}</p>
             </div>
         </div>
         <div>
-            <p className="text-gray-600 font-medium mb-1">Экспертиза</p>
+            <p className="text-gray-600 dark:text-[#a6adba] font-medium mb-1">Экспертиза</p>
             {expertiseTags.length ? (
                 <div className="flex flex-wrap gap-2">
                     {expertiseTags.map((tag) => (
                         <span
                             key={tag}
-                            className="text-xs bg-gray-100 text-gray-800 px-3 py-1 rounded-full"
+                            className="text-xs bg-gray-100 text-gray-800 dark:text-white px-3 py-1 rounded-full"
                         >
                             #{tag}
                         </span>
                     ))}
                 </div>
             ) : (
-                <p className="text-sm text-gray-500">Экспертиза кошула элек</p>
+                <p className="text-sm text-gray-500 dark:text-[#a6adba]">Экспертиза кошула элек</p>
             )}
         </div>
         <div>
-            <p className="text-gray-600 font-medium mb-1">Социалдык тармактар</p>
+            <p className="text-gray-600 dark:text-[#a6adba] font-medium mb-1">Социалдык тармактар</p>
             {socialLinks.length ? (
                 <div className="flex flex-col gap-1">
                     {socialLinks.map(([key, value]) => (
@@ -550,18 +549,18 @@ const ProfileSection = ({ profile, expertiseTags, socialLinks }) => (
                     ))}
                 </div>
             ) : (
-                <p className="text-sm text-gray-500">Социалдык шилтемелер кошула элек</p>
+                <p className="text-sm text-gray-500 dark:text-[#a6adba]">Социалдык шилтемелер кошула элек</p>
             )}
         </div>
     </div>
 );
 
 const AiSection = ({ aiCourses, totalCourses }) => (
-    <div className="bg-white rounded-3xl p-6 shadow-sm space-y-5">
+    <div className="rounded-3xl p-6 shadow-sm space-y-5">
         <div className="flex items-center justify-between gap-3 flex-wrap">
             <div>
                 <h2 className="text-2xl font-semibold">EDU AI ассистент</h2>
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-gray-500 dark:text-[#a6adba]">
                     Курстарыңызда AI жардамчыны кантип колдонуп жатканыңызды көзөмөлдөңүз.
                 </p>
             </div>
@@ -579,7 +578,7 @@ const AiSection = ({ aiCourses, totalCourses }) => (
         </div>
         {aiCourses.length ? (
             <div className="space-y-2">
-                <p className="text-sm text-gray-500">AI жардамчысы иштетилген курстар</p>
+                <p className="text-sm text-gray-500 dark:text-[#a6adba]">AI жардамчысы иштетилген курстар</p>
                 {aiCourses.map((course) => (
                     <div
                         key={course.id}
@@ -587,7 +586,7 @@ const AiSection = ({ aiCourses, totalCourses }) => (
                     >
                         <div>
                             <p className="font-semibold">{course.title}</p>
-                            <p className="text-xs text-gray-500">
+                            <p className="text-xs text-gray-500 dark:text-[#a6adba]">
                                 {course.updatedAt
                                     ? `Жаңыртылды: ${new Date(course.updatedAt).toLocaleDateString()}`
                                     : 'Жаңыртуу маалыматы жок'}
@@ -636,8 +635,8 @@ const OfferingsSection = ({ courses, offerings, loading, refreshOfferings }) => 
             courseId: base?.courseId
                 ? String(base.courseId)
                 : courses[0]?.id
-                  ? String(courses[0].id)
-                  : '',
+                    ? String(courses[0].id)
+                    : '',
             title: base?.title || '',
             modality: base?.modality || 'ONLINE',
             visibility: base?.visibility || 'PRIVATE',
@@ -646,10 +645,10 @@ const OfferingsSection = ({ courses, offerings, loading, refreshOfferings }) => 
             scheduleNote: base?.scheduleNote || '',
             scheduleBlocks: base?.scheduleBlocks
                 ? base.scheduleBlocks.map((block) => ({
-                      day: block.day || '',
-                      startTime: block.startTime || '',
-                      endTime: block.endTime || '',
-                  }))
+                    day: block.day || '',
+                    startTime: block.startTime || '',
+                    endTime: block.endTime || '',
+                }))
                 : [],
             capacity: base?.capacity ? String(base.capacity) : '',
             priceOverride: base?.priceOverride || '',
@@ -759,8 +758,8 @@ const OfferingsSection = ({ courses, offerings, loading, refreshOfferings }) => 
                 scheduleBlocks:
                     createForm.scheduleBlocks && createForm.scheduleBlocks.length
                         ? createForm.scheduleBlocks.filter(
-                              (block) => block.day && block.startTime && block.endTime
-                          )
+                            (block) => block.day && block.startTime && block.endTime
+                        )
                         : null,
                 capacity: createForm.capacity ? Number(createForm.capacity) : null,
                 priceOverride: createForm.priceOverride.trim() || null,
@@ -911,8 +910,8 @@ const OfferingsSection = ({ courses, offerings, loading, refreshOfferings }) => 
                     <p className="text-sm uppercase tracking-wide text-gray-400">
                         Offering башкаруу
                     </p>
-                    <h2 className="text-2xl font-bold text-gray-900">Курс сунуштары</h2>
-                    <p className="text-sm text-gray-500">
+                    <h2 className="text-2xl font-bold">Курс сунуштары</h2>
+                    <p className="text-sm text-gray-500 dark:text-[#a6adba]">
                         Курстарыңызга арналган корпоративдик же атайын сунуштарды көзөмөлдөңүз.
                     </p>
                 </div>
@@ -937,16 +936,16 @@ const OfferingsSection = ({ courses, offerings, loading, refreshOfferings }) => 
                 <StatCard label="Жабылган/аякталган" value={summary.completed} />
             </div>
 
-            <div className="bg-white rounded-3xl p-4 shadow-sm flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <div className="rounded-3xl p-4 shadow-sm flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                 <div className="flex items-center gap-3 flex-wrap">
-                    <div className="flex items-center gap-2 border rounded-full px-3 py-1 text-sm text-gray-600">
+                    <div className="flex items-center gap-2 border rounded-full px-3 py-1 text-sm text-gray-600 dark:text-[#a6adba]">
                         <FiFilter />
                         Фильтр
                     </div>
                     <select
                         value={filterCourseId}
                         onChange={(e) => setFilterCourseId(e.target.value)}
-                        className="border rounded-full px-3 py-1 text-sm"
+                        className="border rounded-full px-3 py-1 text-sm bg-white dark:bg-[#222222]"
                     >
                         <option value="all">Бардык курстар</option>
                         {courses.map((course) => (
@@ -958,7 +957,7 @@ const OfferingsSection = ({ courses, offerings, loading, refreshOfferings }) => 
                     <select
                         value={statusFilter}
                         onChange={(e) => setStatusFilter(e.target.value)}
-                        className="border rounded-full px-3 py-1 text-sm"
+                        className="border rounded-full px-3 py-1 text-sm bg-white dark:bg-[#222222]"
                     >
                         <option value="upcoming">Жакынкы</option>
                         <option value="past">Өткөн</option>
@@ -969,12 +968,12 @@ const OfferingsSection = ({ courses, offerings, loading, refreshOfferings }) => 
                     type="text"
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
-                    className="border rounded-2xl px-4 py-2 text-sm w-full md:w-64"
+                    className="border rounded-2xl px-4 py-2 text-sm w-full md:w-64 text-gray-500 dark:text-[#a6adba] bg-white dark:bg-[#222222]"
                     placeholder="Offering боюнча издөө..."
                 />
             </div>
 
-            <div className="bg-white rounded-3xl p-6 shadow-sm">
+            <div className="rounded-3xl p-6 shadow-sm">
                 {loading ? (
                     <p className="text-center text-gray-500">Offeringдер жүктөлүүдө...</p>
                 ) : filteredOfferings.length ? (
@@ -1052,8 +1051,8 @@ const OfferingsSection = ({ courses, offerings, loading, refreshOfferings }) => 
 
 const StatCard = ({ label, value }) => (
     <div className="border border-gray-200 rounded-2xl p-4">
-        <p className="text-sm text-gray-500">{label}</p>
-        <p className="text-2xl font-semibold text-gray-900 mt-1">{value}</p>
+        <p className="text-sm text-gray-500 dark:text-[#a6adba]">{label}</p>
+        <p className="text-2xl font-semibold mt-1">{value}</p>
     </div>
 );
 
@@ -1065,10 +1064,10 @@ const QuickActionCard = ({ title, description, link, buttonText, accent = 'blue'
     }[accent];
 
     return (
-        <div className="bg-white rounded-3xl p-5 shadow-sm flex flex-col gap-3">
+        <div className="rounded-3xl p-5 shadow-sm flex flex-col gap-3">
             <div>
                 <h3 className="text-lg font-semibold">{title}</h3>
-                <p className="text-sm text-gray-500">{description}</p>
+                <p className="text-sm text-gray-500 dark:text-[#a6adba]">{description}</p>
             </div>
             <Link
                 to={link}
@@ -1082,8 +1081,8 @@ const QuickActionCard = ({ title, description, link, buttonText, accent = 'blue'
 
 const EmptyState = ({ title, description, actionLabel, actionLink }) => (
     <div className="flex flex-col items-center text-center gap-3 border border-dashed border-gray-300 rounded-2xl p-8">
-        <p className="text-lg font-semibold text-gray-900">{title}</p>
-        <p className="text-sm text-gray-500">{description}</p>
+        <p className="text-lg font-semibold">{title}</p>
+        <p className="text-sm text-gray-500 dark:text-[#a6adba]">{description}</p>
         {actionLabel && actionLink && (
             <Link to={actionLink} className="px-4 py-2 rounded-full bg-blue-600 text-white text-sm">
                 {actionLabel}
@@ -1094,11 +1093,11 @@ const EmptyState = ({ title, description, actionLabel, actionLink }) => (
 
 const OfferingsSummary = ({ offerings, loading, onViewOfferings }) => {
     if (loading) {
-        return <p className="text-xs text-gray-500">Offering маалымат жүктөлүүдө...</p>;
+        return <p className="text-xs text-gray-500 dark:text-[#a6adba]">Offering маалымат жүктөлүүдө...</p>;
     }
     if (!offerings.length) {
         return (
-            <div className="border border-dashed border-gray-200 rounded-2xl p-3 text-xs text-gray-500 flex flex-col gap-2">
+            <div className="border border-dashed border-gray-200 rounded-2xl p-3 text-xs text-gray-500 dark:text-[#a6adba] flex flex-col gap-2">
                 <span>Offering түзүлө элек.</span>
                 <button
                     type="button"
@@ -1114,7 +1113,7 @@ const OfferingsSummary = ({ offerings, loading, onViewOfferings }) => {
         .filter((offering) => offering.startAt)
         .sort((a, b) => new Date(a.startAt) - new Date(b.startAt));
     return (
-        <div className="border border-gray-100 rounded-2xl p-3 text-xs text-gray-600 flex flex-col gap-1">
+        <div className="border border-gray-100 rounded-2xl p-3 text-xs text-gray-600 dark:text-[#a6adba] flex flex-col gap-1">
             <span className="font-semibold text-gray-700">{offerings.length} offering</span>
             {upcoming[0] && (
                 <span>Жакынкысы: {new Date(upcoming[0].startAt).toLocaleDateString()}</span>
@@ -1155,20 +1154,20 @@ const CreateOfferingModal = ({ courses, form, onChange, onClose, onSubmit, creat
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 px-4">
-            <div className="bg-white rounded-3xl shadow-xl max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
+            <div className="rounded-3xl shadow-xl max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
                 <div className="flex items-center justify-between mb-4">
                     <div>
                         <p className="text-sm uppercase tracking-wide text-gray-400">
                             {mode === 'edit' ? 'Offering өзгөртүү' : 'Жаңы offering'}
                         </p>
-                        <h2 className="text-2xl font-semibold text-gray-900">
+                        <h2 className="text-2xl font-semibold">
                             {mode === 'edit' ? 'Offeringди өзгөртүү' : 'Курс сунушун түзүү'}
                         </h2>
                     </div>
                     <button
                         type="button"
                         onClick={onClose}
-                        className="text-gray-500 hover:text-gray-700"
+                        className="text-gray-500 dark:text-[#a6adba] hover:text-gray-700"
                     >
                         Жабуу
                     </button>
@@ -1182,7 +1181,7 @@ const CreateOfferingModal = ({ courses, form, onChange, onClose, onSubmit, creat
                 >
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label className="text-sm font-medium text-gray-600">Курс</label>
+                            <label className="text-sm font-medium text-gray-600 dark:text-[#a6adba]">Курс</label>
                             <select
                                 value={form.courseId}
                                 onChange={(e) => onChange('courseId', e.target.value)}
@@ -1198,7 +1197,7 @@ const CreateOfferingModal = ({ courses, form, onChange, onClose, onSubmit, creat
                             </select>
                         </div>
                         <div>
-                            <label className="text-sm font-medium text-gray-600">
+                            <label className="text-sm font-medium text-gray-600 dark:text-[#a6adba]">
                                 Offering аталышы (опция)
                             </label>
                             <input
@@ -1212,7 +1211,7 @@ const CreateOfferingModal = ({ courses, form, onChange, onClose, onSubmit, creat
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label className="text-sm font-medium text-gray-600">Модалдуулук</label>
+                            <label className="text-sm font-medium text-gray-600 dark:text-[#a6adba]">Модалдуулук</label>
                             <select
                                 value={form.modality}
                                 onChange={(e) => onChange('modality', e.target.value)}
@@ -1222,12 +1221,12 @@ const CreateOfferingModal = ({ courses, form, onChange, onClose, onSubmit, creat
                                 <option value="OFFLINE">Офлайн (жандуу)</option>
                                 <option value="HYBRID">Гибрид</option>
                             </select>
-                            <p className="text-xs text-gray-500 mt-1">
+                            <p className="text-xs text-gray-500 dark:text-[#a6adba] mt-1">
                                 {modalityDescriptions[form.modality]}
                             </p>
                         </div>
                         <div>
-                            <label className="text-sm font-medium text-gray-600">Көрүнүү</label>
+                            <label className="text-sm font-medium text-gray-600 dark:text-[#a6adba]">Көрүнүү</label>
                             <select
                                 value={form.visibility}
                                 onChange={(e) => onChange('visibility', e.target.value)}
@@ -1241,7 +1240,7 @@ const CreateOfferingModal = ({ courses, form, onChange, onClose, onSubmit, creat
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label className="text-sm font-medium text-gray-600">Башталышы</label>
+                            <label className="text-sm font-medium text-gray-600 dark:text-[#a6adba]">Башталышы</label>
                             <input
                                 type="datetime-local"
                                 value={form.startAt}
@@ -1250,7 +1249,7 @@ const CreateOfferingModal = ({ courses, form, onChange, onClose, onSubmit, creat
                             />
                         </div>
                         <div>
-                            <label className="text-sm font-medium text-gray-600">Аяктоосу</label>
+                            <label className="text-sm font-medium text-gray-600 dark:text-[#a6adba]">Аяктоосу</label>
                             <input
                                 type="datetime-local"
                                 value={form.endAt}
@@ -1261,7 +1260,7 @@ const CreateOfferingModal = ({ courses, form, onChange, onClose, onSubmit, creat
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label className="text-sm font-medium text-gray-600">Статус</label>
+                            <label className="text-sm font-medium text-gray-600 dark:text-[#a6adba]">Статус</label>
                             <select
                                 value={form.status}
                                 onChange={(e) => onChange('status', e.target.value)}
@@ -1273,7 +1272,7 @@ const CreateOfferingModal = ({ courses, form, onChange, onClose, onSubmit, creat
                                 <option value="ARCHIVED">Archived</option>
                             </select>
                         </div>
-                        <label className="flex items-center gap-2 text-sm font-medium text-gray-600 mt-6">
+                        <label className="flex items-center gap-2 text-sm font-medium text-gray-600 dark:text-[#a6adba] mt-6">
                             <input
                                 type="checkbox"
                                 checked={form.isFeatured}
@@ -1283,7 +1282,7 @@ const CreateOfferingModal = ({ courses, form, onChange, onClose, onSubmit, creat
                         </label>
                     </div>
                     <div>
-                        <label className="text-sm font-medium text-gray-600">
+                        <label className="text-sm font-medium text-gray-600 dark:text-[#a6adba]">
                             Жайгашкан жери / Zoom шилтемеси / Расписаниеси
                         </label>
                         <textarea
@@ -1295,7 +1294,7 @@ const CreateOfferingModal = ({ courses, form, onChange, onClose, onSubmit, creat
                     </div>
                     <div>
                         <div className="flex items-center justify-between">
-                            <label className="text-sm font-medium text-gray-600">
+                            <label className="text-sm font-medium text-gray-600 dark:text-[#a6adba]">
                                 Даяр расписание блоктору
                             </label>
                             <button
@@ -1353,7 +1352,7 @@ const CreateOfferingModal = ({ courses, form, onChange, onClose, onSubmit, creat
                                 ))}
                             </div>
                         ) : (
-                            <p className="text-xs text-gray-500 mt-1">
+                            <p className="text-xs text-gray-500 dark:text-[#a6adba] mt-1">
                                 Жума күндөрү жана убакыттарын кошуу үчүн "Блок кошуу" баскычын
                                 басыңыз.
                             </p>
@@ -1361,7 +1360,7 @@ const CreateOfferingModal = ({ courses, form, onChange, onClose, onSubmit, creat
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
-                            <label className="text-sm font-medium text-gray-600">
+                            <label className="text-sm font-medium text-gray-600 dark:text-[#a6adba]">
                                 Капасити (опция)
                             </label>
                             <input
@@ -1374,7 +1373,7 @@ const CreateOfferingModal = ({ courses, form, onChange, onClose, onSubmit, creat
                             />
                         </div>
                         <div>
-                            <label className="text-sm font-medium text-gray-600">
+                            <label className="text-sm font-medium text-gray-600 dark:text-[#a6adba]">
                                 Бааны өзгөртүү (опция)
                             </label>
                             <input
@@ -1386,7 +1385,7 @@ const CreateOfferingModal = ({ courses, form, onChange, onClose, onSubmit, creat
                             />
                         </div>
                         <div>
-                            <label className="text-sm font-medium text-gray-600">
+                            <label className="text-sm font-medium text-gray-600 dark:text-[#a6adba]">
                                 Компания ID (опция)
                             </label>
                             <input
@@ -1415,8 +1414,8 @@ const CreateOfferingModal = ({ courses, form, onChange, onClose, onSubmit, creat
                             {creating
                                 ? 'Сакталууда...'
                                 : mode === 'edit'
-                                  ? 'Өзгөртүүлөрдү сактоо'
-                                  : 'Offering түзүү'}
+                                    ? 'Өзгөртүүлөрдү сактоо'
+                                    : 'Offering түзүү'}
                         </button>
                     </div>
                 </form>
@@ -1446,20 +1445,19 @@ const OfferingCard = ({ offering, onEdit, onEnroll }) => {
         <div className="border border-gray-200 rounded-2xl p-4 space-y-3">
             <div className="flex items-start justify-between gap-3">
                 <div>
-                    <p className="text-lg font-semibold text-gray-900">{title}</p>
-                    <p className="text-sm text-gray-500">Курс: {offering.course.title}</p>
+                    <p className="text-lg font-semibold">{title}</p>
+                    <p className="text-sm text-gray-500 dark:text-[#a6adba]">Курс: {offering.course.title}</p>
                 </div>
                 <span
-                    className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                        visibility === 'PUBLIC'
-                            ? 'bg-green-100 text-green-700'
-                            : 'bg-gray-100 text-gray-600'
-                    }`}
+                    className={`px-3 py-1 rounded-full text-xs font-semibold ${visibility === 'PUBLIC'
+                        ? 'bg-green-100 text-green-700'
+                        : 'bg-gray-100 text-gray-600 dark:text-[#a6adba]'
+                        }`}
                 >
                     {visibility === 'PUBLIC' ? 'Публичный' : 'Жабык'}
                 </span>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm text-gray-600">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm text-gray-600 dark:text-[#a6adba]">
                 <div className="flex items-center gap-2">
                     <FiCalendar className="text-gray-400" />
                     <span>{start}</span>
@@ -1471,7 +1469,7 @@ const OfferingCard = ({ offering, onEdit, onEnroll }) => {
                 </div>
                 <div>
                     <p>{capacity}</p>
-                    {companyName && <p className="text-xs text-gray-500">{companyName}</p>}
+                    {companyName && <p className="text-xs text-gray-500 dark:text-[#a6adba]">{companyName}</p>}
                 </div>
             </div>
             <div className="flex items-center gap-2 text-xs">
@@ -1486,14 +1484,14 @@ const OfferingCard = ({ offering, onEdit, onEnroll }) => {
                     </span>
                 )}
             </div>
-            <div className="flex flex-wrap gap-4 text-xs text-gray-600">
+            <div className="flex flex-wrap gap-4 text-xs text-gray-600 dark:text-[#a6adba]">
                 <span>Катталган: {offering.enrolledCount ?? 0}</span>
                 {offering.seatsRemaining != null && (
                     <span>Калган орун: {offering.seatsRemaining}</span>
                 )}
             </div>
             {offering.scheduleBlocks?.length ? (
-                <div className="text-sm text-gray-600">
+                <div className="text-sm text-gray-600 dark:text-[#a6adba]">
                     <p className="font-semibold text-gray-700 mb-1">Жүгүртмө:</p>
                     <ul className="space-y-1">
                         {offering.scheduleBlocks.map((block, idx) => (
@@ -1504,7 +1502,7 @@ const OfferingCard = ({ offering, onEdit, onEnroll }) => {
                     </ul>
                 </div>
             ) : offering.scheduleNote ? (
-                <p className="text-sm text-gray-600">Белгилей кетүү: {offering.scheduleNote}</p>
+                <p className="text-sm text-gray-600 dark:text-[#a6adba]">Белгилей кетүү: {offering.scheduleNote}</p>
             ) : null}
             <div className="flex flex-wrap gap-2">
                 <Link
@@ -1555,19 +1553,19 @@ const EnrollStudentModal = ({
     setShowDropdown,
 }) => (
     <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 px-4">
-        <div className="bg-white rounded-3xl shadow-xl max-w-md w-full p-6">
+        <div className="rounded-3xl shadow-xl max-w-md w-full p-6">
             <div className="flex items-center justify-between mb-4">
                 <div>
                     <p className="text-sm uppercase tracking-wide text-gray-400">Студент кошуу</p>
-                    <h2 className="text-2xl font-semibold text-gray-900">
+                    <h2 className="text-2xl font-semibold">
                         {offering.course.title}
                     </h2>
-                    <p className="text-sm text-gray-500">{offering.title || 'Offering'}</p>
+                    <p className="text-sm text-gray-500 dark:text-[#a6adba]">{offering.title || 'Offering'}</p>
                 </div>
                 <button
                     type="button"
                     onClick={onClose}
-                    className="text-gray-500 hover:text-gray-700"
+                    className="text-gray-500 dark:text-[#a6adba] hover:text-gray-700"
                 >
                     Жабуу
                 </button>
@@ -1580,7 +1578,7 @@ const EnrollStudentModal = ({
                 }}
             >
                 <div>
-                    <label className="text-sm font-medium text-gray-600">
+                    <label className="text-sm font-medium text-gray-600 dark:text-[#a6adba]">
                         Студентти издөө жана тандоо
                     </label>
                     <div className="relative">
@@ -1593,16 +1591,15 @@ const EnrollStudentModal = ({
                             onFocus={() => setShowDropdown(true)}
                         />
                         {showDropdown && studentOptions?.length > 0 && (
-                            <div className="absolute mt-1 w-full bg-white border border-gray-200 rounded-2xl shadow-lg max-h-48 overflow-auto z-10">
+                            <div className="absolute mt-1 w-full border border-gray-200 rounded-2xl shadow-lg max-h-48 overflow-auto z-10">
                                 {studentOptions.map((student) => (
                                     <button
                                         key={student.id}
                                         type="button"
-                                        className={`w-full text-left px-3 py-2 text-sm ${
-                                            String(student.id) === form.userId
-                                                ? 'bg-blue-50 text-blue-700'
-                                                : 'hover:bg-gray-50'
-                                        }`}
+                                        className={`w-full text-left px-3 py-2 text-sm ${String(student.id) === form.userId
+                                            ? 'bg-blue-50 text-blue-700'
+                                            : 'hover:bg-gray-50'
+                                            }`}
                                         onClick={() => {
                                             onChange('userId', String(student.id));
                                             onSearchChange(student.name || student.email || '');
@@ -1611,7 +1608,7 @@ const EnrollStudentModal = ({
                                     >
                                         <span className="font-medium">{student.name}</span>
                                         {student.email && (
-                                            <span className="text-xs text-gray-500 ml-2">
+                                            <span className="text-xs text-gray-500 dark:text-[#a6adba] ml-2">
                                                 {student.email}
                                             </span>
                                         )}
@@ -1621,19 +1618,19 @@ const EnrollStudentModal = ({
                         )}
                     </div>
                     {loadingUserOptions && (
-                        <p className="text-xs text-gray-500 mt-1">Студенттер жүктөлүүдө...</p>
+                        <p className="text-xs text-gray-500 dark:text-[#a6adba] mt-1">Студенттер жүктөлүүдө...</p>
                     )}
                     {!studentOptions?.length && userSearch.length >= 2 && !loadingUserOptions && (
-                        <p className="text-xs text-gray-500 mt-2">Студент табылган жок.</p>
+                        <p className="text-xs text-gray-500 dark:text-[#a6adba] mt-2">Студент табылган жок.</p>
                     )}
-                    <p className="text-xs text-gray-500 mt-1">
+                    <p className="text-xs text-gray-500 dark:text-[#a6adba] mt-1">
                         {form.userId
                             ? `Тандалган студент ID: ${form.userId}`
                             : 'Кеминде эки тамга издөө үчүн жазыңыз жана тизмеден тандаңыз.'}
                     </p>
                 </div>
                 <div>
-                    <label className="text-sm font-medium text-gray-600">Скидка % (опция)</label>
+                    <label className="text-sm font-medium text-gray-600 dark:text-[#a6adba]">Скидка % (опция)</label>
                     <input
                         type="number"
                         min="0"
@@ -1644,7 +1641,7 @@ const EnrollStudentModal = ({
                         placeholder="Мисалы: 10"
                     />
                 </div>
-                <div className="text-xs text-gray-500">
+                <div className="text-xs text-gray-500 dark:text-[#a6adba]">
                     Offering ID: {offering.id}. Орундар:{' '}
                     {offering.capacity != null
                         ? `${offering.enrolledCount ?? 0}/${offering.capacity}`

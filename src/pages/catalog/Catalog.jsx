@@ -37,7 +37,7 @@ export default function Catalog() {
                     value={q}
                     onChange={(e) => setQ(e.target.value)}
                     placeholder="Курстарды изде…"
-                    className="border rounded px-3 py-1"
+                    className="border rounded px-3 py-1 text-black dark:text-white bg-white dark:bg-[#222222]"
                 />
             </div>
 

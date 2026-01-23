@@ -58,7 +58,7 @@ const LoginPage = () => {
             {/* Правая часть с формой */}
             <div className="flex-1 flex items-center justify-center px-6">
                 <div className="w-full max-w-md">
-                    <h2 className="text-2xl font-bold text-black mb-6">Кирүү</h2>
+                    <h2 className="text-2xl font-bold text-black dark:text-white mb-6">Кирүү</h2>
 
                     {error && <p className="text-red-500 mb-4">{error}</p>}
 
@@ -103,7 +103,7 @@ const LoginPage = () => {
                         </button>
                     </form>
 
-                    <p className="mt-4 text-sm text-gray-600 text-center">
+                    <p className="mt-4 text-sm text-gray-600 dark:text-[#a6adba] text-center">
                         Аккаунтуңуз жокпу?{' '}
                         <Link to="/register" className="text-blue-500 hover:underline">
                             Катталуу

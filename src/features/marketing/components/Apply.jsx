@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import student from '@assets/images/RightLittleMan.png';
 import Background from '@assets/images/background.png';
+import BackgroundDark from '@assets/images/background-dark.png';
 import LogoStudies from '@assets/images/logoEduBot.png';
 import Button from '@shared/ui/Button';
 
@@ -11,7 +12,8 @@ function Apply({ user }) {
     return (
         <div className="flex items-center justify-center gap-[130px] mt-20 bg-white dark:bg-[#1A1A1A] py-12 px-4 sm:px-6 lg:px-12 text-[#141619] dark:text-[#E8ECF3]">
             <div className="relative hidden md:flex items-center left-[80px] h-[650px]">
-                <img src={Background} alt="Background" className="" />
+                <img src={Background} alt="Background" className="flex dark:hidden" />
+                <img src={BackgroundDark} alt="Background" className="dark:flex hidden" />
 
                 <img
                     src={student}

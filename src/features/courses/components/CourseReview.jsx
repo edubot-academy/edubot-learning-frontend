@@ -65,12 +65,12 @@ const CourseReview = ({ ratingAverage = 0, ratingCount, ratingBreakdown = {}, on
     };
 
     return (
-        <div className="w-full bg-white border border-gray-200 rounded-2xl p-6 sm:p-8 space-y-6">
+        <div className="w-full border border-gray-200 rounded-2xl p-6 sm:p-8 space-y-6">
             <div className="flex items-center justify-between">
-                <h2 className="text-3xl font-black text-gray-900">({totalRatings || 0}) пикир</h2>
+                <h2 className="text-3xl font-black text-gray-900 dark:text-[#E8ECF3]">({totalRatings || 0}) пикир</h2>
                 <button
                     type="button"
-                    className="text-sm text-[#5A5F69] hover:text-[#7B818C]"
+                    className="text-sm hover:text-[#7B818C]"
                     onClick={onViewAll}
                 >
                     баардыгын көрүү
@@ -87,7 +87,7 @@ const CourseReview = ({ ratingAverage = 0, ratingCount, ratingBreakdown = {}, on
                         return (
                             <div
                                 key={level}
-                                className="flex items-center gap-4 text-base text-[#5A5F69]"
+                                className="flex items-center gap-4 text-base"
                             >
                                 <span className="min-w-[110px] whitespace-nowrap">
                                     {level} жылдызча
@@ -98,7 +98,7 @@ const CourseReview = ({ ratingAverage = 0, ratingCount, ratingBreakdown = {}, on
                                         style={{ width: `${percent}%` }}
                                     />
                                 </div>
-                                <span className="w-10 text-right font-semibold text-[#5A5F69]">
+                                <span className="w-10 text-right font-semibold">
                                     {count}
                                 </span>
                             </div>

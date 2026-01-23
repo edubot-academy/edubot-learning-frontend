@@ -84,7 +84,7 @@ const ArticleLessonViewer = ({ lesson }) => {
     }, [sanitizedContent]);
 
     return (
-        <div className="mb-6 bg-white rounded-lg shadow-md p-6 min-h-[320px] w-full max-w-full">
+        <div className="mb-6 rounded-lg shadow-md p-6 min-h-[320px] w-full max-w-full">
             {lesson.locked ? (
                 <div 
                     className="text-center text-gray-600 py-12"
@@ -110,16 +110,6 @@ const ArticleLessonViewer = ({ lesson }) => {
                         role="article"
                         aria-label="Макаланын мазмуну"
                     />
-                   
-                    {hasScroll && (
-                        <div 
-                            className="absolute bottom-0 left-0 right-4 
-                                       h-8 bg-gradient-to-t from-white to-transparent 
-                                       pointer-events-none flex items-end justify-center"
-                            aria-hidden="true"
-                        >
-                        </div>
-                    )}
                 </div>
             ) : (
                 <p 

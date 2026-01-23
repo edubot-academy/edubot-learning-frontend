@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import bannerImg1 from '/banner-img1.png';
 import bannerBlure1 from '/banner-img1-blure.png';
+import bannerBlureDark from '/banner-img1-blure-dark.png';
 import bannerImg2 from '/banner-img2.png';
 import bannerImg3 from '/banner-img3.png';
 import bannerMan3 from '/banner-img-man.png';
@@ -45,8 +46,8 @@ const HeroStart = () => {
                     <div
                         key={index}
                         className={`absolute inset-0 transition-all duration-1000 ease-in-out  ${index === currentSlide
-                                ? 'opacity-100 z-10 translate-x-0'
-                                : 'opacity-0 z-0 translate-x-full'
+                            ? 'opacity-100 z-10 translate-x-0'
+                            : 'opacity-0 z-0 translate-x-full'
                             }`}
                     >
                         {/* ---------- СЛАЙД 1 ---------- */}
@@ -97,7 +98,12 @@ const HeroStart = () => {
                                     <img
                                         src={bannerBlure1}
                                         alt=""
-                                        className="absolute z-[1] right-[-3%] bottom-[0px] h-[97%] lg:flex hidden"
+                                        className="absolute z-[1] right-[-3%] bottom-[0px] h-[97%] lg:flex hidden dark:hidden"
+                                    />
+                                    <img
+                                        src={bannerBlureDark}
+                                        alt=""
+                                        className="absolute z-[1] right-[-3%] bottom-[0px] h-[97%] dark:lg:flex hidden"
                                     />
                                 </div>
                             </section>
@@ -113,7 +119,7 @@ const HeroStart = () => {
                                         alt="Background"
                                         className="w-full h-full"
                                     />
-                                    <div className="absolute inset-0 bg-[linear-gradient(173.96deg,rgba(141,63,14,0.86)_19.82%,rgba(255,255,255,0)_204.47%)]" />
+                                    <div className="absolute inset-0 bg-[linear-gradient(173.96deg,rgba(141,63,14,0.86)_19.82%,rgba(255,255,255,0)_204.47%)] dark:bg-gradient-to-t from-black/[86%] to-transparent to-[125.26%]" />
                                 </div>
 
                                 {/* контент */}
@@ -148,14 +154,14 @@ const HeroStart = () => {
                                         alt="background"
                                         className="w-full h-full object-cover"
                                     />
-                                    <div className="absolute inset-0 bg-black/30" />
+                                    <div className="absolute inset-0 bg-black/30 dark:bg-[#000000BD]" />
                                 </div>
 
                                 {/* Оранжевый блок с текстом */}
                                 <div className="relative bg-[linear-gradient(93.72deg,#F06743_11.31%,#D27A3B_67.42%)] text-white px-[4%] py-[4%] md:px-[2%] md:py-[2%] flex flex-col lg:flex-row h-[80%] w-[90%] rounded-3xl m-auto justify-between">
                                     <div className="">
                                         <h1 className="font-[Suisse_Intl] text-[30px] leading-[120%] tracking-[1%]">
-                                            Жылдык планды сатып алыңыз <br /> жана бардык курстарга 50% <br/> арзандатуу алыңыз.
+                                            Жылдык планды сатып алыңыз <br /> жана бардык курстарга 50% <br /> арзандатуу алыңыз.
                                         </h1>
                                         <p className="font-[Suisse_Intl] text-[18px] leading-[120%] tracking-[0%] mt-[26px] ">
                                             Программалоо тилдерин жана код жазуу <br /> жөндөмдөрүн

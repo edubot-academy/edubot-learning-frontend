@@ -144,7 +144,7 @@ export default function InstructorChat({ course }) {
   };
 
   return (
-    <div className="w-full h-full bg-white rounded-2xl shadow border flex flex-col">
+    <div className="w-full h-full bg-white dark:bg-[#222222] rounded-xl shadow border flex flex-col">
       {/* ================= HEADER ================= */}
       <div className="px-5 py-4 border-b flex items-center gap-3">
         <img
@@ -191,7 +191,7 @@ export default function InstructorChat({ course }) {
                 <div
                   className={`px-3 py-2 text-[13px] rounded-xl
                           ${isMe
-                      ? "bg-white shadow rounded-br-sm"
+                      ? "bg-[#F3F4F6] border border-[1px] border-[#DFE1E5] rounded-br-sm text-[#3E424A]"
                       : "bg-orange-500 text-white rounded-bl-sm"
                     }`}
                 >

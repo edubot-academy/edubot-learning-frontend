@@ -41,22 +41,22 @@ const NotificationsWidget = ({ title = 'Билдирүүлөр', limit = 5, link
     };
 
     return (
-        <div className="bg-white rounded-3xl p-4 sm:p-5 border border-gray-100 shadow-sm">
+        <div className="rounded-3xl p-4 sm:p-5 border border-gray-100 shadow-sm">
             <div className="flex items-center justify-between gap-2 mb-3">
                 <div>
-                    <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
-                    <p className="text-sm text-gray-500">Жаңылык жана эскертмелер</p>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-[#E8ECF3]">{title}</h3>
+                    <p className="text-sm text-gray-500 dark:text-[#a6adba]">Жаңылык жана эскертмелер</p>
                 </div>
                 <div className="flex items-center gap-2">
                     {unreadCount > 0 && (
-                        <span className="px-2 py-1 text-xs rounded-full bg-orange-100 text-orange-700">
+                        <span className="px-2 py-1 text-xs rounded-full bg-orange-100 text-gray-700 dark:text-[#a6adba]">
                             {unreadCount} жаңы
                         </span>
                     )}
                     <button
                         type="button"
                         onClick={handleMarkAll}
-                        className="text-xs text-gray-500 hover:text-gray-800"
+                        className="text-xs text-gray-500 dark:text-[#a6adba] hover:text-gray-800 dark:hover:text-white"
                     >
                         Баарын окулган деп белгилөө
                     </button>
@@ -64,17 +64,17 @@ const NotificationsWidget = ({ title = 'Билдирүүлөр', limit = 5, link
             </div>
 
             {loading ? (
-                <p className="text-sm text-gray-500">Жүктөлүүдө...</p>
+                <p className="text-sm text-gray-500 dark:text-[#a6adba]">Жүктөлүүдө...</p>
             ) : items.length === 0 ? (
-                <p className="text-sm text-gray-500">Азырынча билдирүүлөр жок.</p>
+                <p className="text-sm text-gray-500 dark:text-[#a6adba]">Азырынча билдирүүлөр жок.</p>
             ) : (
                 <ul className="divide-y divide-gray-100">
                     {items.map((item) => (
                         <li key={item.id} className="py-2 text-sm">
-                            <p className="text-gray-800 line-clamp-2">
+                            <p className="text-gray-800 dark:text-white line-clamp-2">
                                 {item.message || item.subject}
                             </p>
-                            <p className="text-xs text-gray-500 mt-1">
+                            <p className="text-xs text-gray-500 dark:text-[#a6adba] mt-1">
                                 {item.createdAt ? new Date(item.createdAt).toLocaleString() : ''}
                             </p>
                         </li>

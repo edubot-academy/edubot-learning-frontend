@@ -148,16 +148,16 @@ const CourseContent = ({
 
     return (
         <>
-            <div className={`w-full bg-white rounded-2xl border border-[#E6E8EC] overflow-hidden ${compact ? 'shadow-sm' : 'shadow'}`}>
+            <div className="w-full dark:bg-[#222222] bg-white rounded-2xl border border-[#E6E8EC] overflow-hidden">
                 {showHeader && (
                     <div className="px-4 sm:px-6 py-4 border-b border-[#DFE1E5]">
                         <div className="flex flex-col gap-3">
                             <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                                 <div className="flex-1 min-w-0">
-                                    <h3 className="text-xl sm:text-2xl font-semibold text-gray-900 break-words">
+                                    <h3 className="text-xl sm:text-2xl font-semibold text-gray-900  dark:text-[#E8ECF3]">
                                         Курстун мазмуну
                                     </h3>
-                                    <p className="text-sm sm:text-base text-gray-600 mt-1 break-words">
+                                    <p className="text-sm sm:text-base dark:text-[#a6adba] text-gray-600 mt-1">
                                         {sections.length} бөлүм • {totalLessons} лекция •{' '}
                                         {formatMinutesToTime(totalMinutes)}
                                     </p>

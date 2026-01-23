@@ -25,7 +25,7 @@ const CourseSidebar = ({
 
     return (
         <div
-            className="bg-white p-6 rounded-lg shadow-md md:sticky md:top-28 self-start 
+            className="bg-white dark:bg-[#222222] p-6 rounded-lg shadow-md md:sticky md:top-28 self-start 
             max-h-none overflow-visible 
             md:max-h-[calc(100vh-7rem)] md:overflow-y-auto"
         >

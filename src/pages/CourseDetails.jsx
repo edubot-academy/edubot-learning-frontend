@@ -31,6 +31,7 @@ import CourseReview from '@features/courses/components/CourseReview';
 import CourseContent from '@features/courses/components/CourseContent';
 import { FaSignalMessenger } from "react-icons/fa6";
 import InstructorChat from '@features/instructorChat/InstructorChat';
+import CourseHeader from '@features/courses/components/CourseHeader';
 
 const CHALLENGE_STORAGE_PREFIX = 'lessonChallengeState';
 
@@ -732,13 +733,13 @@ const CourseDetailsPage = () => {
     };
 
     const renderTabButtons = () => (
-        <div className="flex flex-wrap gap-2 bg-gray-100 rounded-2xl p-1">
+        <div className="flex flex-wrap gap-2 dark:bg-white/10 bg-gray-100 rounded-2xl p-1">
             {tabs.map((tab) => (
                 <button
                     key={tab.id}
                     type="button"
                     onClick={() => handleTabChange(tab)}
-                    className={`flex-1 min-w-[140px] px-4 py-2 rounded-xl text-sm font-medium transition ${activeTab === tab.id ? 'bg-white text-gray-900 shadow' : 'text-gray-600'
+                    className={`flex-1 min-w-[140px] px-4 py-2 rounded-xl text-sm font-medium transition ${activeTab === tab.id ? 'dark:bg-[#222222] bg-white text-gray-900 dark:text-[#E8ECF3] shadow' : 'text-gray-600 dark:text-[#a6adba]'
                         } ${tab.disabled ? 'opacity-60 cursor-not-allowed' : 'hover:text-gray-900'}`}
                 >
                     {tab.label}
@@ -752,12 +753,12 @@ const CourseDetailsPage = () => {
         sections.reduce((count, sec) => count + (sec.lessons?.length || 0), 0);
 
     return (
-        <div className="min-h-screen pt-10 bg-[#f8f9fb]">
+        <div className="min-h-screen pt-10 bg-[#f8f9fb] dark:bg-[#1A1A1A]">
             {/* Chat button - positioned absolutely in header */}
             {enrolled && (
                 <div className="relative max-w-6xl mx-auto flex justify-end mb-10">
                     <button
-                        className="flex w-[265px] h-[61px] opacity-100 rounded-[8px] border border-[1px] p-[18px] gap-[10px] border-[#FB923C] bg-[#FFF7ED]"
+                        className="flex w-[265px] h-[61px] opacity-100 rounded-[8px] border-[1px] p-[18px] gap-[10px]text-[#141619]"
                         onClick={() => setInstructorChat(true)}
                     >
                         <FaSignalMessenger className="text-[#EA580C]" /> Инструктор менен чат

@@ -2,11 +2,11 @@ import React, { useState } from 'react';
 import { submitContactMessage } from '@services/api';
 import toast, { Toaster } from 'react-hot-toast';
 import LeftLittleMan from '../assets/images/LeftLittleMan.png';
-import InstagramIcon from '../assets/icons/instagram.svg';
-import Telegram from '../assets/icons/telegram.svg';
-import MailIcon from '../assets/icons/mailIcon.svg';
-import MapPinIcon from '../assets/icons/mapPinIcon.svg';
-import ClockIcon from '../assets/icons/clockIcon.svg';
+import { FaInstagram } from "react-icons/fa";
+import { PiTelegramLogo } from "react-icons/pi";
+import { FiMail } from "react-icons/fi";
+import { GoClock } from "react-icons/go";
+import { SlLocationPin } from "react-icons/sl";
 
 const ContactPage = () => {
     const [formData, setFormData] = useState({
@@ -67,15 +67,15 @@ const ContactPage = () => {
     };
 
     return (
-        <div className="bg-white min-h-screen px-4 py-12 md:px-16 text-gray-800">
+        <div className="min-h-screen px-4 py-12 md:px-16">
             <Toaster position="top-center" />
             <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 items-center gap-10 md:gap-16">
                 <div>
                     <div className="mb-6 mt-10">
-                        <h1 className="text-5xl md:text-6xl font-bold text-black">Байланышуу</h1>
+                        <h1 className="text-5xl md:text-6xl font-bold">Байланышуу</h1>
                     </div>
 
-                    <p className="mb-10 text-lg text-gray-700">
+                    <p className="mb-10 text-lg text-gray-700 dark:text-[#a6adba]">
                         Lorem ipsum dolor sit amet consectetur adipisicing elit. Quaerat commodi
                         perferendis velit amet placeat! Alias voluptatem quos neque tempore rem!
                     </p>
@@ -88,7 +88,7 @@ const ContactPage = () => {
                         ].map(({ label, name, type }) => (
                             <div key={name}>
                                 {errors[name] && (
-                                    <p className="text-red-500 text-sm mb-1">{errors[name]}</p>
+                                    <p className="text-gray-500 dark:text-[#a6adba] text-sm mb-1">{errors[name]}</p>
                                 )}
                                 <label className="block font-medium mb-1">{label}</label>
                                 <input
@@ -97,14 +97,14 @@ const ContactPage = () => {
                                     value={formData[name]}
                                     onChange={handleChange}
                                     required
-                                    className="w-full border border-black rounded-[10px] px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#E14219] transition"
+                                    className="w-full border border-black rounded-[10px] px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#E14219] transition bg-white dark:bg-[#222222]"
                                 />
                             </div>
                         ))}
 
                         <div>
                             {errors.message && (
-                                <p className="text-red-500 text-sm mb-1">{errors.message}</p>
+                                <p className="text-gray-500 dark:text-[#a6adba] text-sm mb-1">{errors.message}</p>
                             )}
                             <label className="block font-medium mb-1">Билдирүү</label>
                             <textarea
@@ -113,7 +113,7 @@ const ContactPage = () => {
                                 onChange={handleChange}
                                 rows={4}
                                 required
-                                className="w-full border border-black rounded-[10px] px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#E14219] transition"
+                                className="w-full border border-black rounded-[10px] px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#E14219] transition bg-white dark:bg-[#222222]"
                             ></textarea>
                         </div>
 
@@ -139,30 +139,30 @@ const ContactPage = () => {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-10 text-base mb-12">
                     <div className="space-y-4 flex flex-col items-start">
                         <div>
-                            <div className="font-inter text-[#EA580C] flex items-center gap-2">
-                                <img src={InstagramIcon} alt="instagram" className="w-7 h-7" />
-                                Instagram
+                            <div className="font-inter flex items-center gap-2">
+                                <FaInstagram className='w-5 h-5' />
+                                <p className='text-[#EA580C]'>Instagram</p>
                             </div>
                             <a
                                 href="https://www.instagram.com/edubot.company/"
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="text-black block mt-1 font-normal text-sm font-suisse Intl"
+                                className="block mt-1 font-normal text-sm font-suisse Intl"
                             >
                                 @edubot.company
                             </a>
                         </div>
 
                         <div>
-                            <div className="font-inter text-[#EA580C] flex items-center gap-2">
-                                <img src={Telegram} alt="telegram" className="w-7 h-7" />
-                                Telegram
+                            <div className="font-inter flex items-center gap-2">
+                                <PiTelegramLogo className='w-5 h-5' />
+                                <p className='text-[#EA580C] '>Telegram</p>
                             </div>
                             <a
                                 href="https://t.me/edubot_learning"
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="text-black block mt-1 font-normal text-sm font-suisse Intl"
+                                className="block mt-1 font-normal text-sm font-suisse Intl"
                             >
                                 @edubot_learning
                             </a>
@@ -171,13 +171,13 @@ const ContactPage = () => {
 
                     <div className="flex flex-col items-center space-y-4">
                         <div className="text-center">
-                            <div className="font-inter text-[#EA580C] flex items-center justify-start gap-2">
-                                <img src={MailIcon} alt="mail" className="w-7 h-7" />
-                                Электрондук почта
+                            <div className="font-inter flex items-center justify-start gap-2">
+                                <FiMail className='w-5 h-5' />
+                                <p className='text-[#EA580C]'>Электрондук почта</p>
                             </div>
                             <a
                                 href="mailto:jardam.edubot_learning@outlook.com"
-                                className="text-black block mt-1 font-normal text-sm font-suisse Intl"
+                                className="block mt-1 font-normal text-sm font-suisse Intl"
                             >
                                 jardam.edubot_learning@outlook.com
                             </a>
@@ -186,20 +186,20 @@ const ContactPage = () => {
 
                     <div className="space-y-4 flex flex-col items-start text-right">
                         <div>
-                            <div className="font-inter text-[#EA580C] flex items-center justify-start gap-2">
-                                <img src={ClockIcon} alt="clock" className="w-7 h-7" />
-                                Иштөө убактысы
+                            <div className="font-inter flex items-center justify-start gap-2">
+                                <GoClock className='w-5 h-5' />
+                                <p className='text-[#EA580C]'>Иштөө убактысы</p>
                             </div>
-                            <p className="text-black block mt-1 font-normal text-sm font-suisse Intl">
+                            <p className="block mt-1 font-normal text-sm font-suisse Intl">
                                 Дүйшөмбү — Жума, 9:00 — 21:00 (Бишкек убактысы)
                             </p>
                         </div>
                         <div>
-                            <div className="font-inter text-[#EA580C] flex items-center justify-start gap-2">
-                                <img src={MapPinIcon} alt="address" className="w-7 h-7" />
-                                Дарек
+                            <div className="font-inter flex items-center justify-start gap-2">
+                                <SlLocationPin className='w-5 h-5' />
+                                <p className='text-[#EA580C] '>Дарек</p>
                             </div>
-                            <p className="text-black block mt-1 font-normal text-sm font-suisse Intl">
+                            <p className="block mt-1 font-normal text-sm font-suisse Intl">
                                 Ахунбаева 129B, Бишкек, Кыргызстан
                             </p>
                         </div>

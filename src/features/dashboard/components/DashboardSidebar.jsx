@@ -24,7 +24,7 @@ const DashboardSidebar = ({
 
     return (
         <aside
-            className={`bg-white rounded-2xl shadow-xl transition-all duration-300 ${
+            className={`rounded-2xl shadow-xl transition-all duration-300 ${
                 resolvedOpen ? 'w-64 p-6' : 'w-20 p-4'
             } ${className}`}
         >
@@ -47,7 +47,7 @@ const DashboardSidebar = ({
                             className={`w-full flex items-center ${resolvedOpen ? 'justify-start' : 'justify-center'} px-3 py-2 rounded-xl transition ${
                                 isActive
                                     ? 'bg-blue-600 text-white'
-                                    : 'text-gray-700 hover:bg-gray-100'
+                                    : 'hover:bg-gray-100'
                             }`}
                         >
                             {Icon && <Icon className={`text-lg ${resolvedOpen ? 'mr-3' : ''}`} />}

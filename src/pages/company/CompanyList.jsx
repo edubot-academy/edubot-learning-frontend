@@ -43,13 +43,13 @@ export default function CompanyList() {
                     value={q}
                     onChange={(e) => setQ(e.target.value)}
                     placeholder="Издөө…"
-                    className="border rounded px-3 py-1"
+                    className="border rounded px-3 py-1 text-black dark:text-white bg-white dark:bg-[#222222]"
                 />
             </div>
 
             <form onSubmit={onCreate} className="flex gap-2">
                 <input
-                    className="border rounded px-3 py-2 w-full"
+                    className="border rounded px-3 py-2 w-full text-black dark:text-white bg-white dark:bg-[#222222]"
                     placeholder="Жаңы компаниянын аты"
                     value={newName}
                     onChange={(e) => setNewName(e.target.value)}

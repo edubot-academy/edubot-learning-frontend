@@ -150,7 +150,7 @@ const LessonQuizPlayer = ({
 
     if (loading) {
         return (
-            <div className="mb-6 bg-white rounded-lg shadow-md p-6 min-h-[200px] flex items-center justify-center">
+            <div className="mb-6 rounded-lg shadow-md p-6 min-h-[200px] flex items-center justify-center">
                 <p className="text-gray-500">Квиз жүктөлүүдө...</p>
             </div>
         );
@@ -158,7 +158,7 @@ const LessonQuizPlayer = ({
 
     if (!quiz) {
         return (
-            <div className="mb-6 bg-white rounded-lg shadow-md p-6">
+            <div className="mb-6 rounded-lg shadow-md p-6">
                 <p className="text-gray-500">Квиз табылган жок.</p>
             </div>
         );
@@ -167,7 +167,7 @@ const LessonQuizPlayer = ({
     // start screen
     if (!startQuiz && !result) {
         return (
-            <div className="mb-6 bg-white rounded-lg shadow-md py-[20%] text-center">
+            <div className="mb-6 rounded-lg shadow-md py-[20%] text-center">
                 <h2 className="font-bold text-[200%] leading-[44px] tracking-[0.01em] mb-[5%]">
                     Тестти баштайбыз! Даярсыңбы?
                 </h2>
@@ -182,7 +182,7 @@ const LessonQuizPlayer = ({
     // quiz result screen
     if (result) {
         return (
-            <div className="mb-6 bg-white rounded-lg shadow-md p-6 space-y-4">
+            <div className="mb-6 rounded-lg shadow-md p-6 space-y-4">
                 <div className="flex flex-col items-center gap-3 text-center">
                     {result.passed ? (
                         <img src={grade_A} alt="grade" className="w-24" />
@@ -224,7 +224,7 @@ const LessonQuizPlayer = ({
                             ({ question, selected, correctOptions, answeredCorrect }, i) => (
                                 <div
                                     key={question.id}
-                                    className={`border rounded p-3 text-sm ${
+                                    className={`border rounded p-3 text-sm text-black ${
                                         answeredCorrect
                                             ? 'border-green-500 bg-green-50'
                                             : answeredCorrect === false
@@ -271,7 +271,7 @@ const LessonQuizPlayer = ({
     }
 
     return (
-        <div className="mb-6 bg-white rounded-lg shadow-md p-6 space-y-4">
+        <div className="mb-6 rounded-lg shadow-md p-6 space-y-4">
             {currentQuestion ? (
                 <div className="space-y-4">
                     <p className="font-medium text-[20px] leading-[40px]">

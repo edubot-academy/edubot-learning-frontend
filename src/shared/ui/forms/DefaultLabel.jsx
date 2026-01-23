@@ -52,7 +52,7 @@ const DefaultLabel = ({
             ${hasError ? 'border-red-600' : focused ? 'border-amber-600' : 'border-gray-300'}
             px-2 sm:px-3 md:px-4
             py-1.5 sm:py-2 md:py-2.5
-            bg-white
+            bg-white dark:bg-[#222222]
           `}
                 >
                     <label
@@ -60,10 +60,10 @@ const DefaultLabel = ({
               ${
                   isActive
                       ? '-top-2 sm:-top-3 text-xs sm:text-sm'
-                      : 'top-2 sm:top-3 text-gray-500 text-sm sm:text-base'
+                      : 'top-2 sm:top-3 text-gray-500 dark:text-[#a6adba] text-sm sm:text-base'
               }
-              ${hasError ? 'text-red-600' : focused ? 'text-amber-600' : 'text-gray-500'}
-              bg-white px-1 pointer-events-none  
+              ${hasError ? 'text-red-600' : focused ? 'text-amber-600' : 'text-gray-500 dark:text-[#a6adba]'}
+              bg-white dark:bg-[#222222] px-1 pointer-events-none  
             `}
                     >
                         {label}
@@ -77,7 +77,7 @@ const DefaultLabel = ({
                         onFocus={handleFocus}
                         onBlur={handleBlur}
                         placeholder={placeholder}
-                        className="w-full bg-transparent outline-none text-gray-900 text-sm sm:text-base"
+                        className="w-full bg-transparent outline-none text-gray-900 dark:text-[#E8ECF3] text-sm sm:text-base"
                     />
                 </div>
 

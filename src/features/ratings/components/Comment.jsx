@@ -124,7 +124,7 @@ function Comment({ courseId }) {
     };
 
     return (
-        <div className="flex flex-col md:flex-row gap-8 md:gap-12 border border-[#C5C9D1] p-6 md:p-10 rounded-xl mb-16 mt-6 bg-white">
+        <div className="flex flex-col md:flex-row gap-8 md:gap-12 border border-[#C5C9D1] p-6 md:p-10 rounded-xl mb-16 mt-6">
             {/* Left side: title + stars */}
             <div className="flex flex-col items-center md:items-start gap-6 md:w-1/2">
                 <div className="flex gap-2 md:gap-3">{STARS.map((value) => renderStar(value))}</div>
@@ -133,7 +133,7 @@ function Comment({ courseId }) {
                     <h3 className="font-semibold text-xl md:text-2xl">
                         Курс кандай өттү? Сын-пикир калтырыңыз
                     </h3>
-                    <p className="text-[#3E424A] text-sm md:text-base font-normal">
+                    <p className="text-sm md:text-base font-normal">
                         Сиздин пикириңиз башка студенттерге курс тандоодо жардам берет.
                         <br className="hidden md:block" />
                         Сиздин пикир биз үчүн да абдан баалуу!

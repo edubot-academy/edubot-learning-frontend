@@ -49,17 +49,17 @@ const ForgotPassword = ({ onClose }) => {
 
     return (
         <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
-            <div className="relative bg-white rounded-lg shadow-lg w-[600px] p-[50px]">
+            <div className="relative bg-white dark:bg-[#222222] rounded-lg shadow-lg w-[600px] p-[50px]">
                 {/* Кнопка закрытия */}
                 <button
                     onClick={onClose}
-                    className="absolute top-4 right-4 text-gray-600 hover:text-black"
+                    className="absolute top-4 right-4 text-gray-600 dark:text-[#a6adba] hover:text-black dark:hover:text-white"
                 >
                     <IoClose size={28} />
                 </button>
 
                 {/* Заголовок */}
-                <h2 className="text-2xl font-bold text-left mb-6">Сырсөздү унуттуңузбу?</h2>
+                <h2 className="text-2xl font-bold text-left mb-6 text-black dark:text-white">Сырсөздү унуттуңузбу?</h2>
 
                 {/* Шаг 1 */}
                 {!otpSent ? (
@@ -67,7 +67,7 @@ const ForgotPassword = ({ onClose }) => {
                         <select
                             value={method}
                             onChange={(e) => setMethod(e.target.value)}
-                            className="w-full px-4 py-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
+                            className="w-full px-4 py-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 text-black dark:text-white bg-white dark:bg-[#222222]"
                         >
                             <option value="method">Методду тандаңыз</option>
                             <option value="email">Email</option>
@@ -79,7 +79,7 @@ const ForgotPassword = ({ onClose }) => {
                             placeholder="Маалыматтарды киргизиңиз"
                             value={identifier}
                             onChange={(e) => setIdentifier(e.target.value)}
-                            className="w-full px-4 py-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 mb-[50px] mt-[10px]"
+                            className="w-full px-4 py-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 mb-[50px] mt-[10px] text-black dark:text-white bg-white dark:bg-[#222222]"
                             required
                         />
 

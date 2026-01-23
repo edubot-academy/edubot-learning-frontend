@@ -20,17 +20,17 @@ const CourseDescription = ({ course }) => {
         course.learningOutcomes && course.learningOutcomes.length > 0
             ? course.learningOutcomes
             : course.description
-            ? [course.description]
-            : [];
+                ? [course.description]
+                : [];
 
     return (
-        <div className="w-full border border-[#C5C9D1] rounded-xl px-4 sm:px-6 lg:px-8 py-6 sm:py-8 bg-white">
+        <div className="w-full border border-[#C5C9D1] rounded-xl px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
             <div className="mb-4 sm:mb-6 space-y-3">
-                <h1 className="text-xl sm:text-2xl md:text-3xl xl:text-4xl font-bold text-gray-900 leading-tight break-words">
+                <h1 className="text-xl sm:text-2xl md:text-3xl xl:text-4xl font-bold leading-tight break-words">
                     {course.title}
                 </h1>
                 {course.subtitle && (
-                    <p className="text-base sm:text-lg text-gray-700 leading-relaxed break-words">
+                    <p className="text-base sm:text-lg leading-relaxed break-words">
                         {course.subtitle}
                     </p>
                 )}
@@ -43,7 +43,7 @@ const CourseDescription = ({ course }) => {
                     )}
 
                     {(course.updatedAt || course.createdAt) && (
-                        <div className="flex items-center gap-2 text-gray-600">
+                        <div className="flex items-center gap-2">
                             <RiSpam2Line size={18} />
                             {course.updatedAt
                                 ? `акыркы жаңыртуу: ${new Date(course.updatedAt).toLocaleDateString('kg-KG')}`
@@ -51,13 +51,13 @@ const CourseDescription = ({ course }) => {
                         </div>
                     )}
 
-                    <div className="flex items-center gap-2 text-gray-600">
+                    <div className="flex items-center gap-2">
                         <GrLanguage />
                         {course.language || 'Кыргызча'}
                     </div>
 
                     {course.category && (
-                        <div className="flex items-center gap-2 text-gray-600">
+                        <div className="flex items-center gap-2">
                             <span className="text-blue-500">📁</span>
                             {course.category.name || course.category}
                         </div>
@@ -70,7 +70,7 @@ const CourseDescription = ({ course }) => {
                     <div className="flex items-center gap-3">
                         <RiCheckboxCircleFill color="#EA580C" size={20} className="flex-shrink-0" />
                         <p className="text-sm sm:text-base text-gray-600">
-                           Курс жөнүндө маалымат жакында кошулат...
+                            Курс жөнүндө маалымат жакында кошулат...
                         </p>
                     </div>
                 ) : (
@@ -81,7 +81,7 @@ const CourseDescription = ({ course }) => {
                                 size={20}
                                 className="flex-shrink-0 mt-1"
                             />
-                            <p className="text-sm sm:text-base md:text-lg text-gray-700 leading-relaxed break-words">
+                            <p className="text-sm sm:text-base md:text-lg leading-relaxed break-words">
                                 {item}
                             </p>
                         </div>

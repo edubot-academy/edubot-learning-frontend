@@ -16,7 +16,7 @@ const Button = ({ children, variant = 'primary', disabled = false, icon = false,
       disabled:shadow-none disabled:cursor-not-allowed
     `,
         secondary: `
-      border border-black text-black
+      border dark:border-white border-black dark:text-white text-black
       hover:bg-[#EA580C] hover:border-[#EA580C] hover:text-white
       active:scale-95
       disabled:bg-transparent disabled:border-[#C5C9D1]
