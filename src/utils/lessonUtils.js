@@ -14,7 +14,7 @@ export function getResourceMeta(resourceKey = '', resourceName = '') {
     if (!displayName) return null;
 
     const nameForExtension =
-        (resourceName && resourceName.includes('.')) ? resourceName : fallbackName;
+        resourceName && resourceName.includes('.') ? resourceName : fallbackName;
 
     const lastDot = nameForExtension.lastIndexOf('.');
     const extension = lastDot !== -1 ? nameForExtension.slice(lastDot + 1) : '';
@@ -23,6 +23,7 @@ export function getResourceMeta(resourceKey = '', resourceName = '') {
     return {
         fileName: displayName,
         extension: normalizedExt,
-        typeLabel: normalizedExt === 'PDF' ? 'PDF' : normalizedExt === 'ZIP' ? 'ZIP' : normalizedExt,
+        typeLabel:
+            normalizedExt === 'PDF' ? 'PDF' : normalizedExt === 'ZIP' ? 'ZIP' : normalizedExt,
     };
 }

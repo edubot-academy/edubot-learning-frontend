@@ -1,6 +1,6 @@
 import React, { useContext } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { getCompany } from '../../services/api';
+import { getCompany } from '@services/api';
 import toast from 'react-hot-toast';
 import CompanyMembers from './CompanyMembers';
 import CompanySettings from './CompanySettings';
@@ -16,8 +16,11 @@ export default function CompanyDetail() {
 
     React.useEffect(() => {
         (async () => {
-            try { setCompany(await getCompany(companyId)); }
-            catch { toast.error('Компания маалыматын жүктөй албай жатам.'); }
+            try {
+                setCompany(await getCompany(companyId));
+            } catch {
+                toast.error('Компания маалыматын жүктөй албай жатам.');
+            }
         })();
     }, [companyId]);
 
@@ -27,24 +30,42 @@ export default function CompanyDetail() {
         <div className="max-w-6xl mx-auto p-4 space-y-6">
             <div className="flex items-center justify-between">
                 <h1 className="text-2xl font-bold">{company.name}</h1>
-                <Link to="/companies" className="text-blue-600 hover:underline">← Артка</Link>
+                <Link to="/companies" className="text-blue-600 hover:underline">
+                    ← Артка
+                </Link>
             </div>
 
             <div className="flex gap-2">
-                <Tab active={tab === 'settings'} onClick={() => setTab('settings')}>Орнотуулар</Tab>
-                <Tab active={tab === 'members'} onClick={() => setTab('members')}>Мүчөлөр</Tab>
-                <Tab active={tab === 'courses'} onClick={() => setTab('courses')}>Курстар</Tab>
+                <Tab active={tab === 'settings'} onClick={() => setTab('settings')}>
+                    Орнотуулар
+                </Tab>
+                <Tab active={tab === 'members'} onClick={() => setTab('members')}>
+                    Мүчөлөр
+                </Tab>
+                <Tab active={tab === 'courses'} onClick={() => setTab('courses')}>
+                    Курстар
+                </Tab>
             </div>
 
             {tab === 'settings' && <CompanySettings company={company} onSaved={setCompany} />}
             {tab === 'members' && <CompanyMembers companyId={companyId} />}
-            {tab === 'courses' && <CompanyCourses companyId={companyId} canManage={company?.role === 'company_admin' || user?.role === 'admin'} />}
+            {tab === 'courses' && (
+                <CompanyCourses
+                    companyId={companyId}
+                    canManage={company?.role === 'company_admin' || user?.role === 'admin'}
+                />
+            )}
         </div>
     );
 }
 
 function Tab({ active, onClick, children }) {
     return (
-        <button onClick={onClick} className={`px-4 py-2 rounded ${active ? 'bg-blue-600 text-white' : 'bg-gray-100 hover:bg-gray-200'}`}>{children}</button>
+        <button
+            onClick={onClick}
+            className={`px-4 py-2 rounded ${active ? 'bg-blue-600 text-white' : 'bg-gray-50 dark:bg-[#141619] hover:bg-gray-200'}`}
+        >
+            {children}
+        </button>
     );
 }

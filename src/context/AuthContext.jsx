@@ -1,15 +1,15 @@
-import React, { createContext, useState, useEffect } from "react";
-import { fetchUserProfile } from "../services/api";
+import React, { createContext, useState, useEffect } from 'react';
+import { fetchUserProfile } from '@services/api';
 
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(() => {
-        return JSON.parse(localStorage.getItem("user")) || null;
+        return JSON.parse(localStorage.getItem('user')) || null;
     });
 
     useEffect(() => {
-        const token = localStorage.getItem("token");
+        const token = localStorage.getItem('token');
         if (token && !user) {
             loadUserProfile();
         }
@@ -19,24 +19,26 @@ export const AuthProvider = ({ children }) => {
         try {
             const response = await fetchUserProfile();
             setUser(response.data);
-            localStorage.setItem("user", JSON.stringify(response.data));
+            localStorage.setItem('user', JSON.stringify(response.data));
         } catch (error) {
-            console.error("Failed to fetch user profile", error);
-            logout();
+            console.error('Failed to fetch user profile', error);
+            logout(false); // just clear session; don't force redirect on initial load
         }
     };
 
     const login = (userData, token) => {
         setUser(userData);
-        localStorage.setItem("token", token);
-        localStorage.setItem("user", JSON.stringify(userData));
+        localStorage.setItem('token', token);
+        localStorage.setItem('user', JSON.stringify(userData));
     };
 
-    const logout = () => {
+    const logout = (redirect = true) => {
         setUser(null);
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
-        window.location.href = "/login";
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        if (redirect) {
+            window.location.href = '/login';
+        }
     };
 
     return (

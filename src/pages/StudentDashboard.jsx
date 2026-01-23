@@ -1,5 +1,5 @@
-import { useCallback, useContext, useEffect, useMemo, useState } from "react";
-import DashboardSidebar from "../components/DashboardSidebar";
+import { useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import DashboardSidebar from '@features/dashboard/components/DashboardSidebar';
 import {
     fetchStudentCourses,
     fetchStudentDashboardSummary,
@@ -9,9 +9,9 @@ import {
     fetchStudentCertificates,
     fetchStudentNotificationSettings,
     updateStudentNotificationSettings,
-} from "../services/api";
-import { AuthContext } from "../context/AuthContext";
-import toast from "react-hot-toast";
+} from '@services/api';
+import { AuthContext } from '../context/AuthContext';
+import toast from 'react-hot-toast';
 import {
     FiHome,
     FiBookOpen,
@@ -19,15 +19,20 @@ import {
     FiCheckCircle,
     FiBarChart2,
     FiUser,
-} from "react-icons/fi";
+    FiBell,
+} from 'react-icons/fi';
+import NotificationsWidget from '@features/notifications/components/NotificationsWidget';
+import NotificationsTab from '@features/notifications/components/NotificationsTab';
+import { useSearchParams } from 'react-router-dom';
 
 const NAV_ITEMS = [
-    { id: "overview", label: "Кыскача", icon: FiHome },
-    { id: "courses", label: "Курстарым", icon: FiBookOpen },
-    { id: "schedule", label: "Расписание", icon: FiCalendar },
-    { id: "tasks", label: "Тапшырмалар", icon: FiCheckCircle },
-    { id: "progress", label: "Прогресс", icon: FiBarChart2 },
-    { id: "profile", label: "Профиль", icon: FiUser },
+    { id: 'overview', label: 'Кыскача', icon: FiHome },
+    { id: 'courses', label: 'Курстарым', icon: FiBookOpen },
+    { id: 'schedule', label: 'Жүгүртмө', icon: FiCalendar },
+    { id: 'tasks', label: 'Тапшырмалар', icon: FiCheckCircle },
+    { id: 'progress', label: 'Прогресс', icon: FiBarChart2 },
+    { id: 'notifications', label: 'Билдирүүлөр', icon: FiBell },
+    { id: 'profile', label: 'Профиль', icon: FiUser },
 ];
 
 const DEFAULT_NOTIFICATION_SETTINGS = {
@@ -40,39 +45,41 @@ const DEFAULT_NOTIFICATION_SETTINGS = {
 
 const NOTIFICATION_LABELS = {
     lessonReminders: {
-        label: "Сабак эскертмелери",
-        description: "Жандуу сабактар же жаңы сабактар башталар алдында эскертүү алыңыз.",
+        label: 'Сабак эскертмелери',
+        description: 'Жандуу сабактар же жаңы сабактар башталар алдында эскертүү алыңыз.',
     },
     announcementEmails: {
-        label: "Курс боюнча жаңылыктар",
-        description: "Жаңы модулдар жана маанилүү окуу жаңылыктары email аркылуу жетет.",
+        label: 'Курс боюнча жаңылыктар',
+        description: 'Жаңы модулдар жана маанилүү окуу жаңылыктары email аркылуу жетет.',
     },
     taskUpdates: {
-        label: "Тапшырмалар боюнча билдирүү",
-        description: "Квиз жана чакырыктар боюнча эскертмелерди алыңыз.",
+        label: 'Тапшырмалар боюнча билдирүү',
+        description: 'Квиз жана чакырыктар боюнча эскертмелерди алыңыз.',
     },
     smsAlerts: {
-        label: "SMS оповещениелери",
-        description: "Маанилүү окуялар боюнча SMS кабыл алыңыз.",
+        label: 'SMS эскертүүлөр',
+        description: 'Маанилүү окуялар боюнча SMS кабыл алыңыз.',
     },
     pushNotifications: {
-        label: "Push билдирүүлөр",
-        description: "Прогресс жана окуу сунуштары боюнча push билдирүүлөрүн алыңыз.",
+        label: 'Push билдирүүлөр',
+        description: 'Прогресс жана окуу сунуштары боюнча push билдирүүлөрүн алыңыз.',
     },
 };
 
 const formatNotificationLabel = (key) =>
     key
-        ?.replace(/([A-Z])/g, " $1")
-        ?.replace(/_/g, " ")
+        ?.replace(/([A-Z])/g, ' $1')
+        ?.replace(/_/g, ' ')
         ?.replace(/\b\w/g, (l) => l.toUpperCase())
         ?.trim() || key;
 
 const StudentDashboard = () => {
     const { user } = useContext(AuthContext);
+    const [searchParams, setSearchParams] = useSearchParams();
+    const initialTab = searchParams.get('tab') || 'overview';
     const studentId = user?.id;
     const [sidebarOpen, setSidebarOpen] = useState(true);
-    const [activeTab, setActiveTab] = useState("overview");
+    const [activeTab, setActiveTab] = useState(initialTab);
     const [summary, setSummary] = useState(null);
     const [courses, setCourses] = useState([]);
     const [offerings, setOfferings] = useState([]);
@@ -87,6 +94,7 @@ const StudentDashboard = () => {
         schedule: false,
         tasks: false,
         progress: false,
+        notifications: true,
     });
     const [notificationsLoaded, setNotificationsLoaded] = useState(false);
     const [notificationLoading, setNotificationLoading] = useState(false);
@@ -94,13 +102,13 @@ const StudentDashboard = () => {
 
     const loadOverview = useCallback(async () => {
         if (!studentId) return;
-        setTabLoading("overview");
+        setTabLoading('overview');
         try {
             const summaryRes = await fetchStudentDashboardSummary(studentId);
             setSummary(summaryRes || null);
         } catch (error) {
-            console.error("Failed to load overview", error);
-            toast.error("Кыскача маалымат жүктөлгөн жок");
+            console.error('Failed to load overview', error);
+            toast.error('Кыскача маалымат жүктөлгөн жок');
         } finally {
             setTabLoading(null);
             setLoadedTabs((prev) => ({ ...prev, overview: true }));
@@ -109,13 +117,13 @@ const StudentDashboard = () => {
 
     const loadCourses = useCallback(async () => {
         if (!studentId) return;
-        setTabLoading("courses");
+        setTabLoading('courses');
         try {
             const coursesRes = await fetchStudentCourses(studentId);
             setCourses(Array.isArray(coursesRes?.items) ? coursesRes.items : coursesRes || []);
         } catch (error) {
-            console.error("Failed to load courses", error);
-            toast.error("Курстарды жүктөө мүмкүн болбоду");
+            console.error('Failed to load courses', error);
+            toast.error('Курстарды жүктөө мүмкүн болбоду');
         } finally {
             setTabLoading(null);
             setLoadedTabs((prev) => ({ ...prev, courses: true }));
@@ -124,13 +132,15 @@ const StudentDashboard = () => {
 
     const loadSchedule = useCallback(async () => {
         if (!studentId) return;
-        setTabLoading("schedule");
+        setTabLoading('schedule');
         try {
             const offeringsRes = await fetchStudentOfferings(studentId);
-            setOfferings(Array.isArray(offeringsRes?.items) ? offeringsRes.items : offeringsRes || []);
+            setOfferings(
+                Array.isArray(offeringsRes?.items) ? offeringsRes.items : offeringsRes || []
+            );
         } catch (error) {
-            console.error("Failed to load schedule", error);
-            toast.error("Расписание жүктөлгөн жок");
+            console.error('Failed to load schedule', error);
+            toast.error('Жүгүртмө жүктөлгөн жок');
         } finally {
             setTabLoading(null);
             setLoadedTabs((prev) => ({ ...prev, schedule: true }));
@@ -139,13 +149,13 @@ const StudentDashboard = () => {
 
     const loadTasks = useCallback(async () => {
         if (!studentId) return;
-        setTabLoading("tasks");
+        setTabLoading('tasks');
         try {
             const tasksRes = await fetchStudentTasks(studentId);
             setTasks(Array.isArray(tasksRes?.items) ? tasksRes.items : tasksRes || []);
         } catch (error) {
-            console.error("Failed to load tasks", error);
-            toast.error("Тапшырмаларды жүктөө мүмкүн болбоду");
+            console.error('Failed to load tasks', error);
+            toast.error('Тапшырмаларды жүктөө мүмкүн болбоду');
         } finally {
             setTabLoading(null);
             setLoadedTabs((prev) => ({ ...prev, tasks: true }));
@@ -154,7 +164,7 @@ const StudentDashboard = () => {
 
     const loadProgress = useCallback(async () => {
         if (!studentId) return;
-        setTabLoading("progress");
+        setTabLoading('progress');
         try {
             const [progressRes, certificatesRes] = await Promise.all([
                 fetchStudentProgress(studentId),
@@ -162,11 +172,13 @@ const StudentDashboard = () => {
             ]);
             setProgress(Array.isArray(progressRes?.items) ? progressRes.items : progressRes || []);
             setCertificates(
-                Array.isArray(certificatesRes?.items) ? certificatesRes.items : certificatesRes || []
+                Array.isArray(certificatesRes?.items)
+                    ? certificatesRes.items
+                    : certificatesRes || []
             );
         } catch (error) {
-            console.error("Failed to load progress", error);
-            toast.error("Прогресс маалыматтары жүктөлгөн жок");
+            console.error('Failed to load progress', error);
+            toast.error('Прогресс маалыматтары жүктөлгөн жок');
         } finally {
             setTabLoading(null);
             setLoadedTabs((prev) => ({ ...prev, progress: true }));
@@ -183,8 +195,8 @@ const StudentDashboard = () => {
                 ...(data || {}),
             });
         } catch (error) {
-            console.error("Failed to load notification settings", error);
-            toast.error("Эскертмелерди жүктөө мүмкүн болбоду");
+            console.error('Failed to load notification settings', error);
+            toast.error('Эскертмелерди жүктөө мүмкүн болбоду');
             setNotificationSettings((prev) => prev ?? DEFAULT_NOTIFICATION_SETTINGS);
         } finally {
             setNotificationLoading(false);
@@ -194,23 +206,24 @@ const StudentDashboard = () => {
 
     useEffect(() => {
         if (!studentId) return;
-        const tab = activeTab === "profile" ? "overview" : activeTab;
-        if (tab === "overview") {
+        setSearchParams((prev) => {
+            const next = new URLSearchParams(prev);
+            next.set('tab', activeTab);
+            return next;
+        });
+        const tab = activeTab === 'profile' ? 'overview' : activeTab;
+        if (tab === 'overview') {
             loadOverview();
-        } else if (tab === "courses") {
+        } else if (tab === 'courses') {
             loadCourses();
-        } else if (tab === "schedule") {
+        } else if (tab === 'schedule') {
             loadSchedule();
-        } else if (tab === "tasks") {
+        } else if (tab === 'tasks') {
             loadTasks();
-        } else if (tab === "progress") {
+        } else if (tab === 'progress') {
             loadProgress();
         }
-        if (
-            activeTab === "profile" &&
-            !notificationsLoaded &&
-            !notificationLoading
-        ) {
+        if (activeTab === 'profile' && !notificationsLoaded && !notificationLoading) {
             loadNotificationSettings();
         }
     }, [
@@ -228,7 +241,7 @@ const StudentDashboard = () => {
 
     const overviewStudent = useMemo(
         () => ({
-            name: summary?.name || user?.fullName || "Студент",
+            name: summary?.name || user?.fullName || 'Студент',
             streak: summary?.streak || 0,
             lastLesson: summary?.lastLesson || null,
         }),
@@ -236,13 +249,19 @@ const StudentDashboard = () => {
     );
 
     const overviewStats = useMemo(
-        () => summary?.stats || { activeCourses: 0, lessonsCompleted: 0, timeThisWeek: "—", pendingTasks: tasks.length },
+        () =>
+            summary?.stats || {
+                activeCourses: 0,
+                lessonsCompleted: 0,
+                timeThisWeek: '—',
+                pendingTasks: tasks.length,
+            },
         [summary, tasks.length]
     );
 
     const progressItems = useMemo(() => {
         return (progress || []).map((item) => ({
-            course: item.courseTitle || item.course || "Course",
+            course: item.courseTitle || item.course || 'Course',
             lessons: item.lessons
                 ? item.lessons
                 : `${item.lessonsCompleted ?? 0}/${item.lessonsTotal ?? 0}`,
@@ -251,7 +270,9 @@ const StudentDashboard = () => {
                 : `${item.quizzesCompleted ?? 0}/${item.quizzesTotal ?? 0}`,
             certificate:
                 item.certificate ??
-                certificates.some((cert) => cert.courseId === item.courseId || cert.course === item.course),
+                certificates.some(
+                    (cert) => cert.courseId === item.courseId || cert.course === item.course
+                ),
         }));
     }, [progress, certificates]);
 
@@ -271,18 +292,15 @@ const StudentDashboard = () => {
                 ...DEFAULT_NOTIFICATION_SETTINGS,
                 ...(notificationSettings || {}),
             };
-            const updated = await updateStudentNotificationSettings(
-                studentId,
-                payload
-            );
+            const updated = await updateStudentNotificationSettings(studentId, payload);
             setNotificationSettings({
                 ...DEFAULT_NOTIFICATION_SETTINGS,
                 ...(updated || {}),
             });
-            toast.success("Эскертмелер сакталды");
+            toast.success('Эскертмелер сакталды');
         } catch (error) {
-            console.error("Failed to save notifications", error);
-            toast.error("Эскертмелерди сактоо мүмкүн болбоду");
+            console.error('Failed to save notifications', error);
+            toast.error('Эскертмелерди сактоо мүмкүн болбоду');
         } finally {
             setSavingNotifications(false);
         }
@@ -296,13 +314,11 @@ const StudentDashboard = () => {
         [notificationSettings]
     );
 
-    const resolvedTab = activeTab === "profile" ? "overview" : activeTab;
+    const resolvedTab = activeTab === 'profile' ? 'overview' : activeTab;
     const isTabDataLoaded = loadedTabs[resolvedTab] || false;
-    const isProfileReady =
-        activeTab !== "profile" || (notificationsLoaded && !notificationLoading);
+    const isProfileReady = activeTab !== 'profile' || (notificationsLoaded && !notificationLoading);
     const isCurrentTabLoading =
-        tabLoading === resolvedTab ||
-        (activeTab === "profile" && notificationLoading);
+        tabLoading === resolvedTab || (activeTab === 'profile' && notificationLoading);
     const renderTab = () => {
         if (!isTabDataLoaded || !isProfileReady || isCurrentTabLoading) {
             return (
@@ -312,15 +328,17 @@ const StudentDashboard = () => {
             );
         }
         switch (activeTab) {
-            case "courses":
+            case 'courses':
                 return <CoursesTab courses={courses} />;
-            case "schedule":
+            case 'schedule':
                 return <ScheduleTab offerings={offerings} />;
-            case "tasks":
+            case 'tasks':
                 return <TasksTab tasks={tasks} />;
-            case "progress":
+            case 'progress':
                 return <ProgressTab items={progressItems} />;
-            case "profile":
+            case 'notifications':
+                return <NotificationsTab />;
+            case 'profile':
                 return (
                     <ProfileTab
                         student={overviewStudent}
@@ -330,7 +348,7 @@ const StudentDashboard = () => {
                         savingNotifications={savingNotifications}
                     />
                 );
-            case "overview":
+            case 'overview':
             default:
                 return <OverviewTab student={overviewStudent} stats={overviewStats} />;
         }
@@ -351,15 +369,19 @@ const StudentDashboard = () => {
                     <div className="flex items-center justify-between flex-wrap gap-3">
                         <div>
                             <p className="text-sm uppercase tracking-wide text-gray-400">Студент</p>
-                            <h1 className="text-3xl font-bold text-gray-900">{overviewStudent.name}</h1>
-                            <p className="text-sm text-gray-500">Чыгармачыл окуу жолуңузду көзөмөлдөңүз</p>
+                            <h1 className="text-3xl font-bold text-gray-900">
+                                {overviewStudent.name}
+                            </h1>
+                            <p className="text-sm text-gray-500">
+                                Чыгармачыл окуу жолуңузду көзөмөлдөңүз
+                            </p>
                         </div>
                         <button
                             onClick={() => setSidebarOpen((prev) => !prev)}
                             className="hidden md:inline-flex px-4 py-2 rounded-full border text-sm text-gray-600"
                             type="button"
                         >
-                            {sidebarOpen ? "Менюну жашыруу" : "Менюну көрсөтүү"}
+                            {sidebarOpen ? 'Менюну жашыруу' : 'Менюну көрсөтүү'}
                         </button>
                     </div>
                     {renderTab()}
@@ -372,11 +394,16 @@ const StudentDashboard = () => {
 const OverviewTab = ({ student, stats }) => (
     <div className="space-y-6">
         <div className="bg-gradient-to-r from-blue-500 via-blue-600 to-indigo-600 text-white rounded-3xl p-6 sm:p-8">
-            <p className="text-sm uppercase tracking-wide opacity-80">Streak: {student.streak} күн</p>
-            <h2 className="text-2xl sm:text-3xl font-semibold mt-1">Кош келиңиз, {student.name.split(" ")[0]}!</h2>
+            <p className="text-sm uppercase tracking-wide opacity-80">
+                Streak: {student.streak} күн
+            </p>
+            <h2 className="text-2xl sm:text-3xl font-semibold mt-1">
+                Кош келиңиз, {student.name.split(' ')[0]}!
+            </h2>
             {student.lastLesson && (
                 <p className="mt-3 text-sm sm:text-base opacity-90">
-                    Акыркы сабак: <strong>{student.lastLesson.lesson}</strong> ({student.lastLesson.course})
+                    Акыркы сабак: <strong>{student.lastLesson.lesson}</strong> (
+                    {student.lastLesson.course})
                 </p>
             )}
             <button className="mt-5 px-5 py-3 rounded-full bg-white text-blue-600 font-semibold text-sm sm:text-base shadow">
@@ -389,6 +416,7 @@ const OverviewTab = ({ student, stats }) => (
             <StatCard label="Бул жумадагы убакыт" value={stats.timeThisWeek} />
             <StatCard label="Күтүлүп жаткан тапшырмалар" value={stats.pendingTasks} />
         </div>
+        <NotificationsWidget />
     </div>
 );
 
@@ -401,7 +429,7 @@ const CoursesTab = ({ courses }) => {
         );
     }
     const fallbackCover =
-        "https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&w=600&q=80";
+        'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&w=600&q=80';
     return (
         <div className="space-y-4">
             <h2 className="text-2xl font-semibold text-gray-900">Менин курстарым</h2>
@@ -410,14 +438,21 @@ const CoursesTab = ({ courses }) => {
                     const cover =
                         course.coverImageUrl || course.coverImage || course.cover || fallbackCover;
                     const instructor =
-                        course.instructorName || course.instructor?.fullName || course.instructor || "Instruktor";
+                        course.instructorName ||
+                        course.instructor?.fullName ||
+                        course.instructor ||
+                        'Instruktor';
                     const progress = Number(course.progress ?? course.progressPercent ?? 0);
                     return (
                         <div
                             key={course.id || course.courseId}
                             className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden flex flex-col"
                         >
-                            <img src={cover} alt={course.title} className="w-full h-40 object-cover" />
+                            <img
+                                src={cover}
+                                alt={course.title}
+                                className="w-full h-40 object-cover"
+                            />
                             <div className="p-4 flex-1 flex flex-col gap-3">
                                 <div>
                                     <p className="text-sm text-gray-500">{instructor}</p>
@@ -431,12 +466,15 @@ const CoursesTab = ({ courses }) => {
                                     <div className="h-2 rounded-full bg-gray-100">
                                         <div
                                             className="h-2 rounded-full bg-blue-500"
-                                            style={{ width: `${Math.min(100, Math.max(0, progress))}%` }}
+                                            style={{
+                                                width: `${Math.min(100, Math.max(0, progress))}%`,
+                                            }}
                                         />
                                     </div>
                                 </div>
                                 <p className="text-sm text-gray-500">
-                                    Кийинки сабак: {course.nextLessonTitle || course.nextLesson || "—"}
+                                    Кийинки сабак:{' '}
+                                    {course.nextLessonTitle || course.nextLesson || '—'}
                                 </p>
                                 <button className="mt-auto px-4 py-2 rounded-full border text-sm text-blue-600">
                                     Улантуу
@@ -460,20 +498,20 @@ const ScheduleTab = ({ offerings }) => {
     }
     return (
         <div className="space-y-4">
-            <h2 className="text-2xl font-semibold text-gray-900">Расписание</h2>
+            <h2 className="text-2xl font-semibold text-gray-900">Жүгүртмө</h2>
             <div className="space-y-3">
                 {offerings.map((offering) => {
                     const date =
                         offering.date ||
                         (offering.startAt
-                            ? new Date(offering.startAt).toLocaleString("ru-RU", {
-                                  day: "2-digit",
-                                  month: "short",
-                                  hour: "2-digit",
-                                  minute: "2-digit",
+                            ? new Date(offering.startAt).toLocaleString('ru-RU', {
+                                  day: '2-digit',
+                                  month: 'short',
+                                  hour: '2-digit',
+                                  minute: '2-digit',
                               })
-                            : "Белгисиз убакыт");
-                    const modality = offering.modality || offering.modalityLabel || "";
+                            : 'Белгисиз убакыт');
+                    const modality = offering.modality || offering.modalityLabel || '';
                     return (
                         <div
                             key={offering.id}
@@ -487,7 +525,7 @@ const ScheduleTab = ({ offerings }) => {
                                 <p className="text-sm text-gray-500">{modality}</p>
                             </div>
                             <a
-                                href={offering.joinLink || offering.link || "#"}
+                                href={offering.joinLink || offering.link || '#'}
                                 className="px-4 py-2 rounded-full border text-sm text-blue-600"
                             >
                                 Сессияга кошулуу
@@ -517,25 +555,27 @@ const TasksTab = ({ tasks }) => (
                     <tbody>
                         {tasks.map((task) => (
                             <tr key={task.id || task.taskId} className="border-t border-gray-100">
-                                <td className="px-4 py-3 font-medium text-gray-900">{task.title}</td>
+                                <td className="px-4 py-3 font-medium text-gray-900">
+                                    {task.title}
+                                </td>
                                 <td className="px-4 py-3 text-gray-500">
                                     {task.courseTitle || task.course}
                                 </td>
                                 <td className="px-4 py-3 text-gray-500">
                                     {task.due ||
                                         (task.dueAt
-                                            ? new Date(task.dueAt).toLocaleDateString("ru-RU")
-                                            : "—")}
+                                            ? new Date(task.dueAt).toLocaleDateString('ru-RU')
+                                            : '—')}
                                 </td>
                                 <td className="px-4 py-3">
                                     <span
                                         className={`px-3 py-1 rounded-full text-xs ${
-                                            task.status === "completed"
-                                                ? "bg-green-100 text-green-700"
-                                                : "bg-amber-100 text-amber-700"
+                                            task.status === 'completed'
+                                                ? 'bg-green-100 text-green-700'
+                                                : 'bg-amber-100 text-amber-700'
                                         }`}
                                     >
-                                        {task.status === "completed" ? "Жабылган" : "Күтүүдө"}
+                                        {task.status === 'completed' ? 'Жабылган' : 'Күтүүдө'}
                                     </span>
                                 </td>
                             </tr>
@@ -612,7 +652,7 @@ const ProfileTab = ({
                         <input
                             type="email"
                             className="mt-1 w-full border rounded-2xl px-3 py-2"
-                            defaultValue={student.email || "student@example.com"}
+                            defaultValue={student.email || 'student@example.com'}
                             disabled
                         />
                     </div>
@@ -621,14 +661,14 @@ const ProfileTab = ({
                         <input
                             type="text"
                             className="mt-1 w-full border rounded-2xl px-3 py-2"
-                            defaultValue={student.phone || "+996 (555) 123-456"}
+                            defaultValue={student.phone || '+996 (555) 123-456'}
                             disabled
                         />
                     </div>
                 </div>
                 <p className="text-sm text-gray-500">
-                    Профиль маалыматтарын өзгөртүү жакында жеткиликтүү болот. Учурда сиз эскертмелерди башкарсаңыз
-                    болот.
+                    Профиль маалыматтарын өзгөртүү жакында жеткиликтүү болот. Учурда сиз
+                    эскертмелерди башкарсаңыз болот.
                 </p>
             </div>
             <div className="bg-white rounded-3xl border border-gray-100 p-6 space-y-4">
@@ -643,7 +683,7 @@ const ProfileTab = ({
                         notificationEntries.map(([key, value]) => {
                             const meta = NOTIFICATION_LABELS[key] || {};
                             const label = meta.label || formatNotificationLabel(key);
-                            const description = meta.description || "";
+                            const description = meta.description || '';
                             const inputId = `notification-${key}`;
                             return (
                                 <div
@@ -651,7 +691,10 @@ const ProfileTab = ({
                                     className="flex items-start justify-between py-3 gap-4"
                                 >
                                     <div>
-                                        <label htmlFor={inputId} className="font-medium text-gray-900">
+                                        <label
+                                            htmlFor={inputId}
+                                            className="font-medium text-gray-900"
+                                        >
                                             {label}
                                         </label>
                                         {description && (
@@ -670,7 +713,7 @@ const ProfileTab = ({
                                         />
                                         <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-200 rounded-full peer peer-checked:bg-blue-600 transition-colors" />
                                         <span className="ml-3 text-sm text-gray-500">
-                                            {value ? "Күйгүзүлгөн" : "Өчүрүлгөн"}
+                                            {value ? 'Күйгүзүлгөн' : 'Өчүрүлгөн'}
                                         </span>
                                     </label>
                                 </div>
@@ -688,7 +731,7 @@ const ProfileTab = ({
                     disabled={savingNotifications}
                     className="px-5 py-3 rounded-full bg-blue-600 text-white text-sm font-semibold disabled:opacity-60"
                 >
-                    {savingNotifications ? "Сакталууда..." : "Эскертмелерди сактоо"}
+                    {savingNotifications ? 'Сакталууда...' : 'Эскертмелерди сактоо'}
                 </button>
             </div>
         </div>

@@ -1,14 +1,26 @@
 import React from 'react';
 import toast from 'react-hot-toast';
-import { updateCompany, deleteCompany, uploadCompanyLogo } from '../../services/api';
+import { updateCompany, deleteCompany, uploadCompanyLogo } from '@services/api';
 
 // ---- Stable defaults (do NOT inline arrays in props/defaults) ----
 const DEFAULT_KEYS = [
-    'name', 'about', 'logoUrl', 'website', 'email', 'phone',
-    'contactName', 'contactEmail', 'contactPhone',
-    'address', 'city', 'country',
-    'telegram', 'whatsapp', 'instagram',
-    'taxId', 'notes',
+    'name',
+    'about',
+    'logoUrl',
+    'website',
+    'email',
+    'phone',
+    'contactName',
+    'contactEmail',
+    'contactPhone',
+    'address',
+    'city',
+    'country',
+    'telegram',
+    'whatsapp',
+    'instagram',
+    'taxId',
+    'notes',
 ];
 
 /** Extendable field registry (KY/RU labels) */
@@ -39,12 +51,14 @@ const FIELD_META = {
 export default function CompanySettings({
     company,
     onSaved,
-    editableKeys,         // pass if you want to restrict; otherwise we use DEFAULT_KEYS
+    editableKeys, // pass if you want to restrict; otherwise we use DEFAULT_KEYS
     allowDelete = true,
 }) {
     // ---- FIX: make keys stable (avoid default [] recreation) ----
     const keys = React.useMemo(() => {
-        const k = (editableKeys && editableKeys.length ? editableKeys : DEFAULT_KEYS).filter((x) => FIELD_META[x]);
+        const k = (editableKeys && editableKeys.length ? editableKeys : DEFAULT_KEYS).filter(
+            (x) => FIELD_META[x]
+        );
         // normalize order/signature to keep memos stable
         return Array.from(new Set(k));
     }, [editableKeys ? editableKeys.join('|') : 'DEFAULT']);
@@ -62,7 +76,9 @@ export default function CompanySettings({
     const [errors, setErrors] = React.useState({});
 
     // keep form in sync when company/keys change
-    React.useEffect(() => { setForm(initial); }, [initial]);
+    React.useEffect(() => {
+        setForm(initial);
+    }, [initial]);
 
     const dirty = React.useMemo(
         () => JSON.stringify(form) !== JSON.stringify(initial),
@@ -77,7 +93,11 @@ export default function CompanySettings({
             if (!re.test(form.email.trim())) v.email = 'Email туура эмес / Неверный email';
         }
         if (keys.includes('website') && form.website?.trim()) {
-            try { new URL(form.website.trim()); } catch { v.website = 'URL туура эмес / Неверный URL'; }
+            try {
+                new URL(form.website.trim());
+            } catch {
+                v.website = 'URL туура эмес / Неверный URL';
+            }
         }
         return v;
     };
@@ -86,8 +106,14 @@ export default function CompanySettings({
         e?.preventDefault?.();
         const v = validate();
         setErrors(v);
-        if (Object.keys(v).length) { toast.error('Текшерип чыгыңыз / Проверьте поля'); return; }
-        if (!dirty) { setEdit(false); return; }
+        if (Object.keys(v).length) {
+            toast.error('Текшерип чыгыңыз / Проверьте поля');
+            return;
+        }
+        if (!dirty) {
+            setEdit(false);
+            return;
+        }
 
         try {
             setSaving(true);
@@ -104,14 +130,25 @@ export default function CompanySettings({
         }
     }
 
-    const onCancel = () => { setForm(initial); setErrors({}); setEdit(false); };
+    const onCancel = () => {
+        setForm(initial);
+        setErrors({});
+        setEdit(false);
+    };
 
     async function onDelete() {
         if (!allowDelete) return;
         if (!window.confirm('Бул компанияны өчүрүүгө ишенимдүүсүзбү? / Удалить компанию?')) return;
-        try { setDeleting(true); await deleteCompany(company.id); toast.success('Компания өчүрүлдү'); window.location.href = '/companies'; }
-        catch { toast.error('Өчүрүү катасы'); }
-        finally { setDeleting(false); }
+        try {
+            setDeleting(true);
+            await deleteCompany(company.id);
+            toast.success('Компания өчүрүлдү');
+            window.location.href = '/companies';
+        } catch {
+            toast.error('Өчүрүү катасы');
+        } finally {
+            setDeleting(false);
+        }
     }
 
     // Logo upload (same flow as course cover -> /companies/:id/upload-logo)
@@ -143,14 +180,20 @@ export default function CompanySettings({
             const url = val || '';
             return (
                 <div className="border rounded p-3 flex items-center gap-3">
-                    <div className="text-xs text-gray-500 w-40 shrink-0">{meta.label}</div>
+                    <div className="text-xs text-gray-500 dark:text-[#a6adba] w-40 shrink-0">{meta.label}</div>
                     {url ? (
                         /^https?:\/\//i.test(String(url)) ? (
-                            <img src={url} alt="Logo" className="h-14 w-auto object-contain rounded" />
+                            <img
+                                src={url}
+                                alt="Logo"
+                                className="h-14 w-auto object-contain rounded"
+                            />
                         ) : (
                             <span className="text-sm break-words">{String(url)}</span>
                         )
-                    ) : <span className="text-gray-400">—</span>}
+                    ) : (
+                        <span className="text-gray-400">—</span>
+                    )}
                 </div>
             );
         }
@@ -160,8 +203,13 @@ export default function CompanySettings({
             const href = String(val).startsWith('http') ? val : `https://${val}`;
             return (
                 <div className="border rounded p-3 flex items-center gap-3">
-                    <div className="text-xs text-gray-500 w-40 shrink-0">{meta.label}</div>
-                    <a href={href} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline break-all">
+                    <div className="text-xs text-gray-500 dark:text-[#a6adba] w-40 shrink-0">{meta.label}</div>
+                    <a
+                        href={href}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-blue-600 hover:underline break-all"
+                    >
                         {href}
                     </a>
                 </div>
@@ -170,8 +218,10 @@ export default function CompanySettings({
         if (k === 'email' && val) {
             return (
                 <div className="border rounded p-3 flex items-center gap-3">
-                    <div className="text-xs text-gray-500 w-40 shrink-0">{meta.label}</div>
-                    <a href={`mailto:${val}`} className="text-blue-600 hover:underline break-all">{val}</a>
+                    <div className="text-xs text-gray-500 dark:text-[#a6adba] w-40 shrink-0">{meta.label}</div>
+                    <a href={`mailto:${val}`} className="text-blue-600 hover:underline break-all">
+                        {val}
+                    </a>
                 </div>
             );
         }
@@ -179,8 +229,10 @@ export default function CompanySettings({
             const phone = String(val);
             return (
                 <div className="border rounded p-3 flex items-center gap-3">
-                    <div className="text-xs text-gray-500 w-40 shrink-0">{meta.label}</div>
-                    <a href={`tel:${phone}`} className="text-blue-600 hover:underline">{phone}</a>
+                    <div className="text-xs text-gray-500 dark:text-[#a6adba] w-40 shrink-0">{meta.label}</div>
+                    <a href={`tel:${phone}`} className="text-blue-600 hover:underline">
+                        {phone}
+                    </a>
                 </div>
             );
         }
@@ -189,8 +241,13 @@ export default function CompanySettings({
             const href = String(val).startsWith('http') ? String(val) : `https://t.me/${v}`;
             return (
                 <div className="border rounded p-3 flex items-center gap-3">
-                    <div className="text-xs text-gray-500 w-40 shrink-0">{meta.label}</div>
-                    <a href={href} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-blue-600 hover:underline">
+                    <div className="text-xs text-gray-500 dark:text-[#a6adba] w-40 shrink-0">{meta.label}</div>
+                    <a
+                        href={href}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-2 text-blue-600 hover:underline"
+                    >
                         <span>@{v}</span>
                     </a>
                 </div>
@@ -198,11 +255,20 @@ export default function CompanySettings({
         }
         if (k === 'instagram' && val) {
             const v = String(val).replace(/^@/, '');
-            const href = String(val).startsWith('http') ? String(val) : `https://instagram.com/${v}`;
+            const href = String(val).startsWith('http')
+                ? String(val)
+                : `https://instagram.com/${v}`;
             return (
                 <div className="border rounded p-3 flex items-center gap-3">
-                    <div className="text-xs text-gray-500 w-40 shrink-0">{meta.label}</div>
-                    <a href={href} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline break-all">@{v}</a>
+                    <div className="text-xs text-gray-500 dark:text-[#a6adba] w-40 shrink-0">{meta.label}</div>
+                    <a
+                        href={href}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-blue-600 hover:underline break-all"
+                    >
+                        @{v}
+                    </a>
                 </div>
             );
         }
@@ -211,8 +277,10 @@ export default function CompanySettings({
         if (meta.type === 'textarea') {
             return (
                 <div className="border rounded p-3 md:col-span-2">
-                    <div className="text-xs text-gray-500 mb-1">{meta.label}</div>
-                    <div className="whitespace-pre-wrap break-words text-sm">{val || <span className="text-gray-400">—</span>}</div>
+                    <div className="text-xs text-gray-500 dark:text-[#a6adba] mb-1">{meta.label}</div>
+                    <div className="whitespace-pre-wrap break-words text-sm">
+                        {val || <span className="text-gray-400">—</span>}
+                    </div>
                 </div>
             );
         }
@@ -220,30 +288,47 @@ export default function CompanySettings({
         // Default text cell
         return (
             <div className="border rounded p-3">
-                <div className="text-xs text-gray-500 mb-1">{meta.label}</div>
-                <div className="break-words text-sm">{val || <span className="text-gray-400">—</span>}</div>
+                <div className="text-xs text-gray-500 dark:text-[#a6adba] mb-1">{meta.label}</div>
+                <div className="break-words text-sm">
+                    {val || <span className="text-gray-400">—</span>}
+                </div>
             </div>
         );
     };
 
     // ---------- UI ----------
     return (
-        <div className="bg-white rounded shadow p-4 space-y-4">
+        <div className="bg-white dark:bg-[#141619] rounded shadow p-4 space-y-4">
             <div className="flex items-center justify-between">
                 <h2 className="text-lg font-semibold">Компания</h2>
                 <div className="flex items-center gap-2">
                     {edit ? (
                         <>
-                            <button onClick={onCancel} className="px-3 py-2 rounded border">Жокко чыгаруу</button>
-                            <button onClick={onSave} disabled={saving} className={`px-4 py-2 rounded text-white ${saving ? 'bg-gray-400' : 'bg-blue-600 hover:bg-blue-700'}`}>
+                            <button onClick={onCancel} className="px-3 py-2 rounded border">
+                                Жокко чыгаруу
+                            </button>
+                            <button
+                                onClick={onSave}
+                                disabled={saving}
+                                className={`px-4 py-2 rounded text-white ${saving ? 'bg-gray-400' : 'bg-blue-600 hover:bg-blue-700'}`}
+                            >
                                 {saving ? 'Сакталууда…' : 'Сактоо'}
                             </button>
                         </>
                     ) : (
                         <>
-                            <button onClick={() => setEdit(true)} className="px-3 py-2 rounded border">Түзөтүү</button>
+                            <button
+                                onClick={() => setEdit(true)}
+                                className="px-3 py-2 rounded border"
+                            >
+                                Түзөтүү
+                            </button>
                             {allowDelete && (
-                                <button onClick={onDelete} disabled={deleting} className={`px-3 py-2 rounded ${deleting ? 'text-gray-400' : 'text-red-600 hover:text-red-700'}`}>
+                                <button
+                                    onClick={onDelete}
+                                    disabled={deleting}
+                                    className={`px-3 py-2 rounded ${deleting ? 'text-gray-400' : 'text-red-600 hover:text-red-700'}`}
+                                >
                                     {deleting ? 'Өчүрүлүүдө…' : 'Компанияны өчүрүү'}
                                 </button>
                             )}
@@ -260,9 +345,11 @@ export default function CompanySettings({
                     {/* name always near top */}
                     {keys.includes('name') && <ViewCell k="name" />}
                     {/* then rest */}
-                    {keys.filter(k => !['logoUrl', 'name'].includes(k)).map((k) => (
-                        <ViewCell key={k} k={k} />
-                    ))}
+                    {keys
+                        .filter((k) => !['logoUrl', 'name'].includes(k))
+                        .map((k) => (
+                            <ViewCell key={k} k={k} />
+                        ))}
                 </div>
             )}
 
@@ -276,14 +363,23 @@ export default function CompanySettings({
                         if (meta.type === 'textarea') {
                             return (
                                 <label key={k} className="md:col-span-2 flex flex-col">
-                                    <span className="text-sm text-gray-700 mb-1">{meta.label}{meta.required && ' *'}</span>
+                                    <span className="text-sm text-gray-700 mb-1">
+                                        {meta.label}
+                                        {meta.required && ' *'}
+                                    </span>
                                     <textarea
                                         rows={4}
                                         className={`border rounded px-3 py-2 ${invalid ? 'border-red-500' : 'border-gray-300'}`}
                                         value={form[k] ?? ''}
-                                        onChange={(e) => setForm((s) => ({ ...s, [k]: e.target.value }))}
+                                        onChange={(e) =>
+                                            setForm((s) => ({ ...s, [k]: e.target.value }))
+                                        }
                                     />
-                                    {invalid && <span className="text-xs text-red-600 mt-1">{errors[k]}</span>}
+                                    {invalid && (
+                                        <span className="text-xs text-red-600 mt-1">
+                                            {errors[k]}
+                                        </span>
+                                    )}
                                 </label>
                             );
                         }
@@ -293,9 +389,15 @@ export default function CompanySettings({
                                 <div key={k} className="flex flex-col gap-2">
                                     <span className="text-sm text-gray-700">{meta.label}</span>
                                     {form.logoUrl ? (
-                                        <img src={form.logoUrl} alt="Logo" className="h-14 w-auto object-contain rounded" />
+                                        <img
+                                            src={form.logoUrl}
+                                            alt="Logo"
+                                            className="h-14 w-auto object-contain rounded"
+                                        />
                                     ) : (
-                                        <div className="h-14 border rounded flex items-center justify-center text-gray-500">—</div>
+                                        <div className="h-14 border rounded flex items-center justify-center text-gray-500 dark:text-[#a6adba]">
+                                            —
+                                        </div>
                                     )}
                                     <div className="flex items-center gap-2">
                                         <input
@@ -307,7 +409,9 @@ export default function CompanySettings({
                                             className="border rounded px-3 py-2 flex-1"
                                             placeholder="https://…"
                                             value={form.logoUrl ?? ''}
-                                            onChange={(e) => setForm((s) => ({ ...s, logoUrl: e.target.value }))}
+                                            onChange={(e) =>
+                                                setForm((s) => ({ ...s, logoUrl: e.target.value }))
+                                            }
                                         />
                                     </div>
                                 </div>
@@ -315,25 +419,44 @@ export default function CompanySettings({
                         }
 
                         // default inputs
-                        const inputType = ['email', 'tel', 'url', 'text'].includes(meta.type) ? meta.type : 'text';
+                        const inputType = ['email', 'tel', 'url', 'text'].includes(meta.type)
+                            ? meta.type
+                            : 'text';
                         return (
                             <label key={k} className="flex flex-col">
-                                <span className="text-sm text-gray-700 mb-1">{meta.label}{meta.required && ' *'}</span>
+                                <span className="text-sm text-gray-700 mb-1">
+                                    {meta.label}
+                                    {meta.required && ' *'}
+                                </span>
                                 <input
                                     type={inputType}
                                     className={`border rounded px-3 py-2 ${invalid ? 'border-red-500' : 'border-gray-300'}`}
                                     value={form[k] ?? ''}
-                                    onChange={(e) => setForm((s) => ({ ...s, [k]: e.target.value }))}
+                                    onChange={(e) =>
+                                        setForm((s) => ({ ...s, [k]: e.target.value }))
+                                    }
                                     placeholder={meta.placeholder || ''}
                                 />
-                                {invalid && <span className="text-xs text-red-600 mt-1">{errors[k]}</span>}
+                                {invalid && (
+                                    <span className="text-xs text-red-600 mt-1">{errors[k]}</span>
+                                )}
                             </label>
                         );
                     })}
 
                     <div className="md:col-span-2 flex items-center justify-end gap-2 pt-1">
-                        <button type="button" onClick={onCancel} className="px-3 py-2 rounded border">Жокко чыгаруу</button>
-                        <button type="submit" disabled={saving} className={`px-4 py-2 rounded text-white ${saving ? 'bg-gray-400' : 'bg-blue-600 hover:bg-blue-700'}`}>
+                        <button
+                            type="button"
+                            onClick={onCancel}
+                            className="px-3 py-2 rounded border"
+                        >
+                            Жокко чыгаруу
+                        </button>
+                        <button
+                            type="submit"
+                            disabled={saving}
+                            className={`px-4 py-2 rounded text-white ${saving ? 'bg-gray-400' : 'bg-blue-600 hover:bg-blue-700'}`}
+                        >
                             {saving ? 'Сакталууда…' : 'Сактоо'}
                         </button>
                     </div>
