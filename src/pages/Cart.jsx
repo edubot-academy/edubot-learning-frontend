@@ -5,21 +5,26 @@ import { BsTrash, BsCartX } from 'react-icons/bs';
 import { FaShoppingCart } from 'react-icons/fa';
 import Button from '@shared-ui/Button';
 import Modal from '@shared-ui/Modal'; // Используем существующую модалку
+import ContactCourseModal from '@features/courses/components/ContactCourseModal';
 
 const Cart = () => {
     const { cartItems, loading, removeFromCart, getTotalPrice, clearCart, user } = useCart();
 
     const navigate = useNavigate();
     const [showRegisterModal, setShowRegisterModal] = useState(false);
+    const [showContactModal, setShowContactModal] = useState(false);
+
 
     const handleCheckout = () => {
         if (!user) {
             setShowRegisterModal(true);
             return;
         }
-        // Здесь будет логика оформления заказа для авторизованных
-        console.log('Переход к оформлению заказа');
+
+        // 👇 вместо console.log
+        setShowContactModal(true);
     };
+
 
     const handleRegister = () => {
         setShowRegisterModal(false);
@@ -97,7 +102,10 @@ const Cart = () => {
                     </div>
                 </div>
             </Modal>
-
+            <ContactCourseModal
+                isOpen={showContactModal}
+                onClose={() => setShowContactModal(false)}
+            />
             <div className="container mx-auto px-4">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
                     <h1 className="text-2xl sm:text-3xl font-bold">Менин корзинам</h1>

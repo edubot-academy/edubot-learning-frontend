@@ -1,159 +1,169 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import VideoPlayerUI from './ui/Play.jsx';
 import toast from 'react-hot-toast';
 import Hls from 'hls.js';
 
 const VideoPlayer = ({
-    videoUrl,
-    resumeTime,
-    onProgress,
-    onTimeUpdate,
-    onPause,
-    allowPlay = true,
-    videoRef,
-    onEnded,
+  videoUrl,
+  resumeTime,
+  onProgress,
+  onTimeUpdate,
+  onPause,
+  allowPlay = true,
+  videoRef,
+  containerRef,
+  onEnded,
 }) => {
-    const [hasError, setHasError] = useState(false);
-    const [isHls, setIsHls] = useState(false);
-    const [hlsInstance, setHlsInstance] = useState(null);
-    const [qualityOptions, setQualityOptions] = useState([
-        { id: 'auto', label: 'Auto', index: -1 },
-    ]);
-    const [currentQuality, setCurrentQuality] = useState('auto');
+  const hlsRef = useRef(null);
+  const [hasError, setHasError] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [qualityOptions, setQualityOptions] = useState([{ id: 'auto', label: 'Auto' }]);
+  const [currentQuality, setCurrentQuality] = useState('auto');
 
-    const handleError = () => {
-        setHasError(true);
-        toast.error('Видео жүктөлбөй калды. Кайра аракет кылыңыз.');
-    };
+  const handleQualityChange = useCallback((id) => {
+    if (!hlsRef.current) return;
+    hlsRef.current.currentLevel = id === 'auto' ? -1 : Number(id);
+    setCurrentQuality(id);
+  }, []);
 
-    const handleLoadedData = () => {
-        if (hasError) setHasError(false);
-    };
+  const retryLoad = useCallback(() => {
+    setHasError(false);
+    setIsLoading(true);
+  }, []);
 
-    const handleRetry = () => {
-        if (!videoRef?.current) return;
-        setHasError(false);
-        videoRef.current.load();
-        videoRef.current.play().catch(() => {
-            /* ignore autoplay failure */
-        });
-    };
+  useEffect(() => {
+    const videoEl = videoRef.current;
+    if (!videoEl || !videoUrl) return;
 
-    useEffect(() => {
-        const videoEl = videoRef?.current;
-        if (!videoEl || !videoUrl) return undefined;
-
-        const isHlsSource = videoUrl?.includes('.m3u8');
-        console.log(isHlsSource);
-        setIsHls(isHlsSource);
-
-        if (isHlsSource && Hls.isSupported()) {
-            const hls = new Hls();
-            hls.loadSource(videoUrl);
-            hls.attachMedia(videoEl);
-            setHlsInstance(hls);
-            setQualityOptions([{ id: 'auto', label: 'Auto', index: -1 }]);
-            setCurrentQuality('auto');
-
-            hls.on(Hls.Events.MANIFEST_PARSED, (_, data) => {
-                const levels = data?.levels || hls.levels || [];
-                if (levels.length) {
-                    const opts = [
-                        { id: 'auto', label: 'Auto', index: -1 },
-                        ...levels.map((lvl, idx) => ({
-                            id: `${idx}`,
-                            label: `${lvl.height || lvl.bitrate || 'Level ' + idx}p`,
-                            index: idx,
-                        })),
-                    ];
-                    setQualityOptions(opts);
-                }
-            });
-
-            hls.on(Hls.Events.ERROR, (_, data) => {
-                if (data.fatal) {
-                    setHasError(true);
-                    toast.error('HLS видео жүктөлбөй калды.');
-                }
-            });
-
-            return () => {
-                hls.destroy();
-            };
-        }
-
-        // Native HLS support fallback (Safari)
-        if (isHlsSource && videoEl.canPlayType('application/vnd.apple.mpegurl')) {
-            videoEl.src = videoUrl;
-            return undefined;
-        }
-
-        // MP4 or other sources
-        videoEl.src = videoUrl;
-        setQualityOptions([{ id: 'auto', label: 'Default', index: -1 }]);
-        setCurrentQuality('auto');
-        return undefined;
-    }, [videoUrl, videoRef]);
-
-    const handleQualityChange = (id) => {
-        if (!isHls || !hlsInstance) return;
-        const levelIndex = id === 'auto' ? -1 : Number(id);
-        hlsInstance.currentLevel = levelIndex;
-        setCurrentQuality(id);
-    };
-
-    if (!videoUrl) {
-        return (
-            <div className="relative w-full bg-black rounded-xl overflow-hidden aspect-video flex items-center justify-center text-gray-400">
-                Видео табылган жок
-            </div>
-        );
+    if (hlsRef.current) {
+      hlsRef.current.destroy();
+      hlsRef.current = null;
     }
 
-    return (
-        <div className="relative w-full bg-black rounded-xl overflow-hidden">
-            {/* ==== VIDEO ==== */}
-            <video
-                ref={videoRef}
-                src={videoUrl}
-                className="w-full aspect-video object-cover cursor-pointer"
-                preload="metadata"
-                playsInline
-                crossOrigin="anonymous"
-                onError={handleError}
-                onLoadedData={handleLoadedData}
-            />
+    videoEl.pause();
+    videoEl.removeAttribute('src');
+    videoEl.load();
+    setIsLoading(true);
 
-            {hasError && (
-                <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center text-white space-y-3">
-                    <p className="text-sm">Видео жүктөлбөй калды.</p>
-                    <button
-                        type="button"
-                        onClick={handleRetry}
-                        className="px-4 py-2 bg-orange-500 rounded-lg text-sm hover:bg-orange-600 transition"
-                    >
-                        Кайра аракет кылуу
-                    </button>
-                </div>
-            )}
+    const isHlsSource = videoUrl.includes('.m3u8');
 
-            {/* ==== UI КОНТРОЛЫ ==== */}
-            {!hasError && (
-                <VideoPlayerUI
-                    videoRef={videoRef}
-                    resumeTime={resumeTime}
-                    onProgress={onProgress}
-                    onTimeUpdate={onTimeUpdate}
-                    onPause={onPause}
-                    allowPlay={allowPlay}
-                    onEnded={onEnded}
-                    qualityOptions={qualityOptions}
-                    currentQuality={currentQuality}
-                    onQualityChange={handleQualityChange}
-                />
-            )}
+    if (isHlsSource && Hls.isSupported()) {
+      const hls = new Hls();
+      hlsRef.current = hls;
+
+      hls.loadSource(videoUrl);
+      hls.attachMedia(videoEl);
+
+      hls.on(Hls.Events.MANIFEST_PARSED, (_, data) => {
+        const levels = data.levels || [];
+        setQualityOptions([
+          { id: 'auto', label: 'Auto' },
+          ...levels.map((lvl, i) => ({ id: `${i}`, label: `${lvl.height}p` })),
+        ]);
+      });
+
+      hls.on(Hls.Events.ERROR, (_, data) => {
+        if (data.fatal) {
+          setHasError(true);
+          setIsLoading(false);
+          toast.error('Тилекке каршы, видео ойнотулбай калды.');
+        }
+      });
+
+      return () => {
+        hls.destroy();
+        hlsRef.current = null;
+      };
+    } else {
+      videoEl.src = videoUrl;
+    }
+  }, [videoUrl, videoRef, setIsLoading, setHasError,]);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    const handleCanPlay = () => setIsLoading(false);
+    const handleWaiting = () => setIsLoading(true);
+
+    video.addEventListener('canplay', handleCanPlay);
+    video.addEventListener('waiting', handleWaiting);
+
+    return () => {
+      video.removeEventListener('canplay', handleCanPlay);
+      video.removeEventListener('waiting', handleWaiting);
+    };
+  }, [videoRef]);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video || resumeTime == null) return;
+
+    const setTime = () => {
+      if (Number.isFinite(resumeTime)) {
+        video.currentTime = resumeTime;
+      }
+    };
+
+    if (video.readyState >= 1) setTime();
+    else video.addEventListener('loadedmetadata', setTime, { once: true });
+  }, [resumeTime, videoRef]);
+
+  return (
+    <div className="relative w-full bg-black rounded-xl overflow-hidden">
+      {allowPlay && !hasError && (
+        <video
+          ref={videoRef}
+          className="w-full aspect-video object-cover"
+          preload="metadata"
+          playsInline
+          onError={() => {
+            setHasError(true);
+            setIsLoading(false);
+          }}
+        />
+      )}
+
+      {isLoading && allowPlay && !hasError && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-10">
+          <div className="w-12 h-12 border-4 border-t-orange-500 border-gray-200 rounded-full animate-spin" />
         </div>
-    );
+      )}
+
+      {!allowPlay && (
+        <div className="absolute inset-0 bg-black/70 z-20 flex items-center justify-center text-white">
+          Видео табылган жок
+        </div>
+      )}
+
+      {hasError && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/70 z-20 text-white">
+          <p>Видео жүктөлбөй калды.</p>
+          <button
+            className="mt-4 px-4 py-2 bg-orange-500 rounded hover:bg-orange-600"
+            onClick={retryLoad}
+          >
+            Кайра аракет кылуу
+          </button>
+        </div>
+      )}
+      
+      {!hasError && allowPlay && !isLoading && (
+        <VideoPlayerUI
+          videoRef={videoRef}
+          containerRef={containerRef}
+          allowPlay={allowPlay}
+          onProgress={onProgress}
+          onTimeUpdate={onTimeUpdate}
+          onPause={onPause}
+          onEnded={onEnded}
+          qualityOptions={qualityOptions}
+          currentQuality={currentQuality}
+          onQualityChange={handleQualityChange}
+        />
+      )}
+    </div>
+  );
 };
 
 export default VideoPlayer;
