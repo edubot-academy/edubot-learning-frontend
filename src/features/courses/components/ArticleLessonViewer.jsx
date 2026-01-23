@@ -115,7 +115,7 @@ const ArticleLessonViewer = ({ lesson }) => {
                 <p 
                     className="text-gray-500"
                     role="status"
-                    aria-label="Контент отсутствует"
+                    aria-label="Макаланын тексти жок"
                 >
                     Макала тексти кошула элек.
                 </p>

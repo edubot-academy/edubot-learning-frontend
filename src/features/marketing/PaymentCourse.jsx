@@ -20,7 +20,7 @@ const SuccessPaymentModal = ({ open, onClose, receipt }) => (
                 {'\n'}Рахмат!
             </div>
             <button className="bg-[#F25A3C] text-white rounded-xl px-10 py-3" onClick={onClose}>
-                Готово
+                Даяр болду
             </button>
         </div>
     </Modal>
@@ -113,7 +113,7 @@ const PaymentCourse = () => {
                         className="mt-2 w-full py-3 bg-[#F25A3C] text-white rounded-xl font-medium disabled:opacity-60"
                         disabled={isDisabled}
                     >
-                        {isLoading ? 'Обработка...' : 'Сатып алуу →'}
+                        {isLoading ? 'Иштелүүдө...' : 'Сатып алуу →'}
                     </button>
 
                     <p className="text-xs text-gray-500 mt-3 leading-snug">

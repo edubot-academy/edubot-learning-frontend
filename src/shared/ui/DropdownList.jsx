@@ -137,7 +137,7 @@ export default function DropdownList() {
                             onClick={() => setIsOpenSearch(false)}
                             className="bg-orange-500 text-white py-2 font-medium hover:bg-orange-600 transition"
                         >
-                            Готово
+                            Даяр болду
                         </button>
                     </div>
                 )}

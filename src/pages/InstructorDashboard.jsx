@@ -928,7 +928,7 @@ const OfferingsSection = ({ courses, offerings, loading, refreshOfferings }) => 
                 <StatCard label="Бардык offeringдер" value={summary.total} />
                 <StatCard label="Жакынкы offeringдер" value={summary.upcoming} />
                 <StatCard label="Компаниялар үчүн" value={summary.company} />
-                <StatCard label="Публичный offeringдер" value={summary.public} />
+                <StatCard label="Коомдук offeringдер" value={summary.public} />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <StatCard label="Активдүү" value={summary.active} />
@@ -1233,7 +1233,7 @@ const CreateOfferingModal = ({ courses, form, onChange, onClose, onSubmit, creat
                                 className="mt-1 w-full border rounded-2xl px-3 py-2"
                             >
                                 <option value="PRIVATE">Жабык</option>
-                                <option value="PUBLIC">Публичный (жалпы үчүн)</option>
+                                <option value="PUBLIC">Коомдук (жалпы үчүн)</option>
                                 <option value="UNLISTED">Сырткы шилтеме боюнча</option>
                             </select>
                         </div>
@@ -1454,7 +1454,7 @@ const OfferingCard = ({ offering, onEdit, onEnroll }) => {
                         : 'bg-gray-100 text-gray-600 dark:text-[#a6adba]'
                         }`}
                 >
-                    {visibility === 'PUBLIC' ? 'Публичный' : 'Жабык'}
+                    {visibility === 'PUBLIC' ? 'Коомдук' : 'Жабык'}
                 </span>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm text-gray-600 dark:text-[#a6adba]">

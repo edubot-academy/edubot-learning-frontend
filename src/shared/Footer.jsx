@@ -33,7 +33,7 @@ const Footer = () => {
 
                         <div>
                             <h3 className="font-bold text-base mb-3 text-black dark:text-[#E8ECF3]">
-                                КОНТАКТНАЯ ИНФОРМАЦИЯ
+                                БАЙЛАНЫШ ҮЧҮН
                             </h3>
                             <ul className="space-y-1 text-gray-700 dark:text-[#a6adba] text-sm">
                                 <li>
@@ -57,10 +57,10 @@ const Footer = () => {
 
                         <div>
                             <h3 className="font-bold text-base mb-3 text-black dark:text-[#E8ECF3]">
-                                НАШ АДРЕС
+                                БИЗДИН ДАРЕК
                             </h3>
                             <p className="text-sm text-gray-700 dark:text-[#a6adba]">
-                                г.Бишкек, ул.Турусбекова 109/1
+                                Бишкек ш., Ахунбаева 129/1
                             </p>
                         </div>
                     </div>
@@ -75,7 +75,7 @@ const Footer = () => {
                 </div>
 
                 <p className="w-full text-center text-xs text-gray-600 dark:text-[#a6adba] mt-16">
-                    © 2025 Edubot Learning. Все права защищены.
+                    © 2025 Edubot Learning. Бардык укуктар корголгон.
                 </p>
             </div>
         </footer>
