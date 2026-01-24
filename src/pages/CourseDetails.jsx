@@ -29,7 +29,7 @@ import AiAssistantPanel from '@features/assistant/components/AiAssistantPanel';
 import InstructorsInfo from '@features/courses/components/InstructorsInfo';
 import CourseReview from '@features/courses/components/CourseReview';
 import CourseContent from '@features/courses/components/CourseContent';
-import { FaSignalMessenger } from "react-icons/fa6";
+import { FaSignalMessenger } from 'react-icons/fa6';
 import InstructorChat from '@features/instructorChat/InstructorChat';
 import CourseHeader from '@features/courses/components/CourseHeader';
 
@@ -739,8 +739,11 @@ const CourseDetailsPage = () => {
                     key={tab.id}
                     type="button"
                     onClick={() => handleTabChange(tab)}
-                    className={`flex-1 min-w-[140px] px-4 py-2 rounded-xl text-sm font-medium transition ${activeTab === tab.id ? 'dark:bg-[#222222] bg-white text-gray-900 dark:text-[#E8ECF3] shadow' : 'text-gray-600 dark:text-[#a6adba]'
-                        } ${tab.disabled ? 'opacity-60 cursor-not-allowed' : 'hover:text-gray-900'}`}
+                    className={`flex-1 min-w-[140px] px-4 py-2 rounded-xl text-sm font-medium transition ${
+                        activeTab === tab.id
+                            ? 'dark:bg-[#222222] bg-white text-gray-900 dark:text-[#E8ECF3] shadow'
+                            : 'text-gray-600 dark:text-[#a6adba]'
+                    } ${tab.disabled ? 'opacity-60 cursor-not-allowed' : 'hover:text-gray-900'}`}
                 >
                     {tab.label}
                 </button>
@@ -770,7 +773,8 @@ const CourseDetailsPage = () => {
                                 className="flex w-[265px] h-[61px] opacity-100 rounded-[8px] border-[1px] p-[18px] gap-[10px] border-[#FB923C] bg-[#FFF7ED]"
                                 onClick={() => setInstructorChat(true)}
                             >
-                                <FaSignalMessenger className="text-[#EA580C]" /> Инструктор менен чат
+                                <FaSignalMessenger className="text-[#EA580C]" /> Инструктор менен
+                                чат
                             </button>
 
                             {/* Модалка чата */}
@@ -784,17 +788,18 @@ const CourseDetailsPage = () => {
                 </div>
             )}
 
-
             {/* Main content */}
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-8">
-
                 <div className="space-y-6 lg:space-y-0 lg:grid lg:grid-cols-3 lg:gap-6">
                     {/* Mobile layouts */}
                     {enrolled ? (
                         <div className="space-y-6 lg:hidden">
                             {activeLesson &&
                                 (activeLesson.kind === 'article' ? (
-                                    <ArticleLessonViewer key={activeLesson.id} lesson={activeLesson} />
+                                    <ArticleLessonViewer
+                                        key={activeLesson.id}
+                                        lesson={activeLesson}
+                                    />
                                 ) : activeLesson.kind === 'quiz' ? (
                                     <LessonQuizPlayer
                                         key={activeLesson.id}
@@ -823,7 +828,10 @@ const CourseDetailsPage = () => {
                                         onSubmit={handleChallengeSubmit}
                                         submitting={challengeSubmitting}
                                         disabled={!enrolled || activeLesson.locked}
-                                        loading={challengeLoading && !lessonChallengeData[activeLesson.id]}
+                                        loading={
+                                            challengeLoading &&
+                                            !lessonChallengeData[activeLesson.id]
+                                        }
                                         result={lessonChallengeResults[activeLesson.id]}
                                     />
                                 ) : (
@@ -899,7 +907,9 @@ const CourseDetailsPage = () => {
                                             onRetake={handleQuizRetake}
                                             submitting={quizSubmitting}
                                             disabled={!enrolled || activeLesson.locked}
-                                            loading={quizLoading && !lessonQuizData[activeLesson.id]}
+                                            loading={
+                                                quizLoading && !lessonQuizData[activeLesson.id]
+                                            }
                                             result={lessonQuizResults[activeLesson.id]}
                                         />
                                     ) : activeLesson.kind === 'code' ? (
@@ -918,7 +928,8 @@ const CourseDetailsPage = () => {
                                             submitting={challengeSubmitting}
                                             disabled={!enrolled || activeLesson.locked}
                                             loading={
-                                                challengeLoading && !lessonChallengeData[activeLesson.id]
+                                                challengeLoading &&
+                                                !lessonChallengeData[activeLesson.id]
                                             }
                                             result={lessonChallengeResults[activeLesson.id]}
                                         />
@@ -1023,7 +1034,7 @@ const CourseDetailsPage = () => {
                     </div>
                 )}
             </div>
-        </div >
+        </div>
     );
 };
 export default CourseDetailsPage;
