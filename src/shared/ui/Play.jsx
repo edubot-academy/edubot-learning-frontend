@@ -45,7 +45,7 @@ const VideoPlayerUI = ({
 
         feedbackTimeoutRef.current = setTimeout(() => {
             setShowFeedback(false);
-        }, 800);
+        }, 3000);
     }, []);
 
     const togglePlay = useCallback(() => {
