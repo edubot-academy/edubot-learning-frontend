@@ -165,12 +165,19 @@ const CourseDetailsPage = () => {
         }
     };
 
-    const handlePause = () => {
-        if (!videoRef.current) return;
-        const currentTime = videoRef.current.currentTime;
-        if (currentTime < (activeLessonRef.current?.duration ?? 9999) * 0.9) return;
+    // const handlePause = () => {
+    //     if (!videoRef.current) return;
+    //     const currentTime = videoRef.current.currentTime;
+    //     if (currentTime < (activeLessonRef.current?.duration ?? 9999) * 0.9) return;
+    //     if (user && enrolled && activeLessonRef.current?.kind === 'video') {
+    //         console.log('updateVideoTime');
+    //         updateVideoTime(user.id, activeLessonRef.current.id, currentTime);
+    //     }
+    // };
+    const handlePause = (currentTime, duration) => {
+        if (currentTime < duration * 0.9) return;
+
         if (user && enrolled && activeLessonRef.current?.kind === 'video') {
-            console.log('updateVideoTime');
             updateVideoTime(user.id, activeLessonRef.current.id, currentTime);
         }
     };
