@@ -151,7 +151,10 @@ const CardCourse = ({
 
                     <div className="p-3">
                         <img
-                            src={coverImageUrl ||   NoImage}
+                            src={coverImageUrl || NoImage}
+                            onError={(e) => {
+                                e.currentTarget.src = NoImage;
+                            }}
                             alt={title}
                             className="w-full h-48 object-cover rounded"
                         />
@@ -264,7 +267,8 @@ const CardCourse = ({
                             </div>
 
                             <p className="text-gray-600 mb-4 text-sm sm:text-base">
-                                Курс "<span className="font-semibold">{title}</span>" себетке кошулду
+                                Курс "<span className="font-semibold">{title}</span>" себетке
+                                кошулду
                             </p>
 
                             <div className="mt-6 flex flex-col-reverse sm:flex-row justify-between gap-3 sm:gap-4">

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import  { useEffect, useState } from 'react';
 import SectionContainer from '@features/marketing/components/SectionContainer';
 import CardInstructor from './CardInstrictor';
 import { fetchTopInstructors } from '@services/api';

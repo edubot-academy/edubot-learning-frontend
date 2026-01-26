@@ -27,7 +27,6 @@ const CardFeedback = ({ comment, user }) => {
                                 </span>
                             }
                         />
-
                     </div>
                 </div>
                 <div className="flex justify-start items-start w-full mt-4">
@@ -39,14 +38,15 @@ const CardFeedback = ({ comment, user }) => {
                 <div className="flex items-center gap-3 mt-auto">
                     <>
                         <img
-                            src={user.avatar ? user.avatar : grayPerson}
+                            src={user.avatar || grayPerson}
+                            onError={(e) => {
+                                e.currentTarget.src = grayPerson;
+                            }}
                             alt={'profile'}
                             className="w-16 h-16 rounded-full object-cover"
                         />
                         <div>
-                            <h4 className="font-medium text-lg leading-[32px]">
-                                {user.fullName}
-                            </h4>
+                            <h4 className="font-medium text-lg leading-[32px]">{user.fullName}</h4>
                         </div>
                     </>
                 </div>
