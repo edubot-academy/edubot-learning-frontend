@@ -1,4 +1,4 @@
-import { useState, useEffect, useContext } from 'react'; // Добавили useContext
+import { useState, useEffect, useContext } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import CardIcon from '@assets/icons/cardvektor.svg';
 import Button from '../../../shared/ui/Button';
@@ -7,8 +7,8 @@ import { useFavourites } from '../../../context/FavouritesContext';
 import { AiFillStar, AiOutlineStar } from 'react-icons/ai';
 import { IoMdTime } from 'react-icons/io';
 import { FiBook } from 'react-icons/fi';
-import { AuthContext } from '../../../context/AuthContext'; // Добавили AuthContext
-import UnauthModal from '../../../shared/ui/UnauthModal'; // Добавили UnauthModal
+import { AuthContext } from '../../../context/AuthContext';
+import UnauthModal from '../../../shared/ui/UnauthModal';
 
 const formatPrice = (price, currency = 'KGS') => {
     if (!price && price !== 0) return 'Цена не указана';
@@ -40,11 +40,11 @@ const CardCourse = ({
 }) => {
     const [showPopup, setShowPopup] = useState(false);
     const [showFavoritePopup, setShowFavoritePopup] = useState(false);
-    const [showUnauthModal, setShowUnauthModal] = useState(false); // Добавили state для модалки
+    const [showUnauthModal, setShowUnauthModal] = useState(false);
     const navigate = useNavigate();
     const { addToCart, isInCart } = useCart();
     const { toggleFavourite, isFavourite } = useFavourites();
-    const { user } = useContext(AuthContext); // Получаем пользователя
+    const { user } = useContext(AuthContext);
 
     const courseAlreadyInCart = isInCart(id);
     const isCourseFavourite = isFavourite(id);
@@ -53,7 +53,6 @@ const CardCourse = ({
         e.stopPropagation();
         e.preventDefault();
 
-        // Проверяем, авторизован ли пользователь
         if (!user) {
             // Показываем модалку для незарегистрированных пользователей
             setShowUnauthModal(true);
@@ -372,10 +371,10 @@ const FavoritePopupModal = ({ isOpen, onClose, onGoToFavourites, course }) => {
                     </div>
                     <div className="flex flex-col sm:flex-row gap-3">
                         <Button variant="secondary" onClick={onClose} className="flex-1">
-                            Продолжить просмотр
+                            Көрүүну улантуу
                         </Button>
                         <Button variant="primary" onClick={onGoToFavourites} className="flex-1">
-                            Перейти в избранное
+                            Тандалгандарга өтүү
                         </Button>
                     </div>
                 </div>

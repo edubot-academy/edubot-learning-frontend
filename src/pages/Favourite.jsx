@@ -24,9 +24,9 @@ const Favourite = () => {
             <div className="min-h-screen p-6 bg-gray-50 dark:bg-gray-900">
                 <div className="max-w-7xl mx-auto">
                     <h2 className="text-3xl font-bold mb-3 text-gray-900 dark:text-white">
-                        Избранное
+                        Тандалгандар
                     </h2>
-                    <p className="text-gray-600 dark:text-gray-300">Загрузка...</p>
+                    <p className="text-gray-600 dark:text-gray-300">Жүктөлуү...</p>
                 </div>
             </div>
         );
@@ -44,7 +44,7 @@ const Favourite = () => {
                         onClick={refreshFavourites}
                         className="mt-4 px-4 py-2 bg-orange-500 text-white rounded hover:bg-orange-600 transition-colors"
                     >
-                        Попробовать снова
+                        Кайра аракет кылуу
                     </button>
                 </div>
             </div>
@@ -54,7 +54,9 @@ const Favourite = () => {
     return (
         <div className="min-h-screen p-6 bg-gray-50 dark:bg-gray-900">
             <div className="max-w-7xl mx-auto">
-                <h2 className="text-3xl font-bold mb-3 text-gray-900 dark:text-white">Избранное</h2>
+                <h2 className="text-3xl font-bold mb-3 text-gray-900 dark:text-white">
+                    Тандалгандар
+                </h2>
                 <p className="text-gray-600 dark:text-gray-400 mb-8">
                     {favourites.length > 0
                         ? `${favourites.length} ${favourites.length === 1 ? 'курс' : 'курса'} в избранном`
@@ -79,10 +81,11 @@ const Favourite = () => {
                                 />
                             </svg>
                             <p className="text-xl text-gray-500 dark:text-gray-400 mb-2">
-                                Пока нет курсов в избранном
+                                Азырынча курс тандалган эмес
                             </p>
                             <p className="text-gray-400 dark:text-gray-500">
-                                Добавляйте курсы в избранное, нажимая на сердечко на карточке курса
+                                Курс картасындагы жүрөктү басуу менен курстарды тандалгандарга
+                                кошуңуз
                             </p>
                         </div>
                     ) : (

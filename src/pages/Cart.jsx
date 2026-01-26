@@ -4,9 +4,9 @@ import { useCart } from '../context/CartContext';
 import { BsTrash, BsCartX } from 'react-icons/bs';
 import { FaShoppingCart } from 'react-icons/fa';
 import Button from '@shared-ui/Button';
-import Modal from '@shared-ui/Modal'; // Используем существующую модалку
+import Modal from '@shared-ui/Modal';
 import ContactCourseModal from '@features/courses/components/ContactCourseModal';
-import UnauthModal from '../shared/ui/UnauthModal'; // Добавили UnauthModal
+import UnauthModal from '../shared/ui/UnauthModal';
 
 const Cart = () => {
     const { cartItems, loading, removeFromCart, getTotalPrice, clearCart, user } = useCart();
@@ -14,16 +14,14 @@ const Cart = () => {
     const navigate = useNavigate();
     const [showRegisterModal, setShowRegisterModal] = useState(false);
     const [showContactModal, setShowContactModal] = useState(false);
-    const [showUnauthModal, setShowUnauthModal] = useState(false); // Добавили state для модалки
+    const [showUnauthModal, setShowUnauthModal] = useState(false);
 
     const handleCheckout = () => {
         if (!user) {
-            // Показываем новую модалку для незарегистрированных пользователей
             setShowUnauthModal(true);
             return;
         }
 
-        // 👇 вместо console.log
         setShowContactModal(true);
     };
 
@@ -67,7 +65,6 @@ const Cart = () => {
 
     return (
         <div className="min-h-screen py-8">
-            {/* Модалка для незарегистрированных пользователей */}
             <UnauthModal
                 isOpen={showUnauthModal}
                 onClose={() => setShowUnauthModal(false)}
@@ -76,7 +73,6 @@ const Cart = () => {
                 courseTitle={cartItems.length > 0 ? cartItems[0].title : ''}
             />
 
-            {/* Используем существующую Modal компоненту */}
             <Modal
                 isOpen={showRegisterModal}
                 onClose={() => setShowRegisterModal(false)}
@@ -89,7 +85,7 @@ const Cart = () => {
                             <FaShoppingCart className="w-5 h-5 text-orange-500" />
                         </div>
                         <div>
-                            <h3 className="font-bold ">Регистрация керек</h3>
+                            <h3 className="font-bold ">Катталуу керек</h3>
                         </div>
                     </div>
 
@@ -132,7 +128,6 @@ const Cart = () => {
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    {/* Список курсов */}
                     <div className="lg:col-span-2 space-y-4">
                         {cartItems.map((item) => (
                             <div
@@ -150,9 +145,7 @@ const Cart = () => {
                                                 />
                                             ) : (
                                                 <div className="w-full h-full bg-gray-100 flex items-center justify-center">
-                                                    <span className="text-gray-400">
-                                                        Изображение отсутствует
-                                                    </span>
+                                                    <span className="text-gray-400">Сүрөт жок</span>
                                                 </div>
                                             )}
                                         </div>

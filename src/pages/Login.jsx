@@ -1,28 +1,27 @@
-import React, { useState, useContext, useEffect } from 'react'; // Добавили useEffect
-import { useNavigate, Link, useLocation } from 'react-router-dom'; // Добавили useLocation
+import React, { useState, useContext, useEffect } from 'react'; 
+import { useNavigate, Link, useLocation } from 'react-router-dom'; 
 import { loginUser } from '@services/api';
 import { AuthContext } from '../context/AuthContext';
-import { useCart } from '../context/CartContext'; // Добавили useCart
-import { useFavourites } from '../context/FavouritesContext'; // Добавили useFavourites
+import { useCart } from '../context/CartContext'; 
+import { useFavourites } from '../context/FavouritesContext'; 
 import SignInImg from '../assets/images/edubot-signup.png';
 import DefaultLabel from '@shared-ui/forms/DefaultLabel';
 import LabelPassword from '@shared-ui/forms/LabelPassword';
 import ForgotPassword from '@features/auth/components/ForgotPassword';
-import { toast } from 'react-hot-toast'; // Добавили toast
+import { toast } from 'react-hot-toast'; 
 
 const LoginPage = () => {
     const { login } = useContext(AuthContext);
-    const { addToCart } = useCart(); // Добавили addToCart
-    const { toggleFavourite } = useFavourites(); // Добавили toggleFavourite
+    const { addToCart } = useCart();
+    const { toggleFavourite } = useFavourites(); 
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [forgotPassword, setForgotPassword] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const navigate = useNavigate();
-    const location = useLocation(); // Добавили location
+    const location = useLocation(); 
 
-    // Функция для выполнения отложенного действия
     const executePendingAction = async () => {
         const pendingActionStr = localStorage.getItem('pendingAction');
         if (!pendingActionStr) return;
@@ -30,22 +29,19 @@ const LoginPage = () => {
         try {
             const pendingAction = JSON.parse(pendingActionStr);
             
-            // Проверяем, не устарело ли действие (больше 24 часов)
             const now = Date.now();
             const actionAge = now - pendingAction.timestamp;
-            const MAX_ACTION_AGE = 24 * 60 * 60 * 1000; // 24 часа
+            const MAX_ACTION_AGE = 24 * 60 * 60 * 1000; 
             
             if (actionAge > MAX_ACTION_AGE) {
                 localStorage.removeItem('pendingAction');
                 return;
             }
 
-            // Выполняем действие в зависимости от типа
             if (pendingAction.type === 'favourite') {
                 const courseData = {
                     id: pendingAction.courseId,
                     title: pendingAction.courseTitle || `Курс ${pendingAction.courseId}`,
-                    // Добавьте остальные необходимые поля, если есть
                 };
                 const result = await toggleFavourite(courseData);
                 if (result.success) {
@@ -56,7 +52,6 @@ const LoginPage = () => {
                 const courseData = {
                     id: pendingAction.courseId,
                     title: pendingAction.courseTitle,
-                    // Добавьте остальные необходимые поля, если есть
                 };
                 const result = await addToCart(courseData);
                 if (result.success) {
@@ -65,7 +60,6 @@ const LoginPage = () => {
                 }
             }
             
-            // Удаляем выполненное действие
             localStorage.removeItem('pendingAction');
             
         } catch (error) {
@@ -84,10 +78,8 @@ const LoginPage = () => {
             const { access_token, user } = response.data;
             login(user, access_token);
             
-            // Выполняем отложенное действие после успешного входа
             await executePendingAction();
             
-            // Если нет отложенного действия, перенаправляем на главную
             if (!localStorage.getItem('pendingAction')) {
                 navigate('/');
             }
@@ -108,7 +100,6 @@ const LoginPage = () => {
 
     return (
         <div className="min-h-screen flex relative">
-            {/* Левая часть с градиентом */}
             <div className="hidden md:flex md:w-1/2 bg-[linear-gradient(151.1deg,#FFCBA5_3.26%,#E64D26_96.74%)] flex-col justify-center items-center text-white px-6">
                 <img
                     src={SignInImg}
@@ -120,7 +111,6 @@ const LoginPage = () => {
                 </h2>
             </div>
 
-            {/* Правая часть с формой */}
             <div className="flex-1 flex items-center justify-center px-6">
                 <div className="w-full max-w-md">
                     <h2 className="text-2xl font-bold text-black dark:text-white mb-6">Кирүү</h2>
@@ -128,7 +118,6 @@ const LoginPage = () => {
                     {error && <p className="text-red-500 mb-4">{error}</p>}
 
                     <form onSubmit={handleLogin} className="space-y-2">
-                        {/* Email */}
                         <DefaultLabel
                             label="Email"
                             name="email"
@@ -140,7 +129,6 @@ const LoginPage = () => {
                             className="py-2"
                         />
 
-                        {/* Пароль */}
                         <LabelPassword
                             label="Пароль"
                             name="password"

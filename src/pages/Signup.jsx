@@ -1,14 +1,14 @@
-import { useState, useContext, useEffect } from 'react'; // Добавили useContext и useEffect
-import { useNavigate, Link, useLocation } from 'react-router-dom'; // Добавили useLocation
+import { useState, useContext, useEffect } from 'react';
+import { useNavigate, Link, useLocation } from 'react-router-dom'; 
 import { registerUser } from '@services/api';
 import PhoneInput from '@shared/ui/forms/PhoneInput';
 import SignUpImg from '../assets/images/edubot-signup.png';
 import toast from 'react-hot-toast';
 import DefaultLabel from '@shared-ui/forms/DefaultLabel';
 import LabelPassword from '@shared-ui/forms/LabelPassword';
-import { AuthContext } from '../context/AuthContext'; // Добавили AuthContext
-import { useCart } from '../context/CartContext'; // Добавили useCart
-import { useFavourites } from '../context/FavouritesContext'; // Добавили useFavourites
+import { AuthContext } from '../context/AuthContext'; 
+import { useCart } from '../context/CartContext'; 
+import { useFavourites } from '../context/FavouritesContext'; 
 
 const SignupPage = () => {
     const [formData, setFormData] = useState({
@@ -35,10 +35,10 @@ const SignupPage = () => {
     const [error, setError] = useState(null);
 
     const navigate = useNavigate();
-    const location = useLocation(); // Добавили location
-    const { login } = useContext(AuthContext); // Добавили login
-    const { addToCart } = useCart(); // Добавили addToCart
-    const { toggleFavourite } = useFavourites(); // Добавили toggleFavourite
+    const location = useLocation(); 
+    const { login } = useContext(AuthContext); 
+    const { addToCart } = useCart(); 
+    const { toggleFavourite } = useFavourites(); 
 
     const validatePassword = (password) => {
         setPasswordValidations({
@@ -63,7 +63,6 @@ const SignupPage = () => {
         setFormData((prev) => ({ ...prev, phoneNumber: value }));
     };
 
-    // Функция для выполнения отложенного действия
     const executePendingAction = async () => {
         const pendingActionStr = localStorage.getItem('pendingAction');
         if (!pendingActionStr) return;
@@ -71,22 +70,19 @@ const SignupPage = () => {
         try {
             const pendingAction = JSON.parse(pendingActionStr);
 
-            // Проверяем, не устарело ли действие (больше 24 часов)
             const now = Date.now();
             const actionAge = now - pendingAction.timestamp;
-            const MAX_ACTION_AGE = 24 * 60 * 60 * 1000; // 24 часа
+            const MAX_ACTION_AGE = 24 * 60 * 60 * 1000; 
 
             if (actionAge > MAX_ACTION_AGE) {
                 localStorage.removeItem('pendingAction');
                 return;
             }
 
-            // Выполняем действие в зависимости от типа
             if (pendingAction.type === 'favourite') {
                 const courseData = {
                     id: pendingAction.courseId,
                     title: pendingAction.courseTitle || `Курс ${pendingAction.courseId}`,
-                    // Добавьте остальные необходимые поля, если есть
                 };
                 const result = await toggleFavourite(courseData);
                 if (result.success) {
@@ -97,7 +93,6 @@ const SignupPage = () => {
                 const courseData = {
                     id: pendingAction.courseId,
                     title: pendingAction.courseTitle,
-                    // Добавьте остальные необходимые поля, если есть
                 };
                 const result = await addToCart(courseData);
                 if (result.success) {
@@ -106,7 +101,6 @@ const SignupPage = () => {
                 }
             }
 
-            // Удаляем выполненное действие
             localStorage.removeItem('pendingAction');
         } catch (error) {
             console.error('Failed to execute pending action:', error);
@@ -151,14 +145,11 @@ const SignupPage = () => {
                 phoneNumber: formData.phoneNumber || undefined,
             });
 
-            // Автоматически логиним пользователя после регистрации
             const { access_token, user } = response.data;
             login(user, access_token);
 
-            // Выполняем отложенное действие после успешной регистрации
             await executePendingAction();
 
-            // Если нет отложенного действия, перенаправляем на главную
             if (!localStorage.getItem('pendingAction')) {
                 navigate('/');
             }
@@ -172,7 +163,6 @@ const SignupPage = () => {
 
     return (
         <div className="min-h-screen flex">
-            {/* Левая часть с градиентом */}
             <div className="hidden md:flex md:w-1/2 bg-[linear-gradient(151.1deg,#FFCBA5_3.26%,#E64D26_96.74%)] flex-col justify-center items-center text-white px-6">
                 <img
                     src={SignUpImg}
@@ -184,7 +174,6 @@ const SignupPage = () => {
                 </h2>
             </div>
 
-            {/* Правая часть с формой */}
             <div className="flex-1 flex items-center justify-center px-6">
                 <div className="w-full max-w-md">
                     <h2 className="text-2xl font-bold text-black dark:text-white mb-6">Катталуу</h2>
@@ -192,7 +181,6 @@ const SignupPage = () => {
                     {error && <p className="text-red-500 mb-4">{error}</p>}
 
                     <form onSubmit={handleSubmit} className="space-y-2">
-                        {/* Фамилия */}
                         <DefaultLabel
                             label="Фамилияңызды жазыңыз"
                             name="lastName"
@@ -204,7 +192,6 @@ const SignupPage = () => {
                             className="py-2"
                         />
 
-                        {/* Имя */}
                         <DefaultLabel
                             label="Атыңызды жазыңыз"
                             name="firstName"
@@ -216,7 +203,6 @@ const SignupPage = () => {
                             className="py-2"
                         />
 
-                        {/* Email */}
                         <DefaultLabel
                             label="Email почтаңызды жазыңыз"
                             name="email"
@@ -228,12 +214,10 @@ const SignupPage = () => {
                             className="py-2"
                         />
 
-                        {/* Телефон */}
                         <div className="py-2">
                             <PhoneInput onChange={handlePhoneChange} value={formData.phoneNumber} />
                         </div>
 
-                        {/* Пароль */}
                         <div className="relative py-2">
                             <LabelPassword
                                 label="Сырсөз ойлоп табыңыз"
@@ -298,7 +282,6 @@ const SignupPage = () => {
                             )}
                         </div>
 
-                        {/* Повтор пароля */}
                         <div className="py-2">
                             <LabelPassword
                                 label="Повторите пароль"

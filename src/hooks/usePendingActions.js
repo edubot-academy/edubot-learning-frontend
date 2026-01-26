@@ -1,4 +1,3 @@
-// hooks/usePendingActions.js
 import { useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
@@ -14,23 +13,20 @@ export const usePendingActions = () => {
 
     useEffect(() => {
         if (user) {
-            // Проверяем, есть ли отложенные действия
             const pendingActionStr = localStorage.getItem('pendingAction');
             if (pendingActionStr) {
                 try {
                     const pendingAction = JSON.parse(pendingActionStr);
 
-                    // Проверяем, не устарело ли действие (больше 24 часов)
                     const now = Date.now();
                     const actionAge = now - pendingAction.timestamp;
-                    const MAX_ACTION_AGE = 24 * 60 * 60 * 1000; // 24 часа
+                    const MAX_ACTION_AGE = 24 * 60 * 60 * 1000; 
 
                     if (actionAge > MAX_ACTION_AGE) {
                         localStorage.removeItem('pendingAction');
                         return;
                     }
 
-                    // Выполняем действие в зависимости от типа
                     const executeAction = async () => {
                         try {
                             if (pendingAction.type === 'favourite') {
@@ -75,7 +71,6 @@ export const usePendingActions = () => {
                                 }
                             }
 
-                            // Удаляем выполненное действие
                             localStorage.removeItem('pendingAction');
                         } catch (error) {
                             console.error('Failed to execute pending action:', error);
@@ -83,7 +78,6 @@ export const usePendingActions = () => {
                         }
                     };
 
-                    // Запускаем выполнение с небольшой задержкой
                     setTimeout(() => {
                         executeAction();
                     }, 1000);
