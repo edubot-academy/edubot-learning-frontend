@@ -212,11 +212,11 @@ const VideoPlayerUI = ({
             />
 
             <div
-                className="absolute bottom-0 left-0 w-full px-4 pb-3 z-50 pointer-events-auto"
+                className="absolute bottom-0 left-0 w-full px-4 pb-3 z-20 pointer-events-auto"
                 onClick={(e) => e.stopPropagation()}
             >
                 <div
-                    className="w-full h-1.5 bg-gray-500/40 rounded-full cursor-pointer mb-3 relative group"
+                    className="w-full h-1.5 bg-gray-500/40 rounded-full cursor-pointer mb-3 relative z-10  group"
                     onClick={handleProgressClick}
                 >
                     <div
