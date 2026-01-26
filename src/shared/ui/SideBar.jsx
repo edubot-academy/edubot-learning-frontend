@@ -109,9 +109,9 @@ const SideBar = ({ setMenuOpen, setPosition }) => {
                             </div>
                             <Link to="/cart" className={`${linkClass}`}>
                                 <img src={BasketIcon} alt="" className="max-w-6 pb-1" />
-                                Корзина
+                                Себет
                             </Link>
-                            <Link to="/favourite" className={`${linkClass}`}>
+                            <Link to="/favourites" className={`${linkClass}`}>
                                 <img src={BlackHeart} alt="" className="max-w-6 pb-1" />
                                 Избранные
                             </Link>

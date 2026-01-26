@@ -185,11 +185,11 @@ const Header = () => {
     };
 
     const handleFavouriteClick = () => {
-        navigate('/favourite');
+        navigate('/favourites');
         setActiveIcon('heart');
     };
 
-    const isFavouritesPage = location.pathname === '/favourite';
+    const isFavouritesPage = location.pathname === '/favourites';
 
     return (
         <header className="sticky top-0 w-full bg-white text-black dark:bg-[#1A1A1A] dark:text-[#E8ECF3] shadow z-50">
