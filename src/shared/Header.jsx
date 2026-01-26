@@ -18,7 +18,6 @@ import SidebarOverlay from '@shared-ui/SidebarOverlay';
 import UserMenuDropdown from '@shared-ui/UserMenuDropdown';
 import { useFavourites } from '../context/FavouritesContext';
 import { useCart } from '../context/CartContext';
-import Button from '@shared/ui/Button';
 
 const NavLinks = ({ isMobile, user }) => {
     const location = useLocation();
@@ -43,7 +42,6 @@ const NavLinks = ({ isMobile, user }) => {
                 Байланыш
             </Link>
 
-            {/* Безопасная проверка */}
             {user && user.role === 'instructor' && (
                 <Link to="/instructor" className={`${active('/instructor')} ${linkClass}`}>
                     Инструктор
@@ -263,16 +261,15 @@ const Header = () => {
                         </div>
                     </div>
 
-                    {/* Navigation Links - Desktop */}
                     <div className="flex items-center space-x-6 mx-6">
                         <NavLinks isMobile={false} user={user} />
                     </div>
 
-                    {/* Right Side Actions - Desktop */}
                     <div className="flex items-center space-x-4">
-                        {/* Language Selector */}
                         <div className="relative" ref={langRef}>
-                            <button
+                            {/* localization hasn't been added yet */}
+
+                            {/* <button
                                 onClick={() => setLangOpen((p) => !p)}
                                 className="flex items-center space-x-1 p-2"
                             >
@@ -282,7 +279,7 @@ const Header = () => {
                                         langOpen ? 'rotate-180' : ''
                                     }`}
                                 />
-                            </button>
+                            </button> */}
                             {langOpen && (
                                 <div className="absolute right-0 mt-2 bg-white dark:bg-[#141619] shadow rounded border border-gray-200 dark:border-[#2A2E35] z-50">
                                     {['Кыргызча', 'Русский', 'English'].map((l) => (
@@ -305,10 +302,8 @@ const Header = () => {
                             <ThemeToggle dark={dark} setDark={setDark} />
                         </div>
 
-                        {/* User Actions */}
                         {user ? (
                             <div className="flex items-center gap-3">
-                                {/* Иконка сердца */}
                                 <button
                                     className={`relative w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-300 ${
                                         isFavouritesPage || activeIcon === 'heart'
@@ -330,7 +325,6 @@ const Header = () => {
                                         <IoHeartOutline className="w-5 h-5 text-black dark:text-[#E8ECF3]" />
                                     )}
                                 </button>
-                                {/* Иконка корзины */}
                                 <div className="relative">
                                     <button
                                         className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-300 ${
@@ -350,7 +344,6 @@ const Header = () => {
                                                     : 'text-black dark:text-[#E8ECF3]'
                                             }`}
                                         />
-                                        {/* Бейдж с количеством - показывается всегда если есть товары */}
                                         {cartItemsCount > 0 && (
                                             <span className="absolute -top-1 -right-1 bg-orange-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-medium">
                                                 {cartItemsCount}
@@ -359,7 +352,6 @@ const Header = () => {
                                     </button>
                                 </div>
 
-                                {/* Иконка пользователя */}
                                 <div className="relative group">
                                     <button
                                         className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-300 ${
@@ -391,12 +383,23 @@ const Header = () => {
                             </div>
                         ) : (
                             <div className="flex items-center gap-3">
-                                {/* Иконка корзины для неавторизованных */}
+                                <button
+                                    className={`relative w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-300 ${
+                                        isFavouritesPage || activeIcon === 'heart'
+                                            ? 'border-orange-500'
+                                            : 'border-black dark:border-[#E8ECF3] hover:border-gray-600 dark:hover:border-[#E8ECF3]/70'
+                                    }`}
+                                    onClick={handleFavouriteClick}
+                                    aria-label="Избранное"
+                                >
+                                    <IoHeartOutline className="w-5 h-5 text-black dark:text-[#E8ECF3]" />
+                                </button>
+
                                 <div className="relative">
                                     <button
                                         className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-300 ${
                                             activeIcon === 'cart' || location.pathname === '/cart'
-                                                ? 'bg-orange-500 border-orange-500'
+                                                ? 'border-orange-500'
                                                 : 'border-black dark:border-[#E8ECF3] hover:border-gray-600 dark:hover:border-[#E8ECF3]/70'
                                         }`}
                                         onClick={() =>
@@ -407,7 +410,7 @@ const Header = () => {
                                             className={`w-5 h-5 transition-colors duration-300 ${
                                                 activeIcon === 'cart' ||
                                                 location.pathname === '/cart'
-                                                    ? 'text-white'
+                                                    ? 'text-orange-500'
                                                     : 'text-black dark:text-[#E8ECF3]'
                                             }`}
                                         />
@@ -430,11 +433,8 @@ const Header = () => {
                     </div>
                 </div>
 
-                {/* Mobile Layout */}
                 <div className="lg:hidden">
-                    {/* Top Row - Burger Menu, Logo, Search Icon */}
                     <div className="flex items-center justify-between">
-                        {/* Burger Menu - Left */}
                         <button
                             onClick={() => {
                                 setMenuOpen(true);
@@ -445,7 +445,6 @@ const Header = () => {
                             <FaBars />
                         </button>
 
-                        {/* Logo - Center */}
                         <Link to="/" className="flex flex-col items-center">
                             <div className="h-12 w-12">
                                 <img
@@ -462,9 +461,7 @@ const Header = () => {
                             </div>
                         </Link>
 
-                        {/* Right Side - Search */}
                         <div className="flex items-center gap-3">
-                            {/* Search Icon */}
                             <button
                                 onClick={() => setSearchOpen(!searchOpen)}
                                 className="text-gray-700 dark:text-[#E8ECF3] text-2xl"
@@ -472,7 +469,6 @@ const Header = () => {
                                 <IoSearch />
                             </button>
 
-                            {/* User Icon for Mobile */}
                             {user && (
                                 <div className="relative">
                                     <button
@@ -490,7 +486,6 @@ const Header = () => {
                                         />
                                     </button>
 
-                                    {/* Mobile User Dropdown */}
                                     {userMenuOpen && (
                                         <div className="absolute right-0 top-full mt-2 z-50">
                                             <UserMenuDropdown
@@ -504,7 +499,6 @@ const Header = () => {
                         </div>
                     </div>
 
-                    {/* Mobile Search Input */}
                     {searchOpen && (
                         <div className="mt-3" ref={searchContainerRef}>
                             <div className="relative flex items-center border rounded border-[#7B818C] dark:border-[#2A2E35] bg-white dark:bg-[#1A1A1A] overflow-visible">
@@ -519,7 +513,6 @@ const Header = () => {
                                 />
                             </div>
 
-                            {/* Mobile Search Dropdown */}
                             {showDropdown && (
                                 <div className="absolute left-0 right-0 mt-1 mx-4 z-50">
                                     {results.length > 0 ? (
@@ -556,45 +549,35 @@ const Header = () => {
                         </div>
                     )}
 
-                    {/* Mobile Icons Row - только если пользователь авторизован */}
-                    {user && searchOpen === false && (
+                    {!searchOpen && (
                         <div className="flex justify-center gap-4 mt-3">
-                            {/* Иконка сердца для мобильной версии - переходит на /favourite */}
                             <button
                                 className={`relative w-10 h-10 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${
                                     isFavouritesPage || activeIcon === 'heart'
-                                        ? 'bg-orange-500 border-orange-500'
+                                        ? 'border-orange-500'
                                         : 'border-black hover:border-gray-600'
                                 }`}
                                 onClick={handleFavouriteClick}
                             >
-                                {/* Показываем счетчик избранных курсов на мобильной версии */}
-                                {favourites.length > 0 && (
-                                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                                        {favourites.length}
-                                    </span>
-                                )}
-
-                                {isFavouritesPage || activeIcon === 'heart' ? (
-                                    <IoHeart className="w-5 h-5 text-white" />
+                                {user && (isFavouritesPage || activeIcon === 'heart') ? (
+                                    <IoHeart className="w-5 h-5 text-orange-500" />
                                 ) : (
                                     <IoHeartOutline className="w-5 h-5 text-black" />
                                 )}
                             </button>
 
-                            {/* Иконка корзины для мобильной версии с переходом на /cart */}
                             <div className="relative">
                                 <button
                                     className={`w-10 h-10 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${
                                         activeIcon === 'cart'
-                                            ? 'bg-orange-500 border-orange-500'
+                                            ? 'border-orange-500'
                                             : 'border-black hover:border-gray-600'
                                     }`}
                                     onClick={() => handleIconClick('cart', () => navigate('/cart'))}
                                 >
                                     <BsCart2
                                         className={`w-5 h-5 transition-colors duration-300 ${
-                                            activeIcon === 'cart' ? 'text-white' : 'text-black'
+                                            activeIcon === 'cart' ? 'text-orange-500' : 'text-black'
                                         }`}
                                     />
                                 </button>
