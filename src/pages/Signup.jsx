@@ -1,11 +1,14 @@
-import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useState, useContext, useEffect } from 'react'; // Добавили useContext и useEffect
+import { useNavigate, Link, useLocation } from 'react-router-dom'; // Добавили useLocation
 import { registerUser } from '@services/api';
 import PhoneInput from '@shared/ui/forms/PhoneInput';
 import SignUpImg from '../assets/images/edubot-signup.png';
 import toast from 'react-hot-toast';
-import DefaultLabel from '@shared/ui/forms/DefaultLabel';
-import LabelPassword from '@shared/ui/forms/LabelPassword';
+import DefaultLabel from '@shared-ui/forms/DefaultLabel';
+import LabelPassword from '@shared-ui/forms/LabelPassword';
+import { AuthContext } from '../context/AuthContext'; // Добавили AuthContext
+import { useCart } from '../context/CartContext'; // Добавили useCart
+import { useFavourites } from '../context/FavouritesContext'; // Добавили useFavourites
 
 const SignupPage = () => {
     const [formData, setFormData] = useState({
@@ -32,6 +35,10 @@ const SignupPage = () => {
     const [error, setError] = useState(null);
 
     const navigate = useNavigate();
+    const location = useLocation(); // Добавили location
+    const { login } = useContext(AuthContext); // Добавили login
+    const { addToCart } = useCart(); // Добавили addToCart
+    const { toggleFavourite } = useFavourites(); // Добавили toggleFavourite
 
     const validatePassword = (password) => {
         setPasswordValidations({
@@ -54,6 +61,57 @@ const SignupPage = () => {
 
     const handlePhoneChange = (value) => {
         setFormData((prev) => ({ ...prev, phoneNumber: value }));
+    };
+
+    // Функция для выполнения отложенного действия
+    const executePendingAction = async () => {
+        const pendingActionStr = localStorage.getItem('pendingAction');
+        if (!pendingActionStr) return;
+
+        try {
+            const pendingAction = JSON.parse(pendingActionStr);
+
+            // Проверяем, не устарело ли действие (больше 24 часов)
+            const now = Date.now();
+            const actionAge = now - pendingAction.timestamp;
+            const MAX_ACTION_AGE = 24 * 60 * 60 * 1000; // 24 часа
+
+            if (actionAge > MAX_ACTION_AGE) {
+                localStorage.removeItem('pendingAction');
+                return;
+            }
+
+            // Выполняем действие в зависимости от типа
+            if (pendingAction.type === 'favourite') {
+                const courseData = {
+                    id: pendingAction.courseId,
+                    title: pendingAction.courseTitle || `Курс ${pendingAction.courseId}`,
+                    // Добавьте остальные необходимые поля, если есть
+                };
+                const result = await toggleFavourite(courseData);
+                if (result.success) {
+                    toast.success('Курс добавлен в избранное!');
+                    navigate('/favourite');
+                }
+            } else if (pendingAction.type === 'cart') {
+                const courseData = {
+                    id: pendingAction.courseId,
+                    title: pendingAction.courseTitle,
+                    // Добавьте остальные необходимые поля, если есть
+                };
+                const result = await addToCart(courseData);
+                if (result.success) {
+                    toast.success('Курс добавлен в корзину!');
+                    navigate('/cart');
+                }
+            }
+
+            // Удаляем выполненное действие
+            localStorage.removeItem('pendingAction');
+        } catch (error) {
+            console.error('Failed to execute pending action:', error);
+            localStorage.removeItem('pendingAction');
+        }
     };
 
     const handleSubmit = async (e) => {
@@ -86,13 +144,24 @@ const SignupPage = () => {
         }
 
         try {
-            await registerUser({
+            const response = await registerUser({
                 fullName: `${formData.lastName} ${formData.firstName}`,
                 email: formData.email,
                 password: formData.password,
                 phoneNumber: formData.phoneNumber || undefined,
             });
-            navigate('/login');
+
+            // Автоматически логиним пользователя после регистрации
+            const { access_token, user } = response.data;
+            login(user, access_token);
+
+            // Выполняем отложенное действие после успешной регистрации
+            await executePendingAction();
+
+            // Если нет отложенного действия, перенаправляем на главную
+            if (!localStorage.getItem('pendingAction')) {
+                navigate('/');
+            }
         } catch (err) {
             setError(err.response?.data?.message || 'Ката чыкты. Кайра аракет кылыңыз.');
             console.log(err);

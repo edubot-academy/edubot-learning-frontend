@@ -1,20 +1,78 @@
-import React, { useState, useContext } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import React, { useState, useContext, useEffect } from 'react'; // Добавили useEffect
+import { useNavigate, Link, useLocation } from 'react-router-dom'; // Добавили useLocation
 import { loginUser } from '@services/api';
 import { AuthContext } from '../context/AuthContext';
+import { useCart } from '../context/CartContext'; // Добавили useCart
+import { useFavourites } from '../context/FavouritesContext'; // Добавили useFavourites
 import SignInImg from '../assets/images/edubot-signup.png';
-import DefaultLabel from '@shared/ui/forms/DefaultLabel';
-import LabelPassword from '@shared/ui/forms/LabelPassword';
+import DefaultLabel from '@shared-ui/forms/DefaultLabel';
+import LabelPassword from '@shared-ui/forms/LabelPassword';
 import ForgotPassword from '@features/auth/components/ForgotPassword';
+import { toast } from 'react-hot-toast'; // Добавили toast
 
 const LoginPage = () => {
     const { login } = useContext(AuthContext);
+    const { addToCart } = useCart(); // Добавили addToCart
+    const { toggleFavourite } = useFavourites(); // Добавили toggleFavourite
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [forgotPassword, setForgotPassword] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const navigate = useNavigate();
+    const location = useLocation(); // Добавили location
+
+    // Функция для выполнения отложенного действия
+    const executePendingAction = async () => {
+        const pendingActionStr = localStorage.getItem('pendingAction');
+        if (!pendingActionStr) return;
+
+        try {
+            const pendingAction = JSON.parse(pendingActionStr);
+            
+            // Проверяем, не устарело ли действие (больше 24 часов)
+            const now = Date.now();
+            const actionAge = now - pendingAction.timestamp;
+            const MAX_ACTION_AGE = 24 * 60 * 60 * 1000; // 24 часа
+            
+            if (actionAge > MAX_ACTION_AGE) {
+                localStorage.removeItem('pendingAction');
+                return;
+            }
+
+            // Выполняем действие в зависимости от типа
+            if (pendingAction.type === 'favourite') {
+                const courseData = {
+                    id: pendingAction.courseId,
+                    title: pendingAction.courseTitle || `Курс ${pendingAction.courseId}`,
+                    // Добавьте остальные необходимые поля, если есть
+                };
+                const result = await toggleFavourite(courseData);
+                if (result.success) {
+                    toast.success('Курс добавлен в избранное!');
+                    navigate('/favourite');
+                }
+            } else if (pendingAction.type === 'cart') {
+                const courseData = {
+                    id: pendingAction.courseId,
+                    title: pendingAction.courseTitle,
+                    // Добавьте остальные необходимые поля, если есть
+                };
+                const result = await addToCart(courseData);
+                if (result.success) {
+                    toast.success('Курс добавлен в корзину!');
+                    navigate('/cart');
+                }
+            }
+            
+            // Удаляем выполненное действие
+            localStorage.removeItem('pendingAction');
+            
+        } catch (error) {
+            console.error('Failed to execute pending action:', error);
+            localStorage.removeItem('pendingAction');
+        }
+    };
 
     const handleLogin = async (e) => {
         e.preventDefault();
@@ -25,7 +83,14 @@ const LoginPage = () => {
             const response = await loginUser({ email, password });
             const { access_token, user } = response.data;
             login(user, access_token);
-            navigate('/');
+            
+            // Выполняем отложенное действие после успешного входа
+            await executePendingAction();
+            
+            // Если нет отложенного действия, перенаправляем на главную
+            if (!localStorage.getItem('pendingAction')) {
+                navigate('/');
+            }
         } catch (err) {
             setError('Email же сырсөз туура эмес. Кайра аракет кылыңыз.');
         } finally {
