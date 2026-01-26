@@ -78,7 +78,7 @@ const Modal = ({
                     ref={modalRef}
                     className={`
         w-full ${sizeClasses[size] || sizeClasses.md}
-        bg-white rounded-xl shadow-2xl
+        bg-white dark:bg-gray-800 rounded-xl shadow-2xl
         focus:outline-none
       `}
                     role="dialog"
@@ -89,7 +89,7 @@ const Modal = ({
                         {(title || showCloseButton) && (
                             <div className="flex items-start justify-between gap-4 mb-6">
                                 {title && (
-                                    <h2 className="text-2xl font-bold text-gray-900">
+                                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
                                         {title}
                                     </h2>
                                 )}

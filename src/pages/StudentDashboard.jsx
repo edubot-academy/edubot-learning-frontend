@@ -30,7 +30,7 @@ const NAV_ITEMS = [
     { id: 'courses', label: 'Курстарым', icon: FiBookOpen },
     { id: 'schedule', label: 'Жүгүртмө', icon: FiCalendar },
     { id: 'tasks', label: 'Тапшырмалар', icon: FiCheckCircle },
-    { id: 'progress', label: 'Прогресс', icon: FiBarChart2 },
+    { id: 'progress', label: 'Илгерилүү', icon: FiBarChart2 },
     { id: 'notifications', label: 'Билдирүүлөр', icon: FiBell },
     { id: 'profile', label: 'Профиль', icon: FiUser },
 ];
@@ -62,7 +62,7 @@ const NOTIFICATION_LABELS = {
     },
     pushNotifications: {
         label: 'Push билдирүүлөр',
-        description: 'Прогресс жана окуу сунуштары боюнча push билдирүүлөрүн алыңыз.',
+        description: 'Илгерилүү жана окуу сунуштары боюнча push билдирүүлөрүн алыңыз.',
     },
 };
 
@@ -178,7 +178,7 @@ const StudentDashboard = () => {
             );
         } catch (error) {
             console.error('Failed to load progress', error);
-            toast.error('Прогресс маалыматтары жүктөлгөн жок');
+            toast.error('Илгерилүү маалыматтары жүктөлгөн жок');
         } finally {
             setTabLoading(null);
             setLoadedTabs((prev) => ({ ...prev, progress: true }));
@@ -460,7 +460,7 @@ const CoursesTab = ({ courses }) => {
                                 </div>
                                 <div className="space-y-1">
                                     <div className="flex justify-between text-sm text-gray-600">
-                                        <span>Прогресс</span>
+                                        <span>Илгерилүү</span>
                                         <span>{progress}%</span>
                                     </div>
                                     <div className="h-2 rounded-full bg-gray-100">
@@ -593,7 +593,7 @@ const TasksTab = ({ tasks }) => (
 
 const ProgressTab = ({ items }) => (
     <div className="space-y-4">
-        <h2 className="text-2xl font-semibold text-gray-900">Прогресс жана сертификаттар</h2>
+        <h2 className="text-2xl font-semibold text-gray-900">Илгерилүү жана сертификаттар</h2>
         {items.length ? (
             <div className="bg-white rounded-3xl border border-gray-100 divide-y">
                 {items.map((item, index) => (
@@ -619,7 +619,7 @@ const ProgressTab = ({ items }) => (
             </div>
         ) : (
             <div className="bg-white rounded-3xl border border-gray-100 p-6 text-center text-gray-500">
-                Прогресс маалыматы табылган жок.
+                Илгерилүү маалыматы табылган жок.
             </div>
         )}
     </div>

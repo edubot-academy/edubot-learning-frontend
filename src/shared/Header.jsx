@@ -18,14 +18,13 @@ import SidebarOverlay from '@shared-ui/SidebarOverlay';
 import UserMenuDropdown from '@shared-ui/UserMenuDropdown';
 import { useFavourites } from '../context/FavouritesContext';
 import { useCart } from '../context/CartContext';
-import Button from '@shared/ui/Button';
 
 const NavLinks = ({ isMobile, user }) => {
     const location = useLocation();
-    const active = (path) => (location.pathname === path ? 'text-orange-500' : '');
+    const active = (path) => (location.pathname === path ? 'text-orange-500 dark:text-orange-400' : '');
 
     const linkClass =
-        "hover:text-black dark:text-[#E8ECF3] dark:hover:text-white after:content-[''] after:absolute after:-bottom-1 after:left-0 after:h-[2px] after:w-full after:bg-black dark:after:bg-[#E8ECF3] after:scale-x-0 hover:after:scale-x-100 after:transition-transform after:duration-300";
+        "hover:text-black dark:text-[#E8ECF3] dark:hover:text-white after:content-[''] after:absolute after:-bottom-1 after:left-0 after:h-[2px] after:w-full after:bg-black dark:after:bg-white after:scale-x-0 hover:after:scale-x-100 after:transition-transform after:duration-300";
 
     return (
         <div
@@ -192,7 +191,7 @@ const Header = () => {
     const isFavouritesPage = location.pathname === '/favourite';
 
     return (
-        <header className="sticky top-0 w-full bg-white text-black dark:bg-[#1A1A1A] dark:text-[#E8ECF3] shadow z-50">
+        <header className="sticky top-0 w-full bg-white dark:bg-[#1A1A1A] text-black dark:text-[#E8ECF3] shadow dark:shadow-gray-900 z-50">
             <div className="px-4 md:px-10 py-3">
                 {/* Desktop Layout */}
                 <div className="hidden lg:flex items-center justify-between">
@@ -207,8 +206,8 @@ const Header = () => {
                                 />
                             </div>
                             <div className="flex flex-col ml-3">
-                                <span className="text-2xl font-bold text-orange-500">EDUBOT</span>
-                                <span className="text-base -mt-2 text-gray-700 dark:text-[#E8ECF3] tracking-[0.14em]">
+                                <span className="text-2xl font-bold text-orange-500 dark:text-orange-400">EDUBOT</span>
+                                <span className="text-base -mt-2 text-gray-700 dark:text-gray-300 tracking-[0.14em]">
                                     LEARNING
                                 </span>
                             </div>
@@ -216,22 +215,22 @@ const Header = () => {
 
                         {/* Search Bar - Desktop */}
                         <div
-                            className="relative flex items-center border rounded hover:border-[#F06743] flex-1 max-w-xs ml-6 border-[#7B818C] dark:border-[#2A2E35] bg-white dark:bg-[#1A1A1A] overflow-visible"
+                            className="relative flex items-center border rounded hover:border-[#F06743] dark:hover:border-orange-500 flex-1 max-w-xs ml-6 border-[#7B818C] dark:border-gray-600 bg-white dark:bg-[#1A1A1A] overflow-visible"
                             ref={searchContainerRef}
                         >
-                            <IoSearch className="w-5 h-5 ml-2 text-[#7B818C] dark:text-[#E8ECF3]" />
+                            <IoSearch className="w-5 h-5 ml-2 text-[#7B818C] dark:text-gray-400" />
                             <input
                                 type="text"
                                 placeholder="Издөө"
                                 value={search}
                                 onChange={(e) => handleSearch(e.target.value)}
                                 onFocus={() => search.length >= 2 && setShowDropdown(true)}
-                                className="px-3 py-2 focus:outline-none bg-transparent w-full text-base text-gray-900 dark:text-[#E8ECF3] placeholder:text-gray-500 dark:placeholder:text-gray-400"
+                                className="px-3 py-2 focus:outline-none bg-transparent w-full text-base text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400"
                             />
 
                             {/* Search Dropdown */}
                             {showDropdown && (
-                                <div className="absolute top-full left-0 right-0 mt-2 max-w-xs w-full bg-white dark:bg-[#141619] border border-gray-200 dark:border-[#2A2E35] shadow-xl z-50 max-h-64 overflow-y-auto">
+                                <div className="absolute top-full left-0 right-0 mt-2 max-w-xs w-full bg-white dark:bg-[#141619] border border-gray-200 dark:border-gray-700 shadow-xl dark:shadow-gray-900 z-50 max-h-64 overflow-y-auto">
                                     {results.length > 0 ? (
                                         results.map((course) => (
                                             <button
@@ -241,9 +240,9 @@ const Header = () => {
                                                     setShowDropdown(false);
                                                     setSearch('');
                                                 }}
-                                                className="w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-[#1F2229] border-b border-gray-200 dark:border-[#2A2E35] last:border-b-0"
+                                                className="w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800 border-b border-gray-200 dark:border-gray-700 last:border-b-0"
                                             >
-                                                <div className="font-semibold text-sm text-gray-900 dark:text-[#E8ECF3]">
+                                                <div className="font-semibold text-sm text-gray-900 dark:text-white">
                                                     {course.title}
                                                 </div>
                                                 {course.description && (
@@ -254,7 +253,7 @@ const Header = () => {
                                             </button>
                                         ))
                                     ) : (
-                                        <div className="px-4 py-3 text-sm text-gray-500 dark:text-gray-300">
+                                        <div className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
                                             Натыйжа жок
                                         </div>
                                     )}
@@ -274,17 +273,17 @@ const Header = () => {
                         <div className="relative" ref={langRef}>
                             <button
                                 onClick={() => setLangOpen((p) => !p)}
-                                className="flex items-center space-x-1 p-2"
+                                className="flex items-center space-x-1 p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors"
                             >
-                                <GrLanguage className="text-gray-700 dark:text-[#E8ECF3] w-5 h-5" />
+                                <GrLanguage className="text-gray-700 dark:text-gray-300 w-5 h-5" />
                                 <BsChevronDown
-                                    className={`w-4 h-4 text-gray-700 dark:text-[#E8ECF3] transform transition-transform duration-300 ${
+                                    className={`w-4 h-4 text-gray-700 dark:text-gray-300 transform transition-transform duration-300 ${
                                         langOpen ? 'rotate-180' : ''
                                     }`}
                                 />
                             </button>
                             {langOpen && (
-                                <div className="absolute right-0 mt-2 bg-white dark:bg-[#141619] shadow rounded border border-gray-200 dark:border-[#2A2E35] z-50">
+                                <div className="absolute right-0 mt-2 bg-white dark:bg-gray-800 shadow-lg dark:shadow-gray-900 rounded border border-gray-200 dark:border-gray-700 z-50">
                                     {['Кыргызча', 'Русский', 'English'].map((l) => (
                                         <button
                                             key={l}
@@ -292,7 +291,7 @@ const Header = () => {
                                                 setLang(l);
                                                 setLangOpen(false);
                                             }}
-                                            className="block px-4 py-2 w-full text-left hover:bg-gray-100 dark:hover:bg-[#1F2229] text-sm text-gray-800 dark:text-[#E8ECF3]"
+                                            className="block px-4 py-2 w-full text-left hover:bg-gray-100 dark:hover:bg-gray-700 text-sm text-gray-800 dark:text-gray-300"
                                         >
                                             {l}
                                         </button>
@@ -313,7 +312,7 @@ const Header = () => {
                                     className={`relative w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-300 ${
                                         isFavouritesPage || activeIcon === 'heart'
                                             ? 'bg-orange-500 border-orange-500'
-                                            : 'border-black dark:border-[#E8ECF3] hover:border-gray-600 dark:hover:border-[#E8ECF3]/70'
+                                            : 'border-black dark:border-gray-400 hover:border-gray-600 dark:hover:border-gray-300'
                                     }`}
                                     onClick={handleFavouriteClick}
                                     aria-label="Избранное"
@@ -327,7 +326,7 @@ const Header = () => {
                                     {isFavouritesPage || activeIcon === 'heart' ? (
                                         <IoHeart className="w-5 h-5 text-white" />
                                     ) : (
-                                        <IoHeartOutline className="w-5 h-5 text-black dark:text-[#E8ECF3]" />
+                                        <IoHeartOutline className="w-5 h-5 text-black dark:text-gray-300" />
                                     )}
                                 </button>
                                 {/* Иконка корзины */}
@@ -336,7 +335,7 @@ const Header = () => {
                                         className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-300 ${
                                             activeIcon === 'cart' || location.pathname === '/cart'
                                                 ? 'bg-orange-500 border-orange-500'
-                                                : 'border-black dark:border-[#E8ECF3] hover:border-gray-600 dark:hover:border-[#E8ECF3]/70'
+                                                : 'border-black dark:border-gray-400 hover:border-gray-600 dark:hover:border-gray-300'
                                         }`}
                                         onClick={() =>
                                             handleIconClick('cart', () => navigate('/cart'))
@@ -347,7 +346,7 @@ const Header = () => {
                                                 activeIcon === 'cart' ||
                                                 location.pathname === '/cart'
                                                     ? 'text-white'
-                                                    : 'text-black dark:text-[#E8ECF3]'
+                                                    : 'text-black dark:text-gray-300'
                                             }`}
                                         />
                                         {/* Бейдж с количеством - показывается всегда если есть товары */}
@@ -365,7 +364,7 @@ const Header = () => {
                                         className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-300 ${
                                             activeIcon === 'user' || userMenuOpen
                                                 ? 'bg-orange-500 border-orange-500'
-                                                : 'border-black dark:border-[#E8ECF3] hover:border-gray-600 dark:hover:border-[#E8ECF3]/70'
+                                                : 'border-black dark:border-gray-400 hover:border-gray-600 dark:hover:border-gray-300'
                                         }`}
                                         onClick={() => {
                                             handleIconClick('user');
@@ -376,7 +375,7 @@ const Header = () => {
                                             className={`w-5 h-5 transition-colors duration-300 ${
                                                 activeIcon === 'user' || userMenuOpen
                                                     ? 'text-white'
-                                                    : 'text-black dark:text-[#E8ECF3]'
+                                                    : 'text-black dark:text-gray-300'
                                             }`}
                                         />
                                     </button>
@@ -397,7 +396,7 @@ const Header = () => {
                                         className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-300 ${
                                             activeIcon === 'cart' || location.pathname === '/cart'
                                                 ? 'bg-orange-500 border-orange-500'
-                                                : 'border-black dark:border-[#E8ECF3] hover:border-gray-600 dark:hover:border-[#E8ECF3]/70'
+                                                : 'border-black dark:border-gray-400 hover:border-gray-600 dark:hover:border-gray-300'
                                         }`}
                                         onClick={() =>
                                             handleIconClick('cart', () => navigate('/cart'))
@@ -408,7 +407,7 @@ const Header = () => {
                                                 activeIcon === 'cart' ||
                                                 location.pathname === '/cart'
                                                     ? 'text-white'
-                                                    : 'text-black dark:text-[#E8ECF3]'
+                                                    : 'text-black dark:text-gray-300'
                                             }`}
                                         />
 
@@ -421,7 +420,7 @@ const Header = () => {
                                 </div>
 
                                 <Link to="/login">
-                                    <button className="bg-orange-500 text-white px-4 py-2 rounded hover:bg-orange-600 transition-colors">
+                                    <button className="bg-orange-500 dark:bg-orange-600 text-white px-4 py-2 rounded hover:bg-orange-600 dark:hover:bg-orange-500 transition-colors">
                                         Кирүү
                                     </button>
                                 </Link>
@@ -440,7 +439,7 @@ const Header = () => {
                                 setMenuOpen(true);
                                 setPositionBar(false);
                             }}
-                            className="text-gray-700 dark:text-[#E8ECF3] text-2xl"
+                            className="text-gray-700 dark:text-gray-300 text-2xl p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors"
                         >
                             <FaBars />
                         </button>
@@ -455,8 +454,8 @@ const Header = () => {
                                 />
                             </div>
                             <div className="flex flex-col items-center mt-1">
-                                <span className="text-lg font-bold text-orange-500">EDUBOT</span>
-                                <span className="text-xs -mt-1 text-gray-700 dark:text-[#E8ECF3] tracking-[0.14em]">
+                                <span className="text-lg font-bold text-orange-500 dark:text-orange-400">EDUBOT</span>
+                                <span className="text-xs -mt-1 text-gray-700 dark:text-gray-300 tracking-[0.14em]">
                                     LEARNING
                                 </span>
                             </div>
@@ -467,7 +466,7 @@ const Header = () => {
                             {/* Search Icon */}
                             <button
                                 onClick={() => setSearchOpen(!searchOpen)}
-                                className="text-gray-700 dark:text-[#E8ECF3] text-2xl"
+                                className="text-gray-700 dark:text-gray-300 text-2xl p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors"
                             >
                                 <IoSearch />
                             </button>
@@ -479,13 +478,13 @@ const Header = () => {
                                         className={`w-9 h-9 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${
                                             userMenuOpen
                                                 ? 'bg-orange-500 border-orange-500'
-                                                : 'border-black hover:border-gray-600'
+                                                : 'border-black dark:border-gray-400 hover:border-gray-600 dark:hover:border-gray-300'
                                         }`}
                                         onClick={() => setUserMenuOpen(!userMenuOpen)}
                                     >
                                         <FaRegUser
                                             className={`w-4 h-4 transition-colors duration-300 ${
-                                                userMenuOpen ? 'text-white' : 'text-black'
+                                                userMenuOpen ? 'text-white' : 'text-black dark:text-gray-300'
                                             }`}
                                         />
                                     </button>
@@ -507,15 +506,15 @@ const Header = () => {
                     {/* Mobile Search Input */}
                     {searchOpen && (
                         <div className="mt-3" ref={searchContainerRef}>
-                            <div className="relative flex items-center border rounded border-[#7B818C] dark:border-[#2A2E35] bg-white dark:bg-[#1A1A1A] overflow-visible">
-                                <IoSearch className="w-5 h-5 ml-2 text-[#7B818C] dark:text-[#E8ECF3]" />
+                            <div className="relative flex items-center border rounded border-[#7B818C] dark:border-gray-600 bg-white dark:bg-gray-800 overflow-visible">
+                                <IoSearch className="w-5 h-5 ml-2 text-[#7B818C] dark:text-gray-400" />
                                 <input
                                     type="text"
                                     placeholder="Издөө"
                                     value={search}
                                     onChange={(e) => handleSearch(e.target.value)}
                                     onFocus={() => search.length >= 2 && setShowDropdown(true)}
-                                    className="px-3 py-2 focus:outline-none bg-transparent w-full text-base text-gray-900 dark:text-[#E8ECF3] placeholder:text-gray-500 dark:placeholder:text-gray-400"
+                                    className="px-3 py-2 focus:outline-none bg-transparent w-full text-base text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400"
                                 />
                             </div>
 
@@ -523,7 +522,7 @@ const Header = () => {
                             {showDropdown && (
                                 <div className="absolute left-0 right-0 mt-1 mx-4 z-50">
                                     {results.length > 0 ? (
-                                        <div className="bg-white dark:bg-[#141619] shadow-lg border border-gray-200 dark:border-[#2A2E35] rounded max-h-64 overflow-y-auto">
+                                        <div className="bg-white dark:bg-gray-800 shadow-lg border border-gray-200 dark:border-gray-700 rounded max-h-64 overflow-y-auto">
                                             {results.map((course) => (
                                                 <button
                                                     key={course.id}
@@ -533,9 +532,9 @@ const Header = () => {
                                                         setSearch('');
                                                         setSearchOpen(false);
                                                     }}
-                                                    className="w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-[#1F2229] border-b border-gray-100 dark:border-[#2A2E35] last:border-b-0"
+                                                    className="w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 border-b border-gray-100 dark:border-gray-700 last:border-b-0"
                                                 >
-                                                    <div className="font-semibold text-sm text-gray-900 dark:text-[#E8ECF3]">
+                                                    <div className="font-semibold text-sm text-gray-900 dark:text-white">
                                                         {course.title}
                                                     </div>
                                                     {course.description && (
@@ -547,7 +546,7 @@ const Header = () => {
                                             ))}
                                         </div>
                                     ) : (
-                                        <div className="bg-white dark:bg-[#141619] shadow-lg border border-gray-200 dark:border-[#2A2E35] rounded p-4 text-sm text-gray-500 dark:text-gray-300">
+                                        <div className="bg-white dark:bg-gray-800 shadow-lg border border-gray-200 dark:border-gray-700 rounded p-4 text-sm text-gray-500 dark:text-gray-400">
                                             Натыйжа жок
                                         </div>
                                     )}
@@ -559,16 +558,15 @@ const Header = () => {
                     {/* Mobile Icons Row - только если пользователь авторизован */}
                     {user && searchOpen === false && (
                         <div className="flex justify-center gap-4 mt-3">
-                            {/* Иконка сердца для мобильной версии - переходит на /favourite */}
+                            {/* Иконка сердца для мобильной версии */}
                             <button
                                 className={`relative w-10 h-10 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${
                                     isFavouritesPage || activeIcon === 'heart'
                                         ? 'bg-orange-500 border-orange-500'
-                                        : 'border-black hover:border-gray-600'
+                                        : 'border-black dark:border-gray-400 hover:border-gray-600 dark:hover:border-gray-300'
                                 }`}
                                 onClick={handleFavouriteClick}
                             >
-                                {/* Показываем счетчик избранных курсов на мобильной версии */}
                                 {favourites.length > 0 && (
                                     <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
                                         {favourites.length}
@@ -578,23 +576,23 @@ const Header = () => {
                                 {isFavouritesPage || activeIcon === 'heart' ? (
                                     <IoHeart className="w-5 h-5 text-white" />
                                 ) : (
-                                    <IoHeartOutline className="w-5 h-5 text-black" />
+                                    <IoHeartOutline className="w-5 h-5 text-black dark:text-gray-300" />
                                 )}
                             </button>
 
-                            {/* Иконка корзины для мобильной версии с переходом на /cart */}
+                            {/* Иконка корзины для мобильной версии */}
                             <div className="relative">
                                 <button
                                     className={`w-10 h-10 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${
                                         activeIcon === 'cart'
                                             ? 'bg-orange-500 border-orange-500'
-                                            : 'border-black hover:border-gray-600'
+                                            : 'border-black dark:border-gray-400 hover:border-gray-600 dark:hover:border-gray-300'
                                     }`}
                                     onClick={() => handleIconClick('cart', () => navigate('/cart'))}
                                 >
                                     <BsCart2
                                         className={`w-5 h-5 transition-colors duration-300 ${
-                                            activeIcon === 'cart' ? 'text-white' : 'text-black'
+                                            activeIcon === 'cart' ? 'text-white' : 'text-black dark:text-gray-300'
                                         }`}
                                     />
                                 </button>
