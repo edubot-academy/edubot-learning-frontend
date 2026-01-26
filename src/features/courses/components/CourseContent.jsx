@@ -41,18 +41,16 @@ const CourseContent = ({
         }
     }, [sections, activeLesson?.sectionId]);
 
-    useEffect(() => {
-        if (activeLesson?.sectionId && !openIds.includes(activeLesson.sectionId)) {
-            setOpenIds(prev => [...prev, activeLesson.sectionId]);
-        }
-    }, [activeLesson?.sectionId, openIds]);
-
     const toggleOpen = (id) => {
-        setOpenIds((prev) =>
-            prev.includes(id)
-                ? prev.filter(item => item !== id)
-                : [...prev, id]
-        );
+        setOpenIds((prev) => {
+            if (prev.includes(id)) {
+                // Закрываем секцию
+                return prev.filter((item) => item !== id);
+            } else {
+                // Открываем секцию
+                return [...prev, id];
+            }
+        });
     };
 
     const { totalLessons, totalMinutes } = useMemo(() => {
@@ -74,14 +72,15 @@ const CourseContent = ({
         if (!searchQuery.trim()) return sections;
 
         return sections
-            .map(section => ({
+            .map((section) => ({
                 ...section,
-                lessons: section.lessons?.filter(lesson =>
-                    lesson.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                    lesson.description?.toLowerCase().includes(searchQuery.toLowerCase())
-                )
+                lessons: section.lessons?.filter(
+                    (lesson) =>
+                        lesson.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                        lesson.description?.toLowerCase().includes(searchQuery.toLowerCase())
+                ),
             }))
-            .filter(section => section.lessons?.length > 0);
+            .filter((section) => section.lessons?.length > 0);
     }, [sections, searchQuery]);
 
     const isLocked = (lesson) => !enrolled && !lesson.previewVideo;
@@ -91,13 +90,20 @@ const CourseContent = ({
     const getIcon = (lesson) => {
         switch (lesson.kind) {
             case 'article':
-                return <FiBookOpen className="text-[#4b4b4b] flex-shrink-0" size={compact ? 16 : 18} />;
+                return (
+                    <FiBookOpen className="text-[#4b4b4b] flex-shrink-0" size={compact ? 16 : 18} />
+                );
             case 'code':
                 return <FiCode className="text-[#4b4b4b] flex-shrink-0" size={compact ? 16 : 18} />;
             case 'quiz':
                 return <MdQuiz className="text-[#4b4b4b] flex-shrink-0" size={compact ? 16 : 18} />;
             default:
-                return <RiPlayCircleFill className="text-[#4b4b4b] flex-shrink-0" size={compact ? 18 : 22} />;
+                return (
+                    <RiPlayCircleFill
+                        className="text-[#4b4b4b] flex-shrink-0"
+                        size={compact ? 18 : 22}
+                    />
+                );
         }
     };
 
@@ -110,10 +116,14 @@ const CourseContent = ({
 
     const getStatusColor = (status) => {
         switch (status) {
-            case 'active': return 'border-l-4 border-l-orange-500 bg-orange-50';
-            case 'completed': return 'bg-green-50 border-l-4 border-l-green-500';
-            case 'locked': return 'bg-gray-100 opacity-70';
-            default: return 'hover:bg-gray-50';
+            case 'active':
+                return 'border-l-4 border-l-orange-500 bg-orange-50';
+            case 'completed':
+                return 'bg-green-50 border-l-4 border-l-green-500';
+            case 'locked':
+                return 'bg-gray-100 opacity-70';
+            default:
+                return 'hover:bg-gray-50';
         }
     };
 
@@ -121,8 +131,10 @@ const CourseContent = ({
         if (!lesson) return null;
         if (lesson.videoUrl) return lesson.videoUrl;
         if (lesson.previewUrl) return lesson.previewUrl;
-        if (lesson.previewVideo && typeof lesson.previewVideo === 'string') return lesson.previewVideo;
-        if (lesson.previewVideo && lesson.previewVideo.videoUrl) return lesson.previewVideo.videoUrl;
+        if (lesson.previewVideo && typeof lesson.previewVideo === 'string')
+            return lesson.previewVideo;
+        if (lesson.previewVideo && lesson.previewVideo.videoUrl)
+            return lesson.previewVideo.videoUrl;
         if (lesson.previewVideos?.[0]?.videoUrl) return lesson.previewVideos[0].videoUrl;
         return null;
     };
@@ -214,7 +226,7 @@ const CourseContent = ({
 
                 <div className="divide-y divide-[#E6E8EC]">
                     {filteredSections.map((section) => {
-                        const sectionCompleted = section.lessons?.every(lesson =>
+                        const sectionCompleted = section.lessons?.every((lesson) =>
                             completedLessons.includes(lesson.id)
                         );
 
@@ -249,8 +261,10 @@ const CourseContent = ({
                                         </span>
                                         {enrolled && (
                                             <span className="text-xs bg-gray-100 px-2 py-1 rounded whitespace-nowrap ml-2">
-                                                {section.lessons?.filter(l => completedLessons.includes(l.id)).length || 0}/
-                                                {section.lessons?.length || 0}
+                                                {section.lessons?.filter((l) =>
+                                                    completedLessons.includes(l.id)
+                                                ).length || 0}
+                                                /{section.lessons?.length || 0}
                                             </span>
                                         )}
                                     </div>
@@ -266,7 +280,9 @@ const CourseContent = ({
                                         overflow: 'hidden',
                                     }}
                                 >
-                                    <div className={`bg-white px-4 sm:px-6 ${compact ? 'pb-2' : 'pb-4'} space-y-1`}>
+                                    <div
+                                        className={`bg-white px-4 sm:px-6 ${compact ? 'pb-2' : 'pb-4'} space-y-1`}
+                                    >
                                         {section.lessons?.map((lesson) => {
                                             const locked = isLocked(lesson);
                                             const active = isActive(lesson);
@@ -293,55 +309,81 @@ const CourseContent = ({
                                                                 <div className="relative flex-shrink-0 mt-0.5">
                                                                     <input
                                                                         type="checkbox"
-                                                                        className="w-4 h-4 text-orange-600 bg-gray-100 border-gray-300 rounded focus:ring-orange-500 focus:ring-2"
+                                                                        className={`w-4 h-4 ${completed ? 'text-green-600 bg-green-100 border-green-300' : 'text-orange-600 bg-gray-100 border-gray-300'} rounded focus:ring-orange-500 focus:ring-2`}
                                                                         checked={completed}
-                                                                        onMouseDown={(e) => e.stopPropagation()}
-                                                                        onClick={(e) => e.stopPropagation()}
+                                                                        onMouseDown={(e) =>
+                                                                            e.stopPropagation()
+                                                                        }
+                                                                        onClick={(e) =>
+                                                                            e.stopPropagation()
+                                                                        }
                                                                         onChange={(e) => {
                                                                             e.stopPropagation();
-                                                                            if (handleCheckboxToggle) {
-                                                                                handleCheckboxToggle(lesson);
+                                                                            if (
+                                                                                handleCheckboxToggle
+                                                                            ) {
+                                                                                handleCheckboxToggle(
+                                                                                    lesson
+                                                                                );
                                                                             }
                                                                         }}
                                                                         disabled={locked}
                                                                     />
-                                                                    {active && (
-                                                                        <div className="absolute -top-1 -right-1 w-2 h-2 bg-orange-500 rounded-full animate-pulse"></div>
-                                                                    )}
+                                                                    {/* Убрал анимированный кружок для активного урока */}
                                                                 </div>
 
                                                                 <div className="flex-1 min-w-0">
                                                                     <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-2">
-                                                                        <p className={`font-medium ${compact ? 'text-sm' : 'text-base'} text-gray-800 leading-snug break-words ${completed ? 'line-through opacity-70' : ''}`}>
+                                                                        <p
+                                                                            className={`font-medium ${compact ? 'text-sm' : 'text-base'} text-gray-800 leading-snug break-words ${completed ? 'opacity-70' : ''}`}
+                                                                        >
+                                                                            {/* Убрал line-through, оставил только opacity */}
                                                                             {lesson.title}
                                                                         </p>
                                                                         <div className="flex flex-wrap items-center gap-2 text-sm text-gray-600">
                                                                             {getIcon(lesson)}
                                                                             <span className="whitespace-nowrap">
-                                                                                {formatSecondsToTime(lesson.duration)}
+                                                                                {formatSecondsToTime(
+                                                                                    lesson.duration
+                                                                                )}
                                                                             </span>
-                                                                            {locked && <TbLock className="text-gray-400 flex-shrink-0" size={14} />}
+                                                                            {locked && (
+                                                                                <TbLock
+                                                                                    className="text-gray-400 flex-shrink-0"
+                                                                                    size={14}
+                                                                                />
+                                                                            )}
                                                                         </div>
                                                                     </div>
 
-                                                                    {!compact && lesson.description && (
-                                                                        <p className="text-xs text-gray-500 mt-1 line-clamp-1">
-                                                                            {lesson.description}
-                                                                        </p>
-                                                                    )}
+                                                                    {!compact &&
+                                                                        lesson.description && (
+                                                                            <p className="text-xs text-gray-500 mt-1 line-clamp-1">
+                                                                                {lesson.description}
+                                                                            </p>
+                                                                        )}
                                                                 </div>
                                                             </div>
 
                                                             {lesson.resourceUrl && (
                                                                 <div className="sm:self-start flex-shrink-0">
                                                                     <button
-                                                                        onClick={(e) => handleDownload(e, lesson.resourceUrl)}
+                                                                        onClick={(e) =>
+                                                                            handleDownload(
+                                                                                e,
+                                                                                lesson.resourceUrl
+                                                                            )
+                                                                        }
                                                                         className="inline-flex items-center gap-1 px-3 py-1.5 text-sm border border-[#E05A22] text-[#E05A22] rounded-lg hover:bg-orange-50 transition whitespace-nowrap w-full sm:w-auto"
                                                                         title="Ресурстарды жүктөө"
                                                                     >
                                                                         <MdDownload size={16} />
-                                                                        <span className="hidden sm:inline">Ресурстар</span>
-                                                                        <span className="sm:hidden">Жүктөө</span>
+                                                                        <span className="hidden sm:inline">
+                                                                            Ресурстар
+                                                                        </span>
+                                                                        <span className="sm:hidden">
+                                                                            Жүктөө
+                                                                        </span>
                                                                     </button>
                                                                 </div>
                                                             )}
@@ -350,7 +392,10 @@ const CourseContent = ({
                                                         <div className="flex flex-col sm:flex-row sm:items-center gap-3">
                                                             <div className="flex items-start gap-3 w-full">
                                                                 {lesson.kind === 'article' ? (
-                                                                    <FiBookOpen className="text-[#4b4b4b] flex-shrink-0" size={compact ? 16 : 20} />
+                                                                    <FiBookOpen
+                                                                        className="text-[#4b4b4b] flex-shrink-0"
+                                                                        size={compact ? 16 : 20}
+                                                                    />
                                                                 ) : (
                                                                     <img
                                                                         src={ReelsIcon}
@@ -361,23 +406,33 @@ const CourseContent = ({
 
                                                                 <div className="flex-1 min-w-0">
                                                                     <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-2">
-                                                                        <p className={`${compact ? 'text-sm' : 'text-base'} text-gray-800 leading-snug break-words`}>
+                                                                        <p
+                                                                            className={`${compact ? 'text-sm' : 'text-base'} text-gray-800 leading-snug break-words`}
+                                                                        >
                                                                             {lesson.title}
                                                                         </p>
                                                                         <div className="flex flex-wrap items-center gap-2 text-sm text-gray-600">
-                                                                            {lesson.previewVideo && lesson.kind !== 'article' && (
-                                                                                <>
-                                                                                    <RiPlayCircleFill
-                                                                                        className="text-[#4b4b4b] flex-shrink-0"
-                                                                                        size={compact ? 16 : 22}
-                                                                                    />
-                                                                                    <span className="text-[#1E72BE] font-semibold whitespace-nowrap">
-                                                                                        Preview
-                                                                                    </span>
-                                                                                </>
-                                                                            )}
+                                                                            {lesson.previewVideo &&
+                                                                                lesson.kind !==
+                                                                                    'article' && (
+                                                                                    <>
+                                                                                        <RiPlayCircleFill
+                                                                                            className="text-[#4b4b4b] flex-shrink-0"
+                                                                                            size={
+                                                                                                compact
+                                                                                                    ? 16
+                                                                                                    : 22
+                                                                                            }
+                                                                                        />
+                                                                                        <span className="text-[#1E72BE] font-semibold whitespace-nowrap">
+                                                                                            Preview
+                                                                                        </span>
+                                                                                    </>
+                                                                                )}
                                                                             <span className="whitespace-nowrap">
-                                                                                {formatSecondsToTime(lesson.duration)}
+                                                                                {formatSecondsToTime(
+                                                                                    lesson.duration
+                                                                                )}
                                                                             </span>
                                                                         </div>
                                                                     </div>
@@ -408,7 +463,9 @@ const CourseContent = ({
                         <div className="mt-2 w-full bg-gray-200 rounded-full h-2">
                             <div
                                 className="bg-green-600 h-2 rounded-full transition-all duration-300"
-                                style={{ width: `${(completedLessons.length / totalLessons) * 100}%` }}
+                                style={{
+                                    width: `${(completedLessons.length / totalLessons) * 100}%`,
+                                }}
                             ></div>
                         </div>
                     </div>
@@ -422,7 +479,8 @@ const CourseContent = ({
                     previewData={{
                         title: previewLesson?.title,
                         description: previewLesson?.description,
-                        coverImageUrl: previewLesson?.coverImageUrl || previewLesson?.thumbnailUrl || '',
+                        coverImageUrl:
+                            previewLesson?.coverImageUrl || previewLesson?.thumbnailUrl || '',
                         durationInHours: Math.ceil((previewLesson?.duration || 0) / 3600),
                         previewVideos: [
                             {
