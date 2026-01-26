@@ -1,13 +1,18 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useContext } from 'react';
 import bannerImg1 from '/banner-img1.png';
 import bannerBlure1 from '/banner-img1-blure.png';
 import bannerBlureDark from '/banner-img1-blure-dark.png';
 import bannerImg2 from '/banner-img2.png';
 import bannerImg3 from '/banner-img3.png';
 import bannerMan3 from '/banner-img-man.png';
+import { useNavigate } from 'react-router-dom';
+import { AuthContext } from '@app/providers';
 
 const HeroStart = () => {
     const [currentSlide, setCurrentSlide] = useState(0);
+    const { user } = useContext(AuthContext);
+    const navigate = useNavigate();
+    console.log(user);
 
     const slides = [
         {
@@ -45,10 +50,11 @@ const HeroStart = () => {
                 {slides.map((slide, index) => (
                     <div
                         key={index}
-                        className={`absolute inset-0 transition-all duration-1000 ease-in-out  ${index === currentSlide
-                            ? 'opacity-100 z-10 translate-x-0'
-                            : 'opacity-0 z-0 translate-x-full'
-                            }`}
+                        className={`absolute inset-0 transition-all duration-1000 ease-in-out  ${
+                            index === currentSlide
+                                ? 'opacity-100 z-10 translate-x-0'
+                                : 'opacity-0 z-0 translate-x-full'
+                        }`}
                     >
                         {/* ---------- СЛАЙД 1 ---------- */}
                         {index === 0 && (
@@ -62,10 +68,24 @@ const HeroStart = () => {
                                     </p>
 
                                     <div className="flex justify-center lg:justify-start gap-[12px] pt-[32px] md:pt-[60px]">
-                                        <button className="border border-[#141619] dark:border-white/70 rounded-lg text-gray-800 dark:text-white hover:bg-gray-100 dark:hover:bg-white/10 transition font-semibold h-[52px] w-[197px] md:w-[220px] md:h-[54px] text-[14px]">
+                                        <button
+                                            onClick={() => {
+                                                navigate('/contact');
+                                            }}
+                                            className="border border-[#141619] dark:border-white/70 rounded-lg text-gray-800 dark:text-white hover:bg-gray-100 dark:hover:bg-white/10 transition font-semibold h-[52px] w-[197px] md:w-[220px] md:h-[54px] text-[14px]"
+                                        >
                                             Толук маалымат алуу
                                         </button>
-                                        <button className="rounded-lg bg-gradient-to-b from-[#FF8C6E] to-[#E14219] text-white shadow-[0px_5px_21.3px_0px_#E14219BF] font-semibold h-[52px] w-[197px] md:w-[220px] md:h-[54px] text-[14px]">
+                                        <button
+                                            onClick={() => {
+                                                if (user !== null) {
+                                                    navigate('/courses');
+                                                } else {
+                                                    navigate('/login');
+                                                }
+                                            }}
+                                            className="rounded-lg bg-gradient-to-b from-[#FF8C6E] to-[#E14219] text-white shadow-[0px_5px_21.3px_0px_#E14219BF] font-semibold h-[52px] w-[197px] md:w-[220px] md:h-[54px] text-[14px]"
+                                        >
                                             Сабакты азыр баштоо
                                         </button>
                                     </div>
@@ -133,10 +153,24 @@ const HeroStart = () => {
 
                                     {/* блок кнопок и контактов */}
                                     <div className="flex flex-wrap justify-center lg:justify-start gap-4 pt-[60px]">
-                                        <button className="border border-white rounded-lg text-white transition w-[177px] h-[46px] md:w-[373px] md:h-[72px] font-semibold text-[10.12px] md:text-[20px] ">
+                                        <button
+                                            className="border border-white rounded-lg text-white transition w-[177px] h-[46px] md:w-[373px] md:h-[72px] font-semibold text-[10.12px] md:text-[20px] "
+                                            onClick={() => {
+                                                navigate('/contact');
+                                            }}
+                                        >
                                             Толук маалымат алуу
                                         </button>
-                                        <button className="rounded-lg w-[177px] h-[46px] md:w-[373px] md:h-[72px] bg-gradient-to-b from-[#FF8C6E] to-[#E14219] font-semibold text-[10.12px] md:text-[20px] text-white shadow-[0px_5px_21.3px_0px_#E14219BF]">
+                                        <button
+                                            onClick={() => {
+                                                if (user !== null) {
+                                                    navigate('/courses');
+                                                } else {
+                                                    navigate('/login');
+                                                }
+                                            }}
+                                            className="rounded-lg w-[177px] h-[46px] md:w-[373px] md:h-[72px] bg-gradient-to-b from-[#FF8C6E] to-[#E14219] font-semibold text-[10.12px] md:text-[20px] text-white shadow-[0px_5px_21.3px_0px_#E14219BF]"
+                                        >
                                             Сабакты азыр баштоо
                                         </button>
                                     </div>
@@ -161,7 +195,8 @@ const HeroStart = () => {
                                 <div className="relative bg-[linear-gradient(93.72deg,#F06743_11.31%,#D27A3B_67.42%)] text-white px-[4%] py-[4%] md:px-[2%] md:py-[2%] flex flex-col lg:flex-row h-[80%] w-[90%] rounded-3xl m-auto justify-between">
                                     <div className="">
                                         <h1 className="font-[Suisse_Intl] text-[30px] leading-[120%] tracking-[1%]">
-                                            Жылдык планды сатып алыңыз <br /> жана бардык курстарга 50% <br /> арзандатуу алыңыз.
+                                            Жылдык планды сатып алыңыз <br /> жана бардык курстарга
+                                            50% <br /> арзандатуу алыңыз.
                                         </h1>
                                         <p className="font-[Suisse_Intl] text-[18px] leading-[120%] tracking-[0%] mt-[26px] ">
                                             Программалоо тилдерин жана код жазуу <br /> жөндөмдөрүн
@@ -198,8 +233,9 @@ const HeroStart = () => {
                             className="h-1 w-12 bg-white/30 rounded-full overflow-hidden"
                         >
                             <div
-                                className={`h-full bg-white rounded-full transition-all duration-5000 ease-linear ${isActive ? 'animate-progress' : ''
-                                    }`}
+                                className={`h-full bg-white rounded-full transition-all duration-5000 ease-linear ${
+                                    isActive ? 'animate-progress' : ''
+                                }`}
                                 style={{ width: isActive ? '100%' : '0%' }}
                             ></div>
                         </div>

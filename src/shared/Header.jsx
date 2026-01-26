@@ -18,28 +18,43 @@ import SidebarOverlay from '@shared-ui/SidebarOverlay';
 import UserMenuDropdown from '@shared-ui/UserMenuDropdown';
 import { useFavourites } from '../context/FavouritesContext';
 import { useCart } from '../context/CartContext';
-import Button from '@shared/ui/Button';
+
 
 const NavLinks = ({ isMobile, user }) => {
     const location = useLocation();
     const active = (path) => (location.pathname === path ? 'text-orange-500' : '');
 
     const linkClass =
-        "hover:text-black dark:text-[#E8ECF3] dark:hover:text-white after:content-[''] after:absolute after:-bottom-1 after:left-0 after:h-[2px] after:w-full after:bg-black dark:after:bg-[#E8ECF3] after:scale-x-0 hover:after:scale-x-100 after:transition-transform after:duration-300";
+        'relative inline-block px-2 cursor-pointer dark:text-[#E8ECF3] dark:hover:text-white ' +
+        "after:content-[''] after:absolute after:-bottom-1 after:left-1/2 after:h-[2px] after:w-0 " +
+        'after:bg-black dark:after:bg-[#E8ECF3] after:transition-all after:duration-300 ' +
+        'hover:after:left-0 hover:after:w-full';
 
     return (
         <div
             className={
-                isMobile ? 'flex flex-col space-y-4 mt-4' : 'flex space-x-14 items-center mr-[70px]'
+                isMobile
+                    ? 'flex flex-col space-y-4 mt-4'
+                    : 'flex justify-around  w-full  items-center gap-2'
             }
         >
-            <Link to="/courses" className={`${active('/courses')} ${linkClass}`}>
+            <Link
+                to={user !== null ? '/courses' : '/login'}
+                className={`${active('/courses')} ${linkClass}  lg:text-sm xl:text-base 2xl:text-lg `}
+            >
                 Курстар
             </Link>
-            <Link to="/about" className={`${active('/about')} ${linkClass}`}>
+
+            <Link
+                to="/about"
+                className={`${active('/about')} ${linkClass}   lg:text-sm xl:text-base 2xl:text-lg`}
+            >
                 Биз жөнүндө
             </Link>
-            <Link to="/contact" className={`${active('/contact')} ${linkClass}`}>
+            <Link
+                to="/contact"
+                className={`${active('/contact')} ${linkClass} lg:text-sm xl:text-base 2xl:text-lg`}
+            >
                 Байланыш
             </Link>
 
@@ -197,9 +212,9 @@ const Header = () => {
                 {/* Desktop Layout */}
                 <div className="hidden lg:flex items-center justify-between">
                     {/* Logo + Search */}
-                    <div className="flex items-center flex-1">
-                        <Link to="/" className="flex items-center">
-                            <div className="h-16 w-16 md:h-20 md:w-20">
+                    <div className="flex items-center  flex-1">
+                        <Link to="/" className="flex items-center max-w-[191px] w-full">
+                            <div className="h-16 w-16 md:h-20 md:w-20 ">
                                 <img
                                     src={EduBotLogo}
                                     alt="EduBot Logo"
@@ -216,7 +231,7 @@ const Header = () => {
 
                         {/* Search Bar - Desktop */}
                         <div
-                            className="relative flex items-center border rounded hover:border-[#F06743] flex-1 max-w-xs ml-6 border-[#7B818C] dark:border-[#2A2E35] bg-white dark:bg-[#1A1A1A] overflow-visible"
+                            className="relative flex items-center border rounded hover:border-[#F06743] flex-1 max-w-xs ml-6 border-[#7B818C] dark:border-[#2A2E35] bg-white dark:bg-[#1A1A1A] overflow-visible min-w-48"
                             ref={searchContainerRef}
                         >
                             <IoSearch className="w-5 h-5 ml-2 text-[#7B818C] dark:text-[#E8ECF3]" />
@@ -261,11 +276,11 @@ const Header = () => {
                                 </div>
                             )}
                         </div>
-                    </div>
 
-                    {/* Navigation Links - Desktop */}
-                    <div className="flex items-center space-x-6 mx-6">
-                        <NavLinks isMobile={false} user={user} />
+                        {/* Navigation Links - Desktop */}
+                        <div className="flex items-center  ml-11 max-w-[419px] w-full">
+                            <NavLinks isMobile={false} user={user} />
+                        </div>
                     </div>
 
                     {/* Right Side Actions - Desktop */}

@@ -7,6 +7,7 @@ import { useFavourites } from '../../../context/FavouritesContext';
 import { AiFillStar, AiOutlineStar } from 'react-icons/ai';
 import { IoMdTime } from 'react-icons/io';
 import { FiBook } from 'react-icons/fi';
+import NoImage from '@assets/icons/noImage.svg'
 
 const formatPrice = (price, currency = 'KGS') => {
     if (!price && price !== 0) return 'Цена не указана';
@@ -150,7 +151,7 @@ const CardCourse = ({
 
                     <div className="p-3">
                         <img
-                            src={coverImageUrl}
+                            src={coverImageUrl ||   NoImage}
                             alt={title}
                             className="w-full h-48 object-cover rounded"
                         />

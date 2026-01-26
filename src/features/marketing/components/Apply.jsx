@@ -1,13 +1,15 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
 import student from '@assets/images/RightLittleMan.png';
 import Background from '@assets/images/background.png';
 import BackgroundDark from '@assets/images/background-dark.png';
 import LogoStudies from '@assets/images/logoEduBot.png';
 import Button from '@shared/ui/Button';
+import { useNavigate } from 'react-router-dom';
+import { useContext } from 'react';
+import { AuthContext } from '@app/providers';
 
-function Apply({ user }) {
-    if (user) return null;
+function Apply() {
+    const { user } = useContext(AuthContext);
+    const navigate = useNavigate();
 
     return (
         <div className="flex items-center justify-center gap-[130px] mt-20 bg-white dark:bg-[#1A1A1A] py-12 px-4 sm:px-6 lg:px-12 text-[#141619] dark:text-[#E8ECF3]">
@@ -37,9 +39,18 @@ function Apply({ user }) {
                 <p className="text-[#3E424A] dark:text-[#a6adba] mb-4">
                     Edubot Learning кошулуу үчүн азыр баштаңыз
                 </p>
-                <Link to="/register">
-                    <Button>Сабакты азыр баштоо</Button>
-                </Link>
+
+                <Button
+                    onClick={() => {
+                        if (user !== null) {
+                            navigate('/courses');
+                        } else {
+                            navigate('/login');
+                        }
+                    }}
+                >
+                    Сабакты азыр баштоо
+                </Button>
             </div>
         </div>
     );
