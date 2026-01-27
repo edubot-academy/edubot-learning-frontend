@@ -108,9 +108,7 @@ const UnauthModal = ({
                 <p className="text-gray-600">
                     {courseTitle && actionType === 'favourite' ? (
                         <>
-                            Курс кошулуу үчүн"
-                            <span className="font-semibold">{courseTitle}</span>" Тандалгандарга
-                            кошуу каттоо талап кылынат.
+                            Курсту тандалгандарга кошуу үчүн каттодон өтүү керек
                         </>
                     ) : courseTitle && actionType === 'cart' ? (
                         <>
