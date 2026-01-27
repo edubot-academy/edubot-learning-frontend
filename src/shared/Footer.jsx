@@ -33,23 +33,23 @@ const Footer = () => {
 
                         <div>
                             <h3 className="font-bold text-base mb-3 text-black dark:text-[#E8ECF3]">
-                                КОНТАКТНАЯ ИНФОРМАЦИЯ
+                                БАЙЛАНЫШ ҮЧҮН
                             </h3>
                             <ul className="space-y-1 text-gray-700 dark:text-[#a6adba] text-sm">
                                 <li>
-                                    <Link className="flex items-center gap-1 ">
+                                    <Link className="flex items-center gap-1" to={"https://www.instagram.com/edubot.company/"}>
                                         {' '}
                                         <FaInstagram /> edubot_learning
                                     </Link>
                                 </li>
                                 <li>
-                                    <Link className="flex items-center gap-1 ">
+                                    <Link className="flex items-center gap-1" to={'https://t.me/edubot_learning'}>
                                         <FaTelegramPlane /> edubot_learning
                                     </Link>
                                 </li>
                                 <li>
-                                    <Link className="flex items-center gap-1">
-                                        <IoIosCall /> +996 (555) 922 522
+                                    <Link className="flex items-center gap-1" to={"https://wa.me/996221004976"}>
+                                        <IoIosCall /> +996 (221) 004 976
                                     </Link>
                                 </li>
                             </ul>
@@ -57,10 +57,10 @@ const Footer = () => {
 
                         <div>
                             <h3 className="font-bold text-base mb-3 text-black dark:text-[#E8ECF3]">
-                                НАШ АДРЕС
+                                БИЗДИН ДАРЕК
                             </h3>
                             <p className="text-sm text-gray-700 dark:text-[#a6adba]">
-                                г.Бишкек, ул.Турусбекова 109/1
+                                Бишкек ш,. Ахунбаев 109/1
                             </p>
                         </div>
                     </div>
@@ -75,7 +75,7 @@ const Footer = () => {
                 </div>
 
                 <p className="w-full text-center text-xs text-gray-600 dark:text-[#a6adba] mt-16">
-                    © 2025 Edubot Learning. Все права защищены.
+                    © 2025 Edubot Learning. Баардык укуктар сакталган.
                 </p>
             </div>
         </footer>

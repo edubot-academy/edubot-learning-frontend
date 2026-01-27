@@ -44,8 +44,8 @@ function UserMenuDropdown({ user, onClose }) {
     const menuItemsTop = [
         { label: 'Менин курстарым', icon: Lamp, path: '/my-courses' },
         { label: 'Билдирүүлөр', icon: Bell, path: notificationsPath },
-        { label: 'Корзина', icon: Basket, path: '/cart' },
-        { label: 'Избранные', icon: Heart, path: '/favorites' },
+        { label: 'Себет', icon: Basket, path: '/cart' },
+        { label: 'Избранные', icon: Heart, path: '/favourites' },
         { label: 'Настройка', icon: Setting, path: '/settings' },
     ];
 

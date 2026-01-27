@@ -7,10 +7,12 @@ import App from './app/App.jsx';
 import AppProviders from './app/providers';
 import { FavouritesProvider } from './context/FavouritesContext';
 import { CartProvider } from './context/CartContext';
+import ScrollToTop from '@shared/ScrollToTop';
 
 createRoot(document.getElementById('root')).render(
     <StrictMode>
         <BrowserRouter>
+            <ScrollToTop />
             <AppProviders>
                 <FavouritesProvider>
                     <CartProvider>

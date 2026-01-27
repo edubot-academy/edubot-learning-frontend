@@ -11,7 +11,7 @@ import { AuthContext } from '../../../context/AuthContext';
 import UnauthModal from '../../../shared/ui/UnauthModal';
 
 const formatPrice = (price, currency = 'KGS') => {
-    if (!price && price !== 0) return 'Цена не указана';
+    if (!price && price !== 0) return 'Баасы көрсөтүлгөн эмес';
 
     const formattedPrice = new Intl.NumberFormat('ru-RU').format(price);
 
@@ -62,12 +62,12 @@ const CardCourse = ({
         const courseData = {
             id,
             title: title || `Курс ${id}`,
-            instructor: instructor || { fullName: 'Неизвестный инструктор' },
+            instructor: instructor || { fullName: 'Белгисиз инструктор' },
             price: price || 0,
             coverImageUrl,
             ratingCount: ratingCount || 0,
             ratingAverage: ratingAverage || 0,
-            level: level || 'Не указан',
+            level: level || 'Көрсөтүлгөн эмес',
             durationInHours: durationInHours || 0,
             lessonCount: lessonCount || 0,
             isPublished,
@@ -138,7 +138,7 @@ const CardCourse = ({
                         onClick={handleFavoriteClick}
                         className="absolute top-3 right-3 z-10 bg-white p-2 rounded-full shadow-md hover:shadow-lg transition-shadow"
                         aria-label={
-                            isCourseFavourite ? 'Удалить из избранного' : 'Добавить в избранное'
+                            isCourseFavourite ? 'Избранныйдан өчүрүү' : 'Избранныйга кошуу'
                         }
                         aria-pressed={isCourseFavourite}
                     >
@@ -167,7 +167,7 @@ const CardCourse = ({
                         <div className="flex flex-col flex-grow py-4">
                             <h3 className="font-suisse font-medium text-lg">{title}</h3>
                             <p className="text-gray-500 dark:text-[#a6adba] text-sm my-1">
-                                {instructor?.fullName || 'Неизвестный инструктор'}
+                                {instructor?.fullName || 'Белгисиз инструктор'}
                             </p>
                             <div className="flex items-center gap-2 mb-3 mt-3">
                                 <div style={{ display: 'flex', gap: '5px' }}>
@@ -187,11 +187,11 @@ const CardCourse = ({
                             </div>
                             <div className="flex gap-2 mb-4">
                                 <span className="text-xs bg-[#DFF5FF] text-[#006F9D] rounded px-2 py-1">
-                                    {level || 'Не указан'}
+                                    {level || 'Көрсөтүлгөн эмес'}
                                 </span>
                                 <span className="text-xs bg-[#F0F0F0] text-[#141619] dark:bg-[#2A2E35] dark:text-[#E8ECF3] rounded px-2 py-1 flex items-center gap-1">
                                     <IoMdTime className="w-3 h-3" />
-                                    {durationInHours || 0} ч.
+                                    {durationInHours || 0} саат
                                 </span>
                                 <span className="text-xs bg-[#F0F0F0] text-[#141619] dark:bg-[#2A2E35] dark:text-[#E8ECF3] rounded px-2 py-1 flex items-center gap-1">
                                     <FiBook className="w-3 h-3" />
@@ -201,7 +201,7 @@ const CardCourse = ({
                             <div className="flex justify-between items-center mt-auto pt-4 border-t">
                                 <div className="flex flex-col gap-1">
                                     <p className="text-gray-500 dark:text-[#a6adba] text-xs">
-                                        Цена
+                                        Баасы 
                                     </p>
                                     <p className="text-base text-[#141619] dark:text-white font-bold">
                                         {formatPrice(price, 'KGS')}
@@ -220,7 +220,7 @@ const CardCourse = ({
                                                 alt="cart"
                                                 className="w-5 h-5 mr-2"
                                             />
-                                            В корзине
+                                            Себетте
                                         </>
                                     ) : (
                                         'Себетке кошуу'
@@ -341,7 +341,7 @@ const FavoritePopupModal = ({ isOpen, onClose, onGoToFavourites, course }) => {
                 <div className="p-6">
                     <div className="flex items-center justify-between mb-4">
                         <h3 id="favorite-modal-title" className="text-lg font-bold text-gray-800">
-                            Успешно добавлено в избранное!
+                            Избранныйга ийгиликтүү кошулду!
                         </h3>
                         <button
                             onClick={onClose}
@@ -361,7 +361,7 @@ const FavoritePopupModal = ({ isOpen, onClose, onGoToFavourites, course }) => {
                             <div className="flex-1 min-w-0">
                                 <h4 className="font-medium text-sm truncate">{course.title}</h4>
                                 <p className="text-xs text-gray-500 truncate">
-                                    {course.instructor || 'Неизвестный инструктор'}
+                                    {course.instructor || 'Белгисиз инструктор'}
                                 </p>
                                 <p className="text-sm font-bold mt-1">
                                     {formatPrice(course.price, 'KGS')}
