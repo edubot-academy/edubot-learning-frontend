@@ -417,7 +417,7 @@ const CourseContent = ({
                     <div className="px-4 sm:px-6 py-3 border-t border-[#DFE1E5] dark:border-[#2A2E35] bg-gray-50 dark:bg-gray-800/50">
                         <div className="flex flex-col xs:flex-row xs:items-center justify-between gap-2">
                             <div className="text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">
-                                Илгерилүү: {completedLessons.length}/{totalLessons} лекция
+                                Прогресс: {completedLessons.length}/{totalLessons} лекция
                             </div>
                             <div className="text-sm font-medium text-gray-900 dark:text-[#E8ECF3] whitespace-nowrap">
                                 {Math.round((completedLessons.length / totalLessons) * 100)}%
