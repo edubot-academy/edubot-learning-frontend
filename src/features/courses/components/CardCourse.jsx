@@ -182,7 +182,7 @@ const CardCourse = ({
                                     ))}
                                 </div>
                                 <span className="text-gray-600 dark:text-[#a6adba] text-sm">
-                                    ({ratingCount || 0} рейтингов)
+                                    ({ratingCount || 0} рейтинг)
                                 </span>
                             </div>
                             <div className="flex gap-2 mb-4">
@@ -195,7 +195,7 @@ const CardCourse = ({
                                 </span>
                                 <span className="text-xs bg-[#F0F0F0] text-[#141619] dark:bg-[#2A2E35] dark:text-[#E8ECF3] rounded px-2 py-1 flex items-center gap-1">
                                     <FiBook className="w-3 h-3" />
-                                    {lessonCount || 0} уроков
+                                    {lessonCount || 0} сабак
                                 </span>
                             </div>
                             <div className="flex justify-between items-center mt-auto pt-4 border-t">
@@ -223,7 +223,7 @@ const CardCourse = ({
                                             В корзине
                                         </>
                                     ) : (
-                                        'В корзину'
+                                        'Себетке кошуу'
                                     )}
                                 </Button>
                             </div>

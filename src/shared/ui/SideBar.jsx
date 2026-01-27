@@ -154,7 +154,7 @@ const SideBar = ({ setMenuOpen, setPosition }) => {
                                     logout();
                                 }}
                             >
-                                Чыгуу
+                               Аккаунттан чыгуу
                             </button>
                         </>
                     ) : (
