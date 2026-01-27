@@ -42,7 +42,6 @@ const NavLinks = ({ isMobile, user }) => {
                 Байланыш
             </Link>
 
-            {/* Безопасная проверка */}
             {user && user.role === 'instructor' && (
                 <Link to="/instructor" className={`${active('/instructor')} ${linkClass}`}>
                     Инструктор
@@ -262,16 +261,15 @@ const Header = () => {
                         </div>
                     </div>
 
-                    {/* Navigation Links - Desktop */}
                     <div className="flex items-center space-x-6 mx-6">
                         <NavLinks isMobile={false} user={user} />
                     </div>
 
-                    {/* Right Side Actions - Desktop */}
                     <div className="flex items-center space-x-4">
-                        {/* Language Selector */}
                         <div className="relative" ref={langRef}>
-                            <button
+                            {/* localization hasn't been added yet */}
+
+                            {/* <button
                                 onClick={() => setLangOpen((p) => !p)}
                                 className="flex items-center space-x-1 p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors"
                             >
@@ -281,7 +279,7 @@ const Header = () => {
                                         langOpen ? 'rotate-180' : ''
                                     }`}
                                 />
-                            </button>
+                            </button> */}
                             {langOpen && (
                                 <div className="absolute right-0 mt-2 bg-white dark:bg-gray-800 shadow-lg dark:shadow-gray-900 rounded border border-gray-200 dark:border-gray-700 z-50">
                                     {['Кыргызча', 'Русский', 'English'].map((l) => (
@@ -304,13 +302,10 @@ const Header = () => {
                             <ThemeToggle dark={dark} setDark={setDark} />
                         </div>
 
-                        {/* User Actions */}
                         {user ? (
                             <div className="flex items-center gap-3">
-                                {/* Иконка сердца */}
                                 <button
-                                    className={`relative w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-300 ${
-                                        isFavouritesPage || activeIcon === 'heart'
+                                    className={`relative w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-300 ${isFavouritesPage || activeIcon === 'heart'
                                             ? 'bg-orange-500 border-orange-500'
                                             : 'border-black dark:border-gray-400 hover:border-gray-600 dark:hover:border-gray-300'
                                     }`}
@@ -329,11 +324,9 @@ const Header = () => {
                                         <IoHeartOutline className="w-5 h-5 text-black dark:text-gray-300" />
                                     )}
                                 </button>
-                                {/* Иконка корзины */}
                                 <div className="relative">
                                     <button
-                                        className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-300 ${
-                                            activeIcon === 'cart' || location.pathname === '/cart'
+                                        className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-300 ${activeIcon === 'cart' || location.pathname === '/cart'
                                                 ? 'bg-orange-500 border-orange-500'
                                                 : 'border-black dark:border-gray-400 hover:border-gray-600 dark:hover:border-gray-300'
                                         }`}
@@ -342,14 +335,12 @@ const Header = () => {
                                         }
                                     >
                                         <BsCart2
-                                            className={`w-5 h-5 transition-colors duration-300 ${
-                                                activeIcon === 'cart' ||
-                                                location.pathname === '/cart'
+                                            className={`w-5 h-5 transition-colors duration-300 ${activeIcon === 'cart' ||
+                                                    location.pathname === '/cart'
                                                     ? 'text-white'
                                                     : 'text-black dark:text-gray-300'
                                             }`}
                                         />
-                                        {/* Бейдж с количеством - показывается всегда если есть товары */}
                                         {cartItemsCount > 0 && (
                                             <span className="absolute -top-1 -right-1 bg-orange-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-medium">
                                                 {cartItemsCount}
@@ -358,11 +349,9 @@ const Header = () => {
                                     </button>
                                 </div>
 
-                                {/* Иконка пользователя */}
                                 <div className="relative group">
                                     <button
-                                        className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-300 ${
-                                            activeIcon === 'user' || userMenuOpen
+                                        className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-300 ${activeIcon === 'user' || userMenuOpen
                                                 ? 'bg-orange-500 border-orange-500'
                                                 : 'border-black dark:border-gray-400 hover:border-gray-600 dark:hover:border-gray-300'
                                         }`}
@@ -372,8 +361,7 @@ const Header = () => {
                                         }}
                                     >
                                         <FaRegUser
-                                            className={`w-5 h-5 transition-colors duration-300 ${
-                                                activeIcon === 'user' || userMenuOpen
+                                            className={`w-5 h-5 transition-colors duration-300 ${activeIcon === 'user' || userMenuOpen
                                                     ? 'text-white'
                                                     : 'text-black dark:text-gray-300'
                                             }`}
@@ -383,14 +371,24 @@ const Header = () => {
                                     <div className="absolute top-full right-0 pt-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible lg:group-hover:opacity-100 lg:group-hover:visible transform translate-y-2 group-hover:translate-y-0 transition-all duration-300 ease-out z-50">
                                         <div className="relative">
                                             <div className="absolute -top-2 left-0 right-0 h-2 bg-transparent"></div>
-                                            <UserMenuDropdown user={user} onClose={() => {}} />
+                                            <UserMenuDropdown user={user} onClose={() => { }} />
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         ) : (
                             <div className="flex items-center gap-3">
-                                {/* Иконка корзины для неавторизованных */}
+                                <button
+                                    className={`relative w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-300 ${isFavouritesPage || activeIcon === 'heart'
+                                            ? 'border-orange-500'
+                                            : 'border-black dark:border-[#E8ECF3] hover:border-gray-600 dark:hover:border-[#E8ECF3]/70'
+                                        }`}
+                                    onClick={handleFavouriteClick}
+                                    aria-label="Избранное"
+                                >
+                                    <IoHeartOutline className="w-5 h-5 text-black dark:text-[#E8ECF3]" />
+                                </button>
+
                                 <div className="relative">
                                     <button
                                         className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-300 ${
@@ -429,11 +427,8 @@ const Header = () => {
                     </div>
                 </div>
 
-                {/* Mobile Layout */}
                 <div className="lg:hidden">
-                    {/* Top Row - Burger Menu, Logo, Search Icon */}
                     <div className="flex items-center justify-between">
-                        {/* Burger Menu - Left */}
                         <button
                             onClick={() => {
                                 setMenuOpen(true);
@@ -444,7 +439,6 @@ const Header = () => {
                             <FaBars />
                         </button>
 
-                        {/* Logo - Center */}
                         <Link to="/" className="flex flex-col items-center">
                             <div className="h-12 w-12">
                                 <img
@@ -461,9 +455,7 @@ const Header = () => {
                             </div>
                         </Link>
 
-                        {/* Right Side - Search */}
                         <div className="flex items-center gap-3">
-                            {/* Search Icon */}
                             <button
                                 onClick={() => setSearchOpen(!searchOpen)}
                                 className="text-gray-700 dark:text-gray-300 text-2xl p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors"
@@ -471,12 +463,10 @@ const Header = () => {
                                 <IoSearch />
                             </button>
 
-                            {/* User Icon for Mobile */}
                             {user && (
                                 <div className="relative">
                                     <button
-                                        className={`w-9 h-9 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${
-                                            userMenuOpen
+                                        className={`w-9 h-9 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${userMenuOpen
                                                 ? 'bg-orange-500 border-orange-500'
                                                 : 'border-black dark:border-gray-400 hover:border-gray-600 dark:hover:border-gray-300'
                                         }`}
@@ -489,7 +479,6 @@ const Header = () => {
                                         />
                                     </button>
 
-                                    {/* Mobile User Dropdown */}
                                     {userMenuOpen && (
                                         <div className="absolute right-0 top-full mt-2 z-50">
                                             <UserMenuDropdown

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useContext } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import CardIcon from '@assets/icons/cardvektor.svg';
 import Button from '../../../shared/ui/Button';
@@ -7,6 +7,8 @@ import { useFavourites } from '../../../context/FavouritesContext';
 import { AiFillStar, AiOutlineStar } from 'react-icons/ai';
 import { IoMdTime } from 'react-icons/io';
 import { FiBook } from 'react-icons/fi';
+import { AuthContext } from '../../../context/AuthContext';
+import UnauthModal from '../../../shared/ui/UnauthModal';
 
 const formatPrice = (price, currency = 'KGS') => {
     if (!price && price !== 0) return 'Цена не указана';
@@ -38,9 +40,11 @@ const CardCourse = ({
 }) => {
     const [showPopup, setShowPopup] = useState(false);
     const [showFavoritePopup, setShowFavoritePopup] = useState(false);
+    const [showUnauthModal, setShowUnauthModal] = useState(false);
     const navigate = useNavigate();
     const { addToCart, isInCart } = useCart();
     const { toggleFavourite, isFavourite } = useFavourites();
+    const { user } = useContext(AuthContext);
 
     const courseAlreadyInCart = isInCart(id);
     const isCourseFavourite = isFavourite(id);
@@ -48,6 +52,12 @@ const CardCourse = ({
     const handleFavoriteClick = async (e) => {
         e.stopPropagation();
         e.preventDefault();
+
+        if (!user) {
+            // Показываем модалку для незарегистрированных пользователей
+            setShowUnauthModal(true);
+            return;
+        }
 
         const courseData = {
             id,
@@ -222,6 +232,15 @@ const CardCourse = ({
                 </div>
             </Link>
 
+            {/* Модалка для незарегистрированных пользователей */}
+            <UnauthModal
+                isOpen={showUnauthModal}
+                onClose={() => setShowUnauthModal(false)}
+                actionType="favourite"
+                courseId={id}
+                courseTitle={title}
+            />
+
             <FavoritePopupModal
                 isOpen={showFavoritePopup}
                 onClose={closeFavoritePopup}
@@ -263,7 +282,8 @@ const CardCourse = ({
                             </div>
 
                             <p className="text-gray-600 mb-4 text-sm sm:text-base">
-                                Курс "<span className="font-semibold">{title}</span>" себетке кошулду
+                                Курс "<span className="font-semibold">{title}</span>" себетке
+                                кошулду
                             </p>
 
                             <div className="mt-6 flex flex-col-reverse sm:flex-row justify-between gap-3 sm:gap-4">
@@ -351,10 +371,10 @@ const FavoritePopupModal = ({ isOpen, onClose, onGoToFavourites, course }) => {
                     </div>
                     <div className="flex flex-col sm:flex-row gap-3">
                         <Button variant="secondary" onClick={onClose} className="flex-1">
-                            Продолжить просмотр
+                            Көрүүну улантуу
                         </Button>
                         <Button variant="primary" onClick={onGoToFavourites} className="flex-1">
-                            Перейти в избранное
+                            Тандалгандарга өтүү
                         </Button>
                     </div>
                 </div>
