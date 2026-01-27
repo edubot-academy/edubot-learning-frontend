@@ -90,6 +90,30 @@ const CourseDetailsPage = () => {
     const [challengeLoading, setChallengeLoading] = useState(false);
     const [challengeSubmitting, setChallengeSubmitting] = useState(false);
     const [instructorChat, setInstructorChat] = useState(false);
+    const chatRef = useRef(null);
+
+    // Обработчик клика вне модалки
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            // Если модалка открыта и клик был вне модалки И вне кнопки
+            if (
+                instructorChat &&
+                chatRef.current &&
+                !chatRef.current.contains(event.target) &&
+                !event.target.closest('button[class*="instructor-chat-button"]')
+            ) {
+                setInstructorChat(false);
+            }
+        };
+
+        // Добавляем обработчик при монтировании
+        document.addEventListener('mousedown', handleClickOutside);
+
+        // Убираем обработчик при размонтировании
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [instructorChat]);
 
     useEffect(() => {
         hasPlayedRef.current = false;
@@ -755,9 +779,9 @@ const CourseDetailsPage = () => {
     return (
         <div className="min-h-screen pt-10 bg-[#f8f9fb] dark:bg-[#1A1A1A]">
             {enrolled && (
-                <div className="fixed top-20 right-4 z-50">
+                <div className="fixed top-12 right-4 z-50">
                     <button
-                        className={`flex items-center mt-10 justify-center gap-2 w-[265px] h-[61px] rounded-lg border px-6 transition-all ${
+                        className={`instructor-chat-button flex items-center mt-10 justify-center gap-2 w-[265px] h-[61px] rounded-lg border px-6 transition-all ${
                             instructorChat
                                 ? 'border-[#FB923C] bg-[#FFF7ED]'
                                 : 'border-gray-300 bg-white hover:bg-gray-50'
@@ -771,7 +795,7 @@ const CourseDetailsPage = () => {
             )}
 
             {instructorChat && (
-                <div className="fixed top-32 right-4 z-50">
+                <div className="fixed top-32 right-4 z-50" ref={chatRef}>
                     <div className="w-[381px] h-[600px] bg-white rounded-lg shadow-xl border border-gray-200">
                         <InstructorChat course={course} />
                     </div>
