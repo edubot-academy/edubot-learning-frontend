@@ -18,7 +18,6 @@ import SidebarOverlay from '@shared-ui/SidebarOverlay';
 import UserMenuDropdown from '@shared-ui/UserMenuDropdown';
 import { useFavourites } from '../context/FavouritesContext';
 import { useCart } from '../context/CartContext';
-import Button from '@shared/ui/Button';
 
 const NavLinks = ({ isMobile, user }) => {
     const location = useLocation();
@@ -43,7 +42,6 @@ const NavLinks = ({ isMobile, user }) => {
                 Байланыш
             </Link>
 
-            {/* Безопасная проверка */}
             {user && user.role === 'instructor' && (
                 <Link to="/instructor" className={`${active('/instructor')} ${linkClass}`}>
                     Инструктор
@@ -263,16 +261,15 @@ const Header = () => {
                         </div>
                     </div>
 
-                    {/* Navigation Links - Desktop */}
                     <div className="flex items-center space-x-6 mx-6">
                         <NavLinks isMobile={false} user={user} />
                     </div>
 
-                    {/* Right Side Actions - Desktop */}
                     <div className="flex items-center space-x-4">
-                        {/* Language Selector */}
                         <div className="relative" ref={langRef}>
-                            <button
+                            {/* localization hasn't been added yet */}
+
+                            {/* <button
                                 onClick={() => setLangOpen((p) => !p)}
                                 className="flex items-center space-x-1 p-2"
                             >
@@ -282,7 +279,7 @@ const Header = () => {
                                         langOpen ? 'rotate-180' : ''
                                     }`}
                                 />
-                            </button>
+                            </button> */}
                             {langOpen && (
                                 <div className="absolute right-0 mt-2 bg-white dark:bg-[#141619] shadow rounded border border-gray-200 dark:border-[#2A2E35] z-50">
                                     {['Кыргызча', 'Русский', 'English'].map((l) => (
@@ -305,16 +302,13 @@ const Header = () => {
                             <ThemeToggle dark={dark} setDark={setDark} />
                         </div>
 
-                        {/* User Actions */}
                         {user ? (
                             <div className="flex items-center gap-3">
-                                {/* Иконка сердца */}
                                 <button
-                                    className={`relative w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-300 ${
-                                        isFavouritesPage || activeIcon === 'heart'
+                                    className={`relative w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-300 ${isFavouritesPage || activeIcon === 'heart'
                                             ? 'bg-orange-500 border-orange-500'
                                             : 'border-black dark:border-[#E8ECF3] hover:border-gray-600 dark:hover:border-[#E8ECF3]/70'
-                                    }`}
+                                        }`}
                                     onClick={handleFavouriteClick}
                                     aria-label="Избранное"
                                     aria-current={isFavouritesPage ? 'page' : undefined}
@@ -330,27 +324,23 @@ const Header = () => {
                                         <IoHeartOutline className="w-5 h-5 text-black dark:text-[#E8ECF3]" />
                                     )}
                                 </button>
-                                {/* Иконка корзины */}
                                 <div className="relative">
                                     <button
-                                        className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-300 ${
-                                            activeIcon === 'cart' || location.pathname === '/cart'
+                                        className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-300 ${activeIcon === 'cart' || location.pathname === '/cart'
                                                 ? 'bg-orange-500 border-orange-500'
                                                 : 'border-black dark:border-[#E8ECF3] hover:border-gray-600 dark:hover:border-[#E8ECF3]/70'
-                                        }`}
+                                            }`}
                                         onClick={() =>
                                             handleIconClick('cart', () => navigate('/cart'))
                                         }
                                     >
                                         <BsCart2
-                                            className={`w-5 h-5 transition-colors duration-300 ${
-                                                activeIcon === 'cart' ||
-                                                location.pathname === '/cart'
+                                            className={`w-5 h-5 transition-colors duration-300 ${activeIcon === 'cart' ||
+                                                    location.pathname === '/cart'
                                                     ? 'text-white'
                                                     : 'text-black dark:text-[#E8ECF3]'
-                                            }`}
+                                                }`}
                                         />
-                                        {/* Бейдж с количеством - показывается всегда если есть товары */}
                                         {cartItemsCount > 0 && (
                                             <span className="absolute -top-1 -right-1 bg-orange-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-medium">
                                                 {cartItemsCount}
@@ -359,57 +349,62 @@ const Header = () => {
                                     </button>
                                 </div>
 
-                                {/* Иконка пользователя */}
                                 <div className="relative group">
                                     <button
-                                        className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-300 ${
-                                            activeIcon === 'user' || userMenuOpen
+                                        className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-300 ${activeIcon === 'user' || userMenuOpen
                                                 ? 'bg-orange-500 border-orange-500'
                                                 : 'border-black dark:border-[#E8ECF3] hover:border-gray-600 dark:hover:border-[#E8ECF3]/70'
-                                        }`}
+                                            }`}
                                         onClick={() => {
                                             handleIconClick('user');
                                             setUserMenuOpen(!userMenuOpen);
                                         }}
                                     >
                                         <FaRegUser
-                                            className={`w-5 h-5 transition-colors duration-300 ${
-                                                activeIcon === 'user' || userMenuOpen
+                                            className={`w-5 h-5 transition-colors duration-300 ${activeIcon === 'user' || userMenuOpen
                                                     ? 'text-white'
                                                     : 'text-black dark:text-[#E8ECF3]'
-                                            }`}
+                                                }`}
                                         />
                                     </button>
 
                                     <div className="absolute top-full right-0 pt-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible lg:group-hover:opacity-100 lg:group-hover:visible transform translate-y-2 group-hover:translate-y-0 transition-all duration-300 ease-out z-50">
                                         <div className="relative">
                                             <div className="absolute -top-2 left-0 right-0 h-2 bg-transparent"></div>
-                                            <UserMenuDropdown user={user} onClose={() => {}} />
+                                            <UserMenuDropdown user={user} onClose={() => { }} />
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         ) : (
                             <div className="flex items-center gap-3">
-                                {/* Иконка корзины для неавторизованных */}
+                                <button
+                                    className={`relative w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-300 ${isFavouritesPage || activeIcon === 'heart'
+                                            ? 'border-orange-500'
+                                            : 'border-black dark:border-[#E8ECF3] hover:border-gray-600 dark:hover:border-[#E8ECF3]/70'
+                                        }`}
+                                    onClick={handleFavouriteClick}
+                                    aria-label="Избранное"
+                                >
+                                    <IoHeartOutline className="w-5 h-5 text-black dark:text-[#E8ECF3]" />
+                                </button>
+
                                 <div className="relative">
                                     <button
-                                        className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-300 ${
-                                            activeIcon === 'cart' || location.pathname === '/cart'
-                                                ? 'bg-orange-500 border-orange-500'
+                                        className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-300 ${activeIcon === 'cart' || location.pathname === '/cart'
+                                                ? 'border-orange-500'
                                                 : 'border-black dark:border-[#E8ECF3] hover:border-gray-600 dark:hover:border-[#E8ECF3]/70'
-                                        }`}
+                                            }`}
                                         onClick={() =>
                                             handleIconClick('cart', () => navigate('/cart'))
                                         }
                                     >
                                         <BsCart2
-                                            className={`w-5 h-5 transition-colors duration-300 ${
-                                                activeIcon === 'cart' ||
-                                                location.pathname === '/cart'
-                                                    ? 'text-white'
+                                            className={`w-5 h-5 transition-colors duration-300 ${activeIcon === 'cart' ||
+                                                    location.pathname === '/cart'
+                                                    ? 'text-orange-500'
                                                     : 'text-black dark:text-[#E8ECF3]'
-                                            }`}
+                                                }`}
                                         />
 
                                         {cartItemsCount > 0 && (
@@ -430,11 +425,8 @@ const Header = () => {
                     </div>
                 </div>
 
-                {/* Mobile Layout */}
                 <div className="lg:hidden">
-                    {/* Top Row - Burger Menu, Logo, Search Icon */}
                     <div className="flex items-center justify-between">
-                        {/* Burger Menu - Left */}
                         <button
                             onClick={() => {
                                 setMenuOpen(true);
@@ -445,7 +437,6 @@ const Header = () => {
                             <FaBars />
                         </button>
 
-                        {/* Logo - Center */}
                         <Link to="/" className="flex flex-col items-center">
                             <div className="h-12 w-12">
                                 <img
@@ -462,9 +453,7 @@ const Header = () => {
                             </div>
                         </Link>
 
-                        {/* Right Side - Search */}
                         <div className="flex items-center gap-3">
-                            {/* Search Icon */}
                             <button
                                 onClick={() => setSearchOpen(!searchOpen)}
                                 className="text-gray-700 dark:text-[#E8ECF3] text-2xl"
@@ -472,25 +461,21 @@ const Header = () => {
                                 <IoSearch />
                             </button>
 
-                            {/* User Icon for Mobile */}
                             {user && (
                                 <div className="relative">
                                     <button
-                                        className={`w-9 h-9 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${
-                                            userMenuOpen
+                                        className={`w-9 h-9 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${userMenuOpen
                                                 ? 'bg-orange-500 border-orange-500'
                                                 : 'border-black hover:border-gray-600'
-                                        }`}
+                                            }`}
                                         onClick={() => setUserMenuOpen(!userMenuOpen)}
                                     >
                                         <FaRegUser
-                                            className={`w-4 h-4 transition-colors duration-300 ${
-                                                userMenuOpen ? 'text-white' : 'text-black'
-                                            }`}
+                                            className={`w-4 h-4 transition-colors duration-300 ${userMenuOpen ? 'text-white' : 'text-black'
+                                                }`}
                                         />
                                     </button>
 
-                                    {/* Mobile User Dropdown */}
                                     {userMenuOpen && (
                                         <div className="absolute right-0 top-full mt-2 z-50">
                                             <UserMenuDropdown
@@ -503,109 +488,6 @@ const Header = () => {
                             )}
                         </div>
                     </div>
-
-                    {/* Mobile Search Input */}
-                    {searchOpen && (
-                        <div className="mt-3" ref={searchContainerRef}>
-                            <div className="relative flex items-center border rounded border-[#7B818C] dark:border-[#2A2E35] bg-white dark:bg-[#1A1A1A] overflow-visible">
-                                <IoSearch className="w-5 h-5 ml-2 text-[#7B818C] dark:text-[#E8ECF3]" />
-                                <input
-                                    type="text"
-                                    placeholder="Издөө"
-                                    value={search}
-                                    onChange={(e) => handleSearch(e.target.value)}
-                                    onFocus={() => search.length >= 2 && setShowDropdown(true)}
-                                    className="px-3 py-2 focus:outline-none bg-transparent w-full text-base text-gray-900 dark:text-[#E8ECF3] placeholder:text-gray-500 dark:placeholder:text-gray-400"
-                                />
-                            </div>
-
-                            {/* Mobile Search Dropdown */}
-                            {showDropdown && (
-                                <div className="absolute left-0 right-0 mt-1 mx-4 z-50">
-                                    {results.length > 0 ? (
-                                        <div className="bg-white dark:bg-[#141619] shadow-lg border border-gray-200 dark:border-[#2A2E35] rounded max-h-64 overflow-y-auto">
-                                            {results.map((course) => (
-                                                <button
-                                                    key={course.id}
-                                                    onClick={() => {
-                                                        navigate(`/courses/${course.id}`);
-                                                        setShowDropdown(false);
-                                                        setSearch('');
-                                                        setSearchOpen(false);
-                                                    }}
-                                                    className="w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-[#1F2229] border-b border-gray-100 dark:border-[#2A2E35] last:border-b-0"
-                                                >
-                                                    <div className="font-semibold text-sm text-gray-900 dark:text-[#E8ECF3]">
-                                                        {course.title}
-                                                    </div>
-                                                    {course.description && (
-                                                        <div className="text-xs text-gray-500 dark:text-gray-300 mt-1 line-clamp-1">
-                                                            {course.description}
-                                                        </div>
-                                                    )}
-                                                </button>
-                                            ))}
-                                        </div>
-                                    ) : (
-                                        <div className="bg-white dark:bg-[#141619] shadow-lg border border-gray-200 dark:border-[#2A2E35] rounded p-4 text-sm text-gray-500 dark:text-gray-300">
-                                            Натыйжа жок
-                                        </div>
-                                    )}
-                                </div>
-                            )}
-                        </div>
-                    )}
-
-                    {/* Mobile Icons Row - только если пользователь авторизован */}
-                    {user && searchOpen === false && (
-                        <div className="flex justify-center gap-4 mt-3">
-                            {/* Иконка сердца для мобильной версии - переходит на /favourite */}
-                            <button
-                                className={`relative w-10 h-10 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${
-                                    isFavouritesPage || activeIcon === 'heart'
-                                        ? 'bg-orange-500 border-orange-500'
-                                        : 'border-black hover:border-gray-600'
-                                }`}
-                                onClick={handleFavouriteClick}
-                            >
-                                {/* Показываем счетчик избранных курсов на мобильной версии */}
-                                {favourites.length > 0 && (
-                                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                                        {favourites.length}
-                                    </span>
-                                )}
-
-                                {isFavouritesPage || activeIcon === 'heart' ? (
-                                    <IoHeart className="w-5 h-5 text-white" />
-                                ) : (
-                                    <IoHeartOutline className="w-5 h-5 text-black" />
-                                )}
-                            </button>
-
-                            {/* Иконка корзины для мобильной версии с переходом на /cart */}
-                            <div className="relative">
-                                <button
-                                    className={`w-10 h-10 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${
-                                        activeIcon === 'cart'
-                                            ? 'bg-orange-500 border-orange-500'
-                                            : 'border-black hover:border-gray-600'
-                                    }`}
-                                    onClick={() => handleIconClick('cart', () => navigate('/cart'))}
-                                >
-                                    <BsCart2
-                                        className={`w-5 h-5 transition-colors duration-300 ${
-                                            activeIcon === 'cart' ? 'text-white' : 'text-black'
-                                        }`}
-                                    />
-                                </button>
-                                {cartItemsCount > 0 && (
-                                    <span className="absolute -top-1 -right-1 bg-orange-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-medium">
-                                        {cartItemsCount}
-                                    </span>
-                                )}
-                            </div>
-                        </div>
-                    )}
                 </div>
             </div>
 

@@ -1,11 +1,14 @@
-import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useState, useContext, useEffect } from 'react';
+import { useNavigate, Link, useLocation } from 'react-router-dom'; 
 import { registerUser } from '@services/api';
 import PhoneInput from '@shared/ui/forms/PhoneInput';
 import SignUpImg from '../assets/images/edubot-signup.png';
 import toast from 'react-hot-toast';
-import DefaultLabel from '@shared/ui/forms/DefaultLabel';
-import LabelPassword from '@shared/ui/forms/LabelPassword';
+import DefaultLabel from '@shared-ui/forms/DefaultLabel';
+import LabelPassword from '@shared-ui/forms/LabelPassword';
+import { AuthContext } from '../context/AuthContext'; 
+import { useCart } from '../context/CartContext'; 
+import { useFavourites } from '../context/FavouritesContext'; 
 
 const SignupPage = () => {
     const [formData, setFormData] = useState({
@@ -32,6 +35,10 @@ const SignupPage = () => {
     const [error, setError] = useState(null);
 
     const navigate = useNavigate();
+    const location = useLocation(); 
+    const { login } = useContext(AuthContext); 
+    const { addToCart } = useCart(); 
+    const { toggleFavourite } = useFavourites(); 
 
     const validatePassword = (password) => {
         setPasswordValidations({
@@ -54,6 +61,51 @@ const SignupPage = () => {
 
     const handlePhoneChange = (value) => {
         setFormData((prev) => ({ ...prev, phoneNumber: value }));
+    };
+
+    const executePendingAction = async () => {
+        const pendingActionStr = localStorage.getItem('pendingAction');
+        if (!pendingActionStr) return;
+
+        try {
+            const pendingAction = JSON.parse(pendingActionStr);
+
+            const now = Date.now();
+            const actionAge = now - pendingAction.timestamp;
+            const MAX_ACTION_AGE = 24 * 60 * 60 * 1000; 
+
+            if (actionAge > MAX_ACTION_AGE) {
+                localStorage.removeItem('pendingAction');
+                return;
+            }
+
+            if (pendingAction.type === 'favourite') {
+                const courseData = {
+                    id: pendingAction.courseId,
+                    title: pendingAction.courseTitle || `Курс ${pendingAction.courseId}`,
+                };
+                const result = await toggleFavourite(courseData);
+                if (result.success) {
+                    toast.success('Курс добавлен в избранное!');
+                    navigate('/favourite');
+                }
+            } else if (pendingAction.type === 'cart') {
+                const courseData = {
+                    id: pendingAction.courseId,
+                    title: pendingAction.courseTitle,
+                };
+                const result = await addToCart(courseData);
+                if (result.success) {
+                    toast.success('Курс добавлен в корзину!');
+                    navigate('/cart');
+                }
+            }
+
+            localStorage.removeItem('pendingAction');
+        } catch (error) {
+            console.error('Failed to execute pending action:', error);
+            localStorage.removeItem('pendingAction');
+        }
     };
 
     const handleSubmit = async (e) => {
@@ -86,13 +138,21 @@ const SignupPage = () => {
         }
 
         try {
-            await registerUser({
+            const response = await registerUser({
                 fullName: `${formData.lastName} ${formData.firstName}`,
                 email: formData.email,
                 password: formData.password,
                 phoneNumber: formData.phoneNumber || undefined,
             });
-            navigate('/login');
+
+            const { access_token, user } = response.data;
+            login(user, access_token);
+
+            await executePendingAction();
+
+            if (!localStorage.getItem('pendingAction')) {
+                navigate('/');
+            }
         } catch (err) {
             setError(err.response?.data?.message || 'Ката чыкты. Кайра аракет кылыңыз.');
             console.log(err);
@@ -103,7 +163,6 @@ const SignupPage = () => {
 
     return (
         <div className="min-h-screen flex">
-            {/* Левая часть с градиентом */}
             <div className="hidden md:flex md:w-1/2 bg-[linear-gradient(151.1deg,#FFCBA5_3.26%,#E64D26_96.74%)] flex-col justify-center items-center text-white px-6">
                 <img
                     src={SignUpImg}
@@ -115,7 +174,6 @@ const SignupPage = () => {
                 </h2>
             </div>
 
-            {/* Правая часть с формой */}
             <div className="flex-1 flex items-center justify-center px-6">
                 <div className="w-full max-w-md">
                     <h2 className="text-2xl font-bold text-black dark:text-white mb-6">Катталуу</h2>
@@ -123,7 +181,6 @@ const SignupPage = () => {
                     {error && <p className="text-red-500 mb-4">{error}</p>}
 
                     <form onSubmit={handleSubmit} className="space-y-2">
-                        {/* Фамилия */}
                         <DefaultLabel
                             label="Фамилияңызды жазыңыз"
                             name="lastName"
@@ -135,7 +192,6 @@ const SignupPage = () => {
                             className="py-2"
                         />
 
-                        {/* Имя */}
                         <DefaultLabel
                             label="Атыңызды жазыңыз"
                             name="firstName"
@@ -147,7 +203,6 @@ const SignupPage = () => {
                             className="py-2"
                         />
 
-                        {/* Email */}
                         <DefaultLabel
                             label="Email почтаңызды жазыңыз"
                             name="email"
@@ -159,12 +214,10 @@ const SignupPage = () => {
                             className="py-2"
                         />
 
-                        {/* Телефон */}
                         <div className="py-2">
                             <PhoneInput onChange={handlePhoneChange} value={formData.phoneNumber} />
                         </div>
 
-                        {/* Пароль */}
                         <div className="relative py-2">
                             <LabelPassword
                                 label="Сырсөз ойлоп табыңыз"
@@ -229,7 +282,6 @@ const SignupPage = () => {
                             )}
                         </div>
 
-                        {/* Повтор пароля */}
                         <div className="py-2">
                             <LabelPassword
                                 label="Повторите пароль"

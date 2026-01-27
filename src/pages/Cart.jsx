@@ -4,8 +4,9 @@ import { useCart } from '../context/CartContext';
 import { BsTrash, BsCartX } from 'react-icons/bs';
 import { FaShoppingCart } from 'react-icons/fa';
 import Button from '@shared-ui/Button';
-import Modal from '@shared-ui/Modal'; // Используем существующую модалку
+import Modal from '@shared-ui/Modal';
 import ContactCourseModal from '@features/courses/components/ContactCourseModal';
+import UnauthModal from '../shared/ui/UnauthModal';
 
 const Cart = () => {
     const { cartItems, loading, removeFromCart, getTotalPrice, clearCart, user } = useCart();
@@ -13,18 +14,16 @@ const Cart = () => {
     const navigate = useNavigate();
     const [showRegisterModal, setShowRegisterModal] = useState(false);
     const [showContactModal, setShowContactModal] = useState(false);
-
+    const [showUnauthModal, setShowUnauthModal] = useState(false);
 
     const handleCheckout = () => {
         if (!user) {
-            setShowRegisterModal(true);
+            setShowUnauthModal(true);
             return;
         }
 
-        // 👇 вместо console.log
         setShowContactModal(true);
     };
-
 
     const handleRegister = () => {
         setShowRegisterModal(false);
@@ -66,7 +65,14 @@ const Cart = () => {
 
     return (
         <div className="min-h-screen py-8">
-            {/* Используем существующую Modal компоненту */}
+            <UnauthModal
+                isOpen={showUnauthModal}
+                onClose={() => setShowUnauthModal(false)}
+                actionType="cart"
+                courseId={cartItems.length > 0 ? cartItems[0].id : null}
+                courseTitle={cartItems.length > 0 ? cartItems[0].title : ''}
+            />
+
             <Modal
                 isOpen={showRegisterModal}
                 onClose={() => setShowRegisterModal(false)}
@@ -79,7 +85,7 @@ const Cart = () => {
                             <FaShoppingCart className="w-5 h-5 text-orange-500" />
                         </div>
                         <div>
-                            <h3 className="font-bold ">Регистрация керек</h3>
+                            <h3 className="font-bold ">Катталуу керек</h3>
                         </div>
                     </div>
 
@@ -122,7 +128,6 @@ const Cart = () => {
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    {/* Список курсов */}
                     <div className="lg:col-span-2 space-y-4">
                         {cartItems.map((item) => (
                             <div
@@ -140,9 +145,7 @@ const Cart = () => {
                                                 />
                                             ) : (
                                                 <div className="w-full h-full bg-gray-100 flex items-center justify-center">
-                                                    <span className="text-gray-400">
-                                                        Изображение отсутствует
-                                                    </span>
+                                                    <span className="text-gray-400">Сүрөт жок</span>
                                                 </div>
                                             )}
                                         </div>
@@ -198,21 +201,19 @@ const Cart = () => {
                     {/* Сумма заказа */}
                     <div className="lg:col-span-1">
                         <div className="rounded-xl shadow-sm border border-gray-200 p-6 sticky top-6">
-                            <h3 className="text-xl font-bold mb-6">
-                                Заказды жыйынтыктоо
-                            </h3>
+                            <h3 className="text-xl font-bold mb-6">Заказды жыйынтыктоо</h3>
 
                             <div className="space-y-4 mb-6">
                                 <div className="flex justify-between items-center">
-                                    <span className="text-gray-600 dark:text-[#a6adba]">Бардык курстар:</span>
+                                    <span className="text-gray-600 dark:text-[#a6adba]">
+                                        Бардык курстар:
+                                    </span>
                                     <span className="font-semibold">{cartItems.length}</span>
                                 </div>
 
                                 <div className="pt-4 border-t border-gray-200">
                                     <div className="flex justify-between items-center">
-                                        <span className="text-lg font-semibold">
-                                            Жалпы сумма:
-                                        </span>
+                                        <span className="text-lg font-semibold">Жалпы сумма:</span>
                                         <span className="text-2xl font-bold text-orange-500">
                                             {totalPrice} сом
                                         </span>
