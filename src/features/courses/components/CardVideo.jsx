@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useContext, useState } from 'react';
 import { FiBook } from 'react-icons/fi';
 import { IoMdTime } from 'react-icons/io';
 import { TbLock } from 'react-icons/tb';
@@ -6,14 +6,19 @@ import Button from '@shared/ui/Button';
 import { FaPlay } from 'react-icons/fa';
 import ContactCourseModal from './ContactCourseModal';
 import ModalPreviewVideo from './ModalPreviewVideo';
+import UnauthModal from '@shared/ui/UnauthModal'; 
 
 const CardVideo = ({ coverImageUrl, course, lessonCount, activeLesson }) => {
     const [isContactOpen, setIsContactOpen] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [showUnauthModal, setShowUnauthModal] = useState(false);
 
     return (
         <>
-            <div onClick={() => setIsModalOpen(true)} className="border border-gray-200 rounded-md overflow-hidden bg-white dark:bg-[#222222] w-full max-w-full px-6 py-5">
+            <div
+                onClick={() => setIsModalOpen(true)}
+                className="border border-gray-200 rounded-md overflow-hidden bg-white dark:bg-[#222222] w-full max-w-full px-6 py-5"
+            >
                 <div className="relative w-full ">
                     <img
                         src={coverImageUrl}
@@ -61,7 +66,15 @@ const CardVideo = ({ coverImageUrl, course, lessonCount, activeLesson }) => {
                             </Button>
                         </div>
                         <div>
-                            <Button variant="secondary">Избранныйга кошуу</Button>
+                            <Button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setShowUnauthModal(true);
+                                }}
+                                variant="secondary"
+                            >
+                                Избранныйга кошуу
+                            </Button>
                         </div>
                     </div>
                 </div>
@@ -76,6 +89,15 @@ const CardVideo = ({ coverImageUrl, course, lessonCount, activeLesson }) => {
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
                 courseId={course.id}
+            />
+            <UnauthModal
+                isOpen={showUnauthModal}
+                onClose={() => {
+                    setShowUnauthModal(false);
+                }}
+                actionType="favourite"
+                courseId={course.id}
+                courseTitle={course.title}
             />
         </>
     );

@@ -87,7 +87,7 @@ const CardCourse = ({
 
     const goToFavourites = () => {
         closeFavoritePopup();
-        navigate('/favourite');
+        navigate('/favourites');
     };
 
     const handleButtonClick = (e) => {
