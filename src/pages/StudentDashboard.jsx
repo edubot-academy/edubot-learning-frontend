@@ -446,7 +446,7 @@ const CoursesTab = ({ courses }) => {
                     return (
                         <div
                             key={course.id || course.courseId}
-                            className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden flex flex-col"
+                            className="bg-white dark:bg-[#222222] rounded-3xl shadow-sm border border-gray-100 overflow-hidden flex flex-col"
                         >
                             <img
                                 src={cover}
@@ -491,7 +491,7 @@ const CoursesTab = ({ courses }) => {
 const ScheduleTab = ({ offerings }) => {
     if (!offerings.length) {
         return (
-            <div className="bg-white rounded-3xl border border-gray-100 p-6 text-center text-gray-500">
+            <div className="bg-white dark:bg-[#222222] rounded-3xl border border-gray-100 p-6 text-center text-gray-500">
                 Жакынкы жандуу сабактар табылган жок.
             </div>
         );

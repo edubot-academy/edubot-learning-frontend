@@ -24,7 +24,7 @@ const NavLinks = ({ isMobile, user }) => {
     const active = (path) => (location.pathname === path ? 'text-orange-500 dark:text-orange-400' : '');
 
     const linkClass =
-        'relative inline-block px-2 cursor-pointer dark:text-[#E8ECF3] dark:hover:text-white ' +
+        'relative inline-block cursor-pointer dark:text-[#E8ECF3] dark:hover:text-white ' +
         "after:content-[''] after:absolute after:-bottom-1 after:left-1/2 after:h-[2px] after:w-0 " +
         'after:bg-black dark:after:bg-[#E8ECF3] after:transition-all after:duration-300 ' +
         'hover:after:left-0 hover:after:w-full';
@@ -34,7 +34,7 @@ const NavLinks = ({ isMobile, user }) => {
             className={
                 isMobile
                     ? 'flex flex-col space-y-4 mt-4'
-                    : 'flex justify-around  w-full  items-center gap-2'
+                    : 'flex justify-around  w-full  items-center gap-3'
             }
         >
             <Link
@@ -554,53 +554,6 @@ const Header = () => {
                                     )}
                                 </div>
                             )}
-                        </div>
-                    )}
-
-                    {/* Mobile Icons Row - только если пользователь авторизован */}
-                    {user && searchOpen === false && (
-                        <div className="flex justify-center gap-4 mt-3">
-                            {/* Иконка сердца для мобильной версии */}
-                            <button
-                                className={`relative w-10 h-10 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${isFavouritesPage || activeIcon === 'heart'
-                                        ? 'bg-orange-500 border-orange-500'
-                                        : 'border-black dark:border-gray-400 hover:border-gray-600 dark:hover:border-gray-300'
-                                    }`}
-                                onClick={handleFavouriteClick}
-                            >
-                                {favourites.length > 0 && (
-                                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                                        {favourites.length}
-                                    </span>
-                                )}
-
-                                {isFavouritesPage || activeIcon === 'heart' ? (
-                                    <IoHeart className="w-5 h-5 text-white" />
-                                ) : (
-                                    <IoHeartOutline className="w-5 h-5 text-black dark:text-gray-300" />
-                                )}
-                            </button>
-
-                            {/* Иконка корзины для мобильной версии */}
-                            <div className="relative">
-                                <button
-                                    className={`w-10 h-10 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${activeIcon === 'cart'
-                                            ? 'bg-orange-500 border-orange-500'
-                                            : 'border-black dark:border-gray-400 hover:border-gray-600 dark:hover:border-gray-300'
-                                        }`}
-                                    onClick={() => handleIconClick('cart', () => navigate('/cart'))}
-                                >
-                                    <BsCart2
-                                        className={`w-5 h-5 transition-colors duration-300 ${activeIcon === 'cart' ? 'text-white' : 'text-black dark:text-gray-300'
-                                            }`}
-                                    />
-                                </button>
-                                {cartItemsCount > 0 && (
-                                    <span className="absolute -top-1 -right-1 bg-orange-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-medium">
-                                        {cartItemsCount}
-                                    </span>
-                                )}
-                            </div>
                         </div>
                     )}
                 </div>

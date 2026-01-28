@@ -438,10 +438,10 @@ const CourseBuilder = () => {
             <div>
                 <p className="text-lg font-bold">{courseInfo.title}</p>
                 {courseInfo.subtitle && (
-                    <p className="text-sm text-gray-600 mb-1">{courseInfo.subtitle}</p>
+                    <p className="text-sm text-gray-600 dark:text-[#a6adba] mb-1">{courseInfo.subtitle}</p>
                 )}
                 <p>{courseInfo.description}</p>
-                <p className="italic text-gray-500">
+                <p className="italic text-gray-500 dark:text-[#a6adba] ">
                     Баасы: {courseInfo.isPaid ? `${courseInfo.price} сом` : 'Акысыз курс'}
                 </p>
                 {courseInfo.coverImageUrl && (
@@ -458,7 +458,7 @@ const CourseBuilder = () => {
             {courseInfo.learningOutcomesText && (
                 <div>
                     <h4 className="font-semibold mb-2">Бул курста эмнени үйрөнөсүз:</h4>
-                    <ul className="list-disc list-inside text-sm text-gray-700">
+                    <ul className="list-disc list-inside text-sm text-gray-700 dark:text-[#a6adba]">
                         {courseInfo.learningOutcomesText
                             .split('\n')
                             .map((line) => line.trim())
@@ -474,12 +474,12 @@ const CourseBuilder = () => {
                 {curriculum.map((section, sIdx) => (
                     <div key={sIdx} className="mb-4">
                         <p className="font-semibold">{section.sectionTitle}</p>
-                        <ul className="list-disc list-inside text-sm text-gray-700">
+                        <ul className="list-disc list-inside text-sm text-gray-700 dark:text-[#a6adba]">
                             {section.lessons.map((lesson, lIdx) => (
                                 <li key={lIdx}>
                                     {lesson.title}
                                     {lesson.previewVideo && (
-                                        <span className="text-xs text-green-600"> (Превью)</span>
+                                        <span className="text-xs text-gray-600 dark:text-[#a6adba]"> (Превью)</span>
                                     )}
                                 </li>
                             ))}
@@ -489,7 +489,7 @@ const CourseBuilder = () => {
             </div>
 
             <div className="flex flex-wrap gap-4">
-                <button onClick={() => setStep(2)} className="px-4 py-2 bg-gray-200 rounded">
+                <button onClick={() => setStep(2)} className="px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded">
                     Артка
                 </button>
 
@@ -526,7 +526,7 @@ const CourseBuilder = () => {
 
     return (
         <div className="pt-24 p-6 max-w-4xl mx-auto">
-            <h2 className="text-2xl font-bold text-edubot-dark mb-6">Жаңы курс түзүү</h2>
+            <h2 className="text-2xl font-bold text-edubot-dark dark:text-white mb-6">Жаңы курс түзүү</h2>
 
             <div className="flex gap-4 mb-6">
                 <button
@@ -558,27 +558,27 @@ const CourseBuilder = () => {
                         value={courseInfo.title}
                         onChange={handleCourseInfoChange}
                         placeholder="Курс аталышы"
-                        className="w-full border p-2 rounded"
+                        className="w-full border p-2 rounded bg-white dark:bg-[#222222] dark:text-white"
                     />
                     <input
                         name="subtitle"
                         value={courseInfo.subtitle}
                         onChange={handleCourseInfoChange}
                         placeholder="Кыскача сүрөттөмө (подзаголовок)"
-                        className="w-full border p-2 rounded"
+                        className="w-full border p-2 rounded bg-white dark:bg-[#222222] dark:text-white"
                     />
                     <textarea
                         name="description"
                         value={courseInfo.description}
                         onChange={handleCourseInfoChange}
                         placeholder="Курс сүрөттөмөсү"
-                        className="w-full border p-2 rounded"
+                        className="w-full border p-2 rounded bg-white dark:bg-[#222222] dark:text-white"
                     />
                     <select
                         name="categoryId"
                         value={courseInfo.categoryId}
                         onChange={handleCourseInfoChange}
-                        className="w-full border p-2 rounded"
+                        className="w-full border p-2 rounded bg-white dark:bg-[#222222] dark:text-white"
                     >
                         <option value="">Категорияны тандаңыз</option>
                         {categories.map((cat) => (
@@ -597,7 +597,7 @@ const CourseBuilder = () => {
                                 value={courseInfo.price}
                                 onChange={handleCourseInfoChange}
                                 placeholder="Курс баасы"
-                                className="w-full border p-2 rounded"
+                                className="w-full border p-2 rounded bg-white dark:bg-[#222222] dark:text-white"
                             />
                         </div>
                         <div className="flex items-center gap-2 mt-2 sm:mt-7">
@@ -633,7 +633,7 @@ const CourseBuilder = () => {
                             name="languageCode"
                             value={courseInfo.languageCode}
                             onChange={handleCourseInfoChange}
-                            className="w-full border p-2 rounded"
+                            className="w-full border p-2 rounded bg-white dark:bg-[#222222] dark:text-white"
                         >
                             <option value="ky">Кыргызча</option>
                             <option value="ru">Русский</option>
@@ -652,7 +652,7 @@ const CourseBuilder = () => {
                             placeholder={
                                 'Мисалы:\n- UX негиздери\n- Figma менен иштөө\n- UI китепкана түзүү'
                             }
-                            className="w-full border p-2 rounded text-sm min-h-[100px]"
+                            className="w-full border p-2 rounded text-sm min-h-[100px] bg-white dark:bg-[#222222] dark:text-white"
                         />
                     </div>
 
@@ -668,12 +668,12 @@ const CourseBuilder = () => {
                         name="cover"
                         accept="image/*"
                         onChange={handleCourseInfoChange}
-                        className="w-full border p-2 rounded"
+                        className="w-full border p-2 rounded bg-white dark:bg-[#222222] dark:text-white"
                     />
 
                     <button
                         onClick={handleCourseSubmit}
-                        className="bg-edubot-dark text-white px-6 py-2 rounded"
+                        className="bg-edubot-dark dark:bg-blue-950 text-white px-6 py-2 rounded"
                     >
                         Сактоо жана улантуу
                     </button>
@@ -684,10 +684,10 @@ const CourseBuilder = () => {
                 <div>
                     <h3 className="text-xl font-semibold mb-4">Окуу мазмуну</h3>
                     {curriculum.map((section, sIdx) => (
-                        <div key={sIdx} className="mb-6 border border-edubot-teal rounded p-4">
+                        <div key={sIdx} className="mb-6 border border-edubot-teal dark:border-white rounded p-4">
                             <div className="flex justify-between items-center mb-2 gap-2">
                                 <input
-                                    className="w-full p-2 border rounded"
+                                    className="w-full p-2 border rounded bg-white dark:bg-[#222222] dark:text-white"
                                     value={section.sectionTitle}
                                     onChange={(e) => updateSectionTitle(sIdx, e.target.value)}
                                     placeholder="Бөлүм аталышы"
@@ -706,9 +706,9 @@ const CourseBuilder = () => {
                                 </button>
                             </div>
                             {section.lessons.map((lesson, lIdx) => (
-                                <div key={lIdx} className="mb-4 p-2 bg-gray-50 rounded border">
+                                <div key={lIdx} className="mb-4 p-2 bg-gray-50 dark:bg-[#222222] rounded border">
                                     <input
-                                        className="w-full p-2 mb-2 border rounded"
+                                        className="w-full p-2 mb-2 border rounded bg-white dark:bg-[#222222] dark:text-white"
                                         value={lesson.title}
                                         onChange={(e) =>
                                             updateLesson(sIdx, lIdx, 'title', e.target.value)
@@ -720,7 +720,7 @@ const CourseBuilder = () => {
                                         Сабактын тиби
                                     </label>
                                     <select
-                                        className="w-full p-2 mb-2 border rounded bg-white"
+                                        className="w-full p-2 mb-2 border rounded bg-white dark:bg-[#222222] dark:text-white"
                                         value={lesson.kind || 'video'}
                                         onChange={(e) =>
                                             updateLesson(sIdx, lIdx, 'kind', e.target.value)
@@ -811,7 +811,7 @@ const CourseBuilder = () => {
                                                 }
                                             />
                                             {lesson.uploadProgress.video > 0 && (
-                                                <div className="w-full bg-gray-200 rounded h-2 mb-1">
+                                                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded h-2 mb-1">
                                                     <div
                                                         className="bg-blue-600 h-full rounded transition-all duration-200"
                                                         style={{
@@ -821,7 +821,7 @@ const CourseBuilder = () => {
                                                 </div>
                                             )}
                                             {lesson.uploadProgress.video > 0 && (
-                                                <p className="text-xs text-gray-500 mb-2">
+                                                <p className="text-xs text-gray-500 dark:text-[#a6adba] mb-2">
                                                     {lesson.uploadProgress.video}% жүктөлдү
                                                 </p>
                                             )}
@@ -855,7 +855,7 @@ const CourseBuilder = () => {
                                                     }}
                                                 />
                                             </div>
-                                            <p className="text-xs text-gray-500 mb-2">
+                                            <p className="text-xs text-gray-500 dark:text-[#a6adba] mb-2">
                                                 {lesson.uploadProgress.resource}% жүктөлдү
                                             </p>
                                         </>
@@ -866,7 +866,7 @@ const CourseBuilder = () => {
                                     </label>
                                     <input
                                         type="text"
-                                        className="w-full p-2 mb-2 border rounded"
+                                        className="w-full p-2 mb-2 border rounded bg-white dark:bg-[#222222] dark:text-white"
                                         value={lesson.resourceName || ''}
                                         onChange={(e) =>
                                             updateLesson(sIdx, lIdx, 'resourceName', e.target.value)
@@ -874,7 +874,7 @@ const CourseBuilder = () => {
                                         placeholder="мисалы: Практикалык тапшырмалар.pdf"
                                         disabled={!lesson.resourceKey}
                                     />
-                                    <p className="text-xs text-gray-500 mb-2">
+                                    <p className="text-xs text-gray-500 dark:text-[#a6adba] mb-2">
                                         Бул аталыш студенттерге көрсөтүлөт.
                                     </p>
 
@@ -928,7 +928,7 @@ const CourseBuilder = () => {
                     <button
                         onClick={handleCurriculumSubmit}
                         disabled={isUploading}
-                        className="bg-edubot-dark text-white px-6 py-2 rounded ml-4 disabled:opacity-60"
+                        className="bg-edubot-dark dark:bg-blue-950 text-white px-6 py-2 rounded ml-4 disabled:opacity-60"
                     >
                         Сактоо жана улантуу
                     </button>
@@ -939,7 +939,7 @@ const CourseBuilder = () => {
 
             {confirmDelete.type && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white p-6 rounded shadow max-w-sm w-full">
+                    <div className="bg-white dark:bg-[#222222] p-6 rounded shadow max-w-sm w-full">
                         <h4 className="text-lg font-semibold mb-4">Ырастоо</h4>
                         <p className="mb-6">
                             {confirmDelete.type === 'section' ? (
@@ -964,7 +964,7 @@ const CourseBuilder = () => {
                                         title: '',
                                     })
                                 }
-                                className="px-4 py-2 bg-gray-200 rounded"
+                                className="px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded"
                             >
                                 Жок
                             </button>
