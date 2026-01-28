@@ -72,12 +72,12 @@ const ContactPage = () => {
             <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 items-center gap-10 md:gap-16">
                 <div>
                     <div className="mb-6 mt-10">
-                        <h1 className="text-5xl md:text-6xl font-bold"></h1>
+                        <h1 className="text-5xl md:text-6xl font-bold">Биз менен байланышыңыз</h1>
                     </div>
 
                     <p className="mb-10 text-lg text-gray-700 dark:text-[#a6adba]">
-                        Lorem ipsum dolor sit amet consectetur adipisicing elit. Quaerat commodi
-                        perferendis velit amet placeat! Alias voluptatem quos neque tempore rem!
+                        Суроолоруңуз барбы же кайсы курстан баштоону билбей жатасызбы?
+                        Биз сизге жардам берүүгө дайым даярбыз. Форманы толтуруңуз — командабыз жакын арада сиз менен байланышат.
                     </p>
 
                     <form onSubmit={handleSubmit} className="space-y-5 max-w-xl">
