@@ -32,6 +32,7 @@ import CourseContent from '@features/courses/components/CourseContent';
 import { FaSignalMessenger } from 'react-icons/fa6';
 import InstructorChat from '@features/instructorChat/InstructorChat';
 import CourseHeader from '@features/courses/components/CourseHeader';
+import { HiChatAlt2 } from 'react-icons/hi';
 
 const CHALLENGE_STORAGE_PREFIX = 'lessonChallengeState';
 
@@ -92,10 +93,8 @@ const CourseDetailsPage = () => {
     const [instructorChat, setInstructorChat] = useState(false);
     const chatRef = useRef(null);
 
-    // Обработчик клика вне модалки
     useEffect(() => {
         const handleClickOutside = (event) => {
-            // Если модалка открыта и клик был вне модалки И вне кнопки
             if (
                 instructorChat &&
                 chatRef.current &&
@@ -106,10 +105,8 @@ const CourseDetailsPage = () => {
             }
         };
 
-        // Добавляем обработчик при монтировании
         document.addEventListener('mousedown', handleClickOutside);
 
-        // Убираем обработчик при размонтировании
         return () => {
             document.removeEventListener('mousedown', handleClickOutside);
         };
@@ -187,12 +184,19 @@ const CourseDetailsPage = () => {
         }
     };
 
-    const handlePause = () => {
-        if (!videoRef.current) return;
-        const currentTime = videoRef.current.currentTime;
-        if (currentTime < (activeLessonRef.current?.duration ?? 9999) * 0.9) return;
+    // const handlePause = () => {
+    //     if (!videoRef.current) return;
+    //     const currentTime = videoRef.current.currentTime;
+    //     if (currentTime < (activeLessonRef.current?.duration ?? 9999) * 0.9) return;
+    //     if (user && enrolled && activeLessonRef.current?.kind === 'video') {
+    //         console.log('updateVideoTime');
+    //         updateVideoTime(user.id, activeLessonRef.current.id, currentTime);
+    //     }
+    // };
+    const handlePause = (currentTime, duration) => {
+        if (currentTime < duration * 0.9) return;
+
         if (user && enrolled && activeLessonRef.current?.kind === 'video') {
-            console.log('updateVideoTime');
             updateVideoTime(user.id, activeLessonRef.current.id, currentTime);
         }
     };
@@ -779,17 +783,14 @@ const CourseDetailsPage = () => {
     return (
         <div className="min-h-screen pt-10 bg-[#f8f9fb] dark:bg-[#1A1A1A]">
             {enrolled && (
-                <div className="fixed top-12 right-4 z-50 ">
+                <div className="fixed top-20 right-4 z-50 ">
                     <button
-                        className={`instructor-chat-button flex items-center mt-10 justify-center gap-2 w-[265px] h-[61px] rounded-lg border px-6 transition-all dark:bg-[#1A1A1A] ${
-                            instructorChat
-                                ? 'border-[#FB923C] bg-[#FFF7ED]'
-                                : 'border-gray-300 bg-white hover:bg-gray-50'
-                        } shadow-lg`}
+                        className={`instructor-chat-button mt-10 mr-4 flex items-center justify-center w-16 h-16 rounded-full border-2 border-gray-300 bg-white hover:bg-gray-50 transition-all dark:bg-[#1A1A1A] shadow-lg hover:shadow-xl ${
+                            instructorChat ? 'border-[#FB923C] bg-[#FFF7ED]' : ''
+                        }`}
                         onClick={() => setInstructorChat(!instructorChat)}
                     >
-                        <FaSignalMessenger className="text-[#EA580C]" />
-                        <span>Инструктор менен чат</span>
+                        <HiChatAlt2 className="w-8 h-8 text-[#EA580C]" />
                     </button>
                 </div>
             )}
@@ -974,7 +975,7 @@ const CourseDetailsPage = () => {
                     <div className="hidden lg:block lg:col-span-1">
                         <div className="space-y-6 sticky top-6">
                             {enrolled ? (
-                                <div className="bg-white p-5 rounded-xl shadow-sm">
+                                <div className="bg-white dark:bg-[#1A1A1A] p-5 rounded-xl shadow-sm dark:shadow-gray-900/50 border border-[#E6E8EC] dark:border-[#2A2E35]">
                                     <div className="mb-5">{renderTabButtons()}</div>
                                     {activeTab === 'program' ? (
                                         <CourseContent

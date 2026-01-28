@@ -24,13 +24,13 @@ const DashboardSidebar = ({
 
     return (
         <aside
-            className={`rounded-2xl shadow-xl transition-all duration-300 ${
+            className={`rounded-2xl shadow-xl transition-all duration-300 bg-white dark:bg-black ${
                 resolvedOpen ? 'w-64 p-6' : 'w-20 p-4'
             } ${className}`}
         >
             <button
                 onClick={handleToggle}
-                className="w-full flex items-center justify-between text-sm font-semibold text-gray-500"
+                className="w-full flex items-center justify-between text-sm font-semibold text-gray-500 dark:text-gray-400"
                 type="button"
             >
                 <span>{resolvedOpen ? toggleLabels.collapse : toggleLabels.expand}</span>
@@ -44,13 +44,21 @@ const DashboardSidebar = ({
                         <button
                             key={item.id}
                             onClick={() => onSelect(item.id)}
-                            className={`w-full flex items-center ${resolvedOpen ? 'justify-start' : 'justify-center'} px-3 py-2 rounded-xl transition ${
+                            className={`w-full flex items-center ${
+                                resolvedOpen ? 'justify-start' : 'justify-center'
+                            } px-3 py-2 rounded-xl transition ${
                                 isActive
                                     ? 'bg-blue-600 text-white'
-                                    : 'hover:bg-gray-100'
+                                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
                             }`}
                         >
-                            {Icon && <Icon className={`text-lg ${resolvedOpen ? 'mr-3' : ''}`} />}
+                            {Icon && (
+                                <Icon
+                                    className={`text-lg ${resolvedOpen ? 'mr-3' : ''} ${
+                                        isActive ? 'text-white' : 'text-gray-500 dark:text-gray-400'
+                                    }`}
+                                />
+                            )}
                             {resolvedOpen && <span className="font-medium">{item.label}</span>}
                         </button>
                     );

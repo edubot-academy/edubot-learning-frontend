@@ -18,7 +18,7 @@ function Apply({ user }) {
                 <img
                     src={student}
                     alt="Student Illustration"
-                    className="absolute  object-contain  right-[-180px] top-6  scale-80"
+                    className="absolute  object-contain   top-6  scale-80"
                 />
             </div>
 

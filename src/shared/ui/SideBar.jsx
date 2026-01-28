@@ -109,9 +109,9 @@ const SideBar = ({ setMenuOpen, setPosition }) => {
                             </div>
                             <Link to="/cart" className={`${linkClass}`}>
                                 <img src={BasketIcon} alt="" className="max-w-6 pb-1" />
-                                Корзина
+                                Себет
                             </Link>
-                            <Link to="/favourite" className={`${linkClass}`}>
+                            <Link to="/favourites" className={`${linkClass}`}>
                                 <img src={BlackHeart} alt="" className="max-w-6 pb-1" />
                                 Избранные
                             </Link>
@@ -121,7 +121,20 @@ const SideBar = ({ setMenuOpen, setPosition }) => {
                             </div>
                         </ul>
                     </div>
-                ) : null}
+                ) : (
+                    <div className="">
+                        <ul className="flex flex-col justify-between items-start">
+                            <Link to="/cart" className={`${linkClass}`}>
+                                <img src={BasketIcon} alt="" className="max-w-6 pb-1" />
+                                Корзина
+                            </Link>
+                            <Link to="/favourite" className={`${linkClass}`}>
+                                <img src={BlackHeart} alt="" className="max-w-6 pb-1" />
+                                Избранные
+                            </Link>
+                        </ul>
+                    </div>
+                )}
 
                 <div className={`flex flex-col ${user !== null ? 'mt-0' : 'mt-4'}`}>
                     <Link to="/courses" className={`${active('/courses')} ${linkClass}`}>
@@ -141,7 +154,7 @@ const SideBar = ({ setMenuOpen, setPosition }) => {
                                     logout();
                                 }}
                             >
-                                Чыгуу
+                               Аккаунттан чыгуу
                             </button>
                         </>
                     ) : (

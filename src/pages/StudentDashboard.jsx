@@ -460,7 +460,7 @@ const CoursesTab = ({ courses }) => {
                                 </div>
                                 <div className="space-y-1">
                                     <div className="flex justify-between text-sm text-gray-600">
-                                        <span>Прогресс</span>
+                                        <span>Процесс</span>
                                         <span>{progress}%</span>
                                     </div>
                                     <div className="h-2 rounded-full bg-gray-100">

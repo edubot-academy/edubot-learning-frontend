@@ -72,7 +72,7 @@ const ContactPage = () => {
             <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 items-center gap-10 md:gap-16">
                 <div>
                     <div className="mb-6 mt-10">
-                        <h1 className="text-5xl md:text-6xl font-bold">Байланышуу</h1>
+                        <h1 className="text-5xl md:text-6xl font-bold"></h1>
                     </div>
 
                     <p className="mb-10 text-lg text-gray-700 dark:text-[#a6adba]">
@@ -97,7 +97,7 @@ const ContactPage = () => {
                                     value={formData[name]}
                                     onChange={handleChange}
                                     required
-                                    className="w-full border border-black rounded-[10px] px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#E14219] transition bg-white dark:bg-[#222222]"
+                                    className="w-full border border-black rounded-[10px] px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#E14219] transition bg-white dark:bg-[#222222] dark:border-white dark:text-white dark:placeholder-gray-400"
                                 />
                             </div>
                         ))}
@@ -113,13 +113,13 @@ const ContactPage = () => {
                                 onChange={handleChange}
                                 rows={4}
                                 required
-                                className="w-full border border-black rounded-[10px] px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#E14219] transition bg-white dark:bg-[#222222]"
+                                className="w-full border border-black rounded-[10px] px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#E14219] transition bg-white dark:bg-[#222222] dark:border-white dark:text-white dark:placeholder-gray-400"
                             ></textarea>
                         </div>
 
                         <button
                             type="submit"
-                            className="bg-[#E14219] text-white font-medium rounded-[8px] w-[156px] h-[56px] shadow-lg shadow-[#FF8C6E]/90 transition"
+                            className="bg-[#E14219] text-white font-medium rounded-[8px] w-[156px] h-[56px] shadow-lg shadow-[#FF8C6E]/90 transition hover:bg-[#d63915] dark:hover:bg-[#c83413]"
                         >
                             Жөнөтүү
                         </button>
@@ -140,14 +140,14 @@ const ContactPage = () => {
                     <div className="space-y-4 flex flex-col items-start">
                         <div>
                             <div className="font-inter flex items-center gap-2">
-                                <FaInstagram className='w-5 h-5' />
-                                <p className='text-[#EA580C]'>Instagram</p>
+                                <FaInstagram className='w-5 h-5 dark:text-[#a6adba]' />
+                                <p className='text-[#EA580C] dark:text-orange-400'>Instagram</p>
                             </div>
                             <a
                                 href="https://www.instagram.com/edubot.company/"
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="block mt-1 font-normal text-sm font-suisse Intl"
+                                className="block mt-1 font-normal text-sm font-suisse Intl dark:text-[#a6adba] hover:text-[#EA580C] dark:hover:text-orange-300 transition-colors"
                             >
                                 @edubot.company
                             </a>
@@ -155,14 +155,14 @@ const ContactPage = () => {
 
                         <div>
                             <div className="font-inter flex items-center gap-2">
-                                <PiTelegramLogo className='w-5 h-5' />
-                                <p className='text-[#EA580C] '>Telegram</p>
+                                <PiTelegramLogo className='w-5 h-5 dark:text-[#a6adba]' />
+                                <p className='text-[#EA580C] dark:text-orange-400'>Telegram</p>
                             </div>
                             <a
                                 href="https://t.me/edubot_learning"
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="block mt-1 font-normal text-sm font-suisse Intl"
+                                className="block mt-1 font-normal text-sm font-suisse Intl dark:text-[#a6adba] hover:text-[#EA580C] dark:hover:text-orange-300 transition-colors"
                             >
                                 @edubot_learning
                             </a>
@@ -172,12 +172,12 @@ const ContactPage = () => {
                     <div className="flex flex-col items-center space-y-4">
                         <div className="text-center">
                             <div className="font-inter flex items-center justify-start gap-2">
-                                <FiMail className='w-5 h-5' />
-                                <p className='text-[#EA580C]'>Электрондук почта</p>
+                                <FiMail className='w-5 h-5 dark:text-[#a6adba]' />
+                                <p className='text-[#EA580C] dark:text-orange-400'>Электрондук почта</p>
                             </div>
                             <a
                                 href="mailto:jardam.edubot_learning@outlook.com"
-                                className="block mt-1 font-normal text-sm font-suisse Intl"
+                                className="block mt-1 font-normal text-sm font-suisse Intl dark:text-[#a6adba] hover:text-[#EA580C] dark:hover:text-orange-300 transition-colors"
                             >
                                 jardam.edubot_learning@outlook.com
                             </a>
@@ -187,19 +187,19 @@ const ContactPage = () => {
                     <div className="space-y-4 flex flex-col items-start text-right">
                         <div>
                             <div className="font-inter flex items-center justify-start gap-2">
-                                <GoClock className='w-5 h-5' />
-                                <p className='text-[#EA580C]'>Иштөө убактысы</p>
+                                <GoClock className='w-5 h-5 dark:text-[#a6adba]' />
+                                <p className='text-[#EA580C] dark:text-orange-400'>Иштөө убактысы</p>
                             </div>
-                            <p className="block mt-1 font-normal text-sm font-suisse Intl">
+                            <p className="block mt-1 font-normal text-sm font-suisse Intl dark:text-[#a6adba]">
                                 Дүйшөмбү — Жума, 9:00 — 21:00 (Бишкек убактысы)
                             </p>
                         </div>
                         <div>
                             <div className="font-inter flex items-center justify-start gap-2">
-                                <SlLocationPin className='w-5 h-5' />
-                                <p className='text-[#EA580C] '>Дарек</p>
+                                <SlLocationPin className='w-5 h-5 dark:text-[#a6adba]' />
+                                <p className='text-[#EA580C] dark:text-orange-400'>Дарек</p>
                             </div>
-                            <p className="block mt-1 font-normal text-sm font-suisse Intl">
+                            <p className="block mt-1 font-normal text-sm font-suisse Intl dark:text-[#a6adba]">
                                 Ахунбаева 129B, Бишкек, Кыргызстан
                             </p>
                         </div>
@@ -216,7 +216,7 @@ const ContactPage = () => {
                         loading="lazy"
                         referrerPolicy="no-referrer-when-downgrade"
                         title="EduBot Location"
-                        className="rounded-xl w-full"
+                        className="rounded-xl w-full dark:brightness-90 dark:contrast-110"
                     ></iframe>
                 </div>
             </div>

@@ -165,7 +165,7 @@ export const CartProvider = ({ children }) => {
 
             return {
                 success: true,
-                message: 'Курс добавлен в корзину',
+                message: 'Курс себетке кошулду',
             };
         },
         [user, normalizeCartItems, cartItems]
