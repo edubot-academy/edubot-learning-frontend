@@ -7,6 +7,7 @@ import { useFavourites } from '../../../context/FavouritesContext';
 import { AiFillStar, AiOutlineStar } from 'react-icons/ai';
 import { IoMdTime } from 'react-icons/io';
 import { FiBook } from 'react-icons/fi';
+import NoImage from '@assets/icons/noImage.svg'
 import { AuthContext } from '../../../context/AuthContext';
 import UnauthModal from '../../../shared/ui/UnauthModal';
 
@@ -86,7 +87,7 @@ const CardCourse = ({
 
     const goToFavourites = () => {
         closeFavoritePopup();
-        navigate('/favourite');
+        navigate('/favourites');
     };
 
     const handleButtonClick = (e) => {
@@ -160,7 +161,10 @@ const CardCourse = ({
 
                     <div className="p-3">
                         <img
-                            src={coverImageUrl}
+                            src={coverImageUrl || NoImage}
+                            onError={(e) => {
+                                e.currentTarget.src = NoImage;
+                            }}
                             alt={title}
                             className="w-full h-48 object-cover rounded"
                         />
