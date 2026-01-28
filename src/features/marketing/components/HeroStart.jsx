@@ -23,7 +23,7 @@ const HeroStart = () => {
             color: 'from-white to-gray-50',
         },
         {
-            title: 'БИЗДИН КУРСТАР DIGITAL-ДҮЙНӨСҮ КАНТИП ИШТЕЙТ ЭКЕНДИГИН ТУШУНУУГО ЖАРДАМ БЕРЕТ.',
+            title: 'БИЗДИН КУРСТАР DIGITAL-ДҮЙНӨСҮ КАНТИП ИШТЕШИН ТУШУНУУГО ЖАРДАМ БЕРЕТ.',
             description:
                 'Биз баштан-аяк, этап-этабы менен – баштапкыдан жогорку деңгээлге чейин үйрөтөбүз. Жаңы кесибиңиз сиз ойлогондон да жакын!',
             image: bannerImg2,
@@ -50,11 +50,10 @@ const HeroStart = () => {
                 {slides.map((slide, index) => (
                     <div
                         key={index}
-                        className={`absolute inset-0 transition-all duration-1000 ease-in-out  ${
-                            index === currentSlide
-                                ? 'opacity-100 z-10 translate-x-0'
-                                : 'opacity-0 z-0 translate-x-full'
-                        }`}
+                        className={`absolute inset-0 transition-all duration-1000 ease-in-out  ${index === currentSlide
+                            ? 'opacity-100 z-10 translate-x-0'
+                            : 'opacity-0 z-0 translate-x-full'
+                            }`}
                     >
                         {/* ---------- СЛАЙД 1 ---------- */}
                         {index === 0 && (
@@ -210,7 +209,7 @@ const HeroStart = () => {
                                     />
                                     <div className="flex-col justify-between hidden lg:flex">
                                         <p className="text-[#FFFFFF73] font-normal text-[26px] leading-[120%] tracking-[0%]">
-                                            болуп коробогондой арзандатуу!
+                                            болуп көрбөгөндөй арзандатуу!
                                         </p>
                                         <div className="text-[#FFFFFF26] font-bold text-[150.49px] lg:text-center text-left">
                                             50%
@@ -233,9 +232,8 @@ const HeroStart = () => {
                             className="h-1 w-12 bg-white/30 rounded-full overflow-hidden"
                         >
                             <div
-                                className={`h-full bg-white rounded-full transition-all duration-5000 ease-linear ${
-                                    isActive ? 'animate-progress' : ''
-                                }`}
+                                className={`h-full bg-white rounded-full transition-all duration-5000 ease-linear ${isActive ? 'animate-progress' : ''
+                                    }`}
                                 style={{ width: isActive ? '100%' : '0%' }}
                             ></div>
                         </div>
