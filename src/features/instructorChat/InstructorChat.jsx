@@ -144,11 +144,11 @@ export default function InstructorChat({ course }) {
   };
 
   return (
-    <div className="w-full h-full bg-white dark:bg-[#222222] rounded-xl shadow border flex flex-col">
+    <div className="w-full h-full mt-8 bg-white dark:bg-[#222222] rounded-xl shadow border flex flex-col">
       {/* ================= HEADER ================= */}
       <div className="px-5 py-4 border-b flex items-center gap-3">
         <img
-          src={course.instructor.avatar}
+          src={course.instructor.avatarUrl}
           className="w-10 h-10 rounded-full object-cover"
           alt={course.instructor.fullName}
         />
@@ -223,7 +223,7 @@ export default function InstructorChat({ course }) {
       </div>
 
       {/* ================= INPUT ================= */}
-      <div className="border-t px-4 py-3 flex items-center gap-3">
+      <div className="mt-36  border-t px-4 py-3 flex items-center gap-3">
         <div className="relative text-[#EA580C]">
           <div
             className={`absolute -top-24 left-1/2 -translate-x-1/2 grid gap-2 transition-all duration-300

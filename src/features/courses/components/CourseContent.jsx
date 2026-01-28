@@ -53,14 +53,13 @@ const CourseContent = ({
         }
     }, [sections, activeLesson?.sectionId]);
 
-    // Функция переключения секции - закрывает при повторном клике
-    const toggleSection = (id) => {
+    const toggleOpen = (id) => {
         setOpenIds((prev) => {
-            // Если секция уже открыта - закрываем ее
             if (prev.includes(id)) {
-                return prev.filter(item => item !== id);
+                // Закрываем секцию
+                return prev.filter((item) => item !== id);
             } else {
-                // Если секция закрыта - открываем ее
+                // Открываем секцию
                 return [...prev, id];
             }
         });
@@ -85,14 +84,15 @@ const CourseContent = ({
         if (!searchQuery.trim()) return sections;
 
         return sections
-            .map(section => ({
+            .map((section) => ({
                 ...section,
-                lessons: section.lessons?.filter(lesson =>
-                    lesson.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                    lesson.description?.toLowerCase().includes(searchQuery.toLowerCase())
-                )
+                lessons: section.lessons?.filter(
+                    (lesson) =>
+                        lesson.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                        lesson.description?.toLowerCase().includes(searchQuery.toLowerCase())
+                ),
             }))
-            .filter(section => section.lessons?.length > 0);
+            .filter((section) => section.lessons?.length > 0);
     }, [sections, searchQuery]);
 
     const isLocked = (lesson) => !enrolled && !lesson.previewVideo;
@@ -132,8 +132,10 @@ const CourseContent = ({
         if (!lesson) return null;
         if (lesson.videoUrl) return lesson.videoUrl;
         if (lesson.previewUrl) return lesson.previewUrl;
-        if (lesson.previewVideo && typeof lesson.previewVideo === 'string') return lesson.previewVideo;
-        if (lesson.previewVideo && lesson.previewVideo.videoUrl) return lesson.previewVideo.videoUrl;
+        if (lesson.previewVideo && typeof lesson.previewVideo === 'string')
+            return lesson.previewVideo;
+        if (lesson.previewVideo && lesson.previewVideo.videoUrl)
+            return lesson.previewVideo.videoUrl;
         if (lesson.previewVideos?.[0]?.videoUrl) return lesson.previewVideos[0].videoUrl;
         return null;
     };
@@ -230,7 +232,7 @@ const CourseContent = ({
 
                 <div className="divide-y divide-[#E6E8EC] dark:divide-[#2A2E35]">
                     {filteredSections.map((section) => {
-                        const sectionCompleted = section.lessons?.every(lesson =>
+                        const sectionCompleted = section.lessons?.every((lesson) =>
                             completedLessons.includes(lesson.id)
                         );
                         const isSectionOpen = openIds.includes(section.id);
@@ -313,19 +315,25 @@ const CourseContent = ({
                                                                         type="checkbox"
                                                                         className="w-4 h-4 text-orange-600 dark:text-orange-400 bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-orange-500 focus:ring-2"
                                                                         checked={completed}
-                                                                        onMouseDown={(e) => e.stopPropagation()}
-                                                                        onClick={(e) => e.stopPropagation()}
+                                                                        onMouseDown={(e) =>
+                                                                            e.stopPropagation()
+                                                                        }
+                                                                        onClick={(e) =>
+                                                                            e.stopPropagation()
+                                                                        }
                                                                         onChange={(e) => {
                                                                             e.stopPropagation();
-                                                                            if (handleCheckboxToggle) {
-                                                                                handleCheckboxToggle(lesson);
+                                                                            if (
+                                                                                handleCheckboxToggle
+                                                                            ) {
+                                                                                handleCheckboxToggle(
+                                                                                    lesson
+                                                                                );
                                                                             }
                                                                         }}
                                                                         disabled={locked}
                                                                     />
-                                                                    {active && (
-                                                                        <div className="absolute -top-1 -right-1 w-2 h-2 bg-orange-500 rounded-full animate-pulse"></div>
-                                                                    )}
+                                                                    {/* Убрал анимированный кружок для активного урока */}
                                                                 </div>
 
                                                                 <div className="flex-1 min-w-0">
@@ -336,7 +344,9 @@ const CourseContent = ({
                                                                         <div className="flex flex-wrap items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
                                                                             {getIcon(lesson)}
                                                                             <span className="whitespace-nowrap">
-                                                                                {formatSecondsToTime(lesson.duration)}
+                                                                                {formatSecondsToTime(
+                                                                                    lesson.duration
+                                                                                )}
                                                                             </span>
                                                                             {locked && <TbLock className="text-gray-400 dark:text-gray-500 flex-shrink-0" size={14} />}
                                                                         </div>
@@ -358,8 +368,12 @@ const CourseContent = ({
                                                                         title="Ресурстарды жүктөө"
                                                                     >
                                                                         <MdDownload size={16} />
-                                                                        <span className="hidden sm:inline">Ресурстар</span>
-                                                                        <span className="sm:hidden">Жүктөө</span>
+                                                                        <span className="hidden sm:inline">
+                                                                            Ресурстар
+                                                                        </span>
+                                                                        <span className="sm:hidden">
+                                                                            Жүктөө
+                                                                        </span>
                                                                     </button>
                                                                 </div>
                                                             )}
@@ -395,7 +409,9 @@ const CourseContent = ({
                                                                                 </>
                                                                             )}
                                                                             <span className="whitespace-nowrap">
-                                                                                {formatSecondsToTime(lesson.duration)}
+                                                                                {formatSecondsToTime(
+                                                                                    lesson.duration
+                                                                                )}
                                                                             </span>
                                                                         </div>
                                                                     </div>
@@ -440,7 +456,8 @@ const CourseContent = ({
                     previewData={{
                         title: previewLesson?.title,
                         description: previewLesson?.description,
-                        coverImageUrl: previewLesson?.coverImageUrl || previewLesson?.thumbnailUrl || '',
+                        coverImageUrl:
+                            previewLesson?.coverImageUrl || previewLesson?.thumbnailUrl || '',
                         durationInHours: Math.ceil((previewLesson?.duration || 0) / 3600),
                         previewVideos: [
                             {

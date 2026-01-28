@@ -32,6 +32,7 @@ import CourseContent from '@features/courses/components/CourseContent';
 import { FaSignalMessenger } from 'react-icons/fa6';
 import InstructorChat from '@features/instructorChat/InstructorChat';
 import CourseHeader from '@features/courses/components/CourseHeader';
+import { HiChatAlt2 } from 'react-icons/hi';
 
 const CHALLENGE_STORAGE_PREFIX = 'lessonChallengeState';
 
@@ -90,6 +91,26 @@ const CourseDetailsPage = () => {
     const [challengeLoading, setChallengeLoading] = useState(false);
     const [challengeSubmitting, setChallengeSubmitting] = useState(false);
     const [instructorChat, setInstructorChat] = useState(false);
+    const chatRef = useRef(null);
+
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (
+                instructorChat &&
+                chatRef.current &&
+                !chatRef.current.contains(event.target) &&
+                !event.target.closest('button[class*="instructor-chat-button"]')
+            ) {
+                setInstructorChat(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [instructorChat]);
 
     useEffect(() => {
         hasPlayedRef.current = false;
@@ -115,7 +136,6 @@ const CourseDetailsPage = () => {
         }, 100);
     };
 
-    // Auto-complete article lessons after 30 seconds of viewing
     useEffect(() => {
         if (!enrolled || !activeLesson || activeLesson.kind !== 'article' || activeLesson.locked) {
             return undefined;
@@ -140,7 +160,6 @@ const CourseDetailsPage = () => {
         return () => clearTimeout(timer);
     }, [activeLesson, enrolled, id, completedLessons]);
 
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     const debouncedTimeUpdate = useCallback(
         debounce((time) => {
             if (
@@ -684,7 +703,6 @@ const CourseDetailsPage = () => {
                             }
                         }
                     } else {
-                        // Для неавторизованных всегда начинаем с начала
                         setResumeVideoTime(0);
                     }
                 }
@@ -764,41 +782,29 @@ const CourseDetailsPage = () => {
 
     return (
         <div className="min-h-screen pt-10 bg-[#f8f9fb] dark:bg-[#1A1A1A]">
-            {/* Chat button - positioned absolutely in header */}
             {enrolled && (
-                <div className="relative max-w-6xl mx-auto flex justify-end mb-10">
+                <div className="fixed top-20 right-4 z-50 ">
                     <button
-                        className="flex w-[265px] h-[61px] opacity-100 rounded-[8px] border-[1px] p-[18px] gap-[10px]text-[#141619]"
-                        onClick={() => setInstructorChat(true)}
+                        className={`instructor-chat-button mt-10 mr-4 flex items-center justify-center w-16 h-16 rounded-full border-2 border-gray-300 bg-white hover:bg-gray-50 transition-all dark:bg-[#1A1A1A] shadow-lg hover:shadow-xl ${
+                            instructorChat ? 'border-[#FB923C] bg-[#FFF7ED]' : ''
+                        }`}
+                        onClick={() => setInstructorChat(!instructorChat)}
                     >
-                        <FaSignalMessenger className="text-[#EA580C]" /> Инструктор менен чат
+                        <HiChatAlt2 className="w-8 h-8 text-[#EA580C]" />
                     </button>
-
-                    {instructorChat && (
-                        <div className="relative max-w-6xl mx-auto flex justify-end mb-10">
-                            <button
-                                className="flex w-[265px] h-[61px] opacity-100 rounded-[8px] border-[1px] p-[18px] gap-[10px] border-[#FB923C] bg-[#FFF7ED]"
-                                onClick={() => setInstructorChat(true)}
-                            >
-                                <FaSignalMessenger className="text-[#EA580C]" /> Инструктор менен
-                                чат
-                            </button>
-
-                            {/* Модалка чата */}
-                            <div className="relative xl:w-10xl m-auto ">
-                                <div className="z-10 xl:ml-[550px] xl:w-[600px] sm:h-[600px] h-[400px] md:w-[381px] w-[300px]  bg-white rounded-lg shadow-lg">
-                                    <InstructorChat course={course} />
-                                </div>
-                            </div>
-                        </div>
-                    )}
                 </div>
             )}
 
-            {/* Main content */}
+            {instructorChat && (
+                <div className="fixed top-32 right-4 z-50" ref={chatRef}>
+                    <div className="w-full max-w-[1440px] mx-auto  aspect-[905/1096]  rounded-lg shadow-x p-4 sm:p-6 md:p-8">
+                        <InstructorChat course={course} />
+                    </div>
+                </div>
+            )}
+
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-8">
                 <div className="space-y-6 lg:space-y-0 lg:grid lg:grid-cols-3 lg:gap-6">
-                    {/* Mobile layouts */}
                     {enrolled ? (
                         <div className="space-y-6 lg:hidden">
                             {activeLesson &&
@@ -894,7 +900,6 @@ const CourseDetailsPage = () => {
                         </div>
                     )}
 
-                    {/* Desktop layout */}
                     <div className="hidden lg:block lg:col-span-2">
                         {enrolled ? (
                             <div className="space-y-8">
@@ -1017,7 +1022,6 @@ const CourseDetailsPage = () => {
                     </div>
                 </div>
 
-                {/* Additional sections for enrolled users */}
                 {enrolled && (
                     <div className="space-y-8 lg:space-y-0 lg:grid lg:grid-cols-3 lg:gap-6">
                         <div className="lg:col-span-2">
@@ -1033,7 +1037,6 @@ const CourseDetailsPage = () => {
                     </div>
                 )}
 
-                {/* Comments section */}
                 {enrolled && (
                     <div className="pt-6">
                         <Comment courseId={id} />
