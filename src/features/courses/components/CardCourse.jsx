@@ -26,6 +26,22 @@ const formatPrice = (price, currency = 'KGS') => {
     }
 };
 
+const formatDuration = (value) => {
+    if (!value || value <= 0) return '0 мүнөт';
+
+    if (value < 1) {
+        return `${Math.round(value * 100)} мүнөт`;
+    }
+
+    const hours = Math.floor(value);
+    const minutes = Math.round((value - hours) * 60);
+
+    if (minutes === 0) return `${hours} саат`;
+    return `${hours} саат ${minutes} мүнөт`;
+};
+
+
+
 const CardCourse = ({
     coverImageUrl,
     title,
@@ -195,7 +211,7 @@ const CardCourse = ({
                                 </span>
                                 <span className="text-xs bg-[#F0F0F0] text-[#141619] dark:bg-[#2A2E35] dark:text-[#E8ECF3] rounded px-2 py-1 flex items-center gap-1">
                                     <IoMdTime className="w-3 h-3" />
-                                    {durationInHours || 0} саат
+                                    {formatDuration(durationInHours)}
                                 </span>
                                 <span className="text-xs bg-[#F0F0F0] text-[#141619] dark:bg-[#2A2E35] dark:text-[#E8ECF3] rounded px-2 py-1 flex items-center gap-1">
                                     <FiBook className="w-3 h-3" />

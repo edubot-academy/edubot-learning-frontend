@@ -6,7 +6,22 @@ import Button from '@shared/ui/Button';
 import { FaPlay } from 'react-icons/fa';
 import ContactCourseModal from './ContactCourseModal';
 import ModalPreviewVideo from './ModalPreviewVideo';
-import UnauthModal from '@shared/ui/UnauthModal'; 
+import UnauthModal from '@shared/ui/UnauthModal';
+
+const formatDuration = (value) => {
+    if (!value || value <= 0) return '0 мүнөт';
+
+    if (value < 1) {
+        return `${Math.round(value * 100)} мүнөт`;
+    }
+
+    const hours = Math.floor(value);
+    const minutes = Math.round((value - hours) * 60);
+
+    if (minutes === 0) return `${hours} саат`;
+    return `${hours} саат ${minutes} мүнөт`;
+};
+
 
 const CardVideo = ({ coverImageUrl, course, lessonCount, activeLesson }) => {
     const [isContactOpen, setIsContactOpen] = useState(false);
@@ -46,7 +61,7 @@ const CardVideo = ({ coverImageUrl, course, lessonCount, activeLesson }) => {
                         </p>
 
                         <p className="flex items-center gap-2 text-base font-semibold">
-                            <IoMdTime /> {course.durationInHours} саат
+                            <IoMdTime /> {formatDuration(course.durationInHours)}
                         </p>
 
                         <p className="flex items-center gap-2 text-base font-semibold">

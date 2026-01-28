@@ -2,6 +2,21 @@ import React, { useEffect, useState } from 'react';
 import Modal from '@shared-ui/Modal';
 import { fetchCoursePreview } from '../api';
 
+const formatDuration = (value) => {
+    if (!value || value <= 0) return '0 мүнөт';
+
+    if (value < 1) {
+        return `${Math.round(value * 100)} мүнөт`;
+    }
+
+    const hours = Math.floor(value);
+    const minutes = Math.round((value - hours) * 60);
+
+    if (minutes === 0) return `${hours} саат`;
+    return `${hours} саат ${minutes} мүнөт`;
+};
+
+
 function ModalPreviewVideo({ isOpen, onClose, courseId, previewData: previewDataProp = null, initialVideo = null }) {
     const [previewData, setPreviewData] = useState(previewDataProp || null);
     const [loading, setLoading] = useState(previewDataProp ? false : true);
@@ -49,7 +64,12 @@ function ModalPreviewVideo({ isOpen, onClose, courseId, previewData: previewData
             title={previewData?.title}
             size="lg"
         >
-            {loading && <p>Жүктөлүүдө...</p>}
+            {loading && (
+                <div className="flex items-center justify-center min-h-[300px]">
+                    <div className="w-12 h-12 border-4 border-gray-300 border-t-[#f17e22] rounded-full animate-spin" />
+                </div>
+            )}
+
 
             {!loading && previewData && (
                 <>
@@ -91,7 +111,7 @@ function ModalPreviewVideo({ isOpen, onClose, courseId, previewData: previewData
                                 </div>
 
                                 <span className="text-xs text-gray-500">
-                                    {previewData.durationInHours} саат
+                                    {formatDuration(previewData.durationInHours)}
                                 </span>
                             </button>
                         ))}
