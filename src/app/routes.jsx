@@ -41,7 +41,7 @@ const AppRoutes = () => {
                     <Route path="/dashboard" element={<DashboardPage />} />
                     <Route path="/profile" element={<ProfilePage />} />
                     <Route path="/unauthorized" element={<Unauthorized />} />
-                    <Route path="/favourite" element={<Favourite />} />
+                    <Route path="/favourites" element={<Favourite />} />
                     <Route path="/cart" element={<CartPage />} />
                     <Route element={<PrivateRoute allowedRoles={['instructor']} />}>
                         <Route path="/instructor" element={<InstructorDashboard />} />

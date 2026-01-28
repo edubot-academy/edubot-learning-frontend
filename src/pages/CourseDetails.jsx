@@ -967,11 +967,10 @@ const CourseDetailsPage = () => {
                         )}
                     </div>
 
-                    {/* Right sidebar - desktop */}
                     <div className="hidden lg:block lg:col-span-1">
                         <div className="space-y-6 sticky top-6">
                             {enrolled ? (
-                                <div className="bg-white p-5 rounded-xl shadow-sm">
+                                <div className="bg-white dark:bg-[#1A1A1A] p-5 rounded-xl shadow-sm dark:shadow-gray-900/50 border border-[#E6E8EC] dark:border-[#2A2E35]">
                                     <div className="mb-5">{renderTabButtons()}</div>
                                     {activeTab === 'program' ? (
                                         <CourseContent

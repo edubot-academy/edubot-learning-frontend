@@ -23,6 +23,7 @@ const CourseContent = ({
     const [openIds, setOpenIds] = useState([]);
     const [searchQuery, setSearchQuery] = useState('');
     const contentRefs = useRef({});
+    const hasInitialized = useRef(false);
 
     const [previewOpen, setPreviewOpen] = useState(false);
     const [previewLesson, setPreviewLesson] = useState(null);
@@ -31,28 +32,38 @@ const CourseContent = ({
         setPreviewLesson(null);
     };
 
+    // Инициализация открытых секций только один раз при монтировании
     useEffect(() => {
-        if (sections?.length > 0 && openIds.length === 0) {
-            const defaultOpenIds = [sections[0].id];
+        if (!hasInitialized.current && sections?.length > 0) {
+            hasInitialized.current = true;
+            
+            const defaultOpenIds = [];
+            
+            // Если есть активный урок, открываем его секцию
             if (activeLesson?.sectionId) {
                 defaultOpenIds.push(activeLesson.sectionId);
             }
+            
+            // Если нет активного урока, открываем первую секцию
+            if (defaultOpenIds.length === 0 && sections[0]?.id) {
+                defaultOpenIds.push(sections[0].id);
+            }
+            
             setOpenIds([...new Set(defaultOpenIds)]);
         }
     }, [sections, activeLesson?.sectionId]);
 
-    useEffect(() => {
-        if (activeLesson?.sectionId && !openIds.includes(activeLesson.sectionId)) {
-            setOpenIds(prev => [...prev, activeLesson.sectionId]);
-        }
-    }, [activeLesson?.sectionId, openIds]);
-
-    const toggleOpen = (id) => {
-        setOpenIds((prev) =>
-            prev.includes(id)
-                ? prev.filter(item => item !== id)
-                : [...prev, id]
-        );
+    // Функция переключения секции - закрывает при повторном клике
+    const toggleSection = (id) => {
+        setOpenIds((prev) => {
+            // Если секция уже открыта - закрываем ее
+            if (prev.includes(id)) {
+                return prev.filter(item => item !== id);
+            } else {
+                // Если секция закрыта - открываем ее
+                return [...prev, id];
+            }
+        });
     };
 
     const { totalLessons, totalMinutes } = useMemo(() => {
@@ -91,13 +102,13 @@ const CourseContent = ({
     const getIcon = (lesson) => {
         switch (lesson.kind) {
             case 'article':
-                return <FiBookOpen className="text-[#4b4b4b] flex-shrink-0" size={compact ? 16 : 18} />;
+                return <FiBookOpen className="text-[#4b4b4b] dark:text-gray-400 flex-shrink-0" size={compact ? 16 : 18} />;
             case 'code':
-                return <FiCode className="text-[#4b4b4b] flex-shrink-0" size={compact ? 16 : 18} />;
+                return <FiCode className="text-[#4b4b4b] dark:text-gray-400 flex-shrink-0" size={compact ? 16 : 18} />;
             case 'quiz':
-                return <MdQuiz className="text-[#4b4b4b] flex-shrink-0" size={compact ? 16 : 18} />;
+                return <MdQuiz className="text-[#4b4b4b] dark:text-gray-400 flex-shrink-0" size={compact ? 16 : 18} />;
             default:
-                return <RiPlayCircleFill className="text-[#4b4b4b] flex-shrink-0" size={compact ? 18 : 22} />;
+                return <RiPlayCircleFill className="text-[#4b4b4b] dark:text-gray-400 flex-shrink-0" size={compact ? 18 : 22} />;
         }
     };
 
@@ -110,10 +121,10 @@ const CourseContent = ({
 
     const getStatusColor = (status) => {
         switch (status) {
-            case 'active': return 'border-l-4 border-l-orange-500 bg-orange-50';
-            case 'completed': return 'bg-green-50 border-l-4 border-l-green-500';
-            case 'locked': return 'bg-gray-100 opacity-70';
-            default: return 'hover:bg-gray-50';
+            case 'active': return 'border-l-4 border-l-orange-500 bg-orange-50 dark:bg-orange-900/20';
+            case 'completed': return 'bg-green-50 dark:bg-green-900/20 border-l-4 border-l-green-500 dark:border-l-green-400';
+            case 'locked': return 'bg-gray-100 dark:bg-gray-800 opacity-70';
+            default: return 'hover:bg-gray-50 dark:hover:bg-gray-800/50';
         }
     };
 
@@ -138,6 +149,11 @@ const CourseContent = ({
             return;
         }
 
+        // Открываем секцию, в которой находится урок
+        if (lesson.sectionId && !openIds.includes(lesson.sectionId)) {
+            setOpenIds(prev => [...prev, lesson.sectionId]);
+        }
+
         onLessonClick?.(lesson);
     };
 
@@ -148,13 +164,13 @@ const CourseContent = ({
 
     return (
         <>
-            <div className="w-full dark:bg-[#222222] bg-white rounded-2xl border border-[#E6E8EC] overflow-hidden">
+            <div className="w-full dark:bg-[#1A1A1A] bg-white rounded-2xl border border-[#E6E8EC] dark:border-[#2A2E35] overflow-hidden">
                 {showHeader && (
-                    <div className="px-4 sm:px-6 py-4 border-b border-[#DFE1E5]">
+                    <div className="px-4 sm:px-6 py-4 border-b border-[#DFE1E5] dark:border-[#2A2E35]">
                         <div className="flex flex-col gap-3">
                             <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                                 <div className="flex-1 min-w-0">
-                                    <h3 className="text-xl sm:text-2xl font-semibold text-gray-900  dark:text-[#E8ECF3]">
+                                    <h3 className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-[#E8ECF3]">
                                         Курстун мазмуну
                                     </h3>
                                     <p className="text-sm sm:text-base dark:text-[#a6adba] text-gray-600 mt-1">
@@ -171,12 +187,12 @@ const CourseContent = ({
                                                 placeholder="Лекциялардан издөө..."
                                                 value={searchQuery}
                                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm"
+                                                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-[#222222] dark:text-[#E8ECF3] rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm dark:placeholder:text-gray-500"
                                             />
                                             {searchQuery && (
                                                 <button
                                                     onClick={() => setSearchQuery('')}
-                                                    className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600"
+                                                    className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
                                                 >
                                                     ✕
                                                 </button>
@@ -187,7 +203,7 @@ const CourseContent = ({
                             </div>
 
                             {enrolled && !compact && (
-                                <div className="flex flex-wrap gap-3 mt-2 text-sm text-gray-600">
+                                <div className="flex flex-wrap gap-3 mt-2 text-sm text-gray-600 dark:text-gray-400">
                                     <div className="flex items-center gap-2 flex-shrink-0">
                                         <div className="w-3 h-3 rounded-full bg-orange-500 flex-shrink-0"></div>
                                         <span className="whitespace-nowrap">Активдүү лекция</span>
@@ -197,7 +213,7 @@ const CourseContent = ({
                                         <span className="whitespace-nowrap">Аякталган</span>
                                     </div>
                                     <div className="flex items-center gap-2 flex-shrink-0">
-                                        <div className="w-3 h-3 rounded-full bg-gray-300 flex-shrink-0"></div>
+                                        <div className="w-3 h-3 rounded-full bg-gray-300 dark:bg-gray-600 flex-shrink-0"></div>
                                         <span className="whitespace-nowrap">Кичинекей</span>
                                     </div>
                                 </div>
@@ -207,39 +223,41 @@ const CourseContent = ({
                 )}
 
                 {searchQuery && filteredSections.length === 0 && (
-                    <div className="px-4 sm:px-6 py-8 text-center text-gray-500">
+                    <div className="px-4 sm:px-6 py-8 text-center text-gray-500 dark:text-gray-400">
                         " {searchQuery} " сураныч менен табылган жок
                     </div>
                 )}
 
-                <div className="divide-y divide-[#E6E8EC]">
+                <div className="divide-y divide-[#E6E8EC] dark:divide-[#2A2E35]">
                     {filteredSections.map((section) => {
                         const sectionCompleted = section.lessons?.every(lesson =>
                             completedLessons.includes(lesson.id)
                         );
+                        const isSectionOpen = openIds.includes(section.id);
 
                         return (
-                            <div key={section.id}>
+                            <div key={section.id} className="dark:bg-[#1A1A1A]">
                                 <button
-                                    onClick={() => toggleOpen(section.id)}
-                                    className={`flex items-center justify-between w-full px-4 sm:px-6 py-3 text-left transition hover:bg-gray-50 ${compact ? 'py-2' : 'py-3'}`}
+                                    onClick={() => toggleSection(section.id)}
+                                    className={`flex items-center justify-between w-full px-4 sm:px-6 py-3 text-left transition hover:bg-gray-50 dark:hover:bg-gray-800/50 ${compact ? 'py-2' : 'py-3'}`}
+                                    aria-expanded={isSectionOpen}
                                 >
                                     <div className="flex items-center gap-2 min-w-0 flex-1">
-                                        <div className="text-[#EA580C] font-semibold flex items-center gap-2 min-w-0">
-                                            {openIds.includes(section.id) ? (
+                                        <div className="text-[#EA580C] dark:text-orange-400 font-semibold flex items-center gap-2 min-w-0">
+                                            {isSectionOpen ? (
                                                 <IoIosArrowUp className="flex-shrink-0" />
                                             ) : (
                                                 <IoIosArrowDown className="flex-shrink-0" />
                                             )}
-                                            <span className="truncate">{section.title}</span>
+                                            <span className="truncate dark:text-[#E8ECF3]">{section.title}</span>
                                         </div>
                                         {enrolled && sectionCompleted && (
-                                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 flex-shrink-0 ml-2">
+                                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 flex-shrink-0 ml-2">
                                                 Аякталды
                                             </span>
                                         )}
                                     </div>
-                                    <div className="flex items-center gap-2 text-sm text-gray-500 ml-4 flex-shrink-0">
+                                    <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 ml-4 flex-shrink-0">
                                         <span className="whitespace-nowrap">
                                             {section.lessons?.length || 0} лекция
                                         </span>
@@ -248,7 +266,7 @@ const CourseContent = ({
                                             {formatMinutesToTime(section.durationMinutes)}
                                         </span>
                                         {enrolled && (
-                                            <span className="text-xs bg-gray-100 px-2 py-1 rounded whitespace-nowrap ml-2">
+                                            <span className="text-xs bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded whitespace-nowrap ml-2 dark:text-gray-300">
                                                 {section.lessons?.filter(l => completedLessons.includes(l.id)).length || 0}/
                                                 {section.lessons?.length || 0}
                                             </span>
@@ -259,14 +277,14 @@ const CourseContent = ({
                                 <div
                                     ref={(el) => (contentRefs.current[section.id] = el)}
                                     style={{
-                                        maxHeight: openIds.includes(section.id)
+                                        maxHeight: isSectionOpen
                                             ? contentRefs.current[section.id]?.scrollHeight
                                             : 0,
                                         transition: 'max-height 0.3s ease',
                                         overflow: 'hidden',
                                     }}
                                 >
-                                    <div className={`bg-white px-4 sm:px-6 ${compact ? 'pb-2' : 'pb-4'} space-y-1`}>
+                                    <div className={`bg-white dark:bg-[#1A1A1A] px-4 sm:px-6 ${compact ? 'pb-2' : 'pb-4'} space-y-1`}>
                                         {section.lessons?.map((lesson) => {
                                             const locked = isLocked(lesson);
                                             const active = isActive(lesson);
@@ -285,7 +303,7 @@ const CourseContent = ({
                                                     type="button"
                                                     onClick={(e) => handleLessonClick(e, lesson)}
                                                     disabled={locked}
-                                                    className={`w-full text-left p-3 sm:p-4 transition rounded-lg border border-transparent ${statusColor} ${locked ? 'cursor-not-allowed' : 'cursor-pointer hover:shadow-sm'} ${compact ? 'py-2' : ''}`}
+                                                    className={`w-full text-left p-3 sm:p-4 transition rounded-lg border border-transparent dark:border-gray-700/50 ${statusColor} ${locked ? 'cursor-not-allowed' : 'cursor-pointer hover:shadow-sm dark:hover:shadow-gray-900/50'} ${compact ? 'py-2' : ''}`}
                                                 >
                                                     {enrolled ? (
                                                         <div className="flex flex-col sm:flex-row sm:items-center gap-3">
@@ -293,7 +311,7 @@ const CourseContent = ({
                                                                 <div className="relative flex-shrink-0 mt-0.5">
                                                                     <input
                                                                         type="checkbox"
-                                                                        className="w-4 h-4 text-orange-600 bg-gray-100 border-gray-300 rounded focus:ring-orange-500 focus:ring-2"
+                                                                        className="w-4 h-4 text-orange-600 dark:text-orange-400 bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-orange-500 focus:ring-2"
                                                                         checked={completed}
                                                                         onMouseDown={(e) => e.stopPropagation()}
                                                                         onClick={(e) => e.stopPropagation()}
@@ -312,20 +330,20 @@ const CourseContent = ({
 
                                                                 <div className="flex-1 min-w-0">
                                                                     <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-2">
-                                                                        <p className={`font-medium ${compact ? 'text-sm' : 'text-base'} text-gray-800 leading-snug break-words ${completed ? 'line-through opacity-70' : ''}`}>
+                                                                        <p className={`font-medium ${compact ? 'text-sm' : 'text-base'} text-gray-800 dark:text-[#E8ECF3] leading-snug break-words ${completed ? 'line-through opacity-70' : ''}`}>
                                                                             {lesson.title}
                                                                         </p>
-                                                                        <div className="flex flex-wrap items-center gap-2 text-sm text-gray-600">
+                                                                        <div className="flex flex-wrap items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
                                                                             {getIcon(lesson)}
                                                                             <span className="whitespace-nowrap">
                                                                                 {formatSecondsToTime(lesson.duration)}
                                                                             </span>
-                                                                            {locked && <TbLock className="text-gray-400 flex-shrink-0" size={14} />}
+                                                                            {locked && <TbLock className="text-gray-400 dark:text-gray-500 flex-shrink-0" size={14} />}
                                                                         </div>
                                                                     </div>
 
                                                                     {!compact && lesson.description && (
-                                                                        <p className="text-xs text-gray-500 mt-1 line-clamp-1">
+                                                                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-1">
                                                                             {lesson.description}
                                                                         </p>
                                                                     )}
@@ -336,7 +354,7 @@ const CourseContent = ({
                                                                 <div className="sm:self-start flex-shrink-0">
                                                                     <button
                                                                         onClick={(e) => handleDownload(e, lesson.resourceUrl)}
-                                                                        className="inline-flex items-center gap-1 px-3 py-1.5 text-sm border border-[#E05A22] text-[#E05A22] rounded-lg hover:bg-orange-50 transition whitespace-nowrap w-full sm:w-auto"
+                                                                        className="inline-flex items-center gap-1 px-3 py-1.5 text-sm border border-[#E05A22] dark:border-orange-400 text-[#E05A22] dark:text-orange-400 rounded-lg hover:bg-orange-50 dark:hover:bg-orange-900/30 transition whitespace-nowrap w-full sm:w-auto"
                                                                         title="Ресурстарды жүктөө"
                                                                     >
                                                                         <MdDownload size={16} />
@@ -350,7 +368,7 @@ const CourseContent = ({
                                                         <div className="flex flex-col sm:flex-row sm:items-center gap-3">
                                                             <div className="flex items-start gap-3 w-full">
                                                                 {lesson.kind === 'article' ? (
-                                                                    <FiBookOpen className="text-[#4b4b4b] flex-shrink-0" size={compact ? 16 : 20} />
+                                                                    <FiBookOpen className="text-[#4b4b4b] dark:text-gray-400 flex-shrink-0" size={compact ? 16 : 20} />
                                                                 ) : (
                                                                     <img
                                                                         src={ReelsIcon}
@@ -361,17 +379,17 @@ const CourseContent = ({
 
                                                                 <div className="flex-1 min-w-0">
                                                                     <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-2">
-                                                                        <p className={`${compact ? 'text-sm' : 'text-base'} text-gray-800 leading-snug break-words`}>
+                                                                        <p className={`${compact ? 'text-sm' : 'text-base'} text-gray-800 dark:text-[#E8ECF3] leading-snug break-words`}>
                                                                             {lesson.title}
                                                                         </p>
-                                                                        <div className="flex flex-wrap items-center gap-2 text-sm text-gray-600">
+                                                                        <div className="flex flex-wrap items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
                                                                             {lesson.previewVideo && lesson.kind !== 'article' && (
                                                                                 <>
                                                                                     <RiPlayCircleFill
-                                                                                        className="text-[#4b4b4b] flex-shrink-0"
+                                                                                        className="text-[#4b4b4b] dark:text-gray-400 flex-shrink-0"
                                                                                         size={compact ? 16 : 22}
                                                                                     />
-                                                                                    <span className="text-[#1E72BE] font-semibold whitespace-nowrap">
+                                                                                    <span className="text-[#1E72BE] dark:text-blue-400 font-semibold whitespace-nowrap">
                                                                                         Preview
                                                                                     </span>
                                                                                 </>
@@ -396,18 +414,18 @@ const CourseContent = ({
                 </div>
 
                 {enrolled && completedLessons.length > 0 && !compact && (
-                    <div className="px-4 sm:px-6 py-3 border-t border-[#DFE1E5] bg-gray-50">
+                    <div className="px-4 sm:px-6 py-3 border-t border-[#DFE1E5] dark:border-[#2A2E35] bg-gray-50 dark:bg-gray-800/50">
                         <div className="flex flex-col xs:flex-row xs:items-center justify-between gap-2">
-                            <div className="text-sm text-gray-600 whitespace-nowrap">
+                            <div className="text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">
                                 Прогресс: {completedLessons.length}/{totalLessons} лекция
                             </div>
-                            <div className="text-sm font-medium text-gray-900 whitespace-nowrap">
+                            <div className="text-sm font-medium text-gray-900 dark:text-[#E8ECF3] whitespace-nowrap">
                                 {Math.round((completedLessons.length / totalLessons) * 100)}%
                             </div>
                         </div>
-                        <div className="mt-2 w-full bg-gray-200 rounded-full h-2">
+                        <div className="mt-2 w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                             <div
-                                className="bg-green-600 h-2 rounded-full transition-all duration-300"
+                                className="bg-green-600 dark:bg-green-500 h-2 rounded-full transition-all duration-300"
                                 style={{ width: `${(completedLessons.length / totalLessons) * 100}%` }}
                             ></div>
                         </div>
