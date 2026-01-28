@@ -28,7 +28,7 @@ const InstructorCourses = () => {
             <h1 className="text-4xl font-bold mb-8 text-center">Менин курстарым</h1>
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {courses.map((course) => (
-                    <div key={course.id} className="bg-white rounded shadow p-4 relative">
+                    <div key={course.id} className="bg-white dark:bg-[#141619] rounded shadow p-4 relative">
                         <img
                             src={course.coverImageUrl}
                             alt={course.title}
@@ -37,12 +37,12 @@ const InstructorCourses = () => {
                             decoding="async"
                         />
                         <h2 className="text-xl font-semibold mb-2">{course.title}</h2>
-                        <p className="text-gray-700 mb-2">{course.instructor.fullName}</p>
+                        <p className="text-gray-700 dark:text-[#a6adba] mb-2">{course.instructor.fullName}</p>
                         <p className="text-sm text-gray-500 dark:text-[#a6adba] mb-2">Баасы: {course.price} с</p>
                         <span
                             className={`absolute top-2 right-2 px-2 py-1 text-xs rounded ${
                                 course.isPublished
-                                    ? 'bg-green-100 text-green-700'
+                                    ? 'bg-green-100 text-gray-700 dark:text-[#a6adba]'
                                     : 'bg-yellow-100 text-yellow-700'
                             }`}
                         >

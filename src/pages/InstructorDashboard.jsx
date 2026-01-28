@@ -522,7 +522,7 @@ const ProfileSection = ({ profile, expertiseTags, socialLinks }) => (
                     {expertiseTags.map((tag) => (
                         <span
                             key={tag}
-                            className="text-xs bg-gray-100 text-gray-800 dark:text-white px-3 py-1 rounded-full"
+                            className="text-xs bg-gray-100 dark:bg-[#141619] text-gray-800 dark:text-white px-3 py-1 rounded-full"
                         >
                             #{tag}
                         </span>

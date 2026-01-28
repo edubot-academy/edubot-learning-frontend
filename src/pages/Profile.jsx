@@ -725,7 +725,7 @@ const ProfilePage = () => {
                                     disabled={
                                         !isInstructorProfileChanged || savingInstructorProfile
                                     }
-                                    className="bg-edubot-dark text-white px-6 py-2 rounded disabled:opacity-50"
+                                    className="bg-edubot-dark dark:bg-blue-950 text-white px-6 py-2 rounded disabled:opacity-50"
                                 >
                                     Инструктор маалыматын сактоо
                                 </button>

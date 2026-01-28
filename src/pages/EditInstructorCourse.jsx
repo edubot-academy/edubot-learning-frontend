@@ -565,28 +565,28 @@ const EditInstructorCourse = () => {
                         value={course.title || ''}
                         onChange={handleCourseChange}
                         placeholder="Курс аталышы"
-                        className="w-full border p-2 rounded"
+                        className="w-full border p-2 rounded bg-white dark:bg-[#222222] dark:text-white"
                     />
                     <input
                         name="subtitle"
                         value={course.subtitle || ''}
                         onChange={handleCourseChange}
                         placeholder="Кыскача сүрөттөмө (подзаголовок)"
-                        className="w-full border p-2 rounded"
+                        className="w-full border p-2 rounded bg-white dark:bg-[#222222] dark:text-white"
                     />
                     <textarea
                         name="description"
                         value={course.description || ''}
                         onChange={handleCourseChange}
                         placeholder="Курс сүрөттөмөсү"
-                        className="w-full border p-2 rounded"
+                        className="w-full border p-2 rounded bg-white dark:bg-[#222222] dark:text-white"
                     />
 
                     <select
                         name="categoryId"
                         value={course.category.id || ''}
                         onChange={handleCourseChange}
-                        className="w-full border p-2 rounded"
+                        className="w-full border p-2 rounded bg-white dark:bg-[#222222] dark:text-white"
                     >
                         <option value="">Категорияны тандаңыз</option>
                         {categories.map((cat) => (
@@ -605,7 +605,7 @@ const EditInstructorCourse = () => {
                                 value={course.price || ''}
                                 onChange={handleCourseChange}
                                 placeholder="Курс баасы"
-                                className="w-full border p-2 rounded"
+                                className="w-full border p-2 rounded bg-white dark:bg-[#222222] dark:text-white"
                             />
                         </div>
                         <div className="flex items-center gap-2 mt-2 sm:mt-7">
@@ -615,6 +615,7 @@ const EditInstructorCourse = () => {
                                 type="checkbox"
                                 checked={course.isPaid ?? true}
                                 onChange={handleCourseChange}
+                                className="bg-white dark:bg-[#222222] dark:text-white"
                             />
                             <label htmlFor="isPaid" className="text-sm">
                                 Бул курс акы төлөнүүчү
@@ -629,6 +630,7 @@ const EditInstructorCourse = () => {
                             type="checkbox"
                             checked={course.aiAssistantEnabled ?? false}
                             onChange={handleCourseChange}
+                            className="bg-white dark:bg-[#222222] dark:text-white"
                         />
                         <label htmlFor="aiAssistantEnabled" className="text-sm">
                             EDU AI ассистентин бул курста колдонууга уруксат берүү
@@ -641,7 +643,7 @@ const EditInstructorCourse = () => {
                             name="languageCode"
                             value={course.languageCode || 'ky'}
                             onChange={handleCourseChange}
-                            className="w-full border p-2 rounded"
+                            className="w-full border p-2 rounded bg-white dark:bg-[#222222] dark:text-white"
                         >
                             <option value="ky">Кыргызча</option>
                             <option value="ru">Русский</option>
@@ -660,7 +662,7 @@ const EditInstructorCourse = () => {
                             placeholder={
                                 'Мисалы:\n- UX негиздери\n- Figma менен иштөө\n- UI китепкана түзүү'
                             }
-                            className="w-full border p-2 rounded text-sm min-h-[100px]"
+                            className="w-full border p-2 rounded text-sm min-h-[100px] bg-white dark:bg-[#222222] dark:text-white"
                         />
                     </div>
 
@@ -676,13 +678,13 @@ const EditInstructorCourse = () => {
                         name="cover"
                         accept="image/*"
                         onChange={handleCourseChange}
-                        className="w-full border p-2 rounded"
+                        className="w-full border p-2 rounded bg-white dark:bg-[#222222] dark:text-white"
                     />
 
                     <div className="flex gap-3 mt-4">
                         <button
                             onClick={handleCourseSubmit}
-                            className="bg-edubot-dark text-white px-6 py-2 rounded"
+                            className="bg-edubot-dark dark:bg-blue-950 text-white px-6 py-2 rounded"
                         >
                             Сактоо жана улантуу
                         </button>
@@ -699,15 +701,15 @@ const EditInstructorCourse = () => {
                     {sections.map((section, sIdx) => (
                         <div key={sIdx} className="mb-6 border border-edubot-teal rounded p-4">
                             <input
-                                className="w-full p-2 border rounded mb-2"
+                                className="w-full p-2 border rounded mb-2 bg-white dark:bg-[#222222] dark:text-white"
                                 value={section.title}
                                 onChange={(e) => updateSectionTitle(sIdx, e.target.value)}
                                 placeholder="Бөлүм аталышы"
                             />
                             {section.lessons.map((lesson, lIdx) => (
-                                <div key={lIdx} className="mb-4 p-2 bg-gray-50 rounded">
+                                <div key={lIdx} className="mb-4 p-2 bg-white dark:bg-[#222222] rounded">
                                     <input
-                                        className="w-full p-2 mb-2 border rounded"
+                                        className="w-full p-2 mb-2 border rounded bg-white dark:bg-[#222222] dark:text-white"
                                         value={lesson.title}
                                         onChange={(e) =>
                                             handleLessonFieldChange(
@@ -724,7 +726,7 @@ const EditInstructorCourse = () => {
                                         Сабактын тиби
                                     </label>
                                     <select
-                                        className="w-full p-2 mb-2 border rounded bg-white"
+                                        className="w-full p-2 mb-2 border rounded bg-white dark:bg-[#222222] dark:text-white"
                                         value={lesson.kind || 'video'}
                                         onChange={(e) =>
                                             handleLessonFieldChange(
@@ -896,7 +898,7 @@ const EditInstructorCourse = () => {
                                     </label>
                                     <input
                                         type="text"
-                                        className="w-full p-2 mb-2 border rounded"
+                                        className="w-full p-2 mb-2 border rounded  bg-white dark:bg-[#222222] dark:text-white"
                                         value={lesson.resourceName || ''}
                                         onChange={(e) =>
                                             handleLessonFieldChange(
@@ -968,7 +970,7 @@ const EditInstructorCourse = () => {
                         <button
                             onClick={handleSaveAll}
                             disabled={isUploading || saving}
-                            className="bg-edubot-dark text-white px-6 py-2 rounded disabled:opacity-60"
+                            className="bg-edubot-dark dark:bg-blue-950 text-white px-6 py-2 rounded disabled:opacity-60"
                         >
                             Сактоо жана улантуу
                         </button>
@@ -983,10 +985,10 @@ const EditInstructorCourse = () => {
                     <div>
                         <p className="text-lg font-bold">{course.title}</p>
                         {course.subtitle && (
-                            <p className="text-sm text-gray-600 mb-1">{course.subtitle}</p>
+                            <p className="text-sm text-gray-600 dark:text-[#a6adba] mb-1">{course.subtitle}</p>
                         )}
                         <p>{course.description}</p>
-                        <p className="italic text-gray-500">
+                        <p className="italic text-gray-500 dark:text-[#a6adba]">
                             Баасы: {course.isPaid ? `${course.price} сом` : 'Акысыз курс'}
                         </p>
                         {course.coverImageUrl && (
@@ -1001,7 +1003,7 @@ const EditInstructorCourse = () => {
                     {course.learningOutcomesText && (
                         <div>
                             <h4 className="font-semibold mb-2">Бул курста эмнени үйрөнөсүз:</h4>
-                            <ul className="list-disc list-inside text-sm text-gray-700">
+                            <ul className="list-disc list-inside text-sm text-gray-700 dark:text-[#a6adba]">
                                 {(course.learningOutcomesText || '')
                                     .split('\n')
                                     .map((line) => line.trim())
@@ -1017,12 +1019,12 @@ const EditInstructorCourse = () => {
                         {sections.map((section, sIdx) => (
                             <div key={sIdx} className="mb-4">
                                 <p className="font-semibold">{section.title}</p>
-                                <ul className="list-disc list-inside text-sm text-gray-700">
+                                <ul className="list-disc list-inside text-sm text-gray-700 dark:text-[#a6adba]">
                                     {section.lessons.map((lesson, lIdx) => (
                                         <li key={lIdx}>
                                             {lesson.title}{' '}
                                             {lesson.previewVideo && (
-                                                <span className="text-xs text-green-600">
+                                                <span className="text-xs text-gray-600 dark:text-[#a6adba]">
                                                     (Превью)
                                                 </span>
                                             )}
@@ -1036,7 +1038,7 @@ const EditInstructorCourse = () => {
                     <div className="flex gap-4">
                         <button
                             onClick={() => setStep(2)}
-                            className="px-4 py-2 bg-gray-200 rounded"
+                            className="px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded"
                         >
                             Артка
                         </button>
@@ -1053,7 +1055,7 @@ const EditInstructorCourse = () => {
             {/* Cancel confirm modal */}
             {showCancelConfirm && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white p-6 rounded shadow max-w-sm w-full">
+                    <div className="bg-white dark:bg-[#222222] p-6 rounded shadow max-w-sm w-full">
                         <h4 className="text-lg font-semibold mb-4">Ырастоо</h4>
                         <p className="mb-6">Өзгөртүүлөр сакталбайт. Чын эле артка кайтасызбы?</p>
                         <div className="flex justify-end gap-4">
@@ -1077,7 +1079,7 @@ const EditInstructorCourse = () => {
             {/* Delete lesson confirm */}
             {confirmDelete.type && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white p-6 rounded shadow max-w-sm w-full">
+                    <div className="bg-white dark:bg-[#222222] p-6 rounded shadow max-w-sm w-full">
                         <h4 className="text-lg font-semibold mb-4">Ырастоо</h4>
                         <p className="mb-6">
                             <strong>{confirmDelete.lessonTitle}</strong> сабагын өчүрүүнү
@@ -1093,7 +1095,7 @@ const EditInstructorCourse = () => {
                                         lessonTitle: '',
                                     })
                                 }
-                                className="px-4 py-2 bg-gray-200 rounded"
+                                className="px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded"
                             >
                                 Жок
                             </button>
