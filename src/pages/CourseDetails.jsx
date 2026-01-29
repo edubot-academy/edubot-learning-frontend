@@ -783,7 +783,8 @@ const CourseDetailsPage = () => {
     return (
         <div className="min-h-screen pt-10 bg-[#f8f9fb] dark:bg-[#1A1A1A]">
             {enrolled && (
-                <div className="fixed top-20 right-4 z-50 ">
+                <div className="fixed top-20 right-4 z-40">
+                    {' '}
                     <button
                         className={`instructor-chat-button mt-10 mr-4 flex items-center justify-center w-16 h-16 rounded-full border-2 border-gray-300 bg-white hover:bg-gray-50 transition-all dark:bg-[#1A1A1A] shadow-lg hover:shadow-xl ${
                             instructorChat ? 'border-[#FB923C] bg-[#FFF7ED]' : ''
@@ -796,8 +797,9 @@ const CourseDetailsPage = () => {
             )}
 
             {instructorChat && (
-                <div className="fixed top-32 right-4 z-50" ref={chatRef}>
-                    <div className="w-full max-w-[1440px] mx-auto  aspect-[905/1096]  rounded-lg shadow-x p-4 sm:p-6 md:p-8">
+                <div className="fixed top-32 right-4 z-40" ref={chatRef}>
+                    {' '}
+                    <div className="w-full max-w-[1440px] mx-auto aspect-[905/1096] rounded-lg shadow-x p-4 sm:p-6 md:p-8">
                         <InstructorChat course={course} />
                     </div>
                 </div>

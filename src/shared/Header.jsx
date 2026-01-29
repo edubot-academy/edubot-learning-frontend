@@ -366,31 +366,33 @@ const Header = () => {
                                 </div>
 
                                 <div className="relative group">
-                                    <button
-                                        className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-300 ${activeIcon === 'user' || userMenuOpen
-                                            ? 'bg-orange-500 border-orange-500'
-                                            : 'border-black dark:border-gray-400 hover:border-gray-600 dark:hover:border-gray-300'
-                                            }`}
-                                        onClick={() => {
-                                            handleIconClick('user');
-                                            setUserMenuOpen(!userMenuOpen);
-                                        }}
-                                    >
-                                        <FaRegUser
-                                            className={`w-5 h-5 transition-colors duration-300 ${activeIcon === 'user' || userMenuOpen
-                                                ? 'text-white'
-                                                : 'text-black dark:text-gray-300'
-                                                }`}
-                                        />
-                                    </button>
+    <button
+        className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-300 ${
+            activeIcon === 'user' || userMenuOpen
+                ? 'bg-orange-500 border-orange-500'
+                : 'border-black dark:border-gray-400 hover:border-gray-600 dark:hover:border-gray-300'
+        }`}
+        onClick={() => {
+            handleIconClick('user');
+            setUserMenuOpen(!userMenuOpen);
+        }}
+    >
+        <FaRegUser
+            className={`w-5 h-5 transition-colors duration-300 ${
+                activeIcon === 'user' || userMenuOpen
+                    ? 'text-white'
+                    : 'text-black dark:text-gray-300'
+            }`}
+        />
+    </button>
 
-                                    <div className="absolute top-full right-0 pt-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible lg:group-hover:opacity-100 lg:group-hover:visible transform translate-y-2 group-hover:translate-y-0 transition-all duration-300 ease-out z-50">
-                                        <div className="relative">
-                                            <div className="absolute -top-2 left-0 right-0 h-2 bg-transparent"></div>
-                                            <UserMenuDropdown user={user} onClose={() => { }} />
-                                        </div>
-                                    </div>
-                                </div>
+    <div className="absolute top-full right-0 pt-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible lg:group-hover:opacity-100 lg:group-hover:visible transform translate-y-2 group-hover:translate-y-0 transition-all duration-300 ease-out z-60"> 
+        <div className="relative">
+            <div className="absolute -top-2 left-0 right-0 h-2 bg-transparent"></div>
+            <UserMenuDropdown user={user} onClose={() => {}} />
+        </div>
+    </div>
+</div>
                             </div>
                         ) : (
                             <div className="flex items-center gap-3">
