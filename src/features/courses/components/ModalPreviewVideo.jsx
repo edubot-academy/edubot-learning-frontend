@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import Modal from '@shared-ui/Modal';
 import { fetchCoursePreview } from '../api';
-import formatDuration from '../../../shared/formatDuration';
+import { formatMinutes } from '../../../utils/timeUtils';
 
 
 function ModalPreviewVideo({ isOpen, onClose, courseId, previewData: previewDataProp = null, initialVideo = null }) {
@@ -98,7 +98,7 @@ function ModalPreviewVideo({ isOpen, onClose, courseId, previewData: previewData
                                 </div>
 
                                 <span className="text-xs text-gray-500">
-                                    {formatDuration(previewData.durationInHours)}
+                                    {formatMinutes(previewData.durationInHours)}
                                 </span>
                             </button>
                         ))}

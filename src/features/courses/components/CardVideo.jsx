@@ -7,8 +7,7 @@ import { FaPlay } from 'react-icons/fa';
 import ContactCourseModal from './ContactCourseModal';
 import ModalPreviewVideo from './ModalPreviewVideo';
 import UnauthModal from '@shared/ui/UnauthModal';
-import formatDuration from '../../../shared/formatDuration';
-
+import { formatMinutes } from '../../../utils/timeUtils';
 
 const CardVideo = ({ coverImageUrl, course, lessonCount, activeLesson }) => {
     const [isContactOpen, setIsContactOpen] = useState(false);
@@ -48,7 +47,7 @@ const CardVideo = ({ coverImageUrl, course, lessonCount, activeLesson }) => {
                         </p>
 
                         <p className="flex items-center gap-2 text-base font-semibold">
-                            <IoMdTime /> {formatDuration(course.durationInHours)}
+                            <IoMdTime /> {formatMinutes(course.durationInHours)}
                         </p>
 
                         <p className="flex items-center gap-2 text-base font-semibold">
