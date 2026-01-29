@@ -10,6 +10,7 @@ import { FiBook } from 'react-icons/fi';
 import NoImage from '@assets/icons/noImage.svg'
 import { AuthContext } from '../../../context/AuthContext';
 import UnauthModal from '../../../shared/ui/UnauthModal';
+import formatDuration from '../../../shared/formatDuration';
 
 const formatPrice = (price, currency = 'KGS') => {
     if (!price && price !== 0) return 'Баасы көрсөтүлгөн эмес';
@@ -26,19 +27,6 @@ const formatPrice = (price, currency = 'KGS') => {
     }
 };
 
-const formatDuration = (value) => {
-    if (!value || value <= 0) return '0 мүнөт';
-
-    if (value < 1) {
-        return `${Math.round(value * 100)} мүнөт`;
-    }
-
-    const hours = Math.floor(value);
-    const minutes = Math.round((value - hours) * 60);
-
-    if (minutes === 0) return `${hours} саат`;
-    return `${hours} саат ${minutes} мүнөт`;
-};
 
 
 
