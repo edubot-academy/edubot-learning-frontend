@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import Modal from '@shared-ui/Modal';
 import { fetchCoursePreview } from '../api';
+import { formatMinutes } from '../../../utils/timeUtils';
+
 
 function ModalPreviewVideo({ isOpen, onClose, courseId, previewData: previewDataProp = null, initialVideo = null }) {
     const [previewData, setPreviewData] = useState(previewDataProp || null);
@@ -49,7 +51,12 @@ function ModalPreviewVideo({ isOpen, onClose, courseId, previewData: previewData
             title={previewData?.title}
             size="lg"
         >
-            {loading && <p>Жүктөлүүдө...</p>}
+            {loading && (
+                <div className="flex items-center justify-center min-h-[300px]">
+                    <div className="w-12 h-12 border-4 border-gray-300 border-t-[#f17e22] rounded-full animate-spin" />
+                </div>
+            )}
+
 
             {!loading && previewData && (
                 <>
@@ -91,7 +98,7 @@ function ModalPreviewVideo({ isOpen, onClose, courseId, previewData: previewData
                                 </div>
 
                                 <span className="text-xs text-gray-500">
-                                    {previewData.durationInHours} саат
+                                    {formatMinutes(previewData.durationInHours)}
                                 </span>
                             </button>
                         ))}
