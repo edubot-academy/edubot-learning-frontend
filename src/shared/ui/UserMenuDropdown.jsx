@@ -36,13 +36,22 @@ function UserMenuDropdown({ user, onClose }) {
         user?.role === 'student'
             ? '/student?tab=notifications'
             : user?.role === 'instructor'
-              ? '/instructor?tab=notifications'
-              : user?.role === 'admin'
-                ? '/admin?tab=notifications'
-                : '/dashboard';
+                ? '/instructor?tab=notifications'
+                : user?.role === 'admin'
+                    ? '/admin?tab=notifications'
+                    : '/dashboard?tab=notifications';
+
+    const myCoursesPath =
+        user?.role === 'student'
+            ? '/student?tab=my-courses'
+            : user?.role === 'instructor'
+                ? '/instructor?tab=my-courses'
+                : user?.role === 'admin'
+                    ? '/admin?tab=my-courses'
+                    : '/dashboard?tab=my-courses';
 
     const menuItemsTop = [
-        { label: 'Менин курстарым', icon: Lamp, path: '/my-courses' },
+        { label: 'Менин курстарым', icon: Lamp, path: myCoursesPath },
         { label: 'Билдирүүлөр', icon: Bell, path: notificationsPath },
         { label: 'Себет', icon: Basket, path: '/cart' },
         { label: 'Избранные', icon: Heart, path: '/favourites' },
