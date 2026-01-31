@@ -269,7 +269,6 @@ const CourseDetailsPage = () => {
     };
 
     const handleLessonClick = async (lesson) => {
-        console.log('handleLessonClick');
         const isArticle = lesson.kind === 'article';
         const isQuiz = lesson.kind === 'quiz';
         const isCode = lesson.kind === 'code';
@@ -522,7 +521,6 @@ const CourseDetailsPage = () => {
         )
             return;
         if (user && enrolled && activeLesson) {
-            console.log('Marking lesson as complete handleEnded');
             const resp = await markLessonComplete(
                 Number(id),
                 activeLesson.sectionId,
@@ -564,7 +562,6 @@ const CourseDetailsPage = () => {
                 lessonParam.duration > 0 &&
                 !completedLessons.includes(lessonParam.id)
             ) {
-                console.log(`✅ Marking complete: ${lessonParam.title}, progress: ${progress}%`);
                 const resp = await markLessonComplete(
                     Number(id),
                     lessonParam.sectionId,
@@ -580,7 +577,6 @@ const CourseDetailsPage = () => {
 
     const handleCheckboxToggle = async (lesson) => {
         if (!enrolled) return;
-        console.log('Marking lesson as complete handleCheckboxToggle');
         const response = await markLessonComplete(id, lesson.sectionId, lesson.id);
         if (response.completed) {
             setCompletedLessons((prev) => [...new Set([...prev, lesson.id])]);
@@ -638,7 +634,6 @@ const CourseDetailsPage = () => {
                 if (enrollment.enrolled && user) {
                     const progress = await fetchUserProgress(id);
                     const completed = progress.completedLessonIds || [];
-                    console.log('Setting completedLessons from progress:', completed);
                     setCompletedLessons(completed);
                 }
 
@@ -764,11 +759,10 @@ const CourseDetailsPage = () => {
                     key={tab.id}
                     type="button"
                     onClick={() => handleTabChange(tab)}
-                    className={`flex-1 min-w-[140px] px-4 py-2 rounded-xl text-sm font-medium transition ${
-                        activeTab === tab.id
+                    className={`flex-1 min-w-[140px] px-4 py-2 rounded-xl text-sm font-medium transition ${activeTab === tab.id
                             ? 'dark:bg-[#222222] bg-white text-gray-900 dark:text-[#E8ECF3] shadow'
                             : 'text-gray-600 dark:text-[#a6adba]'
-                    } ${tab.disabled ? 'opacity-60 cursor-not-allowed' : 'hover:text-gray-900'}`}
+                        } ${tab.disabled ? 'opacity-60 cursor-not-allowed' : 'hover:text-gray-900'}`}
                 >
                     {tab.label}
                 </button>
@@ -786,9 +780,8 @@ const CourseDetailsPage = () => {
                 <div className="fixed top-20 right-4 z-40">
                     {' '}
                     <button
-                        className={`instructor-chat-button mt-10 mr-4 flex items-center justify-center w-16 h-16 rounded-full border-2 border-gray-300 bg-white hover:bg-gray-50 transition-all dark:bg-[#1A1A1A] shadow-lg hover:shadow-xl ${
-                            instructorChat ? 'border-[#FB923C] bg-[#FFF7ED]' : ''
-                        }`}
+                        className={`instructor-chat-button mt-10 mr-4 flex items-center justify-center w-16 h-16 rounded-full border-2 border-gray-300 bg-white hover:bg-gray-50 transition-all dark:bg-[#1A1A1A] shadow-lg hover:shadow-xl ${instructorChat ? 'border-[#FB923C] bg-[#FFF7ED]' : ''
+                            }`}
                         onClick={() => setInstructorChat(!instructorChat)}
                     >
                         <HiChatAlt2 className="w-8 h-8 text-[#EA580C]" />
