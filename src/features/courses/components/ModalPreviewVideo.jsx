@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import Modal from '@shared-ui/Modal';
 import { fetchCoursePreview } from '../api';
-import { formatMinutes } from '../../../utils/timeUtils';
+import { formatSecondsToTime } from '../../../utils/timeUtils';
 
 
 function ModalPreviewVideo({ isOpen, onClose, courseId, previewData: previewDataProp = null, initialVideo = null }) {
@@ -75,30 +75,30 @@ function ModalPreviewVideo({ isOpen, onClose, courseId, previewData: previewData
                     )}
 
                     <div className="space-y-2">
-                        {previewData.previewVideos?.map((video, index) => (
+                        {previewData.previewVideos?.map((lesson, index) => (
                             <button
-                                key={video.id}
-                                onClick={() => setActiveVideo(video)}
+                                key={lesson.id}
+                                onClick={() => setActiveVideo(lesson)}
                                 className={`w-full flex items-center gap-3 p-3 rounded border
-                                    ${activeVideo?.id === video.id
+                                    ${activeVideo?.id === lesson.id
                                         ? 'bg-blue-50 border-blue-500'
                                         : 'hover:bg-gray-100'}
                                 `}
                             >
                                 <img
                                     src={previewData.coverImageUrl}
-                                    alt={video.title}
+                                    alt={lesson.title}
                                     className="w-16 h-10 object-cover rounded"
                                 />
 
                                 <div className="flex-1 text-left">
                                     <p className="text-sm font-medium line-clamp-1">
-                                        {index + 1}. {video.title}
+                                        {index + 1}. {lesson.title}
                                     </p>
                                 </div>
 
                                 <span className="text-xs text-gray-500">
-                                    {formatMinutes(previewData.durationInHours)}
+                                    {formatSecondsToTime(lesson.duration)}
                                 </span>
                             </button>
                         ))}

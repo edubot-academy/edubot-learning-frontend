@@ -10,7 +10,8 @@ export function formatSecondsToTime(seconds) {
     if (!seconds || isNaN(seconds)) return null;
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
-    return mins + ':' + secs;
+    const paddedSecs = secs < 10 ? `0${secs}` : `${secs}`;
+    return `${mins}:${paddedSecs}`;
 }
 
 export function formatMinutesToTime(minutes) {
