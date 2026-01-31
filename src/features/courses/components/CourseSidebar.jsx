@@ -49,9 +49,8 @@ const CourseSidebar = ({
                         >
                             <h3 className="font-medium text-lg">{section.title}</h3>
                             <span
-                                className={`ml-2 transform transition-transform duration-300 ${
-                                    isOpen ? 'rotate-180' : ''
-                                }`}
+                                className={`ml-2 transform transition-transform duration-300 ${isOpen ? 'rotate-180' : ''
+                                    }`}
                             >
                                 <FiChevronDown className="w-5 h-5" />
                             </span>
@@ -69,16 +68,16 @@ const CourseSidebar = ({
                                     const durationLabel = isQuiz
                                         ? 'Квиз'
                                         : isCode
-                                          ? 'Код тапшырма'
-                                          : isArticle
-                                            ? formatReadTime(lesson.duration)
-                                            : formatDuration(lesson.duration);
+                                            ? 'Код тапшырма'
+                                            : isArticle
+                                                ? formatReadTime(lesson.duration)
+                                                : formatDuration(lesson.duration);
                                     const resourceMeta =
                                         !lesson.locked && lesson.resourceUrl
                                             ? getResourceMeta(
-                                                  lesson.resourceKey,
-                                                  lesson.resourceName
-                                              )
+                                                lesson.resourceKey,
+                                                lesson.resourceName
+                                            )
                                             : null;
 
                                     return (
@@ -106,11 +105,10 @@ const CourseSidebar = ({
                                                 handleLessonClick(lesson);
                                             }}
                                             className={`flex items-center justify-between pl-2 pr-2 py-3 mt-1 rounded-md cursor-pointer transition-all w-full text-left
-                                      ${
-                                          isActive
-                                              ? 'bg-blue-50 text-blue-600 border-l-4 border-blue-500'
-                                              : 'text-gray-800'
-                                      }
+                                      ${isActive
+                                                    ? 'bg-blue-50 text-blue-600 border-l-4 border-blue-500'
+                                                    : 'text-gray-800'
+                                                }
                                       focus:outline-none focus-visible:outline-none focus:ring-0 focus:ring-transparent hover:bg-transparent active:outline-none`}
                                         >
                                             <div className="flex items-center gap-3">
@@ -118,11 +116,9 @@ const CourseSidebar = ({
                                                     type="checkbox"
                                                     checked={completedLessons.includes(lesson.id)}
                                                     onClick={(e) => {
-                                                        console.log('checkbox click sidebar');
                                                         e.stopPropagation();
                                                     }}
                                                     onChange={(e) => {
-                                                        console.log('checkbox change sidebar');
                                                         e.stopPropagation();
                                                         if (e.nativeEvent.isTrusted) {
                                                             handleCheckboxToggle(lesson);

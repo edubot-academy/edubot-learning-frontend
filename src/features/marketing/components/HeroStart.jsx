@@ -12,7 +12,6 @@ const HeroStart = () => {
     const [currentSlide, setCurrentSlide] = useState(0);
     const { user } = useContext(AuthContext);
     const navigate = useNavigate();
-    console.log(user);
 
     const slides = [
         {

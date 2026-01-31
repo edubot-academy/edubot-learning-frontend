@@ -30,7 +30,6 @@ export const fetchCoursePreview = async (courseId) => {
 };
 
 export const fetchTopReviews = async ({ courseId, limit = 3 }) => {
-    console.log('courseId', courseId);
     const response = await api.get(`/courses/${courseId}/reviews/top`, { params: { limit } });
     return response.data;
 };

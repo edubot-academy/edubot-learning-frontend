@@ -1,14 +1,14 @@
 import { useState, useContext, useEffect } from 'react';
-import { useNavigate, Link, useLocation } from 'react-router-dom'; 
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { registerUser } from '@services/api';
 import PhoneInput from '@shared/ui/forms/PhoneInput';
 import SignUpImg from '../assets/images/edubot-signup.png';
 import toast from 'react-hot-toast';
 import DefaultLabel from '@shared-ui/forms/DefaultLabel';
 import LabelPassword from '@shared-ui/forms/LabelPassword';
-import { AuthContext } from '../context/AuthContext'; 
-import { useCart } from '../context/CartContext'; 
-import { useFavourites } from '../context/FavouritesContext'; 
+import { AuthContext } from '../context/AuthContext';
+import { useCart } from '../context/CartContext';
+import { useFavourites } from '../context/FavouritesContext';
 
 const SignupPage = () => {
     const [formData, setFormData] = useState({
@@ -35,10 +35,10 @@ const SignupPage = () => {
     const [error, setError] = useState(null);
 
     const navigate = useNavigate();
-    const location = useLocation(); 
-    const { login } = useContext(AuthContext); 
-    const { addToCart } = useCart(); 
-    const { toggleFavourite } = useFavourites(); 
+    const location = useLocation();
+    const { login } = useContext(AuthContext);
+    const { addToCart } = useCart();
+    const { toggleFavourite } = useFavourites();
 
     const validatePassword = (password) => {
         setPasswordValidations({
@@ -72,7 +72,7 @@ const SignupPage = () => {
 
             const now = Date.now();
             const actionAge = now - pendingAction.timestamp;
-            const MAX_ACTION_AGE = 24 * 60 * 60 * 1000; 
+            const MAX_ACTION_AGE = 24 * 60 * 60 * 1000;
 
             if (actionAge > MAX_ACTION_AGE) {
                 localStorage.removeItem('pendingAction');
@@ -155,7 +155,6 @@ const SignupPage = () => {
             }
         } catch (err) {
             setError(err.response?.data?.message || 'Ката чыкты. Кайра аракет кылыңыз.');
-            console.log(err);
         } finally {
             setLoading(false);
         }

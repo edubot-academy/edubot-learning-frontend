@@ -1,15 +1,24 @@
 import { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { fetchFavorites, addFavorite, removeFavorite } from '../features/favorites/api';
+import { AuthContext } from './AuthContext';
 
 const FavouritesContext = createContext();
 
 export const FavouritesProvider = ({ children }) => {
+    const { user } = useContext(AuthContext);
     const [favourites, setFavourites] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [pendingRequests, setPendingRequests] = useState(new Map());
 
     const loadFavorites = useCallback(async () => {
+        if (!user) {
+            setFavourites([]);
+            setLoading(false);
+            setError(null);
+            localStorage.removeItem('favourites');
+            return;
+        }
         try {
             setLoading(true);
             const data = await fetchFavorites();
@@ -28,7 +37,7 @@ export const FavouritesProvider = ({ children }) => {
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [user]);
 
     useEffect(() => {
         loadFavorites();
@@ -37,6 +46,10 @@ export const FavouritesProvider = ({ children }) => {
     const toggleFavourite = useCallback(
         async (course) => {
             const courseId = course.id;
+
+            if (!user) {
+                return { success: false, error: 'Требуется авторизация', added: false };
+            }
             const requestId = `${courseId}-${Date.now()}`;
 
             if (pendingRequests.has(courseId)) {
