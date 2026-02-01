@@ -31,7 +31,11 @@ const CartPage = lazy(() => import('../pages/Cart'));
 const Chat = lazy(() => import('../pages/Chat'));
 const NotificationsPage = lazy(() => import('../pages/NotificationsPage'));
 const StudentLiveDashboard = lazy(() => import('../pages/liveCourses/StudentLiveDashboard'));
+const StudentCourseDashboard = lazy(() => import('../pages/liveCourses/StudentCourseDashboard'));
+const StudentCourseAssignments = lazy(() => import('../pages/liveCourses/StudentCourseAssignments'));
+const StudentCourseAttendance = lazy(() => import('../pages/liveCourses/StudentCourseAttendance'));
 const ParentDashboard = lazy(() => import('../pages/liveCourses/ParentDashboard'));
+const ParentLink = lazy(() => import('../pages/liveCourses/ParentLink'));
 
 const AppRoutes = () => {
     return (
@@ -64,9 +68,13 @@ const AppRoutes = () => {
                     <Route element={<PrivateRoute allowedRoles={['student']} />}>
                         <Route path="/student" element={<StudentDashboard />} />
                         <Route path="/student/dashboard" element={<StudentLiveDashboard />} />
+                        <Route path="/student/courses/:id/dashboard" element={<StudentCourseDashboard />} />
+                        <Route path="/student/courses/:id/assignments" element={<StudentCourseAssignments />} />
+                        <Route path="/student/courses/:id/attendance" element={<StudentCourseAttendance />} />
                     </Route>
                     <Route element={<PrivateRoute allowedRoles={['parent']} />}>
                         <Route path="/parent/dashboard" element={<ParentDashboard />} />
+                        <Route path="/parent/link" element={<ParentLink />} />
                     </Route>
 
                     <Route path="/courses/:id" element={<CourseDetailsPage />} />

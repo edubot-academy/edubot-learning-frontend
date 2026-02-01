@@ -91,8 +91,45 @@ export const fetchCourseRoster = async (courseId) => {
     return response.data;
 };
 
+export const fetchCourseOverview = async (courseId) => {
+    try {
+        const response = await api.get(`/courses/${courseId}/overview`);
+        return response.data;
+    } catch (error) {
+        // Fallback to details if overview not implemented
+        try {
+            const response = await api.get(`/courses/${courseId}`);
+            return response.data;
+        } catch (err) {
+            throw error;
+        }
+    }
+};
+
+export const releaseSessionHomework = async (sessionId, courseId) => {
+    const response = await api.post(`/instructor/sessions/${sessionId}/release-homework`, {
+        courseId,
+    });
+    return response.data;
+};
+
+export const fetchStudentCourseDashboard = async (courseId) => {
+    const response = await api.get(`/student/courses/${courseId}/dashboard`);
+    return response.data;
+};
+
+export const fetchStudentCourseAttendance = async (courseId) => {
+    const response = await api.get(`/student/courses/${courseId}/attendance`);
+    return response.data;
+};
+
 export const fetchParentStudentSummary = async (studentId) => {
     const response = await api.get(`/parent/students/${studentId}/summary`);
+    return response.data;
+};
+
+export const linkParentToStudent = async ({ studentId, code }) => {
+    const response = await api.post(`/parent/students/${studentId}/link`, { code });
     return response.data;
 };
 
@@ -113,5 +150,15 @@ export const fetchInstructorLiveDashboard = async (courseId) => {
 
 export const generateCoursePlan = async (courseId, payload) => {
     const response = await api.post(`/courses/${courseId}/plan/generate`, payload);
+    return response.data;
+};
+
+export const presignAssignmentUpload = async ({ courseId, fileName }) => {
+    const response = await api.post('/instructor/assignments/uploads/presign', { courseId, fileName });
+    return response.data;
+};
+
+export const presignSubmissionUpload = async ({ assignmentId, fileName }) => {
+    const response = await api.post('/student/submissions/uploads/presign', { assignmentId, fileName });
     return response.data;
 };

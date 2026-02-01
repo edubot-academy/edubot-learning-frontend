@@ -24,6 +24,18 @@ export const fetchCatalogCourses = async ({ page = 1, limit = 20, q = '' } = {})
     }
 };
 
+export const fetchSecureCourses = async ({ page = 1, limit = 20, q = '', courseType = 'all' } = {}) => {
+    try {
+        const response = await api.get('/courses/secure', {
+            params: clean({ page, limit, q, courseType }),
+        });
+        return response.data;
+    } catch (error) {
+        console.error('Error fetching secure courses:', error);
+        throw error;
+    }
+};
+
 export const fetchCoursePreview = async (courseId) => {
     const response = await api.get(`/courses/${courseId}/preview`);
     return response.data;

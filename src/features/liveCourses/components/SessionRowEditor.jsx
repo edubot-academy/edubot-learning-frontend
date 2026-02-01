@@ -29,7 +29,15 @@ const STATUS_COLORS = {
     completed: 'bg-blue-100 text-blue-700',
 };
 
-const SessionRowEditor = ({ session, onChange, onCancel, onComplete, lang = 'ky' }) => {
+const SessionRowEditor = ({
+    session,
+    onChange,
+    onCancel,
+    onComplete,
+    onRelease,
+    releaseLoading = false,
+    lang = 'ky',
+}) => {
     const copy = TEXT[lang] || TEXT.ky;
 
     return (
@@ -81,6 +89,14 @@ const SessionRowEditor = ({ session, onChange, onCancel, onComplete, lang = 'ky'
                     className="px-3 py-2 rounded bg-blue-100 text-blue-700 text-sm hover:bg-blue-200 whitespace-nowrap shrink-0"
                 >
                     {copy.markDone}
+                </button>
+                <button
+                    type="button"
+                    onClick={() => onRelease && onRelease(session.id)}
+                    disabled={releaseLoading}
+                    className="px-3 py-2 rounded border border-gray-200 dark:border-gray-700 text-sm hover:bg-gray-50 dark:hover:bg-gray-800 whitespace-nowrap shrink-0 disabled:opacity-60"
+                >
+                    {releaseLoading ? '...' : lang === 'ru' ? 'Выпустить Д/З' : 'Тапшырма чыгаруу'}
                 </button>
                 <button
                     type="button"

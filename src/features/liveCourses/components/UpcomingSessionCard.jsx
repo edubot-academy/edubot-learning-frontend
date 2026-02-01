@@ -6,12 +6,14 @@ const TEXT = {
         location: 'Дарек',
         link: 'Шилтеме',
         time: 'Убактысы',
+        join: 'Кошулуу',
     },
     ru: {
         title: 'Ближайшее занятие',
         location: 'Адрес',
         link: 'Ссылка',
         time: 'Время',
+        join: 'Присоединиться',
     },
 };
 
@@ -51,6 +53,18 @@ const UpcomingSessionCard = ({ session, lang = 'ky' }) => {
                     </div>
                 )}
             </div>
+            {session.meetingUrl && (
+                <div className="mt-3">
+                    <a
+                        href={session.meetingUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center px-4 py-2 rounded bg-emerald-600 text-white text-sm hover:bg-emerald-700"
+                    >
+                        {copy.join}
+                    </a>
+                </div>
+            )}
         </div>
     );
 };

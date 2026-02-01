@@ -1,19 +1,20 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
-import { fetchCourses } from '@services/api';
+import { fetchSecureCourses, listCourseSessions } from '@services/api';
+import { FiCalendar } from 'react-icons/fi';
 
 const InstructorCourses = () => {
     const { user } = useContext(AuthContext);
     const [courses, setCourses] = useState([]);
+    const [activeType, setActiveType] = useState('video');
 
     useEffect(() => {
         const loadCourses = async () => {
             try {
-                const response = await fetchCourses();
-                const instructorCourses = response.courses.filter(
-                    (course) => course.instructor.id === user?.id
-                );
+                const response = await fetchSecureCourses({ courseType: activeType === 'video' ? 'video' : activeType });
+                const list = response.courses || response.items || [];
+                const instructorCourses = list.filter((course) => course.instructor?.id === user?.id);
                 setCourses(instructorCourses);
             } catch (err) {
                 console.error('Курстарды алуу ишке ашкан жок', err);
@@ -21,54 +22,101 @@ const InstructorCourses = () => {
         };
 
         if (user?.role === 'instructor') loadCourses();
-    }, [user]);
+    }, [user, activeType]);
 
     return (
         <div className="min-h-screen p-6 pt-24 max-w-6xl mx-auto">
             <h1 className="text-4xl font-bold mb-8 text-center">Менин курстарым</h1>
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {courses.map((course) => (
-                    <div key={course.id} className="bg-white dark:bg-[#141619] rounded shadow p-4 relative">
-                        <img
-                            src={course.coverImageUrl}
-                            alt={course.title}
-                            className="w-full h-48 object-cover mb-4"
-                            loading="lazy"
-                            decoding="async"
-                        />
-                        <h2 className="text-xl font-semibold mb-2">{course.title}</h2>
-                        <p className="text-gray-700 dark:text-[#a6adba] mb-2">{course.instructor.fullName}</p>
-                        <p className="text-sm text-gray-500 dark:text-[#a6adba] mb-2">Баасы: {course.price} с</p>
-                        <span
-                            className={`absolute top-2 right-2 px-2 py-1 text-xs rounded ${
-                                course.isPublished
-                                    ? 'bg-green-100 text-gray-700 dark:text-[#a6adba]'
-                                    : 'bg-yellow-100 text-yellow-700'
-                            }`}
-                        >
-                            {course.isPublished ? 'Жарыяланды' : 'Каралууда'}
-                        </span>
-                        <div className="flex items-center justify-between mt-4">
-                            <span className="text-xs px-2 py-1 rounded bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200">
-                                {course.courseType || 'video'}
-                            </span>
-                            <Link
-                                to={
-                                    course.courseType && course.courseType !== 'video'
-                                        ? `/instructor/courses/${course.id}/manage`
-                                        : `/instructor/courses/edit/${course.id}`
-                                }
-                                className="inline-block px-4 py-2 bg-blue-600 text-white rounded transition duration-300 hover:bg-blue-500 hover:shadow-lg"
-                            >
-                                {course.courseType && course.courseType !== 'video'
-                                    ? 'Башкаруу'
-                                    : course.isPublished
-                                      ? 'Tастыктоо'
-                                      : 'Өзгөртүү'}
-                            </Link>
-                        </div>
-                    </div>
+            <div className="flex gap-2 mb-4 justify-center">
+                {['video', 'offline', 'online_live'].map((type) => (
+                    <button
+                        key={type}
+                        onClick={() => setActiveType(type)}
+                        className={`px-4 py-2 rounded-full text-sm ${
+                            activeType === type ? 'bg-emerald-600 text-white' : 'border border-gray-200'
+                        }`}
+                    >
+                        {type}
+                    </button>
                 ))}
+                <Link
+                    to="/instructor/course/create"
+                    className="px-4 py-2 rounded-full bg-blue-600 text-white text-sm"
+                >
+                    Курс түзүү
+                </Link>
+            </div>
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {courses
+                    .filter((c) => (activeType === 'video' ? !c.courseType || c.courseType === 'video' : c.courseType === activeType))
+                    .map((course) => (
+                        <CourseCard key={course.id} course={course} />
+                    ))}
+            </div>
+        </div>
+    );
+};
+
+const CourseCard = ({ course }) => {
+    const [nextSession, setNextSession] = useState(null);
+    useEffect(() => {
+        const loadNext = async () => {
+            if (!course.courseType || course.courseType === 'video') return;
+            try {
+                const res = await listCourseSessions(course.id);
+                const items = Array.isArray(res?.items) ? res.items : res || [];
+                const sorted = [...items].sort(
+                    (a, b) => new Date(a.startsAt || a.date || 0) - new Date(b.startsAt || b.date || 0)
+                );
+                setNextSession(sorted.find((s) => s.status !== 'completed') || sorted[0] || null);
+            } catch (error) {
+                console.error('Failed to load sessions', error);
+            }
+        };
+        loadNext();
+    }, [course]);
+
+    const days = course.daysOfWeek?.length ? course.daysOfWeek.join(', ') : '—';
+    return (
+        <div className="bg-white dark:bg-[#141619] rounded shadow p-4 relative border border-gray-100">
+            <span
+                className={`absolute top-2 right-2 px-2 py-1 text-xs rounded ${
+                    course.isPublished ? 'bg-green-100 text-gray-700' : 'bg-yellow-100 text-yellow-700'
+                }`}
+            >
+                {course.isPublished ? 'Жарыяланды' : 'Каралууда'}
+            </span>
+            <h2 className="text-lg font-semibold mb-1">{course.title}</h2>
+            <p className="text-xs text-gray-500 mb-2">
+                {course.startDate} → {course.endDate} · {days} · {course.dailyStartTime || course.startTime || '—'}
+            </p>
+            <p className="text-xs text-gray-500 mb-2">
+                Орундар: {course.seatLimit ? `${course.seatLimit}` : '—'}
+            </p>
+            {nextSession && (
+                <div className="text-xs text-gray-600 flex items-center gap-1">
+                    <FiCalendar className="text-gray-500" /> {nextSession.date || nextSession.startsAt} ·{' '}
+                    {nextSession.startTime}
+                </div>
+            )}
+            <div className="flex items-center justify-between mt-4">
+                <span className="text-xs px-2 py-1 rounded bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200">
+                    {course.courseType || 'video'}
+                </span>
+                <Link
+                    to={
+                        course.courseType && course.courseType !== 'video'
+                            ? `/instructor/courses/${course.id}/manage`
+                            : `/instructor/courses/edit/${course.id}`
+                    }
+                    className="inline-block px-4 py-2 bg-blue-600 text-white rounded transition duration-300 hover:bg-blue-500 hover:shadow-lg"
+                >
+                    {course.courseType && course.courseType !== 'video'
+                        ? 'Башкаруу'
+                        : course.isPublished
+                          ? 'Tастыктоо'
+                          : 'Өзгөртүү'}
+                </Link>
             </div>
         </div>
     );

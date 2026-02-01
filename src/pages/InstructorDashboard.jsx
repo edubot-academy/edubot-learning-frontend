@@ -3,7 +3,7 @@ import { Link, Navigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import DashboardSidebar from '@features/dashboard/components/DashboardSidebar';
 import {
-    fetchCourses,
+    fetchSecureCourses,
     fetchInstructorProfile,
     fetchCourseDetails,
     fetchUsers,
@@ -78,10 +78,9 @@ const InstructorDashboard = () => {
         const loadCourses = async () => {
             setLoadingCourses(true);
             try {
-                const data = await fetchCourses();
-                const instructorCourses = (data.courses || []).filter(
-                    (course) => course.instructor?.id === user.id
-                );
+                const data = await fetchSecureCourses({ courseType: 'all' });
+                const list = data.courses || data.items || [];
+                const instructorCourses = list.filter((course) => course.instructor?.id === user.id);
                 setCourseList(instructorCourses);
             } catch (error) {
                 console.error('Failed to load instructor courses', error);
