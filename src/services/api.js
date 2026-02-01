@@ -18,3 +18,4 @@ export * from '../features/notifications/api';
 export * from '../features/instructorChat/api';
 export * from '../features/favorites/api';
 export * from '../features/instructorChat/api';
+export * from '../features/liveCourses/api';

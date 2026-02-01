@@ -62,8 +62,15 @@ const EditInstructorCourse = () => {
     useEffect(() => {
         const loadData = async () => {
             try {
-                const [courseData, categoryData, sectionData] = await Promise.all([
-                    fetchCourseDetails(id),
+                const courseData = await fetchCourseDetails(id);
+                // Redirect offline/online_live courses to the manage flow instead of the video editor
+                if (courseData?.courseType && courseData.courseType !== 'video') {
+                    setLoading(false);
+                    navigate(`/instructor/courses/${id}/manage`, { replace: true });
+                    return;
+                }
+
+                const [categoryData, sectionData] = await Promise.all([
                     fetchCategories(),
                     fetchSections(id),
                 ]);

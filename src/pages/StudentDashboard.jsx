@@ -9,6 +9,8 @@ import {
     fetchStudentCertificates,
     fetchStudentNotificationSettings,
     updateStudentNotificationSettings,
+    studentListAssignments,
+    fetchStudentCourses,
 } from '@services/api';
 import { AuthContext } from '../context/AuthContext';
 import toast from 'react-hot-toast';
@@ -82,6 +84,7 @@ const StudentDashboard = () => {
     const [activeTab, setActiveTab] = useState(initialTab);
     const [summary, setSummary] = useState(null);
     const [courses, setCourses] = useState([]);
+    const [assignments, setAssignments] = useState([]);
     const [offerings, setOfferings] = useState([]);
     const [tasks, setTasks] = useState([]);
     const [progress, setProgress] = useState([]);
@@ -153,6 +156,27 @@ const StudentDashboard = () => {
         try {
             const tasksRes = await fetchStudentTasks(studentId);
             setTasks(Array.isArray(tasksRes?.items) ? tasksRes.items : tasksRes || []);
+
+            // ensure we have courses to pull assignments from
+            let courseList = courses;
+            if (!courseList.length) {
+                const courseRes = await fetchStudentCourses(studentId);
+                courseList = Array.isArray(courseRes?.items) ? courseRes.items : courseRes || [];
+                setCourses(courseList);
+            }
+
+            const assignmentLists = await Promise.all(
+                courseList.map((c) =>
+                    studentListAssignments(c.id).catch((err) => {
+                        console.warn('Failed to load assignments for course', c.id, err);
+                        return [];
+                    })
+                )
+            );
+            const flattened = assignmentLists
+                .flat()
+                .map((a, idx) => ({ ...a, courseId: courseList[idx]?.id || a.courseId }));
+            setAssignments(flattened);
         } catch (error) {
             console.error('Failed to load tasks', error);
             toast.error('Тапшырмаларды жүктөө мүмкүн болбоду');
@@ -333,7 +357,7 @@ const StudentDashboard = () => {
             case 'schedule':
                 return <ScheduleTab offerings={offerings} />;
             case 'tasks':
-                return <TasksTab tasks={tasks} />;
+                return <TasksTab tasks={tasks} assignments={assignments} />;
             case 'progress':
                 return <ProgressTab items={progressItems} />;
             case 'notifications':
@@ -538,10 +562,12 @@ const ScheduleTab = ({ offerings }) => {
     );
 };
 
-const TasksTab = ({ tasks }) => (
+const TasksTab = ({ tasks, assignments = [] }) => {
+    const hasData = tasks.length || assignments.length;
+    return (
     <div className="space-y-4">
         <h2 className="text-2xl font-semibold text-gray-900">Тапшырмалар</h2>
-        {tasks.length ? (
+        {hasData ? (
             <div className="bg-white rounded-3xl border border-gray-100 overflow-hidden">
                 <table className="w-full text-sm">
                     <thead className="bg-gray-50 text-gray-500">
@@ -553,6 +579,26 @@ const TasksTab = ({ tasks }) => (
                         </tr>
                     </thead>
                     <tbody>
+                        {assignments.map((task) => (
+                            <tr key={`assign-${task.id || task.title}`} className="border-t border-gray-100">
+                                <td className="px-4 py-3 font-medium text-gray-900">
+                                    {task.title}
+                                </td>
+                                <td className="px-4 py-3 text-gray-500">
+                                    {task.courseTitle || task.course?.title || 'Live/Offline курс'}
+                                </td>
+                                <td className="px-4 py-3 text-gray-500">
+                                    {task.dueDate
+                                        ? new Date(task.dueDate).toLocaleDateString('ru-RU')
+                                        : '—'}
+                                </td>
+                                <td className="px-4 py-3">
+                                    <span className="px-3 py-1 rounded-full text-xs bg-emerald-100 text-emerald-700">
+                                        Жаңы
+                                    </span>
+                                </td>
+                            </tr>
+                        ))}
                         {tasks.map((task) => (
                             <tr key={task.id || task.taskId} className="border-t border-gray-100">
                                 <td className="px-4 py-3 font-medium text-gray-900">
@@ -589,7 +635,8 @@ const TasksTab = ({ tasks }) => (
             </div>
         )}
     </div>
-);
+    );
+};
 
 const ProgressTab = ({ items }) => (
     <div className="space-y-4">

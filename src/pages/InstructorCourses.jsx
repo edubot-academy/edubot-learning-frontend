@@ -48,12 +48,25 @@ const InstructorCourses = () => {
                         >
                             {course.isPublished ? 'Жарыяланды' : 'Каралууда'}
                         </span>
-                        <Link
-                            to={`/instructor/courses/edit/${course.id}`}
-                            className="inline-block mt-4 px-4 py-2 bg-blue-600 text-white rounded transition duration-300 hover:bg-blue-500 hover:shadow-lg"
-                        >
-                            {course.isPublished ? 'Tастыктоо' : 'Өзгөртүү'}
-                        </Link>
+                        <div className="flex items-center justify-between mt-4">
+                            <span className="text-xs px-2 py-1 rounded bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200">
+                                {course.courseType || 'video'}
+                            </span>
+                            <Link
+                                to={
+                                    course.courseType && course.courseType !== 'video'
+                                        ? `/instructor/courses/${course.id}/manage`
+                                        : `/instructor/courses/edit/${course.id}`
+                                }
+                                className="inline-block px-4 py-2 bg-blue-600 text-white rounded transition duration-300 hover:bg-blue-500 hover:shadow-lg"
+                            >
+                                {course.courseType && course.courseType !== 'video'
+                                    ? 'Башкаруу'
+                                    : course.isPublished
+                                      ? 'Tастыктоо'
+                                      : 'Өзгөртүү'}
+                            </Link>
+                        </div>
                     </div>
                 ))}
             </div>

@@ -15,6 +15,7 @@ const StudentDashboard = lazy(() => import('../pages/StudentDashboard'));
 const CreateCourse = lazy(() => import('../pages/CreateCourse'));
 const InstructorCourses = lazy(() => import('../pages/InstructorCourses'));
 const EditInstructorCourse = lazy(() => import('../pages/EditInstructorCourse'));
+const InstructorManageCourse = lazy(() => import('../pages/liveCourses/InstructorCourseManage'));
 const AdminPanel = lazy(() => import('../pages/Admin'));
 const SalesManager = lazy(() => import('../pages/SalesManager'));
 const AboutPage = lazy(() => import('../pages/About'));
@@ -28,6 +29,9 @@ const CompanyList = lazy(() => import('../pages/company/CompanyList'));
 const Favourite = lazy(() => import('../pages/Favourite'));
 const CartPage = lazy(() => import('../pages/Cart'));
 const Chat = lazy(() => import('../pages/Chat'));
+const NotificationsPage = lazy(() => import('../pages/NotificationsPage'));
+const StudentLiveDashboard = lazy(() => import('../pages/liveCourses/StudentLiveDashboard'));
+const ParentDashboard = lazy(() => import('../pages/liveCourses/ParentDashboard'));
 
 const AppRoutes = () => {
     return (
@@ -51,10 +55,18 @@ const AppRoutes = () => {
                             path="/instructor/courses/edit/:id"
                             element={<EditInstructorCourse />}
                         />
+                        <Route
+                            path="/instructor/courses/:id/manage"
+                            element={<InstructorManageCourse />}
+                        />
                     </Route>
 
                     <Route element={<PrivateRoute allowedRoles={['student']} />}>
                         <Route path="/student" element={<StudentDashboard />} />
+                        <Route path="/student/dashboard" element={<StudentLiveDashboard />} />
+                    </Route>
+                    <Route element={<PrivateRoute allowedRoles={['parent']} />}>
+                        <Route path="/parent/dashboard" element={<ParentDashboard />} />
                     </Route>
 
                     <Route path="/courses/:id" element={<CourseDetailsPage />} />
@@ -72,6 +84,9 @@ const AppRoutes = () => {
 
                     <Route element={<PrivateRoute allowedRoles={['assistant']} />}>
                         <Route path="/assistant" element={<AssistantDashboard />} />
+                    </Route>
+                    <Route element={<PrivateRoute allowedRoles={['student', 'instructor', 'parent', 'admin']} />}>
+                        <Route path="/notifications" element={<NotificationsPage />} />
                     </Route>
                     <Route path="/companies/:id/courses" element={<CompanyCourses />} />
                     <Route path="/catalog" element={<Catalog />} />

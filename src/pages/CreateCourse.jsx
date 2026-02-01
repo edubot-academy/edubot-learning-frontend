@@ -28,6 +28,7 @@ import {
     normalizeChallengeForApi,
 } from '../utils/challengeUtils';
 import ArticleEditor from '@features/courses/components/ArticleEditor';
+import LiveCourseBuilder from '@features/liveCourses/LiveCourseBuilder';
 
 const DEFAULT_COURSE_INFO = {
     title: '',
@@ -43,6 +44,29 @@ const DEFAULT_COURSE_INFO = {
     aiAssistantEnabled: false,
 };
 
+const COURSE_TYPE_COPY = {
+    ky: {
+        title: 'Курс түрүн тандаңыз',
+        description: 'Видео курстар мурдагыдай иштейт. Оффлайн жана онлайн live курстар үчүн жаңы агым кошулду.',
+        options: {
+            video: 'Видео сабактар',
+            offline: 'Оффлайн курс',
+            online_live: 'Онлайн live курс',
+        },
+        continue: 'Улантуу',
+    },
+    ru: {
+        title: 'Выберите тип курса',
+        description: 'Видео курсы работают как раньше. Для оффлайн и онлайн live добавлен новый конструктор.',
+        options: {
+            video: 'Видео уроки',
+            offline: 'Оффлайн курс',
+            online_live: 'Онлайн live курс',
+        },
+        continue: 'Продолжить',
+    },
+};
+
 const CourseBuilder = () => {
     const navigate = useNavigate();
     const [step, setStep] = useState(1);
@@ -54,6 +78,8 @@ const CourseBuilder = () => {
         lessonIndex: null,
         title: '',
     });
+    const [courseType, setCourseType] = useState('video');
+    const [typeConfirmed, setTypeConfirmed] = useState(false);
 
     const [courseInfo, setCourseInfo] = useState(DEFAULT_COURSE_INFO);
 
@@ -93,6 +119,8 @@ const CourseBuilder = () => {
                         ...(parsed.courseInfo || {}),
                     }));
                     setCourseId(parsed.courseId || null);
+                    setCourseType(parsed.courseType || 'video');
+                    setTypeConfirmed(Boolean(parsed.typeConfirmed));
                     setStep(parsed.step || 1);
                 }
             } catch (error) {
@@ -104,8 +132,11 @@ const CourseBuilder = () => {
     }, []);
 
     useEffect(() => {
-        localStorage.setItem('draftCourse', JSON.stringify({ courseInfo, courseId, step }));
-    }, [courseInfo, courseId, step]);
+        localStorage.setItem(
+            'draftCourse',
+            JSON.stringify({ courseInfo, courseId, step, courseType, typeConfirmed })
+        );
+    }, [courseInfo, courseId, step, courseType, typeConfirmed]);
 
     const handleCourseInfoChange = (e) => {
         const { name, value, files, type, checked } = e.target;
@@ -523,6 +554,82 @@ const CourseBuilder = () => {
             </div>
         </div>
     );
+
+    const renderTypeSelection = () => {
+        const lang = courseInfo.languageCode || 'ky';
+        const copy = COURSE_TYPE_COPY[lang] || COURSE_TYPE_COPY.ky;
+        const typeOptions = [
+            { key: 'video', label: copy.options.video },
+            { key: 'offline', label: copy.options.offline },
+            { key: 'online_live', label: copy.options.online_live },
+        ];
+
+        return (
+            <div className="pt-24 p-6 max-w-4xl mx-auto">
+                <div className="bg-white dark:bg-[#121212] rounded-2xl border border-gray-200 dark:border-gray-700 p-8 shadow-sm">
+                    <h2 className="text-2xl font-bold text-edubot-dark dark:text-white mb-4">
+                        {copy.title}
+                    </h2>
+                    <p className="text-gray-600 dark:text-gray-400 mb-6">{copy.description}</p>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {typeOptions.map((item) => (
+                            <label
+                                key={item.key}
+                                className={`cursor-pointer rounded-xl border p-4 space-y-2 ${
+                                    courseType === item.key
+                                        ? 'border-edubot-orange bg-orange-50 dark:bg-orange-950'
+                                        : 'border-gray-200 dark:border-gray-700'
+                                }`}
+                            >
+                                <div className="flex items-center gap-2">
+                                    <input
+                                        type="radio"
+                                        name="courseType"
+                                        value={item.key}
+                                        checked={courseType === item.key}
+                                        onChange={(e) => setCourseType(e.target.value)}
+                                        className="h-4 w-4 accent-edubot-orange"
+                                    />
+                                    <span className="font-semibold text-edubot-dark dark:text-white">
+                                        {item.label}
+                                    </span>
+                                </div>
+                                <p className="text-sm text-gray-600 dark:text-gray-400">
+                                    {item.key === 'video'
+                                        ? 'Видео жүктөп, модулдарды түзүңүз.'
+                                        : item.key === 'offline'
+                                          ? 'Дарек, жүгүртмө жана катышуучулар менен иштөө.'
+                                          : 'Онлайн live жыйындар, шилтеме жана тапшырмалар.'}
+                                </p>
+                            </label>
+                        ))}
+                    </div>
+                    <div className="mt-6 flex justify-end">
+                        <button
+                            onClick={() => setTypeConfirmed(true)}
+                            className="px-6 py-3 bg-edubot-orange text-white rounded-lg hover:opacity-90"
+                        >
+                            {copy.continue}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
+    if (!typeConfirmed) {
+        return renderTypeSelection();
+    }
+
+    if (courseType !== 'video') {
+        return (
+            <LiveCourseBuilder
+                courseType={courseType}
+                onBackToType={() => setTypeConfirmed(false)}
+                categories={categories}
+            />
+        );
+    }
 
     return (
         <div className="pt-24 p-6 max-w-4xl mx-auto">
