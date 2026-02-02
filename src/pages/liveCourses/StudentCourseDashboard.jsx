@@ -5,6 +5,8 @@ import { fetchStudentCourseDashboard } from '@services/api';
 import UpcomingSessionCard from '@features/liveCourses/components/UpcomingSessionCard';
 import HomeworkCard from '@features/liveCourses/components/HomeworkCard';
 import AttendanceSummary from '@features/liveCourses/components/AttendanceSummary';
+import GlassCard from '@shared/ui/GlassCard';
+import StatTile from '@shared/ui/StatTile';
 
 const TEXT = {
     ky: {
@@ -89,60 +91,71 @@ const StudentCourseDashboard = () => {
                     </Link>
                 </div>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="md:col-span-2">
-                    <UpcomingSessionCard session={data?.nextSession} lang={lang} />
+
+            <GlassCard className="p-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="md:col-span-2">
+                        <UpcomingSessionCard session={data?.nextSession} lang={lang} />
+                    </div>
+                    <AttendanceSummary stats={data?.attendance || { present: 0, late: 0, absent: 0 }} lang={lang} />
                 </div>
-                <AttendanceSummary stats={data?.attendance || { present: 0, late: 0, absent: 0 }} lang={lang} />
-            </div>
+            </GlassCard>
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#0f0f0f] p-4">
-                    <p className="text-xs text-gray-500">{copy.attendanceRate}</p>
-                    <p className="text-2xl font-semibold text-gray-900 dark:text-white">
-                        {typeof data?.attendanceRate === 'number' ? `${data.attendanceRate}%` : '—'}
-                    </p>
-                </div>
-                <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#0f0f0f] p-4">
-                    <p className="text-xs text-gray-500">{copy.homeworkRate}</p>
-                    <p className="text-2xl font-semibold text-gray-900 dark:text-white">
-                        {typeof data?.homeworkCompletion === 'number' ? `${data.homeworkCompletion}%` : '—'}
-                    </p>
-                </div>
+                <StatTile
+                    label={copy.attendanceRate}
+                    value={typeof data?.attendanceRate === 'number' ? `${data.attendanceRate}%` : '—'}
+                    tone="emerald"
+                />
+                <StatTile
+                    label={copy.homeworkRate}
+                    value={
+                        typeof data?.homeworkCompletion === 'number' ? `${data.homeworkCompletion}%` : '—'
+                    }
+                    tone="violet"
+                />
             </div>
+
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <HomeworkCard
-                    homework={
-                        data?.assignments?.dueSoon?.[0] || {
-                            title: copy.todo,
-                            description: 'Дедлайндар бул жерде көрүнөт',
-                            status: 'pending',
-                            tag: 'dueSoon',
+                <GlassCard className="p-4">
+                    <HomeworkCard
+                        homework={
+                            data?.assignments?.dueSoon?.[0] || {
+                                title: copy.todo,
+                                description: 'Дедлайндар бул жерде көрүнөт',
+                                status: 'pending',
+                                tag: 'dueSoon',
+                            }
                         }
-                    }
-                    lang={lang}
-                />
-                <HomeworkCard
-                    homework={
-                        data?.assignments?.overdue?.[0] || {
-                            title: 'Overdue',
-                            description: 'Өткөн тапшырмалар',
-                            status: 'needs_changes',
-                            tag: 'overdue',
+                        lang={lang}
+                    />
+                </GlassCard>
+                <GlassCard className="p-4">
+                    <HomeworkCard
+                        homework={
+                            data?.assignments?.overdue?.[0] || {
+                                title: 'Overdue',
+                                description: 'Өткөн тапшырмалар',
+                                status: 'needs_changes',
+                                tag: 'overdue',
+                            }
                         }
-                    }
-                    lang={lang}
-                />
-                <HomeworkCard
-                    homework={
-                        data?.assignments?.needsChanges?.[0] || {
-                            title: copy.submissions,
-                            description: 'Тапшырмаларды бул жерден көрө аласыз',
-                            status: 'pending',
-                            tag: 'new',
+                        lang={lang}
+                    />
+                </GlassCard>
+                <GlassCard className="p-4">
+                    <HomeworkCard
+                        homework={
+                            data?.assignments?.needsChanges?.[0] || {
+                                title: copy.submissions,
+                                description: 'Тапшырмаларды бул жерден көрө аласыз',
+                                status: 'pending',
+                                tag: 'new',
+                            }
                         }
-                    }
-                    lang={lang}
-                />
+                        lang={lang}
+                    />
+                </GlassCard>
             </div>
         </div>
     );

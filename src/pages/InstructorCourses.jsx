@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { fetchSecureCourses, listCourseSessions } from '@services/api';
 import { FiCalendar } from 'react-icons/fi';
+import GlassCard from '@shared/ui/GlassCard';
 
 const InstructorCourses = () => {
     const { user } = useContext(AuthContext);
@@ -25,30 +26,39 @@ const InstructorCourses = () => {
     }, [user, activeType]);
 
     return (
-        <div className="min-h-screen p-6 pt-24 max-w-6xl mx-auto">
-            <h1 className="text-4xl font-bold mb-8 text-center">Менин курстарым</h1>
-            <div className="flex gap-2 mb-4 justify-center">
+        <div className="min-h-screen p-6 pt-24 max-w-6xl mx-auto space-y-6">
+            <div className="flex items-center justify-between">
+                <div>
+                    <p className="text-sm text-gray-500">Инструктор</p>
+                    <h1 className="text-3xl font-bold text-gray-900">Менин курстарым</h1>
+                </div>
+                <Link
+                    to="/instructor/course/create"
+                    className="px-4 py-2 rounded-full bg-emerald-600 text-white text-sm shadow"
+                >
+                    Курс түзүү
+                </Link>
+            </div>
+            <div className="flex gap-2 mb-2">
                 {['video', 'offline', 'online_live'].map((type) => (
                     <button
                         key={type}
                         onClick={() => setActiveType(type)}
-                        className={`px-4 py-2 rounded-full text-sm ${
-                            activeType === type ? 'bg-emerald-600 text-white' : 'border border-gray-200'
+                        className={`px-4 py-2 rounded-full text-sm transition ${
+                            activeType === type
+                                ? 'bg-emerald-600 text-white shadow'
+                                : 'border border-gray-200 bg-white text-gray-700'
                         }`}
                     >
                         {type}
                     </button>
                 ))}
-                <Link
-                    to="/instructor/course/create"
-                    className="px-4 py-2 rounded-full bg-blue-600 text-white text-sm"
-                >
-                    Курс түзүү
-                </Link>
             </div>
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {courses
-                    .filter((c) => (activeType === 'video' ? !c.courseType || c.courseType === 'video' : c.courseType === activeType))
+                    .filter((c) =>
+                        activeType === 'video' ? !c.courseType || c.courseType === 'video' : c.courseType === activeType
+                    )
                     .map((course) => (
                         <CourseCard key={course.id} course={course} />
                     ))}
@@ -78,7 +88,7 @@ const CourseCard = ({ course }) => {
 
     const days = course.daysOfWeek?.length ? course.daysOfWeek.join(', ') : '—';
     return (
-        <div className="bg-white dark:bg-[#141619] rounded shadow p-4 relative border border-gray-100">
+        <GlassCard className="p-4 relative border border-gray-100">
             <span
                 className={`absolute top-2 right-2 px-2 py-1 text-xs rounded ${
                     course.isPublished ? 'bg-green-100 text-gray-700' : 'bg-yellow-100 text-yellow-700'
@@ -118,7 +128,7 @@ const CourseCard = ({ course }) => {
                           : 'Өзгөртүү'}
                 </Link>
             </div>
-        </div>
+        </GlassCard>
     );
 };
 

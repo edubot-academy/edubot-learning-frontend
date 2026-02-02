@@ -198,8 +198,23 @@ const LiveCourseBuilder = ({ courseType = 'offline', onBackToType, categories = 
             const fetched = await listCourseSessions(courseIdValue);
             const normalized = normalizeSessions(fetched);
             if (normalized.length) {
-                setSessions(normalized);
-                return normalized;
+                const byDate = new Map(
+                    sessions.map((s) => [s.date, s])
+                );
+                const adjusted = normalized.map((s, idx) => {
+                    const match = byDate.get(s.date) || sessions[idx];
+                    if (match) {
+                        return {
+                            ...s,
+                            title: match.title || s.title,
+                            startTime: match.startTime || s.startTime,
+                            endTime: match.endTime || s.endTime,
+                        };
+                    }
+                    return s;
+                });
+                setSessions(adjusted);
+                return adjusted;
             }
         } catch (err) {
             console.warn('Failed to refresh sessions list', err);
@@ -280,32 +295,20 @@ const LiveCourseBuilder = ({ courseType = 'offline', onBackToType, categories = 
             const latestSessions = await ensureSessionsInBackend(created);
             const alignedPlan = alignPlanWithSessions(latestSessions);
 
-            if (status === 'published') {
-                const createdAssignments = await Promise.all(
-                    alignedPlan
-                        .map((item, idx) => {
-                            const sessionId = resolveSessionId(item, idx, latestSessions);
-                            const numericSession = Number(sessionId);
-                            if (!numericSession || Number.isNaN(numericSession)) {
-                                console.warn('Skipping assignment, sessionId missing', item);
-                                return null;
-                            }
-                            return {
-                                sessionId: numericSession,
-                                title: item.topic,
-                                description: item.homework || '',
-                                dueRule: item.dueRule,
-                            };
-                        })
-                        .filter(Boolean)
-                        .map((payload) => upsertAssignment(created, payload))
-                );
-                await Promise.all(
-                    createdAssignments
-                        .map((a) => a?.id)
-                        .filter(Boolean)
-                        .map((assignmentId) => publishAssignment(assignmentId))
-                );
+            if (status === 'published' && alignedPlan.length) {
+                const assignmentPayloads = alignedPlan.map((item, idx) => {
+                    const sessionId = resolveSessionId(item, idx, latestSessions);
+                    const numericSession = Number(sessionId);
+                    return {
+                        sessionId: Number.isNaN(numericSession) ? undefined : numericSession,
+                        title: item.topic || `Assignment ${idx + 1}`,
+                        description: item.homework || '',
+                        dueRule: item.dueRule,
+                    };
+                });
+
+                // Create assignments as drafts; do not auto-publish on course creation
+                await Promise.all(assignmentPayloads.map((payload) => upsertAssignment(created, payload)));
             }
 
             // Enroll selected roster students if any
@@ -325,7 +328,7 @@ const LiveCourseBuilder = ({ courseType = 'offline', onBackToType, categories = 
             setSaving(false);
         }
 
-        if (status === 'published' && (courseId || courseId === 0 || created)) {
+        if (courseId || courseId === 0 || created) {
             const targetId = courseId || created;
             navigate(`/instructor/courses/${targetId}/manage`, { replace: true });
         }

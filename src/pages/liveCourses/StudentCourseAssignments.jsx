@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { studentListAssignments, submitHomework, presignSubmissionUpload } from '@services/api';
+import GlassCard from '@shared/ui/GlassCard';
 
 const TEXT = {
     ky: {
@@ -85,16 +86,16 @@ const StudentCourseAssignments = () => {
 
     return (
         <div className="pt-20 pb-10 max-w-5xl mx-auto px-4 space-y-4">
-            <div>
+            <GlassCard className="p-5 space-y-1">
                 <h1 className="text-2xl font-bold text-gray-900">{copy.title}</h1>
                 <p className="text-sm text-gray-500">{copy.info}</p>
-            </div>
+            </GlassCard>
             {assignments.length ? (
                 <div className="space-y-3">
                     {assignments.map((a) => (
-                        <div
+                        <GlassCard
                             key={a.id}
-                            className="border border-gray-200 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
+                            className="p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
                         >
                             <div className="flex-1 min-w-[220px] space-y-1">
                                 <p className="text-lg font-semibold text-gray-900">{a.title}</p>
@@ -225,11 +226,11 @@ const StudentCourseAssignments = () => {
                                       ? copy.resubmit
                                       : copy.submit}
                             </button>
-                        </div>
+                        </GlassCard>
                     ))}
                 </div>
             ) : (
-                <div className="text-sm text-gray-500">{copy.empty}</div>
+                <GlassCard className="p-4 text-sm text-gray-500">{copy.empty}</GlassCard>
             )}
         </div>
     );

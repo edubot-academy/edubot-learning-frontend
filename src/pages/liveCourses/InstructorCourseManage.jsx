@@ -235,27 +235,25 @@ const InstructorCourseManage = () => {
                 const normalizeSession = (s) => {
                     const toDate = (value) => {
                         if (!value) return '';
-                        try {
-                            return new Date(value).toISOString().split('T')[0];
-                        } catch {
-                            return value;
+                        if (typeof value === 'string' && value.includes('T')) {
+                            return value.slice(0, 10);
                         }
+                        return value;
                     };
                     const toTime = (value) => {
                         if (!value) return '';
-                        try {
-                            const date = new Date(value);
-                            const hh = `${date.getHours()}`.padStart(2, '0');
-                            const mm = `${date.getMinutes()}`.padStart(2, '0');
-                            return `${hh}:${mm}`;
-                        } catch {
-                            return value;
+                        if (typeof value === 'string' && value.includes('T')) {
+                            const timePart = value.split('T')[1] || '';
+                            return timePart.slice(0, 5);
                         }
+                        return value;
                     };
                     const startSource = s.startAt || s.startsAt;
                     const endSource = s.endAt || s.endsAt;
+                    const title = s.title || s.name || s.topic || '';
                     return {
                         ...s,
+                        title: title || (s.id ? `Session ${s.id}` : 'Session'),
                         date: s.date || (startSource ? toDate(startSource) : ''),
                         startTime: s.startTime || (startSource ? toTime(startSource) : ''),
                         endTime: s.endTime || (endSource ? toTime(endSource) : ''),
@@ -345,7 +343,8 @@ const InstructorCourseManage = () => {
 
     const combineDateTime = (dateStr, timeStr) => {
         if (!dateStr || !timeStr) return null;
-        return new Date(`${dateStr}T${timeStr}:00Z`).toISOString();
+        // Keep local time (no Z) to avoid timezone shifts
+        return `${dateStr}T${timeStr}:00`;
     };
 
     const handleSessionChange = async (sessionId, patch) => {
@@ -356,7 +355,7 @@ const InstructorCourseManage = () => {
             startTime: patch.startTime || current.startTime,
             endTime: patch.endTime || current.endTime,
             status: patch.status || current.status,
-            title: patch.title || current.title,
+            title: (patch.title ?? current.title) || 'Session',
         };
         const startsAt = combineDateTime(payload.date, payload.startTime);
         const endsAt = combineDateTime(payload.date, payload.endTime);

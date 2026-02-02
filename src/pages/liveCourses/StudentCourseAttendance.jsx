@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { fetchStudentCourseAttendance } from '@services/api';
+import GlassCard from '@shared/ui/GlassCard';
 
 const TEXT = {
     ky: {
@@ -59,13 +60,15 @@ const StudentCourseAttendance = () => {
 
     return (
         <div className="pt-20 pb-10 max-w-5xl mx-auto px-4 space-y-4">
-            <h1 className="text-2xl font-bold text-gray-900">{copy.title}</h1>
+            <GlassCard className="p-5">
+                <h1 className="text-2xl font-bold text-gray-900">{copy.title}</h1>
+            </GlassCard>
             {records.length ? (
                 <div className="space-y-2">
                     {records.map((rec) => (
-                        <div
+                        <GlassCard
                             key={rec.id || `${rec.sessionId}-${rec.date}`}
-                            className="flex items-center justify-between rounded-xl border border-gray-200 p-3"
+                            className="flex items-center justify-between p-3"
                         >
                             <div>
                                 <p className="text-sm font-semibold text-gray-900">
@@ -76,11 +79,11 @@ const StudentCourseAttendance = () => {
                             <span className={`px-3 py-1 rounded-full text-xs ${statusBadge(rec.status)}`}>
                                 {rec.status}
                             </span>
-                        </div>
+                        </GlassCard>
                     ))}
                 </div>
             ) : (
-                <div className="text-sm text-gray-500">{copy.empty}</div>
+                <GlassCard className="p-4 text-sm text-gray-500">{copy.empty}</GlassCard>
             )}
         </div>
     );

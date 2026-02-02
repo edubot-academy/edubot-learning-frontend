@@ -47,34 +47,36 @@ const ParentLink = () => {
 
     return (
         <div className="pt-20 pb-10 max-w-md mx-auto px-4 space-y-4">
-            <h1 className="text-2xl font-bold text-gray-900">{copy.title}</h1>
-            <p className="text-sm text-gray-500">{copy.info}</p>
-            <div className="space-y-3">
-                <div className="flex flex-col gap-1">
-                    <label className="text-sm text-gray-600">{copy.studentId}</label>
-                    <input
-                        value={studentId}
-                        onChange={(e) => setStudentId(e.target.value)}
-                        className="rounded border border-gray-200 p-2"
-                    />
+            <GlassCard className="p-5">
+                <h1 className="text-2xl font-bold text-gray-900">{copy.title}</h1>
+                <p className="text-sm text-gray-500">{copy.info}</p>
+                <div className="space-y-3 mt-3">
+                    <div className="flex flex-col gap-1">
+                        <label className="text-sm text-gray-600">{copy.studentId}</label>
+                        <input
+                            value={studentId}
+                            onChange={(e) => setStudentId(e.target.value)}
+                            className="rounded border border-gray-200 p-2"
+                        />
+                    </div>
+                    <div className="flex flex-col gap-1">
+                        <label className="text-sm text-gray-600">{copy.code}</label>
+                        <input
+                            value={code}
+                            onChange={(e) => setCode(e.target.value)}
+                            className="rounded border border-gray-200 p-2"
+                        />
+                    </div>
+                    <button
+                        type="button"
+                        disabled={loading}
+                        onClick={handleSubmit}
+                        className="w-full px-4 py-2 rounded bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50"
+                    >
+                        {loading ? '...' : copy.submit}
+                    </button>
                 </div>
-                <div className="flex flex-col gap-1">
-                    <label className="text-sm text-gray-600">{copy.code}</label>
-                    <input
-                        value={code}
-                        onChange={(e) => setCode(e.target.value)}
-                        className="rounded border border-gray-200 p-2"
-                    />
-                </div>
-                <button
-                    type="button"
-                    disabled={loading}
-                    onClick={handleSubmit}
-                    className="w-full px-4 py-2 rounded bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50"
-                >
-                    {loading ? '...' : copy.submit}
-                </button>
-            </div>
+            </GlassCard>
         </div>
     );
 };

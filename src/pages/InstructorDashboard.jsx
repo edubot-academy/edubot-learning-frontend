@@ -13,6 +13,9 @@ import {
     enrollUserInCourse,
 } from '@services/api';
 import toast from 'react-hot-toast';
+import GlassCard from '@shared/ui/GlassCard';
+import StatTile from '@shared/ui/StatTile';
+import PillTabs from '@shared/ui/PillTabs';
 import {
     FiHome,
     FiBookOpen,
@@ -219,7 +222,7 @@ const InstructorDashboard = () => {
     };
 
     return (
-        <div className="pt-24 min-h-screen">
+        <div className="pt-24 min-h-screen bg-gray-50/60 dark:bg-[#0b0b0d]">
             <div className="max-w-7xl mx-auto flex gap-6 px-4 pb-12">
                 <DashboardSidebar
                     items={NAV_ITEMS}
@@ -231,26 +234,36 @@ const InstructorDashboard = () => {
                 />
 
                 <main className="flex-1 space-y-6">
-                    <div className="flex items-center justify-between flex-wrap gap-3">
-                        <div>
-                            <p className="text-sm uppercase tracking-wide text-gray-400">
-                                Инструктор
-                            </p>
-                            <h1 className="text-3xl font-bold">
-                                {user.fullName || user.email}
-                            </h1>
-                            <p className="text-sm text-gray-500 dark:text-[#a6adba]">
-                                Курстарыңызды жана студенттерди толук көзөмөлдөңүз
-                            </p>
+                    <GlassCard className="p-5">
+                        <div className="flex items-center justify-between flex-wrap gap-3">
+                            <div>
+                                <p className="text-sm uppercase tracking-wide text-gray-400">
+                                    Инструктор
+                                </p>
+                                <h1 className="text-3xl font-bold">
+                                    {user.fullName || user.email}
+                                </h1>
+                                <p className="text-sm text-gray-500 dark:text-[#a6adba]">
+                                    Курстарыңызды жана студенттерди толук көзөмөлдөңүз
+                                </p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <Link
+                                    to="/notifications"
+                                    className="px-3 py-2 rounded-full border border-gray-200 bg-white text-sm flex items-center gap-2"
+                                >
+                                    <FiBell /> Белгилер
+                                </Link>
+                                <button
+                                    onClick={() => setSidebarOpen((prev) => !prev)}
+                                    className="hidden md:inline-flex px-4 py-2 rounded-full border text-sm text-gray-600 dark:text-[#a6adba]"
+                                    type="button"
+                                >
+                                    {sidebarOpen ? 'Менюну жашыруу' : 'Менюну көрсөтүү'}
+                                </button>
+                            </div>
                         </div>
-                        <button
-                            onClick={() => setSidebarOpen((prev) => !prev)}
-                            className="hidden md:inline-flex px-4 py-2 rounded-full border text-sm text-gray-600 dark:text-[#a6adba]"
-                            type="button"
-                        >
-                            {sidebarOpen ? 'Менюну жашыруу' : 'Менюну көрсөтүү'}
-                        </button>
-                    </div>
+                    </GlassCard>
 
                     {renderContent()}
                 </main>
@@ -288,43 +301,66 @@ const OverviewSection = ({
 
     return (
         <>
-            <div className="rounded-3xl p-6 shadow-sm">
-                <p className="text-sm text-gray-500 dark:text-[#a6adba]">Кош келиңиз</p>
-                <h2 className="text-2xl font-semibold">
-                    {user.fullName || user.email}
-                </h2>
-                <p className="mt-2 text-gray-600 dark:text-[#a6adba]">
-                    Профилди толтуруңуз, курстарды жаңыртыңыз жана студенттерге баалуулук
-                    тартуулаңыз.
-                </p>
-                <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    {stats.map((stat) => (
-                        <StatCard key={stat.label} label={stat.label} value={stat.value} />
+            <GlassCard className="p-6 space-y-4">
+                <div className="flex items-center justify-between">
+                    <div>
+                        <p className="text-sm text-gray-500 dark:text-[#a6adba]">Кош келиңиз</p>
+                        <h2 className="text-2xl font-semibold">
+                            {user.fullName || user.email}
+                        </h2>
+                        <p className="mt-2 text-gray-600 dark:text-[#a6adba]">
+                            Профилди толтуруңуз, курстарды жаңыртыңыз жана студенттерге баалуулук
+                            тартуулаңыз.
+                        </p>
+                    </div>
+                    <PillTabs
+                        tabs={[
+                            { id: 'overview', label: 'Кыскача' },
+                            { id: 'progress', label: 'Прогресс' },
+                        ]}
+                        activeId="overview"
+                        onChange={() => {}}
+                    />
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                    {stats.map((stat, idx) => (
+                        <StatTile
+                            key={stat.label}
+                            label={stat.label}
+                            value={stat.value}
+                            tone={idx % 2 === 0 ? 'emerald' : 'sky'}
+                        />
                     ))}
                 </div>
-            </div>
+            </GlassCard>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <QuickActionCard
-                    title="Курстарды Башкаруу"
-                    description="Бар болгон курстарыңызды көрүңүз, өзгөртүңүз же өчүрүңүз."
-                    link="/instructor/courses"
-                    buttonText="Курстар"
-                />
-                <QuickActionCard
-                    title="Жаңы Курс Түзүү"
-                    description="Сабак жана бөлүмдөрү менен жаңы курс кошуңуз."
-                    link="/instructor/course/create"
-                    buttonText="Курс түзүү"
-                    accent="green"
-                />
-                <QuickActionCard
-                    title="Катталуулар"
-                    description="Студенттердин катталуусун көзөмөлдөңүз."
-                    link="/instructor/enrollments"
-                    buttonText="Катталгандар"
-                    accent="amber"
-                />
+                <GlassCard className="p-4">
+                    <QuickActionCard
+                        title="Курстарды Башкаруу"
+                        description="Бар болгон курстарыңызды көрүңүз, өзгөртүңүз же өчүрүңүз."
+                        link="/instructor/courses"
+                        buttonText="Курстар"
+                    />
+                </GlassCard>
+                <GlassCard className="p-4">
+                    <QuickActionCard
+                        title="Жаңы Курс Түзүү"
+                        description="Сабак жана бөлүмдөрү менен жаңы курс кошуңуз."
+                        link="/instructor/course/create"
+                        buttonText="Курс түзүү"
+                        accent="green"
+                    />
+                </GlassCard>
+                <GlassCard className="p-4">
+                    <QuickActionCard
+                        title="Катталуулар"
+                        description="Студенттердин катталуусун көзөмөлдөңүз."
+                        link="/instructor/enrollments"
+                        buttonText="Катталгандар"
+                        accent="amber"
+                    />
+                </GlassCard>
             </div>
 
             <NotificationsWidget />

@@ -5,6 +5,9 @@ import HomeworkCard from '@features/liveCourses/components/HomeworkCard';
 import UpcomingSessionCard from '@features/liveCourses/components/UpcomingSessionCard';
 import { fetchParentStudentSummary } from '@services/api';
 import { AuthContext } from '../../context/AuthContext';
+import GlassCard from '@shared/ui/GlassCard';
+import StatTile from '@shared/ui/StatTile';
+import PillTabs from '@shared/ui/PillTabs';
 
 const TEXT = {
     ky: {
@@ -128,54 +131,73 @@ const ParentDashboard = () => {
 
             {activeChild && (
                 <div className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#0f0f0f] p-4">
-                            <p className="text-xs text-gray-500">{copy.attendanceRate}</p>
-                            <p className="text-2xl font-semibold text-gray-900 dark:text-white">
-                                {typeof activeChild.attendanceRate === 'number'
-                                    ? `${activeChild.attendanceRate}%`
-                                    : '—'}
-                            </p>
-                        </div>
-                        <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#0f0f0f] p-4">
-                            <p className="text-xs text-gray-500">{copy.homeworkRate}</p>
-                            <p className="text-2xl font-semibold text-gray-900 dark:text-white">
-                                {typeof activeChild.homeworkCompletion === 'number'
-                                    ? `${activeChild.homeworkCompletion}%`
-                                    : '—'}
-                            </p>
-                        </div>
-                        <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#0f0f0f] p-4">
-                            <p className="text-xs text-gray-500">{copy.latestFeedback}</p>
-                            <p className="text-sm text-gray-800 dark:text-white line-clamp-2">
-                                {activeChild.latestFeedback || copy.empty}
-                            </p>
-                        </div>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <AttendanceSummary stats={activeChild.attendance || {}} lang={lang} />
-                        <HomeworkCard
-                            homework={{
-                                title: copy.homework,
-                                description: activeChild.homeworkComment || 'Тапшырмалардын абалы',
-                                status: 'pending',
-                                tag: 'new',
-                                dueDate: activeChild.nextDueDate,
-                            }}
-                            lang={lang}
+                    <GlassCard className="p-4">
+                        <PillTabs
+                            tabs={[
+                                { id: 'overview', label: 'Обзор / Кыскача' },
+                                { id: 'details', label: 'Деталдар' },
+                            ]}
+                            activeId="overview"
+                            onChange={() => {}}
                         />
-                        <UpcomingSessionCard session={activeChild.upcomingSession} lang={lang} />
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                            <StatTile
+                                label={copy.attendanceRate}
+                                value={
+                                    typeof activeChild.attendanceRate === 'number'
+                                        ? `${activeChild.attendanceRate}%`
+                                        : '—'
+                                }
+                                tone="emerald"
+                            />
+                            <StatTile
+                                label={copy.homeworkRate}
+                                value={
+                                    typeof activeChild.homeworkCompletion === 'number'
+                                        ? `${activeChild.homeworkCompletion}%`
+                                        : '—'
+                                }
+                                tone="violet"
+                            />
+                            <StatTile
+                                label={copy.latestFeedback}
+                                value={activeChild.latestFeedback ? '•' : '—'}
+                                sub={activeChild.latestFeedback || copy.empty}
+                                tone="amber"
+                            />
+                        </div>
+                    </GlassCard>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <GlassCard className="p-4">
+                            <AttendanceSummary stats={activeChild.attendance || {}} lang={lang} />
+                        </GlassCard>
+                        <GlassCard className="p-4">
+                            <HomeworkCard
+                                homework={{
+                                    title: copy.homework,
+                                    description: activeChild.homeworkComment || 'Тапшырмалардын абалы',
+                                    status: 'pending',
+                                    tag: 'new',
+                                    dueDate: activeChild.nextDueDate,
+                                }}
+                                lang={lang}
+                            />
+                        </GlassCard>
+                        <GlassCard className="p-4">
+                            <UpcomingSessionCard session={activeChild.upcomingSession} lang={lang} />
+                        </GlassCard>
                     </div>
-                    <div className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#0f0f0f] p-4">
+                    <GlassCard className="p-4">
                         <div className="flex items-center justify-between mb-3">
                             <p className="text-sm font-semibold text-gray-900 dark:text-white">
                                 {copy.courses}
                             </p>
                         </div>
                         {renderCourses(activeChild)}
-                    </div>
+                    </GlassCard>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#0f0f0f] p-4 space-y-2">
+                        <GlassCard className="p-4 space-y-2">
                             <p className="text-sm font-semibold text-gray-900 dark:text-white">
                                 {copy.attendanceTimeline}
                             </p>
@@ -194,8 +216,8 @@ const ParentDashboard = () => {
                             ) : (
                                 <p className="text-xs text-gray-500">{copy.empty}</p>
                             )}
-                        </div>
-                        <div className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#0f0f0f] p-4 space-y-2">
+                        </GlassCard>
+                        <GlassCard className="p-4 space-y-2">
                             <p className="text-sm font-semibold text-gray-900 dark:text-white">
                                 {copy.homeworkHistory}
                             </p>
@@ -219,7 +241,7 @@ const ParentDashboard = () => {
                             ) : (
                                 <p className="text-xs text-gray-500">{copy.empty}</p>
                             )}
-                        </div>
+                        </GlassCard>
                     </div>
                 </div>
             )}
