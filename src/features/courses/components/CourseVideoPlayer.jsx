@@ -11,25 +11,44 @@ const CourseVideoPlayer = ({
     nextLesson,
     prevLesson,
     handleLessonClick,
+    onEnded,
 }) => {
     const containerRef = React.useRef(null);
 
-    const handleEnded = () => {
-        if (nextLesson) handleLessonClick(nextLesson);
-    };
+    // Добавляем ключ для принудительного пересоздания VideoPlayer при смене урока
+    const [videoKey, setVideoKey] = React.useState(Date.now());
+
+    React.useEffect(() => {
+        // При смене урока обновляем ключ
+        setVideoKey(Date.now());
+        
+        // Принудительно запускаем воспроизведение через небольшую задержку
+        const timer = setTimeout(() => {
+            if (videoRef.current && !activeLesson.locked) {
+                videoRef.current.play().catch(err => {
+                    console.warn('Autoplay failed:', err);
+                    // Если авто-воспроизведение заблокировано браузером,
+                    // показываем кнопку воспроизведения
+                });
+            }
+        }, 100);
+
+        return () => clearTimeout(timer);
+    }, [activeLesson.id, activeLesson.locked, videoRef]);
 
     return (
         <div ref={containerRef} tabIndex={0} className="mb-6 relative w-full">
             <VideoPlayer
-                key={activeLesson.id}
+                key={videoKey} // Используем ключ для принудительного пересоздания
                 videoUrl={activeLesson.videoUrl}
                 resumeTime={resumeVideoTime}
                 allowPlay={!activeLesson.locked}
                 containerRef={containerRef}
-                onEnded={handleEnded}
+                onEnded={onEnded}
                 onProgress={(p) => handleVideoProgress(p, activeLesson)}
                 onTimeUpdate={handleTimeUpdate}
                 onPause={handlePause}
+                autoPlay={true} // Добавляем пропс для авто-воспроизведения
             />
 
             <button

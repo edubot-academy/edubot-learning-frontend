@@ -25,28 +25,34 @@ const VideoPlayerUI = ({
     const [showFeedback, setShowFeedback] = useState(true);
     const feedbackTimeoutRef = useRef(null);
 
-    const seek = useCallback(
-        (sec) => {
-            const v = videoRef.current;
-            if (!v || !v.duration) return;
+   const seek = useCallback(
+    (sec) => {
+        const v = videoRef.current;
+        if (!v || !v.duration) return;
 
-            const newTime = Math.min(Math.max(v.currentTime + sec, 0), v.duration);
+        const newTime = Math.min(Math.max(v.currentTime + sec, 0), v.duration);
 
-            v.currentTime = newTime;
-            setCurrentTime(newTime);
-        },
-        [videoRef]
-    );
+        // Только обновляем время видео, НЕ вызываем onTimeUpdate
+        v.currentTime = newTime;
+        setCurrentTime(newTime);
+        // НЕ вызываем onTimeUpdate здесь - пусть обработчик timeupdate сделает это
+    },
+    [videoRef] // убрали onTimeUpdate из зависимостей
+);
 
     const showIndicator = useCallback(() => {
         setShowFeedback(true);
 
+        // Очищаем таймаут только если видео играет
         clearTimeout(feedbackTimeoutRef.current);
 
-        feedbackTimeoutRef.current = setTimeout(() => {
-            setShowFeedback(false);
-        }, 3000);
-    }, []);
+        // Устанавливаем таймаут для скрытия только если видео играет
+        if (!videoRef.current?.paused) {
+            feedbackTimeoutRef.current = setTimeout(() => {
+                setShowFeedback(false);
+            }, 3000);
+        }
+    }, [videoRef]);
 
     const togglePlay = useCallback(() => {
         const v = videoRef.current;
@@ -203,11 +209,11 @@ const VideoPlayerUI = ({
             <div className="absolute inset-0 cursor-pointer " aria-hidden />
             <PlayPauseIndicator
                 showFeedback={showFeedback}
-                iconType={isPlaying ? 'pause' : 'play'}
                 isPlaying={isPlaying}
+                onHideFeedback={() => setShowFeedback(false)} // Добавьте этот пропс
             />
             <div
-                className="absolute cursor-pointer bottom-0 left-0 w-full h-[50%] bg-gradient-to-t from-black to-transparent"
+                className="absolute cursor-pointer bottom-0 left-0 w-full h-[50%]"
                 onClick={togglePlay}
             />
 
@@ -290,9 +296,8 @@ const VideoPlayerUI = ({
                             </button>
 
                             <div
-                                className={`overflow-hidden transition-all duration-150 flex items-center ${
-                                    showVolumeSlider ? 'w-24' : 'w-0'
-                                }`}
+                                className={`overflow-hidden transition-all duration-150 flex items-center ${showVolumeSlider ? 'w-24' : 'w-0'
+                                    }`}
                             >
                                 <input
                                     type="range"

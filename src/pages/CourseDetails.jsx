@@ -92,14 +92,17 @@ const CourseDetailsPage = () => {
     const [challengeSubmitting, setChallengeSubmitting] = useState(false);
     const [instructorChat, setInstructorChat] = useState(false);
     const chatRef = useRef(null);
+    const buttonRef = useRef(null);
 
+    // Обработчик клика вне чата
     useEffect(() => {
         const handleClickOutside = (event) => {
             if (
                 instructorChat &&
                 chatRef.current &&
                 !chatRef.current.contains(event.target) &&
-                !event.target.closest('button[class*="instructor-chat-button"]')
+                buttonRef.current &&
+                !buttonRef.current.contains(event.target)
             ) {
                 setInstructorChat(false);
             }
@@ -111,6 +114,8 @@ const CourseDetailsPage = () => {
             document.removeEventListener('mousedown', handleClickOutside);
         };
     }, [instructorChat]);
+
+
 
     useEffect(() => {
         hasPlayedRef.current = false;
@@ -760,8 +765,8 @@ const CourseDetailsPage = () => {
                     type="button"
                     onClick={() => handleTabChange(tab)}
                     className={`flex-1 min-w-[140px] px-4 py-2 rounded-xl text-sm font-medium transition ${activeTab === tab.id
-                            ? 'dark:bg-[#222222] bg-white text-gray-900 dark:text-[#E8ECF3] shadow'
-                            : 'text-gray-600 dark:text-[#a6adba]'
+                        ? 'dark:bg-[#222222] bg-white text-gray-900 dark:text-[#E8ECF3] shadow'
+                        : 'text-gray-600 dark:text-[#a6adba]'
                         } ${tab.disabled ? 'opacity-60 cursor-not-allowed' : 'hover:text-gray-900'}`}
                 >
                     {tab.label}
@@ -777,27 +782,33 @@ const CourseDetailsPage = () => {
     return (
         <div className="min-h-screen pt-10 bg-[#f8f9fb] dark:bg-[#1A1A1A]">
             {enrolled && (
-                <div className="fixed top-20 right-4 z-40">
-                    {' '}
-                    <button
-                        className={`instructor-chat-button mt-10 mr-4 flex items-center justify-center w-16 h-16 rounded-full border-2 border-gray-300 bg-white hover:bg-gray-50 transition-all dark:bg-[#1A1A1A] shadow-lg hover:shadow-xl ${instructorChat ? 'border-[#FB923C] bg-[#FFF7ED]' : ''
-                            }`}
-                        onClick={() => setInstructorChat(!instructorChat)}
-                    >
-                        <HiChatAlt2 className="w-8 h-8 text-[#EA580C]" />
-                    </button>
-                </div>
-            )}
-
-            {instructorChat && (
-                <div className="fixed top-32 right-4 z-40" ref={chatRef}>
-                    {' '}
-                    <div className="w-full max-w-[1440px] mx-auto aspect-[905/1096] rounded-lg shadow-x p-4 sm:p-6 md:p-8">
-                        <InstructorChat course={course} />
+                <>
+                    {/* Кнопка открытия/закрытия чата */}
+                    <div className="fixed top-20 right-4 z-50" ref={buttonRef}>  {/* Changed to z-50 */}
+                        <button
+                            className={`instructor-chat-button mt-10 mr-4 flex items-center justify-center w-16 h-16 rounded-full border-2 transition-all shadow-lg hover:shadow-xl ${instructorChat
+                                    ? 'border-[#FB923C] bg-[#FFF7ED]'
+                                    : 'border-gray-300 bg-white hover:bg-gray-50 dark:bg-[#1A1A1A]'
+                                }`}
+                            onClick={() => setInstructorChat(!instructorChat)}
+                        >
+                            <HiChatAlt2 className="w-8 h-8 text-[#EA580C]" />
+                        </button>
                     </div>
-                </div>
-            )}
 
+                    {/* Компонент чата - ПРАВИЛЬНЫЙ ВАРИАНТ */}
+                    {instructorChat && course && (
+                        <div ref={chatRef} className="fixed top-36 right-4 z-40">
+                            <div className="w-[400px] h-[600px]">
+                                <InstructorChat
+                                    course={course}
+                                    onClose={() => setInstructorChat(false)}
+                                />
+                            </div>
+                        </div>
+                    )}
+                </>
+            )}
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-8">
                 <div className="space-y-6 lg:space-y-0 lg:grid lg:grid-cols-3 lg:gap-6">
                     {enrolled ? (
