@@ -8,6 +8,9 @@ import BlackHeart from '@assets/icons/baseHeart.svg';
 import BellIcon from '@assets/icons/bell.svg';
 import BasketIcon from '@assets/icons/baseBasket.svg';
 import SettingIcon from '@assets/icons/setting.svg';
+import { IoChatbubblesOutline, IoHeartOutline, IoSettingsOutline } from "react-icons/io5";
+import { FaRegBell } from "react-icons/fa";
+import { BsCart2 } from "react-icons/bs";
 
 const SideBar = ({ setMenuOpen, setPosition }) => {
     const { user, setUser } = useContext(AuthContext);
@@ -104,32 +107,36 @@ const SideBar = ({ setMenuOpen, setPosition }) => {
                     <div className="">
                         <ul className="flex flex-col justify-between items-start">
                             <div className={`${linkClass}`}>
-                                <img src={BellIcon} alt="" className="max-w-6 pb-1" />
+                                <FaRegBell className='w-6 h-6' />
                                 Билдирүүлөр
                             </div>
                             <Link to="/cart" className={`${linkClass}`}>
-                                <img src={BasketIcon} alt="" className="max-w-6 pb-1" />
+                                <BsCart2 className='w-6 h-6' />
                                 Себет
                             </Link>
                             <Link to="/favourites" className={`${linkClass}`}>
-                                <img src={BlackHeart} alt="" className="max-w-6 pb-1" />
+                                <IoHeartOutline className='w-6 h-6' />
                                 Избранные
                             </Link>
                             <div className={`${linkClass}`}>
-                                <img src={SettingIcon} alt="" className="max-w-6 pb-1" />
+                                <IoSettingsOutline className='w-6 h-6' />
                                 Настройка
                             </div>
+                            <Link to="/chat" className={`${linkClass}`}>
+                                <IoChatbubblesOutline className="w-6 h-6 mb-1" />
+                                Чат
+                            </Link>
                         </ul>
                     </div>
                 ) : (
                     <div className="">
                         <ul className="flex flex-col justify-between items-start">
                             <Link to="/cart" className={`${linkClass}`}>
-                                <img src={BasketIcon} alt="" className="max-w-6 pb-1" />
+                                <BsCart2 className='w-6 h-6' />
                                 Корзина
                             </Link>
                             <Link to="/favourite" className={`${linkClass}`}>
-                                <img src={BlackHeart} alt="" className="max-w-6 pb-1" />
+                                <IoHeartOutline className='w-6 h-6' />
                                 Избранные
                             </Link>
                         </ul>
@@ -154,7 +161,7 @@ const SideBar = ({ setMenuOpen, setPosition }) => {
                                     logout();
                                 }}
                             >
-                               Аккаунттан чыгуу
+                                Аккаунттан чыгуу
                             </button>
                         </>
                     ) : (

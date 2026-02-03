@@ -7,7 +7,7 @@ import ThemeToggle from '@shared-ui/ThemeToggle';
 import { BsChevronDown } from 'react-icons/bs';
 import EduBotLogo from '@assets/images/edubot-signup.png';
 
-import { IoHeartOutline, IoHeart } from 'react-icons/io5';
+import { IoHeartOutline, IoHeart, IoChatbubblesOutline } from 'react-icons/io5';
 import { BsCart2 } from 'react-icons/bs';
 import { FaRegUser } from 'react-icons/fa';
 
@@ -364,35 +364,53 @@ const Header = () => {
                                         )}
                                     </button>
                                 </div>
+                                <div className="flex gap-3 items-center">
+                                    <div className="relative">
+                                        <button
+                                            className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-300 ${activeIcon === 'cart' || location.pathname === '/cart'
+                                                ? 'bg-orange-500 border-orange-500'
+                                                : 'border-black dark:border-gray-400 hover:border-gray-600 dark:hover:border-gray-300'
+                                                }`}
+                                            onClick={() =>
+                                                handleIconClick('chat', () => navigate('/chat'))
+                                            }
+                                        >
+                                            <IoChatbubblesOutline
+                                                className={`w-5 h-5 transition-colors duration-300 ${activeIcon === 'cart' ||
+                                                    location.pathname === '/cart'
+                                                    ? 'text-white'
+                                                    : 'text-black dark:text-gray-300'
+                                                    }`}
+                                            />
+                                        </button>
+                                    </div>
+                                    <div className="relative group">
+                                        <button
+                                            className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-300 ${activeIcon === 'user' || userMenuOpen
+                                                ? 'bg-orange-500 border-orange-500'
+                                                : 'border-black dark:border-gray-400 hover:border-gray-600 dark:hover:border-gray-300'
+                                                }`}
+                                            onClick={() => {
+                                                handleIconClick('user');
+                                                setUserMenuOpen(!userMenuOpen);
+                                            }}
+                                        >
+                                            <FaRegUser
+                                                className={`w-5 h-5 transition-colors duration-300 ${activeIcon === 'user' || userMenuOpen
+                                                    ? 'text-white'
+                                                    : 'text-black dark:text-gray-300'
+                                                    }`}
+                                            />
+                                        </button>
 
-                                <div className="relative group">
-    <button
-        className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-300 ${
-            activeIcon === 'user' || userMenuOpen
-                ? 'bg-orange-500 border-orange-500'
-                : 'border-black dark:border-gray-400 hover:border-gray-600 dark:hover:border-gray-300'
-        }`}
-        onClick={() => {
-            handleIconClick('user');
-            setUserMenuOpen(!userMenuOpen);
-        }}
-    >
-        <FaRegUser
-            className={`w-5 h-5 transition-colors duration-300 ${
-                activeIcon === 'user' || userMenuOpen
-                    ? 'text-white'
-                    : 'text-black dark:text-gray-300'
-            }`}
-        />
-    </button>
-
-    <div className="absolute top-full right-0 pt-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible lg:group-hover:opacity-100 lg:group-hover:visible transform translate-y-2 group-hover:translate-y-0 transition-all duration-300 ease-out z-60"> 
-        <div className="relative">
-            <div className="absolute -top-2 left-0 right-0 h-2 bg-transparent"></div>
-            <UserMenuDropdown user={user} onClose={() => {}} />
-        </div>
-    </div>
-</div>
+                                        <div className="absolute top-full right-0 pt-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible lg:group-hover:opacity-100 lg:group-hover:visible transform translate-y-2 group-hover:translate-y-0 transition-all duration-300 ease-out z-60">
+                                            <div className="relative">
+                                                <div className="absolute -top-2 left-0 right-0 h-2 bg-transparent"></div>
+                                                <UserMenuDropdown user={user} onClose={() => { }} />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         ) : (
                             <div className="flex items-center gap-3">
@@ -410,8 +428,8 @@ const Header = () => {
                                 <div className="relative">
                                     <button
                                         className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-300 ${activeIcon === 'cart' || location.pathname === '/cart'
-                                                ? 'bg-orange-500 border-orange-500'
-                                                : 'border-black dark:border-gray-400 hover:border-gray-600 dark:hover:border-gray-300'
+                                            ? 'bg-orange-500 border-orange-500'
+                                            : 'border-black dark:border-gray-400 hover:border-gray-600 dark:hover:border-gray-300'
                                             }`}
                                         onClick={() =>
                                             handleIconClick('cart', () => navigate('/cart'))
@@ -419,9 +437,9 @@ const Header = () => {
                                     >
                                         <BsCart2
                                             className={`w-5 h-5 transition-colors duration-300 ${activeIcon === 'cart' ||
-                                                    location.pathname === '/cart'
-                                                    ? 'text-white'
-                                                    : 'text-black dark:text-gray-300'
+                                                location.pathname === '/cart'
+                                                ? 'text-white'
+                                                : 'text-black dark:text-gray-300'
                                                 }`}
                                         />
 
