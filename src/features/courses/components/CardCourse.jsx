@@ -10,7 +10,7 @@ import { FiBook } from 'react-icons/fi';
 import NoImage from '@assets/icons/noImage.svg'
 import { AuthContext } from '../../../context/AuthContext';
 import UnauthModal from '../../../shared/ui/UnauthModal';
-import { formatMinutes } from '../../../utils/timeUtils';
+import { formatMinutesToTime } from '../../../utils/timeUtils';
 
 const formatPrice = (price, currency = 'KGS') => {
     if (!price && price !== 0) return 'Баасы көрсөтүлгөн эмес';
@@ -199,7 +199,7 @@ const CardCourse = ({
                                 </span>
                                 <span className="text-xs bg-[#F0F0F0] text-[#141619] dark:bg-[#2A2E35] dark:text-[#E8ECF3] rounded px-2 py-1 flex items-center gap-1">
                                     <IoMdTime className="w-3 h-3" />
-                                    {formatMinutes(durationInHours)}
+                                    {formatMinutesToTime(durationInHours * 60)}
                                 </span>
                                 <span className="text-xs bg-[#F0F0F0] text-[#141619] dark:bg-[#2A2E35] dark:text-[#E8ECF3] rounded px-2 py-1 flex items-center gap-1">
                                     <FiBook className="w-3 h-3" />
