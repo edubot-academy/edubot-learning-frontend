@@ -37,7 +37,7 @@ const CourseVideoPlayer = ({
     }, [activeLesson.id, activeLesson.locked, videoRef]);
 
     return (
-        <div ref={containerRef} tabIndex={0} className="mb-6 relative w-full">
+        <div ref={containerRef} tabIndex={0} className="videoFs mb-6 relative w-full">
             <VideoPlayer
                 key={videoKey} // Используем ключ для принудительного пересоздания
                 videoUrl={activeLesson.videoUrl}
