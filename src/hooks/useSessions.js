@@ -21,6 +21,7 @@ const addHoursToTime = (startTime = '10:00', hours = 1) => {
 };
 
 const DAY_KEYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+const DAY_TO_NUM = { sun: 0, mon: 1, tue: 2, wed: 3, thu: 4, fri: 5, sat: 6 };
 
 const buildSessionsFromRange = (info, fallbackStartTime = '10:00') => {
     const start = info.startDate ? new Date(info.startDate) : null;
@@ -64,7 +65,7 @@ export const useSessions = (courseInfo) => {
     );
 
     const generateSessions = useCallback(
-        async (courseId = null) => {
+        async (courseId = null, mode = 'replace') => {
             if (!courseInfo.startDate || !courseInfo.endDate || !courseInfo.daysOfWeek?.length) {
                 toast.error('Даталарды жана жуманын күндөрүн тандаңыз');
                 return;
@@ -75,9 +76,13 @@ export const useSessions = (courseInfo) => {
                     const data = await generateCourseSessions(courseId, {
                         startDate: courseInfo.startDate,
                         endDate: courseInfo.endDate,
-                        daysOfWeek: courseInfo.daysOfWeek,
-                        hoursPerDay: courseInfo.hoursPerDay,
-                        timezone: courseInfo.timezone,
+                        daysOfWeek: courseInfo.daysOfWeek
+                            .map((d) => (typeof d === 'number' ? d : DAY_TO_NUM[d] ?? d))
+                            .filter((n) => typeof n === 'number'),
+                        hoursPerDay: Number(courseInfo.hoursPerDay) || 1,
+                        dailyStartTime: courseInfo.defaultStartTime,
+                        titlePrefix: courseInfo.titlePrefix,
+                        mode,
                     });
                     if (Array.isArray(data)) {
                         setSessions(data);

@@ -186,9 +186,9 @@ const LiveCourseBuilder = ({ courseType = 'offline', onBackToType, categories = 
                 endDate: courseInfo.endDate,
                 daysOfWeek: normalizeDaysOfWeek(courseInfo.daysOfWeek),
                 hoursPerDay: Number(courseInfo.hoursPerDay) || 1,
-                timezone: courseInfo.timezone,
-                defaultStartTime: courseInfo.defaultStartTime,
-                dayTimes: courseInfo.dayTimes,
+                dailyStartTime: courseInfo.defaultStartTime,
+                titlePrefix: courseInfo.titlePrefix,
+                mode: 'replace',
             });
         } catch (err) {
             console.error('Failed to generate sessions', err);
