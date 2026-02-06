@@ -12,7 +12,7 @@ import { BsCart2 } from 'react-icons/bs';
 import { FaRegUser } from 'react-icons/fa';
 
 import { AuthContext } from '@app/providers';
-import { searchCourses } from '@services/api';
+import { fetchUnreadNotificationsCount, searchCourses } from '@services/api';
 import SideBar from '@shared-ui/SideBar';
 import SidebarOverlay from '@shared-ui/SidebarOverlay';
 import UserMenuDropdown from '@shared-ui/UserMenuDropdown';
@@ -100,6 +100,7 @@ const Header = () => {
     const [searchOpen, setSearchOpen] = useState(false);
     const [userMenuOpen, setUserMenuOpen] = useState(false);
     const [activeIcon, setActiveIcon] = useState(null);
+    const [unreadNotifications, setUnreadNotifications] = useState(0);
 
     const langRef = useRef(null);
     const [results, setResults] = useState([]);
@@ -163,6 +164,22 @@ const Header = () => {
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
+
+    useEffect(() => {
+        if (!user) return;
+
+        const loadUnreadNotifications = async () => {
+            try {
+                const unreadRes = await fetchUnreadNotificationsCount();
+                setUnreadNotifications(unreadRes?.count ?? 0);
+
+            } catch (error) {
+                console.error("Ошибка при загрузке уведомлений:", error);
+            }
+        };
+
+        loadUnreadNotifications();
+    }, [user]);
 
     const handleSearchSubmit = (e) => {
         e.preventDefault();
@@ -364,50 +381,32 @@ const Header = () => {
                                         )}
                                     </button>
                                 </div>
-                                <div className="flex gap-3 items-center">
-                                    <div className="relative">
-                                        <button
-                                            className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-300 ${activeIcon === 'cart' || location.pathname === '/cart'
-                                                ? 'bg-orange-500 border-orange-500'
-                                                : 'border-black dark:border-gray-400 hover:border-gray-600 dark:hover:border-gray-300'
+                                <div className="relative group">
+                                    <button
+                                        className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-300 ${activeIcon === 'user' || userMenuOpen
+                                            ? 'bg-orange-500 border-orange-500'
+                                            : 'border-black dark:border-gray-400 hover:border-gray-600 dark:hover:border-gray-300'
+                                            }`}
+                                        onClick={() => {
+                                            handleIconClick('user');
+                                            setUserMenuOpen(!userMenuOpen);
+                                        }}
+                                    >
+                                        <FaRegUser
+                                            className={`w-5 h-5 transition-colors duration-300 ${activeIcon === 'user' || userMenuOpen
+                                                ? 'text-white'
+                                                : 'text-black dark:text-gray-300'
                                                 }`}
-                                            onClick={() =>
-                                                handleIconClick('chat', () => navigate('/chat'))
-                                            }
-                                        >
-                                            <IoChatbubblesOutline
-                                                className={`w-5 h-5 transition-colors duration-300 ${activeIcon === 'cart' ||
-                                                    location.pathname === '/cart'
-                                                    ? 'text-white'
-                                                    : 'text-black dark:text-gray-300'
-                                                    }`}
-                                            />
-                                        </button>
-                                    </div>
-                                    <div className="relative group">
-                                        <button
-                                            className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-300 ${activeIcon === 'user' || userMenuOpen
-                                                ? 'bg-orange-500 border-orange-500'
-                                                : 'border-black dark:border-gray-400 hover:border-gray-600 dark:hover:border-gray-300'
-                                                }`}
-                                            onClick={() => {
-                                                handleIconClick('user');
-                                                setUserMenuOpen(!userMenuOpen);
-                                            }}
-                                        >
-                                            <FaRegUser
-                                                className={`w-5 h-5 transition-colors duration-300 ${activeIcon === 'user' || userMenuOpen
-                                                    ? 'text-white'
-                                                    : 'text-black dark:text-gray-300'
-                                                    }`}
-                                            />
-                                        </button>
+                                        />
+                                        {unreadNotifications > 0 && (
+                                            <span className="absolute -top-0.5 right-0 bg-[#FF2C2C] text-white text-xs rounded-full w-4 h-4 flex items-center justify-center font-medium"></span>
+                                        )}
+                                    </button>
 
-                                        <div className="absolute top-full right-0 pt-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible lg:group-hover:opacity-100 lg:group-hover:visible transform translate-y-2 group-hover:translate-y-0 transition-all duration-300 ease-out z-60">
-                                            <div className="relative">
-                                                <div className="absolute -top-2 left-0 right-0 h-2 bg-transparent"></div>
-                                                <UserMenuDropdown user={user} onClose={() => { }} />
-                                            </div>
+                                    <div className="absolute top-full right-0 pt-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible lg:group-hover:opacity-100 lg:group-hover:visible transform translate-y-2 group-hover:translate-y-0 transition-all duration-300 ease-out z-60">
+                                        <div className="relative">
+                                            <div className="absolute -top-2 left-0 right-0 h-2 bg-transparent"></div>
+                                            <UserMenuDropdown user={user} onClose={() => { }} />
                                         </div>
                                     </div>
                                 </div>
