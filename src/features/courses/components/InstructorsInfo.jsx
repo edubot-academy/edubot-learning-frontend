@@ -109,7 +109,7 @@ function InstructorsInfo({ instructorData }) {
                         {expertiseTags.map((tag) => (
                             <span
                                 key={tag}
-                                className="inline-flex items-center justify-center bg-black text-white text-sm px-3 py-1 rounded-2xl whitespace-nowrap"
+                                className="inline-flex items-center justify-center border border-gray-400 bg-black text-white text-sm px-3 py-1 rounded-2xl whitespace-nowrap"
                             >
                                 {tag}
                             </span>

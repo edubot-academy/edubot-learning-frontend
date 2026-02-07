@@ -279,23 +279,25 @@ const CourseContent = ({
                                             </span>
                                         )}
                                     </div>
-                                    <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 ml-4 flex-shrink-0">
-                                        <span className="whitespace-nowrap">
-                                            {section.lessons?.length || 0} лекция
-                                        </span>
-                                        <span className="hidden sm:inline">•</span>
-                                        <span className="whitespace-nowrap">
-                                            {formatMinutesToTime(section.durationMinutes)}
-                                        </span>
-                                        {enrolled && (
-                                            <span className="text-xs bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded whitespace-nowrap ml-2 dark:text-gray-300">
-                                                {section.lessons?.filter((l) =>
-                                                    completedLessons.includes(l.id)
-                                                ).length || 0}
-                                                /{section.lessons?.length || 0}
+                                    {!enrolled && (
+                                        <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 ml-4 flex-shrink-0">
+                                            <span className="whitespace-nowrap">
+                                                {section.lessons?.length || 0} лекция
                                             </span>
-                                        )}
-                                    </div>
+                                            <span className="hidden sm:inline">•</span>
+                                            <span className="whitespace-nowrap">
+                                                {formatMinutesToTime(section.durationMinutes)}
+                                            </span>
+                                            {enrolled && (
+                                                <span className="text-xs bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded whitespace-nowrap ml-2 dark:text-gray-300">
+                                                    {section.lessons?.filter((l) =>
+                                                        completedLessons.includes(l.id)
+                                                    ).length || 0}
+                                                    /{section.lessons?.length || 0}
+                                                </span>
+                                            )}
+                                        </div>
+                                    )}
                                 </button>
 
                                 <div
@@ -440,7 +442,7 @@ const CourseContent = ({
                                                                         <div className="flex flex-wrap items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
                                                                             {lesson.previewVideo &&
                                                                                 lesson.kind !==
-                                                                                    'article' && (
+                                                                                'article' && (
                                                                                     <>
                                                                                         <RiPlayCircleFill
                                                                                             className="text-[#4b4b4b] dark:text-gray-400 flex-shrink-0"

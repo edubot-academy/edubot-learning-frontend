@@ -124,7 +124,7 @@ const VideoPlayer = ({
             {allowPlay && !hasError && (
                 <video
                     ref={videoRef}
-                    className="absolute inset-0 w-full h-full object-cover"
+                    className="absolute inset-0 w-full h-full object-contain"
                     preload="metadata"
                     playsInline
                     onError={() => {
