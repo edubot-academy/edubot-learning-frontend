@@ -120,11 +120,11 @@ const VideoPlayer = ({
     }, [onPause]);
 
     return (
-        <div className="relative w-full bg-black rounded-xl overflow-hidden">
+        <div className="playerBox relative w-full aspect-video bg-black rounded-xl overflow-hidden">
             {allowPlay && !hasError && (
                 <video
                     ref={videoRef}
-                    className="w-full aspect-video object-cover"
+                    className="absolute inset-0 w-full h-full object-contain"
                     preload="metadata"
                     playsInline
                     onError={() => {
