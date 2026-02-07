@@ -46,7 +46,7 @@ const CourseDescription = ({ course }) => {
                         <div className="flex items-center gap-2">
                             <RiSpam2Line size={18} />
                             {course.updatedAt
-                                ? `акыркы жаңыртуу: ${new Date(course.updatedAt).toLocaleDateString('kg-KG')}`
+                                ? `Акыркы жаңыртуу: ${new Date(course.updatedAt).toLocaleDateString('kg-KG')}`
                                 : `түзүлгөн ${new Date(course.createdAt).toLocaleDateString('kg-Kg')}`}
                         </div>
                     )}
