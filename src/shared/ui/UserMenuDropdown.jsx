@@ -9,6 +9,7 @@ import Profile from '@assets/icons/profile.svg';
 import ArrowRight from '@assets/icons/arrowRight.svg';
 import { LuLogOut } from 'react-icons/lu';
 import { AuthContext } from '../../context/AuthContext';
+import { IoChatbubblesOutline } from "react-icons/io5";
 
 function UserMenuDropdown({ user, onClose }) {
     const { logout } = useContext(AuthContext);
@@ -56,6 +57,7 @@ function UserMenuDropdown({ user, onClose }) {
         { label: 'Себет', icon: Basket, path: '/cart' },
         { label: 'Избранные', icon: Heart, path: '/favourites' },
         { label: 'Настройка', icon: Setting, path: '/settings' },
+        { label: 'Чат', icon: false, path: '/chat' },
     ];
 
     const handleItemClick = () => {
@@ -125,11 +127,16 @@ function UserMenuDropdown({ user, onClose }) {
                                         rounded-lg
                                     "
                                 >
-                                    <img
-                                        src={item.icon}
-                                        alt=""
-                                        className="w-[1.2rem] sm:w-[1.1rem] dark:invert dark:brightness-200"
-                                    />
+                                    {item.icon ? (
+                                        <img
+                                            src={item.icon}
+                                            alt=""
+                                            className="w-[1.2rem] sm:w-[1.1rem] dark:invert dark:brightness-200"
+                                        />
+                                    ) : (
+                                        <IoChatbubblesOutline className="w-5 h-5 mb-0.5"/>
+                                    )}
+
                                     <span className="whitespace-nowrap overflow-hidden text-ellipsis">
                                         {item.label}
                                     </span>
