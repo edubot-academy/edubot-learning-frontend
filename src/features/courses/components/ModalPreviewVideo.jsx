@@ -2,12 +2,40 @@ import React, { useEffect, useState } from 'react';
 import Modal from '@shared-ui/Modal';
 import { fetchCoursePreview } from '../api';
 import { formatSecondsToTime } from '../../../utils/timeUtils';
+import VideoPlayer from '@shared/VideoPlayer';
 
 
-function ModalPreviewVideo({ isOpen, onClose, courseId, previewData: previewDataProp = null, initialVideo = null }) {
+function ModalPreviewVideo({ isOpen, onClose, courseId, previewData: previewDataProp = null, initialVideo = null,
+    activeLesson,
+    resumeVideoTime,
+    handleVideoProgress,
+    handleTimeUpdate,
+    handlePause,
+    videoRef,
+    onEnded,
+}) {
     const [previewData, setPreviewData] = useState(previewDataProp || null);
     const [loading, setLoading] = useState(previewDataProp ? false : true);
     const [activeVideo, setActiveVideo] = useState(initialVideo || previewDataProp?.previewVideos?.[0] || null);
+    const containerRef = React.useRef(null);
+    const [videoKey, setVideoKey] = React.useState(Date.now());
+
+    React.useEffect(() => {
+        // При смене урока обновляем ключ
+        setVideoKey(Date.now());
+
+        // Принудительно запускаем воспроизведение через небольшую задержку
+        const timer = setTimeout(() => {
+            if (videoRef.current && !activeVideo.locked) {
+                videoRef.current.play().catch(err => {
+                    console.warn('Autoplay failed:', err);
+                    // Если авто-воспроизведение заблокировано браузером,
+                    // показываем кнопку воспроизведения
+                });
+            }
+        }, 100);
+        return () => clearTimeout(timer);
+    }, [activeVideo, videoRef]);
 
     useEffect(() => {
         if (!isOpen) {
@@ -60,29 +88,35 @@ function ModalPreviewVideo({ isOpen, onClose, courseId, previewData: previewData
 
             {!loading && previewData && (
                 <>
-                    <p className="text-sm text-gray-500 mb-4">
+                    <p className="text-sm text-gray-500 dark:text-[#a6adba] mb-4">
                         {previewData.description || 'Курс жөнүндө маалымат жакында кошулат...'}
                     </p>
 
                     {activeVideo?.videoUrl && (
-                        <video
-                            key={activeVideo.id}
-                            src={activeVideo.videoUrl}
-                            controls
-                            autoPlay
-                            className="w-full aspect-video rounded mb-4"
+                        <VideoPlayer
+                            key={videoKey}
+                            videoUrl={activeVideo.videoUrl}
+                            resumeTime={resumeVideoTime}
+                            allowPlay={!activeVideo.locked}
+                            containerRef={containerRef}
+                            onEnded={onEnded}
+                            onProgress={(p) => handleVideoProgress(p, activeVideo)}
+                            onTimeUpdate={handleTimeUpdate}
+                            onPause={handlePause}
+                            autoPlay={true}
+                            className="w-full aspect-video rounded"
                         />
                     )}
 
-                    <div className="space-y-2">
+                    <div className="space-y-2 mt-4">
                         {previewData.previewVideos?.map((lesson, index) => (
                             <button
                                 key={lesson.id}
                                 onClick={() => setActiveVideo(lesson)}
                                 className={`w-full flex items-center gap-3 p-3 rounded border
                                     ${activeVideo?.id === lesson.id
-                                        ? 'bg-blue-50 border-blue-500'
-                                        : 'hover:bg-gray-100'}
+                                        ? 'bg-blue-50 dark:bg-blue-950 border-blue-500 darck'
+                                        : 'hover:bg-gray-100 dark:hover:bg-gray-700'}
                                 `}
                             >
                                 <img
@@ -97,7 +131,7 @@ function ModalPreviewVideo({ isOpen, onClose, courseId, previewData: previewData
                                     </p>
                                 </div>
 
-                                <span className="text-xs text-gray-500">
+                                <span className="text-xs text-gray-500 dark:text-[#a6adba]">
                                     {formatSecondsToTime(lesson.duration)}
                                 </span>
                             </button>

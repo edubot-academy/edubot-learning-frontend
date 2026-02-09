@@ -787,8 +787,8 @@ const CourseDetailsPage = () => {
                     <div className="fixed top-20 right-4 z-50" ref={buttonRef}>  {/* Changed to z-50 */}
                         <button
                             className={`instructor-chat-button mt-10 mr-4 flex items-center justify-center w-16 h-16 rounded-full border-2 transition-all shadow-lg hover:shadow-xl ${instructorChat
-                                    ? 'border-[#FB923C] bg-[#FFF7ED]'
-                                    : 'border-gray-300 bg-white hover:bg-gray-50 dark:bg-[#1A1A1A]'
+                                ? 'border-[#FB923C] bg-[#FFF7ED]'
+                                : 'border-gray-300 bg-white hover:bg-gray-50 dark:bg-[#1A1A1A]'
                                 }`}
                             onClick={() => setInstructorChat(!instructorChat)}
                         >
@@ -894,6 +894,14 @@ const CourseDetailsPage = () => {
                                 course={course}
                                 lessonCount={lessonCount}
                                 coverImageUrl={course.coverImageUrl}
+                                resumeVideoTime={resumeVideoTime}
+                                handleVideoProgress={(progress) =>
+                                    handleVideoProgress(progress, activeLesson)
+                                }
+                                handleTimeUpdate={handleTimeUpdate}
+                                handlePause={handlePause}
+                                videoRef={videoRef}
+                                onEnded={handleEnded}
                             />
                             <CourseDescription course={course} />
                             <InstructorsInfo instructorData={course.instructor} />
