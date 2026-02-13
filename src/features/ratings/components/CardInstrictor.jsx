@@ -22,8 +22,6 @@ const CardInstructor = ({ avatarUrl, fullName, title, totalStudents }) => {
                             <span
                                 key={star}
                                 onClick={() => setRating(star)}
-                                onMouseEnter={() => setHover(star)}
-                                onMouseLeave={() => setHover(0)}
                                 style={{ cursor: 'pointer' }}
                             >
                                 {star <= totalStudents ? (
@@ -35,7 +33,7 @@ const CardInstructor = ({ avatarUrl, fullName, title, totalStudents }) => {
                         ))}
                     </div>
                 </div>
-                <span className="text-sm text-[#a6adba]">({totalStudents} студентов)</span>
+                <span className="text-sm text-[#a6adba]">({totalStudents ?? 0} студентов)</span>
             </div>
         </div>
     );

@@ -177,9 +177,9 @@ const CourseContent = ({
         onLessonClick?.(lesson);
     };
 
-    const handleDownload = (e, resourceUrl) => {
+    const handleDownload = (e) => {
+        // Prevent the parent card click from firing
         e.stopPropagation();
-        window.open(resourceUrl, '_blank');
     };
 
     return (
@@ -395,13 +395,12 @@ const CourseContent = ({
 
                                                             {lesson.resourceUrl && (
                                                                 <div className="sm:self-start flex-shrink-0">
-                                                                    <button
-                                                                        onClick={(e) =>
-                                                                            handleDownload(
-                                                                                e,
-                                                                                lesson.resourceUrl
-                                                                            )
-                                                                        }
+                                                                    <a
+                                                                        href={lesson.resourceUrl}
+                                                                        download
+                                                                        target="_blank"
+                                                                        rel="noopener noreferrer"
+                                                                        onClick={handleDownload}
                                                                         className="inline-flex items-center gap-1 px-3 py-1.5 text-sm border border-[#E05A22] dark:border-orange-400 text-[#E05A22] dark:text-orange-400 rounded-lg hover:bg-orange-50 dark:hover:bg-orange-900/30 transition whitespace-nowrap w-full sm:w-auto"
                                                                         title="Ресурстарды жүктөө"
                                                                     >
@@ -412,7 +411,7 @@ const CourseContent = ({
                                                                         <span className="sm:hidden">
                                                                             Жүктөө
                                                                         </span>
-                                                                    </button>
+                                                                    </a>
                                                                 </div>
                                                             )}
                                                         </div>

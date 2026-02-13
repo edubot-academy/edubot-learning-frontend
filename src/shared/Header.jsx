@@ -96,7 +96,12 @@ const Header = () => {
     const [search, setSearch] = useState('');
     const [langOpen, setLangOpen] = useState(false);
     const [lang, setLang] = useState('Кыргызча');
-    const [dark, setDark] = useState(false);
+    const [dark, setDark] = useState(() => {
+        if (typeof window === 'undefined') return false;
+        const stored = localStorage.getItem('theme');
+        if (stored) return stored === 'dark';
+        return window.matchMedia?.('(prefers-color-scheme: dark)').matches ?? false;
+    });
     const [searchOpen, setSearchOpen] = useState(false);
     const [userMenuOpen, setUserMenuOpen] = useState(false);
     const [activeIcon, setActiveIcon] = useState(null);
@@ -130,22 +135,6 @@ const Header = () => {
     useEffect(() => {
         setMenuOpen(false);
     }, [location.pathname]);
-
-    // Initialize theme from storage or prefers-color-scheme
-    useEffect(() => {
-        if (typeof window === 'undefined') return;
-        const stored = localStorage.getItem('theme');
-        if (stored === 'dark') {
-            setDark(true);
-            return;
-        }
-        if (stored === 'light') {
-            setDark(false);
-            return;
-        }
-        const prefersDark = window.matchMedia?.('(prefers-color-scheme: dark)').matches;
-        setDark(prefersDark);
-    }, []);
 
     useEffect(() => {
         const root = document.documentElement;
