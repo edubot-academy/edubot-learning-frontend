@@ -9,7 +9,8 @@ import ModalPreviewVideo from './ModalPreviewVideo';
 import UnauthModal from '@shared/ui/UnauthModal';
 import { formatMinutesToTime } from '../../../utils/timeUtils';
 
-const CardVideo = ({ coverImageUrl, course, lessonCount, activeLesson }) => {
+const CardVideo = ({ coverImageUrl, course, lessonCount, activeLesson,
+    resumeVideoTime, onEnded, handleVideoProgress, handleTimeUpdate, handlePause, videoRef }) => {
     const [isContactOpen, setIsContactOpen] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [showUnauthModal, setShowUnauthModal] = useState(false);
@@ -90,6 +91,12 @@ const CardVideo = ({ coverImageUrl, course, lessonCount, activeLesson }) => {
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
                 courseId={course.id}
+                resumeVideoTime={resumeVideoTime}
+                onEnded={onEnded}
+                handleVideoProgress={handleVideoProgress}
+                handleTimeUpdate={handleTimeUpdate}
+                handlePause={handlePause}
+                videoRef={videoRef}
             />
             <UnauthModal
                 isOpen={showUnauthModal}
