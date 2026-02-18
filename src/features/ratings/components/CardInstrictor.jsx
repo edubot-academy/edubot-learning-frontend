@@ -22,7 +22,6 @@ const CardInstructor = ({ avatarUrl, fullName, title, totalStudents }) => {
                             <span
                                 key={star}
                                 onClick={() => setRating(star)}
-                                style={{ cursor: 'pointer' }}
                             >
                                 {star <= totalStudents ? (
                                     <AiFillStar color="#ffc107" size={25} />
