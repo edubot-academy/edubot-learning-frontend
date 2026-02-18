@@ -118,10 +118,10 @@ const SideBar = ({ setMenuOpen, setPosition }) => {
                                 <IoHeartOutline className='w-6 h-6' />
                                 Избранные
                             </Link>
-                            <div className={`${linkClass}`}>
+                            {/* <div className={`${linkClass}`}>
                                 <IoSettingsOutline className='w-6 h-6' />
                                 Настройка
-                            </div>
+                            </div> */}
                             <Link to="/chat" className={`${linkClass}`}>
                                 <IoChatbubblesOutline className="w-6 h-6 mb-1" />
                                 Чат

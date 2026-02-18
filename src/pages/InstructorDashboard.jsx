@@ -28,6 +28,7 @@ import {
 } from 'react-icons/fi';
 import NotificationsWidget from '@features/notifications/components/NotificationsWidget';
 import NotificationsTab from '@features/notifications/components/NotificationsTab';
+import Loader from '@shared/ui/Loader';
 
 const NAV_ITEMS = [
     { id: 'overview', label: 'Кыскача', icon: FiHome },
@@ -167,7 +168,7 @@ const InstructorDashboard = () => {
 
     const renderContent = () => {
         if ((loadingProfile && !profile) || (loadingCourses && !courses.length)) {
-            return <p className="text-center text-gray-500 dark:text-[#a6adba]">Маалымат жүктөлүүдө...</p>;
+            return <Loader fullScreen={false} />;
         }
 
         switch (activeTab) {
@@ -354,7 +355,7 @@ const CoursesSection = ({
             </Link>
         </div>
         {loading && !courses.length ? (
-            <p className="text-sm text-gray-500 dark:text-[#a6adba]">Курстар жүктөлүүдө...</p>
+            <Loader fullScreen={false} />
         ) : courses.length ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {courses.map((course) => (
@@ -975,7 +976,7 @@ const OfferingsSection = ({ courses, offerings, loading, refreshOfferings }) => 
 
             <div className="rounded-3xl p-6 shadow-sm">
                 {loading ? (
-                    <p className="text-center text-gray-500">Offeringдер жүктөлүүдө...</p>
+                    <Loader fullScreen={false} />
                 ) : filteredOfferings.length ? (
                     <div className="space-y-4">
                         {filteredOfferings.map((offering) => (
@@ -1093,7 +1094,7 @@ const EmptyState = ({ title, description, actionLabel, actionLink }) => (
 
 const OfferingsSummary = ({ offerings, loading, onViewOfferings }) => {
     if (loading) {
-        return <p className="text-xs text-gray-500 dark:text-[#a6adba]">Offering маалымат жүктөлүүдө...</p>;
+        return <Loader fullScreen={false} />;
     }
     if (!offerings.length) {
         return (
@@ -1618,7 +1619,7 @@ const EnrollStudentModal = ({
                         )}
                     </div>
                     {loadingUserOptions && (
-                        <p className="text-xs text-gray-500 dark:text-[#a6adba] mt-1">Студенттер жүктөлүүдө...</p>
+                        <Loader fullScreen={false} />
                     )}
                     {!studentOptions?.length && userSearch.length >= 2 && !loadingUserOptions && (
                         <p className="text-xs text-gray-500 dark:text-[#a6adba] mt-2">Студент табылган жок.</p>

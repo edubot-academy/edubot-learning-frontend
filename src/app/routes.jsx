@@ -2,6 +2,7 @@ import React, { Suspense, lazy } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import PrivateRoute from '@shared/PrivateRoute';
 import MainLayout from './layouts/MainLayout';
+import Loader from '@shared/ui/Loader';
 
 const HomePage = lazy(() => import('../pages/Home'));
 const LoginPage = lazy(() => import('../pages/Login'));
@@ -32,7 +33,7 @@ const Chat = lazy(() => import('../pages/Chat'));
 const AppRoutes = () => {
     return (
         <MainLayout>
-            <Suspense fallback={<div className="p-6 text-center">Жүктөлүүдө...</div>}>
+            <Suspense fallback={<Loader fullScreen />}>
                 <Routes>
                     <Route path="/" element={<HomePage />} />
                     <Route path="/login" element={<LoginPage />} />

@@ -163,7 +163,7 @@ const Header = () => {
                 setUnreadNotifications(unreadRes?.count ?? 0);
 
             } catch (error) {
-                console.error("Ошибка при загрузке уведомлений:", error);
+                console.error("Билдирүүлөрдү жүктөөдө ката кетти:", error);
             }
         };
 

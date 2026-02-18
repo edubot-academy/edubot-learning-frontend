@@ -298,7 +298,7 @@ const SignupPage = () => {
                             disabled={loading}
                             className="w-full mt-4 shadow-[0px_5px_21.3px_0px_#E14219BF] bg-[linear-gradient(180deg,#FF8C6E_0%,#E14219_100%)] text-white py-3 rounded text-lg font-semibold hover:opacity-90 transition"
                         >
-                            {loading ? 'Жүктөлүүдө...' : 'Катталуу'}
+                            {loading ? <Loader fullScreen={false} /> : 'Катталуу'}
                         </button>
                     </form>
 

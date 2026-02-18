@@ -183,7 +183,7 @@ export default function CompanyCourses({ companyId, canManage = true }) {
 
             {/* Company course list */}
             {loading ? (
-                <p>Жүктөлүүдө…</p>
+                <Loader fullScreen={false} />
             ) : (
                 <>
                     <div className="text-sm text-gray-600 dark:text-[#a6adba]">

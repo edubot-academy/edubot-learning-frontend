@@ -1,3 +1,5 @@
+import Loader from "@shared/ui/Loader";
+
 const SectionContainer = ({
     title,
     subtitle,
@@ -37,7 +39,7 @@ const SectionContainer = ({
             )}
 
             {loading ? (
-                <p className="text-sm text-gray-500">Жүктөлүүдө...</p>
+                <Loader fullScreen={false} />
             ) : !items?.length ? (
                 <p className="text-sm text-gray-500">{emptyText}</p>
             ) : (

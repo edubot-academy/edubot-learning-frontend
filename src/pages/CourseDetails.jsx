@@ -33,6 +33,7 @@ import { FaSignalMessenger } from 'react-icons/fa6';
 import InstructorChat from '@features/instructorChat/InstructorChat';
 import CourseHeader from '@features/courses/components/CourseHeader';
 import { HiChatAlt2 } from 'react-icons/hi';
+import Loader from '@shared/ui/Loader';
 
 const CHALLENGE_STORAGE_PREFIX = 'lessonChallengeState';
 
@@ -724,7 +725,7 @@ const CourseDetailsPage = () => {
     }, [id, user]);
     /* eslint-enable react-hooks/exhaustive-deps */
 
-    if (loading) return <div>Жүктөлүүдө...</div>;
+    if (loading) return <Loader fullScreen />;
     if (error) return <div>Ката: {error}</div>;
     if (!course) return <div>Курс табылган жок</div>;
 

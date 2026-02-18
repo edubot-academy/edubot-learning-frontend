@@ -6,6 +6,7 @@ import {
     markAllNotificationsRead,
 } from '../api';
 import { Link } from 'react-router-dom';
+import Loader from '@shared/ui/Loader';
 
 const NotificationsTab = () => {
     const [items, setItems] = useState([]);
@@ -91,7 +92,7 @@ const NotificationsTab = () => {
             </div>
 
             {loading && items.length === 0 ? (
-                <p className="text-sm text-gray-500 dark:text-[#a6adba]">Жүктөлүүдө...</p>
+                <Loader fullScreen={false} />
             ) : items.length === 0 ? (
                 <p className="text-sm text-gray-500 dark:text-[#a6adba]">Билдирүүлөр жок.</p>
             ) : (
@@ -157,9 +158,9 @@ const NotificationsTab = () => {
                             type="button"
                             onClick={() => load(page + 1)}
                             disabled={loading}
-                            className="w-full py-2 text-sm border rounded-lg hover:bg-gray-50 text-gray-700"
+                            className="w-full py-2 text-sm border rounded-lg hover:bg-gray-50 text-gray-700 flex justify-center"
                         >
-                            {loading ? 'Жүктөлүүдө...' : 'Дагы билдирүүлөрдү жүктөө'}
+                            {loading ? <Loader size={20} /> : 'Дагы билдирүүлөрдү жүктөө'}
                         </button>
                     )}
                 </div>

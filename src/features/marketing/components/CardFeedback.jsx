@@ -3,7 +3,7 @@ import { Wicon } from '@assets/icons/Wicon';
 import { Yicon } from '@assets/icons/Yicon';
 import grayPerson from '@assets/icons/grayPerson.svg';
 
-const CardFeedback = ({ comment, user }) => {
+const CardFeedback = ({ comment, user, value }) => {
     return (
         <div>
             <div
@@ -13,7 +13,7 @@ const CardFeedback = ({ comment, user }) => {
                 <div className="flex gap-3 text-[#FACC15]">
                     <div>
                         <Rating
-                            value={3.5}
+                            value={value}
                             readonly
                             className="[&>span]:!mx-0.5"
                             emptySymbol={
