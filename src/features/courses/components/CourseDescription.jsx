@@ -2,9 +2,10 @@ import React from 'react';
 import { RiCheckboxCircleFill } from 'react-icons/ri';
 import { GrLanguage } from 'react-icons/gr';
 import { RiSpam2Line } from 'react-icons/ri';
+import Loader from '@shared/ui/Loader';
 
 const CourseDescription = ({ course }) => {
-    if (!course) return <div>Жүктөлүүдө...</div>;
+    if (!course) return <div><Loader fullScreen /></div>;
 
     const isNew = () => {
         if (course.createdAt) {

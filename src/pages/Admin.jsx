@@ -29,6 +29,7 @@ import DashboardSidebar from '@features/dashboard/components/DashboardSidebar';
 import toast from 'react-hot-toast';
 import NotificationsWidget from '@features/notifications/components/NotificationsWidget';
 import NotificationsTab from '@features/notifications/components/NotificationsTab';
+import Loader from '@shared/ui/Loader';
 
 const AdminPanel = () => {
     const [courses, setCourses] = useState([]);
@@ -673,7 +674,7 @@ const AdminPanel = () => {
                                     disabled={transcodeLoading}
                                     className="px-4 py-2 bg-orange-500 text-white rounded disabled:opacity-60"
                                 >
-                                    {transcodeLoading ? 'Жүктөлүүдө...' : 'Транс коддоо'}
+                                    {transcodeLoading ? <Loader fullScreen={false} /> : 'Транс коддоо'}
                                 </button>
                                 <p className="text-xs text-gray-500 mt-2">
                                     ffmpeg серверде орнотулган болушу керек.
@@ -872,7 +873,7 @@ const AdminPanel = () => {
 
                             <div className="space-y-3">
                                 {aiPromptsLoading ? (
-                                    <p className="text-center text-gray-500">Жүктөлүүдө...</p>
+                                    <Loader fullScreen={false} />
                                 ) : aiPrompts.length ? (
                                     aiPrompts.map((prompt) => (
                                         <div

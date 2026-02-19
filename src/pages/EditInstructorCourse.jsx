@@ -38,6 +38,7 @@ import {
 } from '../utils/challengeUtils';
 import { LESSON_KIND_OPTIONS } from '../constants/lessons';
 import ArticleEditor from '@features/courses/components/ArticleEditor';
+import Loader from '@shared/ui/Loader';
 
 const EditInstructorCourse = () => {
     const { id } = useParams();
@@ -525,7 +526,7 @@ const EditInstructorCourse = () => {
 
     const handleCancel = () => navigate('/instructor/courses');
 
-    if (loading) return <div className="p-6">Жүктөлүүдө...</div>;
+    if (loading) return <Loader fullScreen />;
     if (!course) return <div className="p-6 text-red-500">Курс табылган жок</div>;
 
     const isUploading = sections.some((section) =>

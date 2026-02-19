@@ -42,7 +42,7 @@ const SalesDashboard = () => {
 
     const formatCurrency = (value) => `${Number(value).toFixed(2)} сом`;
 
-    if (loading) return <div className="p-6">Студенттер жүктөлүүдө...</div>;
+    if (loading) return <Loader fullScreen={false} />;
 
     return (
         <div className="pt-20 p-6">

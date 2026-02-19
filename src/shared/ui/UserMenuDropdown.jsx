@@ -56,7 +56,7 @@ function UserMenuDropdown({ user, onClose }) {
         { label: 'Билдирүүлөр', icon: Bell, path: notificationsPath },
         { label: 'Себет', icon: Basket, path: '/cart' },
         { label: 'Избранные', icon: Heart, path: '/favourites' },
-        { label: 'Настройка', icon: Setting, path: '/settings' },
+        // { label: 'Настройка', icon: Setting, path: '/settings' },
         { label: 'Чат', icon: false, path: '/chat' },
     ];
 

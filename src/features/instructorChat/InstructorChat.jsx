@@ -10,6 +10,7 @@ import { SlPicture } from 'react-icons/sl';
 import { CgFileDocument } from 'react-icons/cg';
 import sendSvg from '../../assets/icons/send.svg';
 import { AuthContext } from '@app/providers';
+import Loader from '@shared/ui/Loader';
 
 export default function InstructorChat({ course, onClose }) {
     const { user } = useContext(AuthContext);
@@ -200,10 +201,7 @@ export default function InstructorChat({ course, onClose }) {
             >
                 {loading ? (
                     <div className="flex items-center justify-center h-full">
-                        <div className="text-center">
-                            <div className="inline-block w-5 h-5 sm:w-6 sm:h-6 border-2 border-[#EA580C] border-t-transparent rounded-full animate-spin mb-2"></div>
-                            <p className="text-xs text-gray-500 dark:text-gray-400">Билдирүүлөр жүктөлүүдө...</p>
-                        </div>
+                       <Loader fullScreen={false} />
                     </div>
                 ) : messages.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-full text-center p-4">

@@ -1,3 +1,4 @@
+import Loader from '@shared/ui/Loader';
 import React, { useState, useEffect } from 'react';
 import { FiCode, FiClock, FiCheckCircle, FiXCircle, FiX } from 'react-icons/fi';
 
@@ -46,11 +47,7 @@ const LessonChallengePlayer = ({
     };
 
     if (loading) {
-        return (
-            <div className="mb-6 bg-[#262729] rounded-lg shadow-md p-6 min-h-[160px] flex items-center justify-center">
-                <p className="text-gray-500">Код тапшырма жүктөлүүдө...</p>
-            </div>
-        );
+        return <Loader fullScreen />;
     }
 
     if (!challenge) {

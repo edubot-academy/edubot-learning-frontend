@@ -5,6 +5,7 @@ import {
     fetchUnreadNotificationsCount,
     markAllNotificationsRead,
 } from '../api';
+import Loader from '@shared/ui/Loader';
 
 const NotificationsWidget = ({ title = 'Билдирүүлөр', limit = 5, link = '/notifications' }) => {
     const [items, setItems] = useState([]);
@@ -64,7 +65,7 @@ const NotificationsWidget = ({ title = 'Билдирүүлөр', limit = 5, link
             </div>
 
             {loading ? (
-                <p className="text-sm text-gray-500 dark:text-[#a6adba]">Жүктөлүүдө...</p>
+                <Loader fullScreen={false} />
             ) : items.length === 0 ? (
                 <p className="text-sm text-gray-500 dark:text-[#a6adba]">Азырынча билдирүүлөр жок.</p>
             ) : (
