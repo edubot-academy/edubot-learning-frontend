@@ -446,7 +446,7 @@ const AdminPanel = () => {
     };
 
     return (
-        <div className="pt-24 min-h-screen bg-gray-50">
+        <div className="pt-24 min-h-screen bg-gray-50 dark:bg-[#1A1A1A]">
             <div className="max-w-7xl mx-auto flex gap-6 px-4 pb-12">
                 <DashboardSidebar
                     items={NAV_ITEMS}
@@ -458,17 +458,17 @@ const AdminPanel = () => {
                     toggleLabels={{ collapse: 'Менюну жыйуу', expand: '' }}
                 />
 
-                <main className="flex-1 space-y-6">
+                <main className="flex-1 space-y-6 ">
                     <div className="flex items-center justify-between flex-wrap gap-3">
                         <div>
-                            <h1 className="text-3xl font-bold text-gray-900">Админ Панель</h1>
+                            <h1 className="text-3xl font-bold text-gray-900 dark:text-[#E8ECF3]">Админ Панель</h1>
                             <p className="text-sm text-gray-500">
                                 Платформанын бардык секцияларына көзөмөл
                             </p>
                         </div>
                         <button
                             onClick={() => setSidebarOpen((prev) => !prev)}
-                            className="hidden md:inline-flex px-4 py-2 rounded-full border text-sm text-gray-600"
+                            className="hidden md:inline-flex px-4 py-2 rounded-full border text-sm text-gray-600 dark:text-[#E8ECF3]"
                         >
                             {sidebarOpen ? 'Менюну жашыруу' : 'Менюну көрсөтүү'}
                         </button>
@@ -923,7 +923,7 @@ const AdminPanel = () => {
                     )}
 
                     {activeTab === 'users' && (
-                        <div className="bg-white shadow rounded p-4">
+                        <div className="bg-white dark:bg-black shadow rounded p-4">
                             <h2 className="text-2xl font-semibold mb-4">Колдонуучулар</h2>
                             <div className="flex flex-wrap gap-4 mb-4 items-end">
                                 <input
@@ -931,13 +931,13 @@ const AdminPanel = () => {
                                     placeholder="Ат же Email боюнча издөө"
                                     value={search}
                                     onChange={(e) => setSearch(e.target.value)}
-                                    className="border px-2 py-1 rounded"
+                                    className="border px-2 py-1 rounded dark:bg-black dark:text-[#E8ECF3]"
                                 />
                                 <div className="flex flex-wrap gap-2 items-end">
                                     <select
                                         value={roleFilter}
                                         onChange={(e) => setRoleFilter(e.target.value)}
-                                        className="border px-2 py-1 rounded"
+                                        className="border px-2 py-1 rounded dark:bg-black dark:text-[#E8ECF3]"
                                     >
                                         <option value="">Бардык ролдор</option>
                                         <option value="student">Студент</option>
@@ -949,19 +949,19 @@ const AdminPanel = () => {
                                         type="date"
                                         value={dateFrom}
                                         onChange={(e) => setDateFrom(e.target.value)}
-                                        className="border px-2 py-1 rounded"
+                                        className="border px-2 py-1 rounded dark:bg-black dark:text-[#E8ECF3]"
                                     />
                                     <input
                                         type="date"
                                         value={dateTo}
                                         onChange={(e) => setDateTo(e.target.value)}
-                                        className="border px-2 py-1 rounded"
+                                        className="border px-2 py-1 rounded dark:bg-black dark:text-[#E8ECF3]"
                                     />
                                 </div>
                             </div>
-                            <table className="w-full text-left text-sm">
+                            <table className="w-full text-left text-sm ">
                                 <thead>
-                                    <tr className="border-b">
+                                    <tr className="border-b ">
                                         <th className="p-2">Аты</th>
                                         <th className="p-2">Email</th>
                                         <th className="p-2">Роль</th>
@@ -980,7 +980,7 @@ const AdminPanel = () => {
                                                     onChange={(e) =>
                                                         handleRoleChange(user.id, e.target.value)
                                                     }
-                                                    className="border px-2 py-1 rounded"
+                                                    className="border px-2 py-1 rounded dark:bg-black dark:text-[#E8ECF3]"
                                                 >
                                                     <option value="student">Студент</option>
                                                     <option value="instructor">Окутуучу</option>
