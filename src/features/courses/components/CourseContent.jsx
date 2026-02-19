@@ -13,17 +13,21 @@ const CourseContent = ({
     sections,
     enrolled = false,
     onLessonClick,
-    activeLesson,
+    activeLesson, 
     completedLessons = [],
     lessonRefs,
     showHeader = true,
     handleCheckboxToggle,
+    maxHeight="260px",
     compact = false,
 }) => {
     const [openIds, setOpenIds] = useState([]);
     const [searchQuery, setSearchQuery] = useState('');
     const contentRefs = useRef({});
     const hasInitialized = useRef(false);
+    
+    // Новый ref для скроллируемого контейнера
+    const scrollContainerRef = useRef(null);
 
     const [previewOpen, setPreviewOpen] = useState(false);
     const [previewLesson, setPreviewLesson] = useState(null);
@@ -49,6 +53,21 @@ const CourseContent = ({
             setOpenIds([...new Set(defaultOpenIds)]);
         }
     }, [sections, activeLesson?.sectionId]);
+
+    // Эффект для скролла к активному уроку при открытии секции
+    useEffect(() => {
+        if (activeLesson && openIds.includes(activeLesson.sectionId)) {
+            // Даем время на анимацию раскрытия секции
+            setTimeout(() => {
+                if (lessonRefs?.current[activeLesson.id]) {
+                    lessonRefs.current[activeLesson.id].scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'nearest',
+                    });
+                }
+            }, 350);
+        }
+    }, [activeLesson, openIds]);
 
     const toggleOpen = (id) => {
         setOpenIds((prev) => {
@@ -184,9 +203,9 @@ const CourseContent = ({
 
     return (
         <>
-            <div className="w-full dark:bg-[#1A1A1A] bg-white rounded-2xl border border-[#E6E8EC] dark:border-[#2A2E35] overflow-hidden">
+            <div className="w-full dark:bg-[#1A1A1A] bg-white rounded-2xl border border-[#E6E8EC] dark:border-[#2A2E35] overflow-hidden flex flex-col">
                 {showHeader && (
-                    <div className="px-4 sm:px-6 py-4 border-b border-[#DFE1E5] dark:border-[#2A2E35]">
+                    <div className="px-4 sm:px-6 py-4 border-b border-[#DFE1E5] dark:border-[#2A2E35] flex-shrink-0">
                         <div className="flex flex-col gap-3">
                             <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                                 <div className="flex-1 min-w-0">
@@ -243,12 +262,17 @@ const CourseContent = ({
                 )}
 
                 {searchQuery && filteredSections.length === 0 && (
-                    <div className="px-4 sm:px-6 py-8 text-center text-gray-500 dark:text-gray-400">
+                    <div className="px-4 sm:px-6 py-8 text-center text-gray-500 dark:text-gray-400 flex-shrink-0">
                         " {searchQuery} " сураныч менен табылган жок
                     </div>
                 )}
 
-                <div className="divide-y divide-[#E6E8EC] dark:divide-[#2A2E35]">
+                {/* Скроллируемый контейнер с динамической максимальной высотой */}
+                <div 
+                    ref={scrollContainerRef}
+                    className="divide-y divide-[#E6E8EC] dark:divide-[#2A2E35] overflow-y-auto"
+                    style={maxHeight ? { maxHeight } : {}} // Применяем максимальную высоту
+                >
                     {filteredSections.map((section) => {
                         const sectionCompleted = section.lessons?.every((lesson) =>
                             completedLessons.includes(lesson.id)
@@ -478,7 +502,7 @@ const CourseContent = ({
                 </div>
 
                 {enrolled && completedLessons.length > 0 && !compact && (
-                    <div className="px-4 sm:px-6 py-3 border-t border-[#DFE1E5] dark:border-[#2A2E35] bg-gray-50 dark:bg-gray-800/50">
+                    <div className="px-4 sm:px-6 py-3 border-t border-[#DFE1E5] dark:border-[#2A2E35] bg-gray-50 dark:bg-gray-800/50 flex-shrink-0">
                         <div className="flex flex-col xs:flex-row xs:items-center justify-between gap-2">
                             <div className="text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">
                                 Прогресс: {completedLessons.length}/{totalLessons} лекция
