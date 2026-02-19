@@ -7,28 +7,20 @@ import { useFavourites } from '../../../context/FavouritesContext';
 import { AiFillStar, AiOutlineStar } from 'react-icons/ai';
 import { IoMdTime } from 'react-icons/io';
 import { FiBook } from 'react-icons/fi';
-import NoImage from '@assets/icons/noImage.svg'
+import NoImage from '@assets/icons/noImage.svg';
 import { AuthContext } from '../../../context/AuthContext';
 import UnauthModal from '../../../shared/ui/UnauthModal';
 import { formatMinutesToTime } from '../../../utils/timeUtils';
 
 const formatPrice = (price, currency = 'KGS') => {
     if (!price && price !== 0) return 'Баасы көрсөтүлгөн эмес';
-
     const formattedPrice = new Intl.NumberFormat('ru-RU').format(price);
-
     switch (currency) {
-        case 'USD':
-            return `${formattedPrice}$`;
-        case 'KGS':
-            return `${formattedPrice} сом`;
-        default:
-            return `${formattedPrice} ${currency}`;
+        case 'USD': return `${formattedPrice}$`;
+        case 'KGS': return `${formattedPrice} сом`;
+        default: return `${formattedPrice} ${currency}`;
     }
 };
-
-
-
 
 const CardCourse = ({
     coverImageUrl,
@@ -58,29 +50,51 @@ const CardCourse = ({
         e.stopPropagation();
         e.preventDefault();
 
+        console.log('⭐ Favorite clicked - Original course data:', {
+            id,
+            title,
+            coverImageUrl, // Проверяем, что это поле приходит
+            instructor,
+            price,
+            ratingCount,
+            ratingAverage,
+            level,
+            durationInHours,
+            lessonCount
+        });
+
         if (!user) {
-            // Показываем модалку для незарегистрированных пользователей
             setShowUnauthModal(true);
             return;
         }
 
+        // ВАЖНО: Передаем ВСЕ данные, включая фотографию ВО ВСЕХ ВАРИАНТАХ
         const courseData = {
             id,
-            title: title || `Курс ${id}`,
-            instructor: instructor || { fullName: 'Белгисиз инструктор' },
-            price: price || 0,
-            coverImageUrl,
-            ratingCount: ratingCount || 0,
-            ratingAverage: ratingAverage || 0,
-            level: level || 'Көрсөтүлгөн эмес',
-            durationInHours: durationInHours || 0,
-            lessonCount: lessonCount || 0,
+            title,
+            // ФОТОГРАФИЯ - передаем во всех возможных полях
+            image: coverImageUrl,           // Основное поле в контексте
+            coverImageUrl: coverImageUrl,   // Как в пропсах
+            cover: coverImageUrl,           // Альтернативное
+            thumbnail: coverImageUrl,       // Еще один вариант
+            
+            instructor,
+            price,
+            ratingCount,
+            ratingAverage,
+            level,
+            durationInHours,
+            duration: durationInHours,      // Дублируем для надежности
+            lessonCount,
             isPublished,
         };
 
+        console.log('📦 Sending to toggleFavourite:', courseData);
+        
         const result = await toggleFavourite(courseData);
+        console.log('✅ Toggle result:', result);
 
-        if (result.success && result.added) {
+        if (result?.success && result.added) {
             setShowFavoritePopup(true);
         }
     };
@@ -113,26 +127,23 @@ const CardCourse = ({
         };
 
         const result = addToCart(courseData);
-
-        if (result) {
-            if (result.alreadyInCart) {
-                setShowPopup(true);
-            }
+        if (result?.alreadyInCart) {
+            setShowPopup(true);
         }
     };
 
-    const closePopup = () => {
-        setShowPopup(false);
-    };
-
+    const closePopup = () => setShowPopup(false);
     const goToCart = () => {
         closePopup();
         navigate('/cart');
     };
 
-    const handlePopupClick = (e) => {
-        e.stopPropagation();
-    };
+    const handlePopupClick = (e) => e.stopPropagation();
+
+    // Для отладки
+    useEffect(() => {
+        console.log(`🖼️ Course ${id} - coverImageUrl:`, coverImageUrl);
+    }, [id, coverImageUrl]);
 
     return (
         <>
@@ -142,9 +153,7 @@ const CardCourse = ({
                         type="button"
                         onClick={handleFavoriteClick}
                         className="absolute top-3 right-3 z-10 bg-white p-2 rounded-full shadow-md hover:shadow-lg transition-shadow"
-                        aria-label={
-                            isCourseFavourite ? 'Избранныйдан өчүрүү' : 'Избранныйга кошуу'
-                        }
+                        aria-label={isCourseFavourite ? 'Избранныйдан өчүрүү' : 'Избранныйга кошуу'}
                         aria-pressed={isCourseFavourite}
                     >
                         <svg
@@ -167,6 +176,7 @@ const CardCourse = ({
                         <img
                             src={coverImageUrl || NoImage}
                             onError={(e) => {
+                                console.log('Image failed to load:', coverImageUrl);
                                 e.currentTarget.src = NoImage;
                             }}
                             alt={title}
@@ -180,7 +190,7 @@ const CardCourse = ({
                             <div className="flex items-center gap-2 mb-3 mt-3">
                                 <div style={{ display: 'flex', gap: '5px' }}>
                                     {[1, 2, 3, 4, 5].map((star) => (
-                                        <span key={star} style={{ cursor: 'pointer' }}>
+                                        <span key={star}>
                                             {star <= (ratingAverage || 0) ? (
                                                 <AiFillStar className="text-yellow-500" />
                                             ) : (
@@ -208,9 +218,7 @@ const CardCourse = ({
                             </div>
                             <div className="flex justify-between items-center mt-auto pt-4 border-t">
                                 <div className="flex flex-col gap-1">
-                                    <p className="text-gray-500 dark:text-[#a6adba] text-xs">
-                                        Баасы 
-                                    </p>
+                                    <p className="text-gray-500 dark:text-[#a6adba] text-xs">Баасы</p>
                                     <p className="text-base text-[#141619] dark:text-white font-bold">
                                         {formatPrice(price, 'KGS')}
                                     </p>
@@ -223,11 +231,7 @@ const CardCourse = ({
                                 >
                                     {courseAlreadyInCart ? (
                                         <>
-                                            <img
-                                                src={CardIcon}
-                                                alt="cart"
-                                                className="w-5 h-5 mr-2"
-                                            />
+                                            <img src={CardIcon} alt="cart" className="w-5 h-5 mr-2" />
                                             Себетте
                                         </>
                                     ) : (
@@ -240,7 +244,6 @@ const CardCourse = ({
                 </div>
             </Link>
 
-            {/* Модалка для незарегистрированных пользователей */}
             <UnauthModal
                 isOpen={showUnauthModal}
                 onClose={() => setShowUnauthModal(false)}
@@ -263,53 +266,22 @@ const CardCourse = ({
 
             {showPopup && (
                 <>
+                    <div className="fixed inset-0 bg-black bg-opacity-50 z-40" onClick={closePopup} />
                     <div
-                        className="fixed inset-0 bg-black bg-opacity-50 z-40"
-                        onClick={closePopup}
-                    />
-
-                    <div
-                        className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white rounded-lg shadow-2xl z-50 
-                       w-[calc(100%-2rem)] max-w-lg mx-4
-                       md:w-auto md:min-w-[32rem]
-                       sm:max-w-md"
+                        className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white rounded-lg shadow-2xl z-50 w-[calc(100%-2rem)] max-w-lg"
                         onClick={handlePopupClick}
                     >
                         <div className="p-4 sm:p-6">
                             <div className="flex items-center justify-between mb-4">
-                                <h3 className="text-lg font-bold text-gray-800">
-                                    Ийгиликтүү кошулду!
-                                </h3>
-                                <button
-                                    onClick={closePopup}
-                                    className="text-gray-400 hover:text-gray-600 text-2xl leading-none w-8 h-8 flex items-center justify-center"
-                                    aria-label="Жабуу"
-                                >
-                                    ×
-                                </button>
+                                <h3 className="text-lg font-bold text-gray-800">Ийгиликтүү кошулду!</h3>
+                                <button onClick={closePopup} className="text-gray-400 hover:text-gray-600 text-2xl">×</button>
                             </div>
-
-                            <p className="text-gray-600 mb-4 text-sm sm:text-base">
-                                Курс "<span className="font-semibold">{title}</span>" себетке
-                                кошулду
+                            <p className="text-gray-600 mb-4">
+                                Курс "<span className="font-semibold">{title}</span>" себетке кошулду
                             </p>
-
-                            <div className="mt-6 flex flex-col-reverse sm:flex-row justify-between gap-3 sm:gap-4">
-                                <Button
-                                    variant="secondary"
-                                    onClick={closePopup}
-                                    className="text-sm px-4 py-2 w-full sm:w-auto"
-                                >
-                                    Сатып алууну улантыңыз
-                                </Button>
-
-                                <Button
-                                    variant="primary"
-                                    onClick={goToCart}
-                                    className="text-sm px-4 py-2 w-full sm:w-auto"
-                                >
-                                    Себетке өтүү
-                                </Button>
+                            <div className="mt-6 flex flex-col-reverse sm:flex-row justify-between gap-3">
+                                <Button variant="secondary" onClick={closePopup}>Сатып алууну улантыңыз</Button>
+                                <Button variant="primary" onClick={goToCart}>Себетке өтүү</Button>
                             </div>
                         </div>
                     </div>
@@ -324,7 +296,6 @@ const FavoritePopupModal = ({ isOpen, onClose, onGoToFavourites, course }) => {
         const handleEscape = (e) => {
             if (e.key === 'Escape') onClose();
         };
-
         if (isOpen) {
             document.addEventListener('keydown', handleEscape);
             return () => document.removeEventListener('keydown', handleEscape);
@@ -333,46 +304,34 @@ const FavoritePopupModal = ({ isOpen, onClose, onGoToFavourites, course }) => {
 
     if (!isOpen) return null;
 
+    const imageUrl = course?.coverImageUrl || NoImage;
+
     return (
         <div className="fixed inset-0 z-50">
-            <div
-                className="fixed inset-0 bg-black bg-opacity-50"
-                onClick={onClose}
-                aria-hidden="true"
-            />
-            <div
-                className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white rounded-lg shadow-2xl w-[calc(100%-2rem)] max-w-lg"
-                role="dialog"
-                aria-modal="true"
-                aria-labelledby="favorite-modal-title"
-            >
+            <div className="fixed inset-0 bg-black bg-opacity-50" onClick={onClose} />
+            <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white rounded-lg shadow-2xl w-[calc(100%-2rem)] max-w-lg">
                 <div className="p-6">
                     <div className="flex items-center justify-between mb-4">
-                        <h3 id="favorite-modal-title" className="text-lg font-bold text-gray-800">
-                            Избранныйга ийгиликтүү кошулду!
-                        </h3>
-                        <button
-                            onClick={onClose}
-                            className="text-gray-400 hover:text-gray-600 text-2xl"
-                            aria-label="Закрыть"
-                        >
-                            ×
-                        </button>
+                        <h3 className="text-lg font-bold text-gray-800">Избранныйга ийгиликтүү кошулду!</h3>
+                        <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-2xl">×</button>
                     </div>
                     <div className="mb-4 p-3 border rounded-lg bg-gray-50">
                         <div className="flex items-center gap-3">
                             <img
-                                src={course.coverImageUrl}
-                                alt={course.title}
+                                src={imageUrl}
+                                alt={course?.title}
                                 className="w-16 h-16 object-cover rounded"
+                                onError={(e) => {
+                                    e.currentTarget.src = NoImage;
+                                }}
                             />
                             <div className="flex-1 min-w-0">
-                                <h4 className="font-medium text-sm truncate">{course.title}</h4>
+                                <h4 className="font-medium text-sm truncate">{course?.title}</h4>
                                 <p className="text-xs text-gray-500 truncate">
-                                    {course.instructor || 'Белгисиз инструктор'}
+                                    {course?.instructor || 'Белгисиз инструктор'}
                                 </p>
                                 <p className="text-sm font-bold mt-1">
-                                    {formatPrice(course.price, 'KGS')}
+                                    {formatPrice(course?.price, 'KGS')}
                                 </p>
                             </div>
                         </div>
