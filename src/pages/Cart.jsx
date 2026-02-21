@@ -7,6 +7,7 @@ import Button from '@shared-ui/Button';
 import Modal from '@shared-ui/Modal';
 import ContactCourseModal from '@features/courses/components/ContactCourseModal';
 import UnauthModal from '../shared/ui/UnauthModal';
+import Loader from '@shared/ui/Loader';
 
 const Cart = () => {
     const { cartItems, loading, removeFromCart, getTotalPrice, clearCart, user } = useCart();
@@ -32,12 +33,7 @@ const Cart = () => {
 
     if (loading) {
         return (
-            <div className="min-h-screen flex items-center justify-center p-4">
-                <div className="text-center">
-                    <div className="inline-block animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-orange-500"></div>
-                    <p className="mt-4 text-gray-600 dark:text-[#a6adba]">Корзина жүктөлүүдө...</p>
-                </div>
-            </div>
+           <Loader fullScreen />
         );
     }
 

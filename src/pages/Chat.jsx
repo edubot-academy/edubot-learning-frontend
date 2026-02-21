@@ -8,6 +8,7 @@ import { AuthContext } from "../context/AuthContext";
 import toast from "react-hot-toast";
 import { FaPlus } from "react-icons/fa6";
 import sendSvg from "../assets/icons/send.svg";
+import Loader from "@shared/ui/Loader";
 
 export default function Chat() {
   const { user } = useContext(AuthContext);
@@ -160,7 +161,7 @@ export default function Chat() {
   };
 
   if (loading) {
-    return <div className="p-10 text-center">Жүктөлүүдө...</div>;
+    return <Loader fullScreen />;
   }
 
   return (

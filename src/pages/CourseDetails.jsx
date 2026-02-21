@@ -33,6 +33,7 @@ import { FaSignalMessenger } from 'react-icons/fa6';
 import InstructorChat from '@features/instructorChat/InstructorChat';
 import CourseHeader from '@features/courses/components/CourseHeader';
 import { HiChatAlt2 } from 'react-icons/hi';
+import Loader from '@shared/ui/Loader';
 
 const CHALLENGE_STORAGE_PREFIX = 'lessonChallengeState';
 
@@ -93,7 +94,8 @@ const CourseDetailsPage = () => {
     const [instructorChat, setInstructorChat] = useState(false);
     const chatRef = useRef(null);
     const buttonRef = useRef(null);
-
+    const [videoHeight, setVideoHeight] = useState(0);
+    const videoContainerRef = useRef(null);
     // Обработчик клика вне чата
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -115,7 +117,35 @@ const CourseDetailsPage = () => {
         };
     }, [instructorChat]);
 
+    useEffect(() => {
+        const updateVideoHeight = () => {
+            if (videoContainerRef.current) {
+                const height = videoContainerRef.current.offsetHeight;
+                setVideoHeight(height);
+            }
+        };
 
+        updateVideoHeight();
+
+        const handleResize = debounce(() => {
+            updateVideoHeight();
+        }, 100);
+
+        window.addEventListener('resize', handleResize);
+
+        const resizeObserver = new ResizeObserver(() => {
+            updateVideoHeight();
+        });
+
+        if (videoContainerRef.current) {
+            resizeObserver.observe(videoContainerRef.current);
+        }
+
+        return () => {
+            window.removeEventListener('resize', handleResize);
+            resizeObserver.disconnect();
+        };
+    }, [activeLesson]);
 
     useEffect(() => {
         hasPlayedRef.current = false;
@@ -724,7 +754,7 @@ const CourseDetailsPage = () => {
     }, [id, user]);
     /* eslint-enable react-hooks/exhaustive-deps */
 
-    if (loading) return <div>Жүктөлүүдө...</div>;
+    if (loading) return <Loader fullScreen />;
     if (error) return <div>Ката: {error}</div>;
     if (!course) return <div>Курс табылган жок</div>;
 
@@ -744,16 +774,14 @@ const CourseDetailsPage = () => {
         ? 'Ассистентти колдонуу үчүн курска жазылуу керек.'
         : 'EDU AI ассистенти бул курста өчүрүлгөн.';
 
+    // Замените текущий код табов на этот:
+
     const tabs = [
         { id: 'program', label: 'Курстун программасы', disabled: false },
-        { id: 'assistant', label: 'Edu AI Assistent', disabled: !isAiAvailable },
+        ...(isAiAvailable ? [{ id: 'assistant', label: 'Edu AI Assistent', disabled: false }] : [])
     ];
 
     const handleTabChange = (tab) => {
-        if (tab.disabled) {
-            toast.error('EDU AI азырынча бул курста жеткиликтүү эмес');
-            return;
-        }
         setActiveTab(tab.id);
     };
 
@@ -767,7 +795,7 @@ const CourseDetailsPage = () => {
                     className={`flex-1 min-w-[140px] px-4 py-2 rounded-xl text-sm font-medium transition ${activeTab === tab.id
                         ? 'dark:bg-[#222222] bg-white text-gray-900 dark:text-[#E8ECF3] shadow'
                         : 'text-gray-600 dark:text-[#a6adba]'
-                        } ${tab.disabled ? 'opacity-60 cursor-not-allowed' : 'hover:text-gray-900'}`}
+                        }`}
                 >
                     {tab.label}
                 </button>
@@ -916,7 +944,7 @@ const CourseDetailsPage = () => {
 
                     <div className="hidden lg:block lg:col-span-2">
                         {enrolled ? (
-                            <div className="space-y-8">
+                            <div className="space-y-8" ref={videoContainerRef}>
                                 {activeLesson &&
                                     (activeLesson.kind === 'article' ? (
                                         <ArticleLessonViewer
@@ -1001,7 +1029,9 @@ const CourseDetailsPage = () => {
                                             lessonRefs={lessonRefs}
                                             showHeader={false}
                                             handleCheckboxToggle={handleCheckboxToggle}
+                                            maxHeight={videoHeight ? `${videoHeight}px` : undefined}
                                         />
+
                                     ) : (
                                         <div className="bg-white">
                                             {isAiAvailable ? (

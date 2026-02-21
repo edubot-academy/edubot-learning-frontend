@@ -6,6 +6,7 @@ import CompanyMembers from './CompanyMembers';
 import CompanySettings from './CompanySettings';
 import CompanyCourses from './CompanyCourses';
 import { AuthContext } from '../../context/AuthContext';
+import Loader from '@shared/ui/Loader';
 
 export default function CompanyDetail() {
     const { id } = useParams();
@@ -24,7 +25,7 @@ export default function CompanyDetail() {
         })();
     }, [companyId]);
 
-    if (!company) return <div className="p-4">Жүктөлүүдө…</div>;
+    if (!company) return <Loader fullScreen={true} />;
 
     return (
         <div className="max-w-6xl mx-auto p-4 space-y-6">

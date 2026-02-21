@@ -24,6 +24,7 @@ import {
 import NotificationsWidget from '@features/notifications/components/NotificationsWidget';
 import NotificationsTab from '@features/notifications/components/NotificationsTab';
 import { useSearchParams } from 'react-router-dom';
+import Loader from '@shared/ui/Loader';
 
 const NAV_ITEMS = [
     { id: 'overview', label: 'Кыскача', icon: FiHome },
@@ -322,9 +323,7 @@ const StudentDashboard = () => {
     const renderTab = () => {
         if (!isTabDataLoaded || !isProfileReady || isCurrentTabLoading) {
             return (
-                <div className="bg-white rounded-3xl border border-gray-100 p-6 text-center text-gray-500 dark:bg-black dark:text-[#E8ECF3]">
-                    Маалымат жүктөлүүдө...
-                </div>
+                <Loader fullScreen={false} />
             );
         }
         switch (activeTab) {

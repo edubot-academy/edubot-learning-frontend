@@ -2,6 +2,7 @@ import  { useEffect, useState } from 'react';
 import SectionContainer from '@features/marketing/components/SectionContainer';
 import CardInstructor from './CardInstrictor';
 import { fetchTopInstructors } from '@services/api';
+import Loader from '@shared/ui/Loader';
 
 const TopInstructors = () => {
     const [instructors, setInstructors] = useState([]);
@@ -24,7 +25,7 @@ const TopInstructors = () => {
         load();
     }, []);
 
-    if (loading) return <div>Жүктөлүүдө...</div>;
+    if (loading) return <Loader fullScreen={false} />;
     if (error) return <div>{error}</div>;
 
     return (

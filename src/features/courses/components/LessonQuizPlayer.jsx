@@ -149,11 +149,7 @@ const LessonQuizPlayer = ({
     };
 
     if (loading) {
-        return (
-            <div className="mb-6 rounded-lg shadow-md p-6 min-h-[200px] flex items-center justify-center">
-                <p className="text-gray-500">Квиз жүктөлүүдө...</p>
-            </div>
-        );
+        return <Loader fullScreen />;
     }
 
     if (!quiz) {
@@ -311,7 +307,7 @@ const LessonQuizPlayer = ({
                                 Өткөрүү
                             </Button>
                             <Button onClick={handleSubmit} disabled={submitting}>
-                                {submitting ? 'Жүктөлүүдө...' : 'Жыйынтыктоо'}
+                                {submitting ? <Loader fullScreen={false} /> : 'Жыйынтыктоо'}
                             </Button>
                         </div>
                     ) : (

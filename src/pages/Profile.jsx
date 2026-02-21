@@ -9,6 +9,7 @@ import {
     updateInstructorProfile,
 } from '@services/api';
 import PhoneInput from '@shared/ui/forms/PhoneInput';
+import Loader from '@shared/ui/Loader';
 
 const SOCIAL_LINK_FIELDS = ['website', 'twitter', 'linkedin', 'instagram', 'youtube', 'facebook'];
 const SOCIAL_LABELS = {
@@ -491,7 +492,7 @@ const ProfilePage = () => {
                         </div>
                         <div className="flex items-center gap-3">
                             {loadingInstructorProfile && (
-                                <span className="text-sm text-gray-500 dark:text-[#a6adba]">Жүктөлүүдө...</span>
+                                <Loader fullScreen={false} />
                             )}
                             {!isInstructorEditing ? (
                                 <button

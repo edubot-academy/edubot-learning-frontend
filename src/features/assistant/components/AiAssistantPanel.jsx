@@ -10,6 +10,7 @@ import {
 } from '@services/api';
 import toast from 'react-hot-toast';
 import { FiMoreHorizontal, FiPaperclip, FiMic } from 'react-icons/fi';
+import Loader from '@shared/ui/Loader';
 
 const formatTime = (dateString) => {
     if (!dateString) return '';
@@ -27,7 +28,7 @@ const formatTime = (dateString) => {
 const EmptyState = ({ loading }) => (
     <div className="text-center text-gray-500 text-sm py-8">
         {loading
-            ? 'Маалымат жүктөлүүдө...'
+            ? <Loader fullScreen={false} />
             : 'Бул чатта азырынча суроолор жок. Алгачкы суроону жазыңыз.'}
     </div>
 );
@@ -276,7 +277,7 @@ const AiAssistantPanel = ({ courseId, languageCode = 'ru' }) => {
             </div>
 
             {loadingChats && (
-                <p className="text-center text-sm text-gray-500 mb-2">Чаттар жүктөлүүдө...</p>
+                <Loader fullScreen={false} />
             )}
 
             <div className="border border-gray-200 rounded-3xl p-4 bg-white space-y-4">

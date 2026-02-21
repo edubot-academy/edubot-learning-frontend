@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { fetchCatalogCourses } from '@services/api';
 import SectionContainer from '@features/marketing/components/SectionContainer';
 import CardCourse from '@features/courses/components/CardCourse';
+import Loader from '@shared/ui/Loader';
 
 const CoursesPage = () => {
     const [courses, setCourses] = useState([]);
@@ -22,7 +23,9 @@ const CoursesPage = () => {
         loadCourses();
     }, []);
 
-    if (loading) return <div className="pt-[50px]">Курстар жүктөлүүдө...</div>;
+    if (loading) {
+        return <Loader fullScreen />;
+    }
 
     return (
         <div className="min-h-screen p-6 pt-0">

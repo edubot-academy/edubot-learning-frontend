@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { AiFillStar, AiOutlineStar } from 'react-icons/ai';
 
 /**
  * Read-only course review summary that matches the provided design.
@@ -110,8 +111,22 @@ const CourseReview = ({ ratingAverage = 0, ratingCount, ratingBreakdown = {}, on
                     <p className="text-[48px] font-black text-[#C2410C] leading-none">
                         {ratingAverage ? ratingAverage.toFixed(1) : '0.0'}
                     </p>
-                    <div className="flex items-center gap-1 text-yellow-500">
-                        {[1, 2, 3, 4, 5].map((star) => renderStar(star))}
+                    <div className="flex gap-3 text-[#FACC15]">
+                        <div style={{ display: 'flex', gap: '5px' }}>   
+                            {[1, 2, 3, 4, 5].map((star) => (
+                                <span
+                                    key={star}
+                                    onClick={() => setRating(star)}
+                                    style={{ cursor: 'pointer' }}
+                                >
+                                    {star <= ratingAverage ? (
+                                        <AiFillStar color="#ffc107" size={25} />
+                                    ) : (
+                                        <AiOutlineStar color="#ccc" size={25} />
+                                    )}
+                                </span>
+                            ))}
+                        </div>
                     </div>
                 </div>
             </div>
