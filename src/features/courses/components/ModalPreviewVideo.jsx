@@ -87,8 +87,8 @@ function ModalPreviewVideo({ isOpen, onClose, courseId, previewData: previewData
 
 
             {!loading && previewData && (
-                <>
-                    <p className="text-sm text-gray-500 dark:text-[#a6adba] mb-4">
+                <div ref={containerRef} className="w-full videoFs pb-9 relative">
+                    <p className="text-sm text-gray-500 dark:text-[#a6adba] mb-1">
                         {previewData.description || 'Курс жөнүндө маалымат жакында кошулат...'}
                     </p>
 
@@ -137,7 +137,7 @@ function ModalPreviewVideo({ isOpen, onClose, courseId, previewData: previewData
                             </button>
                         ))}
                     </div>
-                </>
+                </div>
             )}
         </Modal>
     );
