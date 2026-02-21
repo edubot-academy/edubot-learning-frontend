@@ -77,7 +77,7 @@ const CardCourse = ({
             coverImageUrl: coverImageUrl,   // Как в пропсах
             cover: coverImageUrl,           // Альтернативное
             thumbnail: coverImageUrl,       // Еще один вариант
-            
+
             instructor,
             price,
             ratingCount,
@@ -90,7 +90,7 @@ const CardCourse = ({
         };
 
         console.log('📦 Sending to toggleFavourite:', courseData);
-        
+
         const result = await toggleFavourite(courseData);
         console.log('✅ Toggle result:', result);
 
@@ -304,18 +304,21 @@ const FavoritePopupModal = ({ isOpen, onClose, onGoToFavourites, course }) => {
 
     if (!isOpen) return null;
 
-    const imageUrl = course?.coverImageUrl || NoImage;
+    const imageUrl =
+        course?.coverImageUrl ??
+        course?.image ??
+        NoImage;
 
     return (
         <div className="fixed inset-0 z-50">
             <div className="fixed inset-0 bg-black bg-opacity-50" onClick={onClose} />
-            <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white rounded-lg shadow-2xl w-[calc(100%-2rem)] max-w-lg">
+            <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 dark:bg-gray-800 bg-white rounded-lg shadow-2xl w-[calc(100%-2rem)] max-w-lg">
                 <div className="p-6">
                     <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-lg font-bold text-gray-800">Избранныйга ийгиликтүү кошулду!</h3>
+                        <h3 className="text-lg font-bold text-gray-800 dark:text-white">Тандалгандарга ийгиликтүү кошулду!</h3>
                         <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-2xl">×</button>
                     </div>
-                    <div className="mb-4 p-3 border rounded-lg bg-gray-50">
+                    <div className="mb-4 p-3 border rounded-lg bg-gray-50 dark:bg-gray-700">
                         <div className="flex items-center gap-3">
                             <img
                                 src={imageUrl}
