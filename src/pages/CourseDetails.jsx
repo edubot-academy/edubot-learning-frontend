@@ -899,6 +899,7 @@ const CourseDetailsPage = () => {
                                     />
                                 ))}
                             <CourseContent
+                                courseId={id}
                                 sections={sections}
                                 enrolled={enrolled}
                                 onLessonClick={handleLessonClick}
@@ -907,7 +908,11 @@ const CourseDetailsPage = () => {
                                 lessonRefs={lessonRefs}
                                 handleCheckboxToggle={handleCheckboxToggle}
                             />
-                            <InstructorsInfo instructorData={course.instructor} />
+                            <InstructorsInfo
+                                instructorData={course.instructor}
+                                ratingAverage={course.ratingAverage}
+                                ratingCount={course.ratingCount}
+                            />
                             <CourseReview
                                 ratingAverage={course.ratingAverage}
                                 ratingCount={course.ratingCount}
@@ -932,8 +937,12 @@ const CourseDetailsPage = () => {
                                 onEnded={handleEnded}
                             />
                             <CourseDescription course={course} />
-                            <InstructorsInfo instructorData={course.instructor} />
-                            <CourseContent sections={sections} />
+                            <InstructorsInfo
+                                instructorData={course.instructor}
+                                ratingAverage={course.ratingAverage}
+                                ratingCount={course.ratingCount}
+                            />
+                            <CourseContent courseId={id} sections={sections} />
                             <CourseReview
                                 ratingAverage={course.ratingAverage}
                                 ratingCount={course.ratingCount}
@@ -1008,8 +1017,10 @@ const CourseDetailsPage = () => {
                         ) : (
                             <div className="space-y-8">
                                 <CourseDescription course={course} />
-                                <InstructorsInfo instructorData={course.instructor} />
-                                <CourseContent sections={sections} />
+                                <InstructorsInfo
+                                    instructorData={course.instructor}
+                                />
+                                <CourseContent courseId={id} sections={sections} />
                             </div>
                         )}
                     </div>
@@ -1069,7 +1080,11 @@ const CourseDetailsPage = () => {
                 {enrolled && (
                     <div className="space-y-8 lg:space-y-0 lg:grid lg:grid-cols-3 lg:gap-6">
                         <div className="lg:col-span-2">
-                            <InstructorsInfo instructorData={course.instructor} />
+                            <InstructorsInfo
+                                instructorData={course.instructor}
+                                ratingAverage={course.ratingAverage}
+                                ratingCount={course.ratingCount}
+                            />
                         </div>
                         <div className="lg:col-span-1">
                             <CourseReview

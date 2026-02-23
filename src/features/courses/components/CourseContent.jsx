@@ -10,22 +10,23 @@ import { formatMinutesToTime, formatSecondsToTime } from '../../../utils/timeUti
 import ModalPreviewVideo from './ModalPreviewVideo';
 
 const CourseContent = ({
+    courseId,
     sections,
     enrolled = false,
     onLessonClick,
-    activeLesson, 
+    activeLesson,
     completedLessons = [],
     lessonRefs,
     showHeader = true,
     handleCheckboxToggle,
-    maxHeight="260px",
+    maxHeight = "260px",
     compact = false,
 }) => {
     const [openIds, setOpenIds] = useState([]);
     const [searchQuery, setSearchQuery] = useState('');
     const contentRefs = useRef({});
     const hasInitialized = useRef(false);
-    
+
     // Новый ref для скроллируемого контейнера
     const scrollContainerRef = useRef(null);
 
@@ -34,6 +35,20 @@ const CourseContent = ({
     const closePreview = () => {
         setPreviewOpen(false);
         setPreviewLesson(null);
+    };
+
+    const buildInitialPreviewVideo = (lesson) => {
+        if (!lesson) return null;
+        const videoUrl = getLessonPreviewVideoUrl(lesson);
+        if (!videoUrl) return null;
+
+        return {
+            id: lesson.id,
+            title: lesson.title,
+            videoUrl,
+            duration: lesson.duration,
+            sectionId: lesson.sectionId,
+        };
     };
 
     useEffect(() => {
@@ -183,6 +198,8 @@ const CourseContent = ({
         if (locked) return;
 
         if (!enrolled && lesson.previewVideo && lesson.kind !== 'article') {
+            const previewUrl = getLessonPreviewVideoUrl(lesson);
+            if (!previewUrl) return;
             e.stopPropagation();
             setPreviewLesson(lesson);
             setPreviewOpen(true);
@@ -268,7 +285,7 @@ const CourseContent = ({
                 )}
 
                 {/* Скроллируемый контейнер с динамической максимальной высотой */}
-                <div 
+                <div
                     ref={scrollContainerRef}
                     className="divide-y divide-[#E6E8EC] dark:divide-[#2A2E35] overflow-y-auto"
                     style={maxHeight ? { maxHeight } : {}} // Применяем максимальную высоту
@@ -527,27 +544,8 @@ const CourseContent = ({
                 <ModalPreviewVideo
                     isOpen={previewOpen}
                     onClose={closePreview}
-                    previewData={{
-                        title: previewLesson?.title,
-                        description: previewLesson?.description,
-                        coverImageUrl:
-                            previewLesson?.coverImageUrl || previewLesson?.thumbnailUrl || '',
-                        durationInHours: Math.ceil((previewLesson?.duration || 0) / 3600),
-                        previewVideos: [
-                            {
-                                id: previewLesson?.id,
-                                title: previewLesson?.title,
-                                videoUrl: getLessonPreviewVideoUrl(previewLesson),
-                                duration: previewLesson?.duration,
-                            },
-                        ],
-                    }}
-                    initialVideo={{
-                        id: previewLesson?.id,
-                        title: previewLesson?.title,
-                        videoUrl: getLessonPreviewVideoUrl(previewLesson),
-                        duration: previewLesson?.duration,
-                    }}
+                    courseId={courseId}
+                    initialVideo={buildInitialPreviewVideo(previewLesson)}
                 />
             )}
         </>

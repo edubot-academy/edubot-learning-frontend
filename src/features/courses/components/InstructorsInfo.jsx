@@ -1,10 +1,10 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { 
-    FaStar, 
-    FaCheckCircle, 
-    FaBriefcase, 
-    FaBookOpen, 
+import {
+    FaStar,
+    FaCheckCircle,
+    FaBriefcase,
+    FaBookOpen,
     FaUsers,
     FaInstagram,
     FaTelegram,
@@ -64,10 +64,19 @@ function InstructorsInfo({ instructorData }) {
         socialLinks = {},
         rating = 0,
         reviewsCount = 0,
-        topTutor = true,
+        topTutor = false,
+        ratingAverage,
+        ratingCount
     } = instructorData || {};
 
     const safeSocialLinks = socialLinks && typeof socialLinks === 'object' ? socialLinks : {};
+    const displayRating = Number.isFinite(Number(ratingAverage ?? rating))
+        ? Number(ratingAverage ?? rating)
+        : 0;
+    const displayRatingCount = Number.isFinite(Number(ratingCount ?? reviewsCount))
+        ? Number(ratingCount ?? reviewsCount)
+        : 0;
+    const isTopTutor = topTutor ?? (displayRating >= 4.7 && displayRatingCount >= 30);
 
     return (
         <div className="w-full border border-gray-200 rounded-xl p-6 md:p-7 shadow-sm flex flex-col md:flex-row gap-5 dark:border-gray-700 dark:bg-[#222222]">
@@ -85,15 +94,14 @@ function InstructorsInfo({ instructorData }) {
             <div className="flex-1 flex flex-col justify-start gap-3 max-w-full">
                 <div className="flex flex-col gap-2">
                     <div className="flex items-center gap-2 flex-wrap text-sm">
-                        {topTutor && (
+                        {isTopTutor && (
                             <span className="bg-green-100 text-green-600 px-2 py-0.5 text-xs font-semibold rounded-md dark:bg-green-900/30 dark:text-green-400">
                                 TOP tutor
                             </span>
                         )}
                         <FaStar className="w-4 h-4 text-amber-400" />
                         <span className="text-sm font-medium text-gray-700 dark:text-gray-200">
-                            {rating?.toFixed ? rating.toFixed(1) : rating}{' '}
-                            {reviewsCount ? `(${reviewsCount})` : ''}
+                            {displayRating.toFixed(1)} {displayRatingCount ? `(${displayRatingCount})` : ''}
                         </span>
                     </div>
 
@@ -107,7 +115,7 @@ function InstructorsInfo({ instructorData }) {
 
                 <div className="flex flex-col gap-4">
                     <p className="text-base leading-relaxed break-words text-gray-700 dark:text-gray-300">{bio}</p>
-                    
+
                     <div className="flex flex-wrap gap-2 w-full">
                         {expertiseTags.map((tag) => (
                             <span
@@ -126,12 +134,12 @@ function InstructorsInfo({ instructorData }) {
                                 <span>{yearsOfExperience}+ years experience</span>
                             </div>
                         )}
-                        
+
                         <div className="flex items-center gap-2 text-gray-600 dark:text-gray-300">
                             <FaBookOpen className="w-4 h-4 text-gray-500 dark:text-white" />
                             <span>{coursesCount} courses</span>
                         </div>
-                        
+
                         <div className="flex items-center gap-2 text-gray-600 dark:text-gray-300">
                             <FaUsers className="w-4 h-4 text-gray-500 dark:text-white" />
                             <span>{numberOfStudents}+ students</span>
@@ -182,5 +190,7 @@ InstructorsInfo.propTypes = {
         rating: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
         reviewsCount: PropTypes.number,
         topTutor: PropTypes.bool,
+        ratingAverage: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
+        ratingCount: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
     }),
 };

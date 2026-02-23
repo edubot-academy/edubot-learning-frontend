@@ -6,7 +6,6 @@ import VideoPlayer from '@shared/VideoPlayer';
 
 
 function ModalPreviewVideo({ isOpen, onClose, courseId, previewData: previewDataProp = null, initialVideo = null,
-    activeLesson,
     resumeVideoTime,
     handleVideoProgress,
     handleTimeUpdate,
@@ -26,7 +25,7 @@ function ModalPreviewVideo({ isOpen, onClose, courseId, previewData: previewData
 
         // Принудительно запускаем воспроизведение через небольшую задержку
         const timer = setTimeout(() => {
-            if (videoRef.current && !activeVideo.locked) {
+            if (videoRef?.current && !activeVideo?.locked) {
                 videoRef.current.play().catch(err => {
                     console.warn('Autoplay failed:', err);
                     // Если авто-воспроизведение заблокировано браузером,
@@ -70,6 +69,12 @@ function ModalPreviewVideo({ isOpen, onClose, courseId, previewData: previewData
         loadPreview();
     }, [isOpen, courseId, previewDataProp, initialVideo]);
 
+    useEffect(() => {
+        if (initialVideo) {
+            setActiveVideo(initialVideo);
+        }
+    }, [initialVideo]);
+
     if (!isOpen) return null;
 
     return (
@@ -88,9 +93,6 @@ function ModalPreviewVideo({ isOpen, onClose, courseId, previewData: previewData
 
             {!loading && previewData && (
                 <div ref={containerRef} className="w-full videoFs pb-9 relative">
-                    <p className="text-sm text-gray-500 dark:text-[#a6adba] mb-1">
-                        {previewData.description || 'Курс жөнүндө маалымат жакында кошулат...'}
-                    </p>
 
                     {activeVideo?.videoUrl && (
                         <VideoPlayer
@@ -114,9 +116,10 @@ function ModalPreviewVideo({ isOpen, onClose, courseId, previewData: previewData
                                 key={lesson.id}
                                 onClick={() => setActiveVideo(lesson)}
                                 className={`w-full flex items-center gap-3 p-3 rounded border
-                                    ${activeVideo?.id === lesson.id
+                                    ${activeVideo?.id === lesson.id || activeVideo?.videoUrl === lesson.videoUrl
                                         ? 'bg-blue-50 dark:bg-blue-950 border-blue-500 darck'
-                                        : 'hover:bg-gray-100 dark:hover:bg-gray-700'}
+                                        : 'hover:bg-gray-100 dark:hover:bg-gray-700'
+                                    }
                                 `}
                             >
                                 <img
