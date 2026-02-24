@@ -1,5 +1,5 @@
 // AdminPanel.jsx — with Companies tab added (KY labels kept)
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import {
     fetchCourses,
     fetchCategories,
@@ -22,9 +22,19 @@ import {
     updateCourseAiPrompt,
     deleteCourseAiPrompt,
     transcodeLessonHls,
+    fetchAdminStats,
 } from '@services/api';
 import { Link, useSearchParams } from 'react-router-dom';
-import { FiUsers, FiBookOpen, FiMail, FiClock, FiBriefcase, FiCpu, FiBell } from 'react-icons/fi';
+import {
+    FiUsers,
+    FiBookOpen,
+    FiMail,
+    FiClock,
+    FiBriefcase,
+    FiCpu,
+    FiBell,
+    FiBarChart2,
+} from 'react-icons/fi';
 import DashboardSidebar from '@features/dashboard/components/DashboardSidebar';
 import toast from 'react-hot-toast';
 import NotificationsWidget from '@features/notifications/components/NotificationsWidget';
@@ -62,17 +72,36 @@ const AdminPanel = () => {
     const [transcodeSectionId, setTranscodeSectionId] = useState('');
     const [transcodeLessonId, setTranscodeLessonId] = useState('');
     const [transcodeLoading, setTranscodeLoading] = useState(false);
+    const [adminStats, setAdminStats] = useState(null);
+    const [adminStatsLoading, setAdminStatsLoading] = useState(false);
+    const [adminStatsLoaded, setAdminStatsLoaded] = useState(false);
 
     const [searchParams, setSearchParams] = useSearchParams();
-    const page = Number(searchParams.get('page')) || 1;
     const [search, setSearch] = useState(searchParams.get('search') || '');
     const [roleFilter, setRoleFilter] = useState(searchParams.get('role') || '');
     const [dateFrom, setDateFrom] = useState(searchParams.get('dateFrom') || '');
     const [dateTo, setDateTo] = useState(searchParams.get('dateTo') || '');
 
-    const [activeTab, setActiveTab] = useState('users'); // users | courses | contacts | pending | companies | ai-prompts | notifications
+    const initialUsersPage = Number(searchParams.get('page')) || 1;
+    const [usersPage, setUsersPage] = useState(initialUsersPage);
+    const [usersTotalPages, setUsersTotalPages] = useState(1);
+    const [usersTotal, setUsersTotal] = useState(0);
+    const usersFiltersInitialized = useRef(false);
+    const usersSearchInitialized = useRef(false);
+    const usersPageInitialized = useRef(false);
+    const pendingUsersPageRef = useRef(null);
+    const lastUsersFetchKeyRef = useRef(null);
+    const lastSearchRef = useRef(search);
+    const lastFilterRef = useRef({
+        role: roleFilter,
+        dateFrom,
+        dateTo,
+    });
+
+    const [activeTab, setActiveTab] = useState('stats'); // stats | users | courses | contacts | pending | companies | ai-prompts | notifications
 
     const NAV_ITEMS = [
+        { id: 'stats', label: 'Статистика', icon: FiBarChart2 },
         { id: 'users', label: 'Колдонуучулар', icon: FiUsers },
         { id: 'courses', label: 'Курстар & Категориялар', icon: FiBookOpen },
         { id: 'contacts', label: 'Байланыш каттары', icon: FiMail },
@@ -84,15 +113,31 @@ const AdminPanel = () => {
 
     const updateSearchParams = useCallback(
         (params) => {
-            const updated = new URLSearchParams(searchParams);
-            Object.entries(params).forEach(([key, value]) => {
-                if (value) updated.set(key, value);
-                else updated.delete(key);
+            setSearchParams((prev) => {
+                const updated = new URLSearchParams(prev);
+                Object.entries(params).forEach(([key, value]) => {
+                    if (value) updated.set(key, value);
+                    else updated.delete(key);
+                });
+                return updated;
             });
-            setSearchParams(updated);
         },
-        [searchParams, setSearchParams]
+        [setSearchParams]
     );
+
+    const loadAdminStats = useCallback(async () => {
+        setAdminStatsLoading(true);
+        try {
+            const data = await fetchAdminStats();
+            setAdminStats(data || {});
+        } catch (error) {
+            console.error('Failed to fetch admin stats:', error);
+            toast.error('Статистика жүктөлгөн жок.');
+        } finally {
+            setAdminStatsLoading(false);
+            setAdminStatsLoaded(true);
+        }
+    }, []);
 
     const loadCoursesAndCategories = useCallback(async () => {
         try {
@@ -117,21 +162,36 @@ const AdminPanel = () => {
     }, []);
 
     const loadUsers = useCallback(async () => {
+        const key = JSON.stringify({
+            p: usersPage,
+            s: search,
+            r: roleFilter,
+            df: dateFrom,
+            dt: dateTo,
+        });
+        if (lastUsersFetchKeyRef.current === key) return;
+        lastUsersFetchKeyRef.current = key;
         try {
             const res = await fetchUsers({
-                page,
-                limit: 10,
+                page: usersPage,
+                limit: 20,
                 search,
                 role: roleFilter,
                 dateFrom: dateFrom ? new Date(dateFrom).toISOString() : undefined,
                 dateTo: dateTo ? new Date(dateTo).toISOString() : undefined,
             });
             setUsers(res.data);
+            setUsersTotal(res?.total ?? res?.data?.length ?? 0);
+            const fallbackTotalPages =
+                res?.total && res?.data?.length
+                    ? Math.max(1, Math.ceil(res.total / res.data.length))
+                    : 1;
+            setUsersTotalPages(res?.totalPages ?? fallbackTotalPages);
         } catch (error) {
             console.error(error);
             toast.error('Колдонуучуларды жүктөө катасы.');
         }
-    }, [page, search, roleFilter, dateFrom, dateTo]);
+    }, [usersPage, search, roleFilter, dateFrom, dateTo]);
 
     const loadPendingCourses = useCallback(async () => {
         try {
@@ -341,20 +401,114 @@ const AdminPanel = () => {
     }, [activeTab, loadCoursesAndCategories, loadContacts, loadPendingCourses, loadCompanies]);
 
     useEffect(() => {
+        if (activeTab === 'stats' && !adminStatsLoaded) {
+            loadAdminStats();
+        }
+    }, [activeTab, adminStatsLoaded, loadAdminStats]);
+
+    // Sync page from URL when landing on Users tab (e.g., back/forward)
+    useEffect(() => {
+        if (activeTab !== 'users') return;
+        const pageFromUrl = Number(searchParams.get('page')) || 1;
+        if (pendingUsersPageRef.current !== null) {
+            if (pageFromUrl === pendingUsersPageRef.current && pageFromUrl !== usersPage) {
+                setUsersPage(pageFromUrl);
+            }
+            if (pageFromUrl === pendingUsersPageRef.current) {
+                pendingUsersPageRef.current = null;
+            }
+            return;
+        }
+        if (!usersPageInitialized.current) {
+            usersPageInitialized.current = true;
+            setUsersPage(pageFromUrl);
+            return;
+        }
+        if (pageFromUrl !== usersPage) {
+            setUsersPage(pageFromUrl);
+        }
+    }, [activeTab, searchParams, usersPage]);
+
+    // Remove page query when leaving Users tab
+    useEffect(() => {
+        if (activeTab !== 'users') {
+            updateSearchParams({ page: undefined });
+        }
+    }, [activeTab, updateSearchParams]);
+
+    useEffect(() => {
         if (activeTab === 'users') {
             loadUsers();
         }
     }, [activeTab, loadUsers]);
 
+    const handleUsersPageChange = useCallback(
+        (nextPage) => {
+            if (nextPage < 1) return;
+            pendingUsersPageRef.current = nextPage;
+            setUsersPage(nextPage);
+            updateSearchParams({
+                search,
+                role: roleFilter,
+                dateFrom,
+                dateTo,
+                page: nextPage,
+            });
+        },
+        [dateFrom, dateTo, roleFilter, search, updateSearchParams]
+    );
+
     // Debounce for Users search
     useEffect(() => {
+        if (activeTab !== 'users') return;
+        if (!usersSearchInitialized.current) {
+            usersSearchInitialized.current = true;
+            lastSearchRef.current = search;
+            return;
+        }
+        if (search === lastSearchRef.current) return;
+        lastSearchRef.current = search;
         const delayDebounce = setTimeout(() => {
             if (search.length >= 3 || search === '') {
-                updateSearchParams({ search });
+                setUsersPage(1);
+                updateSearchParams({
+                    search,
+                    role: roleFilter,
+                    dateFrom,
+                    dateTo,
+                    page: 1,
+                });
             }
         }, 500);
         return () => clearTimeout(delayDebounce);
-    }, [search, updateSearchParams]);
+    }, [activeTab, dateFrom, dateTo, roleFilter, search, updateSearchParams]);
+
+    // Users filters (role/date) -> reset page & sync params
+    useEffect(() => {
+        if (activeTab !== 'users') return;
+        if (!usersFiltersInitialized.current) {
+            usersFiltersInitialized.current = true;
+            lastFilterRef.current = { role: roleFilter, dateFrom, dateTo };
+            return;
+        }
+        const last = lastFilterRef.current;
+        if (
+            last.role === roleFilter &&
+            last.dateFrom === dateFrom &&
+            last.dateTo === dateTo
+        ) {
+            return;
+        }
+        lastFilterRef.current = { role: roleFilter, dateFrom, dateTo };
+        setUsersPage(1);
+        updateSearchParams({
+            search,
+            role: roleFilter,
+            dateFrom,
+            dateTo,
+            page: 1,
+        });
+    }, [activeTab, roleFilter, dateFrom, dateTo, search, updateSearchParams]);
 
     // Debounce for Companies search
     useEffect(() => {
@@ -446,6 +600,35 @@ const AdminPanel = () => {
         }
     };
 
+    const renderUserPageButtons = () => {
+        if (usersTotalPages <= 1) return null;
+        const maxButtons = 10;
+        let start = Math.max(1, usersPage - Math.floor(maxButtons / 2));
+        let end = start + maxButtons - 1;
+        if (end > usersTotalPages) {
+            end = usersTotalPages;
+            start = Math.max(1, end - maxButtons + 1);
+        }
+        const pages = [];
+        for (let p = start; p <= end; p += 1) {
+            pages.push(
+                <button
+                    key={p}
+                    type="button"
+                    onClick={() => handleUsersPageChange(p)}
+                    className={`w-9 h-9 rounded border text-sm font-medium transition ${
+                        p === usersPage
+                            ? 'bg-blue-600 text-white border-blue-600'
+                            : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800'
+                    }`}
+                >
+                    {p}
+                </button>
+            );
+        }
+        return pages;
+    };
+
     return (
         <div className="pt-24 min-h-screen bg-gray-50 dark:bg-[#1A1A1A]">
             <div className="max-w-7xl mx-auto flex gap-6 px-4 pb-12">
@@ -474,8 +657,19 @@ const AdminPanel = () => {
                             {sidebarOpen ? 'Менюну жашыруу' : 'Менюну көрсөтүү'}
                         </button>
                     </div>
-                    <NotificationsWidget />
-                    {activeTab === 'notifications' && <NotificationsTab />}
+                    {activeTab === 'notifications' && (
+                        <>
+                            <NotificationsWidget />
+                            <NotificationsTab />
+                        </>
+                    )}
+                    {activeTab === 'stats' && (
+                        <AdminStatsView
+                            stats={adminStats}
+                            loading={adminStatsLoading}
+                            onRefresh={loadAdminStats}
+                        />
+                    )}
 
                     {activeTab === 'contacts' && (
                         <div className="bg-white shadow rounded p-4">
@@ -999,6 +1193,33 @@ const AdminPanel = () => {
                                     ))}
                                 </tbody>
                             </table>
+                            <div className="flex flex-wrap items-center justify-between gap-3 mt-4 text-sm">
+                                <span className="text-gray-500 dark:text-gray-400">
+                                    Баракча {usersPage} / {usersTotalPages} · Бардыгы:{' '}
+                                    {usersTotal}
+                                </span>
+                                <div className="flex items-center gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => handleUsersPageChange(usersPage - 1)}
+                                        disabled={usersPage <= 1}
+                                        className="px-3 py-2 rounded border text-gray-700 dark:text-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        Алдыңкы
+                                    </button>
+                                    <div className="flex items-center gap-1">
+                                        {renderUserPageButtons()}
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => handleUsersPageChange(usersPage + 1)}
+                                        disabled={usersPage >= usersTotalPages}
+                                        className="px-3 py-2 rounded border text-gray-700 dark:text-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        Кийинки
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     )}
 
@@ -1041,5 +1262,261 @@ const AdminPanel = () => {
         </div>
     );
 };
+
+const AdminStatsView = ({ stats, loading, onRefresh }) => {
+    const totals = stats?.totals || {};
+    const growth = stats?.growth || {};
+    const activity = stats?.activity || {};
+    const revenue = stats?.revenue || {};
+    const trends = stats?.trends || {};
+    const topCourses = Array.isArray(stats?.topCourses) ? stats.topCourses : [];
+
+    const formatNumber = (value) =>
+        Number(value ?? 0).toLocaleString('ru-RU', {
+            maximumFractionDigits: 0,
+        });
+    const formatPercent = (value) => `${Math.round(Number(value ?? 0))}%`;
+    const formatCurrency = (value) =>
+        `${Number(value ?? 0).toLocaleString('ru-RU', {
+            maximumFractionDigits: 0,
+        })} сом`;
+
+    if (loading && !stats) {
+        return (
+            <div className="bg-white dark:bg-[#1B1B1B] rounded-2xl border border-gray-100 dark:border-gray-800 p-6">
+                <Loader fullScreen={false} />
+            </div>
+        );
+    }
+
+    return (
+        <div className="space-y-6">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                    <p className="text-sm uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                        Акыркы 7 күн
+                    </p>
+                    <h2 className="text-3xl font-semibold text-gray-900 dark:text-[#E8ECF3]">
+                        Платформанын статистикасы
+                    </h2>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                        Жалпы көрсөткүчтөр, активдүүлүк жана тренддер
+                    </p>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                    <GrowthBadge label="Жаңы студенттер" value={growth.newStudents7d} tone="blue" />
+                    <GrowthBadge label="Каттоолор" value={growth.enrollments7d} tone="emerald" />
+                    <button
+                        type="button"
+                        onClick={onRefresh}
+                        disabled={loading}
+                        className="px-4 py-2 rounded-full border text-sm text-gray-700 dark:text-[#E8ECF3] dark:border-gray-700 bg-white dark:bg-[#111111] hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-60 disabled:cursor-not-allowed"
+                    >
+                        {loading ? 'Жүктөлүүдө...' : 'Жаңыртуу'}
+                    </button>
+                </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4">
+                <MetricCard label="Студенттер" value={formatNumber(totals.students)} />
+                <MetricCard label="Курстар" value={formatNumber(totals.courses)} />
+                <MetricCard
+                    label="Жарияланган курстар"
+                    value={formatNumber(totals.publishedCourses)}
+                />
+                <MetricCard label="Жалпы каттоолор" value={formatNumber(totals.enrollments)} />
+                <MetricCard
+                    label="Активдүү каттоолор"
+                    value={formatNumber(totals.activeEnrollments)}
+                />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <MetricCard
+                    label="Даяр киреше (жалпы)"
+                    value={formatCurrency(revenue.total)}
+                    accent="bg-gradient-to-r from-amber-500 to-orange-500 text-white"
+                    sub="Бардык убакыт"
+                />
+                <MetricCard
+                    label="Акыркы 30 күн"
+                    value={formatCurrency(revenue.last30d)}
+                    accent="bg-gradient-to-r from-blue-600 to-indigo-600 text-white"
+                    sub="Ревеню"
+                />
+                <MetricCard
+                    label="Курс аяктоо көрсөткүчү"
+                    value={formatPercent(activity.courseCompletionRate)}
+                    accent="bg-gradient-to-r from-emerald-500 to-teal-500 text-white"
+                    sub={`Активдүү: ${formatNumber(activity.activeStudents7d || 0)} (7к) | ${formatNumber(
+                        activity.activeStudents30d || 0
+                    )} (30к)`}
+                />
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <TrendCard
+                    title="Күнүмдүк каттоо (студент)"
+                    series={trends.dailySignups7d}
+                    color="#2563EB"
+                />
+                <TrendCard
+                    title="Күнүмдүк enrollments"
+                    series={trends.dailyEnrollments7d}
+                    color="#10B981"
+                />
+            </div>
+
+            <TopCoursesTable
+                courses={topCourses}
+                formatNumber={formatNumber}
+                formatPercent={formatPercent}
+                formatCurrency={formatCurrency}
+                loading={loading}
+            />
+        </div>
+    );
+};
+
+const MetricCard = ({ label, value, accent, sub }) => (
+    <div
+        className={`rounded-2xl border border-gray-100 dark:border-gray-800 p-4 shadow-sm ${
+            accent || 'bg-white dark:bg-[#1B1B1B]'
+        }`}
+    >
+        <p className={`text-sm ${accent ? 'text-white/80' : 'text-gray-500 dark:text-gray-400'}`}>
+            {label}
+        </p>
+        <p className="text-2xl font-semibold mt-1 text-gray-900 dark:text-[#E8ECF3]">{value}</p>
+        {sub ? <p className="text-xs mt-1 text-white/80 dark:text-gray-400">{sub}</p> : null}
+    </div>
+);
+
+const GrowthBadge = ({ label, value, tone = 'blue' }) => {
+    const toneMap = {
+        blue: 'bg-blue-50 text-blue-700 border-blue-100 dark:bg-blue-900/30 dark:text-blue-200 dark:border-blue-800',
+        emerald:
+            'bg-emerald-50 text-emerald-700 border-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-200 dark:border-emerald-800',
+    };
+    const classes = toneMap[tone] || toneMap.blue;
+    return (
+        <span
+            className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm border ${classes}`}
+        >
+            <span className="inline-flex h-2 w-2 rounded-full bg-current" aria-hidden />
+            <span className="font-medium">+{Number(value ?? 0).toLocaleString('ru-RU')}</span>
+            <span className="text-xs opacity-70">{label}</span>
+        </span>
+    );
+};
+
+const TrendCard = ({ title, series, color }) => {
+    const safeSeries = Array.isArray(series) && series.length ? series : [{ date: '—', count: 0 }];
+    const latest = safeSeries[safeSeries.length - 1];
+    return (
+        <div className="bg-white dark:bg-[#1B1B1B] rounded-2xl border border-gray-100 dark:border-gray-800 p-4">
+            <div className="flex items-start justify-between gap-2">
+                <div>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">{title}</p>
+                    <p className="text-2xl font-semibold text-gray-900 dark:text-[#E8ECF3]">
+                        {(latest?.count ?? 0).toLocaleString('ru-RU')}
+                    </p>
+                </div>
+                <span className="text-xs text-gray-400">7 күн</span>
+            </div>
+            <Sparkline series={safeSeries} color={color} />
+            <div className="flex justify-between text-[11px] text-gray-400 mt-2">
+                {safeSeries.map((point) => (
+                    <span key={point.date} className="truncate">
+                        {point.date?.slice(5) || '—'}
+                    </span>
+                ))}
+            </div>
+        </div>
+    );
+};
+
+const Sparkline = ({ series, color = '#2563EB' }) => {
+    const width = 100;
+    const height = 40;
+    const maxVal = Math.max(...series.map((p) => Number(p.count) || 0), 1);
+    const points = series
+        .map((point, idx) => {
+            const x = (idx / Math.max(series.length - 1, 1)) * width;
+            const y = height - ((Number(point.count) || 0) / maxVal) * (height - 6) - 3;
+            return `${x},${y}`;
+        })
+        .join(' ');
+
+    return (
+        <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-20 text-blue-600">
+            <polyline
+                fill="none"
+                stroke={color}
+                strokeWidth="2.5"
+                strokeLinejoin="round"
+                strokeLinecap="round"
+                points={points || `0,${height / 2} ${width},${height / 2}`}
+            />
+        </svg>
+    );
+};
+
+const TopCoursesTable = ({ courses, formatNumber, formatPercent, formatCurrency, loading }) => (
+    <div className="bg-white dark:bg-[#1B1B1B] rounded-2xl border border-gray-100 dark:border-gray-800 p-4 space-y-3">
+        <div className="flex items-center justify-between">
+            <div>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Алдыңкы курстар</p>
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-[#E8ECF3]">
+                    Активдүүлүк & киреше
+                </h3>
+            </div>
+        </div>
+        <div className="overflow-x-auto">
+            {loading ? (
+                <div className="py-6">
+                    <Loader fullScreen={false} />
+                </div>
+            ) : courses.length ? (
+                <table className="min-w-full text-sm">
+                    <thead>
+                        <tr className="text-gray-500 dark:text-gray-400 text-left">
+                            <th className="py-2 pr-3 font-medium">Курс</th>
+                            <th className="py-2 pr-3 font-medium">Каттоолор</th>
+                            <th className="py-2 pr-3 font-medium">Активдүү (7к)</th>
+                            <th className="py-2 pr-3 font-medium">Аяктоо</th>
+                            <th className="py-2 pr-3 font-medium">Ревеню</th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                        {courses.map((course) => (
+                            <tr key={course.courseId || course.title}>
+                                <td className="py-2 pr-3 font-semibold text-gray-900 dark:text-[#E8ECF3]">
+                                    {course.title}
+                                </td>
+                                <td className="py-2 pr-3 text-gray-700 dark:text-gray-300">
+                                    {formatNumber(course.enrollments)}
+                                </td>
+                                <td className="py-2 pr-3 text-gray-700 dark:text-gray-300">
+                                    {formatNumber(course.activeStudents7d)}
+                                </td>
+                                <td className="py-2 pr-3 text-gray-700 dark:text-gray-300">
+                                    {formatPercent(course.completionRate)}
+                                </td>
+                                <td className="py-2 pr-3 text-gray-700 dark:text-gray-300">
+                                    {formatCurrency(course.revenueTotal)}
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            ) : (
+                <p className="text-sm text-gray-500 dark:text-gray-400 py-4">
+                    Алдыңкы курстар дагы жок.
+                </p>
+            )}
+        </div>
+    </div>
+);
 
 export default AdminPanel;

@@ -45,3 +45,8 @@ export const updateStudentNotificationSettings = async (studentId, payload) => {
     const { data } = await api.patch(`/students/${studentId}/notification-settings`, payload);
     return data;
 };
+
+export const fetchAdminStats = async () => {
+    const { data } = await api.get('/students/admin/stats');
+    return data;
+};
