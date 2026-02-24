@@ -399,7 +399,7 @@ const CourseDetailsPage = () => {
             }
 
             answersPayload = {
-                answers: answeredQuestions.map((answer) => ({
+                answers: answeredQuestions?.map((answer) => ({
                     questionId: answer.questionId,
                     optionId: answer.optionId,
                 })),
@@ -414,7 +414,7 @@ const CourseDetailsPage = () => {
             }
 
             answersPayload = {
-                answers: quiz.questions.map((question) => ({
+                answers: quiz.questions?.map((question) => ({
                     questionId: question.id,
                     optionId: currentAnswers[question.id],
                 })),
@@ -649,7 +649,7 @@ const CourseDetailsPage = () => {
                 setCourse(data);
                 const sectionData = await fetchSections(id);
 
-                const updatedSections = sectionData.map((sec) => ({
+                const updatedSections = sectionData?.map((sec) => ({
                     ...sec,
                     lessons: sec.lessons
                         .slice()
@@ -785,7 +785,7 @@ const CourseDetailsPage = () => {
 
     const renderTabButtons = () => (
         <div className="flex flex-wrap gap-2 dark:bg-white/10 bg-gray-100 rounded-2xl p-1">
-            {tabs.map((tab) => (
+            {tabs?.map((tab) => (
                 <button
                     key={tab.id}
                     type="button"
