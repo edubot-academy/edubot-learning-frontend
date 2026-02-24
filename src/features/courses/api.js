@@ -34,6 +34,16 @@ export const fetchTopReviews = async ({ courseId, limit = 3 }) => {
     return response.data;
 };
 
+export const fetchInstructorStudentCourses = async () => {
+    const response = await api.get('/courses/instructor/my-students');
+    return response.data;
+};
+
+export const fetchCourseStudents = async (courseId) => {
+    const response = await api.get(`/courses/${courseId}/students`);
+    return response.data;
+};
+
 export const fetchCourseDetails = async (courseId) => {
     const response = await api.get(`/courses/${courseId}`);
     return response.data;

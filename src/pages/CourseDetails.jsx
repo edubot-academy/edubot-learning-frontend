@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useContext } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
 import debounce from 'lodash.debounce';
 import toast from 'react-hot-toast';
 import {
@@ -64,6 +64,7 @@ const saveChallengeStateToStorage = (courseId, lessonId, updates) => {
 
 const CourseDetailsPage = () => {
     const { id } = useParams();
+    const [searchParams] = useSearchParams();
     const { user } = useContext(AuthContext);
     const [course, setCourse] = useState(null);
     const [sections, setSections] = useState([]);
@@ -79,6 +80,7 @@ const CourseDetailsPage = () => {
     const lessonRefs = useRef({});
     const videoRef = useRef(null);
     const hasPlayedRef = useRef(false);
+    const markingCompleteRef = useRef(false);
     const [shouldScrollToLesson, setShouldScrollToLesson] = useState(true);
     const [activeTab, setActiveTab] = useState('program'); // 'program' | 'assistant'
     const [lessonQuizData, setLessonQuizData] = useState({});
@@ -213,9 +215,41 @@ const CourseDetailsPage = () => {
         [id, user, enrolled]
     );
 
-    const handleTimeUpdate = (time) => {
+    const handleTimeUpdate = async (time) => {
         if (user && enrolled && activeLessonRef.current?.kind === 'video') {
             debouncedTimeUpdate(time);
+        }
+
+        if (time > 0) {
+            hasPlayedRef.current = true;
+        }
+
+        const duration =
+            videoRef.current?.duration || activeLessonRef.current?.duration || activeLesson?.duration;
+        if (
+            enrolled &&
+            activeLessonRef.current &&
+            duration &&
+            duration > 0 &&
+            time / duration >= 0.95 &&
+            !completedLessons.includes(activeLessonRef.current.id) &&
+            !markingCompleteRef.current
+        ) {
+            try {
+                markingCompleteRef.current = true;
+                const resp = await markLessonComplete(
+                    Number(id),
+                    activeLessonRef.current.sectionId,
+                    activeLessonRef.current.id
+                );
+                if (resp.completed) {
+                    setCompletedLessons((prev) => [
+                        ...new Set([...prev, activeLessonRef.current.id]),
+                    ]);
+                }
+            } finally {
+                markingCompleteRef.current = false;
+            }
         }
     };
 
@@ -555,14 +589,19 @@ const CourseDetailsPage = () => {
             activeLesson?.kind === 'code'
         )
             return;
-        if (user && enrolled && activeLesson) {
-            const resp = await markLessonComplete(
-                Number(id),
-                activeLesson.sectionId,
-                activeLesson.id
-            );
-            if (resp.completed) {
-                setCompletedLessons((prev) => [...new Set([...prev, activeLesson.id])]);
+        if (user && enrolled && activeLesson && !markingCompleteRef.current) {
+            try {
+                markingCompleteRef.current = true;
+                const resp = await markLessonComplete(
+                    Number(id),
+                    activeLesson.sectionId,
+                    activeLesson.id
+                );
+                if (resp.completed) {
+                    setCompletedLessons((prev) => [...new Set([...prev, activeLesson.id])]);
+                }
+            } finally {
+                markingCompleteRef.current = false;
             }
         }
         const { next } = findPrevNextLessons();
@@ -571,44 +610,11 @@ const CourseDetailsPage = () => {
         }
     };
 
-    const handleVideoProgress = useCallback(
-        async (progress, lessonParam) => {
-            if (
-                lessonParam.kind === 'article' ||
-                lessonParam.kind === 'quiz' ||
-                lessonParam.kind === 'code'
-            )
-                return;
-
-            if (!hasPlayedRef.current) {
-                if (progress > 0) {
-                    hasPlayedRef.current = true;
-                } else {
-                    return;
-                }
-            }
-
-            if (
-                enrolled &&
-                lessonParam.id === activeLessonRef.current?.id &&
-                hasPlayedRef.current &&
-                progress >= 95 &&
-                lessonParam.duration &&
-                lessonParam.duration > 0 &&
-                !completedLessons.includes(lessonParam.id)
-            ) {
-                const resp = await markLessonComplete(
-                    Number(id),
-                    lessonParam.sectionId,
-                    lessonParam.id
-                );
-                if (resp.completed) {
-                    setCompletedLessons((prev) => [...new Set([...prev, lessonParam.id])]);
-                }
-            }
-        },
-        [id, enrolled, completedLessons]
-    );
+    const handleVideoProgress = useCallback((progress) => {
+        if (progress > 0) {
+            hasPlayedRef.current = true;
+        }
+    }, []);
 
     const handleCheckboxToggle = async (lesson) => {
         if (!enrolled) return;
@@ -634,6 +640,13 @@ const CourseDetailsPage = () => {
     useEffect(() => {
         const fetchCourse = async () => {
             try {
+                const resumeLessonIdParam = searchParams.get('resumeLessonId');
+                const resumeTimeParam = searchParams.get('resumeTime');
+                const resumeLessonId = resumeLessonIdParam ? Number(resumeLessonIdParam) : null;
+                const resumeTimeSeconds =
+                    resumeTimeParam && !Number.isNaN(Number(resumeTimeParam))
+                        ? Number(resumeTimeParam)
+                        : null;
                 let enrollment = { enrolled: false };
                 if (user) {
                     if (user.role === 'student') {
@@ -673,7 +686,21 @@ const CourseDetailsPage = () => {
                 }
 
                 let lastLesson = null;
-                if (user && enrollment.enrolled) {
+                let hasResumeParam = false;
+                if (resumeLessonId) {
+                    for (let sec of updatedSections) {
+                        for (let lesson of sec.lessons || []) {
+                            if (lesson.id === resumeLessonId) {
+                                lastLesson = lesson;
+                                hasResumeParam = true;
+                                break;
+                            }
+                        }
+                        if (hasResumeParam) break;
+                    }
+                }
+
+                if (!lastLesson && user && enrollment.enrolled) {
                     const lastViewed = await getLastViewedLesson(id);
                     if (lastViewed?.lessonId) {
                         setLastViewedLessonId(lastViewed.lessonId);
@@ -714,7 +741,11 @@ const CourseDetailsPage = () => {
                     if (lastLesson.kind === 'code') {
                         await loadChallengeForLesson(lastLesson);
                     }
-                    if (user && enrollment.enrolled && !lastLesson.locked) {
+                    if (hasResumeParam) {
+                        setResumeVideoTime(
+                            resumeTimeSeconds && resumeTimeSeconds > 0 ? resumeTimeSeconds : 0
+                        );
+                    } else if (user && enrollment.enrolled && !lastLesson.locked) {
                         if (
                             lastLesson.kind === 'article' ||
                             lastLesson.kind === 'quiz' ||

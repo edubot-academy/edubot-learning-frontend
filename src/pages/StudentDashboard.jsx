@@ -1,6 +1,6 @@
 import { useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import DashboardSidebar from '@features/dashboard/components/DashboardSidebar';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import {
     fetchStudentCourses,
     fetchStudentDashboardSummary,
@@ -22,6 +22,7 @@ import {
     FiUser,
     FiBell,
     FiMessageCircle,
+    FiPlay,
 } from 'react-icons/fi';
 import NotificationsWidget from '@features/notifications/components/NotificationsWidget';
 import NotificationsTab from '@features/notifications/components/NotificationsTab';
@@ -29,7 +30,7 @@ import Loader from '@shared/ui/Loader';
 
 const NAV_ITEMS = [
     { id: 'overview', label: 'Кыскача', icon: FiHome },
-    { id: 'courses', label: 'Курстарым', icon: FiBookOpen },
+    { id: 'my-courses', label: 'Курстарым', icon: FiBookOpen },
     { id: 'schedule', label: 'Жүгүртмө', icon: FiCalendar },
     { id: 'tasks', label: 'Тапшырмалар', icon: FiCheckCircle },
     { id: 'progress', label: 'Прогресс', icon: FiBarChart2 },
@@ -93,7 +94,7 @@ const StudentDashboard = () => {
     const [tabLoading, setTabLoading] = useState(null);
     const [loadedTabs, setLoadedTabs] = useState({
         overview: false,
-        courses: false,
+        'my-courses': false,
         schedule: false,
         tasks: false,
         progress: false,
@@ -120,7 +121,7 @@ const StudentDashboard = () => {
 
     const loadCourses = useCallback(async () => {
         if (!studentId) return;
-        setTabLoading('courses');
+        setTabLoading('my-courses');
         try {
             const coursesRes = await fetchStudentCourses(studentId);
             setCourses(Array.isArray(coursesRes?.items) ? coursesRes.items : coursesRes || []);
@@ -129,7 +130,7 @@ const StudentDashboard = () => {
             toast.error('Курстарды жүктөө мүмкүн болбоду');
         } finally {
             setTabLoading(null);
-            setLoadedTabs((prev) => ({ ...prev, courses: true }));
+            setLoadedTabs((prev) => ({ ...prev, 'my-courses': true }));
         }
     }, [studentId]);
 
@@ -217,7 +218,7 @@ const StudentDashboard = () => {
         const tab = activeTab === 'profile' ? 'overview' : activeTab;
         if (tab === 'overview') {
             loadOverview();
-        } else if (tab === 'courses') {
+        } else if (tab === 'my-courses') {
             loadCourses();
         } else if (tab === 'schedule') {
             loadSchedule();
@@ -263,20 +264,72 @@ const StudentDashboard = () => {
     );
 
     const progressItems = useMemo(() => {
-        return (progress || []).map((item) => ({
-            course: item.courseTitle || item.course || 'Course',
-            lessons: item.lessons
-                ? item.lessons
-                : `${item.lessonsCompleted ?? 0}/${item.lessonsTotal ?? 0}`,
-            quizzes: item.quizzes
-                ? item.quizzes
-                : `${item.quizzesCompleted ?? 0}/${item.quizzesTotal ?? 0}`,
-            certificate:
+        return (progress || []).map((item) => {
+            const lessonsArray = Array.isArray(item.lessons) ? item.lessons : [];
+            const sectionsMap = new Map();
+            lessonsArray.forEach((lesson) => {
+                const sectionKey = lesson.sectionId ?? `section-${lesson.sectionTitle || 'unknown'}`;
+                if (!sectionsMap.has(sectionKey)) {
+                    sectionsMap.set(sectionKey, {
+                        sectionId: lesson.sectionId,
+                        sectionTitle: lesson.sectionTitle || 'Секция',
+                        sectionOrder: lesson.sectionOrder ?? 0,
+                        lessons: [],
+                    });
+                }
+                sectionsMap.get(sectionKey).lessons.push(lesson);
+            });
+            const sections = Array.from(sectionsMap.values())
+                .map((section) => ({
+                    ...section,
+                    lessons: section.lessons
+                        .slice()
+                        .sort(
+                            (a, b) =>
+                                (a.lessonOrder ?? 0) - (b.lessonOrder ?? 0) ||
+                                String(a.lessonTitle || '').localeCompare(b.lessonTitle || '')
+                        ),
+                }))
+                .sort(
+                    (a, b) =>
+                        (a.sectionOrder ?? 0) - (b.sectionOrder ?? 0) ||
+                        String(a.sectionTitle || '').localeCompare(b.sectionTitle || '')
+                );
+            const totalLessons =
+                item.lessonsTotal ?? (lessonsArray.length ? lessonsArray.length : 0);
+            const completedLessons = item.lessonsCompleted ?? 0;
+            const progressPercent =
+                totalLessons > 0
+                    ? Math.min(100, Math.round((completedLessons * 100) / totalLessons))
+                    : 0;
+            const flatOrderedLessons = sections.flatMap((section) => section.lessons);
+            const resumeLesson =
+                item.lastViewedLesson && item.lastViewedLesson.lessonId
+                    ? item.lastViewedLesson
+                    : flatOrderedLessons.find((lesson) => !lesson.completed) ||
+                    flatOrderedLessons[0];
+            const hasCertificate =
                 item.certificate ??
                 certificates.some(
                     (cert) => cert.courseId === item.courseId || cert.course === item.course
-                ),
-        }));
+                );
+            return {
+                courseId: item.courseId,
+                courseTitle: item.courseTitle || item.course || 'Course',
+                lessonsCompleted: completedLessons,
+                lessonsTotal: totalLessons,
+                progressPercent,
+                sections: sections.map((section) => ({
+                    ...section,
+                    lessons: section.lessons.map((lesson) => ({
+                        ...lesson,
+                        kind: lesson.kind || 'video',
+                    })),
+                })),
+                resumeLesson,
+                hasCertificate,
+            };
+        });
     }, [progress, certificates]);
 
     const handleNotificationChange = useCallback((key, value) => {
@@ -329,7 +382,7 @@ const StudentDashboard = () => {
             );
         }
         switch (activeTab) {
-            case 'courses':
+            case 'my-courses':
                 return <CoursesTab courses={courses} />;
             case 'schedule':
                 return <ScheduleTab offerings={offerings} />;
@@ -371,7 +424,11 @@ const StudentDashboard = () => {
                             activeId={activeTab}
                             onSelect={(id) => {
                                 if (id === 'chat') {
-                                    navigate('/chat'); 
+                                    navigate('/chat');
+                                    return;
+                                }
+                                if (id === 'profile') {
+                                    navigate('/profile');
                                     return;
                                 }
                                 setActiveTab(id);
@@ -460,10 +517,51 @@ const CoursesTab = ({ courses }) => {
                         course.instructor?.fullName ||
                         course.instructor ||
                         'Инструктор';
-                    const progress = Number(course.progress ?? course.progressPercent ?? 0);
+                    const courseId = course.id ?? course.courseId;
+                    const lessonsCompleted = Number(course.lessonsCompleted ?? 0);
+                    const lessonsTotal = Number(course.lessonsTotal ?? course.lessonCount ?? 0);
+                    const rawProgress = course.progressPercent ?? course.progress;
+                    const progressValue =
+                        typeof rawProgress === 'number'
+                            ? Math.max(0, Math.min(100, Math.round(rawProgress)))
+                            : lessonsTotal > 0
+                                ? Math.round((lessonsCompleted * 100) / lessonsTotal)
+                                : 0;
+                    const nextLessonObj =
+                        course.nextLesson && typeof course.nextLesson === 'object'
+                            ? course.nextLesson
+                            : null;
+                    const lastViewed =
+                        course.lastViewedLesson ||
+                        (course.lastViewedLessonId
+                            ? {
+                                lessonId: course.lastViewedLessonId,
+                                lessonTitle: course.lastViewedLessonTitle,
+                                lastVideoTime: course.lastVideoTime,
+                            }
+                            : null);
+                    const nextLessonTitle =
+                        nextLessonObj?.title ||
+                        course.nextLessonTitle ||
+                        course.nextLesson ||
+                        '';
+                    const resumeLessonId = nextLessonObj?.lessonId || lastViewed?.lessonId;
+                    const resumeTimeSeconds =
+                        nextLessonObj?.lessonId === resumeLessonId && nextLessonObj?.lastVideoTime
+                            ? nextLessonObj.lastVideoTime
+                            : lastViewed?.lastVideoTime;
+                    const resumeTimeParam =
+                        resumeLessonId && resumeTimeSeconds
+                            ? `&resumeTime=${Math.floor(resumeTimeSeconds)}`
+                            : '';
+                    const resumeSearch =
+                        courseId && resumeLessonId
+                            ? `?resumeLessonId=${resumeLessonId}${resumeTimeParam}`
+                            : '';
+
                     return (
                         <div
-                            key={course.id || course.courseId}
+                            key={courseId || course.title}
                             className="bg-white dark:bg-[#222222] rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden flex flex-col hover:shadow-md transition-shadow"
                         >
                             <img
@@ -475,28 +573,36 @@ const CoursesTab = ({ courses }) => {
                                 <div>
                                     <p className="text-sm text-gray-500 dark:text-gray-400">{instructor}</p>
                                     <h3 className="text-lg font-semibold text-gray-900 dark:text-[#E8ECF3]">{course.title}</h3>
+                                    {lessonsTotal > 0 ? (
+                                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                                            Сабактар: {lessonsCompleted}/{lessonsTotal}
+                                        </p>
+                                    ) : null}
                                 </div>
                                 <div className="space-y-1">
                                     <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400">
                                         <span>Процесс</span>
-                                        <span>{progress}%</span>
+                                        <span>{Math.max(0, Math.min(100, progressValue))}%</span>
                                     </div>
                                     <div className="h-2 rounded-full bg-gray-100 dark:bg-gray-700">
                                         <div
                                             className="h-2 rounded-full bg-blue-500"
                                             style={{
-                                                width: `${Math.min(100, Math.max(0, progress))}%`,
+                                                width: `${Math.min(100, Math.max(0, progressValue))}%`,
                                             }}
                                         />
                                     </div>
                                 </div>
                                 <p className="text-sm text-gray-500 dark:text-gray-400">
                                     Кийинки сабак:{' '}
-                                    {course.nextLessonTitle || course.nextLesson || '—'}
+                                    {nextLessonTitle || '—'}
                                 </p>
-                                <button className="mt-auto px-4 py-2 rounded-full border text-sm text-blue-600 dark:text-blue-400 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                                <Link
+                                    to={courseId ? `/courses/${courseId}${resumeSearch}` : '#'}
+                                    className="mt-auto px-4 py-2 rounded-full border text-sm text-blue-600 dark:text-blue-400 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-center"
+                                >
                                     Улантуу
-                                </button>
+                                </Link>
                             </div>
                         </div>
                     );
@@ -608,39 +714,182 @@ const TasksTab = ({ tasks }) => (
     </div>
 );
 
-const ProgressTab = ({ items }) => (
-    <div className="space-y-4">
-        <h2 className="text-2xl font-semibold text-gray-900 dark:text-[#E8ECF3]">Прогресс жана сертификаттар</h2>
-        {items.length ? (
-            <div className="bg-white dark:bg-[#222222] rounded-3xl border border-gray-100 dark:border-gray-800 divide-y divide-gray-100 dark:divide-gray-800">
-                {items.map((item, index) => (
+const ProgressTab = ({ items }) => {
+    const formatTime = (seconds) => {
+        if (seconds === null || seconds === undefined) return null;
+        const mins = Math.floor(seconds / 60);
+        const secs = Math.floor(seconds % 60)
+            .toString()
+            .padStart(2, '0');
+        return `${mins}:${secs}`;
+    };
+
+    if (!items.length) {
+        return (
+            <div className="space-y-4">
+                <h2 className="text-2xl font-semibold text-gray-900 dark:text-[#E8ECF3]">
+                    Прогресс жана сертификаттар
+                </h2>
+                <div className="bg-white dark:bg-[#222222] rounded-3xl border border-gray-100 dark:border-gray-800 p-6 text-center text-gray-500 dark:text-gray-400">
+                    No enrolled courses yet.
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div className="space-y-4">
+            <h2 className="text-2xl font-semibold text-gray-900 dark:text-[#E8ECF3]">
+                Прогресс жана сертификаттар
+            </h2>
+            <div className="space-y-4">
+                {items.map((item) => (
                     <div
-                        key={index}
-                        className="p-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+                        key={item.courseId || item.courseTitle}
+                        className="bg-white dark:bg-[#222222] rounded-3xl border border-gray-100 dark:border-gray-800 p-5 space-y-4"
                     >
-                        <div>
-                            <p className="text-lg font-semibold text-gray-900 dark:text-[#E8ECF3]">{item.course}</p>
-                            <p className="text-sm text-gray-500 dark:text-gray-400">
-                                Сабактар: {item.lessons} · Квиздер: {item.quizzes}
-                            </p>
+                        <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                            <div>
+                                <p className="text-lg font-semibold text-gray-900 dark:text-[#E8ECF3]">
+                                    {item.courseTitle}
+                                </p>
+                                <p className="text-sm text-gray-500 dark:text-gray-400">
+                                    Сабактар: {item.lessonsCompleted}/{item.lessonsTotal || '—'}
+                                </p>
+                            </div>
+                            <div className="flex items-center gap-3 flex-wrap">
+                                <div className="w-48">
+                                    <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400">
+                                        <span>Прогресс</span>
+                                        <span>{item.progressPercent}%</span>
+                                    </div>
+                                    <div className="h-2 rounded-full bg-gray-100 dark:bg-gray-700 overflow-hidden">
+                                        <div
+                                            className="h-2 bg-blue-600 rounded-full"
+                                            style={{ width: `${item.progressPercent}%` }}
+                                        />
+                                    </div>
+                                </div>
+                                {item.resumeLesson ? (
+                                    <Link
+                                        to={
+                                            item.courseId
+                                                ? {
+                                                    pathname: `/courses/${item.courseId}`,
+                                                    search: `?resumeLessonId=${item.resumeLesson.lessonId || ''}${item.resumeLesson.lastVideoTime
+                                                            ? `&resumeTime=${Math.floor(
+                                                                item.resumeLesson.lastVideoTime
+                                                            )}`
+                                                            : ''
+                                                        }`,
+                                                }
+                                                : '#'
+                                        }
+                                        className="inline-flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400 px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-900/30"
+                                    >
+                                        <FiPlay className="shrink-0" />
+                                        Улантуу: {item.resumeLesson.lessonTitle}
+                                        {item.resumeLesson.lastVideoTime
+                                            ? ` (${formatTime(item.resumeLesson.lastVideoTime)})`
+                                            : ''}
+                                    </Link>
+                                ) : null}
+                                {item.hasCertificate ? (
+                                    <span className="text-xs px-2 py-1 rounded-full bg-green-100 text-green-700">
+                                        Сертификат даяр
+                                    </span>
+                                ) : null}
+                            </div>
                         </div>
-                        {item.certificate ? (
-                            <button className="px-4 py-2 rounded-full border text-sm text-green-600 dark:text-green-400 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-                                Сертификатты жүктөө
-                            </button>
+
+                        {item.sections.length ? (
+                            <div className="space-y-3">
+                                {item.sections.map((section) => (
+                                    <div
+                                        key={section.sectionId || section.sectionTitle}
+                                        className="rounded-2xl border border-gray-100 dark:border-gray-800 p-4 space-y-3"
+                                    >
+                                        <div className="flex items-center justify-between gap-2">
+                                            <p className="font-semibold text-gray-900 dark:text-[#E8ECF3]">
+                                                {section.sectionTitle}
+                                            </p>
+                                            <span className="text-sm text-gray-500 dark:text-gray-400">
+                                                {section.lessons.filter((l) => l.completed).length}/
+                                                {section.lessons.length}
+                                            </span>
+                                        </div>
+                                        <div className="space-y-2">
+                                            {section.lessons.map((lesson) => {
+                                                const isQuiz = lesson.kind === 'quiz';
+                                                const quizBadge = isQuiz
+                                                    ? lesson.quizPassed === true
+                                                        ? { label: 'Квиз өттү', className: 'bg-green-100 text-green-700' }
+                                                        : lesson.quizPassed === false
+                                                            ? { label: 'Квиз өтпөдү', className: 'bg-red-100 text-red-700' }
+                                                            : null
+                                                    : null;
+                                                return (
+                                                    <div
+                                                        key={lesson.lessonId || lesson.lessonTitle}
+                                                        className="flex items-center justify-between gap-3 rounded-xl px-3 py-2 bg-gray-50 dark:bg-gray-800/50"
+                                                    >
+                                                        <div className="flex items-center gap-3">
+                                                            <span
+                                                                className={`w-5 h-5 rounded-full flex items-center justify-center text-xs ${lesson.completed
+                                                                    ? 'bg-green-100 text-green-700'
+                                                                    : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-400'
+                                                                    }`}
+                                                            >
+                                                                {lesson.completed ? '✓' : ''}
+                                                            </span>
+                                                            <div className="flex flex-col">
+                                                                <div className="flex items-center gap-2">
+                                                                    <p className="text-sm text-gray-800 dark:text-[#E8ECF3]">
+                                                                        {lesson.lessonTitle}
+                                                                    </p>
+                                                                    <span className="text-[11px] px-2 py-0.5 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 uppercase">
+                                                                        {lesson.kind === 'quiz'
+                                                                            ? 'Квиз'
+                                                                            : lesson.kind === 'article'
+                                                                                ? 'Макала'
+                                                                                : lesson.kind === 'code'
+                                                                                    ? 'Код'
+                                                                                    : 'Видео'}
+                                                                    </span>
+                                                                    {quizBadge ? (
+                                                                        <span className={`text-[11px] px-2 py-0.5 rounded-full ${quizBadge.className}`}>
+                                                                            {quizBadge.label}
+                                                                            {typeof lesson.quizScore === 'number'
+                                                                                ? ` (${lesson.quizScore}%)`
+                                                                                : ''}
+                                                                        </span>
+                                                                    ) : null}
+                                                                </div>
+                                                                {!lesson.completed && lesson.lastVideoTime ? (
+                                                                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                                                                        Акыркы убакыт: {formatTime(lesson.lastVideoTime)}
+                                                                    </span>
+                                                                ) : null}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
                         ) : (
-                            <span className="text-sm text-gray-400 dark:text-gray-500">Сертификат али даяр эмес</span>
+                            <div className="text-sm text-gray-500 dark:text-gray-400">
+                                Бул курс боюнча сабактар табылган жок.
+                            </div>
                         )}
                     </div>
                 ))}
             </div>
-        ) : (
-            <div className="bg-white dark:bg-[#222222] rounded-3xl border border-gray-100 dark:border-gray-800 p-6 text-center text-gray-500 dark:text-gray-400">
-                Прогресс маалыматы табылган жок.
-            </div>
-        )}
-    </div>
-);
+        </div>
+    );
+};
 
 const ProfileTab = ({
     student,
