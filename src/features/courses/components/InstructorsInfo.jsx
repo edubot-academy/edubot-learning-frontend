@@ -117,7 +117,7 @@ function InstructorsInfo({ instructorData }) {
                     <p className="text-base leading-relaxed break-words text-gray-700 dark:text-gray-300">{bio}</p>
 
                     <div className="flex flex-wrap gap-2 w-full">
-                        {expertiseTags.map((tag) => (
+                        {expertiseTags?.map((tag) => (
                             <span
                                 key={tag}
                                 className="inline-flex items-center justify-center border border-gray-400 bg-black text-white text-sm px-3 py-1 rounded-2xl whitespace-nowrap dark:bg-gray-700 dark:border-gray-600"
