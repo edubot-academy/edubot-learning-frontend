@@ -48,7 +48,7 @@ export default function InstructorChat({ course, onClose }) {
 
         (async () => {
             try {
-                const chats = await fetchInstructorChats({ role: 'student' });
+                const chats = await fetchInstructorChats({ role: user?.role });
                 const chatForCourse = chats.find((c) => c.course?.id === course.id);
 
                 if (chatForCourse) {
@@ -123,7 +123,7 @@ export default function InstructorChat({ course, onClose }) {
             if (!activeChat?.id && response?.chat) {
                 setActiveChat(response.chat);
             } else if (!activeChat?.id && response?.chatId) {
-                const chats = await fetchInstructorChats({ role: 'student' });
+                const chats = await fetchInstructorChats({ role: user?.role });
                 const newChat = chats.find((c) => c.id === response.chatId);
                 if (newChat) {
                     setActiveChat(newChat);
