@@ -50,19 +50,6 @@ const CardCourse = ({
         e.stopPropagation();
         e.preventDefault();
 
-        console.log('⭐ Favorite clicked - Original course data:', {
-            id,
-            title,
-            coverImageUrl, // Проверяем, что это поле приходит
-            instructor,
-            price,
-            ratingCount,
-            ratingAverage,
-            level,
-            durationInHours,
-            lessonCount
-        });
-
         if (!user) {
             setShowUnauthModal(true);
             return;

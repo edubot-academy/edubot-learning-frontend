@@ -774,8 +774,6 @@ const CourseDetailsPage = () => {
         ? 'Ассистентти колдонуу үчүн курска жазылуу керек.'
         : 'EDU AI ассистенти бул курста өчүрүлгөн.';
 
-    // Замените текущий код табов на этот:
-
     const tabs = [
         { id: 'program', label: 'Курстун программасы', disabled: false },
         ...(isAiAvailable ? [{ id: 'assistant', label: 'Edu AI Assistent', disabled: false }] : [])
@@ -806,6 +804,9 @@ const CourseDetailsPage = () => {
     const lessonCount =
         course?.lessonCount ??
         sections.reduce((count, sec) => count + (sec.lessons?.length || 0), 0);
+    const activeQuiz = activeLesson?.kind === 'quiz' ? lessonQuizData[activeLesson.id] : null;
+    const activeChallenge =
+        activeLesson?.kind === 'code' ? lessonChallengeData[activeLesson.id] : null;
 
     return (
         <div className="min-h-screen pt-10 bg-[#f8f9fb] dark:bg-[#1A1A1A]">
@@ -848,39 +849,48 @@ const CourseDetailsPage = () => {
                                         lesson={activeLesson}
                                     />
                                 ) : activeLesson.kind === 'quiz' ? (
-                                    <LessonQuizPlayer
-                                        key={activeLesson.id}
-                                        quiz={lessonQuizData[activeLesson.id]}
-                                        answers={lessonQuizAnswers[activeLesson.id] || {}}
-                                        onAnswerChange={handleQuizAnswerChange}
-                                        onSubmit={handleQuizSubmit}
-                                        onRetake={handleQuizRetake}
-                                        submitting={quizSubmitting}
-                                        disabled={!enrolled || activeLesson.locked}
-                                        loading={quizLoading && !lessonQuizData[activeLesson.id]}
-                                        result={lessonQuizResults[activeLesson.id]}
-                                    />
+                                    activeQuiz ? (
+                                        <LessonQuizPlayer
+                                            key={activeLesson.id}
+                                            quiz={activeQuiz}
+                                            answers={lessonQuizAnswers[activeLesson.id] || {}}
+                                            onAnswerChange={handleQuizAnswerChange}
+                                            onSubmit={handleQuizSubmit}
+                                            onRetake={handleQuizRetake}
+                                            submitting={quizSubmitting}
+                                            disabled={!enrolled || activeLesson.locked}
+                                            loading={quizLoading && !activeQuiz}
+                                            result={lessonQuizResults[activeLesson.id]}
+                                        />
+                                    ) : (
+                                        <div className="flex justify-center py-10">
+                                            <Loader />
+                                        </div>
+                                    )
                                 ) : activeLesson.kind === 'code' ? (
-                                    <LessonChallengePlayer
-                                        key={activeLesson.id}
-                                        challenge={lessonChallengeData[activeLesson.id]}
-                                        code={
-                                            lessonChallengeCode[activeLesson.id] ??
-                                            lessonChallengeData[activeLesson.id]?.starterCode ??
-                                            ''
-                                        }
-                                        onCodeChange={(newCode) =>
-                                            handleChallengeCodeChange(activeLesson.id, newCode)
-                                        }
-                                        onSubmit={handleChallengeSubmit}
-                                        submitting={challengeSubmitting}
-                                        disabled={!enrolled || activeLesson.locked}
-                                        loading={
-                                            challengeLoading &&
-                                            !lessonChallengeData[activeLesson.id]
-                                        }
-                                        result={lessonChallengeResults[activeLesson.id]}
-                                    />
+                                    activeChallenge ? (
+                                        <LessonChallengePlayer
+                                            key={activeLesson.id}
+                                            challenge={activeChallenge}
+                                            code={
+                                                lessonChallengeCode[activeLesson.id] ??
+                                                activeChallenge?.starterCode ??
+                                                ''
+                                            }
+                                            onCodeChange={(newCode) =>
+                                                handleChallengeCodeChange(activeLesson.id, newCode)
+                                            }
+                                            onSubmit={handleChallengeSubmit}
+                                            submitting={challengeSubmitting}
+                                            disabled={!enrolled || activeLesson.locked}
+                                            loading={challengeLoading && !activeChallenge}
+                                            result={lessonChallengeResults[activeLesson.id]}
+                                        />
+                                    ) : (
+                                        <div className="flex justify-center py-10">
+                                            <Loader />
+                                        </div>
+                                    )
                                 ) : (
                                     <CourseVideoPlayer
                                         key={activeLesson.id}
@@ -961,41 +971,51 @@ const CourseDetailsPage = () => {
                                             lesson={activeLesson}
                                         />
                                     ) : activeLesson.kind === 'quiz' ? (
-                                        <LessonQuizPlayer
-                                            key={activeLesson.id}
-                                            quiz={lessonQuizData[activeLesson.id]}
-                                            answers={lessonQuizAnswers[activeLesson.id] || {}}
-                                            onAnswerChange={handleQuizAnswerChange}
-                                            onSubmit={handleQuizSubmit}
-                                            onRetake={handleQuizRetake}
-                                            submitting={quizSubmitting}
-                                            disabled={!enrolled || activeLesson.locked}
-                                            loading={
-                                                quizLoading && !lessonQuizData[activeLesson.id]
-                                            }
-                                            result={lessonQuizResults[activeLesson.id]}
-                                        />
+                                        activeQuiz ? (
+                                            <LessonQuizPlayer
+                                                key={activeLesson.id}
+                                                quiz={activeQuiz}
+                                                answers={lessonQuizAnswers[activeLesson.id] || {}}
+                                                onAnswerChange={handleQuizAnswerChange}
+                                                onSubmit={handleQuizSubmit}
+                                                onRetake={handleQuizRetake}
+                                                submitting={quizSubmitting}
+                                                disabled={!enrolled || activeLesson.locked}
+                                                loading={quizLoading && !activeQuiz}
+                                                result={lessonQuizResults[activeLesson.id]}
+                                            />
+                                        ) : (
+                                            <div className="flex justify-center py-10">
+                                                <Loader />
+                                            </div>
+                                        )
                                     ) : activeLesson.kind === 'code' ? (
-                                        <LessonChallengePlayer
-                                            key={activeLesson.id}
-                                            challenge={lessonChallengeData[activeLesson.id]}
-                                            code={
-                                                lessonChallengeCode[activeLesson.id] ??
-                                                lessonChallengeData[activeLesson.id]?.starterCode ??
-                                                ''
-                                            }
-                                            onCodeChange={(newCode) =>
-                                                handleChallengeCodeChange(activeLesson.id, newCode)
-                                            }
-                                            onSubmit={handleChallengeSubmit}
-                                            submitting={challengeSubmitting}
-                                            disabled={!enrolled || activeLesson.locked}
-                                            loading={
-                                                challengeLoading &&
-                                                !lessonChallengeData[activeLesson.id]
-                                            }
-                                            result={lessonChallengeResults[activeLesson.id]}
-                                        />
+                                        activeChallenge ? (
+                                            <LessonChallengePlayer
+                                                key={activeLesson.id}
+                                                challenge={activeChallenge}
+                                                code={
+                                                    lessonChallengeCode[activeLesson.id] ??
+                                                    activeChallenge?.starterCode ??
+                                                    ''
+                                                }
+                                                onCodeChange={(newCode) =>
+                                                    handleChallengeCodeChange(
+                                                        activeLesson.id,
+                                                        newCode
+                                                    )
+                                                }
+                                                onSubmit={handleChallengeSubmit}
+                                                submitting={challengeSubmitting}
+                                                disabled={!enrolled || activeLesson.locked}
+                                                loading={challengeLoading && !activeChallenge}
+                                                result={lessonChallengeResults[activeLesson.id]}
+                                            />
+                                        ) : (
+                                            <div className="flex justify-center py-10">
+                                                <Loader />
+                                            </div>
+                                        )
                                     ) : (
                                         <CourseVideoPlayer
                                             key={activeLesson.id}
