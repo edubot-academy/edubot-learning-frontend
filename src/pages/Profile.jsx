@@ -25,7 +25,6 @@ const createEmptyInstructorProfile = () => ({
     title: '',
     bio: '',
     yearsOfExperience: '',
-    numberOfStudents: '',
     expertiseTagsText: '',
     socialLinks: SOCIAL_LINK_FIELDS.reduce((acc, key) => {
         acc[key] = '';
@@ -47,7 +46,6 @@ const normalizeInstructorProfileState = (data = {}) => {
     base.title = data.title || '';
     base.bio = data.bio || '';
     base.yearsOfExperience = toInputValue(data.yearsOfExperience);
-    base.numberOfStudents = toInputValue(data.numberOfStudents);
     base.expertiseTagsText = Array.isArray(data.expertiseTags) ? data.expertiseTags.join(', ') : '';
     base.courses = Array.isArray(data.courses) ? data.courses : [];
     SOCIAL_LINK_FIELDS.forEach((key) => {
@@ -62,7 +60,6 @@ const mapProfileForCompare = (profile) => ({
     title: (profile.title || '').trim(),
     bio: (profile.bio || '').trim(),
     yearsOfExperience: profile.yearsOfExperience === '' ? '' : Number(profile.yearsOfExperience),
-    numberOfStudents: profile.numberOfStudents === '' ? '' : Number(profile.numberOfStudents),
     expertiseTags: (profile.expertiseTagsText || '')
         .split(',')
         .map((tag) => tag.trim())
@@ -169,7 +166,6 @@ const ProfilePage = () => {
             title: instructorProfile.title?.trim() || null,
             bio: instructorProfile.bio?.trim() || null,
             yearsOfExperience: parseNumberValue(instructorProfile.yearsOfExperience),
-            numberOfStudents: parseNumberValue(instructorProfile.numberOfStudents),
             expertiseTags,
         };
 
@@ -597,8 +593,8 @@ const ProfilePage = () => {
                                                     {course.studentsCount
                                                         ? `${course.studentsCount} студент`
                                                         : course.status
-                                                          ? `Статус: ${course.status}`
-                                                          : ''}
+                                                            ? `Статус: ${course.status}`
+                                                            : ''}
                                                 </div>
                                             </div>
                                         ))}
@@ -655,27 +651,6 @@ const ProfilePage = () => {
                                         }}
                                         className="w-full border border-blue-600 rounded p-2 text-black dark:text-white bg-white dark:bg-[#222222]"
                                         placeholder="мисалы: 5"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="text-gray-600 dark:text-[#a6adba] block mb-1">
-                                        Студенттердин саны
-                                    </label>
-                                    <input
-                                        type="text"
-                                        inputMode="numeric"
-                                        value={instructorProfile.numberOfStudents}
-                                        onChange={(e) => {
-                                            const { value } = e.target;
-                                            if (value === '' || /^\d+$/.test(value)) {
-                                                handleInstructorProfileChange(
-                                                    'numberOfStudents',
-                                                    value
-                                                );
-                                            }
-                                        }}
-                                        className="w-full border border-blue-600 rounded p-2 text-black dark:text-white bg-white dark:bg-[#222222]"
-                                        placeholder="мисалы: 350"
                                     />
                                 </div>
                             </div>
