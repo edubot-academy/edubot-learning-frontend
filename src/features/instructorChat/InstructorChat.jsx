@@ -44,12 +44,17 @@ export default function InstructorChat({ course, onClose }) {
 
     /* ================= LOAD CHAT FOR COURSE ================= */
     useEffect(() => {
-        if (!course?.id || !user) return;
+        if (!course?.id || !user) {
+            setLoading(false);
+            return;
+        }
+        setLoading(true);
 
         (async () => {
+            let chatForCourse = null;
             try {
                 const chats = await fetchInstructorChats({ role: user?.role });
-                const chatForCourse = chats.find((c) => c.course?.id === course.id);
+                chatForCourse = chats.find((c) => c.course?.id === course.id);
 
                 if (chatForCourse) {
                     setActiveChat(chatForCourse);
@@ -58,6 +63,11 @@ export default function InstructorChat({ course, onClose }) {
                 }
             } catch (e) {
                 console.error('Баарлашууну жүктөөдө ката кетти', e);
+            } finally {
+                // If chat exists, messages loader will manage loading state further
+                if (!chatForCourse) {
+                    setLoading(false);
+                }
             }
         })();
     }, [course, user]);

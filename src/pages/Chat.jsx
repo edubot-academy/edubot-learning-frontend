@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useContext } from "react";
 import {
   fetchInstructorChats,
   fetchInstructorChatMessages,
-  sendInstructorChatMessage,
+  replyInstructorChatMessage,
 } from "@services/api";
 import { AuthContext } from "../context/AuthContext";
 import toast from "react-hot-toast";
@@ -102,11 +102,10 @@ export default function Chat() {
     setSending(true);
 
     try {
-      await sendInstructorChatMessage({
-        content: optimistic.content,
+      await replyInstructorChatMessage({
         chatId: activeChat.id,
-        courseId: activeChat.course.id,
-        instructorId: activeChat.instructor.id,
+        content: optimistic.content,
+        type: "text",
       });
 
       const res = await fetchInstructorChatMessages(activeChat.id);
@@ -137,14 +136,11 @@ export default function Chat() {
     setActionsOpen(false);
 
     try {
-      const formData = new FormData();
-      formData.append("chatId", activeChat.id);
-      formData.append("courseId", activeChat.course.id);
-      formData.append("instructorId", activeChat.instructor.id);
-      formData.append("type", type);
-      formData.append("file", file);
-
-      await sendInstructorChatMessage(formData);
+      await replyInstructorChatMessage({
+        chatId: activeChat.id,
+        type,
+        file,
+      });
       const res = await fetchInstructorChatMessages(activeChat.id);
       setMessages(res?.messages ?? []);
     } catch {

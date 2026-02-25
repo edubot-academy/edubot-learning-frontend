@@ -76,10 +76,8 @@ const CardCourse = ({
             isPublished,
         };
 
-        console.log('📦 Sending to toggleFavourite:', courseData);
 
         const result = await toggleFavourite(courseData);
-        console.log('✅ Toggle result:', result);
 
         if (result?.success && result.added) {
             setShowFavoritePopup(true);
@@ -129,7 +127,6 @@ const CardCourse = ({
 
     // Для отладки
     useEffect(() => {
-        console.log(`🖼️ Course ${id} - coverImageUrl:`, coverImageUrl);
     }, [id, coverImageUrl]);
 
     return (
@@ -163,7 +160,6 @@ const CardCourse = ({
                         <img
                             src={coverImageUrl || NoImage}
                             onError={(e) => {
-                                console.log('Image failed to load:', coverImageUrl);
                                 e.currentTarget.src = NoImage;
                             }}
                             alt={title}
