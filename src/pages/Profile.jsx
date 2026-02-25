@@ -503,8 +503,8 @@ const ProfilePage = () => {
 
                     {!isInstructorEditing ? (
                         <div className="space-y-5">
-                            <div>
-                                <p className="text-gray-600 dark:text-[#a6adba] font-medium mb-1">Био / Өзүм жөнүндө</p>
+                            <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-[#141619] p-4">
+                                <p className="text-gray-600 dark:text-[#a6adba] font-medium mb-2">Био / Өзүм жөнүндө</p>
                                 <p className="text-gray-800 dark:text-white whitespace-pre-line">
                                     {instructorProfile.bio?.trim() || 'Маалымат кошула элек'}
                                 </p>
@@ -626,7 +626,7 @@ const ProfilePage = () => {
                                     onChange={(e) =>
                                         handleInstructorProfileChange('bio', e.target.value)
                                     }
-                                    className="w-full border border-blue-600 rounded p-3 text-sm min-h-[120px]"
+                                    className="w-full border border-blue-600 rounded p-3 text-sm min-h-[120px] text-black dark:text-white bg-white dark:bg-[#222222] placeholder-gray-500 dark:placeholder-gray-500"
                                     placeholder="Кыскача өз тажрыйбаңыз жана окуткан курстарыңыз тууралуу жазыңыз"
                                 />
                             </div>

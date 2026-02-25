@@ -658,10 +658,14 @@ const AdminPanel = () => {
                         </button>
                     </div>
                     {activeTab === 'notifications' && (
-                        <>
-                            <NotificationsWidget />
-                            <NotificationsTab />
-                        </>
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <div className="bg-white dark:bg-[#111111] shadow-sm rounded-2xl p-4 border border-gray-100 dark:border-gray-800">
+                                <NotificationsWidget />
+                            </div>
+                            <div className="bg-white dark:bg-[#111111] shadow-sm rounded-2xl p-4 border border-gray-100 dark:border-gray-800">
+                                <NotificationsTab />
+                            </div>
+                        </div>
                     )}
                     {activeTab === 'stats' && (
                         <AdminStatsView
@@ -672,75 +676,84 @@ const AdminPanel = () => {
                     )}
 
                     {activeTab === 'contacts' && (
-                        <div className="bg-white shadow rounded p-4">
-                            <h2 className="text-2xl font-semibold mb-4">Байланыш Каттары</h2>
-                            <table className="w-full text-left text-sm">
-                                <thead>
-                                    <tr className="border-b">
-                                        <th className="p-2">Аты</th>
-                                        <th className="p-2">Email</th>
-                                        <th className="p-2">Телефон</th>
-                                        <th className="p-2">Каттар</th>
-                                        <th className="p-2">Келген күнү</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {contacts.map((c) => (
-                                        <tr key={c.id} className="border-b">
-                                            <td className="p-2">{c.name}</td>
-                                            <td className="p-2">{c.email}</td>
-                                            <td className="p-2">{c.phone}</td>
-                                            <td className="p-2">{c.message}</td>
-                                            <td className="p-2">
-                                                {new Date(c.createdAt).toLocaleString()}
-                                            </td>
+                        <div className="bg-white dark:bg-[#111111] shadow-sm rounded-2xl p-4 border border-gray-100 dark:border-gray-800">
+                            <h2 className="text-2xl font-semibold mb-4 text-gray-900 dark:text-[#E8ECF3]">
+                                Байланыш Каттары
+                            </h2>
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-left text-sm">
+                                    <thead className="border-b border-gray-200 dark:border-gray-800 text-gray-600 dark:text-[#a6adba]">
+                                        <tr>
+                                            <th className="p-2">Аты</th>
+                                            <th className="p-2">Email</th>
+                                            <th className="p-2">Телефон</th>
+                                            <th className="p-2">Каттар</th>
+                                            <th className="p-2">Келген күнү</th>
                                         </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+                                    </thead>
+                                    <tbody>
+                                        {contacts.map((c) => (
+                                            <tr key={c.id} className="border-b border-gray-100 dark:border-gray-800">
+                                                <td className="p-2 text-gray-900 dark:text-[#E8ECF3]">{c.name}</td>
+                                                <td className="p-2 text-gray-700 dark:text-[#cdd3de]">{c.email}</td>
+                                                <td className="p-2 text-gray-700 dark:text-[#cdd3de]">{c.phone}</td>
+                                                <td className="p-2 text-gray-700 dark:text-[#cdd3de]">{c.message}</td>
+                                                <td className="p-2 text-gray-600 dark:text-[#a6adba]">
+                                                    {c.createdAt ? new Date(c.createdAt).toLocaleString() : '—'}
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     )}
 
                     {activeTab === 'courses' && (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div className="bg-white shadow rounded p-4">
-                                <h2 className="text-2xl font-semibold mb-4">Курстар</h2>
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <div className="bg-white dark:bg-[#111111] shadow-sm rounded-2xl p-4 border border-gray-100 dark:border-gray-800">
+                                <h2 className="text-2xl font-semibold mb-4 text-gray-900 dark:text-[#E8ECF3]">
+                                    Курстар
+                                </h2>
                                 <ul className="space-y-3">
                                     {courses.map((course) => (
-                                        <li key={course.id} className="border p-3 rounded">
-                                            <div className="flex justify-between items-center">
-                                                <div>
-                                                    <p className="font-medium">{course.title}</p>
-                                                    <p className="text-sm text-gray-500">
+                                        <li
+                                            key={course.id}
+                                            className="border border-gray-200 dark:border-gray-800 rounded-2xl p-4 bg-gray-50 dark:bg-[#1B1B1B]"
+                                        >
+                                            <div className="flex justify-between items-start gap-3">
+                                                <div className="min-w-0">
+                                                    <p className="font-semibold text-gray-900 dark:text-[#E8ECF3] truncate">
+                                                        {course.title}
+                                                    </p>
+                                                    <p className="text-sm text-gray-500 dark:text-[#a6adba]">
                                                         Окутуучу: {course.instructor?.fullName}
                                                     </p>
                                                 </div>
-                                                <div className="flex items-center gap-2">
+                                                <div className="flex items-center gap-3 text-sm">
                                                     <Link
                                                         to={`/courses/${course.id}`}
-                                                        className="text-blue-600 hover:underline"
+                                                        className="text-blue-500 hover:underline"
                                                     >
                                                         Көрүү
                                                     </Link>
                                                     <button
-                                                        onClick={() =>
-                                                            handleDeleteCourse(course.id)
-                                                        }
-                                                        className="text-red-600 hover:underline"
+                                                        onClick={() => handleDeleteCourse(course.id)}
+                                                        className="text-red-500 hover:underline"
                                                     >
                                                         Өчүрүү
                                                     </button>
                                                 </div>
                                             </div>
-                                            <div className="mt-2">
-                                                <label className="text-sm">
+                                            <div className="mt-3">
+                                                <label className="text-sm text-gray-500 dark:text-[#a6adba]">
                                                     Колдонуучуну курска жазуу:
                                                 </label>
                                                 <select
                                                     onChange={(e) =>
                                                         handleEnrollUser(e.target.value, course.id)
                                                     }
-                                                    className="ml-2 px-2 py-1 border rounded"
+                                                    className="mt-1 w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#0E0E0E] text-sm text-gray-900 dark:text-[#E8ECF3]"
                                                     defaultValue=""
                                                 >
                                                     <option value="" disabled>
@@ -756,25 +769,27 @@ const AdminPanel = () => {
                                         </li>
                                     ))}
                                     {courses.length === 0 && (
-                                        <li className="text-center text-gray-500 p-4 border rounded">
+                                        <li className="text-center text-gray-500 dark:text-[#a6adba] p-4 border border-dashed rounded-2xl">
                                             Курстар табылган жок.
                                         </li>
                                     )}
                                 </ul>
                             </div>
 
-                            <div className="bg-white shadow rounded p-4">
-                                <h2 className="text-2xl font-semibold mb-4">Категориялар</h2>
+                            <div className="bg-white dark:bg-[#111111] shadow-sm rounded-2xl p-4 border border-gray-100 dark:border-gray-800">
+                                <h2 className="text-2xl font-semibold mb-4 text-gray-900 dark:text-[#E8ECF3]">
+                                    Категориялар
+                                </h2>
                                 <div className="flex gap-2 mb-4">
                                     <input
                                         value={newCategory}
                                         onChange={(e) => setNewCategory(e.target.value)}
-                                        className="border px-2 py-1 rounded w-full"
+                                        className="border border-gray-200 dark:border-gray-700 px-3 py-2 rounded-lg w-full bg-white dark:bg-[#0E0E0E] text-gray-900 dark:text-[#E8ECF3]"
                                         placeholder="Жаңы категориянын аталышы"
                                     />
                                     <button
                                         onClick={handleAddCategory}
-                                        className="bg-blue-600 text-white px-4 py-1 rounded"
+                                        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg whitespace-nowrap"
                                     >
                                         Кошуу
                                     </button>
@@ -783,38 +798,38 @@ const AdminPanel = () => {
                                     {categories.map((category) => (
                                         <li
                                             key={category.id}
-                                            className="border p-3 rounded flex justify-between items-center"
+                                            className="border border-gray-200 dark:border-gray-800 rounded-2xl p-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 bg-gray-50 dark:bg-[#1B1B1B]"
                                         >
                                             {editingCategoryId === category.id ? (
-                                                <>
+                                                <div className="flex flex-col sm:flex-row gap-2 w-full">
                                                     <input
                                                         value={editingCategoryName}
                                                         onChange={(e) =>
                                                             setEditingCategoryName(e.target.value)
                                                         }
-                                                        className="border px-2 py-1 rounded w-full mr-2"
+                                                        className="border border-gray-200 dark:border-gray-700 px-3 py-2 rounded-lg flex-1 bg-white dark:bg-[#0E0E0E] text-gray-900 dark:text-[#E8ECF3]"
                                                     />
                                                     <button
                                                         onClick={() =>
                                                             handleUpdateCategory(category.id)
                                                         }
-                                                        className="bg-green-500 text-white px-3 py-1 rounded"
+                                                        className="bg-green-600 text-white px-4 py-2 rounded-lg"
                                                     >
                                                         Сактоо
                                                     </button>
-                                                </>
+                                                </div>
                                             ) : (
                                                 <>
-                                                    <span>{category.name}</span>
-                                                    <div className="flex gap-2">
+                                                    <span className="font-medium text-gray-900 dark:text-[#E8ECF3]">
+                                                        {category.name}
+                                                    </span>
+                                                    <div className="flex gap-3 text-sm">
                                                         <button
                                                             onClick={() => {
                                                                 setEditingCategoryId(category.id);
-                                                                setEditingCategoryName(
-                                                                    category.name
-                                                                );
+                                                                setEditingCategoryName(category.name);
                                                             }}
-                                                            className="text-blue-600"
+                                                            className="text-blue-500 hover:underline"
                                                         >
                                                             Өзгөртүү
                                                         </button>
@@ -822,7 +837,7 @@ const AdminPanel = () => {
                                                             onClick={() =>
                                                                 handleDeleteCategory(category.id)
                                                             }
-                                                            className="text-red-600"
+                                                            className="text-red-500 hover:underline"
                                                         >
                                                             Өчүрүү
                                                         </button>
@@ -834,11 +849,10 @@ const AdminPanel = () => {
                                 </ul>
                             </div>
 
-                            <div className="bg-white shadow rounded p-4">
-                                <h2 className="text-2xl font-semibold mb-4">HLS транс коддоо</h2>
-                                <p className="text-sm text-gray-600 mb-3">
-                                    MP4 сабакты HLSке айландыруу үчүн Course / Section / Lesson ID
-                                    киргизиңиз.
+                            <div className="bg-white dark:bg-[#111111] shadow-sm rounded-2xl p-4 border border-gray-100 dark:border-gray-800">
+                                <h2 className="text-2xl font-semibold mb-4 text-gray-900 dark:text-[#E8ECF3]">HLS транс коддоо</h2>
+                                <p className="text-sm text-gray-600 dark:text-[#a6adba] mb-3">
+                                    MP4 сабакты HLSке айландыруу үчүн Course / Section / Lesson ID киргизиңиз.
                                 </p>
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
                                     <input
@@ -846,31 +860,31 @@ const AdminPanel = () => {
                                         placeholder="Course ID"
                                         value={transcodeCourseId}
                                         onChange={(e) => setTranscodeCourseId(e.target.value)}
-                                        className="border rounded px-3 py-2"
+                                        className="border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 bg-white dark:bg-[#0E0E0E] text-gray-900 dark:text-[#E8ECF3]"
                                     />
                                     <input
                                         type="number"
                                         placeholder="Section ID"
                                         value={transcodeSectionId}
                                         onChange={(e) => setTranscodeSectionId(e.target.value)}
-                                        className="border rounded px-3 py-2"
+                                        className="border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 bg-white dark:bg-[#0E0E0E] text-gray-900 dark:text-[#E8ECF3]"
                                     />
                                     <input
                                         type="number"
                                         placeholder="Lesson ID"
                                         value={transcodeLessonId}
                                         onChange={(e) => setTranscodeLessonId(e.target.value)}
-                                        className="border rounded px-3 py-2"
+                                        className="border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 bg-white dark:bg-[#0E0E0E] text-gray-900 dark:text-[#E8ECF3]"
                                     />
                                 </div>
                                 <button
                                     onClick={handleTranscode}
                                     disabled={transcodeLoading}
-                                    className="px-4 py-2 bg-orange-500 text-white rounded disabled:opacity-60"
+                                    className="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg disabled:opacity-60"
                                 >
                                     {transcodeLoading ? <Loader fullScreen={false} /> : 'Транс коддоо'}
                                 </button>
-                                <p className="text-xs text-gray-500 mt-2">
+                                <p className="text-xs text-gray-500 dark:text-[#a6adba] mt-2">
                                     ffmpeg серверде орнотулган болушу керек.
                                 </p>
                             </div>
@@ -879,40 +893,42 @@ const AdminPanel = () => {
 
                     {activeTab === 'companies' && (
                         <div className="grid md:grid-cols-2 gap-6">
-                            <div className="bg-white shadow rounded p-4 space-y-3">
-                                <h2 className="text-2xl font-semibold">Компанияларды издөө</h2>
+                            <div className="bg-white dark:bg-[#111111] shadow-sm rounded-2xl p-4 space-y-3 border border-gray-100 dark:border-gray-800">
+                                <h2 className="text-2xl font-semibold text-gray-900 dark:text-[#E8ECF3]">
+                                    Компанияларды издөө
+                                </h2>
                                 <input
                                     value={companySearch}
                                     onChange={(e) => setCompanySearch(e.target.value)}
-                                    className="border px-3 py-2 rounded w-full"
+                                    className="border border-gray-200 dark:border-gray-700 px-3 py-2 rounded-lg w-full bg-white dark:bg-[#0E0E0E] text-gray-900 dark:text-[#E8ECF3]"
                                     placeholder="Компаниянын аталышы"
                                 />
                                 <ul className="space-y-3">
                                     {companies.map((c) => (
                                         <li
                                             key={c.id}
-                                            className="border rounded p-3 flex items-center justify-between"
+                                            className="border border-gray-200 dark:border-gray-800 rounded-2xl p-3 flex items-center justify-between bg-gray-50 dark:bg-[#1B1B1B]"
                                         >
                                             <div className="min-w-0">
-                                                <div className="font-semibold truncate">
+                                                <div className="font-semibold truncate text-gray-900 dark:text-[#E8ECF3]">
                                                     {c.name}
                                                 </div>
                                                 {c.about && (
-                                                    <div className="text-sm text-gray-600 line-clamp-1">
+                                                    <div className="text-sm text-gray-600 dark:text-[#a6adba] line-clamp-1">
                                                         {c.about}
                                                     </div>
                                                 )}
                                             </div>
                                             <Link
                                                 to={`/companies/${c.id}`}
-                                                className="text-blue-600 hover:underline"
+                                                className="text-blue-500 hover:underline"
                                             >
                                                 Ачуу
                                             </Link>
                                         </li>
                                     ))}
                                     {companies.length === 0 && (
-                                        <li className="text-center text-gray-500 p-6 border rounded">
+                                        <li className="text-center text-gray-500 dark:text-[#a6adba] p-6 border border-dashed rounded-2xl">
                                             Компаниялар табылган жок.
                                         </li>
                                     )}
@@ -929,7 +945,7 @@ const AdminPanel = () => {
                                                 setCompanyPage(p);
                                                 loadCompanies(p, companySearch);
                                             }}
-                                            className={`px-3 py-1 border rounded ${p === companyPage ? 'bg-blue-600 text-white' : ''}`}
+                                            className={`px-3 py-1 rounded border border-gray-200 dark:border-gray-700 ${p === companyPage ? 'bg-blue-600 text-white' : 'text-gray-700 dark:text-[#E8ECF3]'}`}
                                         >
                                             {p}
                                         </button>
@@ -937,18 +953,18 @@ const AdminPanel = () => {
                                 </div>
                             </div>
 
-                            <div className="bg-white shadow rounded p-4 space-y-4">
-                                <h2 className="text-2xl font-semibold">Жаңы компания кошуу</h2>
+                            <div className="bg-white dark:bg-[#111111] shadow-sm rounded-2xl p-4 space-y-4 border border-gray-100 dark:border-gray-800">
+                                <h2 className="text-2xl font-semibold text-gray-900 dark:text-[#E8ECF3]">Жаңы компания кошуу</h2>
                                 <form onSubmit={handleCreateCompany} className="space-y-3">
                                     <input
                                         value={newCompanyName}
                                         onChange={(e) => setNewCompanyName(e.target.value)}
-                                        className="border px-3 py-2 rounded w-full"
+                                        className="border border-gray-200 dark:border-gray-700 px-3 py-2 rounded-lg w-full bg-white dark:bg-[#0E0E0E] text-gray-900 dark:text-[#E8ECF3]"
                                         placeholder="Компаниянын аталышы"
                                     />
                                     <button
                                         type="submit"
-                                        className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 w-full"
+                                        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg w-full"
                                     >
                                         Кошуу
                                     </button>
@@ -958,10 +974,10 @@ const AdminPanel = () => {
                     )}
 
                     {activeTab === 'ai-prompts' && (
-                        <div className="bg-white shadow rounded-2xl p-6 space-y-6">
+                        <div className="bg-white dark:bg-[#111111] shadow-sm rounded-2xl p-6 space-y-6 border border-gray-100 dark:border-gray-800">
                             <div className="flex flex-wrap gap-4 items-center">
                                 <div className="flex-1 min-w-[240px]">
-                                    <label className="text-sm font-semibold text-gray-600">
+                                    <label className="text-sm font-semibold text-gray-600 dark:text-[#a6adba]">
                                         Курс тандаңыз
                                     </label>
                                     <select
@@ -969,7 +985,7 @@ const AdminPanel = () => {
                                         onChange={(e) =>
                                             setAiPromptCourseId(Number(e.target.value))
                                         }
-                                        className="mt-1 w-full border rounded px-3 py-2"
+                                        className="mt-1 w-full border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 bg-white dark:bg-[#0E0E0E] text-gray-900 dark:text-[#E8ECF3]"
                                     >
                                         <option value="">Курс...</option>
                                         {courses.map((course) => (
@@ -983,7 +999,7 @@ const AdminPanel = () => {
                                     onClick={() =>
                                         aiPromptCourseId && loadPromptsForCourse(aiPromptCourseId)
                                     }
-                                    className="px-4 py-2 rounded-full bg-gray-100 text-sm"
+                                    className="px-4 py-2 rounded-full bg-gray-100 dark:bg-[#1B1B1B] text-sm text-gray-700 dark:text-[#E8ECF3]"
                                 >
                                     Жаңыртуу
                                 </button>
@@ -991,28 +1007,28 @@ const AdminPanel = () => {
 
                             <form
                                 onSubmit={handleCreatePrompt}
-                                className="grid md:grid-cols-2 gap-4 bg-gray-50 rounded-2xl p-4"
+                                className="grid md:grid-cols-2 gap-4 bg-gray-50 dark:bg-[#0F1114] rounded-2xl p-4 border border-gray-100 dark:border-gray-800"
                             >
                                 <div className="md:col-span-2">
-                                    <label className="text-sm font-semibold text-gray-600">
+                                    <label className="text-sm font-semibold text-gray-600 dark:text-[#a6adba]">
                                         AI сунуш
                                     </label>
                                     <textarea
                                         value={newPromptText}
                                         onChange={(e) => setNewPromptText(e.target.value)}
-                                        className="mt-1 w-full border rounded px-3 py-2 text-sm"
+                                        className="mt-1 w-full border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-[#0E0E0E] text-gray-900 dark:text-[#E8ECF3]"
                                         rows={3}
                                         placeholder="Суроо же сунуш текстин жазыңыз..."
                                     />
                                 </div>
                                 <div>
-                                    <label className="text-sm font-semibold text-gray-600">
+                                    <label className="text-sm font-semibold text-gray-600 dark:text-[#a6adba]">
                                         Тил
                                     </label>
                                     <select
                                         value={newPromptLanguage}
                                         onChange={(e) => setNewPromptLanguage(e.target.value)}
-                                        className="mt-1 w-full border rounded px-3 py-2"
+                                        className="mt-1 w-full border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 bg-white dark:bg-[#0E0E0E] text-gray-900 dark:text-[#E8ECF3]"
                                     >
                                         <option value="ky">Кыргызча</option>
                                         <option value="ru">Русский</option>
@@ -1020,17 +1036,17 @@ const AdminPanel = () => {
                                     </select>
                                 </div>
                                 <div>
-                                    <label className="text-sm font-semibold text-gray-600">
+                                    <label className="text-sm font-semibold text-gray-600 dark:text-[#a6adba]">
                                         Тартип
                                     </label>
                                     <input
                                         type="number"
                                         value={newPromptOrder}
                                         onChange={(e) => setNewPromptOrder(e.target.value)}
-                                        className="mt-1 w-full border rounded px-3 py-2"
+                                        className="mt-1 w-full border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 bg-white dark:bg-[#0E0E0E] text-gray-900 dark:text-[#E8ECF3]"
                                     />
                                 </div>
-                                <label className="flex items-center gap-2 text-sm font-semibold text-gray-600">
+                                <label className="flex items-center gap-2 text-sm font-semibold text-gray-600 dark:text-[#a6adba]">
                                     <input
                                         type="checkbox"
                                         checked={newPromptIsActive}
@@ -1038,7 +1054,7 @@ const AdminPanel = () => {
                                     />
                                     Активдүү
                                 </label>
-                                <label className="flex items-center gap-2 text-sm font-semibold text-gray-600">
+                                <label className="flex items-center gap-2 text-sm font-semibold text-gray-600 dark:text-[#a6adba]">
                                     <input
                                         type="checkbox"
                                         checked={newPromptIsGlobal}
@@ -1050,7 +1066,7 @@ const AdminPanel = () => {
                                     {editingPromptId && (
                                         <button
                                             type="button"
-                                            className="px-5 py-2 rounded-full border text-sm text-gray-600"
+                                            className="px-5 py-2 rounded-full border border-gray-200 dark:border-gray-700 text-sm text-gray-600 dark:text-[#E8ECF3]"
                                             onClick={resetPromptForm}
                                         >
                                             Баш тартуу
@@ -1058,7 +1074,7 @@ const AdminPanel = () => {
                                     )}
                                     <button
                                         type="submit"
-                                        className="px-6 py-2 rounded-full bg-blue-600 text-white text-sm"
+                                        className="px-6 py-2 rounded-full bg-blue-600 hover:bg-blue-700 text-white text-sm"
                                     >
                                         {editingPromptId ? 'Сактоо' : 'Сунуш кошуу'}
                                     </button>
@@ -1072,11 +1088,11 @@ const AdminPanel = () => {
                                     aiPrompts.map((prompt) => (
                                         <div
                                             key={prompt.id}
-                                            className="border rounded-2xl p-4 flex flex-col gap-2 md:flex-row md:items-center md:justify-between"
+                                            className="border border-gray-200 dark:border-gray-800 rounded-2xl p-4 flex flex-col gap-2 md:flex-row md:items-center md:justify-between bg-gray-50 dark:bg-[#1B1B1B]"
                                         >
                                             <div>
-                                                <p className="font-semibold">{prompt.text}</p>
-                                                <div className="text-xs text-gray-500 flex flex-wrap gap-3 mt-1">
+                                                <p className="font-semibold text-gray-900 dark:text-[#E8ECF3]">{prompt.text}</p>
+                                                <div className="text-xs text-gray-500 dark:text-[#a6adba] flex flex-wrap gap-3 mt-1">
                                                     <span>Тил: {prompt.language}</span>
                                                     <span>Тартип: {prompt.order}</span>
                                                     <span>
@@ -1109,7 +1125,7 @@ const AdminPanel = () => {
                                         </div>
                                     ))
                                 ) : (
-                                    <p className="text-center text-gray-500 text-sm">
+                                    <p className="text-center text-gray-500 dark:text-[#a6adba] text-sm">
                                         Бул курс үчүн сунуштар табылган жок.
                                     </p>
                                 )}
@@ -1224,37 +1240,46 @@ const AdminPanel = () => {
                     )}
 
                     {activeTab === 'pending' && (
-                        <div className="bg-white shadow rounded p-4">
-                            <h2 className="text-2xl font-semibold mb-4">Каралуудагы курстар</h2>
-                            <ul className="space-y-3">
+                        <div className="bg-white dark:bg-[#111111] shadow-sm rounded-2xl p-4 border border-gray-100 dark:border-gray-800">
+                            <h2 className="text-2xl font-semibold mb-4 text-gray-900 dark:text-[#E8ECF3]">
+                                Каралуудагы курстар
+                            </h2>
+                            <div className="space-y-3">
                                 {pendingCourses.map((course) => (
-                                    <li
+                                    <div
                                         key={course.id}
-                                        className="border rounded p-3 flex justify-between items-center"
+                                        className="border border-gray-200 dark:border-gray-800 rounded-2xl p-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-gray-50 dark:bg-[#1B1B1B]"
                                     >
-                                        <div>
-                                            <p className="font-semibold">{course.title}</p>
-                                            <p className="text-sm text-gray-500">
+                                        <div className="min-w-0">
+                                            <p className="font-semibold text-gray-900 dark:text-[#E8ECF3] truncate">
+                                                {course.title}
+                                            </p>
+                                            <p className="text-sm text-gray-500 dark:text-[#a6adba]">
                                                 {course.instructor?.fullName}
                                             </p>
                                         </div>
-                                        <div className="flex gap-2">
+                                        <div className="flex gap-2 flex-wrap">
                                             <button
                                                 onClick={() => handleMarkCourseApproved(course.id)}
-                                                className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+                                                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg"
                                             >
                                                 Тастыктоо
                                             </button>
                                             <button
                                                 onClick={() => handleMarkCourseRejected(course.id)}
-                                                className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
+                                                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg"
                                             >
                                                 Жокко чыгаруу
                                             </button>
                                         </div>
-                                    </li>
+                                    </div>
                                 ))}
-                            </ul>
+                                {!pendingCourses.length && (
+                                    <div className="text-sm text-gray-500 dark:text-[#a6adba] p-4 border border-dashed rounded-2xl">
+                                        Каралууда курс жок.
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     )}
                 </main>

@@ -58,6 +58,10 @@ const InstructorDashboard = () => {
     const [courseStudents, setCourseStudents] = useState([]);
     const [courseStudentsMeta, setCourseStudentsMeta] = useState(null);
     const [loadingCourseStudents, setLoadingCourseStudents] = useState(false);
+    const [studentsPage, setStudentsPage] = useState(1);
+    const [studentSearch, setStudentSearch] = useState('');
+    const [progressMin, setProgressMin] = useState('');
+    const [progressMax, setProgressMax] = useState('');
     const [studentsError, setStudentsError] = useState('');
 
     const courses = useMemo(
@@ -147,9 +151,21 @@ const InstructorDashboard = () => {
         setLoadingCourseStudents(true);
         setStudentsError('');
         try {
-            const data = await fetchCourseStudents(courseId);
+            const data = await fetchCourseStudents(courseId, {
+                page: studentsPage,
+                limit: 20,
+                q: studentSearch || undefined,
+                progressGte: progressMin === '' ? undefined : Number(progressMin),
+                progressLte: progressMax === '' ? undefined : Number(progressMax),
+            });
             setCourseStudents(data?.students || []);
-            setCourseStudentsMeta(data?.course || null);
+            setCourseStudentsMeta({
+                ...(data?.course || {}),
+                page: data?.page,
+                total: data?.total,
+                totalPages: data?.totalPages,
+                limit: data?.limit,
+            });
         } catch (error) {
             console.error('Failed to load course students', error);
             setCourseStudents([]);
@@ -162,7 +178,7 @@ const InstructorDashboard = () => {
         } finally {
             setLoadingCourseStudents(false);
         }
-    }, []);
+    }, [studentsPage, studentSearch, progressMin, progressMax]);
 
     useEffect(() => {
         if (!user?.id || user.role !== 'instructor') return;
@@ -243,6 +259,7 @@ const InstructorDashboard = () => {
     useEffect(() => {
         if (activeTab !== 'students') return;
         if (selectedStudentCourseId) {
+            setStudentsPage(1);
             loadCourseStudents(selectedStudentCourseId);
         } else {
             setCourseStudents([]);
@@ -279,6 +296,14 @@ const InstructorDashboard = () => {
                         loadingStudents={loadingCourseStudents}
                         error={studentsError}
                         refreshCourses={loadStudentCourses}
+                        studentsPage={studentsPage}
+                        onChangePage={setStudentsPage}
+                        search={studentSearch}
+                        onSearchChange={setStudentSearch}
+                        progressMin={progressMin}
+                        progressMax={progressMax}
+                        onProgressMinChange={setProgressMin}
+                        onProgressMaxChange={setProgressMax}
                     />
                 );
             case 'profile':
@@ -532,6 +557,14 @@ const StudentsSection = ({
     loadingStudents,
     error,
     refreshCourses,
+    studentsPage,
+    onChangePage,
+    search,
+    onSearchChange,
+    progressMin,
+    progressMax,
+    onProgressMinChange,
+    onProgressMaxChange,
 }) => {
     const fallbackCover =
         'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&w=600&q=80';
@@ -660,6 +693,56 @@ const StudentsSection = ({
                     ) : null}
                 </div>
 
+                {selectedCourseId ? (
+                    <div className="flex flex-wrap gap-3 items-end">
+                        <div className="flex flex-col">
+                            <label className="text-xs text-gray-500 dark:text-[#a6adba]">Издөө</label>
+                            <input
+                                type="text"
+                                value={search}
+                                onChange={(e) => {
+                                    onChangePage(1);
+                                    onSearchChange(e.target.value);
+                                }}
+                                placeholder="Ат, email же телефон"
+                                className="px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#111] text-sm"
+                            />
+                        </div>
+                        <div className="flex flex-col">
+                            <label className="text-xs text-gray-500 dark:text-[#a6adba]">
+                                Прогресс кеминде (%)
+                            </label>
+                            <input
+                                type="number"
+                                min="0"
+                                max="100"
+                                value={progressMin}
+                                onChange={(e) => {
+                                    onChangePage(1);
+                                    onProgressMinChange(e.target.value);
+                                }}
+                                className="w-24 px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#111] text-sm"
+                            />
+                        </div>
+                        <div className="flex flex-col">
+                            <label className="text-xs text-gray-500 dark:text-[#a6adba]">
+                                Прогресс жогору (%)
+                            </label>
+                            <input
+                                type="number"
+                                min="0"
+                                max="100"
+                                value={progressMax}
+                                onChange={(e) => {
+                                    onChangePage(1);
+                                    onProgressMaxChange(e.target.value);
+                                }}
+                                className="w-24 px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#111] text-sm"
+                            />
+                        </div>
+                    </div>
+                ) : null}
+
                 {error ? (
                     <div className="p-3 rounded-lg bg-red-50 text-red-700 border border-red-100">
                         {error}
@@ -671,7 +754,7 @@ const StudentsSection = ({
                 ) : !selectedCourseId ? (
                     <p className="text-sm text-gray-500 dark:text-[#a6adba]">Курс тандаңыз.</p>
                 ) : sortedStudents.length ? (
-                    <div className="overflow-x-auto">
+                    <div className="overflow-x-auto rounded-2xl border border-gray-100 dark:border-gray-800">
                         <table className="min-w-full divide-y divide-gray-200">
                             <thead>
                                 <tr className="text-left text-sm text-gray-500 dark:text-[#a6adba]">
@@ -779,6 +862,34 @@ const StudentsSection = ({
                         Бул курста азырынча студент жок.
                     </p>
                 )}
+
+                {selectedCourseId && courseMeta?.totalPages > 1 ? (
+                    <div className="flex items-center justify-between gap-3 pt-4 text-sm text-gray-600 dark:text-[#a6adba]">
+                        <button
+                            type="button"
+                            onClick={() => onChangePage(Math.max(1, studentsPage - 1))}
+                            disabled={studentsPage <= 1}
+                            className="px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 disabled:opacity-50"
+                        >
+                            Алдыңкы
+                        </button>
+                        <span>
+                            Барак {studentsPage} / {courseMeta.totalPages}
+                        </span>
+                        <button
+                            type="button"
+                            onClick={() =>
+                                onChangePage(
+                                    Math.min(courseMeta.totalPages || 1, studentsPage + 1)
+                                )
+                            }
+                            disabled={studentsPage >= (courseMeta.totalPages || 1)}
+                            className="px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 disabled:opacity-50"
+                        >
+                            Кийинки
+                        </button>
+                    </div>
+                ) : null}
             </div>
         </div>
     );
@@ -798,9 +909,11 @@ const ProfileSection = ({ profile, expertiseTags, socialLinks }) => (
                 Профилди өзгөртүү
             </Link>
         </div>
-        <div>
-            <p className="text-gray-600 dark:text-[#a6adba] font-medium mb-1">Био / Өзүм жөнүндө</p>
-            <p className="text-gray-800 dark:text-white">{profile?.bio?.trim() || 'Маалымат кошула элек'}</p>
+        <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-[#141619] p-4">
+            <p className="text-gray-600 dark:text-[#a6adba] font-medium mb-2">Био / Өзүм жөнүндө</p>
+            <p className="text-gray-800 dark:text-white whitespace-pre-line">
+                {profile?.bio?.trim() || 'Маалымат кошула элек'}
+            </p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>

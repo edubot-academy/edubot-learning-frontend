@@ -42,7 +42,7 @@ const NotificationsWidget = ({ title = 'Билдирүүлөр', limit = 5, link
     };
 
     return (
-        <div className="rounded-3xl p-4 sm:p-5 border border-gray-100 shadow-sm">
+        <div className="rounded-3xl p-4 sm:p-5 border border-gray-100 dark:border-gray-800 shadow-sm bg-white dark:bg-[#111111]">
             <div className="flex items-center justify-between gap-2 mb-3">
                 <div>
                     <h3 className="text-lg font-semibold text-gray-900 dark:text-[#E8ECF3]">{title}</h3>
@@ -50,7 +50,7 @@ const NotificationsWidget = ({ title = 'Билдирүүлөр', limit = 5, link
                 </div>
                 <div className="flex items-center gap-2">
                     {unreadCount > 0 && (
-                        <span className="px-2 py-1 text-xs rounded-full bg-orange-100 text-gray-700 dark:text-[#a6adba]">
+                        <span className="px-2 py-1 text-xs rounded-full bg-orange-100 dark:bg-orange-900/40 text-gray-700 dark:text-[#E8ECF3]">
                             {unreadCount} жаңы
                         </span>
                     )}
@@ -69,10 +69,10 @@ const NotificationsWidget = ({ title = 'Билдирүүлөр', limit = 5, link
             ) : items.length === 0 ? (
                 <p className="text-sm text-gray-500 dark:text-[#a6adba]">Азырынча билдирүүлөр жок.</p>
             ) : (
-                <ul className="divide-y divide-gray-100">
+                <ul className="divide-y divide-gray-100 dark:divide-gray-800">
                     {items.map((item) => (
                         <li key={item.id} className="py-2 text-sm">
-                            <p className="text-gray-800 dark:text-white line-clamp-2">
+                            <p className="text-gray-800 dark:text-[#E8ECF3] line-clamp-2">
                                 {item.message || item.subject}
                             </p>
                             <p className="text-xs text-gray-500 dark:text-[#a6adba] mt-1">
@@ -84,7 +84,7 @@ const NotificationsWidget = ({ title = 'Билдирүүлөр', limit = 5, link
             )}
 
             <div className="mt-3 text-right">
-                <Link to={link} className="text-sm text-blue-600 hover:underline">
+                <Link to={link} className="text-sm text-blue-600 dark:text-blue-400 hover:underline">
                     Бардыгын көрүү
                 </Link>
             </div>

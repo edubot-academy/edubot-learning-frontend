@@ -71,7 +71,7 @@ const NotificationsTab = () => {
     };
 
     return (
-        <div className=" rounded-3xl border border-gray-100 shadow-sm p-4 sm:p-6">
+        <div className="rounded-3xl border border-gray-100 dark:border-gray-800 shadow-sm p-4 sm:p-6 bg-white dark:bg-[#111111]">
             <div className="flex items-center justify-between gap-3 mb-4">
                 <div className="flex items-center gap-2">
                     <span className="text-xl">🔔</span>
@@ -85,7 +85,7 @@ const NotificationsTab = () => {
                 <button
                     type="button"
                     onClick={handleMarkAll}
-                    className="text-sm text-gray-600 hover:text-gray-900 dark:hover:text-[#E8ECF3]"
+                    className="text-sm text-gray-600 dark:text-[#a6adba] hover:text-gray-900 dark:hover:text-[#E8ECF3]"
                 >
                     Баарын окулган деп белгилөө
                 </button>
@@ -103,24 +103,24 @@ const NotificationsTab = () => {
                                 <span className="w-2 h-2 bg-orange-400 rounded-full" />
                                 <span>{day}</span>
                             </div>
-                            <div className="divide-y divide-gray-100 rounded-lg border border-gray-100">
+                            <div className="divide-y divide-gray-100 dark:divide-gray-800 rounded-lg border border-gray-100 dark:border-gray-800 overflow-hidden">
                                 {list.map((notif) => {
                                     const isUnread = !notif.read;
                                     return (
                                         <div
                                             key={notif.id}
-                                            className={`p-3 sm:p-4 flex items-start gap-3 ${isUnread ? 'bg-orange-50' : 'bg-white'}`}
+                                            className={`p-3 sm:p-4 flex items-start gap-3 ${isUnread ? 'bg-orange-50 dark:bg-orange-900/20' : 'bg-white dark:bg-[#0E0E0E]'}`}
                                         >
                                             <div className="text-lg">{notif.icon || '💬'}</div>
                                             <div className="flex-1 min-w-0">
                                                 <div className="flex items-start justify-between gap-2">
-                                                    <p className="font-semibold text-gray-800 line-clamp-2">
+                                                    <p className="font-semibold text-gray-800 dark:text-[#E8ECF3] line-clamp-2">
                                                         {notif.title || notif.subject || 'Билдирүү'}
                                                     </p>
                                                     {isUnread && (
                                                         <button
                                                             type="button"
-                                                            className="text-xs text-blue-600"
+                                                            className="text-xs text-blue-600 dark:text-blue-400"
                                                             onClick={() =>
                                                                 handleMarkAsRead(notif.id)
                                                             }
@@ -130,7 +130,7 @@ const NotificationsTab = () => {
                                                     )}
                                                 </div>
                                                 {notif.message && (
-                                                    <p className="text-sm text-gray-600 mt-1 line-clamp-3">
+                                                    <p className="text-sm text-gray-600 dark:text-[#cdd3de] mt-1 line-clamp-3">
                                                         {notif.message}
                                                     </p>
                                                 )}
@@ -140,7 +140,7 @@ const NotificationsTab = () => {
                                                     {notif.link && (
                                                         <Link
                                                             to={notif.link}
-                                                            className="text-blue-600 hover:underline"
+                                                            className="text-blue-600 dark:text-blue-400 hover:underline"
                                                         >
                                                             Карап чыгуу
                                                         </Link>
@@ -158,7 +158,7 @@ const NotificationsTab = () => {
                             type="button"
                             onClick={() => load(page + 1)}
                             disabled={loading}
-                            className="w-full py-2 text-sm border rounded-lg hover:bg-gray-50 text-gray-700 flex justify-center"
+                            className="w-full py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-[#1B1B1B] text-gray-700 dark:text-[#E8ECF3] flex justify-center"
                         >
                             {loading ? <Loader size={20} /> : 'Дагы билдирүүлөрдү жүктөө'}
                         </button>

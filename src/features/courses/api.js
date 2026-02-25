@@ -39,8 +39,13 @@ export const fetchInstructorStudentCourses = async () => {
     return response.data;
 };
 
-export const fetchCourseStudents = async (courseId) => {
-    const response = await api.get(`/courses/${courseId}/students`);
+export const fetchCourseStudents = async (
+    courseId,
+    { page = 1, limit = 20, q, progressGte, progressLte } = {}
+) => {
+    const response = await api.get(`/courses/${courseId}/students`, {
+        params: clean({ page, limit, q, progressGte, progressLte }),
+    });
     return response.data;
 };
 
