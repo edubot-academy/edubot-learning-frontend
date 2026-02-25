@@ -2,7 +2,10 @@ import { useState, useEffect, useRef, useContext } from "react";
 import {
   fetchInstructorChats,
   fetchInstructorChatMessages,
+  sendInstructorChatMessage,
   replyInstructorChatMessage,
+  fetchStudentCourses,
+  fetchCourseDetails,
 } from "@services/api";
 import { AuthContext } from "../context/AuthContext";
 import toast from "react-hot-toast";
@@ -21,6 +24,26 @@ export default function Chat() {
   const [loading, setLoading] = useState(true);
   const [actionsOpen, setActionsOpen] = useState(false);
   const [sending, setSending] = useState(false);
+  const [newChatOpen, setNewChatOpen] = useState(false);
+  const [newChatMessage, setNewChatMessage] = useState("");
+  const [newChatCourseId, setNewChatCourseId] = useState("");
+  const [newChatLoading, setNewChatLoading] = useState(false);
+  const [newChatCourses, setNewChatCourses] = useState([]);
+  const [newChatCoursesLoading, setNewChatCoursesLoading] = useState(false);
+  const [creatingChat, setCreatingChat] = useState(false);
+
+  const getInstructorIdFromCourse = (courseItem) => {
+    if (!courseItem) return null;
+    return (
+      courseItem.instructor?.id ||
+      courseItem.instructorId ||
+      courseItem.instructor?.userId ||
+      courseItem.instructor?.user?.id ||
+      courseItem.instructorUserId ||
+      courseItem.userId ||
+      courseItem.ownerId
+    );
+  };
 
   // 🔥 mobile state
   const [isMobileChatOpen, setIsMobileChatOpen] = useState(false);
@@ -173,7 +196,32 @@ export default function Chat() {
       >
         <div className="px-6 py-4">
           <h2 className="text-3xl font-semibold">Chat</h2>
-          <p className="text-lg text-gray-500">Recent Chats</p>
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-lg text-gray-500">Recent Chats</p>
+            {user?.role === "student" && (
+              <button
+                type="button"
+                onClick={() => {
+                  setNewChatOpen(true);
+                  if (!newChatCourses.length && !newChatCoursesLoading) {
+                    setNewChatCoursesLoading(true);
+                    fetchStudentCourses(user.id)
+                      .then((res) => {
+                        const items = Array.isArray(res?.items) ? res.items : res || [];
+                        setNewChatCourses(items);
+                      })
+                      .catch(() => {
+                        toast.error("Курстарды жүктөө мүмкүн болбоду");
+                      })
+                      .finally(() => setNewChatCoursesLoading(false));
+                  }
+                }}
+                className="text-sm px-3 py-1 rounded-full border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-[#222222]"
+              >
+                Жаңы чат
+              </button>
+            )}
+          </div>
         </div>
 
         <div className="flex-1 overflow-y-auto space-y-2 px-3">
@@ -313,6 +361,156 @@ export default function Chat() {
           </>
         )}
       </div>
+
+      {/* ================= NEW CHAT MODAL ================= */}
+      {newChatOpen && user?.role === "student" && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 px-4">
+          <div className="bg-white dark:bg-[#141619] rounded-2xl shadow-xl w-full max-w-lg p-6 space-y-4">
+            <div className="flex items-start justify-between">
+              <div>
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
+                  Инструктор менен чат ачуу
+                </h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  Курсту тандап, биринчи билдирүү жазыңыз.
+                </p>
+              </div>
+              <button
+                onClick={() => setNewChatOpen(false)}
+                className="w-8 h-8 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center justify-center text-gray-500"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-3 max-h-60 overflow-y-auto pr-1">
+              {newChatCoursesLoading ? (
+                <Loader fullScreen={false} />
+              ) : newChatCourses.length === 0 ? (
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  Курстар табылган жок.
+                </p>
+              ) : (
+                newChatCourses.map((courseItem) => {
+                  const instructorName =
+                    courseItem.instructor?.fullName || courseItem.instructorName || "Инструктор";
+                  return (
+                    <label
+                      key={courseItem.id || courseItem.courseId}
+                      className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer ${
+                        String(newChatCourseId) === String(courseItem.id || courseItem.courseId)
+                          ? "border-orange-500 bg-orange-50"
+                          : "border-gray-200 dark:border-gray-700"
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        className="mt-1"
+                        name="chat-course"
+                        value={courseItem.id || courseItem.courseId}
+                        checked={String(newChatCourseId) === String(courseItem.id || courseItem.courseId)}
+                        onChange={() => setNewChatCourseId(courseItem.id || courseItem.courseId)}
+                      />
+                      <div>
+                        <p className="font-medium text-gray-900 dark:text-white">
+                          {courseItem.title}
+                        </p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">{instructorName}</p>
+                      </div>
+                    </label>
+                  );
+                })
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm text-gray-600 dark:text-gray-300">Билдирүү</label>
+              <textarea
+                value={newChatMessage}
+                onChange={(e) => setNewChatMessage(e.target.value)}
+                className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-[#222222] p-3 text-sm focus:border-orange-500 focus:outline-none"
+                rows={3}
+                placeholder="Салам! Суроом бар..."
+              />
+            </div>
+
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setNewChatOpen(false)}
+                className="px-4 py-2 rounded-lg border text-sm text-gray-700 dark:text-gray-200"
+              >
+                Жабуу
+              </button>
+              <button
+                type="button"
+                disabled={creatingChat}
+                onClick={async () => {
+                  if (!newChatCourseId) {
+                    toast.error("Курс тандаңыз");
+                    return;
+                  }
+                  const text = newChatMessage.trim();
+                  if (!text) {
+                    toast.error("Билдирүү жазыңыз");
+                    return;
+                  }
+                  const courseItem = newChatCourses.find(
+                    (c) => String(c.id || c.courseId) === String(newChatCourseId)
+                  );
+                  if (!courseItem) {
+                    toast.error("Курс табылган жок");
+                    return;
+                  }
+                  const courseId = courseItem.id || courseItem.courseId;
+                  let instructorId = getInstructorIdFromCourse(courseItem);
+                  try {
+                    setCreatingChat(true);
+                    if (!instructorId) {
+                      try {
+                        const details = await fetchCourseDetails(courseId);
+                        instructorId = getInstructorIdFromCourse(details);
+                      } catch (e) {
+                        // ignore, will error below if still missing
+                      }
+                    }
+                    if (!instructorId) {
+                      toast.error("Инструктор маалыматы жок");
+                      setCreatingChat(false);
+                      return;
+                    }
+                    const res = await sendInstructorChatMessage({
+                      content: text,
+                      courseId: courseItem.id || courseItem.courseId,
+                      instructorId,
+                    });
+                    const refreshed = await fetchInstructorChats({ role: user.role });
+                    setChats(refreshed || []);
+                    const newId = res?.chat?.id || res?.chatId;
+                    const found = (refreshed || []).find((c) => c.id === newId);
+                    if (found) {
+                      setActiveChat(found);
+                      setIsMobileChatOpen(true);
+                      const msgs = await fetchInstructorChatMessages(found.id);
+                      setMessages(msgs?.messages ?? []);
+                    }
+                    setNewChatMessage("");
+                    setNewChatCourseId("");
+                    setNewChatOpen(false);
+                  } catch {
+                    toast.error("Чатты түзүү мүмкүн болбоду");
+                  } finally {
+                    setCreatingChat(false);
+                  }
+                }}
+                className="px-4 py-2 rounded-lg bg-orange-500 text-white text-sm disabled:opacity-60"
+              >
+                {creatingChat ? "Жөнөтүлүүдө..." : "Чат ачуу"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
