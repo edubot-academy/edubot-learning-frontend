@@ -5,7 +5,15 @@ export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(() => {
-        return JSON.parse(localStorage.getItem('user')) || null;
+        try {
+            const stored = localStorage.getItem('user');
+            if (!stored || stored === 'undefined') return null;
+            return JSON.parse(stored);
+        } catch (e) {
+            // Remove bad data so it does not break subsequent renders
+            localStorage.removeItem('user');
+            return null;
+        }
     });
 
     useEffect(() => {

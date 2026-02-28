@@ -9,6 +9,7 @@ import LabelPassword from '@shared-ui/forms/LabelPassword';
 import { AuthContext } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import { useFavourites } from '../context/FavouritesContext';
+import Loader from '@shared/ui/Loader';
 
 const SignupPage = () => {
     const [formData, setFormData] = useState({

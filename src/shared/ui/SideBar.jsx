@@ -72,7 +72,7 @@ const SideBar = ({ setMenuOpen, setPosition }) => {
                         <img src={Person} alt="Person" />
                     </div>
 
-                    {user !== null ? (
+                    {user ? (
                         <div
                             className="w-full flex items-center justify-between ml-5 cursor-pointer hover:bg-gray-50 rounded-lg p-2"
                             onClick={handleProfileClick}
@@ -81,10 +81,10 @@ const SideBar = ({ setMenuOpen, setPosition }) => {
                             onKeyDown={(e) => e.key === 'Enter' && handleProfileClick()}
                         >
                             <div className="flex flex-col items-start">
-                                <h2 className="text-xl font-semibold">{user.fullName}</h2>
+                                <h2 className="text-xl font-semibold">{user?.fullName || 'Колдонуучу'}</h2>
                                 <span className="text-[#208D28]">Идентифицированный</span>
                                 <span className="text-sm text-gray-500 capitalize">
-                                    {user.role}
+                                    {user?.role}
                                 </span>
                             </div>
                         </div>
@@ -103,7 +103,7 @@ const SideBar = ({ setMenuOpen, setPosition }) => {
                     )}
                 </div>
 
-                {user !== null ? (
+                {user ? (
                     <div className="">
                         <ul className="flex flex-col justify-between items-start">
                             <div className={`${linkClass}`}>

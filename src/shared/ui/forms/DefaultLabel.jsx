@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 
 const DefaultLabel = ({
     label = 'label',
+    name = '',
     required = false,
     error = '',
     placeholder = '',
@@ -72,6 +73,7 @@ const DefaultLabel = ({
 
                     <input
                         type="text"
+                        name={name}
                         value={value} // Всегда используем локальное значение
                         onChange={handleChange}
                         onFocus={handleFocus}

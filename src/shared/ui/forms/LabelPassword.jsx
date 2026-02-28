@@ -3,6 +3,7 @@ import { MdVisibility, MdVisibilityOff } from 'react-icons/md';
 
 const LabelPassword = ({
     label = 'label',
+    name = '',
     required = false,
     error = '',
     placeholder = '',
@@ -78,6 +79,7 @@ const LabelPassword = ({
 
                     <input
                         type={showPassword ? 'text' : 'password'}
+                        name={name}
                         value={value} // ← Используем только локальное значение
                         onChange={handleChange}
                         onFocus={handleFocus}
