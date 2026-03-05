@@ -59,22 +59,22 @@ const NavLinks = ({ isMobile, user }) => {
 
             {user && user.role === 'instructor' && (
                 <Link to="/instructor" className={`${active('/instructor')} ${linkClass}`}>
-                    Инструктор
+                    Dashboard
                 </Link>
             )}
             {user && user.role === 'admin' && (
                 <Link to="/admin" className={`${active('/admin')} ${linkClass}`}>
-                    Админ
+                    Dashboard
                 </Link>
             )}
             {user && user.role === 'assistant' && (
                 <Link to="/assistant" className={`${active('/assistant')} ${linkClass}`}>
-                    Ассистент
+                    Dashboard
                 </Link>
             )}
             {user && user.role === 'student' && (
                 <Link to="/student" className={`${active('/student')} ${linkClass}`}>
-                    Студент
+                    Dashboard
                 </Link>
             )}
         </div>
@@ -381,12 +381,21 @@ const Header = () => {
                                             setUserMenuOpen(!userMenuOpen);
                                         }}
                                     >
-                                        <FaRegUser
-                                            className={`w-5 h-5 transition-colors duration-300 ${activeIcon === 'user' || userMenuOpen
-                                                ? 'text-white'
-                                                : 'text-black dark:text-gray-300'
-                                                }`}
-                                        />
+                                        {user.avatar ? (
+                                            <img
+                                                src={user.avatar}
+                                                alt="User Avatar"
+                                                className="w-10 h-10 rounded-full object-cover"
+                                            />
+                                        ) : (
+                                            <FaRegUser
+                                                className={`w-5 h-5 transition-colors duration-300 ${activeIcon === 'user' || userMenuOpen
+                                                    ? 'text-white'
+                                                    : 'text-black dark:text-gray-300'
+                                                    }`}
+                                            />
+                                        )}
+
                                         {unreadNotifications > 0 && (
                                             <span className="absolute -top-0.5 right-0 bg-[#FF2C2C] text-white text-xs rounded-full w-4 h-4 flex items-center justify-center font-medium"></span>
                                         )}
@@ -486,7 +495,7 @@ const Header = () => {
                             </button>
 
                             {user && (
-                                <div className="relative">
+                                <div className="relative hidden md:block">
                                     <button
                                         className={`w-9 h-9 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${userMenuOpen
                                             ? 'bg-orange-500 border-orange-500'
@@ -494,10 +503,17 @@ const Header = () => {
                                             }`}
                                         onClick={() => setUserMenuOpen(!userMenuOpen)}
                                     >
-                                        <FaRegUser
-                                            className={`w-4 h-4 transition-colors duration-300 ${userMenuOpen ? 'text-white' : 'text-black dark:text-gray-300'
-                                                }`}
-                                        />
+                                        {user.avatar ? (
+                                            <img
+                                                src={user.avatar}
+                                                alt="User Avatar"
+                                                className="w-9 h-9 rounded-full object-cover"
+                                            />
+                                        ) : (
+                                            <FaRegUser
+                                                className={`w-4 h-4 transition-colors duration-300 ${userMenuOpen ? 'text-white' : 'text-black dark:text-gray-300'}`}
+                                            />
+                                        )}
                                     </button>
 
                                     {userMenuOpen && (
