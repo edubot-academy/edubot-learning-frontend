@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useContext } from 'react';
-import { useParams, useSearchParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import debounce from 'lodash.debounce';
 import toast from 'react-hot-toast';
 import {
@@ -33,7 +33,6 @@ import { FaSignalMessenger } from 'react-icons/fa6';
 import InstructorChat from '@features/instructorChat/InstructorChat';
 import CourseHeader from '@features/courses/components/CourseHeader';
 import { HiChatAlt2 } from 'react-icons/hi';
-import Loader from '@shared/ui/Loader';
 
 const CHALLENGE_STORAGE_PREFIX = 'lessonChallengeState';
 
@@ -64,7 +63,6 @@ const saveChallengeStateToStorage = (courseId, lessonId, updates) => {
 
 const CourseDetailsPage = () => {
     const { id } = useParams();
-    const [searchParams] = useSearchParams();
     const { user } = useContext(AuthContext);
     const [course, setCourse] = useState(null);
     const [sections, setSections] = useState([]);
@@ -80,7 +78,6 @@ const CourseDetailsPage = () => {
     const lessonRefs = useRef({});
     const videoRef = useRef(null);
     const hasPlayedRef = useRef(false);
-    const markingCompleteRef = useRef(false);
     const [shouldScrollToLesson, setShouldScrollToLesson] = useState(true);
     const [activeTab, setActiveTab] = useState('program'); // 'program' | 'assistant'
     const [lessonQuizData, setLessonQuizData] = useState({});
@@ -95,18 +92,14 @@ const CourseDetailsPage = () => {
     const [challengeSubmitting, setChallengeSubmitting] = useState(false);
     const [instructorChat, setInstructorChat] = useState(false);
     const chatRef = useRef(null);
-    const buttonRef = useRef(null);
-    const [videoHeight, setVideoHeight] = useState(0);
-    const videoContainerRef = useRef(null);
-    // Обработчик клика вне чата
+
     useEffect(() => {
         const handleClickOutside = (event) => {
             if (
                 instructorChat &&
                 chatRef.current &&
                 !chatRef.current.contains(event.target) &&
-                buttonRef.current &&
-                !buttonRef.current.contains(event.target)
+                !event.target.closest('button[class*="instructor-chat-button"]')
             ) {
                 setInstructorChat(false);
             }
@@ -118,36 +111,6 @@ const CourseDetailsPage = () => {
             document.removeEventListener('mousedown', handleClickOutside);
         };
     }, [instructorChat]);
-
-    useEffect(() => {
-        const updateVideoHeight = () => {
-            if (videoContainerRef.current) {
-                const height = videoContainerRef.current.offsetHeight;
-                setVideoHeight(height);
-            }
-        };
-
-        updateVideoHeight();
-
-        const handleResize = debounce(() => {
-            updateVideoHeight();
-        }, 100);
-
-        window.addEventListener('resize', handleResize);
-
-        const resizeObserver = new ResizeObserver(() => {
-            updateVideoHeight();
-        });
-
-        if (videoContainerRef.current) {
-            resizeObserver.observe(videoContainerRef.current);
-        }
-
-        return () => {
-            window.removeEventListener('resize', handleResize);
-            resizeObserver.disconnect();
-        };
-    }, [activeLesson]);
 
     useEffect(() => {
         hasPlayedRef.current = false;
@@ -215,41 +178,9 @@ const CourseDetailsPage = () => {
         [id, user, enrolled]
     );
 
-    const handleTimeUpdate = async (time) => {
+    const handleTimeUpdate = (time) => {
         if (user && enrolled && activeLessonRef.current?.kind === 'video') {
             debouncedTimeUpdate(time);
-        }
-
-        if (time > 0) {
-            hasPlayedRef.current = true;
-        }
-
-        const duration =
-            videoRef.current?.duration || activeLessonRef.current?.duration || activeLesson?.duration;
-        if (
-            enrolled &&
-            activeLessonRef.current &&
-            duration &&
-            duration > 0 &&
-            time / duration >= 0.95 &&
-            !completedLessons.includes(activeLessonRef.current.id) &&
-            !markingCompleteRef.current
-        ) {
-            try {
-                markingCompleteRef.current = true;
-                const resp = await markLessonComplete(
-                    Number(id),
-                    activeLessonRef.current.sectionId,
-                    activeLessonRef.current.id
-                );
-                if (resp.completed) {
-                    setCompletedLessons((prev) => [
-                        ...new Set([...prev, activeLessonRef.current.id]),
-                    ]);
-                }
-            } finally {
-                markingCompleteRef.current = false;
-            }
         }
     };
 
@@ -338,6 +269,7 @@ const CourseDetailsPage = () => {
     };
 
     const handleLessonClick = async (lesson) => {
+        console.log('handleLessonClick');
         const isArticle = lesson.kind === 'article';
         const isQuiz = lesson.kind === 'quiz';
         const isCode = lesson.kind === 'code';
@@ -433,7 +365,7 @@ const CourseDetailsPage = () => {
             }
 
             answersPayload = {
-                answers: answeredQuestions?.map((answer) => ({
+                answers: answeredQuestions.map((answer) => ({
                     questionId: answer.questionId,
                     optionId: answer.optionId,
                 })),
@@ -448,7 +380,7 @@ const CourseDetailsPage = () => {
             }
 
             answersPayload = {
-                answers: quiz.questions?.map((question) => ({
+                answers: quiz.questions.map((question) => ({
                     questionId: question.id,
                     optionId: currentAnswers[question.id],
                 })),
@@ -589,19 +521,15 @@ const CourseDetailsPage = () => {
             activeLesson?.kind === 'code'
         )
             return;
-        if (user && enrolled && activeLesson && !markingCompleteRef.current) {
-            try {
-                markingCompleteRef.current = true;
-                const resp = await markLessonComplete(
-                    Number(id),
-                    activeLesson.sectionId,
-                    activeLesson.id
-                );
-                if (resp.completed) {
-                    setCompletedLessons((prev) => [...new Set([...prev, activeLesson.id])]);
-                }
-            } finally {
-                markingCompleteRef.current = false;
+        if (user && enrolled && activeLesson) {
+            console.log('Marking lesson as complete handleEnded');
+            const resp = await markLessonComplete(
+                Number(id),
+                activeLesson.sectionId,
+                activeLesson.id
+            );
+            if (resp.completed) {
+                setCompletedLessons((prev) => [...new Set([...prev, activeLesson.id])]);
             }
         }
         const { next } = findPrevNextLessons();
@@ -610,14 +538,49 @@ const CourseDetailsPage = () => {
         }
     };
 
-    const handleVideoProgress = useCallback((progress) => {
-        if (progress > 0) {
-            hasPlayedRef.current = true;
-        }
-    }, []);
+    const handleVideoProgress = useCallback(
+        async (progress, lessonParam) => {
+            if (
+                lessonParam.kind === 'article' ||
+                lessonParam.kind === 'quiz' ||
+                lessonParam.kind === 'code'
+            )
+                return;
+
+            if (!hasPlayedRef.current) {
+                if (progress > 0) {
+                    hasPlayedRef.current = true;
+                } else {
+                    return;
+                }
+            }
+
+            if (
+                enrolled &&
+                lessonParam.id === activeLessonRef.current?.id &&
+                hasPlayedRef.current &&
+                progress >= 95 &&
+                lessonParam.duration &&
+                lessonParam.duration > 0 &&
+                !completedLessons.includes(lessonParam.id)
+            ) {
+                console.log(`✅ Marking complete: ${lessonParam.title}, progress: ${progress}%`);
+                const resp = await markLessonComplete(
+                    Number(id),
+                    lessonParam.sectionId,
+                    lessonParam.id
+                );
+                if (resp.completed) {
+                    setCompletedLessons((prev) => [...new Set([...prev, lessonParam.id])]);
+                }
+            }
+        },
+        [id, enrolled, completedLessons]
+    );
 
     const handleCheckboxToggle = async (lesson) => {
         if (!enrolled) return;
+        console.log('Marking lesson as complete handleCheckboxToggle');
         const response = await markLessonComplete(id, lesson.sectionId, lesson.id);
         if (response.completed) {
             setCompletedLessons((prev) => [...new Set([...prev, lesson.id])]);
@@ -640,13 +603,6 @@ const CourseDetailsPage = () => {
     useEffect(() => {
         const fetchCourse = async () => {
             try {
-                const resumeLessonIdParam = searchParams.get('resumeLessonId');
-                const resumeTimeParam = searchParams.get('resumeTime');
-                const resumeLessonId = resumeLessonIdParam ? Number(resumeLessonIdParam) : null;
-                const resumeTimeSeconds =
-                    resumeTimeParam && !Number.isNaN(Number(resumeTimeParam))
-                        ? Number(resumeTimeParam)
-                        : null;
                 let enrollment = { enrolled: false };
                 if (user) {
                     if (user.role === 'student') {
@@ -662,7 +618,7 @@ const CourseDetailsPage = () => {
                 setCourse(data);
                 const sectionData = await fetchSections(id);
 
-                const updatedSections = sectionData?.map((sec) => ({
+                const updatedSections = sectionData.map((sec) => ({
                     ...sec,
                     lessons: sec.lessons
                         .slice()
@@ -682,25 +638,12 @@ const CourseDetailsPage = () => {
                 if (enrollment.enrolled && user) {
                     const progress = await fetchUserProgress(id);
                     const completed = progress.completedLessonIds || [];
+                    console.log('Setting completedLessons from progress:', completed);
                     setCompletedLessons(completed);
                 }
 
                 let lastLesson = null;
-                let hasResumeParam = false;
-                if (resumeLessonId) {
-                    for (let sec of updatedSections) {
-                        for (let lesson of sec.lessons || []) {
-                            if (lesson.id === resumeLessonId) {
-                                lastLesson = lesson;
-                                hasResumeParam = true;
-                                break;
-                            }
-                        }
-                        if (hasResumeParam) break;
-                    }
-                }
-
-                if (!lastLesson && user && enrollment.enrolled) {
+                if (user && enrollment.enrolled) {
                     const lastViewed = await getLastViewedLesson(id);
                     if (lastViewed?.lessonId) {
                         setLastViewedLessonId(lastViewed.lessonId);
@@ -741,11 +684,7 @@ const CourseDetailsPage = () => {
                     if (lastLesson.kind === 'code') {
                         await loadChallengeForLesson(lastLesson);
                     }
-                    if (hasResumeParam) {
-                        setResumeVideoTime(
-                            resumeTimeSeconds && resumeTimeSeconds > 0 ? resumeTimeSeconds : 0
-                        );
-                    } else if (user && enrollment.enrolled && !lastLesson.locked) {
+                    if (user && enrollment.enrolled && !lastLesson.locked) {
                         if (
                             lastLesson.kind === 'article' ||
                             lastLesson.kind === 'quiz' ||
@@ -785,7 +724,7 @@ const CourseDetailsPage = () => {
     }, [id, user]);
     /* eslint-enable react-hooks/exhaustive-deps */
 
-    if (loading) return <Loader fullScreen />;
+    if (loading) return <div>Жүктөлүүдө...</div>;
     if (error) return <div>Ката: {error}</div>;
     if (!course) return <div>Курс табылган жок</div>;
 
@@ -807,24 +746,29 @@ const CourseDetailsPage = () => {
 
     const tabs = [
         { id: 'program', label: 'Курстун программасы', disabled: false },
-        ...(isAiAvailable ? [{ id: 'assistant', label: 'Edu AI Assistent', disabled: false }] : [])
+        { id: 'assistant', label: 'Edu AI Assistent', disabled: !isAiAvailable },
     ];
 
     const handleTabChange = (tab) => {
+        if (tab.disabled) {
+            toast.error('EDU AI азырынча бул курста жеткиликтүү эмес');
+            return;
+        }
         setActiveTab(tab.id);
     };
 
     const renderTabButtons = () => (
         <div className="flex flex-wrap gap-2 dark:bg-white/10 bg-gray-100 rounded-2xl p-1">
-            {tabs?.map((tab) => (
+            {tabs.map((tab) => (
                 <button
                     key={tab.id}
                     type="button"
                     onClick={() => handleTabChange(tab)}
-                    className={`flex-1 min-w-[140px] px-4 py-2 rounded-xl text-sm font-medium transition ${activeTab === tab.id
-                        ? 'dark:bg-[#222222] bg-white text-gray-900 dark:text-[#E8ECF3] shadow'
-                        : 'text-gray-600 dark:text-[#a6adba]'
-                        }`}
+                    className={`flex-1 min-w-[140px] px-4 py-2 rounded-xl text-sm font-medium transition ${
+                        activeTab === tab.id
+                            ? 'dark:bg-[#222222] bg-white text-gray-900 dark:text-[#E8ECF3] shadow'
+                            : 'text-gray-600 dark:text-[#a6adba]'
+                    } ${tab.disabled ? 'opacity-60 cursor-not-allowed' : 'hover:text-gray-900'}`}
                 >
                     {tab.label}
                 </button>
@@ -835,40 +779,32 @@ const CourseDetailsPage = () => {
     const lessonCount =
         course?.lessonCount ??
         sections.reduce((count, sec) => count + (sec.lessons?.length || 0), 0);
-    const activeQuiz = activeLesson?.kind === 'quiz' ? lessonQuizData[activeLesson.id] : null;
-    const activeChallenge =
-        activeLesson?.kind === 'code' ? lessonChallengeData[activeLesson.id] : null;
 
     return (
         <div className="min-h-screen pt-10 bg-[#f8f9fb] dark:bg-[#1A1A1A]">
             {enrolled && (
-                <>
-                    {/* Кнопка открытия/закрытия чата */}
-                    <div className="fixed top-20 right-4 z-50" ref={buttonRef}>  {/* Changed to z-50 */}
-                        <button
-                            className={`instructor-chat-button mt-10 mr-4 flex items-center justify-center w-16 h-16 rounded-full border-2 transition-all shadow-lg hover:shadow-xl ${instructorChat
-                                ? 'border-[#FB923C] bg-[#FFF7ED]'
-                                : 'border-gray-300 bg-white hover:bg-gray-50 dark:bg-[#1A1A1A]'
-                                }`}
-                            onClick={() => setInstructorChat(!instructorChat)}
-                        >
-                            <HiChatAlt2 className="w-8 h-8 text-[#EA580C]" />
-                        </button>
-                    </div>
-
-                    {/* Компонент чата - ПРАВИЛЬНЫЙ ВАРИАНТ */}
-                    {instructorChat && course && (
-                        <div ref={chatRef} className="fixed top-36 right-4 z-40">
-                            <div className="w-[400px] h-[600px]">
-                                <InstructorChat
-                                    course={course}
-                                    onClose={() => setInstructorChat(false)}
-                                />
-                            </div>
-                        </div>
-                    )}
-                </>
+                <div className="fixed top-20 right-4 z-40">
+                    {' '}
+                    <button
+                        className={`instructor-chat-button mt-10 mr-4 flex items-center justify-center w-16 h-16 rounded-full border-2 border-gray-300 bg-white hover:bg-gray-50 transition-all dark:bg-[#1A1A1A] shadow-lg hover:shadow-xl ${
+                            instructorChat ? 'border-[#FB923C] bg-[#FFF7ED]' : ''
+                        }`}
+                        onClick={() => setInstructorChat(!instructorChat)}
+                    >
+                        <HiChatAlt2 className="w-8 h-8 text-[#EA580C]" />
+                    </button>
+                </div>
             )}
+
+            {instructorChat && (
+                <div className="fixed top-32 right-4 z-40" ref={chatRef}>
+                    {' '}
+                    <div className="w-full max-w-[1440px] mx-auto aspect-[905/1096] rounded-lg shadow-x p-4 sm:p-6 md:p-8">
+                        <InstructorChat course={course} />
+                    </div>
+                </div>
+            )}
+
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-8">
                 <div className="space-y-6 lg:space-y-0 lg:grid lg:grid-cols-3 lg:gap-6">
                     {enrolled ? (
@@ -880,48 +816,39 @@ const CourseDetailsPage = () => {
                                         lesson={activeLesson}
                                     />
                                 ) : activeLesson.kind === 'quiz' ? (
-                                    activeQuiz ? (
-                                        <LessonQuizPlayer
-                                            key={activeLesson.id}
-                                            quiz={activeQuiz}
-                                            answers={lessonQuizAnswers[activeLesson.id] || {}}
-                                            onAnswerChange={handleQuizAnswerChange}
-                                            onSubmit={handleQuizSubmit}
-                                            onRetake={handleQuizRetake}
-                                            submitting={quizSubmitting}
-                                            disabled={!enrolled || activeLesson.locked}
-                                            loading={quizLoading && !activeQuiz}
-                                            result={lessonQuizResults[activeLesson.id]}
-                                        />
-                                    ) : (
-                                        <div className="flex justify-center py-10">
-                                            <Loader />
-                                        </div>
-                                    )
+                                    <LessonQuizPlayer
+                                        key={activeLesson.id}
+                                        quiz={lessonQuizData[activeLesson.id]}
+                                        answers={lessonQuizAnswers[activeLesson.id] || {}}
+                                        onAnswerChange={handleQuizAnswerChange}
+                                        onSubmit={handleQuizSubmit}
+                                        onRetake={handleQuizRetake}
+                                        submitting={quizSubmitting}
+                                        disabled={!enrolled || activeLesson.locked}
+                                        loading={quizLoading && !lessonQuizData[activeLesson.id]}
+                                        result={lessonQuizResults[activeLesson.id]}
+                                    />
                                 ) : activeLesson.kind === 'code' ? (
-                                    activeChallenge ? (
-                                        <LessonChallengePlayer
-                                            key={activeLesson.id}
-                                            challenge={activeChallenge}
-                                            code={
-                                                lessonChallengeCode[activeLesson.id] ??
-                                                activeChallenge?.starterCode ??
-                                                ''
-                                            }
-                                            onCodeChange={(newCode) =>
-                                                handleChallengeCodeChange(activeLesson.id, newCode)
-                                            }
-                                            onSubmit={handleChallengeSubmit}
-                                            submitting={challengeSubmitting}
-                                            disabled={!enrolled || activeLesson.locked}
-                                            loading={challengeLoading && !activeChallenge}
-                                            result={lessonChallengeResults[activeLesson.id]}
-                                        />
-                                    ) : (
-                                        <div className="flex justify-center py-10">
-                                            <Loader />
-                                        </div>
-                                    )
+                                    <LessonChallengePlayer
+                                        key={activeLesson.id}
+                                        challenge={lessonChallengeData[activeLesson.id]}
+                                        code={
+                                            lessonChallengeCode[activeLesson.id] ??
+                                            lessonChallengeData[activeLesson.id]?.starterCode ??
+                                            ''
+                                        }
+                                        onCodeChange={(newCode) =>
+                                            handleChallengeCodeChange(activeLesson.id, newCode)
+                                        }
+                                        onSubmit={handleChallengeSubmit}
+                                        submitting={challengeSubmitting}
+                                        disabled={!enrolled || activeLesson.locked}
+                                        loading={
+                                            challengeLoading &&
+                                            !lessonChallengeData[activeLesson.id]
+                                        }
+                                        result={lessonChallengeResults[activeLesson.id]}
+                                    />
                                 ) : (
                                     <CourseVideoPlayer
                                         key={activeLesson.id}
@@ -940,7 +867,6 @@ const CourseDetailsPage = () => {
                                     />
                                 ))}
                             <CourseContent
-                                courseId={id}
                                 sections={sections}
                                 enrolled={enrolled}
                                 onLessonClick={handleLessonClick}
@@ -949,11 +875,7 @@ const CourseDetailsPage = () => {
                                 lessonRefs={lessonRefs}
                                 handleCheckboxToggle={handleCheckboxToggle}
                             />
-                            <InstructorsInfo
-                                instructorData={course.instructor}
-                                ratingAverage={course.ratingAverage}
-                                ratingCount={course.ratingCount}
-                            />
+                            <InstructorsInfo instructorData={course.instructor} />
                             <CourseReview
                                 ratingAverage={course.ratingAverage}
                                 ratingCount={course.ratingCount}
@@ -968,22 +890,10 @@ const CourseDetailsPage = () => {
                                 course={course}
                                 lessonCount={lessonCount}
                                 coverImageUrl={course.coverImageUrl}
-                                resumeVideoTime={resumeVideoTime}
-                                handleVideoProgress={(progress) =>
-                                    handleVideoProgress(progress, activeLesson)
-                                }
-                                handleTimeUpdate={handleTimeUpdate}
-                                handlePause={handlePause}
-                                videoRef={videoRef}
-                                onEnded={handleEnded}
                             />
                             <CourseDescription course={course} />
-                            <InstructorsInfo
-                                instructorData={course.instructor}
-                                ratingAverage={course.ratingAverage}
-                                ratingCount={course.ratingCount}
-                            />
-                            <CourseContent courseId={id} sections={sections} />
+                            <InstructorsInfo instructorData={course.instructor} />
+                            <CourseContent sections={sections} />
                             <CourseReview
                                 ratingAverage={course.ratingAverage}
                                 ratingCount={course.ratingCount}
@@ -994,7 +904,7 @@ const CourseDetailsPage = () => {
 
                     <div className="hidden lg:block lg:col-span-2">
                         {enrolled ? (
-                            <div className="space-y-8" ref={videoContainerRef}>
+                            <div className="space-y-8">
                                 {activeLesson &&
                                     (activeLesson.kind === 'article' ? (
                                         <ArticleLessonViewer
@@ -1002,51 +912,41 @@ const CourseDetailsPage = () => {
                                             lesson={activeLesson}
                                         />
                                     ) : activeLesson.kind === 'quiz' ? (
-                                        activeQuiz ? (
-                                            <LessonQuizPlayer
-                                                key={activeLesson.id}
-                                                quiz={activeQuiz}
-                                                answers={lessonQuizAnswers[activeLesson.id] || {}}
-                                                onAnswerChange={handleQuizAnswerChange}
-                                                onSubmit={handleQuizSubmit}
-                                                onRetake={handleQuizRetake}
-                                                submitting={quizSubmitting}
-                                                disabled={!enrolled || activeLesson.locked}
-                                                loading={quizLoading && !activeQuiz}
-                                                result={lessonQuizResults[activeLesson.id]}
-                                            />
-                                        ) : (
-                                            <div className="flex justify-center py-10">
-                                                <Loader />
-                                            </div>
-                                        )
+                                        <LessonQuizPlayer
+                                            key={activeLesson.id}
+                                            quiz={lessonQuizData[activeLesson.id]}
+                                            answers={lessonQuizAnswers[activeLesson.id] || {}}
+                                            onAnswerChange={handleQuizAnswerChange}
+                                            onSubmit={handleQuizSubmit}
+                                            onRetake={handleQuizRetake}
+                                            submitting={quizSubmitting}
+                                            disabled={!enrolled || activeLesson.locked}
+                                            loading={
+                                                quizLoading && !lessonQuizData[activeLesson.id]
+                                            }
+                                            result={lessonQuizResults[activeLesson.id]}
+                                        />
                                     ) : activeLesson.kind === 'code' ? (
-                                        activeChallenge ? (
-                                            <LessonChallengePlayer
-                                                key={activeLesson.id}
-                                                challenge={activeChallenge}
-                                                code={
-                                                    lessonChallengeCode[activeLesson.id] ??
-                                                    activeChallenge?.starterCode ??
-                                                    ''
-                                                }
-                                                onCodeChange={(newCode) =>
-                                                    handleChallengeCodeChange(
-                                                        activeLesson.id,
-                                                        newCode
-                                                    )
-                                                }
-                                                onSubmit={handleChallengeSubmit}
-                                                submitting={challengeSubmitting}
-                                                disabled={!enrolled || activeLesson.locked}
-                                                loading={challengeLoading && !activeChallenge}
-                                                result={lessonChallengeResults[activeLesson.id]}
-                                            />
-                                        ) : (
-                                            <div className="flex justify-center py-10">
-                                                <Loader />
-                                            </div>
-                                        )
+                                        <LessonChallengePlayer
+                                            key={activeLesson.id}
+                                            challenge={lessonChallengeData[activeLesson.id]}
+                                            code={
+                                                lessonChallengeCode[activeLesson.id] ??
+                                                lessonChallengeData[activeLesson.id]?.starterCode ??
+                                                ''
+                                            }
+                                            onCodeChange={(newCode) =>
+                                                handleChallengeCodeChange(activeLesson.id, newCode)
+                                            }
+                                            onSubmit={handleChallengeSubmit}
+                                            submitting={challengeSubmitting}
+                                            disabled={!enrolled || activeLesson.locked}
+                                            loading={
+                                                challengeLoading &&
+                                                !lessonChallengeData[activeLesson.id]
+                                            }
+                                            result={lessonChallengeResults[activeLesson.id]}
+                                        />
                                     ) : (
                                         <CourseVideoPlayer
                                             key={activeLesson.id}
@@ -1068,10 +968,8 @@ const CourseDetailsPage = () => {
                         ) : (
                             <div className="space-y-8">
                                 <CourseDescription course={course} />
-                                <InstructorsInfo
-                                    instructorData={course.instructor}
-                                />
-                                <CourseContent courseId={id} sections={sections} />
+                                <InstructorsInfo instructorData={course.instructor} />
+                                <CourseContent sections={sections} />
                             </div>
                         )}
                     </div>
@@ -1091,9 +989,7 @@ const CourseDetailsPage = () => {
                                             lessonRefs={lessonRefs}
                                             showHeader={false}
                                             handleCheckboxToggle={handleCheckboxToggle}
-                                            maxHeight={videoHeight ? `${videoHeight}px` : undefined}
                                         />
-
                                     ) : (
                                         <div className="bg-white">
                                             {isAiAvailable ? (
@@ -1131,11 +1027,7 @@ const CourseDetailsPage = () => {
                 {enrolled && (
                     <div className="space-y-8 lg:space-y-0 lg:grid lg:grid-cols-3 lg:gap-6">
                         <div className="lg:col-span-2">
-                            <InstructorsInfo
-                                instructorData={course.instructor}
-                                ratingAverage={course.ratingAverage}
-                                ratingCount={course.ratingCount}
-                            />
+                            <InstructorsInfo instructorData={course.instructor} />
                         </div>
                         <div className="lg:col-span-1">
                             <CourseReview

@@ -60,7 +60,7 @@ const Footer = () => {
                                 БИЗДИН ДАРЕК
                             </h3>
                             <p className="text-sm text-gray-700 dark:text-[#a6adba]">
-                                Бишкек ш,. Ахунбаев 109/1
+                                Бишкек ш. Ахунбаев 129Б
                             </p>
                         </div>
                     </div>
