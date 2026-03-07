@@ -1,7 +1,6 @@
 import { useState, useContext, useEffect } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { registerUser } from '@services/api';
-import PhoneInput from '@shared/ui/forms/PhoneInput';
 import SignUpImg from '../assets/images/edubot-signup.png';
 import toast from 'react-hot-toast';
 import DefaultLabel from '@shared-ui/forms/DefaultLabel';
@@ -34,6 +33,7 @@ const SignupPage = () => {
     const [showRepeatPassword, setShowRepeatPassword] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
+    const [isPhoneFocused, setIsPhoneFocused] = useState(false);
 
     const navigate = useNavigate();
     const location = useLocation();
@@ -53,15 +53,25 @@ const SignupPage = () => {
 
     const handleChange = (e) => {
         const { name, value } = e.target;
-        setFormData({ ...formData, [name]: value });
+
+        if (name === 'phoneNumber') {
+            const phoneValue = value.replace(/[^\d+]/g, '');
+            setFormData({ ...formData, [name]: phoneValue });
+        } else {
+            setFormData({ ...formData, [name]: value });
+        }
 
         if (name === 'password') {
             validatePassword(value);
         }
     };
 
-    const handlePhoneChange = (value) => {
-        setFormData((prev) => ({ ...prev, phoneNumber: value }));
+    const handlePhoneFocus = () => {
+        setIsPhoneFocused(true);
+    };
+
+    const handlePhoneBlur = () => {
+        setIsPhoneFocused(false);
     };
 
     const executePendingAction = async () => {
@@ -214,8 +224,43 @@ const SignupPage = () => {
                             className="py-2"
                         />
 
-                        <div className="py-2">
-                            <PhoneInput onChange={handlePhoneChange} value={formData.phoneNumber} />
+                        <div className="py-2 relative">
+                            <div className="relative">
+                                <input
+                                    type="tel"
+                                    id="phoneNumber"
+                                    name="phoneNumber"
+                                    value={formData.phoneNumber}
+                                    onChange={handleChange}
+                                    onFocus={handlePhoneFocus}
+                                    onBlur={handlePhoneBlur}
+                                    placeholder=" "
+                                    required
+                                    className={`
+                                        w-full px-4 py-2 border rounded-lg outline-none transition-all
+                                        ${
+                                            isPhoneFocused || formData.phoneNumber
+                                                ? 'border-orange-500 ring-2 ring-orange-500/50'
+                                                : 'border-gray-300 dark:border-gray-300'
+                                        }
+                                        dark:bg-[#252424] dark:text-white bg-white
+                                        peer
+                                    `}
+                                />
+                                <label
+                                    htmlFor="phoneNumber"
+                                    className={`
+                                        absolute left-3 transition-all duration-200 pointer-events-none
+                                        ${
+                                            isPhoneFocused || formData.phoneNumber
+                                                ? 'top-0 text-xs -translate-y-1/2 bg-white dark:bg-[#2A2A2A] px-1 text-orange-500 dark:text-orange-400'
+                                                : 'top-1/2 text-base -translate-y-1/2 text-gray-500 dark:text-gray-400'
+                                        }
+                                    `}
+                                >
+                                    Телефон номери
+                                </label>
+                            </div>
                         </div>
 
                         <div className="relative py-2">
@@ -232,11 +277,11 @@ const SignupPage = () => {
                             />
 
                             {showTooltip && (
-                                <ul className="absolute z-10 top-full left-0 mt-1 bg-white text-black rounded shadow-lg text-xs w-full px-3 py-2 border">
+                                <ul className="absolute z-10 top-full left-0 mt-1 bg-white text-black rounded shadow-lg text-xs w-full px-3 py-2 border dark:bg-[#2A2A2A] dark:text-white dark:border-gray-600">
                                     <li
                                         className={
                                             passwordValidations.length
-                                                ? 'text-green-600'
+                                                ? 'text-green-600 dark:text-green-400'
                                                 : 'text-gray-400'
                                         }
                                     >
@@ -245,7 +290,7 @@ const SignupPage = () => {
                                     <li
                                         className={
                                             passwordValidations.lowercase
-                                                ? 'text-green-600'
+                                                ? 'text-green-600 dark:text-green-400'
                                                 : 'text-gray-400'
                                         }
                                     >
@@ -254,7 +299,7 @@ const SignupPage = () => {
                                     <li
                                         className={
                                             passwordValidations.uppercase
-                                                ? 'text-green-600'
+                                                ? 'text-green-600 dark:text-green-400'
                                                 : 'text-gray-400'
                                         }
                                     >
@@ -263,7 +308,7 @@ const SignupPage = () => {
                                     <li
                                         className={
                                             passwordValidations.number
-                                                ? 'text-green-600'
+                                                ? 'text-green-600 dark:text-green-400'
                                                 : 'text-gray-400'
                                         }
                                     >
@@ -272,7 +317,7 @@ const SignupPage = () => {
                                     <li
                                         className={
                                             passwordValidations.specialChar
-                                                ? 'text-green-600'
+                                                ? 'text-green-600 dark:text-green-400'
                                                 : 'text-gray-400'
                                         }
                                     >
@@ -297,7 +342,7 @@ const SignupPage = () => {
                         <button
                             type="submit"
                             disabled={loading}
-                            className="w-full mt-4 shadow-[0px_5px_21.3px_0px_#E14219BF] bg-[linear-gradient(180deg,#FF8C6E_0%,#E14219_100%)] text-white py-3 rounded text-lg font-semibold hover:opacity-90 transition"
+                            className="w-full mt-4 shadow-[0px_5px_21.3px_0px_#E14219BF] bg-[linear-gradient(180deg,#FF8C6E_0%,#E14219_100%)] text-white py-3 rounded text-lg font-semibold hover:opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             {loading ? <Loader fullScreen={false} /> : 'Катталуу'}
                         </button>

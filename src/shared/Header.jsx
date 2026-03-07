@@ -21,7 +21,8 @@ import { useCart } from '../context/CartContext';
 
 const NavLinks = ({ isMobile, user }) => {
     const location = useLocation();
-    const active = (path) => (location.pathname === path ? 'text-orange-500 dark:text-orange-400' : '');
+    const active = (path) =>
+        location.pathname === path ? 'text-orange-500 dark:text-orange-400' : '';
 
     const linkClass =
         'relative inline-block cursor-pointer dark:text-[#E8ECF3] dark:hover:text-white ' +
@@ -161,9 +162,8 @@ const Header = () => {
             try {
                 const unreadRes = await fetchUnreadNotificationsCount();
                 setUnreadNotifications(unreadRes?.count ?? 0);
-
             } catch (error) {
-                console.error("Билдирүүлөрдү жүктөөдө ката кетти:", error);
+                console.error('Билдирүүлөрдү жүктөөдө ката кетти:', error);
             }
         };
 
@@ -226,7 +226,9 @@ const Header = () => {
                                 />
                             </div>
                             <div className="flex flex-col ml-3">
-                                <span className="text-2xl font-bold text-orange-500 dark:text-orange-400">EDUBOT</span>
+                                <span className="text-2xl font-bold text-orange-500 dark:text-orange-400">
+                                    EDUBOT
+                                </span>
                                 <span className="text-base -mt-2 text-gray-700 dark:text-gray-300 tracking-[0.14em]">
                                     LEARNING
                                 </span>
@@ -248,9 +250,9 @@ const Header = () => {
                                 className="px-3 py-2 focus:outline-none bg-transparent w-full text-base text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400"
                             />
 
-                            {/* Search Dropdown */}
+                            {/* Search Dropdown - ИСПРАВЛЕНО: z-40 вместо z-50 */}
                             {showDropdown && (
-                                <div className="absolute top-full left-0 right-0 mt-2 max-w-xs w-full bg-white dark:bg-[#141619] border border-gray-200 dark:border-gray-700 shadow-xl dark:shadow-gray-900 z-50 max-h-64 overflow-y-auto">
+                                <div className="absolute top-full left-0 right-0 mt-2 max-w-xs w-full bg-white dark:bg-[#141619] border border-gray-200 dark:border-gray-700 shadow-xl dark:shadow-gray-900 z-40 max-h-64 overflow-y-auto">
                                     {results.length > 0 ? (
                                         results.map((course) => (
                                             <button
@@ -290,20 +292,8 @@ const Header = () => {
                     <div className="flex items-center space-x-4">
                         <div className="relative" ref={langRef}>
                             {/* localization hasn't been added yet */}
-
-                            {/* <button
-                                onClick={() => setLangOpen((p) => !p)}
-                                className="flex items-center space-x-1 p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors"
-                            >
-                                <GrLanguage className="text-gray-700 dark:text-gray-300 w-5 h-5" />
-                                <BsChevronDown
-                                    className={`w-4 h-4 text-gray-700 dark:text-gray-300 transform transition-transform duration-300 ${
-                                        langOpen ? 'rotate-180' : ''
-                                    }`}
-                                />
-                            </button> */}
                             {langOpen && (
-                                <div className="absolute right-0 mt-2 bg-white dark:bg-gray-800 shadow-lg dark:shadow-gray-900 rounded border border-gray-200 dark:border-gray-700 z-50">
+                                <div className="absolute right-0 mt-2 bg-white dark:bg-gray-800 shadow-lg dark:shadow-gray-900 rounded border border-gray-200 dark:border-gray-700 z-40">
                                     {['Кыргызча', 'Русский', 'English'].map((l) => (
                                         <button
                                             key={l}
@@ -327,10 +317,11 @@ const Header = () => {
                         {user ? (
                             <div className="flex items-center gap-3">
                                 <button
-                                    className={`relative w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-300 ${isFavouritesPage || activeIcon === 'heart'
-                                        ? 'bg-orange-500 border-orange-500'
-                                        : 'border-black dark:border-gray-400 hover:border-gray-600 dark:hover:border-gray-300'
-                                        }`}
+                                    className={`relative w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-300 ${
+                                        isFavouritesPage || activeIcon === 'heart'
+                                            ? 'bg-orange-500 border-orange-500'
+                                            : 'border-black dark:border-gray-400 hover:border-gray-600 dark:hover:border-gray-300'
+                                    }`}
                                     onClick={handleFavouriteClick}
                                     aria-label="Избранное"
                                     aria-current={isFavouritesPage ? 'page' : undefined}
@@ -348,20 +339,22 @@ const Header = () => {
                                 </button>
                                 <div className="relative">
                                     <button
-                                        className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-300 ${activeIcon === 'cart' || location.pathname === '/cart'
-                                            ? 'bg-orange-500 border-orange-500'
-                                            : 'border-black dark:border-gray-400 hover:border-gray-600 dark:hover:border-gray-300'
-                                            }`}
+                                        className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-300 ${
+                                            activeIcon === 'cart' || location.pathname === '/cart'
+                                                ? 'bg-orange-500 border-orange-500'
+                                                : 'border-black dark:border-gray-400 hover:border-gray-600 dark:hover:border-gray-300'
+                                        }`}
                                         onClick={() =>
                                             handleIconClick('cart', () => navigate('/cart'))
                                         }
                                     >
                                         <BsCart2
-                                            className={`w-5 h-5 transition-colors duration-300 ${activeIcon === 'cart' ||
+                                            className={`w-5 h-5 transition-colors duration-300 ${
+                                                activeIcon === 'cart' ||
                                                 location.pathname === '/cart'
-                                                ? 'text-white'
-                                                : 'text-black dark:text-gray-300'
-                                                }`}
+                                                    ? 'text-white'
+                                                    : 'text-black dark:text-gray-300'
+                                            }`}
                                         />
                                         {cartItemsCount > 0 && (
                                             <span className="absolute -top-1 -right-1 bg-orange-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-medium">
@@ -372,30 +365,33 @@ const Header = () => {
                                 </div>
                                 <div className="relative group">
                                     <button
-                                        className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-300 ${activeIcon === 'user' || userMenuOpen
-                                            ? 'bg-orange-500 border-orange-500'
-                                            : 'border-black dark:border-gray-400 hover:border-gray-600 dark:hover:border-gray-300'
-                                            }`}
+                                        className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-300 ${
+                                            activeIcon === 'user' || userMenuOpen
+                                                ? 'bg-orange-500 border-orange-500'
+                                                : 'border-black dark:border-gray-400 hover:border-gray-600 dark:hover:border-gray-300'
+                                        }`}
                                         onClick={() => {
                                             handleIconClick('user');
                                             setUserMenuOpen(!userMenuOpen);
                                         }}
                                     >
                                         <FaRegUser
-                                            className={`w-5 h-5 transition-colors duration-300 ${activeIcon === 'user' || userMenuOpen
-                                                ? 'text-white'
-                                                : 'text-black dark:text-gray-300'
-                                                }`}
+                                            className={`w-5 h-5 transition-colors duration-300 ${
+                                                activeIcon === 'user' || userMenuOpen
+                                                    ? 'text-white'
+                                                    : 'text-black dark:text-gray-300'
+                                            }`}
                                         />
                                         {unreadNotifications > 0 && (
                                             <span className="absolute -top-0.5 right-0 bg-[#FF2C2C] text-white text-xs rounded-full w-4 h-4 flex items-center justify-center font-medium"></span>
                                         )}
                                     </button>
 
-                                    <div className="absolute top-full right-0 pt-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible lg:group-hover:opacity-100 lg:group-hover:visible transform translate-y-2 group-hover:translate-y-0 transition-all duration-300 ease-out z-60">
+                                    {/* ИСПРАВЛЕНО: z-40 вместо z-60 */}
+                                    <div className="absolute top-full right-0 pt-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible lg:group-hover:opacity-100 lg:group-hover:visible transform translate-y-2 group-hover:translate-y-0 transition-all duration-300 ease-out z-40">
                                         <div className="relative">
                                             <div className="absolute -top-2 left-0 right-0 h-2 bg-transparent"></div>
-                                            <UserMenuDropdown user={user} onClose={() => { }} />
+                                            <UserMenuDropdown user={user} onClose={() => {}} />
                                         </div>
                                     </div>
                                 </div>
@@ -403,10 +399,11 @@ const Header = () => {
                         ) : (
                             <div className="flex items-center gap-3">
                                 <button
-                                    className={`relative w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-300 ${isFavouritesPage || activeIcon === 'heart'
-                                        ? 'border-orange-500'
-                                        : 'border-black dark:border-[#E8ECF3] hover:border-gray-600 dark:hover:border-[#E8ECF3]/70'
-                                        }`}
+                                    className={`relative w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-300 ${
+                                        isFavouritesPage || activeIcon === 'heart'
+                                            ? 'border-orange-500'
+                                            : 'border-black dark:border-[#E8ECF3] hover:border-gray-600 dark:hover:border-[#E8ECF3]/70'
+                                    }`}
                                     onClick={handleFavouriteClick}
                                     aria-label="Избранное"
                                 >
@@ -415,20 +412,22 @@ const Header = () => {
 
                                 <div className="relative">
                                     <button
-                                        className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-300 ${activeIcon === 'cart' || location.pathname === '/cart'
-                                            ? 'bg-orange-500 border-orange-500'
-                                            : 'border-black dark:border-gray-400 hover:border-gray-600 dark:hover:border-gray-300'
-                                            }`}
+                                        className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-300 ${
+                                            activeIcon === 'cart' || location.pathname === '/cart'
+                                                ? 'bg-orange-500 border-orange-500'
+                                                : 'border-black dark:border-gray-400 hover:border-gray-600 dark:hover:border-gray-300'
+                                        }`}
                                         onClick={() =>
                                             handleIconClick('cart', () => navigate('/cart'))
                                         }
                                     >
                                         <BsCart2
-                                            className={`w-5 h-5 transition-colors duration-300 ${activeIcon === 'cart' ||
+                                            className={`w-5 h-5 transition-colors duration-300 ${
+                                                activeIcon === 'cart' ||
                                                 location.pathname === '/cart'
-                                                ? 'text-white'
-                                                : 'text-black dark:text-gray-300'
-                                                }`}
+                                                    ? 'text-white'
+                                                    : 'text-black dark:text-gray-300'
+                                            }`}
                                         />
 
                                         {cartItemsCount > 0 && (
@@ -470,7 +469,9 @@ const Header = () => {
                                 />
                             </div>
                             <div className="flex flex-col items-center mt-1">
-                                <span className="text-lg font-bold text-orange-500 dark:text-orange-400">EDUBOT</span>
+                                <span className="text-lg font-bold text-orange-500 dark:text-orange-400">
+                                    EDUBOT
+                                </span>
                                 <span className="text-xs -mt-1 text-gray-700 dark:text-gray-300 tracking-[0.14em]">
                                     LEARNING
                                 </span>
@@ -488,20 +489,24 @@ const Header = () => {
                             {user && (
                                 <div className="relative">
                                     <button
-                                        className={`w-9 h-9 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${userMenuOpen
-                                            ? 'bg-orange-500 border-orange-500'
-                                            : 'border-black dark:border-gray-400 hover:border-gray-600 dark:hover:border-gray-300'
-                                            }`}
+                                        className={`w-9 h-9 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${
+                                            userMenuOpen
+                                                ? 'bg-orange-500 border-orange-500'
+                                                : 'border-black dark:border-gray-400 hover:border-gray-600 dark:hover:border-gray-300'
+                                        }`}
                                         onClick={() => setUserMenuOpen(!userMenuOpen)}
                                     >
                                         <FaRegUser
-                                            className={`w-4 h-4 transition-colors duration-300 ${userMenuOpen ? 'text-white' : 'text-black dark:text-gray-300'
-                                                }`}
+                                            className={`w-4 h-4 transition-colors duration-300 ${
+                                                userMenuOpen
+                                                    ? 'text-white'
+                                                    : 'text-black dark:text-gray-300'
+                                            }`}
                                         />
                                     </button>
 
                                     {userMenuOpen && (
-                                        <div className="absolute right-0 top-full mt-2 z-50">
+                                        <div className="absolute right-0 top-full mt-2 z-40">
                                             <UserMenuDropdown
                                                 user={user}
                                                 onClose={() => setUserMenuOpen(false)}
@@ -528,9 +533,9 @@ const Header = () => {
                                 />
                             </div>
 
-                            {/* Mobile Search Dropdown */}
+                            {/* Mobile Search Dropdown - ИСПРАВЛЕНО: z-40 вместо z-50 */}
                             {showDropdown && (
-                                <div className="absolute left-0 right-0 mt-1 mx-4 z-50">
+                                <div className="absolute left-0 right-0 mt-1 mx-4 z-40">
                                     {results.length > 0 ? (
                                         <div className="bg-white dark:bg-gray-800 shadow-lg border border-gray-200 dark:border-gray-700 rounded max-h-64 overflow-y-auto">
                                             {results.map((course) => (
