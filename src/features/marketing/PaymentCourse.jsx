@@ -47,7 +47,7 @@ const PaymentCourse = () => {
     const handlePay = async (e) => {
         e.preventDefault();
         if (!totalPrice) {
-            toast.error('Корзина бош');
+            toast.error('Себет бош');
             return;
         }
 
