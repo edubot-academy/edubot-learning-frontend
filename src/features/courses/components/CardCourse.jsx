@@ -137,7 +137,7 @@ const CardCourse = ({
                         type="button"
                         onClick={handleFavoriteClick}
                         className="absolute top-3 right-3 z-10 bg-white p-2 rounded-full shadow-md hover:shadow-lg transition-shadow"
-                        aria-label={isCourseFavourite ? 'Избранныйдан өчүрүү' : 'Избранныйга кошуу'}
+                        aria-label={isCourseFavourite ? 'Тандалгандар өчүрүү' : 'Тандалгандарга кошуу'}
                         aria-pressed={isCourseFavourite}
                     >
                         <svg

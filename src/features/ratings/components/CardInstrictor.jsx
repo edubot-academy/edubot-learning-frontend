@@ -62,7 +62,7 @@ const CardInstructor = ({
                         {[1, 2, 3, 4, 5].map(renderStar)}
                     </div>
                 </div>
-                <span className="text-sm text-[#a6adba]">({safeRatingCount} студентов)</span>
+                <span className="text-sm text-[#a6adba]">({safeRatingCount} студенттер)</span>
             </div>
         </div>
     );

@@ -284,7 +284,7 @@ const SignupPage = () => {
 
                         <div className="py-2">
                             <LabelPassword
-                                label="Повторите пароль"
+                                label="Сырсөздү кайталаңыз"
                                 name="repeatPassword"
                                 value={formData.repeatPassword}
                                 onChange={handleChange}

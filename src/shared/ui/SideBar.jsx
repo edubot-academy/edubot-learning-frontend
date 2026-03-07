@@ -133,11 +133,11 @@ const SideBar = ({ setMenuOpen, setPosition }) => {
                         <ul className="flex flex-col justify-between items-start">
                             <Link to="/cart" className={`${linkClass}`}>
                                 <BsCart2 className='w-6 h-6' />
-                                Корзина
+                                Себет
                             </Link>
                             <Link to="/favourite" className={`${linkClass}`}>
                                 <IoHeartOutline className='w-6 h-6' />
-                                Избранные
+                                Тандалгандар
                             </Link>
                         </ul>
                     </div>
@@ -167,7 +167,7 @@ const SideBar = ({ setMenuOpen, setPosition }) => {
                     ) : (
                         <>
                             <Link to="/cart" className={`${active('/cart')} ${linkClass}`}>
-                                Корзина
+                                Себет
                             </Link>
                             <Link to="/register" className={`${active('/register')} ${linkClass}`}>
                                 Катталуу
