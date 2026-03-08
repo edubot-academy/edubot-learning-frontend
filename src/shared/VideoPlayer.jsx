@@ -10,15 +10,21 @@ const VideoPlayer = ({
     onTimeUpdate,
     onPause,
     allowPlay = true,
+    blockedMessage = 'Видео табылган жок',
     containerRef,
     onEnded,
+    subtitleTracks = [],
+    onRequestRefresh,
 }) => {
     const hlsRef = useRef(null);
     const videoRef = useRef(null);
+    const refreshAttemptedRef = useRef(false);
     const [hasError, setHasError] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [qualityOptions, setQualityOptions] = useState([{ id: 'auto', label: 'Auto' }]);
     const [currentQuality, setCurrentQuality] = useState('auto');
+    const [sourceUrl, setSourceUrl] = useState(videoUrl);
+    const [reloadToken, setReloadToken] = useState(0);
 
     const handleQualityChange = useCallback((id) => {
         if (!hlsRef.current) return;
@@ -29,11 +35,35 @@ const VideoPlayer = ({
     const retryLoad = useCallback(() => {
         setHasError(false);
         setIsLoading(true);
+        refreshAttemptedRef.current = false;
+        setReloadToken(Date.now());
     }, []);
 
     useEffect(() => {
+        setSourceUrl(videoUrl);
+        refreshAttemptedRef.current = false;
+    }, [videoUrl]);
+
+    useEffect(() => {
+        refreshAttemptedRef.current = false;
+    }, [sourceUrl]);
+
+    useEffect(() => {
         const videoEl = videoRef.current;
-        if (!videoEl || !videoUrl) return;
+        if (!videoEl || !sourceUrl) return;
+
+        if (!allowPlay) {
+            if (hlsRef.current) {
+                hlsRef.current.destroy();
+                hlsRef.current = null;
+            }
+            return;
+        }
+
+        setHasError(false);
+        setIsLoading(true);
+        setQualityOptions([{ id: 'auto', label: 'Auto' }]);
+        setCurrentQuality('auto');
 
         if (hlsRef.current) {
             hlsRef.current.destroy();
@@ -45,17 +75,20 @@ const VideoPlayer = ({
         videoEl.load();
         setIsLoading(true);
 
-        const isHlsSource = videoUrl.includes('.m3u8');
+        const isHlsSource = sourceUrl.includes('.m3u8');
 
         if (isHlsSource && Hls.isSupported()) {
-            const hls = new Hls();
+            const hls = new Hls({ startLevel: -1 });
             hlsRef.current = hls;
 
-            hls.loadSource(videoUrl);
+            hls.loadSource(sourceUrl);
             hls.attachMedia(videoEl);
 
             hls.on(Hls.Events.MANIFEST_PARSED, (_, data) => {
                 const levels = data.levels || [];
+                const startLevel = levels.length > 1 ? Math.max(0, Math.floor((levels.length - 1) / 2)) : 0;
+                hls.currentLevel = startLevel;
+                hls.nextAutoLevel = startLevel;
                 setQualityOptions([
                     { id: 'auto', label: 'Auto' },
                     ...levels.map((lvl, i) => ({ id: `${i}`, label: `${lvl.height}p` })),
@@ -64,6 +97,28 @@ const VideoPlayer = ({
 
             hls.on(Hls.Events.ERROR, (_, data) => {
                 if (data.fatal) {
+                    const status = data?.response?.code || data?.response?.status;
+                    const shouldRetry = status === 403 && onRequestRefresh && !refreshAttemptedRef.current;
+
+                    if (shouldRetry) {
+                        refreshAttemptedRef.current = true;
+                        onRequestRefresh()
+                            .then((nextUrl) => {
+                                if (nextUrl) {
+                                    setSourceUrl(nextUrl);
+                                    setReloadToken(Date.now());
+                                } else {
+                                    setHasError(true);
+                                    setIsLoading(false);
+                                }
+                            })
+                            .catch(() => {
+                                setHasError(true);
+                                setIsLoading(false);
+                            });
+                        return;
+                    }
+
                     setHasError(true);
                     setIsLoading(false);
                     toast.error('Тилекке каршы, видео ойнотулбай калды.');
@@ -75,9 +130,10 @@ const VideoPlayer = ({
                 hlsRef.current = null;
             };
         } else {
-            videoEl.src = videoUrl;
+            videoEl.src = sourceUrl;
+            videoEl.load();
         }
-    }, [videoUrl, videoRef, setIsLoading, setHasError]);
+    }, [sourceUrl, allowPlay, videoRef, setIsLoading, setHasError, reloadToken, onRequestRefresh]);
 
     useEffect(() => {
         const video = videoRef.current;
@@ -131,7 +187,20 @@ const VideoPlayer = ({
                         setHasError(true);
                         setIsLoading(false);
                     }}
-                />
+                >
+                    {subtitleTracks
+                        ?.filter((track) => track?.src || track?.url)
+                        .map((track, idx) => (
+                            <track
+                                key={track.id || track.label || track.src || track.url || idx}
+                                kind={track.kind || 'subtitles'}
+                                src={track.src || track.url}
+                                srcLang={track.lang || track.srclang || track.language || 'en'}
+                                label={track.label || track.language || track.lang || 'Subtitles'}
+                                default={track.default}
+                            />
+                        ))}
+                </video>
             )}
 
             {isLoading && allowPlay && !hasError && (
@@ -141,8 +210,8 @@ const VideoPlayer = ({
             )}
 
             {!allowPlay && (
-                <div className="absolute inset-0 bg-black/70 z-20 flex items-center justify-center text-white">
-                    Видео табылган жок
+                <div className="absolute inset-0 bg-black/70 z-20 flex items-center justify-center text-white px-4 text-center">
+                    {blockedMessage}
                 </div>
             )}
 

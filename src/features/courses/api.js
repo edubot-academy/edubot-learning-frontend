@@ -229,9 +229,15 @@ export async function uploadLessonFile(courseId, sectionId, type, file, lessonOr
     }
 
     const extension = parts.pop().toLowerCase();
-    const allowed = ['mp4', 'webm', 'avi', 'mov', 'mkv', 'pdf', 'zip'];
-    if (!allowed.includes(extension)) {
-        throw new Error(`Unsupported file type: .${extension}`);
+    const videoAllowed = ['mp4', 'webm'];
+    const resourceAllowed = ['pdf', 'zip'];
+
+    if (type === 'video' && !videoAllowed.includes(extension)) {
+        throw new Error('Видео үчүн бир гана MP4 же WebM жүктөңүз (H.264/AAC сунушталат)');
+    }
+
+    if (type === 'resource' && !resourceAllowed.includes(extension)) {
+        throw new Error('Материал катары PDF же ZIP гана жүктөөгө болот');
     }
 
     let presign;
@@ -266,8 +272,14 @@ export async function uploadLessonFile(courseId, sectionId, type, file, lessonOr
         throw new Error(msg);
     }
 
-    return key;
+    return { key, maxFileSize };
 }
+
+export const fetchMediaStatus = async (key) => {
+    if (!key) throw new Error('Missing media key');
+    const { data } = await api.get(`/media/${encodeURIComponent(key)}/status`);
+    return data;
+};
 
 export const updateLessonDuration = async (courseId, sectionId, lessonId, duration) => {
     try {

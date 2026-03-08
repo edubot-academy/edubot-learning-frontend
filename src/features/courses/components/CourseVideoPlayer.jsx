@@ -12,6 +12,9 @@ const CourseVideoPlayer = ({
     prevLesson,
     handleLessonClick,
     onEnded,
+    subtitleTracks,
+    blockedMessage,
+    onRefreshVideo,
 }) => {
     const containerRef = React.useRef(null);
 
@@ -42,13 +45,16 @@ const CourseVideoPlayer = ({
                 key={videoKey} // Используем ключ для принудительного пересоздания
                 videoUrl={activeLesson.videoUrl}
                 resumeTime={resumeVideoTime}
-                allowPlay={!activeLesson.locked}
+                allowPlay={!activeLesson.locked && (activeLesson.mediaReady ?? true)}
                 containerRef={containerRef}
                 onEnded={onEnded}
                 onProgress={(p) => handleVideoProgress(p, activeLesson)}
                 onTimeUpdate={handleTimeUpdate}
                 onPause={handlePause}
                 autoPlay={true} // Добавляем пропс для авто-воспроизведения
+                subtitleTracks={subtitleTracks}
+                blockedMessage={blockedMessage}
+                onRequestRefresh={onRefreshVideo}
             />
 
             <button

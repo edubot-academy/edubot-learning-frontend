@@ -8,6 +8,7 @@ import { HiOutlineFolderOpen } from 'react-icons/hi2';
 import ReelsIcon from '@assets/icons/reelsIcon.svg';
 import { formatMinutesToTime, formatSecondsToTime } from '../../../utils/timeUtils';
 import ModalPreviewVideo from './ModalPreviewVideo';
+import toast from 'react-hot-toast';
 
 const CourseContent = ({
     courseId,
@@ -163,6 +164,8 @@ const CourseContent = ({
 
     const getLessonStatus = (lesson) => {
         if (isLocked(lesson)) return 'locked';
+        if (lesson.kind === 'video' && lesson.mediaStatus === 'failed') return 'failed';
+        if (lesson.kind === 'video' && lesson.mediaReady === false) return 'preparing';
         if (isActive(lesson)) return 'active';
         if (isCompleted(lesson)) return 'completed';
         return 'available';
@@ -176,6 +179,10 @@ const CourseContent = ({
                 return 'bg-green-50 dark:bg-green-900/20 border-l-4 border-l-green-500 dark:border-l-green-400';
             case 'locked':
                 return 'bg-gray-100 dark:bg-gray-800 opacity-70';
+            case 'preparing':
+                return 'bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-l-yellow-500 dark:border-l-yellow-400';
+            case 'failed':
+                return 'bg-red-50 dark:bg-red-900/20 border-l-4 border-l-red-500 dark:border-l-red-400';
             default:
                 return 'hover:bg-gray-50 dark:hover:bg-gray-800/50';
         }
@@ -183,19 +190,42 @@ const CourseContent = ({
 
     const getLessonPreviewVideoUrl = (lesson) => {
         if (!lesson) return null;
-        if (lesson.videoUrl) return lesson.videoUrl;
-        if (lesson.previewUrl) return lesson.previewUrl;
+        if (lesson.kind === 'video' && lesson.mediaReady === false) return null;
+        if (lesson.manifestUrl && lesson.mediaReady !== false) return lesson.manifestUrl;
+        if (lesson.videoUrl && lesson.mediaReady !== false) return lesson.videoUrl;
+        if (lesson.previewUrl && lesson.mediaReady !== false) return lesson.previewUrl;
         if (lesson.previewVideo && typeof lesson.previewVideo === 'string')
             return lesson.previewVideo;
-        if (lesson.previewVideo && lesson.previewVideo.videoUrl)
+        if (
+            lesson.previewVideo &&
+            lesson.previewVideo.manifestUrl &&
+            lesson.previewVideo.mediaReady !== false
+        )
+            return lesson.previewVideo.manifestUrl;
+        if (lesson.previewVideo && lesson.previewVideo.videoUrl && lesson.previewVideo.mediaReady !== false)
             return lesson.previewVideo.videoUrl;
-        if (lesson.previewVideos?.[0]?.videoUrl) return lesson.previewVideos[0].videoUrl;
+        if (
+            lesson.previewVideos?.[0]?.manifestUrl &&
+            lesson.previewVideos[0].mediaReady !== false
+        )
+            return lesson.previewVideos[0].manifestUrl;
+        if (lesson.previewVideos?.[0]?.videoUrl && lesson.previewVideos[0].mediaReady !== false)
+            return lesson.previewVideos[0].videoUrl;
         return null;
     };
 
     const handleLessonClick = (e, lesson) => {
         const locked = isLocked(lesson);
         if (locked) return;
+
+        if (lesson.kind === 'video' && lesson.mediaReady === false) {
+            toast.error(
+                lesson.mediaStatus === 'failed'
+                    ? 'Видео иштетүүдө ката чыкты. Инструктор кайра жүктөшү керек.'
+                    : 'Видео даярдалып жатат. Бир аз күтө туруңуз.'
+            );
+            return;
+        }
 
         if (!enrolled && lesson.previewVideo && lesson.kind !== 'article') {
             const previewUrl = getLessonPreviewVideoUrl(lesson);
@@ -431,6 +461,18 @@ const CourseContent = ({
                                                                                 {lesson.description}
                                                                             </p>
                                                                         )}
+                                                                    {lesson.kind === 'video' &&
+                                                                        lesson.mediaReady === false && (
+                                                                            <p className="text-xs text-yellow-600 dark:text-yellow-400 mt-1">
+                                                                                Видео даярдалып жатат...
+                                                                            </p>
+                                                                        )}
+                                                                    {lesson.kind === 'video' &&
+                                                                        lesson.mediaStatus === 'failed' && (
+                                                                            <p className="text-xs text-red-600 dark:text-red-400 mt-1">
+                                                                                Видео иштетүүдө ката чыкты.
+                                                                            </p>
+                                                                        )}
                                                                 </div>
                                                             </div>
 
@@ -504,6 +546,18 @@ const CourseContent = ({
                                                                             </span>
                                                                         </div>
                                                                     </div>
+                                                                    {lesson.kind === 'video' &&
+                                                                        lesson.mediaReady === false && (
+                                                                            <p className="text-xs text-yellow-600 dark:text-yellow-400 mt-1">
+                                                                                Видео даярдалып жатат...
+                                                                            </p>
+                                                                        )}
+                                                                    {lesson.kind === 'video' &&
+                                                                        lesson.mediaStatus === 'failed' && (
+                                                                            <p className="text-xs text-red-600 dark:text-red-400 mt-1">
+                                                                                Видео иштетүүдө ката чыкты.
+                                                                            </p>
+                                                                        )}
                                                                 </div>
                                                             </div>
                                                         </div>

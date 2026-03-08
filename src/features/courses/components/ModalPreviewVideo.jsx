@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import Modal from '@shared-ui/Modal';
 import { fetchCoursePreview } from '../api';
 import { formatSecondsToTime } from '../../../utils/timeUtils';
@@ -18,6 +18,15 @@ function ModalPreviewVideo({ isOpen, onClose, courseId, previewData: previewData
     const [activeVideo, setActiveVideo] = useState(initialVideo || previewDataProp?.previewVideos?.[0] || null);
     const containerRef = React.useRef(null);
     const [videoKey, setVideoKey] = React.useState(Date.now());
+    const playableVideos = useMemo(() => {
+        const videos = previewData?.previewVideos || [];
+        return videos.filter(
+            (v) =>
+                v &&
+                v.mediaReady !== false &&
+                (v.manifestUrl || v.videoUrl || v.previewUrl || v.previewVideo?.videoUrl)
+        );
+    }, [previewData]);
 
     React.useEffect(() => {
         // При смене урока обновляем ключ
@@ -46,7 +55,12 @@ function ModalPreviewVideo({ isOpen, onClose, courseId, previewData: previewData
 
         if (previewDataProp) {
             setPreviewData(previewDataProp);
-            setActiveVideo(initialVideo || previewDataProp.previewVideos?.[0] || null);
+            const initial =
+                (initialVideo && initialVideo.mediaReady !== false && initialVideo) ||
+                playableVideos[0] ||
+                previewDataProp.previewVideos?.[0] ||
+                null;
+            setActiveVideo(initial);
             setLoading(false);
             return;
         }
@@ -58,7 +72,11 @@ function ModalPreviewVideo({ isOpen, onClose, courseId, previewData: previewData
             try {
                 const data = await fetchCoursePreview(courseId);
                 setPreviewData(data);
-                setActiveVideo(initialVideo || data?.previewVideos?.[0] || null);
+                const initial =
+                    (initialVideo && initialVideo.mediaReady !== false && initialVideo) ||
+                    data?.previewVideos?.find((v) => v.mediaReady !== false) ||
+                    null;
+                setActiveVideo(initial);
             } catch (e) {
                 console.error('Failed to load course preview:', e);
             } finally {
@@ -67,10 +85,10 @@ function ModalPreviewVideo({ isOpen, onClose, courseId, previewData: previewData
         };
 
         loadPreview();
-    }, [isOpen, courseId, previewDataProp, initialVideo]);
+    }, [isOpen, courseId, previewDataProp, initialVideo, playableVideos]);
 
     useEffect(() => {
-        if (initialVideo) {
+        if (initialVideo && initialVideo.mediaReady !== false) {
             setActiveVideo(initialVideo);
         }
     }, [initialVideo]);
@@ -94,12 +112,17 @@ function ModalPreviewVideo({ isOpen, onClose, courseId, previewData: previewData
             {!loading && previewData && (
                 <div ref={containerRef} className="w-full videoFs pb-9 relative">
 
-                    {activeVideo?.videoUrl && (
+                    {activeVideo?.mediaReady !== false && (activeVideo?.manifestUrl || activeVideo?.videoUrl) ? (
                         <VideoPlayer
                             key={videoKey}
-                            videoUrl={activeVideo.videoUrl}
+                            videoUrl={activeVideo.manifestUrl || activeVideo.videoUrl}
                             resumeTime={resumeVideoTime}
-                            allowPlay={!activeVideo.locked}
+                            allowPlay={!activeVideo.locked && activeVideo.mediaReady !== false}
+                            blockedMessage={
+                                activeVideo.mediaStatus === 'failed'
+                                    ? 'Видео иштетүүдө ката чыкты.'
+                                    : 'Видео даярдалып жатат.'
+                            }
                             containerRef={containerRef}
                             onEnded={onEnded}
                             onProgress={(p) => handleVideoProgress(p, activeVideo)}
@@ -108,37 +131,57 @@ function ModalPreviewVideo({ isOpen, onClose, courseId, previewData: previewData
                             autoPlay={true}
                             className="w-full aspect-video rounded"
                         />
+                    ) : (
+                        <div className="w-full aspect-video rounded bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-sm text-gray-600 dark:text-gray-300">
+                            Видео даярдала элек
+                        </div>
                     )}
 
                     <div className="space-y-2 mt-4">
-                        {previewData.previewVideos?.map((lesson, index) => (
-                            <button
-                                key={lesson.id}
-                                onClick={() => setActiveVideo(lesson)}
-                                className={`w-full flex items-center gap-3 p-3 rounded border
+                        {previewData.previewVideos?.map((lesson, index) => {
+                            const disabled = lesson.mediaReady === false;
+                            const label =
+                                lesson.mediaStatus === 'failed'
+                                    ? 'Ката'
+                                    : lesson.mediaReady === false
+                                    ? 'Даярдалып жатат'
+                                    : null;
+                            return (
+                                <button
+                                    key={lesson.id}
+                                    onClick={() => !disabled && setActiveVideo(lesson)}
+                                    className={`w-full flex items-center gap-3 p-3 rounded border
                                     ${activeVideo?.id === lesson.id || activeVideo?.videoUrl === lesson.videoUrl
-                                        ? 'bg-blue-50 dark:bg-blue-950 border-blue-500 darck'
-                                        : 'hover:bg-gray-100 dark:hover:bg-gray-700'
-                                    }
-                                `}
-                            >
-                                <img
-                                    src={previewData.coverImageUrl}
-                                    alt={lesson.title}
-                                    className="w-16 h-10 object-cover rounded"
-                                />
+                                            ? 'bg-blue-50 dark:bg-blue-950 border-blue-500 darck'
+                                            : 'hover:bg-gray-100 dark:hover:bg-gray-700'
+                                        }
+                                        ${disabled ? 'opacity-60 cursor-not-allowed' : ''}`}
+                                >
+                                    <img
+                                        src={previewData.coverImageUrl}
+                                        alt={lesson.title}
+                                        className="w-16 h-10 object-cover rounded"
+                                    />
 
-                                <div className="flex-1 text-left">
-                                    <p className="text-sm font-medium line-clamp-1">
-                                        {index + 1}. {lesson.title}
-                                    </p>
-                                </div>
+                                    <div className="flex-1 text-left">
+                                        <p className="text-sm font-medium line-clamp-1">
+                                            {index + 1}. {lesson.title}
+                                        </p>
+                                    </div>
 
-                                <span className="text-xs text-gray-500 dark:text-[#a6adba]">
-                                    {formatSecondsToTime(lesson.duration)}
-                                </span>
-                            </button>
-                        ))}
+                                    <div className="flex flex-col items-end gap-1">
+                                        <span className="text-xs text-gray-500 dark:text-[#a6adba]">
+                                            {formatSecondsToTime(lesson.duration)}
+                                        </span>
+                                        {label && (
+                                            <span className="text-[11px] text-yellow-700 dark:text-yellow-400">
+                                                {label}
+                                            </span>
+                                        )}
+                                    </div>
+                                </button>
+                            );
+                        })}
                     </div>
                 </div>
             )}

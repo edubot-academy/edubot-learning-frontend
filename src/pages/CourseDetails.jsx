@@ -16,6 +16,7 @@ import {
     submitLessonQuiz,
     fetchLessonChallenge,
     submitLessonChallenge,
+    fetchLessons,
 } from '@services/api';
 import { AuthContext } from '../context/AuthContext';
 import CourseVideoPlayer from '@features/courses/components/CourseVideoPlayer';
@@ -60,6 +61,34 @@ const saveChallengeStateToStorage = (courseId, lessonId, updates) => {
     } catch (error) {
         console.warn('Failed to persist challenge state', error);
     }
+};
+
+const mapLessonFromApi = (lesson, sectionId, enrolled) => {
+    const kind = lesson.kind || 'video';
+    const mediaStatus =
+        lesson.mediaStatus ||
+        (lesson.mediaReady ? 'ready' : undefined) ||
+        (lesson.manifestUrl || lesson.videoUrl ? 'ready' : undefined);
+    const mediaReady =
+        kind === 'video'
+            ? Boolean(lesson.mediaReady ?? mediaStatus === 'ready' ?? lesson.manifestUrl ?? lesson.videoUrl)
+            : true;
+    const videoUrl =
+        kind === 'video' ? lesson.manifestUrl || lesson.hlsUrl || lesson.videoUrl || lesson.streamUrl : null;
+
+    return {
+        ...lesson,
+        kind,
+        content: lesson.content || '',
+        resourceName: lesson.resourceName || '',
+        sectionId,
+        locked: !enrolled && !lesson.previewVideo,
+        mediaStatus,
+        mediaReady,
+        videoUrl,
+        manifestUrl: videoUrl || lesson.manifestUrl || '',
+        subtitleTracks: lesson.subtitleTracks || lesson.captions || lesson.subtitles || [],
+    };
 };
 
 const CourseDetailsPage = () => {
@@ -215,6 +244,39 @@ const CourseDetailsPage = () => {
         [id, user, enrolled]
     );
 
+    const refreshLessonMedia = useCallback(
+        async (lesson) => {
+            if (!lesson?.sectionId || !lesson?.id) return null;
+            try {
+                const refreshedLessons = await fetchLessons(id, lesson.sectionId);
+                const updated = refreshedLessons.find((l) => l.id === lesson.id);
+                if (!updated) return null;
+
+                const mapped = mapLessonFromApi(updated, lesson.sectionId, enrolled);
+
+                setSections((prev) =>
+                    prev.map((section) =>
+                        section.id !== lesson.sectionId
+                            ? section
+                            : {
+                                  ...section,
+                                  lessons: section.lessons.map((l) =>
+                                      l.id === lesson.id ? { ...l, ...mapped } : l
+                                  ),
+                              }
+                    )
+                );
+                setActiveLesson((prev) => (prev?.id === lesson.id ? { ...prev, ...mapped } : prev));
+                return mapped.videoUrl;
+            } catch (error) {
+                console.error('Failed to refresh lesson media', error);
+                toast.error('Видео статустарын жаңыртуу мүмкүн болбоду.');
+                return null;
+            }
+        },
+        [enrolled, id]
+    );
+
     const handleTimeUpdate = async (time) => {
         if (user && enrolled && activeLessonRef.current?.kind === 'video') {
             debouncedTimeUpdate(time);
@@ -341,6 +403,18 @@ const CourseDetailsPage = () => {
         const isArticle = lesson.kind === 'article';
         const isQuiz = lesson.kind === 'quiz';
         const isCode = lesson.kind === 'code';
+        const isVideo = lesson.kind === 'video';
+
+        if (isVideo && lesson.mediaReady === false) {
+            toast.error(
+                lesson.mediaStatus === 'failed'
+                    ? 'Видео иштетүүдө ката чыкты. Инструктор кайра жүктөшү керек.'
+                    : 'Видео даярдалып жатат. Бир аз күтө туруңуз.'
+            );
+            await refreshLessonMedia(lesson);
+            return;
+        }
+
         setActiveLesson(lesson);
         localStorage.setItem(`active_section_${id}`, String(lesson.sectionId));
         setActiveSectionId(lesson.sectionId);
@@ -667,14 +741,7 @@ const CourseDetailsPage = () => {
                     lessons: sec.lessons
                         .slice()
                         .sort((a, b) => a.order - b.order)
-                        .map((lesson) => ({
-                            ...lesson,
-                            kind: lesson.kind || 'video',
-                            content: lesson.content || '',
-                            resourceName: lesson.resourceName || '',
-                            sectionId: sec.id,
-                            locked: !enrollment.enrolled && !lesson.previewVideo,
-                        })),
+                        .map((lesson) => mapLessonFromApi(lesson, sec.id, enrollment.enrolled)),
                 }));
 
                 setSections(updatedSections.sort((a, b) => a.order - b.order));
@@ -838,6 +905,49 @@ const CourseDetailsPage = () => {
     const activeQuiz = activeLesson?.kind === 'quiz' ? lessonQuizData[activeLesson.id] : null;
     const activeChallenge =
         activeLesson?.kind === 'code' ? lessonChallengeData[activeLesson.id] : null;
+    const playerBlockedMessage =
+        activeLesson?.mediaReady === false
+            ? activeLesson?.mediaStatus === 'failed'
+                ? 'Видео иштетүүдө ката чыкты. Кайра аракет кылыңыз.'
+                : 'Видео даярдалып жатат. Бир аз күтө туруңуз.'
+            : activeLesson?.locked
+            ? 'Видео табылган жок'
+            : undefined;
+
+    const renderActiveVideoStatus = () => {
+        if (!activeLesson || activeLesson.kind !== 'video' || activeLesson.mediaReady) return null;
+        const isFailed = activeLesson.mediaStatus === 'failed';
+
+        return (
+            <div
+                className={`mb-3 p-3 rounded ${
+                    isFailed
+                        ? 'bg-red-50 border border-red-200 text-red-700'
+                        : 'bg-yellow-50 border border-yellow-200 text-yellow-700'
+                }`}
+            >
+                <div className="flex flex-wrap items-center gap-3 text-sm">
+                    <span>
+                        {isFailed
+                            ? 'Видео иштетүүдө ката чыкты. Кайра аракет кылып көрүңүз.'
+                            : 'Видео даярдалып жатат. Бир нече мүнөт күтө туруңуз.'}
+                    </span>
+                    <button
+                        type="button"
+                        onClick={() => refreshLessonMedia(activeLesson)}
+                        className="px-3 py-1 rounded border border-current bg-white/70"
+                    >
+                        Статусту жаңыртуу
+                    </button>
+                    {isCourseInstructor && (
+                        <span className="text-xs">
+                            Инструктор катары редактордо видеону кайра жүктөп/транскоддоп көрүңүз.
+                        </span>
+                    )}
+                </div>
+            </div>
+        );
+    };
 
     return (
         <div className="min-h-screen pt-10 bg-[#f8f9fb] dark:bg-[#1A1A1A]">
@@ -925,21 +1035,27 @@ const CourseDetailsPage = () => {
                                         </div>
                                     )
                                 ) : (
-                                    <CourseVideoPlayer
-                                        key={activeLesson.id}
-                                        activeLesson={activeLesson}
-                                        resumeVideoTime={resumeVideoTime}
-                                        handleVideoProgress={(progress) =>
-                                            handleVideoProgress(progress, activeLesson)
-                                        }
-                                        handleTimeUpdate={handleTimeUpdate}
-                                        handlePause={handlePause}
-                                        videoRef={videoRef}
-                                        nextLesson={nextLesson}
-                                        prevLesson={prevLesson}
-                                        onEnded={handleEnded}
-                                        handleLessonClick={handleLessonClick}
-                                    />
+                                    <>
+                                        {renderActiveVideoStatus()}
+                                        <CourseVideoPlayer
+                                            key={activeLesson.id}
+                                            activeLesson={activeLesson}
+                                            resumeVideoTime={resumeVideoTime}
+                                            handleVideoProgress={(progress) =>
+                                                handleVideoProgress(progress, activeLesson)
+                                            }
+                                            handleTimeUpdate={handleTimeUpdate}
+                                            handlePause={handlePause}
+                                            videoRef={videoRef}
+                                            nextLesson={nextLesson}
+                                            prevLesson={prevLesson}
+                                            onEnded={handleEnded}
+                                            handleLessonClick={handleLessonClick}
+                                            subtitleTracks={activeLesson.subtitleTracks}
+                                            blockedMessage={playerBlockedMessage}
+                                            onRefreshVideo={() => refreshLessonMedia(activeLesson)}
+                                        />
+                                    </>
                                 ))}
                             <CourseContent
                                 courseId={id}
@@ -1050,21 +1166,27 @@ const CourseDetailsPage = () => {
                                             </div>
                                         )
                                     ) : (
-                                        <CourseVideoPlayer
-                                            key={activeLesson.id}
-                                            activeLesson={activeLesson}
-                                            resumeVideoTime={resumeVideoTime}
-                                            handleVideoProgress={(progress) =>
-                                                handleVideoProgress(progress, activeLesson)
-                                            }
-                                            handleTimeUpdate={handleTimeUpdate}
-                                            handlePause={handlePause}
-                                            videoRef={videoRef}
-                                            nextLesson={nextLesson}
-                                            prevLesson={prevLesson}
-                                            onEnded={handleEnded}
-                                            handleLessonClick={handleLessonClick}
-                                        />
+                                        <>
+                                            {renderActiveVideoStatus()}
+                                            <CourseVideoPlayer
+                                                key={activeLesson.id}
+                                                activeLesson={activeLesson}
+                                                resumeVideoTime={resumeVideoTime}
+                                                handleVideoProgress={(progress) =>
+                                                    handleVideoProgress(progress, activeLesson)
+                                                }
+                                                handleTimeUpdate={handleTimeUpdate}
+                                                handlePause={handlePause}
+                                                videoRef={videoRef}
+                                                nextLesson={nextLesson}
+                                                prevLesson={prevLesson}
+                                                onEnded={handleEnded}
+                                                handleLessonClick={handleLessonClick}
+                                                subtitleTracks={activeLesson.subtitleTracks}
+                                                blockedMessage={playerBlockedMessage}
+                                                onRefreshVideo={() => refreshLessonMedia(activeLesson)}
+                                            />
+                                        </>
                                     ))}
                             </div>
                         ) : (

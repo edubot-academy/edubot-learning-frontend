@@ -20,6 +20,7 @@ import {
     fetchLessonChallenge,
     upsertLessonChallenge,
     fetchSkills,
+    fetchMediaStatus,
 } from '@services/api';
 import { getVideoDuration } from '../utils/videoUtils';
 import LessonQuizEditor from '@features/courses/components/LessonQuizEditor';
@@ -37,9 +38,19 @@ import {
     normalizeChallengeForApi,
     mapChallengeFromApi,
 } from '../utils/challengeUtils';
+import { pollMediaStatus } from '../utils/mediaStatus';
 import { LESSON_KIND_OPTIONS } from '../constants/lessons';
 import ArticleEditor from '@features/courses/components/ArticleEditor';
 import Loader from '@shared/ui/Loader';
+
+const formatBytes = (bytes) => {
+    if (!bytes || Number.isNaN(bytes)) return '';
+    const units = ['Б', 'КБ', 'МБ', 'ГБ'];
+    const k = 1024;
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    const size = bytes / Math.pow(k, i);
+    return `${size.toFixed(size >= 10 ? 0 : 1)} ${units[i] || 'Б'}`;
+};
 
 const EditInstructorCourse = () => {
     const { id } = useParams();
@@ -105,6 +116,24 @@ const EditInstructorCourse = () => {
                                     kind: l.kind || 'video',
                                     content: l.content || '',
                                     resourceName: l.resourceName || '',
+                                    mediaStatus:
+                                        l.mediaStatus ||
+                                        (l.mediaReady ? 'ready' : undefined) ||
+                                        (l.manifestUrl || l.videoUrl ? 'ready' : undefined),
+                                    mediaReady:
+                                        l.kind === 'video'
+                                            ? Boolean(
+                                                  l.mediaReady ||
+                                                      l.mediaStatus === 'ready' ||
+                                                      l.manifestUrl ||
+                                                      l.videoUrl
+                                              )
+                                            : true,
+                                    manifestUrl: l.manifestUrl || l.hlsUrl || l.videoUrl || '',
+                                    videoKey: l.videoKey || l.uploadKey || '',
+                                    videoUploadKey: l.videoUploadKey || l.uploadKey || l.videoKey || '',
+                                    subtitleTracks: l.subtitleTracks || l.captions || l.subtitles || [],
+                                    videoMaxFileSize: l.videoMaxFileSize,
                                     quiz: l.kind === 'quiz' ? createEmptyQuiz() : undefined,
                                     challenge:
                                         l.kind === 'code' ? createEmptyChallenge() : undefined,
@@ -264,6 +293,7 @@ const EditInstructorCourse = () => {
                 content: '',
                 kind: 'video',
                 videoKey: '',
+                videoUploadKey: '',
                 resourceKey: '',
                 resourceName: '',
                 quiz: createEmptyQuiz(),
@@ -271,6 +301,11 @@ const EditInstructorCourse = () => {
                 uploadProgress: { video: 0, resource: 0 },
                 uploading: { video: false, resource: false },
                 duration: undefined,
+                mediaStatus: undefined,
+                mediaReady: false,
+                manifestUrl: '',
+                subtitleTracks: [],
+                videoMaxFileSize: undefined,
             };
             updated[sectionIndex] = {
                 ...updated[sectionIndex],
@@ -303,11 +338,19 @@ const EditInstructorCourse = () => {
             if (field === 'kind') {
                 if (value === 'article') {
                     lesson.previewVideo = false;
+                    lesson.mediaReady = true;
+                    lesson.mediaStatus = undefined;
                 }
                 if (value === 'quiz') {
                     lesson.previewVideo = false;
                     lesson.videoKey = '';
                     lesson.quiz = ensureQuizShape(lesson.quiz);
+                    lesson.mediaReady = true;
+                    lesson.mediaStatus = undefined;
+                }
+                if (value === 'video') {
+                    lesson.mediaReady = Boolean(lesson.mediaReady && lesson.videoKey);
+                    lesson.mediaStatus = lesson.mediaReady ? lesson.mediaStatus || 'ready' : undefined;
                 }
             }
             return updated;
@@ -332,6 +375,57 @@ const EditInstructorCourse = () => {
         });
     };
 
+    const refreshLessonMediaStatus = async (sectionIndex, lessonIndex) => {
+        const lesson = sections?.[sectionIndex]?.lessons?.[lessonIndex];
+        const key = lesson?.videoUploadKey || lesson?.videoKey;
+        if (!key) {
+            toast.error('Видео ачкычы табылган жок.');
+            return;
+        }
+
+        try {
+            const status = await fetchMediaStatus(key);
+            setSections((prev) => {
+                const updated = [...prev];
+                const current = updated[sectionIndex].lessons[lessonIndex];
+                current.mediaStatus = status?.mediaStatus || status?.status || current.mediaStatus;
+                const readyFlag =
+                    status?.mediaReady ??
+                    current.mediaReady ??
+                    status?.mediaStatus === 'ready' ||
+                        status?.status === 'ready' ||
+                        current.mediaStatus === 'ready';
+                current.mediaReady = Boolean(readyFlag);
+                current.manifestUrl = status?.manifestUrl || current.manifestUrl;
+                return updated;
+            });
+
+            if (status?.mediaStatus === 'failed') {
+                toast.error('Видео иштетүүдө ката чыкты. Кайра жүктөп көрүңүз.');
+            } else if (status?.mediaReady) {
+                toast.success('Видео даяр.');
+            }
+        } catch (error) {
+            console.error('Failed to refresh media status', error);
+            toast.error('Статусту алуу мүмкүн болбоду.');
+        }
+    };
+
+    const resetVideoUpload = (sectionIndex, lessonIndex) => {
+        setSections((prev) => {
+            const updated = [...prev];
+            const lesson = updated[sectionIndex].lessons[lessonIndex];
+            lesson.videoKey = '';
+            lesson.videoUploadKey = '';
+            lesson.mediaStatus = undefined;
+            lesson.mediaReady = false;
+            lesson.manifestUrl = '';
+            lesson.uploadProgress.video = 0;
+            lesson.duration = undefined;
+            return updated;
+        });
+    };
+
     const handleFileUpload = async (sectionIndex, lessonIndex, type, file) => {
         if (!file) return;
 
@@ -342,7 +436,7 @@ const EditInstructorCourse = () => {
         });
 
         try {
-            const key = await uploadLessonFile(
+            const { key, maxFileSize } = await uploadLessonFile(
                 id,
                 sectionIndex,
                 type,
@@ -358,6 +452,16 @@ const EditInstructorCourse = () => {
             );
 
             if (type === 'video') {
+                setSections((prev) => {
+                    const updated = [...prev];
+                    const lesson = updated[sectionIndex].lessons[lessonIndex];
+                    lesson.videoMaxFileSize = maxFileSize;
+                    lesson.videoUploadKey = key;
+                    lesson.mediaStatus = 'uploaded';
+                    lesson.mediaReady = false;
+                    return updated;
+                });
+
                 try {
                     const duration = await getVideoDuration(file);
                     handleLessonFieldChange(sectionIndex, lessonIndex, 'duration', duration);
@@ -372,6 +476,47 @@ const EditInstructorCourse = () => {
                 type === 'video' ? 'videoKey' : 'resourceKey',
                 key
             );
+            if (type === 'video') {
+                const status = await pollMediaStatus(key, {
+                    onUpdate: (state) => {
+                        setSections((prev) => {
+                            const updated = [...prev];
+                            const lesson = updated[sectionIndex].lessons[lessonIndex];
+                            lesson.mediaStatus =
+                                state?.mediaStatus || state?.status || lesson.mediaStatus;
+                            lesson.mediaReady =
+                                state?.mediaReady ??
+                                lesson.mediaReady ??
+                                lesson.mediaStatus === 'ready';
+                            lesson.manifestUrl = state?.manifestUrl || lesson.manifestUrl;
+                            return updated;
+                        });
+                    },
+                });
+
+                setSections((prev) => {
+                    const updated = [...prev];
+                    const lesson = updated[sectionIndex].lessons[lessonIndex];
+                    lesson.mediaStatus = status?.mediaStatus || lesson.mediaStatus;
+                    const readyFlag =
+                        status?.mediaReady !== undefined
+                            ? status.mediaReady
+                            : lesson.mediaReady !== undefined
+                            ? lesson.mediaReady
+                            : status?.mediaStatus === 'ready' || lesson.mediaStatus === 'ready';
+                    lesson.mediaReady = Boolean(readyFlag);
+                    lesson.manifestUrl = status?.manifestUrl || lesson.manifestUrl;
+                    return updated;
+                });
+
+                if (status?.mediaStatus === 'failed') {
+                    toast.error('Видео иштетүүдө ката чыкты. Кайра жүктөп көрүңүз.');
+                } else if (status?.mediaReady) {
+                    toast.success('Видео даяр.');
+                } else {
+                    toast('Видео даярдалып жатат...', { icon: '⏳' });
+                }
+            }
 
             if (type === 'resource') {
                 handleLessonFieldChange(sectionIndex, lessonIndex, 'resourceName', file.name);
@@ -466,6 +611,9 @@ const EditInstructorCourse = () => {
                     if (isVideo && !lesson.videoKey) {
                         toast.error('Видео сабактар үчүн файл жүктөө керек.');
                         continue;
+                    } else if (isVideo && !lesson.mediaReady) {
+                        toast.error('Кээ бир видеолор даярдала элек. Статусту текшериңиз.');
+                        continue;
                     }
 
                     if (isArticle) {
@@ -545,6 +693,21 @@ const EditInstructorCourse = () => {
     };
 
     const handleSubmitForApproval = async () => {
+        const unready = sections.flatMap((section, sIdx) =>
+            section.lessons
+                .filter((lesson) => lesson.kind === 'video' && !lesson.mediaReady)
+                .map((lesson) => `${sIdx + 1}. ${lesson.title || 'Видео сабак'}`)
+        );
+
+        if (unready.length) {
+            toast.error(
+                `Видео даярдалып жатат же иштебей калды: ${unready
+                    .slice(0, 3)
+                    .join('; ')}${unready.length > 3 ? ' ...' : ''}`
+            );
+            return;
+        }
+
         try {
             await markCoursePending(id);
             toast.success('Курс модераторго жөнөтүлдү');
@@ -581,6 +744,49 @@ const EditInstructorCourse = () => {
     const isUploading = sections.some((section) =>
         section.lessons.some((lesson) => lesson.uploading?.video || lesson.uploading?.resource)
     );
+
+    const renderVideoStatus = (lesson, sIdx, lIdx) => {
+        if (lesson.kind !== 'video') return null;
+
+        const status = lesson.mediaStatus;
+        if (!status && lesson.mediaReady) return null;
+        if (!status && !lesson.videoKey) return null;
+
+        let label = 'Видео даярдалып жатат...';
+        let tone = 'text-gray-600';
+
+        if (status === 'failed') {
+            label = 'Видео иштетүүдө ката чыкты. Кайра жүктөп көрүңүз.';
+            tone = 'text-red-600';
+        } else if (status === 'ready' || lesson.mediaReady) {
+            label = 'Видео даяр.';
+            tone = 'text-green-600';
+        }
+
+        return (
+            <div className={`text-xs mt-1 flex items-center gap-2 flex-wrap ${tone}`}>
+                <span>{label}</span>
+                {['pending', 'uploaded', 'processing', 'failed'].includes(status) && (
+                    <button
+                        type="button"
+                        onClick={() => refreshLessonMediaStatus(sIdx, lIdx)}
+                        className="underline"
+                    >
+                        Статусту жаңыртуу
+                    </button>
+                )}
+                {status === 'failed' && (
+                    <button
+                        type="button"
+                        onClick={() => resetVideoUpload(sIdx, lIdx)}
+                        className="underline text-red-600"
+                    >
+                        Кайра жүктөө
+                    </button>
+                )}
+            </div>
+        );
+    };
 
     return (
         <div className="pt-24 p-6 max-w-4xl mx-auto">
@@ -909,7 +1115,7 @@ const EditInstructorCourse = () => {
                                             <div className="flex items-center justify-between gap-2">
                                                 <input
                                                     type="file"
-                                                    accept="video/*"
+                                                    accept=".mp4,.webm"
                                                     onChange={(e) =>
                                                         handleFileUpload(
                                                             sIdx,
@@ -926,6 +1132,15 @@ const EditInstructorCourse = () => {
                                                     </span>
                                                 )}
                                             </div>
+                                            <p className="text-xs text-gray-500 dark:text-gray-400">
+                                                Форматтар: MP4/WebM. Сунушталган кодек: H.264/AAC.
+                                                {lesson.videoMaxFileSize
+                                                    ? ` Максимум өлчөмү: ${formatBytes(
+                                                          lesson.videoMaxFileSize
+                                                      )}.`
+                                                    : ''}
+                                            </p>
+                                            {renderVideoStatus(lesson, sIdx, lIdx)}
                                             {lesson.uploadProgress.video > 0 && (
                                                 <div className="mb-2">
                                                     <div className="w-full bg-gray-200 rounded h-2">
