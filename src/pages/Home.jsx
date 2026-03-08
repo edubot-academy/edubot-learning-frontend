@@ -8,6 +8,7 @@ import Apply from '@features/marketing/components/Apply';
 import Instructor from '@features/ratings/components/TopInstructors';
 import FAQ from '@features/marketing/components/FAQ';
 import TopCourses from '@features/courses/components/TopCourses';
+import TopLearnersHome from '@features/leaderboard/components/TopLearnersHome';
 
 const HomePage = () => {
     const [coursesData, setCoursesData] = useState([]);
@@ -30,6 +31,7 @@ const HomePage = () => {
             <StickyButton />
             <Benefits />
             <TopCourses coursesData={coursesData} />
+            <TopLearnersHome />
             <Instructor />
             <Apply />
             <Feedback />

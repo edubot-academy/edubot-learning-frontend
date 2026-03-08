@@ -29,6 +29,7 @@ const CompanyList = lazy(() => import('../pages/company/CompanyList'));
 const Favourite = lazy(() => import('../pages/Favourite'));
 const CartPage = lazy(() => import('../pages/Cart'));
 const Chat = lazy(() => import('../pages/Chat'));
+const LeaderboardPage = lazy(() => import('../pages/Leaderboard'));
 
 const AppRoutes = () => {
     return (
@@ -79,6 +80,7 @@ const AppRoutes = () => {
                     <Route path="/companies" element={<CompanyList />} />
                     <Route path="/companies/:id" element={<CompanyDetail />} />
                     <Route path="/chat" element={<Chat />} />
+                    <Route path="/leaderboard" element={<LeaderboardPage />} />
                 </Routes>
             </Suspense>
         </MainLayout>

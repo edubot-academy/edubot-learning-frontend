@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     createCourse,
     createLesson,
     createSection,
     fetchCategories,
+    fetchSkills,
     uploadCourseImage,
     markCoursePending,
     uploadLessonFile,
@@ -48,6 +49,7 @@ const CourseBuilder = () => {
     const [step, setStep] = useState(1);
     const [courseId, setCourseId] = useState(null);
     const [categories, setCategories] = useState([]);
+    const [skillsLoading, setSkillsLoading] = useState(false);
     const [confirmDelete, setConfirmDelete] = useState({
         type: null,
         sectionIndex: null,
@@ -57,9 +59,14 @@ const CourseBuilder = () => {
 
     const [courseInfo, setCourseInfo] = useState(DEFAULT_COURSE_INFO);
 
+    const [skillOptions, setSkillOptions] = useState([
+        { value: '', label: 'Skill тандаңыз (опция)' },
+    ]);
+
     const [curriculum, setCurriculum] = useState([
         {
             sectionTitle: 'Бөлүм 1',
+            skillId: '',
             lessons: [
                 {
                     title: 'Сабак 1',
@@ -79,11 +86,33 @@ const CourseBuilder = () => {
         },
     ]);
 
+    const loadSkillsList = useCallback(async () => {
+        setSkillsLoading(true);
+        try {
+            const skillsData = await fetchSkills().catch(() => []);
+            if (Array.isArray(skillsData) && skillsData.length) {
+                const mapped = skillsData
+                    .filter((s) => s.slug || s.id)
+                    .map((s) => ({
+                        value: s.id ?? s.slug ?? '',
+                        label: s.name || s.slug,
+                    }));
+                setSkillOptions([{ value: '', label: 'Skill тандаңыз (опция)' }, ...mapped]);
+            }
+        } catch (error) {
+            console.error('Skills load failed', error);
+            toast.error('Skills жүктөлгөн жок.');
+        } finally {
+            setSkillsLoading(false);
+        }
+    }, []);
+
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const data = await fetchCategories();
-                setCategories(data);
+                const [categoriesData] = await Promise.all([fetchCategories()]);
+                setCategories(categoriesData);
+                loadSkillsList();
 
                 const saved = localStorage.getItem('draftCourse');
                 if (saved) {
@@ -101,7 +130,7 @@ const CourseBuilder = () => {
             }
         };
         fetchData();
-    }, []);
+    }, [loadSkillsList]);
 
     useEffect(() => {
         localStorage.setItem('draftCourse', JSON.stringify({ courseInfo, courseId, step }));
@@ -135,7 +164,7 @@ const CourseBuilder = () => {
     const addSection = () => {
         setCurriculum((prev) => [
             ...prev,
-            { sectionTitle: `Бөлүм ${prev.length + 1}`, lessons: [] },
+            { sectionTitle: `Бөлүм ${prev.length + 1}`, skillId: '', lessons: [] },
         ]);
     };
 
@@ -162,6 +191,20 @@ const CourseBuilder = () => {
         const updated = [...curriculum];
         updated[index].sectionTitle = title;
         setCurriculum(updated);
+    };
+
+    const updateSectionSkill = (index, skillId) => {
+        setCurriculum((prev) => {
+            const updated = [...prev];
+            updated[index].skillId = skillId;
+            return updated;
+        });
+    };
+
+    const normalizeSkillValue = (value) => {
+        if (!value) return undefined;
+        const num = Number(value);
+        return Number.isFinite(num) ? num : value;
     };
 
     const updateLesson = (sectionIndex, lessonIndex, field, value) => {
@@ -345,6 +388,7 @@ const CourseBuilder = () => {
                 const sec = await createSection(courseId, {
                     title: section.sectionTitle,
                     order: sIdx,
+                    skillId: normalizeSkillValue(section.skillId),
                 });
 
                 for (const [lIdx, lesson] of section.lessons.entries()) {
@@ -685,26 +729,52 @@ const CourseBuilder = () => {
                     <h3 className="text-xl font-semibold mb-4">Окуу мазмуну</h3>
                     {curriculum.map((section, sIdx) => (
                         <div key={sIdx} className="mb-6 border border-edubot-teal dark:border-white rounded p-4">
-                            <div className="flex justify-between items-center mb-2 gap-2">
+                        <div className="flex flex-col md:flex-row md:items-center md:gap-3 mb-2">
+                            <div className="flex-1 flex flex-col gap-2">
                                 <input
                                     className="w-full p-2 border rounded bg-white dark:bg-[#222222] dark:text-white"
                                     value={section.sectionTitle}
                                     onChange={(e) => updateSectionTitle(sIdx, e.target.value)}
                                     placeholder="Бөлүм аталышы"
                                 />
-                                <button
-                                    onClick={() =>
-                                        setConfirmDelete({
-                                            type: 'section',
-                                            sectionIndex: sIdx,
-                                            title: section.sectionTitle,
-                                        })
-                                    }
-                                    className="px-3 py-1 bg-red-100 text-red-700 border border-red-300 rounded hover:bg-red-200 text-sm"
-                                >
-                                    Өчүрүү
-                                </button>
+                                <div className="flex flex-col sm:flex-row gap-2 items-start">
+                                    <select
+                                        className="w-full p-2 border rounded bg-white dark:bg-[#222222] dark:text-white text-sm"
+                                        value={section.skillId || ''}
+                                        onChange={(e) => updateSectionSkill(sIdx, e.target.value)}
+                                    >
+                                        {skillOptions.map((opt) => (
+                                            <option key={opt.value} value={opt.value}>
+                                                {opt.label}
+                                            </option>
+                                        ))}
+                                    </select>
+                                    <button
+                                        type="button"
+                                        onClick={loadSkillsList}
+                                        className="px-3 py-2 text-sm rounded border bg-white dark:bg-[#222222]"
+                                        disabled={skillsLoading}
+                                    >
+                                        {skillsLoading ? '...' : 'Жаңыртуу'}
+                                    </button>
+                                </div>
+                                <p className="text-xs text-gray-500 dark:text-gray-400">
+                                    Skill тандаңыз — ушул бөлүмгө байланышкан лидерборддордо прогресс эсептелет.
+                                </p>
                             </div>
+                            <button
+                                onClick={() =>
+                                    setConfirmDelete({
+                                        type: 'section',
+                                        sectionIndex: sIdx,
+                                        title: section.sectionTitle,
+                                    })
+                                }
+                                className="px-3 py-1 bg-red-100 text-red-700 border border-red-300 rounded hover:bg-red-200 text-sm h-10 mt-2 md:mt-0"
+                            >
+                                Өчүрүү
+                            </button>
+                        </div>
                             {section.lessons.map((lesson, lIdx) => (
                                 <div key={lIdx} className="mb-4 p-2 bg-gray-50 dark:bg-[#222222] rounded border">
                                     <input

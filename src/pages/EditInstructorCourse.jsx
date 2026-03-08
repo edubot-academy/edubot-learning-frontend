@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import {
@@ -19,6 +19,7 @@ import {
     upsertLessonQuiz,
     fetchLessonChallenge,
     upsertLessonChallenge,
+    fetchSkills,
 } from '@services/api';
 import { getVideoDuration } from '../utils/videoUtils';
 import LessonQuizEditor from '@features/courses/components/LessonQuizEditor';
@@ -49,6 +50,29 @@ const EditInstructorCourse = () => {
     const [sections, setSections] = useState([]);
     const [originalSections, setOriginalSections] = useState([]);
     const [categories, setCategories] = useState([]);
+    const [skillOptions, setSkillOptions] = useState([{ value: '', label: 'Skill тандаңыз (опция)' }]);
+    const [skillsLoading, setSkillsLoading] = useState(false);
+
+    const loadSkillsList = useCallback(async () => {
+        setSkillsLoading(true);
+        try {
+            const skillsData = await fetchSkills();
+            if (Array.isArray(skillsData) && skillsData.length) {
+                const mapped = skillsData
+                    .filter((s) => s.slug || s.id)
+                    .map((s) => ({
+                        value: s.id ?? s.slug ?? '',
+                        label: s.name || s.slug,
+                    }));
+                setSkillOptions([{ value: '', label: 'Skill тандаңыз (опция)' }, ...mapped]);
+            }
+        } catch (error) {
+            console.error('Skills load failed', error);
+            toast.error('Skills жүктөлгөн жок.');
+        } finally {
+            setSkillsLoading(false);
+        }
+    }, []);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [showCancelConfirm, setShowCancelConfirm] = useState(false);
@@ -63,10 +87,11 @@ const EditInstructorCourse = () => {
     useEffect(() => {
         const loadData = async () => {
             try {
-                const [courseData, categoryData, sectionData] = await Promise.all([
+                const [courseData, categoryData, sectionData, skillsData] = await Promise.all([
                     fetchCourseDetails(id),
                     fetchCategories(),
                     fetchSections(id),
+                    fetchSkills().catch(() => []),
                 ]);
 
                 const allSections = await Promise.all(
@@ -128,6 +153,7 @@ const EditInstructorCourse = () => {
                             id: sec.id,
                             title: sec.title,
                             order: sec.order,
+                            skillId: sec.skillId || sec.skill?.id || sec.skillSlug || '',
                             lessons: lessonsWithExtras,
                         };
                     })
@@ -149,6 +175,14 @@ const EditInstructorCourse = () => {
                     learningOutcomesText,
                     aiAssistantEnabled: Boolean(courseData.aiAssistantEnabled),
                 };
+
+                if (Array.isArray(skillsData) && skillsData.length) {
+                    const mapped = skillsData.map((s) => ({
+                        value: s.id ?? s.slug ?? '',
+                        label: s.name || s.slug,
+                    }));
+                    setSkillOptions([{ value: '', label: 'Skill тандаңыз (опция)' }, ...mapped]);
+                }
 
                 setCourse(hydratedCourse);
                 setOriginalCourse(hydratedCourse);
@@ -196,6 +230,20 @@ const EditInstructorCourse = () => {
             updated[index].title = title;
             return updated;
         });
+    };
+
+    const updateSectionSkill = (index, skillId) => {
+        setSections((prev) => {
+            const updated = [...prev];
+            updated[index].skillId = skillId;
+            return updated;
+        });
+    };
+
+    const normalizeSkillValue = (value) => {
+        if (!value) return undefined;
+        const num = Number(value);
+        return Number.isFinite(num) ? num : value;
     };
 
     const addSection = () => {
@@ -394,6 +442,7 @@ const EditInstructorCourse = () => {
                 const sectionPayload = {
                     title: section.title,
                     order: sectionIdx,
+                    skillId: normalizeSkillValue(section.skillId),
                 };
 
                 if (!section.id) {
@@ -701,12 +750,52 @@ const EditInstructorCourse = () => {
                 <div>
                     {sections.map((section, sIdx) => (
                         <div key={sIdx} className="mb-6 border border-edubot-teal rounded p-4">
-                            <input
-                                className="w-full p-2 border rounded mb-2 bg-white dark:bg-[#222222] dark:text-white"
-                                value={section.title}
-                                onChange={(e) => updateSectionTitle(sIdx, e.target.value)}
-                                placeholder="Бөлүм аталышы"
-                            />
+                            <div className="flex flex-col md:flex-row md:items-center gap-3 mb-2">
+                                <div className="flex-1 flex flex-col gap-2">
+                                    <input
+                                        className="w-full p-2 border rounded bg-white dark:bg-[#222222] dark:text-white"
+                                        value={section.title}
+                                        onChange={(e) => updateSectionTitle(sIdx, e.target.value)}
+                                        placeholder="Бөлүм аталышы"
+                                    />
+                                    <div className="flex flex-col sm:flex-row gap-2 items-start">
+                                        <select
+                                            className="w-full p-2 border rounded bg-white dark:bg-[#222222] dark:text-white text-sm"
+                                            value={section.skillId || ''}
+                                            onChange={(e) => updateSectionSkill(sIdx, e.target.value)}
+                                        >
+                                            {skillOptions.map((opt) => (
+                                                <option key={opt.value} value={opt.value}>
+                                                    {opt.label}
+                                                </option>
+                                            ))}
+                                        </select>
+                                        <button
+                                            type="button"
+                                            onClick={loadSkillsList}
+                                            className="px-3 py-2 text-sm rounded border bg-white dark:bg-[#222222]"
+                                            disabled={skillsLoading}
+                                        >
+                                            {skillsLoading ? '...' : 'Жаңыртуу'}
+                                        </button>
+                                    </div>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                                        Skill тандасаңыз, ушул бөлүмдүн прогресси skill лидербордго кошулат.
+                                    </p>
+                                </div>
+                                <button
+                                    onClick={() =>
+                                        setConfirmDelete({
+                                            type: 'section',
+                                            sectionIndex: sIdx,
+                                            title: section.title,
+                                        })
+                                    }
+                                    className="px-3 py-1 bg-red-100 text-red-700 border border-red-300 rounded hover:bg-red-200 text-sm h-10 md:mt-7"
+                                >
+                                    Өчүрүү
+                                </button>
+                            </div>
                             {section.lessons.map((lesson, lIdx) => (
                                 <div key={lIdx} className="mb-4 p-2 bg-white dark:bg-[#222222] rounded">
                                     <input
