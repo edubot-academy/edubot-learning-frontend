@@ -75,7 +75,7 @@ const CardVideo = ({ coverImageUrl, course, lessonCount, activeLesson,
                                 }}
                                 variant="secondary"
                             >
-                                Избранныйга кошуу
+                                Тандалгандарга кошуу
                             </Button>
                         </div>
                     </div>
