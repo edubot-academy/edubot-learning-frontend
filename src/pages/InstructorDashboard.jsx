@@ -140,7 +140,7 @@ const InstructorDashboard = () => {
         } finally {
             setLoadingStudentCourses(false);
         }
-    }, [user, selectedStudentCourseId]);
+    }, [user]);
 
     const loadCourseStudents = useCallback(async (courseId) => {
         if (!courseId) {
@@ -259,13 +259,25 @@ const InstructorDashboard = () => {
     useEffect(() => {
         if (activeTab !== 'students') return;
         if (selectedStudentCourseId) {
-            setStudentsPage(1);
             loadCourseStudents(selectedStudentCourseId);
         } else {
             setCourseStudents([]);
             setCourseStudentsMeta(null);
         }
-    }, [activeTab, selectedStudentCourseId, loadCourseStudents]);
+    }, [
+        activeTab,
+        selectedStudentCourseId,
+        studentsPage,
+        studentSearch,
+        progressMin,
+        progressMax,
+        loadCourseStudents,
+    ]);
+
+    const handleSelectStudentCourse = useCallback((courseId) => {
+        setStudentsPage(1);
+        setSelectedStudentCourseId(courseId);
+    }, []);
 
     const renderContent = () => {
         if ((loadingProfile && !profile) || (loadingCourses && !courses.length)) {
@@ -290,7 +302,7 @@ const InstructorDashboard = () => {
                         courses={studentCourses}
                         loadingCourses={loadingStudentCourses}
                         selectedCourseId={selectedStudentCourseId}
-                        onSelectCourse={setSelectedStudentCourseId}
+                        onSelectCourse={handleSelectStudentCourse}
                         courseStudents={courseStudents}
                         courseMeta={courseStudentsMeta}
                         loadingStudents={loadingCourseStudents}
@@ -354,7 +366,7 @@ const InstructorDashboard = () => {
                     className="flex-shrink-0"
                 />
 
-                <main className="flex-1 space-y-6">
+                <main className="flex-1 min-w-0 space-y-6">
                     <div className="flex items-center justify-between flex-wrap gap-3">
                         <div>
                             <p className="text-sm uppercase tracking-wide text-gray-400">
@@ -581,6 +593,16 @@ const StudentsSection = ({
         return Number.isNaN(date.getTime()) ? '—' : date.toLocaleDateString();
     };
 
+    const formatLastViewed = (student) => {
+        if (!student.lastViewedLessonId) return '—';
+        const rawTime = Number(student.lastVideoTime) || 0;
+        const totalSeconds = rawTime > 1000 ? Math.round(rawTime / 1000) : Math.round(rawTime);
+        const minutes = Math.floor(totalSeconds / 60);
+        const seconds = String(totalSeconds % 60).padStart(2, '0');
+        const timeText = totalSeconds ? ` (${minutes}:${seconds})` : '';
+        return `Сабак #${student.lastViewedLessonId}${timeText}`;
+    };
+
     return (
         <div className="space-y-6">
             <div className="rounded-3xl p-6 shadow-sm flex items-center justify-between gap-3 flex-wrap">
@@ -754,11 +776,11 @@ const StudentsSection = ({
                 ) : !selectedCourseId ? (
                     <p className="text-sm text-gray-500 dark:text-[#a6adba]">Курс тандаңыз.</p>
                 ) : sortedStudents.length ? (
-                    <div className="overflow-x-auto rounded-2xl border border-gray-100 dark:border-gray-800">
-                        <table className="min-w-full divide-y divide-gray-200">
+                    <div className="overflow-x-auto rounded-2xl border border-gray-100 dark:border-gray-800 w-full max-w-full bg-white dark:bg-[#0B0B0D] px-4">
+                        <table className="table-auto w-full min-w-max divide-y divide-gray-200">
                             <thead>
                                 <tr className="text-left text-sm text-gray-500 dark:text-[#a6adba]">
-                                    <th className="py-2 pr-4">Студент</th>
+                                    <th className="py-2 pr-4 pl-1">Студент</th>
                                     <th className="py-2 pr-4">Email</th>
                                     <th className="py-2 pr-4">Телефон</th>
                                     <th className="py-2 pr-4">Катталды</th>
@@ -776,17 +798,17 @@ const StudentsSection = ({
                                     );
                                     const tests = Array.isArray(student.tests) ? student.tests : [];
                                     return (
-                                        <tr key={student.id}>
+                                        <tr key={student.id} className="bg-white dark:bg-[#0B0B0D]">
                                             <td className="py-3 pr-4">
                                                 <p className="font-medium">{student.fullName}</p>
                                             </td>
-                                            <td className="py-3 pr-4 text-sm text-gray-600 dark:text-[#a6adba]">
+                                            <td className="py-3 pr-4 text-sm text-gray-600 dark:text-[#a6adba] break-words">
                                                 {student.email || '—'}
                                             </td>
-                                            <td className="py-3 pr-4 text-sm text-gray-600 dark:text-[#a6adba]">
+                                            <td className="py-3 pr-4 text-sm text-gray-600 dark:text-[#a6adba] whitespace-nowrap">
                                                 {student.phoneNumber || '—'}
                                             </td>
-                                            <td className="py-3 pr-4 text-sm text-gray-600 dark:text-[#a6adba]">
+                                            <td className="py-3 pr-4 text-sm text-gray-600 dark:text-[#a6adba] whitespace-nowrap">
                                                 {formatDate(student.enrolledAt)}
                                             </td>
                                             <td className="py-3 pr-4">
@@ -812,7 +834,7 @@ const StudentsSection = ({
                                                     {student.completed ? 'Бүттү' : 'Уланууда'}
                                                 </span>
                                             </td>
-                                            <td className="py-3 pr-4">
+                                            <td className="py-3 pr-4 align-top">
                                                 {tests.length ? (
                                                     <div className="flex flex-col gap-1">
                                                         {tests.map((test) => (
@@ -845,11 +867,8 @@ const StudentsSection = ({
                                                     </span>
                                                 )}
                                             </td>
-                                            <td className="py-3 text-sm text-gray-600 dark:text-[#a6adba]">
-                                                {student.lastViewedLessonId
-                                                    ? `Сабак #${student.lastViewedLessonId}${student.lastVideoTime ? ` (${student.lastVideoTime}s)` : ''
-                                                    }`
-                                                    : '—'}
+                                            <td className="py-3 text-sm text-gray-600 dark:text-[#a6adba] whitespace-normal break-words leading-5">
+                                                {formatLastViewed(student)}
                                             </td>
                                         </tr>
                                     );
