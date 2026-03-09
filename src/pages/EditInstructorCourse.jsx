@@ -52,6 +52,23 @@ const EditInstructorCourse = () => {
     const [categories, setCategories] = useState([]);
     const [skillOptions, setSkillOptions] = useState([{ value: '', label: 'Skill тандаңыз (опция)' }]);
     const [skillsLoading, setSkillsLoading] = useState(false);
+    const toSkillValue = (value) => {
+        if (value === undefined || value === null) return '';
+        return String(value);
+    };
+    const resolveSectionSkillValue = (sectionLike, options = []) => {
+        const optionSet = new Set(options.map((o) => o.value));
+        const candidates = [
+            sectionLike?.skillId,
+            sectionLike?.skill?.id,
+            sectionLike?.skillSlug,
+            sectionLike?.skill?.slug,
+        ]
+            .map(toSkillValue)
+            .filter(Boolean);
+        const match = candidates.find((val) => optionSet.has(val));
+        return match ?? (candidates[0] || '');
+    };
 
     const loadSkillsList = useCallback(async () => {
         setSkillsLoading(true);
@@ -61,7 +78,7 @@ const EditInstructorCourse = () => {
                 const mapped = skillsData
                     .filter((s) => s.slug || s.id)
                     .map((s) => ({
-                        value: s.id ?? s.slug ?? '',
+                        value: toSkillValue(s.id ?? s.slug ?? ''),
                         label: s.name || s.slug,
                     }));
                 setSkillOptions([{ value: '', label: 'Skill тандаңыз (опция)' }, ...mapped]);
@@ -93,6 +110,20 @@ const EditInstructorCourse = () => {
                     fetchSections(id),
                     fetchSkills().catch(() => []),
                 ]);
+
+                const mappedSkillOptions =
+                    Array.isArray(skillsData) && skillsData.length
+                        ? skillsData
+                              .filter((s) => s.slug || s.id)
+                              .map((s) => ({
+                                  value: toSkillValue(s.id ?? s.slug ?? ''),
+                                  label: s.name || s.slug,
+                              }))
+                        : [];
+                const skillOptionsWithBlank = [
+                    { value: '', label: 'Skill тандаңыз (опция)' },
+                    ...mappedSkillOptions,
+                ];
 
                 const allSections = await Promise.all(
                     sectionData.map(async (sec) => {
@@ -153,7 +184,7 @@ const EditInstructorCourse = () => {
                             id: sec.id,
                             title: sec.title,
                             order: sec.order,
-                            skillId: sec.skillId || sec.skill?.id || sec.skillSlug || '',
+                            skillId: resolveSectionSkillValue(sec, skillOptionsWithBlank),
                             lessons: lessonsWithExtras,
                         };
                     })
@@ -176,13 +207,7 @@ const EditInstructorCourse = () => {
                     aiAssistantEnabled: Boolean(courseData.aiAssistantEnabled),
                 };
 
-                if (Array.isArray(skillsData) && skillsData.length) {
-                    const mapped = skillsData.map((s) => ({
-                        value: s.id ?? s.slug ?? '',
-                        label: s.name || s.slug,
-                    }));
-                    setSkillOptions([{ value: '', label: 'Skill тандаңыз (опция)' }, ...mapped]);
-                }
+                setSkillOptions(skillOptionsWithBlank);
 
                 setCourse(hydratedCourse);
                 setOriginalCourse(hydratedCourse);
@@ -235,7 +260,7 @@ const EditInstructorCourse = () => {
     const updateSectionSkill = (index, skillId) => {
         setSections((prev) => {
             const updated = [...prev];
-            updated[index].skillId = skillId;
+            updated[index].skillId = toSkillValue(skillId);
             return updated;
         });
     };
