@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useCallback } from 'react';
+import { useEffect, useMemo, useState, useCallback, useContext } from 'react';
 import { Link } from 'react-router-dom';
 import Loader from '@shared/ui/Loader';
 import {
@@ -8,6 +8,7 @@ import {
     fetchWeeklyLeaderboard,
     fetchSkills,
 } from '@services/api';
+import { AuthContext } from '../context/AuthContext';
 
 const defaultSkillBoards = [
     { slug: 'html', label: 'HTML' },
@@ -214,6 +215,8 @@ const LeaderboardPage = () => {
         { label: 'Курс бүтүрүү', value: 'Badge гана (XP азырынча жок)' },
     ];
 
+    const { user } = useContext(AuthContext);
+
     return (
         <div className="bg-white dark:bg-[#111418] text-gray-900 dark:text-white min-h-screen">
             <div className="relative overflow-hidden">
@@ -235,12 +238,14 @@ const LeaderboardPage = () => {
                         >
                             Курстарды изилдөө
                         </Link>
-                        <Link
-                            to="/dashboard"
-                            className="border border-orange-200 text-orange-600 px-4 py-2 rounded-full font-semibold hover:bg-orange-50 transition"
-                        >
-                            Жеке прогресс
-                        </Link>
+                        {user?.role === 'student' ? (
+                            <Link
+                                to="/student"
+                                className="border border-orange-200 text-orange-600 px-4 py-2 rounded-full font-semibold hover:bg-orange-50 transition"
+                            >
+                                Жеке прогресс
+                            </Link>
+                        ) : null}
                     </div>
                 </div>
             </div>
