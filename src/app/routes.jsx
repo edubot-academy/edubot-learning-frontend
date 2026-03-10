@@ -1,4 +1,4 @@
-import React, { Suspense, lazy } from 'react';
+import { Suspense, lazy } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import PrivateRoute from '@shared/PrivateRoute';
 import MainLayout from './layouts/MainLayout';
@@ -29,6 +29,7 @@ const Favourite = lazy(() => import('../pages/Favourite'));
 const CartPage = lazy(() => import('../pages/Cart'));
 const Chat = lazy(() => import('../pages/Chat'));
 const LeaderboardPage = lazy(() => import('../pages/Leaderboard'));
+const AttendancePage = lazy(() => import('../pages/Attendance'));
 
 const AppRoutes = () => {
     return (
@@ -73,6 +74,14 @@ const AppRoutes = () => {
 
                     <Route element={<PrivateRoute allowedRoles={['assistant']} />}>
                         <Route path="/assistant" element={<AssistantDashboard />} />
+                    </Route>
+
+                    <Route
+                        element={
+                            <PrivateRoute allowedRoles={['admin', 'assistant', 'instructor']} />
+                        }
+                    >
+                        <Route path="/attendance" element={<AttendancePage />} />
                     </Route>
                     <Route path="/companies/:id/courses" element={<CompanyCourses />} />
                     <Route path="/catalog" element={<Catalog />} />

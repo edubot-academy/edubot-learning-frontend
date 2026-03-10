@@ -17,6 +17,7 @@ export * from '../features/cart/api';
 export * from '../features/notifications/api';
 export * from '../features/instructorChat/api';
 export * from '../features/favorites/api';
-export * from '../features/instructorChat/api';
 export * from '../features/leaderboard/api';
 export * from '../features/skills/api';
+export * from '../features/integration/api';
+export * from '../features/attendance/api';

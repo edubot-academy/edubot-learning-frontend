@@ -39,12 +39,35 @@ import {
     FiBell,
     FiBarChart2,
     FiTag,
+    FiActivity,
 } from 'react-icons/fi';
 import DashboardSidebar from '@features/dashboard/components/DashboardSidebar';
 import toast from 'react-hot-toast';
 import NotificationsWidget from '@features/notifications/components/NotificationsWidget';
 import NotificationsTab from '@features/notifications/components/NotificationsTab';
 import Loader from '@shared/ui/Loader';
+import IntegrationTab from '@features/integration/components/IntegrationTab';
+
+const ADMIN_TABS = [
+    'stats',
+    'users',
+    'courses',
+    'contacts',
+    'pending',
+    'companies',
+    'skills',
+    'ai-prompts',
+    'notifications',
+    'integration',
+];
+
+const USERS_QUERY_KEYS = Object.freeze({
+    search: 'u_search',
+    role: 'u_role',
+    dateFrom: 'u_dateFrom',
+    dateTo: 'u_dateTo',
+    page: 'u_page',
+});
 
 const AdminPanel = () => {
     const [courses, setCourses] = useState([]);
@@ -87,12 +110,21 @@ const AdminPanel = () => {
     const [editingSkill, setEditingSkill] = useState({ name: '', slug: '' });
 
     const [searchParams, setSearchParams] = useSearchParams();
-    const [search, setSearch] = useState(searchParams.get('search') || '');
-    const [roleFilter, setRoleFilter] = useState(searchParams.get('role') || '');
-    const [dateFrom, setDateFrom] = useState(searchParams.get('dateFrom') || '');
-    const [dateTo, setDateTo] = useState(searchParams.get('dateTo') || '');
+    const [search, setSearch] = useState(
+        searchParams.get(USERS_QUERY_KEYS.search) || searchParams.get('search') || ''
+    );
+    const [roleFilter, setRoleFilter] = useState(
+        searchParams.get(USERS_QUERY_KEYS.role) || searchParams.get('role') || ''
+    );
+    const [dateFrom, setDateFrom] = useState(
+        searchParams.get(USERS_QUERY_KEYS.dateFrom) || searchParams.get('dateFrom') || ''
+    );
+    const [dateTo, setDateTo] = useState(
+        searchParams.get(USERS_QUERY_KEYS.dateTo) || searchParams.get('dateTo') || ''
+    );
 
-    const initialUsersPage = Number(searchParams.get('page')) || 1;
+    const initialUsersPage =
+        Number(searchParams.get(USERS_QUERY_KEYS.page) || searchParams.get('page')) || 1;
     const [usersPage, setUsersPage] = useState(initialUsersPage);
     const [usersTotalPages, setUsersTotalPages] = useState(1);
     const [usersTotal, setUsersTotal] = useState(0);
@@ -108,7 +140,10 @@ const AdminPanel = () => {
         dateTo,
     });
 
-    const [activeTab, setActiveTab] = useState('stats'); // stats | users | courses | contacts | pending | companies | skills | ai-prompts | notifications
+    const [activeTab, setActiveTab] = useState(() => {
+        const tabFromUrl = searchParams.get('tab');
+        return ADMIN_TABS.includes(tabFromUrl) ? tabFromUrl : 'stats';
+    }); // stats | users | courses | contacts | pending | companies | skills | ai-prompts | notifications | integration
 
     const NAV_ITEMS = [
         { id: 'stats', label: 'Статистика', icon: FiBarChart2 },
@@ -120,6 +155,7 @@ const AdminPanel = () => {
         { id: 'skills', label: 'Skills', icon: FiTag },
         { id: 'ai-prompts', label: 'AI сунуштары', icon: FiCpu },
         { id: 'notifications', label: 'Билдирүүлөр', icon: FiBell },
+        { id: 'integration', label: 'Интеграция', icon: FiActivity },
     ];
 
     const updateSearchParams = useCallback(
@@ -135,6 +171,21 @@ const AdminPanel = () => {
         },
         [setSearchParams]
     );
+
+    useEffect(() => {
+        const tabFromUrl = searchParams.get('tab');
+        if (ADMIN_TABS.includes(tabFromUrl) && tabFromUrl !== activeTab) {
+            setActiveTab(tabFromUrl);
+            return;
+        }
+        if (!tabFromUrl && activeTab !== 'stats') {
+            setActiveTab('stats');
+        }
+    }, [searchParams, activeTab]);
+
+    useEffect(() => {
+        updateSearchParams({ tab: activeTab });
+    }, [activeTab, updateSearchParams]);
 
     const loadAdminStats = useCallback(async () => {
         setAdminStatsLoading(true);
@@ -486,7 +537,8 @@ const AdminPanel = () => {
     // Sync page from URL when landing on Users tab (e.g., back/forward)
     useEffect(() => {
         if (activeTab !== 'users') return;
-        const pageFromUrl = Number(searchParams.get('page')) || 1;
+        const pageFromUrl =
+            Number(searchParams.get(USERS_QUERY_KEYS.page) || searchParams.get('page')) || 1;
         if (pendingUsersPageRef.current !== null) {
             if (pageFromUrl === pendingUsersPageRef.current && pageFromUrl !== usersPage) {
                 setUsersPage(pageFromUrl);
@@ -509,7 +561,7 @@ const AdminPanel = () => {
     // Remove page query when leaving Users tab
     useEffect(() => {
         if (activeTab !== 'users') {
-            updateSearchParams({ page: undefined });
+            updateSearchParams({ [USERS_QUERY_KEYS.page]: undefined });
         }
     }, [activeTab, updateSearchParams]);
 
@@ -525,11 +577,11 @@ const AdminPanel = () => {
             pendingUsersPageRef.current = nextPage;
             setUsersPage(nextPage);
             updateSearchParams({
-                search,
-                role: roleFilter,
-                dateFrom,
-                dateTo,
-                page: nextPage,
+                [USERS_QUERY_KEYS.search]: search,
+                [USERS_QUERY_KEYS.role]: roleFilter,
+                [USERS_QUERY_KEYS.dateFrom]: dateFrom,
+                [USERS_QUERY_KEYS.dateTo]: dateTo,
+                [USERS_QUERY_KEYS.page]: nextPage,
             });
         },
         [dateFrom, dateTo, roleFilter, search, updateSearchParams]
@@ -549,11 +601,11 @@ const AdminPanel = () => {
             if (search.length >= 3 || search === '') {
                 setUsersPage(1);
                 updateSearchParams({
-                    search,
-                    role: roleFilter,
-                    dateFrom,
-                    dateTo,
-                    page: 1,
+                    [USERS_QUERY_KEYS.search]: search,
+                    [USERS_QUERY_KEYS.role]: roleFilter,
+                    [USERS_QUERY_KEYS.dateFrom]: dateFrom,
+                    [USERS_QUERY_KEYS.dateTo]: dateTo,
+                    [USERS_QUERY_KEYS.page]: 1,
                 });
             }
         }, 500);
@@ -569,21 +621,17 @@ const AdminPanel = () => {
             return;
         }
         const last = lastFilterRef.current;
-        if (
-            last.role === roleFilter &&
-            last.dateFrom === dateFrom &&
-            last.dateTo === dateTo
-        ) {
+        if (last.role === roleFilter && last.dateFrom === dateFrom && last.dateTo === dateTo) {
             return;
         }
         lastFilterRef.current = { role: roleFilter, dateFrom, dateTo };
         setUsersPage(1);
         updateSearchParams({
-            search,
-            role: roleFilter,
-            dateFrom,
-            dateTo,
-            page: 1,
+            [USERS_QUERY_KEYS.search]: search,
+            [USERS_QUERY_KEYS.role]: roleFilter,
+            [USERS_QUERY_KEYS.dateFrom]: dateFrom,
+            [USERS_QUERY_KEYS.dateTo]: dateTo,
+            [USERS_QUERY_KEYS.page]: 1,
         });
     }, [activeTab, roleFilter, dateFrom, dateTo, search, updateSearchParams]);
 
@@ -722,7 +770,9 @@ const AdminPanel = () => {
                 <main className="flex-1 space-y-6 ">
                     <div className="flex items-center justify-between flex-wrap gap-3">
                         <div>
-                            <h1 className="text-3xl font-bold text-gray-900 dark:text-[#E8ECF3]">Админ Панель</h1>
+                            <h1 className="text-3xl font-bold text-gray-900 dark:text-[#E8ECF3]">
+                                Админ Панель
+                            </h1>
                             <p className="text-sm text-gray-500">
                                 Платформанын бардык секцияларына көзөмөл
                             </p>
@@ -744,6 +794,8 @@ const AdminPanel = () => {
                             </div>
                         </div>
                     )}
+                    {activeTab === 'integration' && <IntegrationTab />}
+
                     {activeTab === 'stats' && (
                         <AdminStatsView
                             stats={adminStats}
@@ -770,13 +822,26 @@ const AdminPanel = () => {
                                     </thead>
                                     <tbody>
                                         {contacts.map((c) => (
-                                            <tr key={c.id} className="border-b border-gray-100 dark:border-gray-800">
-                                                <td className="p-2 text-gray-900 dark:text-[#E8ECF3]">{c.name}</td>
-                                                <td className="p-2 text-gray-700 dark:text-[#cdd3de]">{c.email}</td>
-                                                <td className="p-2 text-gray-700 dark:text-[#cdd3de]">{c.phone}</td>
-                                                <td className="p-2 text-gray-700 dark:text-[#cdd3de]">{c.message}</td>
+                                            <tr
+                                                key={c.id}
+                                                className="border-b border-gray-100 dark:border-gray-800"
+                                            >
+                                                <td className="p-2 text-gray-900 dark:text-[#E8ECF3]">
+                                                    {c.name}
+                                                </td>
+                                                <td className="p-2 text-gray-700 dark:text-[#cdd3de]">
+                                                    {c.email}
+                                                </td>
+                                                <td className="p-2 text-gray-700 dark:text-[#cdd3de]">
+                                                    {c.phone}
+                                                </td>
+                                                <td className="p-2 text-gray-700 dark:text-[#cdd3de]">
+                                                    {c.message}
+                                                </td>
                                                 <td className="p-2 text-gray-600 dark:text-[#a6adba]">
-                                                    {c.createdAt ? new Date(c.createdAt).toLocaleString() : '—'}
+                                                    {c.createdAt
+                                                        ? new Date(c.createdAt).toLocaleString()
+                                                        : '—'}
                                                 </td>
                                             </tr>
                                         ))}
@@ -815,7 +880,9 @@ const AdminPanel = () => {
                                                         Көрүү
                                                     </Link>
                                                     <button
-                                                        onClick={() => handleDeleteCourse(course.id)}
+                                                        onClick={() =>
+                                                            handleDeleteCourse(course.id)
+                                                        }
                                                         className="text-red-500 hover:underline"
                                                     >
                                                         Өчүрүү
@@ -904,7 +971,9 @@ const AdminPanel = () => {
                                                         <button
                                                             onClick={() => {
                                                                 setEditingCategoryId(category.id);
-                                                                setEditingCategoryName(category.name);
+                                                                setEditingCategoryName(
+                                                                    category.name
+                                                                );
                                                             }}
                                                             className="text-blue-500 hover:underline"
                                                         >
@@ -927,9 +996,12 @@ const AdminPanel = () => {
                             </div>
 
                             <div className="bg-white dark:bg-[#111111] shadow-sm rounded-2xl p-4 border border-gray-100 dark:border-gray-800">
-                                <h2 className="text-2xl font-semibold mb-4 text-gray-900 dark:text-[#E8ECF3]">HLS транс коддоо</h2>
+                                <h2 className="text-2xl font-semibold mb-4 text-gray-900 dark:text-[#E8ECF3]">
+                                    HLS транс коддоо
+                                </h2>
                                 <p className="text-sm text-gray-600 dark:text-[#a6adba] mb-3">
-                                    MP4 сабакты HLSке айландыруу үчүн Course / Section / Lesson ID киргизиңиз.
+                                    MP4 сабакты HLSке айландыруу үчүн Course / Section / Lesson ID
+                                    киргизиңиз.
                                 </p>
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
                                     <input
@@ -959,7 +1031,11 @@ const AdminPanel = () => {
                                     disabled={transcodeLoading}
                                     className="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg disabled:opacity-60"
                                 >
-                                    {transcodeLoading ? <Loader fullScreen={false} /> : 'Транс коддоо'}
+                                    {transcodeLoading ? (
+                                        <Loader fullScreen={false} />
+                                    ) : (
+                                        'Транс коддоо'
+                                    )}
                                 </button>
                                 <p className="text-xs text-gray-500 dark:text-[#a6adba] mt-2">
                                     ffmpeg серверде орнотулган болушу керек.
@@ -1031,7 +1107,9 @@ const AdminPanel = () => {
                             </div>
 
                             <div className="bg-white dark:bg-[#111111] shadow-sm rounded-2xl p-4 space-y-4 border border-gray-100 dark:border-gray-800">
-                                <h2 className="text-2xl font-semibold text-gray-900 dark:text-[#E8ECF3]">Жаңы компания кошуу</h2>
+                                <h2 className="text-2xl font-semibold text-gray-900 dark:text-[#E8ECF3]">
+                                    Жаңы компания кошуу
+                                </h2>
                                 <form onSubmit={handleCreateCompany} className="space-y-3">
                                     <input
                                         value={newCompanyName}
@@ -1058,7 +1136,8 @@ const AdminPanel = () => {
                                         Skills каталогу
                                     </h2>
                                     <p className="text-sm text-gray-500 dark:text-[#a6adba]">
-                                        Skill тандагыч курстагы секциялар үчүн; лидерборддор ушул тегдерге таянат.
+                                        Skill тандагыч курстагы секциялар үчүн; лидерборддор ушул
+                                        тегдерге таянат.
                                     </p>
                                 </div>
                                 <button
@@ -1077,7 +1156,10 @@ const AdminPanel = () => {
                                     value={editingSkillId ? editingSkill.name : newSkill.name}
                                     onChange={(e) =>
                                         editingSkillId
-                                            ? setEditingSkill((p) => ({ ...p, name: e.target.value }))
+                                            ? setEditingSkill((p) => ({
+                                                  ...p,
+                                                  name: e.target.value,
+                                              }))
                                             : setNewSkill((p) => ({ ...p, name: e.target.value }))
                                     }
                                     className="border border-gray-200 dark:border-gray-700 px-3 py-2 rounded-lg w-full bg-white dark:bg-[#0E0E0E] text-gray-900 dark:text-[#E8ECF3]"
@@ -1087,7 +1169,10 @@ const AdminPanel = () => {
                                     value={editingSkillId ? editingSkill.slug : newSkill.slug}
                                     onChange={(e) =>
                                         editingSkillId
-                                            ? setEditingSkill((p) => ({ ...p, slug: e.target.value }))
+                                            ? setEditingSkill((p) => ({
+                                                  ...p,
+                                                  slug: e.target.value,
+                                              }))
                                             : setNewSkill((p) => ({ ...p, slug: e.target.value }))
                                     }
                                     className="border border-gray-200 dark:border-gray-700 px-3 py-2 rounded-lg w-full bg-white dark:bg-[#0E0E0E] text-gray-900 dark:text-[#E8ECF3]"
@@ -1108,7 +1193,9 @@ const AdminPanel = () => {
                                     )}
                                     <button
                                         type="button"
-                                        onClick={editingSkillId ? handleUpdateSkill : handleAddSkill}
+                                        onClick={
+                                            editingSkillId ? handleUpdateSkill : handleAddSkill
+                                        }
                                         className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm"
                                     >
                                         {editingSkillId ? 'Сактоо' : 'Кошуу'}
@@ -1133,13 +1220,18 @@ const AdminPanel = () => {
                                                 <p className="font-semibold text-gray-900 dark:text-[#E8ECF3]">
                                                     {s.name}
                                                 </p>
-                                                <p className="text-xs text-gray-500 dark:text-[#a6adba]">Slug: {s.slug}</p>
+                                                <p className="text-xs text-gray-500 dark:text-[#a6adba]">
+                                                    Slug: {s.slug}
+                                                </p>
                                             </div>
                                             <div className="flex gap-3 text-sm">
                                                 <button
                                                     onClick={() => {
                                                         setEditingSkillId(s.id);
-                                                        setEditingSkill({ name: s.name, slug: s.slug });
+                                                        setEditingSkill({
+                                                            name: s.name,
+                                                            slug: s.slug,
+                                                        });
                                                     }}
                                                     className="text-blue-600 hover:underline"
                                                 >
@@ -1277,7 +1369,9 @@ const AdminPanel = () => {
                                             className="border border-gray-200 dark:border-gray-800 rounded-2xl p-4 flex flex-col gap-2 md:flex-row md:items-center md:justify-between bg-gray-50 dark:bg-[#1B1B1B]"
                                         >
                                             <div>
-                                                <p className="font-semibold text-gray-900 dark:text-[#E8ECF3]">{prompt.text}</p>
+                                                <p className="font-semibold text-gray-900 dark:text-[#E8ECF3]">
+                                                    {prompt.text}
+                                                </p>
                                                 <div className="text-xs text-gray-500 dark:text-[#a6adba] flex flex-wrap gap-3 mt-1">
                                                     <span>Тил: {prompt.language}</span>
                                                     <span>Тартип: {prompt.order}</span>
@@ -1397,8 +1491,7 @@ const AdminPanel = () => {
                             </table>
                             <div className="flex flex-wrap items-center justify-between gap-3 mt-4 text-sm">
                                 <span className="text-gray-500 dark:text-gray-400">
-                                    Баракча {usersPage} / {usersTotalPages} · Бардыгы:{' '}
-                                    {usersTotal}
+                                    Баракча {usersPage} / {usersTotalPages} · Бардыгы: {usersTotal}
                                 </span>
                                 <div className="flex items-center gap-2">
                                     <button

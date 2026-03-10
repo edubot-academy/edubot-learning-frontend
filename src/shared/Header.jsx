@@ -21,7 +21,8 @@ import { useCart } from '../context/CartContext';
 
 const NavLinks = ({ isMobile, user }) => {
     const location = useLocation();
-    const active = (path) => (location.pathname === path ? 'text-orange-500 dark:text-orange-400' : '');
+    const active = (path) =>
+        location.pathname === path ? 'text-orange-500 dark:text-orange-400' : '';
 
     const linkClass =
         'relative inline-block cursor-pointer dark:text-[#E8ECF3] dark:hover:text-white ' +
@@ -70,6 +71,11 @@ const NavLinks = ({ isMobile, user }) => {
             {user && user.role === 'assistant' && (
                 <Link to="/assistant" className={`${active('/assistant')} ${linkClass}`}>
                     Dashboard
+                </Link>
+            )}
+            {user && ['admin', 'assistant', 'instructor'].includes(user.role) && (
+                <Link to="/attendance" className={`${active('/attendance')} ${linkClass}`}>
+                    Катышуу
                 </Link>
             )}
             {user && user.role === 'student' && (
@@ -161,9 +167,8 @@ const Header = () => {
             try {
                 const unreadRes = await fetchUnreadNotificationsCount();
                 setUnreadNotifications(unreadRes?.count ?? 0);
-
             } catch (error) {
-                console.error("Билдирүүлөрдү жүктөөдө ката кетти:", error);
+                console.error('Билдирүүлөрдү жүктөөдө ката кетти:', error);
             }
         };
 
@@ -226,7 +231,9 @@ const Header = () => {
                                 />
                             </div>
                             <div className="flex flex-col ml-3">
-                                <span className="text-2xl font-bold text-orange-500 dark:text-orange-400">EDUBOT</span>
+                                <span className="text-2xl font-bold text-orange-500 dark:text-orange-400">
+                                    EDUBOT
+                                </span>
                                 <span className="text-base -mt-2 text-gray-700 dark:text-gray-300 tracking-[0.14em]">
                                     LEARNING
                                 </span>
@@ -327,10 +334,11 @@ const Header = () => {
                         {user ? (
                             <div className="flex items-center gap-3">
                                 <button
-                                    className={`relative w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-300 ${isFavouritesPage || activeIcon === 'heart'
-                                        ? 'bg-orange-500 border-orange-500'
-                                        : 'border-black dark:border-gray-400 hover:border-gray-600 dark:hover:border-gray-300'
-                                        }`}
+                                    className={`relative w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-300 ${
+                                        isFavouritesPage || activeIcon === 'heart'
+                                            ? 'bg-orange-500 border-orange-500'
+                                            : 'border-black dark:border-gray-400 hover:border-gray-600 dark:hover:border-gray-300'
+                                    }`}
                                     onClick={handleFavouriteClick}
                                     aria-label="Избранное"
                                     aria-current={isFavouritesPage ? 'page' : undefined}
@@ -348,20 +356,22 @@ const Header = () => {
                                 </button>
                                 <div className="relative">
                                     <button
-                                        className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-300 ${activeIcon === 'cart' || location.pathname === '/cart'
-                                            ? 'bg-orange-500 border-orange-500'
-                                            : 'border-black dark:border-gray-400 hover:border-gray-600 dark:hover:border-gray-300'
-                                            }`}
+                                        className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-300 ${
+                                            activeIcon === 'cart' || location.pathname === '/cart'
+                                                ? 'bg-orange-500 border-orange-500'
+                                                : 'border-black dark:border-gray-400 hover:border-gray-600 dark:hover:border-gray-300'
+                                        }`}
                                         onClick={() =>
                                             handleIconClick('cart', () => navigate('/cart'))
                                         }
                                     >
                                         <BsCart2
-                                            className={`w-5 h-5 transition-colors duration-300 ${activeIcon === 'cart' ||
+                                            className={`w-5 h-5 transition-colors duration-300 ${
+                                                activeIcon === 'cart' ||
                                                 location.pathname === '/cart'
-                                                ? 'text-white'
-                                                : 'text-black dark:text-gray-300'
-                                                }`}
+                                                    ? 'text-white'
+                                                    : 'text-black dark:text-gray-300'
+                                            }`}
                                         />
                                         {cartItemsCount > 0 && (
                                             <span className="absolute -top-1 -right-1 bg-orange-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-medium">
@@ -372,10 +382,11 @@ const Header = () => {
                                 </div>
                                 <div className="relative group">
                                     <button
-                                        className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-300 ${activeIcon === 'user' || userMenuOpen
-                                            ? 'bg-orange-500 border-orange-500'
-                                            : 'border-black dark:border-gray-400 hover:border-gray-600 dark:hover:border-gray-300'
-                                            }`}
+                                        className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-300 ${
+                                            activeIcon === 'user' || userMenuOpen
+                                                ? 'bg-orange-500 border-orange-500'
+                                                : 'border-black dark:border-gray-400 hover:border-gray-600 dark:hover:border-gray-300'
+                                        }`}
                                         onClick={() => {
                                             handleIconClick('user');
                                             setUserMenuOpen(!userMenuOpen);
@@ -389,10 +400,11 @@ const Header = () => {
                                             />
                                         ) : (
                                             <FaRegUser
-                                                className={`w-5 h-5 transition-colors duration-300 ${activeIcon === 'user' || userMenuOpen
-                                                    ? 'text-white'
-                                                    : 'text-black dark:text-gray-300'
-                                                    }`}
+                                                className={`w-5 h-5 transition-colors duration-300 ${
+                                                    activeIcon === 'user' || userMenuOpen
+                                                        ? 'text-white'
+                                                        : 'text-black dark:text-gray-300'
+                                                }`}
                                             />
                                         )}
 
@@ -404,7 +416,7 @@ const Header = () => {
                                     <div className="absolute top-full right-0 pt-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible lg:group-hover:opacity-100 lg:group-hover:visible transform translate-y-2 group-hover:translate-y-0 transition-all duration-300 ease-out z-60">
                                         <div className="relative">
                                             <div className="absolute -top-2 left-0 right-0 h-2 bg-transparent"></div>
-                                            <UserMenuDropdown user={user} onClose={() => { }} />
+                                            <UserMenuDropdown user={user} onClose={() => {}} />
                                         </div>
                                     </div>
                                 </div>
@@ -412,10 +424,11 @@ const Header = () => {
                         ) : (
                             <div className="flex items-center gap-3">
                                 <button
-                                    className={`relative w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-300 ${isFavouritesPage || activeIcon === 'heart'
-                                        ? 'border-orange-500'
-                                        : 'border-black dark:border-[#E8ECF3] hover:border-gray-600 dark:hover:border-[#E8ECF3]/70'
-                                        }`}
+                                    className={`relative w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-300 ${
+                                        isFavouritesPage || activeIcon === 'heart'
+                                            ? 'border-orange-500'
+                                            : 'border-black dark:border-[#E8ECF3] hover:border-gray-600 dark:hover:border-[#E8ECF3]/70'
+                                    }`}
                                     onClick={handleFavouriteClick}
                                     aria-label="Избранное"
                                 >
@@ -424,20 +437,22 @@ const Header = () => {
 
                                 <div className="relative">
                                     <button
-                                        className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-300 ${activeIcon === 'cart' || location.pathname === '/cart'
-                                            ? 'bg-orange-500 border-orange-500'
-                                            : 'border-black dark:border-gray-400 hover:border-gray-600 dark:hover:border-gray-300'
-                                            }`}
+                                        className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-300 ${
+                                            activeIcon === 'cart' || location.pathname === '/cart'
+                                                ? 'bg-orange-500 border-orange-500'
+                                                : 'border-black dark:border-gray-400 hover:border-gray-600 dark:hover:border-gray-300'
+                                        }`}
                                         onClick={() =>
                                             handleIconClick('cart', () => navigate('/cart'))
                                         }
                                     >
                                         <BsCart2
-                                            className={`w-5 h-5 transition-colors duration-300 ${activeIcon === 'cart' ||
+                                            className={`w-5 h-5 transition-colors duration-300 ${
+                                                activeIcon === 'cart' ||
                                                 location.pathname === '/cart'
-                                                ? 'text-white'
-                                                : 'text-black dark:text-gray-300'
-                                                }`}
+                                                    ? 'text-white'
+                                                    : 'text-black dark:text-gray-300'
+                                            }`}
                                         />
 
                                         {cartItemsCount > 0 && (
@@ -479,7 +494,9 @@ const Header = () => {
                                 />
                             </div>
                             <div className="flex flex-col items-center mt-1">
-                                <span className="text-lg font-bold text-orange-500 dark:text-orange-400">EDUBOT</span>
+                                <span className="text-lg font-bold text-orange-500 dark:text-orange-400">
+                                    EDUBOT
+                                </span>
                                 <span className="text-xs -mt-1 text-gray-700 dark:text-gray-300 tracking-[0.14em]">
                                     LEARNING
                                 </span>
@@ -497,10 +514,11 @@ const Header = () => {
                             {user && (
                                 <div className="relative hidden md:block">
                                     <button
-                                        className={`w-9 h-9 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${userMenuOpen
-                                            ? 'bg-orange-500 border-orange-500'
-                                            : 'border-black dark:border-gray-400 hover:border-gray-600 dark:hover:border-gray-300'
-                                            }`}
+                                        className={`w-9 h-9 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${
+                                            userMenuOpen
+                                                ? 'bg-orange-500 border-orange-500'
+                                                : 'border-black dark:border-gray-400 hover:border-gray-600 dark:hover:border-gray-300'
+                                        }`}
                                         onClick={() => setUserMenuOpen(!userMenuOpen)}
                                     >
                                         {user.avatar ? (

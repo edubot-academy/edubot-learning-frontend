@@ -5,21 +5,19 @@ This folder contains the shared documentation needed to keep **EduBot CRM** and 
 ## Folder structure
 
 - `architecture/`
-  - `SYSTEM_ARCHITECTURE.md`
-  - `DOMAIN_OWNERSHIP.md`
-  - `BUSINESS_FLOW.md`
-  - `IDENTITY_MAPPING.md`
+    - `SYSTEM_ARCHITECTURE.md`
+    - `DOMAIN_OWNERSHIP.md`
+    - `BUSINESS_FLOW.md`
+    - `IDENTITY_MAPPING.md`
 - `contracts/`
-  - `ENUMS.md`
-  - `CRM_LMS_API_CONTRACT.md`
-  - `WEBHOOK_EVENTS.md`
-  - `ACCESS_ACTIVATION_RULES.md`
+    - `ENUMS.md`
+    - `CRM_LMS_API_CONTRACT.md`
+    - `WEBHOOK_EVENTS.md`
+    - `ACCESS_ACTIVATION_RULES.md`
 - `prompts/`
-  - `SHARED_ARCHITECTURE_PROMPT.md`
-  - `CRM_FRONTEND_PROMPT.md`
-  - `CRM_BACKEND_PROMPT.md`
-  - `LMS_FRONTEND_PROMPT.md`
-  - `LMS_BACKEND_PROMPT.md`
+    - `SHARED_ARCHITECTURE_PROMPT.md`
+    - `LMS_FRONTEND_PROMPT.md`
+    - `LMS_BACKEND_PROMPT.md`
 
 ## How to use
 
