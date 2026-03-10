@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import StickyButton from '@shared/ui/StickyButton';
 import { fetchTopCourses } from '@services/api';
 import Benefits from '@features/marketing/components/Benefits';
@@ -9,6 +9,7 @@ import Instructor from '@features/ratings/components/TopInstructors';
 import FAQ from '@features/marketing/components/FAQ';
 import TopCourses from '@features/courses/components/TopCourses';
 import LeaderBoard from '@features/student/LeaderBoard';
+import TopLearnersHome from '@features/leaderboard/components/TopLearnersHome';
 
 const HomePage = () => {
     const [coursesData, setCoursesData] = useState([]);
@@ -32,6 +33,7 @@ const HomePage = () => {
             <Benefits />
             <TopCourses coursesData={coursesData} />
             <LeaderBoard/>
+            <TopLearnersHome />
             <Instructor />
             <Apply />
             <Feedback />

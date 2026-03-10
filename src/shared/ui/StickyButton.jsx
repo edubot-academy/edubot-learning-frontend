@@ -1,7 +1,7 @@
 import whatsapp from '@assets/icons/whatsapp_icon.svg';
 
 const StickyButton = () => {
-    const phoneNumber = '+996501503452';
+    const phoneNumber = '996221004976';
     const whatsappUrl = `https://wa.me/${phoneNumber}`;
 
     return (

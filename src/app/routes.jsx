@@ -1,4 +1,4 @@
-import React, { Suspense, lazy } from 'react';
+import { Suspense, lazy } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import PrivateRoute from '@shared/PrivateRoute';
 import MainLayout from './layouts/MainLayout';
@@ -9,7 +9,6 @@ const LoginPage = lazy(() => import('../pages/Login'));
 const SignupPage = lazy(() => import('../pages/Signup'));
 const CoursesPage = lazy(() => import('../pages/Courses'));
 const CourseDetailsPage = lazy(() => import('../pages/CourseDetails'));
-const DashboardPage = lazy(() => import('../pages/Dashboard'));
 const ProfilePage = lazy(() => import('../pages/Profile'));
 const InstructorDashboard = lazy(() => import('../pages/InstructorDashboard'));
 const StudentDashboard = lazy(() => import('../pages/StudentDashboard'));
@@ -30,6 +29,8 @@ const Favourite = lazy(() => import('../pages/Favourite'));
 const CartPage = lazy(() => import('../pages/Cart'));
 const Chat = lazy(() => import('../pages/Chat'));
 const AllTopStudents = lazy(() => import('../pages/AllTopStudents'));
+const LeaderboardPage = lazy(() => import('../pages/Leaderboard'));
+
 const AppRoutes = () => {
     return (
         <MainLayout>
@@ -39,7 +40,6 @@ const AppRoutes = () => {
                     <Route path="/login" element={<LoginPage />} />
                     <Route path="/register" element={<SignupPage />} />
                     <Route path="/courses" element={<CoursesPage />} />
-                    <Route path="/dashboard" element={<DashboardPage />} />
                     <Route path="/profile" element={<ProfilePage />} />
                     <Route path="/unauthorized" element={<Unauthorized />} />
                     <Route path="/favourites" element={<Favourite />} />
@@ -57,6 +57,7 @@ const AppRoutes = () => {
 
                     <Route element={<PrivateRoute allowedRoles={['student']} />}>
                         <Route path="/student" element={<StudentDashboard />} />
+                        <Route path="/dashboard" element={<StudentDashboard />} />
                     </Route>
 
                     <Route path="/courses/:id" element={<CourseDetailsPage />} />
@@ -80,6 +81,7 @@ const AppRoutes = () => {
                     <Route path="/companies" element={<CompanyList />} />
                     <Route path="/companies/:id" element={<CompanyDetail />} />
                     <Route path="/chat" element={<Chat />} />
+                    <Route path="/leaderboard" element={<LeaderboardPage />} />
                 </Routes>
             </Suspense>
         </MainLayout>

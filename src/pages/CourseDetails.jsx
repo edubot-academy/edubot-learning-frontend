@@ -844,17 +844,19 @@ const CourseDetailsPage = () => {
             {enrolled && (
                 <>
                     {/* Кнопка открытия/закрытия чата */}
-                    <div className="fixed top-20 right-4 z-50" ref={buttonRef}>  {/* Changed to z-50 */}
-                        <button
-                            className={`instructor-chat-button mt-10 mr-4 flex items-center justify-center w-16 h-16 rounded-full border-2 transition-all shadow-lg hover:shadow-xl ${instructorChat
-                                ? 'border-[#FB923C] bg-[#FFF7ED]'
-                                : 'border-gray-300 bg-white hover:bg-gray-50 dark:bg-[#1A1A1A]'
-                                }`}
-                            onClick={() => setInstructorChat(!instructorChat)}
-                        >
-                            <HiChatAlt2 className="w-8 h-8 text-[#EA580C]" />
-                        </button>
-                    </div>
+                    {user?.role === 'student' && (
+                        <div className="fixed top-20 right-4 z-50" ref={buttonRef}>
+                            <button
+                                className={`instructor-chat-button mt-10 mr-4 flex items-center justify-center w-16 h-16 rounded-full border-2 transition-all shadow-lg hover:shadow-xl ${instructorChat
+                                        ? 'border-[#FB923C] bg-[#FFF7ED]'
+                                        : 'border-gray-300 bg-white hover:bg-gray-50 dark:bg-[#1A1A1A]'
+                                    }`}
+                                onClick={() => setInstructorChat(!instructorChat)}
+                            >
+                                <HiChatAlt2 className="w-8 h-8 text-[#EA580C]" />
+                            </button>
+                        </div>
+                    )}
 
                     {/* Компонент чата - ПРАВИЛЬНЫЙ ВАРИАНТ */}
                     {instructorChat && course && (
@@ -869,7 +871,7 @@ const CourseDetailsPage = () => {
                     )}
                 </>
             )}
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-8">
+            <div className="mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-8">
                 <div className="space-y-6 lg:space-y-0 lg:grid lg:grid-cols-3 lg:gap-6">
                     {enrolled ? (
                         <div className="space-y-6 lg:hidden">

@@ -6,8 +6,8 @@ import { FaShoppingCart, FaUserPlus, FaSignInAlt } from 'react-icons/fa';
 const AuthRequiredModal = ({
     isOpen,
     onClose,
-    title = 'Корзинага кошуу',
-    description = 'Курсту корзинага кошуу үчүн системага кириңиз же жаңы аккаунт түзүңүз',
+    title = 'Себетке кошуу',
+    description = 'Курсту себетке кошуу үчүн системага кириңиз же жаңы аккаунт түзүңүз',
 }) => {
     const navigate = useNavigate();
 
@@ -60,7 +60,7 @@ const AuthRequiredModal = ({
                         <div className="space-y-4">
                             <div className="bg-orange-50 border border-orange-100 rounded-xl p-4">
                                 <p className="text-orange-800 text-sm">
-                                    <span className="font-semibold">Эскертүү:</span> Сиз корзинада
+                                    <span className="font-semibold">Эскертүү:</span> Сиз Себетте
                                     сакталган курстарды кийин карап чыга аласыз
                                 </p>
                             </div>

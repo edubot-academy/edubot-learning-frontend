@@ -159,7 +159,7 @@ export const CartProvider = ({ children }) => {
                         localStorage.setItem('cart', JSON.stringify(updated));
                         return updated;
                     });
-                    return { success: false, message: 'Курс корзинага кошулган жок' };
+                    return { success: false, message: 'Курс себетке кошулган жок' };
                 }
             }
 

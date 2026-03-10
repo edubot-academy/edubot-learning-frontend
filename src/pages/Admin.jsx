@@ -23,6 +23,10 @@ import {
     deleteCourseAiPrompt,
     transcodeLessonHls,
     fetchAdminStats,
+    fetchSkills,
+    createSkill,
+    updateSkill,
+    deleteSkill,
 } from '@services/api';
 import { Link, useSearchParams } from 'react-router-dom';
 import {
@@ -34,6 +38,7 @@ import {
     FiCpu,
     FiBell,
     FiBarChart2,
+    FiTag,
 } from 'react-icons/fi';
 import DashboardSidebar from '@features/dashboard/components/DashboardSidebar';
 import toast from 'react-hot-toast';
@@ -75,6 +80,11 @@ const AdminPanel = () => {
     const [adminStats, setAdminStats] = useState(null);
     const [adminStatsLoading, setAdminStatsLoading] = useState(false);
     const [adminStatsLoaded, setAdminStatsLoaded] = useState(false);
+    const [skills, setSkills] = useState([]);
+    const [skillsLoading, setSkillsLoading] = useState(false);
+    const [newSkill, setNewSkill] = useState({ name: '', slug: '' });
+    const [editingSkillId, setEditingSkillId] = useState(null);
+    const [editingSkill, setEditingSkill] = useState({ name: '', slug: '' });
 
     const [searchParams, setSearchParams] = useSearchParams();
     const [search, setSearch] = useState(searchParams.get('search') || '');
@@ -98,7 +108,7 @@ const AdminPanel = () => {
         dateTo,
     });
 
-    const [activeTab, setActiveTab] = useState('stats'); // stats | users | courses | contacts | pending | companies | ai-prompts | notifications
+    const [activeTab, setActiveTab] = useState('stats'); // stats | users | courses | contacts | pending | companies | skills | ai-prompts | notifications
 
     const NAV_ITEMS = [
         { id: 'stats', label: 'Статистика', icon: FiBarChart2 },
@@ -107,6 +117,7 @@ const AdminPanel = () => {
         { id: 'contacts', label: 'Байланыш каттары', icon: FiMail },
         { id: 'pending', label: 'Каралуудагы курстар', icon: FiClock },
         { id: 'companies', label: 'Компаниялар', icon: FiBriefcase },
+        { id: 'skills', label: 'Skills', icon: FiTag },
         { id: 'ai-prompts', label: 'AI сунуштары', icon: FiCpu },
         { id: 'notifications', label: 'Билдирүүлөр', icon: FiBell },
     ];
@@ -370,6 +381,56 @@ const AdminPanel = () => {
         }
     };
 
+    const handleAddSkill = async () => {
+        const name = newSkill.name.trim();
+        const slug = newSkill.slug.trim();
+        if (!name || !slug) {
+            toast.error('Skill аталышы жана slug толтуруңуз.');
+            return;
+        }
+        try {
+            await createSkill({ name, slug });
+            toast.success('Skill кошулду.');
+            setNewSkill({ name: '', slug: '' });
+            loadSkillsList();
+        } catch (error) {
+            console.error('Skill create error', error);
+            toast.error('Skill кошуу катасы.');
+        }
+    };
+
+    const handleUpdateSkill = async () => {
+        if (!editingSkillId) return;
+        const name = editingSkill.name.trim();
+        const slug = editingSkill.slug.trim();
+        if (!name || !slug) {
+            toast.error('Аталыш жана slug талап кылынат.');
+            return;
+        }
+        try {
+            await updateSkill(editingSkillId, { name, slug });
+            toast.success('Skill сакталды.');
+            setEditingSkillId(null);
+            setEditingSkill({ name: '', slug: '' });
+            loadSkillsList();
+        } catch (error) {
+            console.error('Skill update error', error);
+            toast.error('Skill сактоо катасы.');
+        }
+    };
+
+    const handleDeleteSkill = async (id) => {
+        if (!window.confirm('Skill өчүрүлсүнбү?')) return;
+        try {
+            await deleteSkill(id);
+            toast.success('Skill өчүрүлдү.');
+            loadSkillsList();
+        } catch (error) {
+            console.error('Skill delete error', error);
+            toast.error('Skill өчүрүү катасы.');
+        }
+    };
+
     const loadPromptsForCourse = useCallback(async (courseId) => {
         if (!courseId) return;
         setAiPromptsLoading(true);
@@ -400,11 +461,27 @@ const AdminPanel = () => {
         }
     }, [activeTab, loadCoursesAndCategories, loadContacts, loadPendingCourses, loadCompanies]);
 
+    const loadSkillsList = useCallback(async () => {
+        setSkillsLoading(true);
+        try {
+            const data = await fetchSkills();
+            setSkills(Array.isArray(data) ? data : data?.items || []);
+        } catch (error) {
+            console.error('Skills load failed', error);
+            toast.error('Skills жүктөлгөн жок.');
+        } finally {
+            setSkillsLoading(false);
+        }
+    }, []);
+
     useEffect(() => {
         if (activeTab === 'stats' && !adminStatsLoaded) {
             loadAdminStats();
         }
-    }, [activeTab, adminStatsLoaded, loadAdminStats]);
+        if (activeTab === 'skills') {
+            loadSkillsList();
+        }
+    }, [activeTab, adminStatsLoaded, loadAdminStats, loadSkillsList]);
 
     // Sync page from URL when landing on Users tab (e.g., back/forward)
     useEffect(() => {
@@ -969,6 +1046,115 @@ const AdminPanel = () => {
                                         Кошуу
                                     </button>
                                 </form>
+                            </div>
+                        </div>
+                    )}
+
+                    {activeTab === 'skills' && (
+                        <div className="bg-white dark:bg-[#111111] shadow-sm rounded-2xl p-6 border border-gray-100 dark:border-gray-800 space-y-4">
+                            <div className="flex items-center justify-between gap-3 flex-wrap">
+                                <div>
+                                    <h2 className="text-2xl font-semibold text-gray-900 dark:text-[#E8ECF3]">
+                                        Skills каталогу
+                                    </h2>
+                                    <p className="text-sm text-gray-500 dark:text-[#a6adba]">
+                                        Skill тандагыч курстагы секциялар үчүн; лидерборддор ушул тегдерге таянат.
+                                    </p>
+                                </div>
+                                <button
+                                    onClick={loadSkillsList}
+                                    className="px-4 py-2 rounded-full bg-gray-100 dark:bg-[#1B1B1B] text-sm text-gray-700 dark:text-[#E8ECF3]"
+                                >
+                                    Жаңыртуу
+                                </button>
+                            </div>
+
+                            <div className="grid md:grid-cols-3 gap-3 bg-gray-50 dark:bg-[#0F1114] p-4 rounded-2xl border border-gray-100 dark:border-gray-800">
+                                <div className="md:col-span-3 text-sm text-gray-600 dark:text-[#a6adba]">
+                                    Skill ID же slug тандагычка жөнөтүлөт; slug уникалдуу болсун.
+                                </div>
+                                <input
+                                    value={editingSkillId ? editingSkill.name : newSkill.name}
+                                    onChange={(e) =>
+                                        editingSkillId
+                                            ? setEditingSkill((p) => ({ ...p, name: e.target.value }))
+                                            : setNewSkill((p) => ({ ...p, name: e.target.value }))
+                                    }
+                                    className="border border-gray-200 dark:border-gray-700 px-3 py-2 rounded-lg w-full bg-white dark:bg-[#0E0E0E] text-gray-900 dark:text-[#E8ECF3]"
+                                    placeholder="Skill аталышы"
+                                />
+                                <input
+                                    value={editingSkillId ? editingSkill.slug : newSkill.slug}
+                                    onChange={(e) =>
+                                        editingSkillId
+                                            ? setEditingSkill((p) => ({ ...p, slug: e.target.value }))
+                                            : setNewSkill((p) => ({ ...p, slug: e.target.value }))
+                                    }
+                                    className="border border-gray-200 dark:border-gray-700 px-3 py-2 rounded-lg w-full bg-white dark:bg-[#0E0E0E] text-gray-900 dark:text-[#E8ECF3]"
+                                    placeholder="Slug (мисалы: javascript)"
+                                />
+                                <div className="flex gap-2">
+                                    {editingSkillId && (
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setEditingSkillId(null);
+                                                setEditingSkill({ name: '', slug: '' });
+                                            }}
+                                            className="px-4 py-2 rounded-lg border text-sm"
+                                        >
+                                            Баш тартуу
+                                        </button>
+                                    )}
+                                    <button
+                                        type="button"
+                                        onClick={editingSkillId ? handleUpdateSkill : handleAddSkill}
+                                        className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm"
+                                    >
+                                        {editingSkillId ? 'Сактоо' : 'Кошуу'}
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="space-y-2">
+                                {skillsLoading ? (
+                                    <Loader fullScreen={false} />
+                                ) : skills.length === 0 ? (
+                                    <p className="text-sm text-gray-500 dark:text-[#a6adba]">
+                                        Skills табылган жок.
+                                    </p>
+                                ) : (
+                                    skills.map((s) => (
+                                        <div
+                                            key={s.id || s.slug}
+                                            className="border border-gray-200 dark:border-gray-800 rounded-2xl p-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 bg-gray-50 dark:bg-[#1B1B1B]"
+                                        >
+                                            <div>
+                                                <p className="font-semibold text-gray-900 dark:text-[#E8ECF3]">
+                                                    {s.name}
+                                                </p>
+                                                <p className="text-xs text-gray-500 dark:text-[#a6adba]">Slug: {s.slug}</p>
+                                            </div>
+                                            <div className="flex gap-3 text-sm">
+                                                <button
+                                                    onClick={() => {
+                                                        setEditingSkillId(s.id);
+                                                        setEditingSkill({ name: s.name, slug: s.slug });
+                                                    }}
+                                                    className="text-blue-600 hover:underline"
+                                                >
+                                                    Өзгөртүү
+                                                </button>
+                                                <button
+                                                    onClick={() => handleDeleteSkill(s.id)}
+                                                    className="text-red-500 hover:underline"
+                                                >
+                                                    Өчүрүү
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))
+                                )}
                             </div>
                         </div>
                     )}
