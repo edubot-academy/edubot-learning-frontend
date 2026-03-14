@@ -3,6 +3,7 @@ import { toast } from 'react-hot-toast';
 import RegisterAndEnrollModal from '@features/enrollments/components/RegisterAndEnrollModal';
 import PayMoreModal from '@features/enrollments/components/PayMoreModal';
 import { fetchMyStudents } from '@services/api';
+import Loader from '@shared/ui/Loader';
 
 const SalesDashboard = () => {
     const [students, setStudents] = useState([]);
