@@ -14,6 +14,32 @@ export const ENROLLMENT_STATUS = Object.freeze({
     CANCELLED: 'cancelled',
 });
 
+export const COURSE_TYPE = Object.freeze({
+    VIDEO: 'video',
+    OFFLINE: 'offline',
+    ONLINE_LIVE: 'online_live',
+});
+
+export const COURSE_GROUP_STATUS = Object.freeze({
+    PLANNED: 'planned',
+    ACTIVE: 'active',
+    COMPLETED: 'completed',
+    CANCELLED: 'cancelled',
+});
+
+export const COURSE_SESSION_STATUS = Object.freeze({
+    SCHEDULED: 'scheduled',
+    DONE: 'done',
+    COMPLETED: 'completed',
+    CANCELLED: 'cancelled',
+});
+
+export const MEETING_PROVIDER = Object.freeze({
+    ZOOM: 'zoom',
+    GOOGLE_MEET: 'google_meet',
+    CUSTOM: 'custom',
+});
+
 export const RISK_ISSUE_TYPE = Object.freeze({
     LOW_ATTENDANCE: 'low_attendance',
     INACTIVE_STUDENT: 'inactive_student',
@@ -34,15 +60,17 @@ export const SOURCE_SYSTEM = Object.freeze({
     LMS: 'lms',
 });
 
-export const GROUP_STATUS = Object.freeze({
-    PLANNED: 'planned',
-    ACTIVE: 'active',
-    COMPLETED: 'completed',
-    CANCELLED: 'cancelled',
-});
-
+// Legacy course/date attendance endpoint statuses
 export const ATTENDANCE_STATUS = Object.freeze({
     PRESENT: 'present',
     LATE: 'late',
     ABSENT: 'absent',
+});
+
+// Session-based attendance endpoint statuses
+export const SESSION_ATTENDANCE_STATUS = Object.freeze({
+    PRESENT: 'present',
+    LATE: 'late',
+    ABSENT: 'absent',
+    EXCUSED: 'excused',
 });

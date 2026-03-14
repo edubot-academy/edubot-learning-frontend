@@ -21,3 +21,7 @@ export * from '../features/leaderboard/api';
 export * from '../features/skills/api';
 export * from '../features/integration/api';
 export * from '../features/attendance/api';
+export * from '../features/courseGroups/api';
+export * from '../features/courseSessions/api';
+export * from '../features/liveIntegration/api';
+export * from '../features/analytics/api';

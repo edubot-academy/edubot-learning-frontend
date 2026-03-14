@@ -9,11 +9,13 @@ This folder contains the shared documentation needed to keep **EduBot CRM** and 
     - `DOMAIN_OWNERSHIP.md`
     - `BUSINESS_FLOW.md`
     - `IDENTITY_MAPPING.md`
+    - `ZOOM_INTEGRATION_ARCHITECTURE.md`
 - `contracts/`
     - `ENUMS.md`
     - `CRM_LMS_API_CONTRACT.md`
     - `WEBHOOK_EVENTS.md`
     - `ACCESS_ACTIVATION_RULES.md`
+    - `LMS_FRONTEND_ENDPOINTS_HANDOFF.md`
 - `prompts/`
     - `SHARED_ARCHITECTURE_PROMPT.md`
     - `LMS_FRONTEND_PROMPT.md`

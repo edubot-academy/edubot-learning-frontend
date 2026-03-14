@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'react-hot-toast';
+import { ATTENDANCE_STATUS } from '@shared/contracts';
 import {
-    ATTENDANCE_STATUS,
     fetchCourseAttendance,
     fetchCourseStudents,
     fetchCourses,

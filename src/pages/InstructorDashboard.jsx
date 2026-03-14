@@ -13,6 +13,8 @@ import {
     enrollUserInCourse,
     fetchInstructorStudentCourses,
     fetchCourseStudents,
+    createCourse,
+    fetchCategories,
 } from '@services/api';
 import toast from 'react-hot-toast';
 import {
@@ -30,6 +32,10 @@ import {
 import NotificationsWidget from '@features/notifications/components/NotificationsWidget';
 import NotificationsTab from '@features/notifications/components/NotificationsTab';
 import Loader from '@shared/ui/Loader';
+import AttendancePage from './Attendance';
+import SessionWorkspacePage from './SessionWorkspace';
+import InstructorAnalyticsPage from './InstructorAnalytics';
+import InternalLeaderboardPage from './InternalLeaderboard';
 
 const NAV_ITEMS = [
     { id: 'overview', label: 'Кыскача', icon: FiHome },
@@ -38,6 +44,10 @@ const NAV_ITEMS = [
     { id: 'profile', label: 'Профиль', icon: FiUser },
     { id: 'ai', label: 'AI ассистент', icon: FiCpu },
     { id: 'offerings', label: 'Offeringдер', icon: FiLayers },
+    { id: 'sessions', label: 'Сессиялар', icon: FiCalendar },
+    { id: 'attendance', label: 'Катышуу', icon: FiUsers },
+    { id: 'analytics', label: 'Аналитика', icon: FiGlobe },
+    { id: 'leaderboard', label: 'Leaderboard', icon: FiFilter },
     { id: 'notifications', label: 'Билдирүүлөр', icon: FiBell },
 ];
 
@@ -63,6 +73,25 @@ const InstructorDashboard = () => {
     const [progressMin, setProgressMin] = useState('');
     const [progressMax, setProgressMax] = useState('');
     const [studentsError, setStudentsError] = useState('');
+    const [showDeliveryModal, setShowDeliveryModal] = useState(false);
+    const [creatingDeliveryCourse, setCreatingDeliveryCourse] = useState(false);
+    const [deliveryCategories, setDeliveryCategories] = useState([]);
+    const [deliveryCourse, setDeliveryCourse] = useState({
+        courseType: 'offline',
+        title: '',
+        description: '',
+        categoryId: '',
+        price: '',
+        languageCode: 'ky',
+    });
+
+    const analyticsLink = useMemo(() => {
+        const to = new Date();
+        const from = new Date(to.getTime() - 30 * 24 * 60 * 60 * 1000);
+        const toIso = to.toISOString().slice(0, 10);
+        const fromIso = from.toISOString().slice(0, 10);
+        return `/instructor/analytics?from=${fromIso}&to=${toIso}`;
+    }, []);
 
     const courses = useMemo(
         () => (courseList.length ? courseList : profile?.courses || []),
@@ -142,43 +171,46 @@ const InstructorDashboard = () => {
         }
     }, [user]);
 
-    const loadCourseStudents = useCallback(async (courseId) => {
-        if (!courseId) {
-            setCourseStudents([]);
-            setCourseStudentsMeta(null);
-            return;
-        }
-        setLoadingCourseStudents(true);
-        setStudentsError('');
-        try {
-            const data = await fetchCourseStudents(courseId, {
-                page: studentsPage,
-                limit: 20,
-                q: studentSearch || undefined,
-                progressGte: progressMin === '' ? undefined : Number(progressMin),
-                progressLte: progressMax === '' ? undefined : Number(progressMax),
-            });
-            setCourseStudents(data?.students || []);
-            setCourseStudentsMeta({
-                ...(data?.course || {}),
-                page: data?.page,
-                total: data?.total,
-                totalPages: data?.totalPages,
-                limit: data?.limit,
-            });
-        } catch (error) {
-            console.error('Failed to load course students', error);
-            setCourseStudents([]);
-            setCourseStudentsMeta(null);
-            if (error?.response?.status === 403) {
-                setStudentsError('Not your course');
-            } else {
-                toast.error('Курс студенттерин жүктөө мүмкүн болбоду');
+    const loadCourseStudents = useCallback(
+        async (courseId) => {
+            if (!courseId) {
+                setCourseStudents([]);
+                setCourseStudentsMeta(null);
+                return;
             }
-        } finally {
-            setLoadingCourseStudents(false);
-        }
-    }, [studentsPage, studentSearch, progressMin, progressMax]);
+            setLoadingCourseStudents(true);
+            setStudentsError('');
+            try {
+                const data = await fetchCourseStudents(courseId, {
+                    page: studentsPage,
+                    limit: 20,
+                    q: studentSearch || undefined,
+                    progressGte: progressMin === '' ? undefined : Number(progressMin),
+                    progressLte: progressMax === '' ? undefined : Number(progressMax),
+                });
+                setCourseStudents(data?.students || []);
+                setCourseStudentsMeta({
+                    ...(data?.course || {}),
+                    page: data?.page,
+                    total: data?.total,
+                    totalPages: data?.totalPages,
+                    limit: data?.limit,
+                });
+            } catch (error) {
+                console.error('Failed to load course students', error);
+                setCourseStudents([]);
+                setCourseStudentsMeta(null);
+                if (error?.response?.status === 403) {
+                    setStudentsError('Not your course');
+                } else {
+                    toast.error('Курс студенттерин жүктөө мүмкүн болбоду');
+                }
+            } finally {
+                setLoadingCourseStudents(false);
+            }
+        },
+        [studentsPage, studentSearch, progressMin, progressMax]
+    );
 
     useEffect(() => {
         if (!user?.id || user.role !== 'instructor') return;
@@ -279,6 +311,71 @@ const InstructorDashboard = () => {
         setSelectedStudentCourseId(courseId);
     }, []);
 
+    const handleDeliveryCourseChange = (event) => {
+        const { name, value } = event.target;
+        setDeliveryCourse((prev) => ({ ...prev, [name]: value }));
+    };
+
+    const closeDeliveryModal = () => {
+        setShowDeliveryModal(false);
+        setDeliveryCourse({
+            courseType: 'offline',
+            title: '',
+            description: '',
+            categoryId: '',
+            price: '',
+            languageCode: 'ky',
+        });
+    };
+
+    const openDeliveryModal = async () => {
+        if (!deliveryCategories.length) {
+            try {
+                const categories = await fetchCategories();
+                setDeliveryCategories(Array.isArray(categories) ? categories : []);
+            } catch (error) {
+                console.error('Failed to load categories', error);
+                toast.error('Категориялар жүктөлгөн жок');
+            }
+        }
+        setShowDeliveryModal(true);
+    };
+
+    const handleCreateDeliveryCourse = async () => {
+        if (!deliveryCourse.title || !deliveryCourse.description || !deliveryCourse.categoryId) {
+            toast.error('Сураныч, аталыш, сүрөттөмө жана категорияны толтуруңуз.');
+            return;
+        }
+
+        setCreatingDeliveryCourse(true);
+        try {
+            await createCourse({
+                title: deliveryCourse.title,
+                description: deliveryCourse.description,
+                categoryId: parseInt(deliveryCourse.categoryId, 10),
+                price: Number(deliveryCourse.price || 0),
+                languageCode: deliveryCourse.languageCode || 'ky',
+                courseType: deliveryCourse.courseType,
+                isPaid: Number(deliveryCourse.price || 0) > 0,
+            });
+
+            toast.success('Курс түзүлдү. Эми группа жана сессия түзө аласыз.');
+            closeDeliveryModal();
+            setActiveTab('courses');
+
+            const data = await fetchCourses();
+            const instructorCourses = (data.courses || []).filter(
+                (course) => course.instructor?.id === user.id
+            );
+            setCourseList(instructorCourses);
+        } catch (error) {
+            console.error('Failed to create delivery course', error);
+            toast.error('Курсту түзүүдө ката кетти.');
+        } finally {
+            setCreatingDeliveryCourse(false);
+        }
+    };
+
     const renderContent = () => {
         if ((loadingProfile && !profile) || (loadingCourses && !courses.length)) {
             return <Loader fullScreen={false} />;
@@ -293,6 +390,14 @@ const InstructorDashboard = () => {
                         offeringsByCourse={offeringsByCourse}
                         loadingOfferings={loadingOfferings}
                         onViewOfferings={() => setActiveTab('offerings')}
+                        onOpenDeliveryModal={openDeliveryModal}
+                        showDeliveryModal={showDeliveryModal}
+                        onCloseDeliveryModal={closeDeliveryModal}
+                        deliveryCourse={deliveryCourse}
+                        onDeliveryCourseChange={handleDeliveryCourseChange}
+                        onCreateDeliveryCourse={handleCreateDeliveryCourse}
+                        creatingDeliveryCourse={creatingDeliveryCourse}
+                        deliveryCategories={deliveryCategories}
                     />
                 );
             case 'students':
@@ -337,6 +442,14 @@ const InstructorDashboard = () => {
                         refreshOfferings={handleRefreshOfferings}
                     />
                 );
+            case 'sessions':
+                return <SessionWorkspacePage />;
+            case 'attendance':
+                return <AttendancePage />;
+            case 'analytics':
+                return <InstructorAnalyticsPage />;
+            case 'leaderboard':
+                return <InternalLeaderboardPage />;
             case 'notifications':
                 return <NotificationsTab />;
             case 'overview':
@@ -349,6 +462,7 @@ const InstructorDashboard = () => {
                         publishedCount={publishedCount}
                         pendingCount={pendingCount}
                         aiEnabledCount={aiEnabledCount}
+                        analyticsLink={analyticsLink}
                     />
                 );
         }
@@ -372,9 +486,7 @@ const InstructorDashboard = () => {
                             <p className="text-sm uppercase tracking-wide text-gray-400">
                                 Инструктор
                             </p>
-                            <h1 className="text-3xl font-bold">
-                                {user.fullName || user.email}
-                            </h1>
+                            <h1 className="text-3xl font-bold">{user.fullName || user.email}</h1>
                             <p className="text-sm text-gray-500 dark:text-[#a6adba]">
                                 Курстарыңызды жана студенттерди толук көзөмөлдөңүз
                             </p>
@@ -386,6 +498,12 @@ const InstructorDashboard = () => {
                         >
                             {sidebarOpen ? 'Менюну жашыруу' : 'Менюну көрсөтүү'}
                         </button>
+                        <Link
+                            to={analyticsLink}
+                            className="inline-flex px-4 py-2 rounded-full bg-blue-600 text-white text-sm"
+                        >
+                            Analytics
+                        </Link>
                     </div>
 
                     {renderContent()}
@@ -402,6 +520,7 @@ const OverviewSection = ({
     publishedCount,
     pendingCount,
     aiEnabledCount,
+    analyticsLink,
 }) => {
     const stats = [
         {
@@ -426,9 +545,7 @@ const OverviewSection = ({
         <>
             <div className="rounded-3xl p-6 shadow-sm">
                 <p className="text-sm text-gray-500 dark:text-[#a6adba]">Кош келиңиз</p>
-                <h2 className="text-2xl font-semibold">
-                    {user.fullName || user.email}
-                </h2>
+                <h2 className="text-2xl font-semibold">{user.fullName || user.email}</h2>
                 <p className="mt-2 text-gray-600 dark:text-[#a6adba]">
                     Профилди толтуруңуз, курстарды жаңыртыңыз жана студенттерге баалуулук
                     тартуулаңыз.
@@ -440,7 +557,7 @@ const OverviewSection = ({
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <QuickActionCard
                     title="Курстарды Башкаруу"
                     description="Бар болгон курстарыңызды көрүңүз, өзгөртүңүз же өчүрүңүз."
@@ -461,6 +578,13 @@ const OverviewSection = ({
                     buttonText="Катталгандар"
                     accent="amber"
                 />
+                <QuickActionCard
+                    title="Analytics"
+                    description="Attendance, homework жана risk метрикаларын көрүңүз."
+                    link={analyticsLink}
+                    buttonText="Аналитика"
+                    accent="blue"
+                />
             </div>
 
             <NotificationsWidget />
@@ -474,19 +598,38 @@ const CoursesSection = ({
     offeringsByCourse,
     loadingOfferings,
     onViewOfferings,
+    onOpenDeliveryModal,
+    showDeliveryModal,
+    onCloseDeliveryModal,
+    deliveryCourse,
+    onDeliveryCourseChange,
+    onCreateDeliveryCourse,
+    creatingDeliveryCourse,
+    deliveryCategories,
 }) => (
     <div className="rounded-3xl p-6 shadow-sm">
         <div className="flex items-center justify-between flex-wrap gap-3 mb-4">
             <div>
                 <h2 className="text-2xl font-semibold">Курстарым</h2>
-                <p className="text-sm text-gray-500 dark:text-[#a6adba]">Активдүү жана каралуудагы курстар</p>
+                <p className="text-sm text-gray-500 dark:text-[#a6adba]">
+                    Активдүү жана каралуудагы курстар
+                </p>
             </div>
-            <Link
-                to="/instructor/course/create"
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-600 text-white text-sm"
-            >
-                Жаңы курс
-            </Link>
+            <div className="flex items-center gap-2">
+                <button
+                    type="button"
+                    onClick={onOpenDeliveryModal}
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-edubot-teal text-edubot-teal text-sm"
+                >
+                    Оффлайн/Live курс
+                </button>
+                <Link
+                    to="/instructor/course/create"
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-600 text-white text-sm"
+                >
+                    Жаңы курс
+                </Link>
+            </div>
         </div>
         {loading && !courses.length ? (
             <Loader fullScreen={false} />
@@ -501,14 +644,17 @@ const CoursesSection = ({
                             <div>
                                 <p className="text-lg font-semibold">{course.title}</p>
                                 {course.category?.name && (
-                                    <p className="text-sm text-gray-500 dark:text-[#a6adba]">{course.category.name}</p>
+                                    <p className="text-sm text-gray-500 dark:text-[#a6adba]">
+                                        {course.category.name}
+                                    </p>
                                 )}
                             </div>
                             <span
-                                className={`text-xs px-2 py-1 rounded-full ${course.isPublished
-                                    ? 'bg-green-100 text-green-700'
-                                    : 'bg-yellow-100 text-yellow-700'
-                                    }`}
+                                className={`text-xs px-2 py-1 rounded-full ${
+                                    course.isPublished
+                                        ? 'bg-green-100 text-green-700'
+                                        : 'bg-yellow-100 text-yellow-700'
+                                }`}
                             >
                                 {course.isPublished ? 'Жарыяланды' : 'Каралууда'}
                             </span>
@@ -554,6 +700,116 @@ const CoursesSection = ({
                 actionLabel="Курс түзүү"
                 actionLink="/instructor/course/create"
             />
+        )}
+
+        {showDeliveryModal && (
+            <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+                <div className="w-full max-w-xl bg-white dark:bg-[#161616] rounded-2xl shadow-xl p-5 space-y-4">
+                    <div className="flex items-center justify-between">
+                        <h3 className="text-lg font-semibold text-edubot-dark dark:text-white">
+                            Оффлайн / Онлайн түз эфир курс түзүү
+                        </h3>
+                        <button
+                            type="button"
+                            onClick={onCloseDeliveryModal}
+                            className="text-sm text-gray-500 hover:text-gray-700"
+                        >
+                            Жабуу
+                        </button>
+                    </div>
+
+                    <div className="grid sm:grid-cols-2 gap-3">
+                        <div>
+                            <label className="block text-sm mb-1">Курс түрү</label>
+                            <select
+                                name="courseType"
+                                value={deliveryCourse.courseType}
+                                onChange={onDeliveryCourseChange}
+                                className="w-full border p-2 rounded bg-white dark:bg-[#222222] dark:text-white"
+                            >
+                                <option value="offline">Оффлайн</option>
+                                <option value="online_live">Онлайн түз эфир</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-sm mb-1">Сабак тили</label>
+                            <select
+                                name="languageCode"
+                                value={deliveryCourse.languageCode}
+                                onChange={onDeliveryCourseChange}
+                                className="w-full border p-2 rounded bg-white dark:bg-[#222222] dark:text-white"
+                            >
+                                <option value="ky">Кыргызча</option>
+                                <option value="ru">Русский</option>
+                                <option value="en">English</option>
+                            </select>
+                        </div>
+                        <div className="sm:col-span-2">
+                            <label className="block text-sm mb-1">Курс аталышы</label>
+                            <input
+                                name="title"
+                                value={deliveryCourse.title}
+                                onChange={onDeliveryCourseChange}
+                                className="w-full border p-2 rounded bg-white dark:bg-[#222222] dark:text-white"
+                            />
+                        </div>
+                        <div className="sm:col-span-2">
+                            <label className="block text-sm mb-1">Сүрөттөмө</label>
+                            <textarea
+                                name="description"
+                                value={deliveryCourse.description}
+                                onChange={onDeliveryCourseChange}
+                                className="w-full border p-2 rounded bg-white dark:bg-[#222222] dark:text-white"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm mb-1">Категория</label>
+                            <select
+                                name="categoryId"
+                                value={deliveryCourse.categoryId}
+                                onChange={onDeliveryCourseChange}
+                                className="w-full border p-2 rounded bg-white dark:bg-[#222222] dark:text-white"
+                            >
+                                <option value="">Тандаңыз</option>
+                                {deliveryCategories.map((cat) => (
+                                    <option key={cat.id} value={cat.id}>
+                                        {cat.name}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-sm mb-1">Баасы (сом)</label>
+                            <input
+                                name="price"
+                                type="number"
+                                min="0"
+                                value={deliveryCourse.price}
+                                onChange={onDeliveryCourseChange}
+                                className="w-full border p-2 rounded bg-white dark:bg-[#222222] dark:text-white"
+                            />
+                        </div>
+                    </div>
+
+                    <div className="flex justify-end gap-2">
+                        <button
+                            type="button"
+                            onClick={onCloseDeliveryModal}
+                            className="px-4 py-2 rounded bg-gray-200 dark:bg-gray-700"
+                        >
+                            Жокко чыгаруу
+                        </button>
+                        <button
+                            type="button"
+                            onClick={onCreateDeliveryCourse}
+                            disabled={creatingDeliveryCourse}
+                            className="px-4 py-2 rounded bg-edubot-teal text-white disabled:opacity-60"
+                        >
+                            {creatingDeliveryCourse ? 'Түзүлүүдө...' : 'Түзүү'}
+                        </button>
+                    </div>
+                </div>
+            </div>
         )}
     </div>
 );
@@ -664,17 +920,24 @@ const StudentsSection = ({
                                                 {course.title}
                                             </p>
                                             <span
-                                                className={`text-xs px-2 py-1 rounded-full ${course.isPublished
+                                                className={`text-xs px-2 py-1 rounded-full ${
+                                                    course.isPublished
                                                         ? 'bg-green-100 text-green-700'
                                                         : 'bg-yellow-100 text-yellow-700'
-                                                    }`}
+                                                }`}
                                             >
-                                                {course.isPublished ? 'Жарыяланды' : course.status || 'Каралууда'}
+                                                {course.isPublished
+                                                    ? 'Жарыяланды'
+                                                    : course.status || 'Каралууда'}
                                             </span>
                                         </div>
                                         <div className="flex items-center justify-between text-sm text-gray-600 dark:text-[#a6adba]">
                                             <span>{course.studentCount ?? 0} студент</span>
-                                            <span>{course.createdAt ? formatDate(course.createdAt) : ''}</span>
+                                            <span>
+                                                {course.createdAt
+                                                    ? formatDate(course.createdAt)
+                                                    : ''}
+                                            </span>
                                         </div>
                                     </div>
                                 </button>
@@ -699,8 +962,9 @@ const StudentsSection = ({
                         </h3>
                         <p className="text-sm text-gray-500 dark:text-[#a6adba]">
                             {courseMeta
-                                ? `Сабактар: ${courseMeta.lessonCount ?? '—'} • Студенттер: ${courseMeta.studentCount ?? 0
-                                }`
+                                ? `Сабактар: ${courseMeta.lessonCount ?? '—'} • Студенттер: ${
+                                      courseMeta.studentCount ?? 0
+                                  }`
                                 : 'Курс тандаңыз.'}
                         </p>
                     </div>
@@ -718,7 +982,9 @@ const StudentsSection = ({
                 {selectedCourseId ? (
                     <div className="flex flex-wrap gap-3 items-end">
                         <div className="flex flex-col">
-                            <label className="text-xs text-gray-500 dark:text-[#a6adba]">Издөө</label>
+                            <label className="text-xs text-gray-500 dark:text-[#a6adba]">
+                                Издөө
+                            </label>
                             <input
                                 type="text"
                                 value={search}
@@ -826,10 +1092,11 @@ const StudentsSection = ({
                                             </td>
                                             <td className="py-3 pr-4">
                                                 <span
-                                                    className={`text-xs px-2 py-1 rounded-full ${student.completed
+                                                    className={`text-xs px-2 py-1 rounded-full ${
+                                                        student.completed
                                                             ? 'bg-green-100 text-green-700'
                                                             : 'bg-blue-100 text-blue-700'
-                                                        }`}
+                                                    }`}
                                                 >
                                                     {student.completed ? 'Бүттү' : 'Уланууда'}
                                                 </span>
@@ -846,12 +1113,15 @@ const StudentsSection = ({
                                                                     {test.lessonTitle}
                                                                 </span>
                                                                 <span
-                                                                    className={`px-2 py-0.5 rounded-full ${test.passed
+                                                                    className={`px-2 py-0.5 rounded-full ${
+                                                                        test.passed
                                                                             ? 'bg-green-100 text-green-700'
                                                                             : 'bg-red-100 text-red-700'
-                                                                        }`}
+                                                                    }`}
                                                                 >
-                                                                    {test.passed ? 'Өттү' : 'Өтпөдү'}
+                                                                    {test.passed
+                                                                        ? 'Өттү'
+                                                                        : 'Өтпөдү'}
                                                                 </span>
                                                                 {typeof test.score === 'number' && (
                                                                     <span className="text-gray-500 dark:text-[#a6adba]">
@@ -898,9 +1168,7 @@ const StudentsSection = ({
                         <button
                             type="button"
                             onClick={() =>
-                                onChangePage(
-                                    Math.min(courseMeta.totalPages || 1, studentsPage + 1)
-                                )
+                                onChangePage(Math.min(courseMeta.totalPages || 1, studentsPage + 1))
                             }
                             disabled={studentsPage >= (courseMeta.totalPages || 1)}
                             className="px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 disabled:opacity-50"
@@ -968,7 +1236,9 @@ const ProfileSection = ({ profile, expertiseTags, socialLinks }) => (
             )}
         </div>
         <div>
-            <p className="text-gray-600 dark:text-[#a6adba] font-medium mb-1">Социалдык тармактар</p>
+            <p className="text-gray-600 dark:text-[#a6adba] font-medium mb-1">
+                Социалдык тармактар
+            </p>
             {socialLinks.length ? (
                 <div className="flex flex-col gap-1">
                     {socialLinks.map(([key, value]) => (
@@ -984,7 +1254,9 @@ const ProfileSection = ({ profile, expertiseTags, socialLinks }) => (
                     ))}
                 </div>
             ) : (
-                <p className="text-sm text-gray-500 dark:text-[#a6adba]">Социалдык шилтемелер кошула элек</p>
+                <p className="text-sm text-gray-500 dark:text-[#a6adba]">
+                    Социалдык шилтемелер кошула элек
+                </p>
             )}
         </div>
     </div>
@@ -1013,7 +1285,9 @@ const AiSection = ({ aiCourses, totalCourses }) => (
         </div>
         {aiCourses.length ? (
             <div className="space-y-2">
-                <p className="text-sm text-gray-500 dark:text-[#a6adba]">AI жардамчысы иштетилген курстар</p>
+                <p className="text-sm text-gray-500 dark:text-[#a6adba]">
+                    AI жардамчысы иштетилген курстар
+                </p>
                 {aiCourses.map((course) => (
                     <div
                         key={course.id}
@@ -1070,8 +1344,8 @@ const OfferingsSection = ({ courses, offerings, loading, refreshOfferings }) => 
             courseId: base?.courseId
                 ? String(base.courseId)
                 : courses[0]?.id
-                    ? String(courses[0].id)
-                    : '',
+                  ? String(courses[0].id)
+                  : '',
             title: base?.title || '',
             modality: base?.modality || 'ONLINE',
             visibility: base?.visibility || 'PRIVATE',
@@ -1080,10 +1354,10 @@ const OfferingsSection = ({ courses, offerings, loading, refreshOfferings }) => 
             scheduleNote: base?.scheduleNote || '',
             scheduleBlocks: base?.scheduleBlocks
                 ? base.scheduleBlocks.map((block) => ({
-                    day: block.day || '',
-                    startTime: block.startTime || '',
-                    endTime: block.endTime || '',
-                }))
+                      day: block.day || '',
+                      startTime: block.startTime || '',
+                      endTime: block.endTime || '',
+                  }))
                 : [],
             capacity: base?.capacity ? String(base.capacity) : '',
             priceOverride: base?.priceOverride || '',
@@ -1193,8 +1467,8 @@ const OfferingsSection = ({ courses, offerings, loading, refreshOfferings }) => 
                 scheduleBlocks:
                     createForm.scheduleBlocks && createForm.scheduleBlocks.length
                         ? createForm.scheduleBlocks.filter(
-                            (block) => block.day && block.startTime && block.endTime
-                        )
+                              (block) => block.day && block.startTime && block.endTime
+                          )
                         : null,
                 capacity: createForm.capacity ? Number(createForm.capacity) : null,
                 priceOverride: createForm.priceOverride.trim() || null,
@@ -1616,7 +1890,9 @@ const CreateOfferingModal = ({ courses, form, onChange, onClose, onSubmit, creat
                 >
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label className="text-sm font-medium text-gray-600 dark:text-[#a6adba]">Курс</label>
+                            <label className="text-sm font-medium text-gray-600 dark:text-[#a6adba]">
+                                Курс
+                            </label>
                             <select
                                 value={form.courseId}
                                 onChange={(e) => onChange('courseId', e.target.value)}
@@ -1646,7 +1922,9 @@ const CreateOfferingModal = ({ courses, form, onChange, onClose, onSubmit, creat
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label className="text-sm font-medium text-gray-600 dark:text-[#a6adba]">Модалдуулук</label>
+                            <label className="text-sm font-medium text-gray-600 dark:text-[#a6adba]">
+                                Модалдуулук
+                            </label>
                             <select
                                 value={form.modality}
                                 onChange={(e) => onChange('modality', e.target.value)}
@@ -1661,7 +1939,9 @@ const CreateOfferingModal = ({ courses, form, onChange, onClose, onSubmit, creat
                             </p>
                         </div>
                         <div>
-                            <label className="text-sm font-medium text-gray-600 dark:text-[#a6adba]">Көрүнүү</label>
+                            <label className="text-sm font-medium text-gray-600 dark:text-[#a6adba]">
+                                Көрүнүү
+                            </label>
                             <select
                                 value={form.visibility}
                                 onChange={(e) => onChange('visibility', e.target.value)}
@@ -1675,7 +1955,9 @@ const CreateOfferingModal = ({ courses, form, onChange, onClose, onSubmit, creat
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label className="text-sm font-medium text-gray-600 dark:text-[#a6adba]">Башталышы</label>
+                            <label className="text-sm font-medium text-gray-600 dark:text-[#a6adba]">
+                                Башталышы
+                            </label>
                             <input
                                 type="datetime-local"
                                 value={form.startAt}
@@ -1684,7 +1966,9 @@ const CreateOfferingModal = ({ courses, form, onChange, onClose, onSubmit, creat
                             />
                         </div>
                         <div>
-                            <label className="text-sm font-medium text-gray-600 dark:text-[#a6adba]">Аяктоосу</label>
+                            <label className="text-sm font-medium text-gray-600 dark:text-[#a6adba]">
+                                Аяктоосу
+                            </label>
                             <input
                                 type="datetime-local"
                                 value={form.endAt}
@@ -1695,7 +1979,9 @@ const CreateOfferingModal = ({ courses, form, onChange, onClose, onSubmit, creat
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label className="text-sm font-medium text-gray-600 dark:text-[#a6adba]">Статус</label>
+                            <label className="text-sm font-medium text-gray-600 dark:text-[#a6adba]">
+                                Статус
+                            </label>
                             <select
                                 value={form.status}
                                 onChange={(e) => onChange('status', e.target.value)}
@@ -1849,8 +2135,8 @@ const CreateOfferingModal = ({ courses, form, onChange, onClose, onSubmit, creat
                             {creating
                                 ? 'Сакталууда...'
                                 : mode === 'edit'
-                                    ? 'Өзгөртүүлөрдү сактоо'
-                                    : 'Offering түзүү'}
+                                  ? 'Өзгөртүүлөрдү сактоо'
+                                  : 'Offering түзүү'}
                         </button>
                     </div>
                 </form>
@@ -1881,13 +2167,16 @@ const OfferingCard = ({ offering, onEdit, onEnroll }) => {
             <div className="flex items-start justify-between gap-3">
                 <div>
                     <p className="text-lg font-semibold">{title}</p>
-                    <p className="text-sm text-gray-500 dark:text-[#a6adba]">Курс: {offering.course.title}</p>
+                    <p className="text-sm text-gray-500 dark:text-[#a6adba]">
+                        Курс: {offering.course.title}
+                    </p>
                 </div>
                 <span
-                    className={`px-3 py-1 rounded-full text-xs font-semibold ${visibility === 'PUBLIC'
-                        ? 'bg-green-100 text-green-700'
-                        : 'bg-gray-100 text-gray-600 dark:text-[#a6adba]'
-                        }`}
+                    className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                        visibility === 'PUBLIC'
+                            ? 'bg-green-100 text-green-700'
+                            : 'bg-gray-100 text-gray-600 dark:text-[#a6adba]'
+                    }`}
                 >
                     {visibility === 'PUBLIC' ? 'Публичный' : 'Жабык'}
                 </span>
@@ -1904,7 +2193,9 @@ const OfferingCard = ({ offering, onEdit, onEnroll }) => {
                 </div>
                 <div>
                     <p>{capacity}</p>
-                    {companyName && <p className="text-xs text-gray-500 dark:text-[#a6adba]">{companyName}</p>}
+                    {companyName && (
+                        <p className="text-xs text-gray-500 dark:text-[#a6adba]">{companyName}</p>
+                    )}
                 </div>
             </div>
             <div className="flex items-center gap-2 text-xs">
@@ -1937,7 +2228,9 @@ const OfferingCard = ({ offering, onEdit, onEnroll }) => {
                     </ul>
                 </div>
             ) : offering.scheduleNote ? (
-                <p className="text-sm text-gray-600 dark:text-[#a6adba]">Белгилей кетүү: {offering.scheduleNote}</p>
+                <p className="text-sm text-gray-600 dark:text-[#a6adba]">
+                    Белгилей кетүү: {offering.scheduleNote}
+                </p>
             ) : null}
             <div className="flex flex-wrap gap-2">
                 <Link
@@ -1992,10 +2285,10 @@ const EnrollStudentModal = ({
             <div className="flex items-center justify-between mb-4">
                 <div>
                     <p className="text-sm uppercase tracking-wide text-gray-400">Студент кошуу</p>
-                    <h2 className="text-2xl font-semibold">
-                        {offering.course.title}
-                    </h2>
-                    <p className="text-sm text-gray-500 dark:text-[#a6adba]">{offering.title || 'Offering'}</p>
+                    <h2 className="text-2xl font-semibold">{offering.course.title}</h2>
+                    <p className="text-sm text-gray-500 dark:text-[#a6adba]">
+                        {offering.title || 'Offering'}
+                    </p>
                 </div>
                 <button
                     type="button"
@@ -2031,10 +2324,11 @@ const EnrollStudentModal = ({
                                     <button
                                         key={student.id}
                                         type="button"
-                                        className={`w-full text-left px-3 py-2 text-sm ${String(student.id) === form.userId
-                                            ? 'bg-blue-50 text-blue-700'
-                                            : 'hover:bg-gray-50'
-                                            }`}
+                                        className={`w-full text-left px-3 py-2 text-sm ${
+                                            String(student.id) === form.userId
+                                                ? 'bg-blue-50 text-blue-700'
+                                                : 'hover:bg-gray-50'
+                                        }`}
                                         onClick={() => {
                                             onChange('userId', String(student.id));
                                             onSearchChange(student.name || student.email || '');
@@ -2052,11 +2346,11 @@ const EnrollStudentModal = ({
                             </div>
                         )}
                     </div>
-                    {loadingUserOptions && (
-                        <Loader fullScreen={false} />
-                    )}
+                    {loadingUserOptions && <Loader fullScreen={false} />}
                     {!studentOptions?.length && userSearch.length >= 2 && !loadingUserOptions && (
-                        <p className="text-xs text-gray-500 dark:text-[#a6adba] mt-2">Студент табылган жок.</p>
+                        <p className="text-xs text-gray-500 dark:text-[#a6adba] mt-2">
+                            Студент табылган жок.
+                        </p>
                     )}
                     <p className="text-xs text-gray-500 dark:text-[#a6adba] mt-1">
                         {form.userId
@@ -2065,7 +2359,9 @@ const EnrollStudentModal = ({
                     </p>
                 </div>
                 <div>
-                    <label className="text-sm font-medium text-gray-600 dark:text-[#a6adba]">Скидка % (опция)</label>
+                    <label className="text-sm font-medium text-gray-600 dark:text-[#a6adba]">
+                        Скидка % (опция)
+                    </label>
                     <input
                         type="number"
                         min="0"

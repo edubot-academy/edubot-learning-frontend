@@ -3,13 +3,13 @@ import { Link } from 'react-router-dom';
 import { fetchHomepageLeaderboard } from '@services/api';
 import Loader from '@shared/ui/Loader';
 
-const badges = ['🚀 Fast Progress', '🏆 Quiz Champion', '⚡ JavaScript Master', '⚛ React Leader'];
+const badges = ['🚀 Fast Progress', '⚡ JavaScript Master', '⚛ React Leader'];
 
 const pickBadge = (item, index) => {
     if (item?.progressPercent >= 100) return '⭐ Course Finisher';
     if (item?.streakDays >= 5) return '🔥 Learning Streak';
     if (item?.streakDays >= 3) return '🔥 3+ Day Streak';
-    if ((item?.quizzesPassed || 0) >= 10) return '🏆 Quiz Champion';
+    if (Number(item?.quizzesPassed) > 0 && Number(item?.quizzesPassed) >= 10) return '🏆 Quiz Champion';
     return badges[index % badges.length];
 };
 
@@ -73,7 +73,7 @@ const HighlightCard = ({ item, index }) => {
                     {badge}
                 </div>
                 <div className="text-sm text-orange-700 font-semibold">
-                    {item?.quizzesPassed ? `${item.quizzesPassed} тест` : `${item?.lessonsCompleted || 0} сабак`}
+                    {Number(item?.quizzesPassed) > 0 ? `${item.quizzesPassed} тест` : `${item?.lessonsCompleted || 0} сабак`}
                 </div>
             </div>
         </div>
