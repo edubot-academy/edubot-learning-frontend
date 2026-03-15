@@ -40,6 +40,7 @@ import {
     FiBarChart2,
     FiTag,
     FiActivity,
+    FiCheckSquare,
 } from 'react-icons/fi';
 import DashboardSidebar from '@features/dashboard/components/DashboardSidebar';
 import toast from 'react-hot-toast';
@@ -47,6 +48,7 @@ import NotificationsWidget from '@features/notifications/components/Notification
 import NotificationsTab from '@features/notifications/components/NotificationsTab';
 import Loader from '@shared/ui/Loader';
 import IntegrationTab from '@features/integration/components/IntegrationTab';
+import AttendancePage from './Attendance';
 
 const ADMIN_TABS = [
     'stats',
@@ -59,6 +61,7 @@ const ADMIN_TABS = [
     'ai-prompts',
     'notifications',
     'integration',
+    'attendance',
 ];
 
 const USERS_QUERY_KEYS = Object.freeze({
@@ -156,6 +159,7 @@ const AdminPanel = () => {
         { id: 'ai-prompts', label: 'AI сунуштары', icon: FiCpu },
         { id: 'notifications', label: 'Билдирүүлөр', icon: FiBell },
         { id: 'integration', label: 'Интеграция', icon: FiActivity },
+        { id: 'attendance', label: 'Катышуу', icon: FiCheckSquare },
     ];
 
     const updateSearchParams = useCallback(
@@ -795,6 +799,12 @@ const AdminPanel = () => {
                         </div>
                     )}
                     {activeTab === 'integration' && <IntegrationTab />}
+
+                    {activeTab === 'attendance' && (
+                        <div className="bg-white dark:bg-[#111111] shadow-sm rounded-2xl p-4 border border-gray-100 dark:border-gray-800">
+                            <AttendancePage embedded />
+                        </div>
+                    )}
 
                     {activeTab === 'stats' && (
                         <AdminStatsView

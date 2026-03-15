@@ -4,9 +4,11 @@ import DashboardSidebar from '@features/dashboard/components/DashboardSidebar';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import {
     fetchStudentCourses,
-    fetchStudentDashboardSummary,
-    fetchStudentOfferings,
-    fetchStudentTasks,
+    fetchStudentDashboard,
+    fetchStudentUpcomingSessions,
+    fetchStudentRecordings,
+    fetchStudentHomework,
+    fetchStudentAttendance,
     fetchStudentProgress,
     fetchStudentCertificates,
     fetchStudentNotificationSettings,
@@ -29,6 +31,7 @@ import {
 import NotificationsWidget from '@features/notifications/components/NotificationsWidget';
 import NotificationsTab from '@features/notifications/components/NotificationsTab';
 import Loader from '@shared/ui/Loader';
+import InternalLeaderboardPage from './InternalLeaderboard';
 
 const NAV_ITEMS = [
     { id: 'overview', label: 'Кыскача', icon: FiHome },
@@ -36,6 +39,7 @@ const NAV_ITEMS = [
     { id: 'schedule', label: 'Жүгүртмө', icon: FiCalendar },
     { id: 'tasks', label: 'Тапшырмалар', icon: FiCheckCircle },
     { id: 'progress', label: 'Прогресс', icon: FiBarChart2 },
+    { id: 'leaderboard', label: 'Leaderboard', icon: FiBarChart2 },
     { id: 'notifications', label: 'Билдирүүлөр', icon: FiBell },
     { id: 'profile', label: 'Профиль', icon: FiUser },
     { id: 'chat', label: 'Чат', icon: FiMessageCircle },
@@ -175,6 +179,10 @@ const StudentDashboard = () => {
     const [courses, setCourses] = useState([]);
     const [offerings, setOfferings] = useState([]);
     const [tasks, setTasks] = useState([]);
+    const [recordings, setRecordings] = useState([]);
+    const [attendanceRows, setAttendanceRows] = useState([]);
+    const [filterCourseId, setFilterCourseId] = useState('');
+    const [filterGroupId, setFilterGroupId] = useState('');
     const [progress, setProgress] = useState([]);
     const [certificates, setCertificates] = useState([]);
     const [leaderboardItems, setLeaderboardItems] = useState([]);
@@ -186,6 +194,7 @@ const StudentDashboard = () => {
         schedule: false,
         tasks: false,
         progress: false,
+        leaderboard: true,
         notifications: true,
     });
     const [notificationsLoaded, setNotificationsLoaded] = useState(false);
@@ -200,16 +209,41 @@ const StudentDashboard = () => {
         return `/student/analytics?from=${fromIso}&to=${toIso}`;
     }, []);
 
+    const studentFilters = useMemo(
+        () => ({
+            courseId: filterCourseId || undefined,
+            groupId: filterGroupId || undefined,
+            limit: 20,
+        }),
+        [filterCourseId, filterGroupId]
+    );
+
+    const groupOptions = useMemo(() => {
+        const groups = [];
+        offerings.forEach((item) => {
+            const groupId = item.groupId || item.group?.id;
+            if (!groupId) return;
+            const groupName = item.groupName || item.group?.name || `Group #${groupId}`;
+            if (!groups.some((g) => String(g.id) === String(groupId))) {
+                groups.push({ id: String(groupId), name: groupName });
+            }
+        });
+        return groups;
+    }, [offerings]);
+
     const loadOverview = useCallback(async () => {
         if (!studentId) return;
         setTabLoading('overview');
         try {
-            const [summaryRes, leaderboardRes, offeringsRes, tasksRes] = await Promise.all([
-                fetchStudentDashboardSummary(studentId),
-                fetchWeeklyLeaderboard({ limit: 5 }),
-                fetchStudentOfferings(studentId),
-                fetchStudentTasks(studentId),
-            ]);
+            const [summaryRes, leaderboardRes, offeringsRes, tasksRes, recordingsRes, attendanceRes] =
+                await Promise.all([
+                    fetchStudentDashboard(studentFilters),
+                    fetchWeeklyLeaderboard({ limit: 5 }),
+                    fetchStudentUpcomingSessions(studentFilters),
+                    fetchStudentHomework(studentFilters),
+                    fetchStudentRecordings(studentFilters),
+                    fetchStudentAttendance(studentFilters),
+                ]);
 
             setSummary(summaryRes || null);
             setLeaderboardItems(
@@ -219,6 +253,12 @@ const StudentDashboard = () => {
                 Array.isArray(offeringsRes?.items) ? offeringsRes.items : offeringsRes || []
             );
             setTasks(Array.isArray(tasksRes?.items) ? tasksRes.items : tasksRes || []);
+            setRecordings(
+                Array.isArray(recordingsRes?.items) ? recordingsRes.items : recordingsRes || []
+            );
+            setAttendanceRows(
+                Array.isArray(attendanceRes?.items) ? attendanceRes.items : attendanceRes || []
+            );
         } catch (error) {
             console.error('Failed to load overview', error);
             toast.error('Кыскача маалымат жүктөлгөн жок');
@@ -226,7 +266,7 @@ const StudentDashboard = () => {
             setTabLoading(null);
             setLoadedTabs((prev) => ({ ...prev, overview: true, schedule: true, tasks: true }));
         }
-    }, [studentId]);
+    }, [studentId, studentFilters]);
 
     const loadCourses = useCallback(async () => {
         if (!studentId) return;
@@ -241,15 +281,21 @@ const StudentDashboard = () => {
             setTabLoading(null);
             setLoadedTabs((prev) => ({ ...prev, 'my-courses': true }));
         }
-    }, [studentId]);
+    }, [studentId, studentFilters]);
 
     const loadSchedule = useCallback(async () => {
         if (!studentId) return;
         setTabLoading('schedule');
         try {
-            const offeringsRes = await fetchStudentOfferings(studentId);
+            const [offeringsRes, recordingsRes] = await Promise.all([
+                fetchStudentUpcomingSessions(studentFilters),
+                fetchStudentRecordings(studentFilters),
+            ]);
             setOfferings(
                 Array.isArray(offeringsRes?.items) ? offeringsRes.items : offeringsRes || []
+            );
+            setRecordings(
+                Array.isArray(recordingsRes?.items) ? recordingsRes.items : recordingsRes || []
             );
         } catch (error) {
             console.error('Failed to load schedule', error);
@@ -258,13 +304,13 @@ const StudentDashboard = () => {
             setTabLoading(null);
             setLoadedTabs((prev) => ({ ...prev, schedule: true }));
         }
-    }, [studentId]);
+    }, [studentId, studentFilters]);
 
     const loadTasks = useCallback(async () => {
         if (!studentId) return;
         setTabLoading('tasks');
         try {
-            const tasksRes = await fetchStudentTasks(studentId);
+            const tasksRes = await fetchStudentHomework(studentFilters);
             setTasks(Array.isArray(tasksRes?.items) ? tasksRes.items : tasksRes || []);
         } catch (error) {
             console.error('Failed to load tasks', error);
@@ -273,7 +319,7 @@ const StudentDashboard = () => {
             setTabLoading(null);
             setLoadedTabs((prev) => ({ ...prev, tasks: true }));
         }
-    }, [studentId]);
+    }, [studentId, studentFilters]);
 
     const loadProgress = useCallback(async () => {
         if (!studentId) return;
@@ -353,6 +399,31 @@ const StudentDashboard = () => {
         setSearchParams,
     ]);
 
+    useEffect(() => {
+        if (!filterCourseId) {
+            setFilterGroupId('');
+            return;
+        }
+        const selected = courses.find((course) => String(course.id) === String(filterCourseId));
+        const selectedType = resolveCourseType(selected);
+        if (selectedType === 'video') {
+            setFilterGroupId('');
+            return;
+        }
+        const hasGroup = groupOptions.some((group) => String(group.id) === String(filterGroupId));
+        if (!hasGroup) {
+            setFilterGroupId('');
+        }
+    }, [filterCourseId, filterGroupId, courses, groupOptions]);
+
+    const hasAttendanceEligibleCourses = useMemo(() => {
+        if (filterCourseId) {
+            const selected = courses.find((course) => String(course.id) === String(filterCourseId));
+            return resolveCourseType(selected) !== 'video';
+        }
+        return courses.some((course) => resolveCourseType(course) !== 'video');
+    }, [courses, filterCourseId]);
+
     const overviewStudent = useMemo(
         () => ({
             name: summary?.name || user?.fullName || 'Студент',
@@ -374,6 +445,9 @@ const StudentDashboard = () => {
     );
 
     const attendanceStats = useMemo(() => {
+        if (!hasAttendanceEligibleCourses) {
+            return { rate: 0, totalSessions: 0, present: 0, absent: 0 };
+        }
         const rawRate = readNumber(summary, [
             'attendance.rate',
             'stats.attendanceRate',
@@ -383,11 +457,13 @@ const StudentDashboard = () => {
         const rate = rawRate !== null ? Math.round(rawRate) : null;
         const totalSessions =
             readNumber(summary, ['attendance.totalSessions', 'stats.totalSessions']) ||
+            attendanceRows.length ||
             offerings.filter(
                 (item) => item.startAt && new Date(item.startAt).getTime() < Date.now()
             ).length;
         const present =
             readNumber(summary, ['attendance.present', 'stats.attendedSessions']) ||
+            attendanceRows.filter((item) => String(item.status || '').toLowerCase() === 'present').length ||
             Math.round((totalSessions * (rate ?? 80)) / 100);
         const absent = Math.max(0, totalSessions - present);
         return {
@@ -396,7 +472,7 @@ const StudentDashboard = () => {
             present,
             absent,
         };
-    }, [summary, offerings]);
+    }, [summary, offerings, attendanceRows, hasAttendanceEligibleCourses]);
 
     const engagement = useMemo(() => {
         const calculatedXp =
@@ -649,7 +725,7 @@ const StudentDashboard = () => {
             case 'my-courses':
                 return <CoursesTab courses={courses} offeringsByCourse={offeringsByCourse} />;
             case 'schedule':
-                return <ScheduleTab offerings={offerings} />;
+                return <ScheduleTab offerings={offerings} recordings={recordings} />;
             case 'tasks':
                 return <TasksTab tasks={tasks} />;
             case 'progress':
@@ -657,12 +733,15 @@ const StudentDashboard = () => {
                     <ProgressTab
                         items={progressItems}
                         attendanceStats={attendanceStats}
+                        attendanceEnabled={hasAttendanceEligibleCourses}
                         engagement={engagement}
                         leaderboardItems={leaderboardItems}
                         milestoneItems={milestoneItems}
                         badgeItems={badgeItems}
                     />
                 );
+            case 'leaderboard':
+                return <InternalLeaderboardPage />;
             case 'notifications':
                 return <NotificationsTab />;
             case 'profile':
@@ -685,6 +764,7 @@ const StudentDashboard = () => {
                         tasks={tasks}
                         announcements={announcementItems}
                         attendanceStats={attendanceStats}
+                        attendanceEnabled={hasAttendanceEligibleCourses}
                         engagement={engagement}
                         leaderboardItems={leaderboardItems}
                         milestoneItems={milestoneItems}
@@ -739,7 +819,38 @@ const StudentDashboard = () => {
                                 Чыгармачыл окуу жолуңузду көзөмөлдөңүз
                             </p>
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap justify-end">
+                            <select
+                                value={filterCourseId}
+                                onChange={(e) => setFilterCourseId(e.target.value)}
+                                className="px-3 py-2 rounded-full border text-sm bg-white dark:bg-[#222222]"
+                            >
+                                <option value="">All courses</option>
+                                {courses.map((course) => (
+                                    <option key={course.id} value={course.id}>
+                                        {course.title}
+                                    </option>
+                                ))}
+                            </select>
+                            {(() => {
+                                const selected = courses.find(
+                                    (course) => String(course.id) === String(filterCourseId)
+                                );
+                                return filterCourseId && resolveCourseType(selected) !== 'video';
+                            })() ? (
+                                <select
+                                    value={filterGroupId}
+                                    onChange={(e) => setFilterGroupId(e.target.value)}
+                                    className="px-3 py-2 rounded-full border text-sm bg-white dark:bg-[#222222]"
+                                >
+                                    <option value="">All groups</option>
+                                    {groupOptions.map((group) => (
+                                        <option key={group.id} value={group.id}>
+                                            {group.name}
+                                        </option>
+                                    ))}
+                                </select>
+                            ) : null}
                             <button
                                 onClick={() => setSidebarOpen((prev) => !prev)}
                                 className="hidden md:inline-flex px-4 py-2 rounded-full border text-sm text-gray-600 dark:text-[#E8ECF3] dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
@@ -769,6 +880,7 @@ const OverviewTab = ({
     tasks,
     announcements,
     attendanceStats,
+    attendanceEnabled,
     engagement,
     leaderboardItems,
     milestoneItems,
@@ -816,7 +928,9 @@ const OverviewTab = ({
                     <StatCard label="Активдүү курстар" value={stats.activeCourses} />
                     <StatCard label="Жалпы сабактар" value={stats.lessonsCompleted} />
                     <StatCard label="Күтүүдө тапшырма" value={pendingHomework.length} />
-                    <StatCard label="Катышуу" value={`${attendanceStats.rate}%`} />
+                    {attendanceEnabled ? (
+                        <StatCard label="Катышуу" value={`${attendanceStats.rate}%`} />
+                    ) : null}
                 </div>
 
                 <section className="bg-white dark:bg-[#222222] rounded-3xl border border-gray-100 dark:border-gray-800 p-5 space-y-3">
@@ -1115,7 +1229,7 @@ const CoursesTab = ({ courses, offeringsByCourse }) => {
     );
 };
 
-const ScheduleTab = ({ offerings }) => {
+const ScheduleTab = ({ offerings, recordings }) => {
     const [nowMs, setNowMs] = useState(Date.now());
     const [selectedLiveId, setSelectedLiveId] = useState('');
 
@@ -1147,7 +1261,14 @@ const ScheduleTab = ({ offerings }) => {
     }
 
     const selectedLive = sorted.find((item) => String(item.id) === String(selectedLiveId));
-    const selectedRecordings = resolveRecordings(selectedLive || {});
+    const selectedRecordings = [
+        ...resolveRecordings(selectedLive || {}),
+        ...recordings.filter((rec) => {
+            const recSessionId = rec.sessionId || rec.courseSessionId || rec.offeringId;
+            const liveSessionId = selectedLive?.sessionId || selectedLive?.id || selectedLive?.offeringId;
+            return recSessionId && liveSessionId && String(recSessionId) === String(liveSessionId);
+        }),
+    ];
     const selectedJoinUrl =
         selectedLive?.joinLink || selectedLive?.link || selectedLive?.joinUrl || '';
     const selectedJoinAllowed = !selectedLive || isStudentJoinWindowOpen(selectedLive, nowMs);
@@ -1346,6 +1467,7 @@ const TasksTab = ({ tasks }) => (
 const ProgressTab = ({
     items,
     attendanceStats,
+    attendanceEnabled,
     engagement,
     leaderboardItems,
     milestoneItems,
@@ -1381,7 +1503,9 @@ const ProgressTab = ({
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
                 <StatCard label="XP" value={engagement.xp} />
                 <StatCard label="Learning streak" value={`${engagement.streak} күн`} />
-                <StatCard label="Attendance" value={`${attendanceStats.rate}%`} />
+                {attendanceEnabled ? (
+                    <StatCard label="Attendance" value={`${attendanceStats.rate}%`} />
+                ) : null}
                 <StatCard
                     label="Leaderboard"
                     value={`Top ${Math.max(1, leaderboardItems.length)}`}
@@ -1739,6 +1863,7 @@ OverviewTab.propTypes = {
         present: PropTypes.number,
         absent: PropTypes.number,
     }).isRequired,
+    attendanceEnabled: PropTypes.bool.isRequired,
     engagement: PropTypes.shape({
         xp: PropTypes.number,
         streak: PropTypes.number,
@@ -1758,6 +1883,11 @@ CoursesTab.propTypes = {
 
 ScheduleTab.propTypes = {
     offerings: PropTypes.arrayOf(PropTypes.object).isRequired,
+    recordings: PropTypes.arrayOf(PropTypes.object),
+};
+
+ScheduleTab.defaultProps = {
+    recordings: [],
 };
 
 TasksTab.propTypes = {
@@ -1769,6 +1899,7 @@ ProgressTab.propTypes = {
     attendanceStats: PropTypes.shape({
         rate: PropTypes.number,
     }).isRequired,
+    attendanceEnabled: PropTypes.bool.isRequired,
     engagement: PropTypes.shape({
         xp: PropTypes.number,
         streak: PropTypes.number,

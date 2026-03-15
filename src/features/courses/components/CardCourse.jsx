@@ -12,6 +12,13 @@ import { AuthContext } from '../../../context/AuthContext';
 import UnauthModal from '../../../shared/ui/UnauthModal';
 import { formatMinutesToTime } from '../../../utils/timeUtils';
 
+const courseTypeLabel = (type) => {
+    const normalized = String(type || 'video').toLowerCase();
+    if (normalized === 'offline') return 'Offline';
+    if (normalized === 'online_live') return 'Online Live';
+    return 'Video';
+};
+
 const formatPrice = (price, currency = 'KGS') => {
     if (!price && price !== 0) return 'Баасы көрсөтүлгөн эмес';
     const formattedPrice = new Intl.NumberFormat('ru-RU').format(price);
@@ -34,6 +41,9 @@ const CardCourse = ({
     durationInHours,
     lessonCount,
     isPublished = true,
+    courseType = 'video',
+    location,
+    meetingUrl,
 }) => {
     const [showPopup, setShowPopup] = useState(false);
     const [showFavoritePopup, setShowFavoritePopup] = useState(false);
@@ -167,6 +177,21 @@ const CardCourse = ({
                         />
                         <div className="flex flex-col flex-grow py-4">
                             <h3 className="font-suisse font-medium text-lg">{title}</h3>
+                            <div className="flex flex-wrap gap-1 my-1">
+                                <span className="text-[11px] px-2 py-0.5 rounded-full bg-blue-50 text-blue-700">
+                                    {courseTypeLabel(courseType)}
+                                </span>
+                                {String(courseType || '').toLowerCase() === 'offline' && location ? (
+                                    <span className="text-[11px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-700">
+                                        {location}
+                                    </span>
+                                ) : null}
+                                {String(courseType || '').toLowerCase() === 'online_live' && meetingUrl ? (
+                                    <span className="text-[11px] px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700">
+                                        Live link
+                                    </span>
+                                ) : null}
+                            </div>
                             <p className="text-gray-500 dark:text-[#a6adba] text-sm my-1">
                                 {instructor?.fullName || 'Белгисиз инструктор'}
                             </p>

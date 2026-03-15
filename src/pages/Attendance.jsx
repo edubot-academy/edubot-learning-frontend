@@ -45,7 +45,7 @@ const getAttendanceErrorMessage = (error) => {
     return Array.isArray(fallback) ? fallback.join(', ') : fallback;
 };
 
-const AttendancePage = () => {
+const AttendancePage = ({ embedded = false }) => {
     const [courses, setCourses] = useState([]);
     const [selectedCourseId, setSelectedCourseId] = useState('');
     const [sessionDate, setSessionDate] = useState(todayLocal());
@@ -197,13 +197,15 @@ const AttendancePage = () => {
     };
 
     return (
-        <div className="pt-24 max-w-7xl mx-auto px-4 pb-12 space-y-6">
-            <div>
-                <h1 className="text-3xl font-bold text-gray-900 dark:text-[#E8ECF3]">Катышуу</h1>
-                <p className="text-sm text-gray-500 dark:text-[#a6adba]">
-                    Сабактагы катышууну белгилөө жана отчетту көрүү.
-                </p>
-            </div>
+        <div className={embedded ? 'space-y-6' : 'pt-24 max-w-7xl mx-auto px-4 pb-12 space-y-6'}>
+            {!embedded && (
+                <div>
+                    <h1 className="text-3xl font-bold text-gray-900 dark:text-[#E8ECF3]">Катышуу</h1>
+                    <p className="text-sm text-gray-500 dark:text-[#a6adba]">
+                        Сабактагы катышууну белгилөө жана отчетту көрүү.
+                    </p>
+                </div>
+            )}
 
             <section className="bg-white dark:bg-[#111111] rounded-2xl border border-gray-100 dark:border-gray-800 p-4 space-y-4">
                 <h2 className="text-xl font-semibold text-gray-900 dark:text-[#E8ECF3]">

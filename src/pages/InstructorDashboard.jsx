@@ -1,5 +1,5 @@
 import { useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import { Link, Navigate } from 'react-router-dom';
+import { Link, Navigate, useSearchParams } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import DashboardSidebar from '@features/dashboard/components/DashboardSidebar';
 import {
@@ -36,6 +36,7 @@ import AttendancePage from './Attendance';
 import SessionWorkspacePage from './SessionWorkspace';
 import InstructorAnalyticsPage from './InstructorAnalytics';
 import InternalLeaderboardPage from './InternalLeaderboard';
+import InstructorHomeworkPage from './InstructorHomework';
 
 const NAV_ITEMS = [
     { id: 'overview', label: 'Кыскача', icon: FiHome },
@@ -48,13 +49,18 @@ const NAV_ITEMS = [
     { id: 'attendance', label: 'Катышуу', icon: FiUsers },
     { id: 'analytics', label: 'Аналитика', icon: FiGlobe },
     { id: 'leaderboard', label: 'Leaderboard', icon: FiFilter },
+    { id: 'homework', label: 'Homework', icon: FiBookOpen },
     { id: 'notifications', label: 'Билдирүүлөр', icon: FiBell },
 ];
 
 const InstructorDashboard = () => {
     const { user } = useContext(AuthContext);
     const [sidebarOpen, setSidebarOpen] = useState(true);
-    const [activeTab, setActiveTab] = useState('overview');
+    const [searchParams, setSearchParams] = useSearchParams();
+    const initialTab = searchParams.get('tab') || 'overview';
+    const [activeTab, setActiveTab] = useState(
+        NAV_ITEMS.some((item) => item.id === initialTab) ? initialTab : 'overview'
+    );
     const [profile, setProfile] = useState(null);
     const [loadingProfile, setLoadingProfile] = useState(false);
     const [courseList, setCourseList] = useState([]);
@@ -84,6 +90,34 @@ const InstructorDashboard = () => {
         price: '',
         languageCode: 'ky',
     });
+
+    useEffect(() => {
+        const tabFromQuery = searchParams.get('tab');
+        const resolvedTab =
+            tabFromQuery && NAV_ITEMS.some((item) => item.id === tabFromQuery)
+                ? tabFromQuery
+                : 'overview';
+        if (resolvedTab !== activeTab) {
+            setActiveTab(resolvedTab);
+        }
+    }, [searchParams]);
+
+    const handleTabSelect = useCallback(
+        (tabId) => {
+            if (!NAV_ITEMS.some((item) => item.id === tabId)) return;
+            setActiveTab(tabId);
+            setSearchParams(
+                (prev) => {
+                    const next = new URLSearchParams(prev);
+                    if (tabId === 'overview') next.delete('tab');
+                    else next.set('tab', tabId);
+                    return next;
+                },
+                { replace: true }
+            );
+        },
+        [setSearchParams]
+    );
 
     const analyticsLink = useMemo(() => {
         const to = new Date();
@@ -445,11 +479,13 @@ const InstructorDashboard = () => {
             case 'sessions':
                 return <SessionWorkspacePage />;
             case 'attendance':
-                return <AttendancePage />;
+                return <AttendancePage embedded />;
             case 'analytics':
                 return <InstructorAnalyticsPage />;
             case 'leaderboard':
                 return <InternalLeaderboardPage />;
+            case 'homework':
+                return <InstructorHomeworkPage />;
             case 'notifications':
                 return <NotificationsTab />;
             case 'overview':
@@ -474,7 +510,7 @@ const InstructorDashboard = () => {
                 <DashboardSidebar
                     items={NAV_ITEMS}
                     activeId={activeTab}
-                    onSelect={setActiveTab}
+                    onSelect={handleTabSelect}
                     isOpen={sidebarOpen}
                     onToggle={setSidebarOpen}
                     className="flex-shrink-0"

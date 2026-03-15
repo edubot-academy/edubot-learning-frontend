@@ -1,11 +1,28 @@
 import PropTypes from 'prop-types';
 import { formatHoursToTime } from '../../../utils/timeUtils';
 
+const courseTypeLabel = (type) => {
+    const normalized = String(type || 'video').toLowerCase();
+    if (normalized === 'offline') return 'Offline';
+    if (normalized === 'online_live') return 'Online Live';
+    return 'Video';
+};
+
 const CourseHeader = ({ course, progress, enrolled }) => {
     return (
         <div className="w-full bg-gray-800 text-white min-h-[380px] py-12 px-6 md:px-12">
             <div className="max-w-6xl mx-auto">
                 <h1 className="text-3xl md:text-4xl font-bold mb-2">{course.title}</h1>
+                <div className="mb-2 flex flex-wrap gap-2 text-xs">
+                    <span className="px-2 py-1 rounded-full bg-blue-600/40">
+                        {courseTypeLabel(course.courseType || course.type)}
+                    </span>
+                    {String(course.courseType || course.type || '').toLowerCase() === 'offline' && course.location ? (
+                        <span className="px-2 py-1 rounded-full bg-gray-600/40">
+                            {course.location}
+                        </span>
+                    ) : null}
+                </div>
                 <p className="text-md md:text-lg leading-relaxed whitespace-pre-line mb-2">
                     {course.description}
                 </p>
@@ -61,6 +78,9 @@ CourseHeader.propTypes = {
         title: PropTypes.string,
         description: PropTypes.string,
         durationInHours: PropTypes.number,
+        courseType: PropTypes.string,
+        type: PropTypes.string,
+        location: PropTypes.string,
         instructor: PropTypes.shape({
             fullName: PropTypes.string,
             avatar: PropTypes.string,

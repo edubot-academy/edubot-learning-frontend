@@ -50,3 +50,39 @@ export const fetchAdminStats = async () => {
     const { data } = await api.get('/students/admin/stats');
     return data;
 };
+
+// New LMS student-role endpoints (/student/*)
+export const fetchStudentDashboard = async ({ courseId, groupId, limit } = {}) => {
+    const { data } = await api.get('/student/dashboard', {
+        params: clean({ courseId, groupId, limit }),
+    });
+    return data;
+};
+
+export const fetchStudentUpcomingSessions = async ({ courseId, groupId, limit } = {}) => {
+    const { data } = await api.get('/student/sessions/upcoming', {
+        params: clean({ courseId, groupId, limit }),
+    });
+    return data;
+};
+
+export const fetchStudentRecordings = async ({ courseId, groupId, limit } = {}) => {
+    const { data } = await api.get('/student/recordings', {
+        params: clean({ courseId, groupId, limit }),
+    });
+    return data;
+};
+
+export const fetchStudentAttendance = async ({ from, to, courseId, groupId, limit } = {}) => {
+    const { data } = await api.get('/student/attendance', {
+        params: clean({ from, to, courseId, groupId, limit }),
+    });
+    return data;
+};
+
+export const fetchStudentHomework = async ({ courseId, groupId, limit } = {}) => {
+    const { data } = await api.get('/student/homework', {
+        params: clean({ courseId, groupId, limit }),
+    });
+    return data;
+};

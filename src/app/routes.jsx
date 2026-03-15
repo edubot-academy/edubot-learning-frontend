@@ -1,5 +1,5 @@
 import { Suspense, lazy } from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import PrivateRoute from '@shared/PrivateRoute';
 import MainLayout from './layouts/MainLayout';
 import Loader from '@shared/ui/Loader';
@@ -32,9 +32,6 @@ const CartPage = lazy(() => import('../pages/Cart'));
 const Chat = lazy(() => import('../pages/Chat'));
 const LeaderboardPage = lazy(() => import('../pages/Leaderboard'));
 const InternalLeaderboardPage = lazy(() => import('../pages/InternalLeaderboard'));
-const AttendancePage = lazy(() => import('../pages/Attendance'));
-const SessionWorkspace = lazy(() => import('../pages/SessionWorkspace'));
-const InstructorAnalyticsPage = lazy(() => import('../pages/InstructorAnalytics'));
 
 const AppRoutes = () => {
     return (
@@ -51,8 +48,9 @@ const AppRoutes = () => {
                     <Route path="/cart" element={<CartPage />} />
                     <Route element={<PrivateRoute allowedRoles={['instructor']} />}>
                         <Route path="/instructor" element={<InstructorDashboard />} />
-                        <Route path="/instructor/sessions" element={<SessionWorkspace />} />
-                        <Route path="/instructor/analytics" element={<InstructorAnalyticsPage />} />
+                        <Route path="/instructor/sessions" element={<Navigate to="/instructor?tab=sessions" replace />} />
+                        <Route path="/instructor/analytics" element={<Navigate to="/instructor?tab=analytics" replace />} />
+                        <Route path="/instructor/homework" element={<Navigate to="/instructor?tab=homework" replace />} />
                         <Route path="/instructor/course/create" element={<CreateCourse />} />
                         <Route path="/instructor/courses" element={<InstructorCourses />} />
                         <Route
@@ -83,14 +81,6 @@ const AppRoutes = () => {
 
                     <Route element={<PrivateRoute allowedRoles={['assistant']} />}>
                         <Route path="/assistant" element={<AssistantDashboard />} />
-                    </Route>
-
-                    <Route
-                        element={
-                            <PrivateRoute allowedRoles={['admin', 'assistant', 'instructor']} />
-                        }
-                    >
-                        <Route path="/attendance" element={<AttendancePage />} />
                     </Route>
                     <Route path="/companies/:id/courses" element={<CompanyCourses />} />
                     <Route path="/catalog" element={<Catalog />} />

@@ -25,3 +25,4 @@ export * from '../features/courseGroups/api';
 export * from '../features/courseSessions/api';
 export * from '../features/liveIntegration/api';
 export * from '../features/analytics/api';
+export * from '../features/homework/api';

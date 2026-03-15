@@ -20,6 +20,9 @@ const extractErrorMessage = (error, fallback) => {
     return Array.isArray(msg) ? msg.join(', ') : msg;
 };
 
+const resolveCourseType = (course = {}) =>
+    String(course?.courseType || course?.type || 'video').toLowerCase();
+
 const RegisterAndEnrollModal = ({ onClose, onSuccess }) => {
     const [users, setUsers] = useState([]);
     const [courses, setCourses] = useState([]);
@@ -60,6 +63,11 @@ const RegisterAndEnrollModal = ({ onClose, onSuccess }) => {
         actor?.companyId ||
         actor?.company?.id ||
         'default_company';
+
+    const selectedCourse = courses.find((course) => String(course.id) === String(selectedCourseId));
+    const selectedCourseType = resolveCourseType(selectedCourse);
+    const requiresGroup = selectedCourseType !== 'video';
+    const selectedGroup = groups.find((group) => String(group.id) === String(selectedGroupId));
 
     const handleSearch = async () => {
         if (!searchTerm) return;
@@ -104,10 +112,10 @@ const RegisterAndEnrollModal = ({ onClose, onSuccess }) => {
 
     const handleEnrollAndPay = async () => {
         if (!selectedCourseId || !amount) return;
-
-        const selectedCourse = courses.find(
-            (course) => String(course.id) === String(selectedCourseId)
-        );
+        if (requiresGroup && !selectedGroupId) {
+            toast.error('Оффлайн/онлайн live курс үчүн группа тандоо милдеттүү.');
+            return;
+        }
         const companyId = resolveCompanyId();
         let integrationEnrollmentId = null;
 
@@ -229,7 +237,7 @@ const RegisterAndEnrollModal = ({ onClose, onSuccess }) => {
     }, [selectedCourseId, discount, courses]);
 
     useEffect(() => {
-        if (!selectedCourseId) {
+        if (!selectedCourseId || selectedCourseType === 'video') {
             setGroups([]);
             setSelectedGroupId('');
             return;
@@ -241,6 +249,7 @@ const RegisterAndEnrollModal = ({ onClose, onSuccess }) => {
             try {
                 const response = await fetchIntegrationGroups({
                     courseId: selectedCourseId,
+                    status: 'active',
                     limit: 100,
                 });
                 if (!isCancelled) {
@@ -263,7 +272,7 @@ const RegisterAndEnrollModal = ({ onClose, onSuccess }) => {
         return () => {
             isCancelled = true;
         };
-    }, [selectedCourseId]);
+    }, [selectedCourseId, selectedCourseType]);
 
     useEffect(() => {
         const { fullName, passwordManuallyChanged } = newUserData;
@@ -458,6 +467,7 @@ const RegisterAndEnrollModal = ({ onClose, onSuccess }) => {
                             </select>
                         </div>
 
+                        {requiresGroup && (
                         <div className="mb-4">
                             <label className="block mb-1 font-medium">
                                 Группаны тандаңыз (милдеттүү)
@@ -473,17 +483,26 @@ const RegisterAndEnrollModal = ({ onClose, onSuccess }) => {
                                 </option>
                                 {groups.map((group) => (
                                     <option key={group.id} value={group.id}>
-                                        {group.name}
+                                        {group.name} · {group.startDate || '—'} → {group.endDate || '—'} · {group.availableSeats ?? '—'}/{group.maxCapacity ?? group.seatLimit ?? '—'}
                                     </option>
                                 ))}
                             </select>
                             {!loadingGroups && selectedCourseId && groups.length === 0 && (
                                 <p className="text-xs text-amber-600 mt-1">
-                                    Бул курс үчүн интеграциялык группа табылган жок. Эски агым
-                                    колдонулат.
+                                    Бул курс үчүн интеграциялык группа табылган жок.
                                 </p>
                             )}
+                            {selectedGroup && (
+                                <div className="mt-3 rounded-lg border border-gray-200 p-3 text-xs text-gray-700">
+                                    <p><strong>Аты:</strong> {selectedGroup.name || '—'}</p>
+                                    <p><strong>Статус:</strong> {selectedGroup.status || '—'}</p>
+                                    <p><strong>Даталар:</strong> {selectedGroup.startDate || '—'} → {selectedGroup.endDate || '—'}</p>
+                                    <p><strong>Орундар:</strong> {selectedGroup.availableSeats ?? '—'} / {selectedGroup.maxCapacity ?? selectedGroup.seatLimit ?? '—'}</p>
+                                    <p><strong>Мугалим:</strong> {selectedGroup.teacherName || selectedGroup.instructor?.fullName || '—'}</p>
+                                </div>
+                            )}
                         </div>
+                        )}
 
                         <div className="mb-4">
                             <label className="block mb-1 font-medium">Жеңилдик (%)</label>
@@ -536,7 +555,7 @@ const RegisterAndEnrollModal = ({ onClose, onSuccess }) => {
                             <button
                                 className="bg-blue-600 text-white px-4 py-2 rounded disabled:opacity-60"
                                 onClick={handleEnrollAndPay}
-                                disabled={!selectedCourseId || !amount || isSubmitting}
+                                disabled={!selectedCourseId || !amount || isSubmitting || (requiresGroup && !selectedGroupId)}
                             >
                                 {isSubmitting ? 'Сакталууда...' : 'Жазуу жана Төлөө'}
                             </button>
