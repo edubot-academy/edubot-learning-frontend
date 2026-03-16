@@ -1,14 +1,18 @@
 import { useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import PropTypes from 'prop-types';
 import DashboardSidebar from '@features/dashboard/components/DashboardSidebar';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import {
     fetchStudentCourses,
-    fetchStudentDashboardSummary,
-    fetchStudentOfferings,
-    fetchStudentTasks,
+    fetchStudentDashboard,
+    fetchStudentUpcomingSessions,
+    fetchStudentRecordings,
+    fetchStudentHomework,
+    fetchStudentAttendance,
     fetchStudentProgress,
     fetchStudentCertificates,
     fetchStudentNotificationSettings,
+    fetchWeeklyLeaderboard,
     updateStudentNotificationSettings,
 } from '@services/api';
 import { AuthContext } from '../context/AuthContext';
@@ -27,6 +31,7 @@ import {
 import NotificationsWidget from '@features/notifications/components/NotificationsWidget';
 import NotificationsTab from '@features/notifications/components/NotificationsTab';
 import Loader from '@shared/ui/Loader';
+import InternalLeaderboardPage from './InternalLeaderboard';
 
 const NAV_ITEMS = [
     { id: 'overview', label: 'Кыскача', icon: FiHome },
@@ -34,6 +39,7 @@ const NAV_ITEMS = [
     { id: 'schedule', label: 'Жүгүртмө', icon: FiCalendar },
     { id: 'tasks', label: 'Тапшырмалар', icon: FiCheckCircle },
     { id: 'progress', label: 'Прогресс', icon: FiBarChart2 },
+    { id: 'leaderboard', label: 'Leaderboard', icon: FiBarChart2 },
     { id: 'notifications', label: 'Билдирүүлөр', icon: FiBell },
     { id: 'profile', label: 'Профиль', icon: FiUser },
     { id: 'chat', label: 'Чат', icon: FiMessageCircle },
@@ -49,24 +55,24 @@ const DEFAULT_NOTIFICATION_SETTINGS = {
 
 const NOTIFICATION_LABELS = {
     lessonReminders: {
-        label: 'Сабак эскертмелери',
-        description: 'Жандуу сабактар же жаңы сабактар башталар алдында эскертүү алыңыз.',
+        label: 'Class reminders',
+        description: 'Сабак башталар алдында эскертүү алыңыз.',
     },
     announcementEmails: {
         label: 'Курс боюнча жаңылыктар',
         description: 'Жаңы модулдар жана маанилүү окуу жаңылыктары email аркылуу жетет.',
     },
     taskUpdates: {
-        label: 'Тапшырмалар боюнча билдирүү',
-        description: 'Квиз жана чакырыктар боюнча эскертмелерди алыңыз.',
+        label: 'Homework reminders',
+        description: 'Тапшырмалардын мөөнөтү жакындаганда эскертүү алыңыз.',
     },
     smsAlerts: {
         label: 'SMS эскертүүлөр',
         description: 'Маанилүү окуялар боюнча SMS кабыл алыңыз.',
     },
     pushNotifications: {
-        label: 'Push билдирүүлөр',
-        description: 'Прогресс жана окуу сунуштары боюнча push билдирүүлөрүн алыңыз.',
+        label: 'Missed class alerts',
+        description: 'Калтырылган сабактар боюнча дароо билдирүү алыңыз.',
     },
 };
 
@@ -76,6 +82,91 @@ const formatNotificationLabel = (key) =>
         ?.replace(/_/g, ' ')
         ?.replace(/\b\w/g, (l) => l.toUpperCase())
         ?.trim() || key;
+
+const JOIN_WINDOW_MS = 10 * 60 * 1000;
+
+const isOnlineLiveOffering = (offering) => {
+    const type = String(offering?.courseType || offering?.type || '').toLowerCase();
+    const modality = String(offering?.modality || offering?.modalityLabel || '').toLowerCase();
+    return type === 'online_live' || modality.includes('online') || modality.includes('live');
+};
+
+const isStudentJoinWindowOpen = (offering, nowMs) => {
+    const startMs = offering?.startAt ? new Date(offering.startAt).getTime() : null;
+    const endMs = offering?.endAt ? new Date(offering.endAt).getTime() : null;
+    if (!startMs || Number.isNaN(startMs)) return true;
+    if (!endMs || Number.isNaN(endMs)) return nowMs >= startMs - JOIN_WINDOW_MS;
+    return nowMs >= startMs - JOIN_WINDOW_MS && nowMs <= endMs;
+};
+
+const resolveCourseType = (item = {}) =>
+    item.courseType || item.type || item.course?.courseType || item.course?.type || 'video';
+
+const courseTypeLabel = (type) => {
+    if (type === 'offline') return 'Offline';
+    if (type === 'online_live') return 'Online Live';
+    return 'Video';
+};
+
+const formatCountdown = (targetMs, nowMs) => {
+    const totalSeconds = Math.max(0, Math.floor((targetMs - nowMs) / 1000));
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(
+        seconds
+    ).padStart(2, '0')}`;
+};
+
+const formatSessionDate = (isoValue) => {
+    if (!isoValue) return 'Белгисиз убакыт';
+    const date = new Date(isoValue);
+    if (Number.isNaN(date.getTime())) return 'Белгисиз убакыт';
+    return date.toLocaleString('ru-RU', {
+        day: '2-digit',
+        month: 'short',
+        hour: '2-digit',
+        minute: '2-digit',
+    });
+};
+
+const resolveInstructorName = (item = {}) =>
+    item.instructorName ||
+    item.teacherName ||
+    item.instructor?.fullName ||
+    item.teacher ||
+    'Инструктор';
+
+const resolveRecordings = (item = {}) => {
+    if (Array.isArray(item.recordings)) return item.recordings;
+    if (item.recordingUrl) {
+        return [
+            {
+                id: `rec-${item.id || '1'}`,
+                title: item.recordingTitle || 'Session Recording',
+                url: item.recordingUrl,
+            },
+        ];
+    }
+    return [];
+};
+
+const readNumber = (obj, paths = []) => {
+    for (const path of paths) {
+        const value = path.split('.').reduce((acc, key) => acc?.[key], obj);
+        const numeric = Number(value);
+        if (Number.isFinite(numeric)) return numeric;
+    }
+    return null;
+};
+
+const readArray = (obj, paths = []) => {
+    for (const path of paths) {
+        const value = path.split('.').reduce((acc, key) => acc?.[key], obj);
+        if (Array.isArray(value)) return value;
+    }
+    return [];
+};
 
 const StudentDashboard = () => {
     const { user } = useContext(AuthContext);
@@ -88,8 +179,13 @@ const StudentDashboard = () => {
     const [courses, setCourses] = useState([]);
     const [offerings, setOfferings] = useState([]);
     const [tasks, setTasks] = useState([]);
+    const [recordings, setRecordings] = useState([]);
+    const [attendanceRows, setAttendanceRows] = useState([]);
+    const [filterCourseId, setFilterCourseId] = useState('');
+    const [filterGroupId, setFilterGroupId] = useState('');
     const [progress, setProgress] = useState([]);
     const [certificates, setCertificates] = useState([]);
+    const [leaderboardItems, setLeaderboardItems] = useState([]);
     const [notificationSettings, setNotificationSettings] = useState(null);
     const [tabLoading, setTabLoading] = useState(null);
     const [loadedTabs, setLoadedTabs] = useState({
@@ -98,26 +194,79 @@ const StudentDashboard = () => {
         schedule: false,
         tasks: false,
         progress: false,
+        leaderboard: true,
         notifications: true,
     });
     const [notificationsLoaded, setNotificationsLoaded] = useState(false);
     const [notificationLoading, setNotificationLoading] = useState(false);
     const [savingNotifications, setSavingNotifications] = useState(false);
 
+    const analyticsLink = useMemo(() => {
+        const to = new Date();
+        const from = new Date(to.getTime() - 30 * 24 * 60 * 60 * 1000);
+        const toIso = to.toISOString().slice(0, 10);
+        const fromIso = from.toISOString().slice(0, 10);
+        return `/student/analytics?from=${fromIso}&to=${toIso}`;
+    }, []);
+
+    const studentFilters = useMemo(
+        () => ({
+            courseId: filterCourseId || undefined,
+            groupId: filterGroupId || undefined,
+            limit: 20,
+        }),
+        [filterCourseId, filterGroupId]
+    );
+
+    const groupOptions = useMemo(() => {
+        const groups = [];
+        offerings.forEach((item) => {
+            const groupId = item.groupId || item.group?.id;
+            if (!groupId) return;
+            const groupName = item.groupName || item.group?.name || `Group #${groupId}`;
+            if (!groups.some((g) => String(g.id) === String(groupId))) {
+                groups.push({ id: String(groupId), name: groupName });
+            }
+        });
+        return groups;
+    }, [offerings]);
+
     const loadOverview = useCallback(async () => {
         if (!studentId) return;
         setTabLoading('overview');
         try {
-            const summaryRes = await fetchStudentDashboardSummary(studentId);
+            const [summaryRes, leaderboardRes, offeringsRes, tasksRes, recordingsRes, attendanceRes] =
+                await Promise.all([
+                    fetchStudentDashboard(studentFilters),
+                    fetchWeeklyLeaderboard({ limit: 5 }),
+                    fetchStudentUpcomingSessions(studentFilters),
+                    fetchStudentHomework(studentFilters),
+                    fetchStudentRecordings(studentFilters),
+                    fetchStudentAttendance(studentFilters),
+                ]);
+
             setSummary(summaryRes || null);
+            setLeaderboardItems(
+                Array.isArray(leaderboardRes?.items) ? leaderboardRes.items : leaderboardRes || []
+            );
+            setOfferings(
+                Array.isArray(offeringsRes?.items) ? offeringsRes.items : offeringsRes || []
+            );
+            setTasks(Array.isArray(tasksRes?.items) ? tasksRes.items : tasksRes || []);
+            setRecordings(
+                Array.isArray(recordingsRes?.items) ? recordingsRes.items : recordingsRes || []
+            );
+            setAttendanceRows(
+                Array.isArray(attendanceRes?.items) ? attendanceRes.items : attendanceRes || []
+            );
         } catch (error) {
             console.error('Failed to load overview', error);
             toast.error('Кыскача маалымат жүктөлгөн жок');
         } finally {
             setTabLoading(null);
-            setLoadedTabs((prev) => ({ ...prev, overview: true }));
+            setLoadedTabs((prev) => ({ ...prev, overview: true, schedule: true, tasks: true }));
         }
-    }, [studentId]);
+    }, [studentId, studentFilters]);
 
     const loadCourses = useCallback(async () => {
         if (!studentId) return;
@@ -132,15 +281,21 @@ const StudentDashboard = () => {
             setTabLoading(null);
             setLoadedTabs((prev) => ({ ...prev, 'my-courses': true }));
         }
-    }, [studentId]);
+    }, [studentId, studentFilters]);
 
     const loadSchedule = useCallback(async () => {
         if (!studentId) return;
         setTabLoading('schedule');
         try {
-            const offeringsRes = await fetchStudentOfferings(studentId);
+            const [offeringsRes, recordingsRes] = await Promise.all([
+                fetchStudentUpcomingSessions(studentFilters),
+                fetchStudentRecordings(studentFilters),
+            ]);
             setOfferings(
                 Array.isArray(offeringsRes?.items) ? offeringsRes.items : offeringsRes || []
+            );
+            setRecordings(
+                Array.isArray(recordingsRes?.items) ? recordingsRes.items : recordingsRes || []
             );
         } catch (error) {
             console.error('Failed to load schedule', error);
@@ -149,13 +304,13 @@ const StudentDashboard = () => {
             setTabLoading(null);
             setLoadedTabs((prev) => ({ ...prev, schedule: true }));
         }
-    }, [studentId]);
+    }, [studentId, studentFilters]);
 
     const loadTasks = useCallback(async () => {
         if (!studentId) return;
         setTabLoading('tasks');
         try {
-            const tasksRes = await fetchStudentTasks(studentId);
+            const tasksRes = await fetchStudentHomework(studentFilters);
             setTasks(Array.isArray(tasksRes?.items) ? tasksRes.items : tasksRes || []);
         } catch (error) {
             console.error('Failed to load tasks', error);
@@ -164,7 +319,7 @@ const StudentDashboard = () => {
             setTabLoading(null);
             setLoadedTabs((prev) => ({ ...prev, tasks: true }));
         }
-    }, [studentId]);
+    }, [studentId, studentFilters]);
 
     const loadProgress = useCallback(async () => {
         if (!studentId) return;
@@ -241,7 +396,33 @@ const StudentDashboard = () => {
         loadNotificationSettings,
         notificationsLoaded,
         notificationLoading,
+        setSearchParams,
     ]);
+
+    useEffect(() => {
+        if (!filterCourseId) {
+            setFilterGroupId('');
+            return;
+        }
+        const selected = courses.find((course) => String(course.id) === String(filterCourseId));
+        const selectedType = resolveCourseType(selected);
+        if (selectedType === 'video') {
+            setFilterGroupId('');
+            return;
+        }
+        const hasGroup = groupOptions.some((group) => String(group.id) === String(filterGroupId));
+        if (!hasGroup) {
+            setFilterGroupId('');
+        }
+    }, [filterCourseId, filterGroupId, courses, groupOptions]);
+
+    const hasAttendanceEligibleCourses = useMemo(() => {
+        if (filterCourseId) {
+            const selected = courses.find((course) => String(course.id) === String(filterCourseId));
+            return resolveCourseType(selected) !== 'video';
+        }
+        return courses.some((course) => resolveCourseType(course) !== 'video');
+    }, [courses, filterCourseId]);
 
     const overviewStudent = useMemo(
         () => ({
@@ -263,12 +444,173 @@ const StudentDashboard = () => {
         [summary, tasks.length]
     );
 
+    const attendanceStats = useMemo(() => {
+        if (!hasAttendanceEligibleCourses) {
+            return { rate: 0, totalSessions: 0, present: 0, absent: 0 };
+        }
+        const rawRate = readNumber(summary, [
+            'attendance.rate',
+            'stats.attendanceRate',
+            'attendanceRate',
+            'attendance.percent',
+        ]);
+        const rate = rawRate !== null ? Math.round(rawRate) : null;
+        const totalSessions =
+            readNumber(summary, ['attendance.totalSessions', 'stats.totalSessions']) ||
+            attendanceRows.length ||
+            offerings.filter(
+                (item) => item.startAt && new Date(item.startAt).getTime() < Date.now()
+            ).length;
+        const present =
+            readNumber(summary, ['attendance.present', 'stats.attendedSessions']) ||
+            attendanceRows.filter((item) => String(item.status || '').toLowerCase() === 'present').length ||
+            Math.round((totalSessions * (rate ?? 80)) / 100);
+        const absent = Math.max(0, totalSessions - present);
+        return {
+            rate: rate ?? (totalSessions ? Math.round((present / totalSessions) * 100) : 0),
+            totalSessions,
+            present,
+            absent,
+        };
+    }, [summary, offerings, attendanceRows, hasAttendanceEligibleCourses]);
+
+    const engagement = useMemo(() => {
+        const calculatedXp =
+            readNumber(summary, ['xp', 'stats.xp', 'gamification.xp', 'engagement.xp']) ||
+            progress.reduce(
+                (acc, item) => acc + Math.round((Number(item.progressPercent || 0) || 0) * 4),
+                0
+            ) +
+                tasks.filter((task) => task.status === 'completed').length * 30;
+        const xp = Math.max(0, calculatedXp);
+        const level = Math.max(1, Math.floor(xp / 500) + 1);
+        const currentLevelStart = (level - 1) * 500;
+        const nextLevelXp = level * 500;
+        const streak =
+            readNumber(summary, [
+                'streak',
+                'stats.streakDays',
+                'engagement.streak',
+                'gamification.streakDays',
+            ]) || 0;
+        return {
+            xp,
+            streak,
+            level,
+            currentLevelXp: xp - currentLevelStart,
+            nextLevelGap: nextLevelXp - currentLevelStart,
+        };
+    }, [summary, progress, tasks]);
+
+    const milestoneItems = useMemo(() => {
+        const incoming = readArray(summary, [
+            'milestones',
+            'engagement.milestones',
+            'gamification.milestones',
+        ]);
+        if (incoming.length) {
+            return incoming.map((item, index) => ({
+                id: item.id || item.milestoneId || `m-${index}`,
+                title: item.title || item.name || item.label || 'Milestone',
+                value: item.value || item.description || item.progressText || '',
+            }));
+        }
+        return [
+            {
+                id: 'm1',
+                title: 'Course Completion',
+                value: `${overviewStats.lessonsCompleted || 0} lessons done`,
+            },
+            {
+                id: 'm2',
+                title: 'Attendance Target',
+                value: `${attendanceStats.rate}% monthly attendance`,
+            },
+            {
+                id: 'm3',
+                title: 'Weekly Consistency',
+                value: `${engagement.streak} day learning streak`,
+            },
+        ];
+    }, [summary, overviewStats.lessonsCompleted, attendanceStats.rate, engagement.streak]);
+
+    const badgeItems = useMemo(() => {
+        const incoming = readArray(summary, [
+            'badges',
+            'engagement.badges',
+            'gamification.badges',
+            'achievements',
+        ]);
+        if (incoming.length) {
+            return incoming.map((item, index) => ({
+                id: item.id || item.badgeId || `b-${index}`,
+                title: item.title || item.name || item.label || 'Badge',
+            }));
+        }
+        const badges = [];
+        if (engagement.streak >= 3) badges.push({ id: 'b1', title: 'Streak Starter' });
+        if (attendanceStats.rate >= 90) badges.push({ id: 'b2', title: 'Perfect Presence' });
+        if (engagement.xp >= 1000) badges.push({ id: 'b3', title: 'XP 1000+' });
+        if (!badges.length) badges.push({ id: 'b0', title: 'First Step' });
+        return badges;
+    }, [summary, engagement.streak, attendanceStats.rate, engagement.xp]);
+
+    const announcementItems = useMemo(() => {
+        const incoming = readArray(summary, [
+            'announcements',
+            'notifications.announcements',
+            'feed.announcements',
+            'updates',
+        ]);
+        if (incoming.length) {
+            return incoming.map((item, index) => ({
+                id: item.id || item.announcementId || `a-${index}`,
+                title: item.title || item.subject || item.name || 'Announcement',
+                body: item.body || item.message || item.description || '',
+            }));
+        }
+
+        const homeworkAnnouncements = tasks
+            .filter((task) => task.status !== 'completed')
+            .slice(0, 2)
+            .map((task, idx) => ({
+                id: `a-task-${task.id || idx}`,
+                title: task.title || 'Үй тапшырма',
+                body: task.courseTitle || task.course || 'Курс жаңыртуусу',
+            }));
+
+        const classAnnouncements = offerings.slice(0, 2).map((offering, idx) => ({
+            id: `a-offering-${offering.id || idx}`,
+            title: offering.courseTitle || offering.course?.title || 'Класс жаңыртуусу',
+            body: `${formatSessionDate(offering.startAt)} • ${courseTypeLabel(
+                resolveCourseType(offering)
+            )}`,
+        }));
+
+        return [...homeworkAnnouncements, ...classAnnouncements].slice(0, 4);
+    }, [summary, tasks, offerings]);
+
+    const offeringsByCourse = useMemo(() => {
+        const map = new Map();
+        offerings.forEach((offering) => {
+            const key = String(
+                offering.courseId || offering.course?.id || offering.course?.courseId || ''
+            );
+            if (!key) return;
+            const current = map.get(key) || [];
+            current.push(offering);
+            map.set(key, current);
+        });
+        return map;
+    }, [offerings]);
+
     const progressItems = useMemo(() => {
         return (progress || []).map((item) => {
             const lessonsArray = Array.isArray(item.lessons) ? item.lessons : [];
             const sectionsMap = new Map();
             lessonsArray.forEach((lesson) => {
-                const sectionKey = lesson.sectionId ?? `section-${lesson.sectionTitle || 'unknown'}`;
+                const sectionKey =
+                    lesson.sectionId ?? `section-${lesson.sectionTitle || 'unknown'}`;
                 if (!sectionsMap.has(sectionKey)) {
                     sectionsMap.set(sectionKey, {
                         sectionId: lesson.sectionId,
@@ -307,7 +649,7 @@ const StudentDashboard = () => {
                 item.lastViewedLesson && item.lastViewedLesson.lessonId
                     ? item.lastViewedLesson
                     : flatOrderedLessons.find((lesson) => !lesson.completed) ||
-                    flatOrderedLessons[0];
+                      flatOrderedLessons[0];
             const hasCertificate =
                 item.certificate ??
                 certificates.some(
@@ -377,19 +719,29 @@ const StudentDashboard = () => {
         tabLoading === resolvedTab || (activeTab === 'profile' && notificationLoading);
     const renderTab = () => {
         if (!isTabDataLoaded || !isProfileReady || isCurrentTabLoading) {
-            return (
-                <Loader fullScreen={false} />
-            );
+            return <Loader fullScreen={false} />;
         }
         switch (activeTab) {
             case 'my-courses':
-                return <CoursesTab courses={courses} />;
+                return <CoursesTab courses={courses} offeringsByCourse={offeringsByCourse} />;
             case 'schedule':
-                return <ScheduleTab offerings={offerings} />;
+                return <ScheduleTab offerings={offerings} recordings={recordings} />;
             case 'tasks':
                 return <TasksTab tasks={tasks} />;
             case 'progress':
-                return <ProgressTab items={progressItems} />;
+                return (
+                    <ProgressTab
+                        items={progressItems}
+                        attendanceStats={attendanceStats}
+                        attendanceEnabled={hasAttendanceEligibleCourses}
+                        engagement={engagement}
+                        leaderboardItems={leaderboardItems}
+                        milestoneItems={milestoneItems}
+                        badgeItems={badgeItems}
+                    />
+                );
+            case 'leaderboard':
+                return <InternalLeaderboardPage />;
             case 'notifications':
                 return <NotificationsTab />;
             case 'profile':
@@ -404,7 +756,21 @@ const StudentDashboard = () => {
                 );
             case 'overview':
             default:
-                return <OverviewTab student={overviewStudent} stats={overviewStats} />;
+                return (
+                    <OverviewTab
+                        student={overviewStudent}
+                        stats={overviewStats}
+                        offerings={offerings}
+                        tasks={tasks}
+                        announcements={announcementItems}
+                        attendanceStats={attendanceStats}
+                        attendanceEnabled={hasAttendanceEligibleCourses}
+                        engagement={engagement}
+                        leaderboardItems={leaderboardItems}
+                        milestoneItems={milestoneItems}
+                        badgeItems={badgeItems}
+                    />
+                );
         }
     };
     const navigate = useNavigate();
@@ -443,7 +809,9 @@ const StudentDashboard = () => {
                 <main className="flex-1 space-y-6 min-w-0">
                     <div className="flex items-center justify-between flex-wrap gap-3">
                         <div>
-                            <p className="text-sm uppercase tracking-wide text-gray-400 dark:text-gray-500">Студент</p>
+                            <p className="text-sm uppercase tracking-wide text-gray-400 dark:text-gray-500">
+                                Студент
+                            </p>
                             <h1 className="text-3xl font-bold text-gray-900 dark:text-[#E8ECF3]">
                                 {overviewStudent.name}
                             </h1>
@@ -451,13 +819,52 @@ const StudentDashboard = () => {
                                 Чыгармачыл окуу жолуңузду көзөмөлдөңүз
                             </p>
                         </div>
-                        <button
-                            onClick={() => setSidebarOpen((prev) => !prev)}
-                            className="hidden md:inline-flex px-4 py-2 rounded-full border text-sm text-gray-600 dark:text-[#E8ECF3] dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-                            type="button"
-                        >
-                            {sidebarOpen ? 'Менюну жашыруу' : 'Менюну көрсөтүү'}
-                        </button>
+                        <div className="flex items-center gap-2 flex-wrap justify-end">
+                            <select
+                                value={filterCourseId}
+                                onChange={(e) => setFilterCourseId(e.target.value)}
+                                className="px-3 py-2 rounded-full border text-sm bg-white dark:bg-[#222222]"
+                            >
+                                <option value="">All courses</option>
+                                {courses.map((course) => (
+                                    <option key={course.id} value={course.id}>
+                                        {course.title}
+                                    </option>
+                                ))}
+                            </select>
+                            {(() => {
+                                const selected = courses.find(
+                                    (course) => String(course.id) === String(filterCourseId)
+                                );
+                                return filterCourseId && resolveCourseType(selected) !== 'video';
+                            })() ? (
+                                <select
+                                    value={filterGroupId}
+                                    onChange={(e) => setFilterGroupId(e.target.value)}
+                                    className="px-3 py-2 rounded-full border text-sm bg-white dark:bg-[#222222]"
+                                >
+                                    <option value="">All groups</option>
+                                    {groupOptions.map((group) => (
+                                        <option key={group.id} value={group.id}>
+                                            {group.name}
+                                        </option>
+                                    ))}
+                                </select>
+                            ) : null}
+                            <button
+                                onClick={() => setSidebarOpen((prev) => !prev)}
+                                className="hidden md:inline-flex px-4 py-2 rounded-full border text-sm text-gray-600 dark:text-[#E8ECF3] dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                                type="button"
+                            >
+                                {sidebarOpen ? 'Менюну жашыруу' : 'Менюну көрсөтүү'}
+                            </button>
+                            <Link
+                                to={analyticsLink}
+                                className="inline-flex px-4 py-2 rounded-full bg-blue-600 text-white text-sm"
+                            >
+                                Analytics
+                            </Link>
+                        </div>
                     </div>
                     {renderTab()}
                 </main>
@@ -466,36 +873,252 @@ const StudentDashboard = () => {
     );
 };
 
-const OverviewTab = ({ student, stats }) => (
-    <div className="space-y-6">
-        <div className="bg-gradient-to-r from-blue-500 via-blue-600 to-indigo-600 text-white rounded-3xl p-6 sm:p-8">
-            <p className="text-sm uppercase tracking-wide opacity-80">
-                Streak: {student.streak} күн
-            </p>
-            <h2 className="text-2xl sm:text-3xl font-semibold mt-1">
-                Кош келиңиз, {student.name.split(' ')[0]}!
-            </h2>
-            {student.lastLesson && (
-                <p className="mt-3 text-sm sm:text-base opacity-90">
-                    Акыркы сабак: <strong>{student.lastLesson.lesson}</strong> (
-                    {student.lastLesson.course})
-                </p>
-            )}
-            <button className="mt-5 px-5 py-3 rounded-full bg-white text-blue-600 font-semibold text-sm sm:text-base shadow hover:bg-gray-100 transition-colors">
-                Сабакты улантуу
-            </button>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <StatCard label="Активдүү курстар" value={stats.activeCourses} />
-            <StatCard label="Жалпы сабактар" value={stats.lessonsCompleted} />
-            <StatCard label="Бул жумадагы убакыт" value={stats.timeThisWeek} />
-            <StatCard label="Күтүлүп жаткан тапшырмалар" value={stats.pendingTasks} />
-        </div>
-        <NotificationsWidget />
-    </div>
-);
+const OverviewTab = ({
+    student,
+    stats,
+    offerings,
+    tasks,
+    announcements,
+    attendanceStats,
+    attendanceEnabled,
+    engagement,
+    leaderboardItems,
+    milestoneItems,
+    badgeItems,
+}) => {
+    const [nowMs, setNowMs] = useState(Date.now());
 
-const CoursesTab = ({ courses }) => {
+    useEffect(() => {
+        const timer = setInterval(() => setNowMs(Date.now()), 1000);
+        return () => clearInterval(timer);
+    }, []);
+
+    const upcoming = useMemo(
+        () =>
+            offerings
+                .filter((item) => item.startAt && new Date(item.startAt).getTime() >= nowMs)
+                .sort((a, b) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime())
+                .slice(0, 4),
+        [offerings, nowMs]
+    );
+    const pendingHomework = useMemo(
+        () => tasks.filter((task) => task.status !== 'completed').slice(0, 4),
+        [tasks]
+    );
+
+    return (
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
+            <div className="xl:col-span-2 space-y-4">
+                <div className="bg-gradient-to-r from-blue-600 via-blue-700 to-cyan-600 text-white rounded-3xl p-6 sm:p-8">
+                    <p className="text-sm uppercase tracking-wide opacity-80">
+                        Streak: {engagement.streak} күн
+                    </p>
+                    <h2 className="text-2xl sm:text-3xl font-semibold mt-1">
+                        Кош келиңиз, {student.name.split(' ')[0]}!
+                    </h2>
+                    {student.lastLesson && (
+                        <p className="mt-3 text-sm sm:text-base opacity-90">
+                            Акыркы сабак: <strong>{student.lastLesson.lesson}</strong> (
+                            {student.lastLesson.course})
+                        </p>
+                    )}
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                    <StatCard label="Активдүү курстар" value={stats.activeCourses} />
+                    <StatCard label="Жалпы сабактар" value={stats.lessonsCompleted} />
+                    <StatCard label="Күтүүдө тапшырма" value={pendingHomework.length} />
+                    {attendanceEnabled ? (
+                        <StatCard label="Катышуу" value={`${attendanceStats.rate}%`} />
+                    ) : null}
+                </div>
+
+                <section className="bg-white dark:bg-[#222222] rounded-3xl border border-gray-100 dark:border-gray-800 p-5 space-y-3">
+                    <div className="flex items-center justify-between">
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-[#E8ECF3]">
+                            Upcoming classes
+                        </h3>
+                        <span className="text-xs text-gray-500">{upcoming.length} items</span>
+                    </div>
+                    <div className="space-y-2">
+                        {upcoming.map((item) => {
+                            const type = resolveCourseType(item);
+                            const joinUrl = item.joinLink || item.link || item.joinUrl || '';
+                            const joinAllowed =
+                                !isOnlineLiveOffering(item) || isStudentJoinWindowOpen(item, nowMs);
+                            const countdown = item.startAt
+                                ? formatCountdown(new Date(item.startAt).getTime(), nowMs)
+                                : null;
+                            return (
+                                <div
+                                    key={item.id || `${item.courseId}-${item.startAt}`}
+                                    className="rounded-2xl border border-gray-100 dark:border-gray-700 p-3"
+                                >
+                                    <div className="flex items-center justify-between gap-2">
+                                        <p className="font-medium text-gray-900 dark:text-[#E8ECF3]">
+                                            {item.courseTitle || item.course?.title || 'Class'}
+                                        </p>
+                                        <span className="text-[11px] px-2 py-1 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
+                                            {courseTypeLabel(type)}
+                                        </span>
+                                    </div>
+                                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                                        {formatSessionDate(item.startAt)}
+                                    </p>
+                                    {type === 'offline' && (
+                                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                            {item.location || item.room || 'Classroom TBD'} •{' '}
+                                            {resolveInstructorName(item)}
+                                        </p>
+                                    )}
+                                    {type === 'online_live' && (
+                                        <div className="mt-2 flex items-center gap-2 flex-wrap">
+                                            <span className="text-xs text-blue-700 dark:text-blue-300">
+                                                Countdown: {countdown}
+                                            </span>
+                                            {joinUrl && joinAllowed ? (
+                                                <a
+                                                    href={joinUrl}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="px-3 py-1 rounded-full text-xs bg-blue-600 text-white"
+                                                >
+                                                    Join
+                                                </a>
+                                            ) : (
+                                                <span className="text-xs text-amber-600">
+                                                    Join 10 мүнөт мурун ачылат
+                                                </span>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })}
+                        {upcoming.length === 0 && (
+                            <p className="text-sm text-gray-500">Жакынкы класстар жок.</p>
+                        )}
+                    </div>
+                </section>
+
+                <section className="grid md:grid-cols-2 gap-4">
+                    <div className="bg-white dark:bg-[#222222] rounded-3xl border border-gray-100 dark:border-gray-800 p-5 space-y-3">
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-[#E8ECF3]">
+                            Homework
+                        </h3>
+                        {pendingHomework.map((task) => (
+                            <div
+                                key={task.id || task.taskId}
+                                className="text-sm border-b border-gray-100 dark:border-gray-800 pb-2"
+                            >
+                                <p className="font-medium text-gray-900 dark:text-[#E8ECF3]">
+                                    {task.title}
+                                </p>
+                                <p className="text-gray-500">
+                                    {task.due || task.dueAt || 'Due date pending'}
+                                </p>
+                            </div>
+                        ))}
+                        {pendingHomework.length === 0 && (
+                            <p className="text-sm text-gray-500">Тапшырмалар жок.</p>
+                        )}
+                    </div>
+                    <div className="bg-white dark:bg-[#222222] rounded-3xl border border-gray-100 dark:border-gray-800 p-5 space-y-3">
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-[#E8ECF3]">
+                            Announcements
+                        </h3>
+                        {announcements.map((item) => (
+                            <div
+                                key={item.id || item.title}
+                                className="text-sm border-b border-gray-100 dark:border-gray-800 pb-2"
+                            >
+                                <p className="font-medium text-gray-900 dark:text-[#E8ECF3]">
+                                    {item.title}
+                                </p>
+                                <p className="text-gray-500">
+                                    {item.body || item.message || 'Жаңы жаңылык'}
+                                </p>
+                            </div>
+                        ))}
+                        {announcements.length === 0 && (
+                            <p className="text-sm text-gray-500">Жаңылыктар жок.</p>
+                        )}
+                    </div>
+                </section>
+                <NotificationsWidget />
+            </div>
+
+            <div className="space-y-4">
+                <section className="bg-white dark:bg-[#222222] rounded-3xl border border-gray-100 dark:border-gray-800 p-5">
+                    <h3 className="font-semibold text-gray-900 dark:text-[#E8ECF3]">XP & Level</h3>
+                    <p className="text-2xl font-bold text-blue-600 mt-1">{engagement.xp} XP</p>
+                    <p className="text-sm text-gray-500">Level {engagement.level}</p>
+                    <div className="h-2 rounded-full bg-gray-100 dark:bg-gray-700 mt-2">
+                        <div
+                            className="h-2 rounded-full bg-blue-500"
+                            style={{
+                                width: `${Math.round(
+                                    (engagement.currentLevelXp /
+                                        Math.max(1, engagement.nextLevelGap)) *
+                                        100
+                                )}%`,
+                            }}
+                        />
+                    </div>
+                </section>
+
+                <section className="bg-white dark:bg-[#222222] rounded-3xl border border-gray-100 dark:border-gray-800 p-5">
+                    <h3 className="font-semibold text-gray-900 dark:text-[#E8ECF3]">Leaderboard</h3>
+                    <div className="mt-2 space-y-2 text-sm">
+                        {leaderboardItems.slice(0, 5).map((row, idx) => (
+                            <div
+                                key={row.studentId || row.id || idx}
+                                className="flex items-center justify-between"
+                            >
+                                <span className="text-gray-700 dark:text-gray-300">
+                                    {idx + 1}. {row.fullName || row.name || 'Student'}
+                                </span>
+                                <span className="text-gray-500">{row.xp || 0} XP</span>
+                            </div>
+                        ))}
+                    </div>
+                </section>
+
+                <section className="bg-white dark:bg-[#222222] rounded-3xl border border-gray-100 dark:border-gray-800 p-5">
+                    <h3 className="font-semibold text-gray-900 dark:text-[#E8ECF3]">Milestones</h3>
+                    <div className="mt-2 space-y-2 text-sm">
+                        {milestoneItems.map((item) => (
+                            <div key={item.id || item.title}>
+                                <p className="font-medium text-gray-900 dark:text-[#E8ECF3]">
+                                    {item.title}
+                                </p>
+                                <p className="text-gray-500">{item.value || item.description}</p>
+                            </div>
+                        ))}
+                    </div>
+                </section>
+
+                <section className="bg-white dark:bg-[#222222] rounded-3xl border border-gray-100 dark:border-gray-800 p-5">
+                    <h3 className="font-semibold text-gray-900 dark:text-[#E8ECF3]">
+                        Achievement badges
+                    </h3>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                        {badgeItems.map((badge) => (
+                            <span
+                                key={badge.id || badge.title}
+                                className="px-2 py-1 text-xs rounded-full bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300"
+                            >
+                                {badge.title || badge.name}
+                            </span>
+                        ))}
+                    </div>
+                </section>
+            </div>
+        </div>
+    );
+};
+
+const CoursesTab = ({ courses, offeringsByCourse }) => {
     if (!courses.length) {
         return (
             <div className="bg-white dark:bg-[#222222] rounded-3xl border border-gray-100 dark:border-gray-800 p-6 text-center text-gray-500 dark:text-gray-400">
@@ -503,105 +1126,99 @@ const CoursesTab = ({ courses }) => {
             </div>
         );
     }
+
     const fallbackCover =
         'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&w=600&q=80';
+
     return (
         <div className="space-y-4">
-            <h2 className="text-2xl font-semibold text-gray-900 dark:text-[#E8ECF3]">Менин курстарым</h2>
+            <h2 className="text-2xl font-semibold text-gray-900 dark:text-[#E8ECF3]">
+                Менин курстарым
+            </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {courses.map((course) => {
+                    const courseId = String(course.id ?? course.courseId ?? '');
                     const cover =
                         course.coverImageUrl || course.coverImage || course.cover || fallbackCover;
-                    const instructor =
-                        course.instructorName ||
-                        course.instructor?.fullName ||
-                        course.instructor ||
-                        'Инструктор';
-                    const courseId = course.id ?? course.courseId;
-                    const lessonsCompleted = Number(course.lessonsCompleted ?? 0);
-                    const lessonsTotal = Number(course.lessonsTotal ?? course.lessonCount ?? 0);
-                    const rawProgress = course.progressPercent ?? course.progress;
-                    const progressValue =
-                        typeof rawProgress === 'number'
-                            ? Math.max(0, Math.min(100, Math.round(rawProgress)))
-                            : lessonsTotal > 0
-                                ? Math.round((lessonsCompleted * 100) / lessonsTotal)
-                                : 0;
-                    const nextLessonObj =
-                        course.nextLesson && typeof course.nextLesson === 'object'
-                            ? course.nextLesson
-                            : null;
-                    const lastViewed =
-                        course.lastViewedLesson ||
-                        (course.lastViewedLessonId
-                            ? {
-                                lessonId: course.lastViewedLessonId,
-                                lessonTitle: course.lastViewedLessonTitle,
-                                lastVideoTime: course.lastVideoTime,
-                            }
-                            : null);
-                    const nextLessonTitle =
-                        nextLessonObj?.title ||
-                        course.nextLessonTitle ||
-                        course.nextLesson ||
-                        '';
-                    const resumeLessonId = nextLessonObj?.lessonId || lastViewed?.lessonId;
-                    const resumeTimeSeconds =
-                        nextLessonObj?.lessonId === resumeLessonId && nextLessonObj?.lastVideoTime
-                            ? nextLessonObj.lastVideoTime
-                            : lastViewed?.lastVideoTime;
-                    const resumeTimeParam =
-                        resumeLessonId && resumeTimeSeconds
-                            ? `&resumeTime=${Math.floor(resumeTimeSeconds)}`
-                            : '';
-                    const resumeSearch =
-                        courseId && resumeLessonId
-                            ? `?resumeLessonId=${resumeLessonId}${resumeTimeParam}`
-                            : '';
+                    const instructor = resolveInstructorName(course);
+                    const progressValue = Math.max(
+                        0,
+                        Math.min(
+                            100,
+                            Math.round(Number(course.progressPercent ?? course.progress ?? 0))
+                        )
+                    );
+                    const linkedOfferings = offeringsByCourse.get(courseId) || [];
+                    const nextSession = linkedOfferings
+                        .filter((item) => item.startAt)
+                        .sort(
+                            (a, b) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime()
+                        )[0];
+                    const courseType = resolveCourseType(course);
+                    const recordingsCount = linkedOfferings.reduce(
+                        (acc, row) => acc + resolveRecordings(row).length,
+                        0
+                    );
 
                     return (
                         <div
                             key={courseId || course.title}
-                            className="bg-white dark:bg-[#222222] rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden flex flex-col hover:shadow-md transition-shadow"
+                            className="bg-white dark:bg-[#222222] rounded-3xl border border-gray-100 dark:border-gray-800 overflow-hidden"
                         >
                             <img
                                 src={cover}
                                 alt={course.title}
                                 className="w-full h-40 object-cover"
                             />
-                            <div className="p-4 flex-1 flex flex-col gap-3">
-                                <div>
-                                    <p className="text-sm text-gray-500 dark:text-gray-400">{instructor}</p>
-                                    <h3 className="text-lg font-semibold text-gray-900 dark:text-[#E8ECF3]">{course.title}</h3>
-                                    {lessonsTotal > 0 ? (
-                                        <p className="text-xs text-gray-500 dark:text-gray-400">
-                                            Сабактар: {lessonsCompleted}/{lessonsTotal}
-                                        </p>
-                                    ) : null}
+                            <div className="p-4 space-y-3">
+                                <div className="flex items-start justify-between gap-2">
+                                    <div>
+                                        <p className="text-sm text-gray-500">{instructor}</p>
+                                        <h3 className="text-lg font-semibold text-gray-900 dark:text-[#E8ECF3]">
+                                            {course.title}
+                                        </h3>
+                                    </div>
+                                    <span className="text-[11px] px-2 py-1 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
+                                        {courseTypeLabel(courseType)}
+                                    </span>
                                 </div>
                                 <div className="space-y-1">
                                     <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400">
-                                        <span>Процесс</span>
-                                        <span>{Math.max(0, Math.min(100, progressValue))}%</span>
+                                        <span>Прогресс</span>
+                                        <span>{progressValue}%</span>
                                     </div>
                                     <div className="h-2 rounded-full bg-gray-100 dark:bg-gray-700">
                                         <div
                                             className="h-2 rounded-full bg-blue-500"
-                                            style={{
-                                                width: `${Math.min(100, Math.max(0, progressValue))}%`,
-                                            }}
+                                            style={{ width: `${progressValue}%` }}
                                         />
                                     </div>
                                 </div>
-                                <p className="text-sm text-gray-500 dark:text-gray-400">
-                                    Кийинки сабак:{' '}
-                                    {nextLessonTitle || '—'}
-                                </p>
+                                {courseType === 'offline' && (
+                                    <div className="text-sm text-gray-500">
+                                        <p>
+                                            Location:{' '}
+                                            {nextSession?.location ||
+                                                nextSession?.room ||
+                                                'Classroom TBD'}
+                                        </p>
+                                        <p>Schedule: {formatSessionDate(nextSession?.startAt)}</p>
+                                        <p>
+                                            Teacher: {resolveInstructorName(nextSession || course)}
+                                        </p>
+                                    </div>
+                                )}
+                                {courseType === 'online_live' && (
+                                    <div className="text-sm text-gray-500">
+                                        <p>Next class: {formatSessionDate(nextSession?.startAt)}</p>
+                                        <p>Recordings: {recordingsCount}</p>
+                                    </div>
+                                )}
                                 <Link
-                                    to={courseId ? `/courses/${courseId}${resumeSearch}` : '#'}
-                                    className="mt-auto px-4 py-2 rounded-full border text-sm text-blue-600 dark:text-blue-400 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-center"
+                                    to={courseId ? `/courses/${courseId}` : '#'}
+                                    className="inline-flex px-4 py-2 rounded-full border text-sm text-blue-600 dark:text-blue-400 dark:border-gray-700"
                                 >
-                                    Улантуу
+                                    Open Course
                                 </Link>
                             </div>
                         </div>
@@ -612,52 +1229,181 @@ const CoursesTab = ({ courses }) => {
     );
 };
 
-const ScheduleTab = ({ offerings }) => {
-    if (!offerings.length) {
+const ScheduleTab = ({ offerings, recordings }) => {
+    const [nowMs, setNowMs] = useState(Date.now());
+    const [selectedLiveId, setSelectedLiveId] = useState('');
+
+    useEffect(() => {
+        const timer = setInterval(() => setNowMs(Date.now()), 1000);
+        return () => clearInterval(timer);
+    }, []);
+
+    const sorted = useMemo(
+        () =>
+            [...offerings].sort(
+                (a, b) => new Date(a.startAt || 0).getTime() - new Date(b.startAt || 0).getTime()
+            ),
+        [offerings]
+    );
+
+    useEffect(() => {
+        if (selectedLiveId) return;
+        const firstLive = sorted.find((item) => resolveCourseType(item) === 'online_live');
+        if (firstLive?.id) setSelectedLiveId(String(firstLive.id));
+    }, [sorted, selectedLiveId]);
+
+    if (!sorted.length) {
         return (
             <div className="bg-white dark:bg-[#222222] rounded-3xl border border-gray-100 dark:border-gray-800 p-6 text-center text-gray-500 dark:text-gray-400">
-                Жакынкы жандуу сабактар табылган жок.
+                Жакынкы класстар табылган жок.
             </div>
         );
     }
+
+    const selectedLive = sorted.find((item) => String(item.id) === String(selectedLiveId));
+    const selectedRecordings = [
+        ...resolveRecordings(selectedLive || {}),
+        ...recordings.filter((rec) => {
+            const recSessionId = rec.sessionId || rec.courseSessionId || rec.offeringId;
+            const liveSessionId = selectedLive?.sessionId || selectedLive?.id || selectedLive?.offeringId;
+            return recSessionId && liveSessionId && String(recSessionId) === String(liveSessionId);
+        }),
+    ];
+    const selectedJoinUrl =
+        selectedLive?.joinLink || selectedLive?.link || selectedLive?.joinUrl || '';
+    const selectedJoinAllowed = !selectedLive || isStudentJoinWindowOpen(selectedLive, nowMs);
+
     return (
         <div className="space-y-4">
             <h2 className="text-2xl font-semibold text-gray-900 dark:text-[#E8ECF3]">Жүгүртмө</h2>
             <div className="space-y-3">
-                {offerings.map((offering) => {
-                    const date =
-                        offering.date ||
-                        (offering.startAt
-                            ? new Date(offering.startAt).toLocaleString('ru-RU', {
-                                day: '2-digit',
-                                month: 'short',
-                                hour: '2-digit',
-                                minute: '2-digit',
-                            })
-                            : 'Белгисиз убакыт');
-                    const modality = offering.modality || offering.modalityLabel || '';
+                {sorted.map((item) => {
+                    const type = resolveCourseType(item);
+                    const joinUrl = item.joinLink || item.link || item.joinUrl || '';
+                    const joinAllowed =
+                        !isOnlineLiveOffering(item) || isStudentJoinWindowOpen(item, nowMs);
+                    const recordings = resolveRecordings(item);
                     return (
                         <div
-                            key={offering.id}
-                            className="bg-white dark:bg-[#222222] border border-gray-100 dark:border-gray-800 rounded-2xl p-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between hover:shadow-md transition-shadow"
+                            key={item.id || `${item.courseId}-${item.startAt}`}
+                            className="bg-white dark:bg-[#222222] border border-gray-100 dark:border-gray-800 rounded-2xl p-4"
                         >
-                            <div>
-                                <p className="text-sm text-gray-500 dark:text-gray-400">
-                                    {offering.courseTitle || offering.course?.title}
-                                </p>
-                                <p className="text-lg font-semibold text-gray-900 dark:text-[#E8ECF3]">{date}</p>
-                                <p className="text-sm text-gray-500 dark:text-gray-400">{modality}</p>
+                            <div className="flex flex-wrap items-center justify-between gap-3">
+                                <div>
+                                    <p className="font-semibold text-gray-900 dark:text-[#E8ECF3]">
+                                        {item.courseTitle || item.course?.title || 'Class'}
+                                    </p>
+                                    <p className="text-sm text-gray-500">
+                                        {formatSessionDate(item.startAt)}
+                                    </p>
+                                </div>
+                                <span className="text-[11px] px-2 py-1 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
+                                    {courseTypeLabel(type)}
+                                </span>
                             </div>
-                            <a
-                                href={offering.joinLink || offering.link || '#'}
-                                className="px-4 py-2 rounded-full border text-sm text-blue-600 dark:text-blue-400 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-                            >
-                                Сессияга кошулуу
-                            </a>
+                            {type === 'offline' && (
+                                <div className="mt-2 text-sm text-gray-500">
+                                    <p>Location: {item.location || item.room || 'Classroom TBD'}</p>
+                                    <p>Teacher: {resolveInstructorName(item)}</p>
+                                    <p>Schedule: {formatSessionDate(item.startAt)}</p>
+                                </div>
+                            )}
+                            {type === 'online_live' && (
+                                <div className="mt-2 flex flex-wrap items-center gap-2 text-sm">
+                                    <span className="text-blue-700 dark:text-blue-300">
+                                        Countdown:{' '}
+                                        {item.startAt
+                                            ? formatCountdown(
+                                                  new Date(item.startAt).getTime(),
+                                                  nowMs
+                                              )
+                                            : '--:--:--'}
+                                    </span>
+                                    {joinUrl && joinAllowed ? (
+                                        <a
+                                            href={joinUrl}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="px-3 py-1 rounded-full bg-blue-600 text-white text-xs"
+                                        >
+                                            Join class
+                                        </a>
+                                    ) : (
+                                        <span className="text-xs text-amber-600">
+                                            Join 10 мүнөт мурун ачылат
+                                        </span>
+                                    )}
+                                    <button
+                                        type="button"
+                                        onClick={() => setSelectedLiveId(String(item.id))}
+                                        className="px-3 py-1 rounded-full border text-xs text-gray-600 dark:text-gray-300 dark:border-gray-700"
+                                    >
+                                        Live page
+                                    </button>
+                                    <span className="text-xs text-gray-500">
+                                        Recordings: {recordings.length}
+                                    </span>
+                                </div>
+                            )}
                         </div>
                     );
                 })}
             </div>
+
+            {selectedLive && resolveCourseType(selectedLive) === 'online_live' && (
+                <section className="bg-white dark:bg-[#222222] rounded-3xl border border-gray-100 dark:border-gray-800 p-5 space-y-3">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-[#E8ECF3]">
+                        Live class page
+                    </h3>
+                    <p className="text-sm text-gray-500">
+                        {selectedLive.courseTitle || selectedLive.course?.title}
+                    </p>
+                    <p className="text-sm text-blue-700 dark:text-blue-300">
+                        Countdown:{' '}
+                        {selectedLive.startAt
+                            ? formatCountdown(new Date(selectedLive.startAt).getTime(), nowMs)
+                            : '--:--:--'}
+                    </p>
+                    <div className="flex flex-wrap items-center gap-2">
+                        {selectedJoinUrl && selectedJoinAllowed ? (
+                            <a
+                                href={selectedJoinUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="px-4 py-2 rounded-full bg-blue-600 text-white text-sm"
+                            >
+                                Join class
+                            </a>
+                        ) : (
+                            <button
+                                type="button"
+                                disabled
+                                className="px-4 py-2 rounded-full border text-sm text-gray-400 cursor-not-allowed"
+                            >
+                                Join class
+                            </button>
+                        )}
+                    </div>
+                    <div className="space-y-2">
+                        <p className="font-medium text-gray-900 dark:text-[#E8ECF3]">Recordings</p>
+                        {selectedRecordings.length ? (
+                            selectedRecordings.map((rec) => (
+                                <a
+                                    key={rec.id || rec.url}
+                                    href={rec.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="block text-sm text-blue-600 dark:text-blue-400 underline"
+                                >
+                                    {rec.title || 'Recording'}
+                                </a>
+                            ))
+                        ) : (
+                            <p className="text-sm text-gray-500">Азырынча recording жок.</p>
+                        )}
+                    </div>
+                </section>
+            )}
         </div>
     );
 };
@@ -678,7 +1424,10 @@ const TasksTab = ({ tasks }) => (
                     </thead>
                     <tbody>
                         {tasks.map((task) => (
-                            <tr key={task.id || task.taskId} className="border-t border-gray-100 dark:border-gray-800">
+                            <tr
+                                key={task.id || task.taskId}
+                                className="border-t border-gray-100 dark:border-gray-800"
+                            >
                                 <td className="px-4 py-3 font-medium text-gray-900 dark:text-[#E8ECF3]">
                                     {task.title}
                                 </td>
@@ -693,10 +1442,11 @@ const TasksTab = ({ tasks }) => (
                                 </td>
                                 <td className="px-4 py-3">
                                     <span
-                                        className={`px-3 py-1 rounded-full text-xs ${task.status === 'completed'
-                                            ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
-                                            : 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400'
-                                            }`}
+                                        className={`px-3 py-1 rounded-full text-xs ${
+                                            task.status === 'completed'
+                                                ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
+                                                : 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400'
+                                        }`}
                                     >
                                         {task.status === 'completed' ? 'Жабылган' : 'Күтүүдө'}
                                     </span>
@@ -714,7 +1464,15 @@ const TasksTab = ({ tasks }) => (
     </div>
 );
 
-const ProgressTab = ({ items }) => {
+const ProgressTab = ({
+    items,
+    attendanceStats,
+    attendanceEnabled,
+    engagement,
+    leaderboardItems,
+    milestoneItems,
+    badgeItems,
+}) => {
     const formatTime = (seconds) => {
         if (seconds === null || seconds === undefined) return null;
         const mins = Math.floor(seconds / 60);
@@ -742,6 +1500,49 @@ const ProgressTab = ({ items }) => {
             <h2 className="text-2xl font-semibold text-gray-900 dark:text-[#E8ECF3]">
                 Прогресс жана сертификаттар
             </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
+                <StatCard label="XP" value={engagement.xp} />
+                <StatCard label="Learning streak" value={`${engagement.streak} күн`} />
+                {attendanceEnabled ? (
+                    <StatCard label="Attendance" value={`${attendanceStats.rate}%`} />
+                ) : null}
+                <StatCard
+                    label="Leaderboard"
+                    value={`Top ${Math.max(1, leaderboardItems.length)}`}
+                />
+            </div>
+            <div className="grid grid-cols-1 xl:grid-cols-3 gap-3">
+                <div className="xl:col-span-2 bg-white dark:bg-[#222222] rounded-3xl border border-gray-100 dark:border-gray-800 p-4">
+                    <h3 className="font-semibold text-gray-900 dark:text-[#E8ECF3]">
+                        Course milestones
+                    </h3>
+                    <div className="mt-2 space-y-2 text-sm">
+                        {milestoneItems.map((item) => (
+                            <div key={item.id || item.title}>
+                                <p className="font-medium text-gray-900 dark:text-[#E8ECF3]">
+                                    {item.title}
+                                </p>
+                                <p className="text-gray-500">{item.value || item.description}</p>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+                <div className="bg-white dark:bg-[#222222] rounded-3xl border border-gray-100 dark:border-gray-800 p-4">
+                    <h3 className="font-semibold text-gray-900 dark:text-[#E8ECF3]">
+                        Achievement badges
+                    </h3>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                        {badgeItems.map((badge) => (
+                            <span
+                                key={badge.id || badge.title}
+                                className="px-2 py-1 rounded-full text-xs bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300"
+                            >
+                                {badge.title || badge.name}
+                            </span>
+                        ))}
+                    </div>
+                </div>
+            </div>
             <div className="space-y-4">
                 {items.map((item) => (
                     <div
@@ -758,31 +1559,22 @@ const ProgressTab = ({ items }) => {
                                 </p>
                             </div>
                             <div className="flex items-center gap-3 flex-wrap">
-                                <div className="w-48">
-                                    <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400">
-                                        <span>Прогресс</span>
-                                        <span>{item.progressPercent}%</span>
-                                    </div>
-                                    <div className="h-2 rounded-full bg-gray-100 dark:bg-gray-700 overflow-hidden">
-                                        <div
-                                            className="h-2 bg-blue-600 rounded-full"
-                                            style={{ width: `${item.progressPercent}%` }}
-                                        />
-                                    </div>
-                                </div>
+                                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                                    {item.progressPercent}%
+                                </span>
                                 {item.resumeLesson ? (
                                     <Link
                                         to={
                                             item.courseId
-                                                ? {
-                                                    pathname: `/courses/${item.courseId}`,
-                                                    search: `?resumeLessonId=${item.resumeLesson.lessonId || ''}${item.resumeLesson.lastVideoTime
-                                                            ? `&resumeTime=${Math.floor(
+                                                ? `/courses/${item.courseId}?resumeLessonId=${
+                                                      item.resumeLesson.lessonId || ''
+                                                  }${
+                                                      item.resumeLesson.lastVideoTime
+                                                          ? `&resumeTime=${Math.floor(
                                                                 item.resumeLesson.lastVideoTime
                                                             )}`
-                                                            : ''
-                                                        }`,
-                                                }
+                                                          : ''
+                                                  }`
                                                 : '#'
                                         }
                                         className="inline-flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400 px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-900/30"
@@ -800,6 +1592,15 @@ const ProgressTab = ({ items }) => {
                                     </span>
                                 ) : null}
                             </div>
+                        </div>
+
+                        <div className="h-2 rounded-full bg-gray-100 dark:bg-gray-700">
+                            <div
+                                className="h-2 rounded-full bg-blue-500"
+                                style={{
+                                    width: `${Math.min(100, Math.max(0, item.progressPercent))}%`,
+                                }}
+                            />
                         </div>
 
                         {item.sections.length ? (
@@ -823,10 +1624,18 @@ const ProgressTab = ({ items }) => {
                                                 const isQuiz = lesson.kind === 'quiz';
                                                 const quizBadge = isQuiz
                                                     ? lesson.quizPassed === true
-                                                        ? { label: 'Квиз өттү', className: 'bg-green-100 text-green-700' }
+                                                        ? {
+                                                              label: 'Квиз өттү',
+                                                              className:
+                                                                  'bg-green-100 text-green-700',
+                                                          }
                                                         : lesson.quizPassed === false
-                                                            ? { label: 'Квиз өтпөдү', className: 'bg-red-100 text-red-700' }
-                                                            : null
+                                                          ? {
+                                                                label: 'Квиз өтпөдү',
+                                                                className:
+                                                                    'bg-red-100 text-red-700',
+                                                            }
+                                                          : null
                                                     : null;
                                                 return (
                                                     <div
@@ -835,10 +1644,11 @@ const ProgressTab = ({ items }) => {
                                                     >
                                                         <div className="flex items-center gap-3">
                                                             <span
-                                                                className={`w-5 h-5 rounded-full flex items-center justify-center text-xs ${lesson.completed
-                                                                    ? 'bg-green-100 text-green-700'
-                                                                    : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-400'
-                                                                    }`}
+                                                                className={`w-5 h-5 rounded-full flex items-center justify-center text-xs ${
+                                                                    lesson.completed
+                                                                        ? 'bg-green-100 text-green-700'
+                                                                        : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-400'
+                                                                }`}
                                                             >
                                                                 {lesson.completed ? '✓' : ''}
                                                             </span>
@@ -850,24 +1660,33 @@ const ProgressTab = ({ items }) => {
                                                                     <span className="text-[11px] px-2 py-0.5 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 uppercase">
                                                                         {lesson.kind === 'quiz'
                                                                             ? 'Квиз'
-                                                                            : lesson.kind === 'article'
-                                                                                ? 'Макала'
-                                                                                : lesson.kind === 'code'
-                                                                                    ? 'Код'
-                                                                                    : 'Видео'}
+                                                                            : lesson.kind ===
+                                                                                'article'
+                                                                              ? 'Макала'
+                                                                              : lesson.kind ===
+                                                                                  'code'
+                                                                                ? 'Код'
+                                                                                : 'Видео'}
                                                                     </span>
                                                                     {quizBadge ? (
-                                                                        <span className={`text-[11px] px-2 py-0.5 rounded-full ${quizBadge.className}`}>
+                                                                        <span
+                                                                            className={`text-[11px] px-2 py-0.5 rounded-full ${quizBadge.className}`}
+                                                                        >
                                                                             {quizBadge.label}
-                                                                            {typeof lesson.quizScore === 'number'
+                                                                            {typeof lesson.quizScore ===
+                                                                            'number'
                                                                                 ? ` (${lesson.quizScore}%)`
                                                                                 : ''}
                                                                         </span>
                                                                     ) : null}
                                                                 </div>
-                                                                {!lesson.completed && lesson.lastVideoTime ? (
+                                                                {!lesson.completed &&
+                                                                lesson.lastVideoTime ? (
                                                                     <span className="text-xs text-gray-500 dark:text-gray-400">
-                                                                        Акыркы убакыт: {formatTime(lesson.lastVideoTime)}
+                                                                        Акыркы убакыт:{' '}
+                                                                        {formatTime(
+                                                                            lesson.lastVideoTime
+                                                                        )}
                                                                     </span>
                                                                 ) : null}
                                                             </div>
@@ -890,7 +1709,6 @@ const ProgressTab = ({ items }) => {
         </div>
     );
 };
-
 const ProfileTab = ({
     student,
     notificationSettings,
@@ -904,7 +1722,9 @@ const ProfileTab = ({
             <h2 className="text-2xl font-semibold text-gray-900 dark:text-[#E8ECF3]">Профиль</h2>
             <div className="bg-white dark:bg-[#222222] rounded-3xl border border-gray-100 dark:border-gray-800 p-6 space-y-4">
                 <div>
-                    <label className="text-sm font-medium text-gray-600 dark:text-gray-400">Аты-жөнү</label>
+                    <label className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                        Аты-жөнү
+                    </label>
                     <input
                         type="text"
                         className="mt-1 w-full border rounded-2xl px-3 py-2 bg-white dark:bg-[#222222] text-gray-900 dark:text-[#E8ECF3] border-gray-200 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -914,7 +1734,9 @@ const ProfileTab = ({
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                        <label className="text-sm font-medium text-gray-600 dark:text-gray-400">Email</label>
+                        <label className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                            Email
+                        </label>
                         <input
                             type="email"
                             className="mt-1 w-full border rounded-2xl px-3 py-2 bg-white dark:bg-[#222222] text-gray-900 dark:text-[#E8ECF3] border-gray-200 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -923,7 +1745,9 @@ const ProfileTab = ({
                         />
                     </div>
                     <div>
-                        <label className="text-sm font-medium text-gray-600 dark:text-gray-400">Телефон</label>
+                        <label className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                            Телефон
+                        </label>
                         <input
                             type="text"
                             className="mt-1 w-full border rounded-2xl px-3 py-2 bg-white dark:bg-[#222222] text-gray-900 dark:text-[#E8ECF3] border-gray-200 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -939,7 +1763,9 @@ const ProfileTab = ({
             </div>
             <div className="bg-white dark:bg-[#222222] rounded-3xl border border-gray-100 dark:border-gray-800 p-6 space-y-4">
                 <div>
-                    <p className="text-lg font-semibold text-gray-900 dark:text-[#E8ECF3]">Эскертмелер</p>
+                    <p className="text-lg font-semibold text-gray-900 dark:text-[#E8ECF3]">
+                        Эскертмелер
+                    </p>
                     <p className="text-sm text-gray-500 dark:text-gray-400">
                         Кайсы каналдар аркылуу эскертмелерди алгыңыз келерин тандаңыз.
                     </p>
@@ -964,7 +1790,9 @@ const ProfileTab = ({
                                             {label}
                                         </label>
                                         {description && (
-                                            <p className="text-sm text-gray-500 dark:text-gray-400">{description}</p>
+                                            <p className="text-sm text-gray-500 dark:text-gray-400">
+                                                {description}
+                                            </p>
                                         )}
                                     </div>
                                     <label className="relative inline-flex items-center cursor-pointer">
@@ -1010,5 +1838,98 @@ const StatCard = ({ label, value }) => (
         <p className="text-2xl font-semibold text-gray-900 dark:text-[#E8ECF3] mt-1">{value}</p>
     </div>
 );
+
+OverviewTab.propTypes = {
+    student: PropTypes.shape({
+        name: PropTypes.string,
+        streak: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
+        lastLesson: PropTypes.shape({
+            lesson: PropTypes.string,
+            course: PropTypes.string,
+        }),
+    }).isRequired,
+    stats: PropTypes.shape({
+        activeCourses: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
+        lessonsCompleted: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
+        timeThisWeek: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
+        pendingTasks: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
+    }).isRequired,
+    offerings: PropTypes.arrayOf(PropTypes.object).isRequired,
+    tasks: PropTypes.arrayOf(PropTypes.object).isRequired,
+    announcements: PropTypes.arrayOf(PropTypes.object).isRequired,
+    attendanceStats: PropTypes.shape({
+        rate: PropTypes.number,
+        totalSessions: PropTypes.number,
+        present: PropTypes.number,
+        absent: PropTypes.number,
+    }).isRequired,
+    attendanceEnabled: PropTypes.bool.isRequired,
+    engagement: PropTypes.shape({
+        xp: PropTypes.number,
+        streak: PropTypes.number,
+        level: PropTypes.number,
+        currentLevelXp: PropTypes.number,
+        nextLevelGap: PropTypes.number,
+    }).isRequired,
+    leaderboardItems: PropTypes.arrayOf(PropTypes.object).isRequired,
+    milestoneItems: PropTypes.arrayOf(PropTypes.object).isRequired,
+    badgeItems: PropTypes.arrayOf(PropTypes.object).isRequired,
+};
+
+CoursesTab.propTypes = {
+    courses: PropTypes.arrayOf(PropTypes.object).isRequired,
+    offeringsByCourse: PropTypes.instanceOf(Map).isRequired,
+};
+
+ScheduleTab.propTypes = {
+    offerings: PropTypes.arrayOf(PropTypes.object).isRequired,
+    recordings: PropTypes.arrayOf(PropTypes.object),
+};
+
+ScheduleTab.defaultProps = {
+    recordings: [],
+};
+
+TasksTab.propTypes = {
+    tasks: PropTypes.arrayOf(PropTypes.object).isRequired,
+};
+
+ProgressTab.propTypes = {
+    items: PropTypes.arrayOf(PropTypes.object).isRequired,
+    attendanceStats: PropTypes.shape({
+        rate: PropTypes.number,
+    }).isRequired,
+    attendanceEnabled: PropTypes.bool.isRequired,
+    engagement: PropTypes.shape({
+        xp: PropTypes.number,
+        streak: PropTypes.number,
+    }).isRequired,
+    leaderboardItems: PropTypes.arrayOf(PropTypes.object).isRequired,
+    milestoneItems: PropTypes.arrayOf(PropTypes.object).isRequired,
+    badgeItems: PropTypes.arrayOf(PropTypes.object).isRequired,
+};
+
+ProfileTab.propTypes = {
+    student: PropTypes.shape({
+        name: PropTypes.string,
+        email: PropTypes.string,
+        phone: PropTypes.string,
+    }).isRequired,
+    notificationSettings: PropTypes.object,
+    onNotificationChange: PropTypes.func,
+    onSaveNotifications: PropTypes.func.isRequired,
+    savingNotifications: PropTypes.bool,
+};
+
+ProfileTab.defaultProps = {
+    notificationSettings: {},
+    onNotificationChange: undefined,
+    savingNotifications: false,
+};
+
+StatCard.propTypes = {
+    label: PropTypes.string.isRequired,
+    value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+};
 
 export default StudentDashboard;

@@ -1,6 +1,18 @@
 import axios from 'axios';
 import api, { clean } from '../../shared/api/client';
 import toast from 'react-hot-toast';
+import { COURSE_TYPE } from '@shared/contracts';
+
+const VALID_COURSE_TYPES = new Set(Object.values(COURSE_TYPE));
+
+const withCourseType = (courseData = {}) => {
+    if (!courseData || typeof courseData !== 'object') return courseData;
+    if (!courseData.courseType) return courseData;
+    if (!VALID_COURSE_TYPES.has(courseData.courseType)) {
+        throw new Error('courseType must be video, offline, or online_live');
+    }
+    return courseData;
+};
 
 export const fetchCourses = async ({ q = '', limit = 20, excludeIds = '' } = {}) => {
     try {
@@ -63,12 +75,12 @@ export const fetchCompanyCourses = async (companyId, params = {}) => {
 };
 
 export const createCourse = async (courseData) => {
-    const response = await api.post('/courses', courseData);
+    const response = await api.post('/courses', withCourseType(courseData));
     return response.data;
 };
 
 export const updateCourse = async (courseId, courseData) => {
-    const response = await api.patch(`/courses/${courseId}`, courseData);
+    const response = await api.patch(`/courses/${courseId}`, withCourseType(courseData));
     return response.data;
 };
 

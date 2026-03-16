@@ -1,7 +1,14 @@
-import React, { useContext, useEffect, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { fetchCourses } from '@services/api';
+
+const courseTypeLabel = (type) => {
+    const normalized = String(type || 'video').toLowerCase();
+    if (normalized === 'offline') return 'Offline';
+    if (normalized === 'online_live') return 'Online Live';
+    return 'Video';
+};
 
 const InstructorCourses = () => {
     const { user } = useContext(AuthContext);
@@ -37,6 +44,9 @@ const InstructorCourses = () => {
                             decoding="async"
                         />
                         <h2 className="text-xl font-semibold mb-2">{course.title}</h2>
+                        <span className="inline-flex mb-2 text-xs px-2 py-1 rounded-full bg-blue-50 text-blue-700">
+                            {courseTypeLabel(course.courseType || course.type)}
+                        </span>
                         <p className="text-gray-700 dark:text-[#a6adba] mb-2">{course.instructor.fullName}</p>
                         <p className="text-sm text-gray-500 dark:text-[#a6adba] mb-2">Баасы: {course.price} с</p>
                         <span

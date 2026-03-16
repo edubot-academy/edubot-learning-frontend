@@ -102,3 +102,42 @@ export const fetchHomepageLeaderboard = async () =>
     safeRequest(() => api.get('/leaderboard/homepage'), {
         items: mockStudents.slice(0, 3),
     });
+
+export const fetchInternalWeeklyLeaderboard = async ({ page = 1, limit = 10, track = 'all' } = {}) =>
+    safeRequest(
+        () =>
+            api.get('/leaderboard/internal/weekly', {
+                params: clean({ page, limit, track }),
+            }),
+        () => buildFallback(page, limit)
+    );
+
+export const fetchInternalCourseLeaderboard = async (
+    courseId,
+    { page = 1, limit = 10, track = 'all' } = {}
+) =>
+    safeRequest(
+        () =>
+            api.get(`/leaderboard/internal/course/${courseId}`, {
+                params: clean({ page, limit, track }),
+            }),
+        () => buildFallback(page, limit)
+    );
+
+export const fetchInternalStudentOfWeek = async ({ track = 'all' } = {}) =>
+    safeRequest(
+        () =>
+            api.get('/leaderboard/internal/student-of-week', {
+                params: clean({ track }),
+            }),
+        mockStudents[0]
+    );
+
+export const fetchInternalHomepageLeaderboard = async ({ track = 'all' } = {}) =>
+    safeRequest(
+        () =>
+            api.get('/leaderboard/internal/homepage', {
+                params: clean({ track }),
+            }),
+        { items: mockStudents.slice(0, 3) }
+    );

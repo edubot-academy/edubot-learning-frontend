@@ -10,6 +10,7 @@ import {
 } from '@services/api';
 import toast from 'react-hot-toast';
 import { AuthContext } from '../context/AuthContext';
+import AttendancePage from './Attendance';
 
 const AssistantDashboard = () => {
     const { user } = useContext(AuthContext);
@@ -28,6 +29,7 @@ const AssistantDashboard = () => {
     const [discounts, setDiscounts] = useState({});
     const [totalPages, setTotalPages] = useState(1);
     const [loading, setLoading] = useState(true);
+    const [activeTab, setActiveTab] = useState('enrollments');
 
     // Company membership (derived from company-user entity)
     const [myCos, setMyCos] = useState([]); // [{id,name,role,...}]
@@ -248,9 +250,53 @@ const AssistantDashboard = () => {
 
     const filteredStudents = students;
 
+    if (activeTab === 'attendance') {
+        return (
+            <div className="pt-20 p-6">
+                <h2 className="text-2xl font-bold mb-4">📘 Assistant Dashboard</h2>
+                <div className="mb-4 inline-flex gap-2 rounded-xl border border-gray-200 dark:border-gray-700 p-1 bg-white dark:bg-[#111111]">
+                    <button
+                        type="button"
+                        onClick={() => setActiveTab('enrollments')}
+                        className="px-3 py-1.5 rounded-lg text-sm font-medium text-gray-600 dark:text-[#a6adba] hover:text-gray-900 dark:hover:text-[#E8ECF3]"
+                    >
+                        Каттоо
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => setActiveTab('attendance')}
+                        className="px-3 py-1.5 rounded-lg text-sm font-medium bg-blue-600 text-white"
+                    >
+                        Катышуу
+                    </button>
+                </div>
+                <div className="bg-white dark:bg-[#111111] shadow-sm rounded-2xl p-4 border border-gray-100 dark:border-gray-800">
+                    <AttendancePage embedded />
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="pt-20 p-6 relative">
             <h2 className="text-2xl font-bold mb-4">📘 Assistant Dashboard</h2>
+
+            <div className="mb-4 inline-flex gap-2 rounded-xl border border-gray-200 dark:border-gray-700 p-1 bg-white dark:bg-[#111111]">
+                <button
+                    type="button"
+                    onClick={() => setActiveTab('enrollments')}
+                    className="px-3 py-1.5 rounded-lg text-sm font-medium bg-blue-600 text-white"
+                >
+                    Каттоо
+                </button>
+                <button
+                    type="button"
+                    onClick={() => setActiveTab('attendance')}
+                    className="px-3 py-1.5 rounded-lg text-sm font-medium text-gray-600 dark:text-[#a6adba] hover:text-gray-900 dark:hover:text-[#E8ECF3]"
+                >
+                    Катышуу
+                </button>
+            </div>
 
             {isAssistant && activeCompanyId && (
                 <div className="mb-3 text-xs text-gray-600 dark:text-[#a6adba]">

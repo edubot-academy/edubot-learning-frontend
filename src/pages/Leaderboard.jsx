@@ -81,7 +81,7 @@ const LeaderRow = ({ item, rank }) => (
                 </div>
             ) : null}
         </div>
-        {item?.quizzesPassed ? (
+        {Number(item?.quizzesPassed) > 0 ? (
             <span className="text-xs bg-orange-50 text-orange-700 px-2 py-1 rounded-full">
                 {item.quizzesPassed} тест
             </span>
@@ -289,8 +289,10 @@ const LeaderboardPage = () => {
                             <div className="flex-1">
                                 <p className="text-lg font-semibold">{studentOfWeek.fullName}</p>
                                 <p className="text-sm text-gray-600 dark:text-gray-300">
-                                    {studentOfWeek.xp} XP · {studentOfWeek.lessonsCompleted || 0} сабак ·{' '}
-                                    {studentOfWeek.quizzesPassed || 0} тест
+                                    {studentOfWeek.xp} XP · {studentOfWeek.lessonsCompleted || 0} сабак
+                                    {Number(studentOfWeek.quizzesPassed) > 0
+                                        ? ` · ${studentOfWeek.quizzesPassed} тест`
+                                        : ''}
                                 </p>
                                 {studentOfWeek.progressPercent ? (
                                     <div className="mt-3">
