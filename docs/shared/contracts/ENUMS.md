@@ -18,9 +18,8 @@ export enum PaymentStatus {
 
 ```ts
 export enum EnrollmentStatus {
-  PENDING_ACTIVATION = 'pending_activation',
+  PENDING = 'pending',
   ACTIVE = 'active',
-  PAUSED = 'paused',
   COMPLETED = 'completed',
   CANCELLED = 'cancelled',
 }
@@ -73,6 +72,8 @@ export enum LeadSource {
 
 ## LeadStatus
 
+Legacy storage enum still persisted in CRM DB during rollout.
+
 ```ts
 export enum LeadStatus {
   NEW = 'new',
@@ -88,7 +89,22 @@ export enum LeadStatus {
 }
 ```
 
+## LeadQualificationStatus
+
+Canonical CRM API enum for lead qualification ownership.
+
+```ts
+export enum LeadQualificationStatus {
+  NEW = 'new',
+  CONTACTED = 'contacted',
+  QUALIFIED = 'qualified',
+  DISQUALIFIED = 'disqualified',
+}
+```
+
 ## DealStage
+
+Legacy storage enum still persisted in CRM DB during rollout.
 
 ```ts
 export enum DealStage {
@@ -97,6 +113,22 @@ export enum DealStage {
   TRIAL_BOOKED = 'trial_booked',
   TRIAL_COMPLETED = 'trial_completed',
   OFFER_SENT = 'offer_sent',
+  NEGOTIATION = 'negotiation',
+  PAYMENT_PENDING = 'payment_pending',
+  WON = 'won',
+  LOST = 'lost',
+}
+```
+
+## DealPipelineStage
+
+Canonical CRM API enum for sales funnel ownership.
+
+```ts
+export enum DealPipelineStage {
+  NEW = 'new',
+  CONSULTATION = 'consultation',
+  TRIAL = 'trial',
   NEGOTIATION = 'negotiation',
   PAYMENT_PENDING = 'payment_pending',
   WON = 'won',
@@ -113,5 +145,31 @@ export enum RetentionCaseStatus {
   MONITORING = 'monitoring',
   RESOLVED = 'resolved',
   ESCALATED = 'escalated',
+}
+```
+
+## TaskStatus
+
+Legacy storage enum still persisted in CRM DB during rollout.
+
+```ts
+export enum TaskStatus {
+  OPEN = 'open',
+  IN_PROGRESS = 'in_progress',
+  DONE = 'done',
+  CANCELLED = 'cancelled',
+}
+```
+
+## TaskWorkflowStatus
+
+Canonical CRM API enum for task workflow state. `overdue` is derived from `dueAt` and is not stored as a DB enum.
+
+```ts
+export enum TaskWorkflowStatus {
+  PENDING = 'pending',
+  COMPLETED = 'completed',
+  CANCELLED = 'cancelled',
+  OVERDUE = 'overdue',
 }
 ```

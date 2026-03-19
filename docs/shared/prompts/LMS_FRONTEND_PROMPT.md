@@ -89,9 +89,8 @@ Enrollment:
 - progress
 
 Enrollment statuses:
-- pending_activation
+- pending
 - active
-- paused
 - completed
 - cancelled
 

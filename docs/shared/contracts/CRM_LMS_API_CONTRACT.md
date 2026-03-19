@@ -12,8 +12,16 @@ This document defines the minimum integration contract between EduBot CRM and Ed
 Use secure service-to-service auth headers:
 - `Authorization: Bearer <integration_token>`
 - `X-Client-System: crm`
-- `X-Company-Id: <company_id>`
-- `X-Request-Id: <uuid>`
+- `X-Company-Id: <company_context_id>` (required; single-tenant CRM can use a constant like `default`)
+- `X-Request-Id: <uuid>` (new value per transport attempt/retry)
+
+For mutating enrollment endpoints, CRM must also send:
+- `X-Idempotency-Key: <stable_key_per_business_action>`
+
+Idempotency contract:
+- same key + same payload => safe replay (same result)
+- same key + different payload => `409 conflict`
+- missing key on enrollment mutation => `400`
 
 ### LMS calling CRM webhooks
 Use:
@@ -128,8 +136,8 @@ POST /api/integration/enrollments
 
 ```ts
 type CreateIntegrationEnrollmentRequestDto = {
-  crmCompanyId: string;
   crmLeadId: string;
+  crmContactId?: string | null;
   crmDealId?: string | null;
   crmPaymentId?: string | null;
   student: {
@@ -138,9 +146,10 @@ type CreateIntegrationEnrollmentRequestDto = {
     email?: string | null;
   };
   courseId: string;
-  groupId: string;
+  courseType: 'video' | 'offline' | 'online_live';
+  groupId?: string | null; // video: nullable; offline/online_live: required
   paymentStatus: 'submitted' | 'confirmed' | 'failed' | 'refunded' | 'overdue';
-  enrollmentStatus?: 'pending_activation' | 'active' | 'paused' | 'completed' | 'cancelled';
+  enrollmentStatus?: 'pending' | 'active' | 'completed' | 'cancelled';
   sourceSystem: 'crm';
   meta?: {
     submittedByUserId?: string | null;
@@ -152,32 +161,22 @@ type CreateIntegrationEnrollmentRequestDto = {
 
 ### Expected LMS behavior
 - find or create student
-- map `crmLeadId`
-- create enrollment as `pending_activation` by default
+- map stable CRM person identity, preferably `crmContactId`
+- keep `crmLeadId` only for lineage/audit
+- create enrollment as `pending` by default
 - keep academic access locked until activated
+- validate course/group rules:
+  - `video` can be created with `groupId = null`
+  - `offline` and `online_live` require `groupId`
 
 ### Response shape
 
 ```ts
 type CreateIntegrationEnrollmentResponseDto = {
-  success: boolean;
-  message: string;
-  student: {
-    id: string;
-    crmLeadId: string | null;
-    fullName: string;
-    phone: string;
-    email: string | null;
-  };
-  enrollment: {
-    id: string;
-    courseId: string;
-    groupId: string;
-    enrollmentStatus: 'pending_activation' | 'active' | 'paused' | 'completed' | 'cancelled';
-    accessStatus: 'locked' | 'active';
-    paymentStatusSnapshot: 'submitted' | 'confirmed' | 'failed' | 'refunded' | 'overdue';
-    createdAt: string;
-  };
+  enrollmentId: string;
+  studentId: string;
+  status: 'pending' | 'active' | 'completed' | 'cancelled';
+  accessActive: boolean;
 };
 ```
 
@@ -193,8 +192,8 @@ PATCH /api/integration/enrollments/:enrollmentId/activate
 
 ```ts
 type ActivateIntegrationEnrollmentRequestDto = {
-  crmCompanyId: string;
   crmLeadId: string;
+  crmContactId?: string | null;
   crmPaymentId?: string | null;
   paymentStatus: 'confirmed';
   activatedByUserId?: string | null;
@@ -212,14 +211,10 @@ type ActivateIntegrationEnrollmentRequestDto = {
 
 ```ts
 type ActivateIntegrationEnrollmentResponseDto = {
-  success: boolean;
-  message: string;
-  enrollment: {
-    id: string;
-    enrollmentStatus: 'pending_activation' | 'active' | 'paused' | 'completed' | 'cancelled';
-    accessStatus: 'locked' | 'active';
-    activatedAt: string | null;
-  };
+  enrollmentId: string;
+  studentId: string;
+  status: 'pending' | 'active' | 'completed' | 'cancelled';
+  accessActive: boolean;
 };
 ```
 
@@ -264,7 +259,7 @@ type IntegrationStudentSummaryResponseDto = {
     courseName: string;
     groupId: string | null;
     groupName: string | null;
-    enrollmentStatus: 'pending_activation' | 'active' | 'paused' | 'completed' | 'cancelled';
+    enrollmentStatus: 'pending' | 'active' | 'completed' | 'cancelled';
     attendanceRate: number | null;
     homeworkCompletionRate: number | null;
     quizParticipationRate: number | null;
@@ -272,6 +267,27 @@ type IntegrationStudentSummaryResponseDto = {
     lastActivityAt: string | null;
     riskLevel: 'low' | 'medium' | 'high' | 'critical' | null;
   }>;
+};
+```
+
+---
+
+## Transport retry/error policy
+
+- CRM retries LMS calls only on transient failures: `429`, `5xx`, timeout/network errors.
+- CRM does not retry on contract/auth/business errors: `400`, `401`, `403`, `404`, `409`, `422`.
+- LMS error envelope expected by CRM:
+
+```ts
+type IntegrationErrorResponse = {
+  success: false;
+  error: {
+    code: string;
+    message: string;
+    details?: unknown;
+  };
+  requestId: string;
+  timestamp: string;
 };
 ```
 
@@ -298,7 +314,6 @@ type LmsRiskAlertWebhookDto = {
   eventId: string;
   eventType: 'risk_alert';
   occurredAt: string;
-  companyId: string;
   crmLeadId?: string | null;
   lmsStudentId: string;
   lmsEnrollmentId: string;
@@ -350,11 +365,10 @@ type LmsEnrollmentStatusWebhookDto = {
   eventId: string;
   eventType: 'enrollment_status_changed';
   occurredAt: string;
-  companyId: string;
   crmLeadId?: string | null;
   lmsStudentId: string;
   lmsEnrollmentId: string;
-  enrollmentStatus: 'pending_activation' | 'active' | 'paused' | 'completed' | 'cancelled';
+  enrollmentStatus: 'pending' | 'active' | 'completed' | 'cancelled';
   accessStatus: 'locked' | 'active';
   reason?: string | null;
 };

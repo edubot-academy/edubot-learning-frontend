@@ -16,7 +16,7 @@ CRM creates payment with status `submitted`.
 ### 2. CRM requests enrollment in LMS
 LMS creates:
 - student if needed
-- enrollment with status `pending_activation`
+- enrollment with status `pending`
 - `accessStatus = locked`
 
 ### 3. Payment confirmed in CRM
@@ -45,12 +45,11 @@ This rule should be decided by business policy and kept consistent.
 Access should remain locked when:
 - payment is only submitted but not approved
 - enrollment exists but activation has not happened
-- enrollment is paused
 - enrollment is cancelled
 
 ---
 
-## When access may be paused later
+## When access may be restricted later
 
 Possible reasons:
 - overdue payment
@@ -58,9 +57,10 @@ Possible reasons:
 - policy violation
 - transfer or schedule issue
 
-If access is paused:
-- LMS should set `enrollmentStatus = paused`
-- CRM may receive status update or create follow-up task if needed
+If access is restricted later:
+- LMS may keep an internal hold or pause reason
+- the shared CRM-facing enrollment status contract should not expose a separate public `paused` status
+- CRM may receive a status update or create a follow-up task if needed
 
 ---
 

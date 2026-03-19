@@ -117,9 +117,8 @@ Enrollment entity fields:
 - updatedAt
 
 Enrollment statuses:
-- pending_activation
+- pending
 - active
-- paused
 - completed
 - cancelled
 
@@ -161,7 +160,7 @@ Create integration APIs for CRM:
 The integration flow should support:
 - CRM requests enrollment after payment submission
 - LMS creates student if needed
-- LMS creates enrollment as pending_activation
+- LMS creates enrollment as pending
 - CRM later activates enrollment after payment confirmation
 - LMS grants course access only when enrollment is active
 

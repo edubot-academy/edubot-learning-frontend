@@ -26,7 +26,11 @@ CRM stores:
 - tags
 
 ### 2. Lead qualification and deal creation
-Sales updates lead status and creates or advances a deal.
+Sales updates lead qualification and creates or advances a deal.
+
+CRM ownership split:
+- Lead owns qualification state
+- Deal owns sales funnel state
 
 CRM may reference:
 - LMS course ID
@@ -50,7 +54,7 @@ After payment submission, CRM sends enrollment request to LMS.
 LMS behavior:
 - find or create student
 - map CRM contact to LMS student
-- create enrollment with status `pending_activation`
+- create enrollment with status `pending`
 - keep academic access locked
 
 ### 6. Payment confirmation in CRM
@@ -107,7 +111,7 @@ CRM tracks:
 1. CRM marks payment overdue
 2. CRM may create payment reminder task
 3. CRM may optionally call LMS to pause enrollment
-4. LMS changes enrollment status to `paused` if business rules require
+4. LMS may keep an internal pause/hold reason, but the shared CRM-facing enrollment status contract should stay `cancelled` or an internal-only operational state
 
 ---
 
