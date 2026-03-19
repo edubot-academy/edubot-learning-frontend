@@ -14,9 +14,9 @@ import { formatMinutesToTime } from '../../../utils/timeUtils';
 
 const courseTypeLabel = (type) => {
     const normalized = String(type || 'video').toLowerCase();
-    if (normalized === 'offline') return 'Offline';
-    if (normalized === 'online_live') return 'Online Live';
-    return 'Video';
+    if (normalized === 'offline') return 'Оффлайн';
+    if (normalized === 'online_live') return 'Онлайн түз эфир';
+    return 'Видео';
 };
 
 const formatPrice = (price, currency = 'KGS') => {
@@ -55,6 +55,7 @@ const CardCourse = ({
 
     const courseAlreadyInCart = isInCart(id);
     const isCourseFavourite = isFavourite(id);
+    const isSelfServeVideoCourse = String(courseType || 'video').toLowerCase() === 'video';
 
     const handleFavoriteClick = async (e) => {
         e.stopPropagation();
@@ -119,6 +120,7 @@ const CardCourse = ({
             durationInHours,
             lessonCount,
             isPublished,
+            courseType,
         };
 
         const result = addToCart(courseData);
@@ -188,7 +190,7 @@ const CardCourse = ({
                                 ) : null}
                                 {String(courseType || '').toLowerCase() === 'online_live' && meetingUrl ? (
                                     <span className="text-[11px] px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700">
-                                        Live link
+                                        Түз эфир
                                     </span>
                                 ) : null}
                             </div>
@@ -235,9 +237,11 @@ const CardCourse = ({
                                     variant="primary"
                                     size="small"
                                     onClick={handleButtonClick}
-                                    disabled={courseAlreadyInCart}
+                                    disabled={courseAlreadyInCart || !isSelfServeVideoCourse}
                                 >
-                                    {courseAlreadyInCart ? (
+                                    {!isSelfServeVideoCourse ? (
+                                        'LMSте сатып алынбайт'
+                                    ) : courseAlreadyInCart ? (
                                         <>
                                             <img src={CardIcon} alt="cart" className="w-5 h-5 mr-2" />
                                             Себетте

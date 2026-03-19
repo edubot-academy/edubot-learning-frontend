@@ -3,7 +3,6 @@ import { Link, Navigate, useSearchParams } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import DashboardSidebar from '@features/dashboard/components/DashboardSidebar';
 import {
-    fetchCourses,
     fetchInstructorProfile,
     fetchCourseDetails,
     fetchUsers,
@@ -44,12 +43,12 @@ const NAV_ITEMS = [
     { id: 'students', label: 'Студенттер', icon: FiUsers },
     { id: 'profile', label: 'Профиль', icon: FiUser },
     { id: 'ai', label: 'AI ассистент', icon: FiCpu },
-    { id: 'offerings', label: 'Offeringдер', icon: FiLayers },
+    { id: 'offerings', label: 'Агымдар', icon: FiLayers },
     { id: 'sessions', label: 'Сессиялар', icon: FiCalendar },
     { id: 'attendance', label: 'Катышуу', icon: FiUsers },
     { id: 'analytics', label: 'Аналитика', icon: FiGlobe },
-    { id: 'leaderboard', label: 'Leaderboard', icon: FiFilter },
-    { id: 'homework', label: 'Homework', icon: FiBookOpen },
+    { id: 'leaderboard', label: 'Рейтинг', icon: FiFilter },
+    { id: 'homework', label: 'Үй тапшырма', icon: FiBookOpen },
     { id: 'notifications', label: 'Билдирүүлөр', icon: FiBell },
 ];
 
@@ -155,11 +154,8 @@ const InstructorDashboard = () => {
         const loadCourses = async () => {
             setLoadingCourses(true);
             try {
-                const data = await fetchCourses();
-                const instructorCourses = (data.courses || []).filter(
-                    (course) => course.instructor?.id === user.id
-                );
-                setCourseList(instructorCourses);
+                const profileData = await fetchInstructorProfile(user.id);
+                setCourseList(Array.isArray(profileData?.courses) ? profileData.courses : []);
             } catch (error) {
                 console.error('Failed to load instructor courses', error);
                 toast.error('Инструктор курстарын жүктөө мүмкүн болбоду');
@@ -196,7 +192,7 @@ const InstructorDashboard = () => {
         } catch (error) {
             console.error('Failed to load student courses', error);
             if (error?.response?.status === 403) {
-                setStudentsError('Not your course');
+                setStudentsError('Бул курс сизге бекитилген эмес');
             } else {
                 toast.error('Студенттер тизмесин жүктөө мүмкүн болбоду');
             }
@@ -235,7 +231,7 @@ const InstructorDashboard = () => {
                 setCourseStudents([]);
                 setCourseStudentsMeta(null);
                 if (error?.response?.status === 403) {
-                    setStudentsError('Not your course');
+                    setStudentsError('Бул курс сизге бекитилген эмес');
                 } else {
                     toast.error('Курс студенттерин жүктөө мүмкүн болбоду');
                 }
@@ -397,11 +393,8 @@ const InstructorDashboard = () => {
             closeDeliveryModal();
             setActiveTab('courses');
 
-            const data = await fetchCourses();
-            const instructorCourses = (data.courses || []).filter(
-                (course) => course.instructor?.id === user.id
-            );
-            setCourseList(instructorCourses);
+            const profileData = await fetchInstructorProfile(user.id);
+            setCourseList(Array.isArray(profileData?.courses) ? profileData.courses : []);
         } catch (error) {
             console.error('Failed to create delivery course', error);
             toast.error('Курсту түзүүдө ката кетти.');
@@ -538,7 +531,7 @@ const InstructorDashboard = () => {
                             to={analyticsLink}
                             className="inline-flex px-4 py-2 rounded-full bg-blue-600 text-white text-sm"
                         >
-                            Analytics
+                            Аналитика
                         </Link>
                     </div>
 
@@ -615,7 +608,7 @@ const OverviewSection = ({
                     accent="amber"
                 />
                 <QuickActionCard
-                    title="Analytics"
+                    title="Аналитика"
                     description="Attendance, homework жана risk метрикаларын көрүңүз."
                     link={analyticsLink}
                     buttonText="Аналитика"

@@ -1,13 +1,14 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useContext, useEffect, useMemo, useState } from 'react';
 import PropTypes from 'prop-types';
 import { toast } from 'react-hot-toast';
 import { ATTENDANCE_STATUS } from '@shared/contracts';
 import {
     fetchCourseAttendance,
     fetchCourseStudents,
-    fetchCourses,
+    fetchInstructorProfile,
     markAttendanceSession,
 } from '@services/api';
+import { AuthContext } from '../context/AuthContext';
 
 const todayLocal = () => new Date().toISOString().slice(0, 10);
 
@@ -52,6 +53,7 @@ const getAttendanceErrorMessage = (error) => {
 };
 
 const AttendancePage = ({ embedded = false }) => {
+    const { user } = useContext(AuthContext);
     const [courses, setCourses] = useState([]);
     const [selectedCourseId, setSelectedCourseId] = useState('');
     const [sessionDate, setSessionDate] = useState(todayLocal());
@@ -66,13 +68,14 @@ const AttendancePage = ({ embedded = false }) => {
     const [loadingReport, setLoadingReport] = useState(false);
 
     useEffect(() => {
+        if (!user?.id || user.role !== 'instructor') return;
         let cancelled = false;
         const loadCourses = async () => {
             setLoadingCourses(true);
             try {
-                const response = await fetchCourses({ limit: 200 });
+                const response = await fetchInstructorProfile(user.id);
                 if (cancelled) return;
-                const list = toCourseList(response);
+                const list = toCourseList(response?.courses || response);
                 const eligibleCourses = list.filter(isAttendanceCourseType);
                 setCourses(eligibleCourses);
                 if (eligibleCourses.length > 0) setSelectedCourseId(String(eligibleCourses[0].id));
@@ -89,7 +92,7 @@ const AttendancePage = ({ embedded = false }) => {
         return () => {
             cancelled = true;
         };
-    }, []);
+    }, [user]);
 
     useEffect(() => {
         if (!selectedCourseId) return;

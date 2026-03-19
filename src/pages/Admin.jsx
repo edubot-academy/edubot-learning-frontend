@@ -1458,7 +1458,6 @@ const AdminPanel = () => {
                                         <option value="student">Студент</option>
                                         <option value="instructor">Окутуучу</option>
                                         <option value="assistant">Ассистент</option>
-                                        <option value="sales">Сатуу</option>
                                         <option value="admin">Admin</option>
                                     </select>
                                     <input
@@ -1501,7 +1500,6 @@ const AdminPanel = () => {
                                                     <option value="student">Студент</option>
                                                     <option value="instructor">Окутуучу</option>
                                                     <option value="assistant">Ассистент</option>
-                                                    <option value="sales">Сатуу</option>
                                                     <option value="admin">Admin</option>
                                                 </select>
                                                 <button

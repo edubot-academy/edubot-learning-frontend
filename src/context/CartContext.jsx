@@ -127,6 +127,13 @@ export const CartProvider = ({ children }) => {
 
     const addToCart = useCallback(
         async (course) => {
+            if (String(course?.courseType || 'video').toLowerCase() !== 'video') {
+                return {
+                    success: false,
+                    message: 'LMS аркылуу өз алдынча сатып алуу видео курстар үчүн гана жеткиликтүү',
+                };
+            }
+
             const alreadyInCart = cartItems.some((item) => item.id === course.id);
             if (alreadyInCart) {
                 return { success: false, message: 'Курс уже в корзине' };

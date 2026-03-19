@@ -7,9 +7,8 @@ export const PAYMENT_STATUS = Object.freeze({
 });
 
 export const ENROLLMENT_STATUS = Object.freeze({
-    PENDING_ACTIVATION: 'pending_activation',
+    PENDING: 'pending',
     ACTIVE: 'active',
-    PAUSED: 'paused',
     COMPLETED: 'completed',
     CANCELLED: 'cancelled',
 });
@@ -29,8 +28,8 @@ export const COURSE_GROUP_STATUS = Object.freeze({
 
 export const COURSE_SESSION_STATUS = Object.freeze({
     SCHEDULED: 'scheduled',
-    DONE: 'done',
     COMPLETED: 'completed',
+    DONE: 'completed',
     CANCELLED: 'cancelled',
 });
 

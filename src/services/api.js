@@ -1,6 +1,5 @@
 export * from '../features/auth/api';
 export * from '../features/users/api';
-export * from '../features/enrollments/api';
 export * from '../features/courses/api';
 export * from '../features/ai/api';
 export * from '../features/categories/api';

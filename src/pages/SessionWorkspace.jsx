@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useContext, useEffect, useMemo, useState } from 'react';
 import PropTypes from 'prop-types';
 import { toast } from 'react-hot-toast';
 import {
@@ -22,7 +22,7 @@ import {
     fetchSessionMeeting,
     fetchCourseSessions,
     fetchCourseStudents,
-    fetchCourses,
+    fetchInstructorProfile,
     fetchSessionAttendance,
     importSessionAttendance,
     markAttendanceSession,
@@ -34,6 +34,7 @@ import {
     updateCourseSession,
     reviewSessionHomeworkSubmission,
 } from '@services/api';
+import { AuthContext } from '../context/AuthContext';
 
 const todayIso = new Date().toISOString().slice(0, 10);
 const JOIN_WINDOW_MS = 10 * 60 * 1000;
@@ -172,7 +173,16 @@ const normalizeCourseType = (course, session, group) =>
     group?.course?.courseType ||
     COURSE_TYPE.VIDEO;
 
+const getWorkspaceErrorMessage = (error, fallback) => {
+    const status = error?.response?.status;
+    if (status === 401) return 'Сессия мөөнөтү бүттү. Кайра кириңиз.';
+    if (status === 403) return 'Бул курс, группа же сессия сизге бекитилген эмес.';
+    const message = error?.response?.data?.message || error?.message || fallback;
+    return Array.isArray(message) ? message.join(', ') : message;
+};
+
 const SessionWorkspace = () => {
+    const { user } = useContext(AuthContext);
     const [activeTab, setActiveTab] = useState('attendance');
 
     const [courses, setCourses] = useState([]);
@@ -243,13 +253,14 @@ const SessionWorkspace = () => {
     }, []);
 
     useEffect(() => {
+        if (!user?.id || user.role !== 'instructor') return;
         let cancelled = false;
         const loadCourses = async () => {
             setLoadingCourses(true);
             try {
-                const response = await fetchCourses({ limit: 200 });
+                const response = await fetchInstructorProfile(user.id);
                 if (cancelled) return;
-                const list = toArray(response);
+                const list = toArray(response?.courses || response);
                 const teachingCourses = list.filter((course) => {
                     const type = String(course?.courseType || course?.type || 'video').toLowerCase();
                     return type === COURSE_TYPE.OFFLINE || type === COURSE_TYPE.ONLINE_LIVE;
@@ -259,11 +270,11 @@ const SessionWorkspace = () => {
                     setSelectedCourseId(String(teachingCourses[0].id));
                 } else {
                     setSelectedCourseId('');
-                    toast.error('Sessions supports only offline or online_live courses.');
+                    toast.error('Сессия workspace оффлайн же онлайн түз эфир курстары үчүн гана жеткиликтүү.');
                 }
             } catch (error) {
                 console.error(error);
-                toast.error('Курстар жүктөлгөн жок.');
+                toast.error(getWorkspaceErrorMessage(error, 'Курстар жүктөлгөн жок.'));
             } finally {
                 if (!cancelled) setLoadingCourses(false);
             }
@@ -272,7 +283,7 @@ const SessionWorkspace = () => {
         return () => {
             cancelled = true;
         };
-    }, []);
+    }, [user]);
 
     useEffect(() => {
         if (!selectedCourseId) {
@@ -292,7 +303,7 @@ const SessionWorkspace = () => {
                 setSelectedGroupId(list.length ? String(list[0].id) : '');
             } catch (error) {
                 console.error(error);
-                toast.error('Группаларды жүктөө мүмкүн болгон жок.');
+                toast.error(getWorkspaceErrorMessage(error, 'Группаларды жүктөө мүмкүн болгон жок.'));
                 setGroups([]);
                 setSelectedGroupId('');
             } finally {
@@ -324,7 +335,7 @@ const SessionWorkspace = () => {
                 setSelectedSessionId(first?.id ? String(first.id) : '');
             } catch (error) {
                 console.error(error);
-                toast.error('Сессияларды жүктөө мүмкүн болгон жок.');
+                toast.error(getWorkspaceErrorMessage(error, 'Сессияларды жүктөө мүмкүн болгон жок.'));
                 setSessions([]);
                 setSelectedSessionId('');
             } finally {
@@ -379,7 +390,7 @@ const SessionWorkspace = () => {
                 setAttendanceHistory(attendanceRes?.items || []);
             } catch (error) {
                 console.error(error);
-                toast.error('Сессия маалыматтарын жүктөө катасы.');
+                toast.error(getWorkspaceErrorMessage(error, 'Сессия маалыматтарын жүктөө катасы.'));
                 setStudents([]);
                 setAttendanceRows({});
                 setAttendanceHistory([]);
@@ -455,7 +466,7 @@ const SessionWorkspace = () => {
             } catch (error) {
                 if (cancelled) return;
                 console.error(error);
-                toast.error('Үй тапшырмалар жүктөлгөн жок.');
+                toast.error(getWorkspaceErrorMessage(error, 'Үй тапшырмалар жүктөлгөн жок.'));
                 setPublishedHomework([]);
                 setSelectedHomeworkId('');
             } finally {
@@ -488,7 +499,7 @@ const SessionWorkspace = () => {
             } catch (error) {
                 if (cancelled) return;
                 console.error(error);
-                toast.error('Тапшырма жооптору жүктөлгөн жок.');
+                toast.error(getWorkspaceErrorMessage(error, 'Тапшырма жооптору жүктөлгөн жок.'));
                 setHomeworkSubmissions([]);
             } finally {
                 if (!cancelled) setLoadingHomeworkSubmissions(false);
@@ -756,8 +767,7 @@ const SessionWorkspace = () => {
             const refreshed = await fetchCourseAttendance({ courseId: Number(selectedCourseId) });
             setAttendanceHistory(refreshed?.items || []);
         } catch (error) {
-            const message = error?.response?.data?.message || 'Катышууну сактоо катасы';
-            toast.error(Array.isArray(message) ? message.join(', ') : message);
+            toast.error(getWorkspaceErrorMessage(error, 'Катышууну сактоо катасы'));
         } finally {
             setSavingAttendance(false);
         }
@@ -769,7 +779,7 @@ const SessionWorkspace = () => {
             return;
         }
         if (!quickGroup.name.trim() || !quickGroup.code.trim()) {
-            toast.error('Group үчүн name жана code милдеттүү.');
+            toast.error('Группа үчүн аталыш жана код милдеттүү.');
             return;
         }
 
@@ -804,9 +814,7 @@ const SessionWorkspace = () => {
                 meetingProvider: prev.meetingProvider,
             }));
         } catch (error) {
-            const message =
-                error?.response?.data?.message || error?.message || 'Group түзүү катасы';
-            toast.error(Array.isArray(message) ? message.join(', ') : message);
+            toast.error(getWorkspaceErrorMessage(error, 'Группа түзүү катасы'));
         } finally {
             setSavingGroup(false);
         }
@@ -823,7 +831,7 @@ const SessionWorkspace = () => {
             !quickSession.startsAt ||
             !quickSession.endsAt
         ) {
-            toast.error('Session үчүн sessionIndex, title, startsAt, endsAt милдеттүү.');
+            toast.error('Сессия үчүн номер, аталыш, башталышы жана аягы милдеттүү.');
             return;
         }
 
@@ -864,9 +872,7 @@ const SessionWorkspace = () => {
                 status: prev.status,
             }));
         } catch (error) {
-            const message =
-                error?.response?.data?.message || error?.message || 'Session түзүү катасы';
-            toast.error(Array.isArray(message) ? message.join(', ') : message);
+            toast.error(getWorkspaceErrorMessage(error, 'Сессия түзүү катасы'));
         } finally {
             setSavingSession(false);
         }
@@ -878,7 +884,7 @@ const SessionWorkspace = () => {
             return;
         }
         if (!editGroup.name.trim() || !editGroup.code.trim()) {
-            toast.error('Group үчүн name жана code милдеттүү.');
+            toast.error('Группа үчүн аталыш жана код милдеттүү.');
             return;
         }
 
@@ -903,9 +909,7 @@ const SessionWorkspace = () => {
             setGroups(list);
             toast.success('Group жаңыртылды.');
         } catch (error) {
-            const message =
-                error?.response?.data?.message || error?.message || 'Group жаңыртуу катасы';
-            toast.error(Array.isArray(message) ? message.join(', ') : message);
+            toast.error(getWorkspaceErrorMessage(error, 'Группаны жаңыртуу катасы'));
         } finally {
             setSavingGroupUpdate(false);
         }
@@ -917,7 +921,7 @@ const SessionWorkspace = () => {
             return;
         }
         if (!editSession.title.trim() || !editSession.startsAt || !editSession.endsAt) {
-            toast.error('Session үчүн title, startsAt, endsAt милдеттүү.');
+            toast.error('Сессия үчүн аталыш, башталышы жана аягы милдеттүү.');
             return;
         }
 
@@ -939,9 +943,7 @@ const SessionWorkspace = () => {
             setSessions(list);
             toast.success('Session жаңыртылды.');
         } catch (error) {
-            const message =
-                error?.response?.data?.message || error?.message || 'Session жаңыртуу катасы';
-            toast.error(Array.isArray(message) ? message.join(', ') : message);
+            toast.error(getWorkspaceErrorMessage(error, 'Сессияны жаңыртуу катасы'));
         } finally {
             setSavingSessionUpdate(false);
         }
@@ -963,10 +965,9 @@ const SessionWorkspace = () => {
                 : await createSessionMeeting(Number(selectedSessionId), payload);
             setMeetingJoinUrl(res?.joinUrl || '');
             setMeetingId(String(res?.meetingId || meetingId || ''));
-            toast.success('Meeting шилтемеси жаңыртылды.');
+            toast.success('Жолугушуу шилтемеси жаңыртылды.');
         } catch (error) {
-            const message = error?.response?.data?.message || 'Meeting түзүү катасы';
-            toast.error(Array.isArray(message) ? message.join(', ') : message);
+            toast.error(getWorkspaceErrorMessage(error, 'Жолугушуу шилтемесин сактоо катасы'));
         } finally {
             setSavingMeeting(false);
         }
@@ -986,10 +987,9 @@ const SessionWorkspace = () => {
             setMeetingJoinUrl(res?.joinUrl || '');
             setMeetingId(String(res?.meetingId || ''));
             if (res?.provider) setMeetingProvider(res.provider);
-            toast.success('Meeting абалы жаңыртылды.');
+            toast.success('Жолугушуунун абалы жаңыртылды.');
         } catch (error) {
-            const message = error?.response?.data?.message || 'Meeting табылган жок';
-            toast.error(Array.isArray(message) ? message.join(', ') : message);
+            toast.error(getWorkspaceErrorMessage(error, 'Жолугушуу табылган жок'));
         } finally {
             setLoadingMeetingState(false);
         }
@@ -1008,10 +1008,9 @@ const SessionWorkspace = () => {
             });
             setMeetingJoinUrl('');
             setMeetingId('');
-            toast.success('Meeting өчүрүлдү.');
+            toast.success('Жолугушуу өчүрүлдү.');
         } catch (error) {
-            const message = error?.response?.data?.message || 'Meeting өчүрүү катасы';
-            toast.error(Array.isArray(message) ? message.join(', ') : message);
+            toast.error(getWorkspaceErrorMessage(error, 'Жолугушууну өчүрүү катасы'));
         } finally {
             setDeletingMeeting(false);
         }
@@ -1054,8 +1053,7 @@ const SessionWorkspace = () => {
 
             toast.success('Zoom attendance импорттолду.');
         } catch (error) {
-            const message = error?.response?.data?.message || 'Attendance импорт катасы';
-            toast.error(Array.isArray(message) ? message.join(', ') : message);
+            toast.error(getWorkspaceErrorMessage(error, 'Катышууну импорттоо катасы'));
         } finally {
             setImportingAttendance(false);
         }
@@ -1075,8 +1073,7 @@ const SessionWorkspace = () => {
             if (res?.recordingUrl) setRecordingLink(res.recordingUrl);
             toast.success('Zoom recordings синхрондолду.');
         } catch (error) {
-            const message = error?.response?.data?.message || 'Recording sync катасы';
-            toast.error(Array.isArray(message) ? message.join(', ') : message);
+            toast.error(getWorkspaceErrorMessage(error, 'Жазууларды синхрондоо катасы'));
         } finally {
             setSyncingRecordings(false);
         }
@@ -1084,7 +1081,7 @@ const SessionWorkspace = () => {
 
     const joinLiveSession = (joinUrl) => {
         if (!joinUrl) {
-            toast.error('Join шилтемеси табылган жок.');
+            toast.error('Кошулуу шилтемеси табылган жок.');
             return;
         }
         window.open(joinUrl, '_blank', 'noopener,noreferrer');
@@ -1152,8 +1149,7 @@ const SessionWorkspace = () => {
             toast.success('Үй тапшырма жарыяланды.');
         } catch (error) {
             console.error(error);
-            const message = error?.response?.data?.message || 'Үй тапшырма жарыялоо катасы';
-            toast.error(Array.isArray(message) ? message.join(', ') : message);
+            toast.error(getWorkspaceErrorMessage(error, 'Үй тапшырманы жарыялоо катасы'));
         } finally {
             setSavingHomework(false);
         }
@@ -1196,8 +1192,7 @@ const SessionWorkspace = () => {
             toast.success('Үй тапшырма жаңыртылды.');
         } catch (error) {
             console.error(error);
-            const message = error?.response?.data?.message || 'Үй тапшырма жаңыртуу катасы';
-            toast.error(Array.isArray(message) ? message.join(', ') : message);
+            toast.error(getWorkspaceErrorMessage(error, 'Үй тапшырманы жаңыртуу катасы'));
         } finally {
             setUpdatingHomework(false);
         }
@@ -1221,8 +1216,7 @@ const SessionWorkspace = () => {
             toast.success('Тапшырма жооп статусу жаңыртылды.');
         } catch (error) {
             console.error(error);
-            const message = error?.response?.data?.message || 'Тапшырма жоопун баалоо катасы';
-            toast.error(Array.isArray(message) ? message.join(', ') : message);
+            toast.error(getWorkspaceErrorMessage(error, 'Тапшырма жоопун баалоо катасы'));
         } finally {
             setReviewingSubmissionId('');
         }
@@ -1479,7 +1473,7 @@ const SessionWorkspace = () => {
                                 >
                                     {[
                                         COURSE_SESSION_STATUS.SCHEDULED,
-                                        COURSE_SESSION_STATUS.DONE,
+                                        COURSE_SESSION_STATUS.COMPLETED,
                                         COURSE_SESSION_STATUS.CANCELLED,
                                     ]
                                         .filter(Boolean)
@@ -1740,7 +1734,7 @@ const SessionWorkspace = () => {
                                 >
                                     {[
                                         COURSE_SESSION_STATUS.SCHEDULED,
-                                        COURSE_SESSION_STATUS.DONE,
+                                        COURSE_SESSION_STATUS.COMPLETED,
                                         COURSE_SESSION_STATUS.CANCELLED,
                                     ]
                                         .filter(Boolean)

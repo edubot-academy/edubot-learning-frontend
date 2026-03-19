@@ -42,8 +42,8 @@ const statusBadgeClass = (status) => {
     switch (status) {
         case ENROLLMENT_STATUS.ACTIVE:
             return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300';
-        case ENROLLMENT_STATUS.PAUSED:
-            return 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300';
+        case ENROLLMENT_STATUS.PENDING:
+            return 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300';
         case ENROLLMENT_STATUS.CANCELLED:
             return 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300';
         case ENROLLMENT_STATUS.COMPLETED:
@@ -192,19 +192,19 @@ const IntegrationTab = ({ companyId = null }) => {
 
                 <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 mt-4">
                     <FilterSelect
-                        label="Severity"
+                        label="Деңгээл"
                         value={severityFilter}
                         onChange={setSeverityFilter}
                         options={riskSeverityOptions}
                     />
                     <FilterSelect
-                        label="Issue type"
+                        label="Тобокелдик түрү"
                         value={issueTypeFilter}
                         onChange={setIssueTypeFilter}
                         options={riskIssueOptions}
                     />
                     <FilterSelect
-                        label="Enrollment status"
+                        label="Каттоо статусу"
                         value={statusFilter}
                         onChange={setStatusFilter}
                         options={enrollmentStatusOptions}
@@ -233,14 +233,14 @@ const IntegrationTab = ({ companyId = null }) => {
                 </div>
 
                 <div className="grid md:grid-cols-3 gap-3 mt-4">
-                    <StatCard label="Бүгүнкү Risk Alert" value={riskSummary?.todayGenerated ?? 0} />
-                    <StatCard label="Критикалык Alert" value={criticalCount} />
-                    <StatCard label="Enrollment окуялары" value={filteredEnrollmentEvents.length} />
+                    <StatCard label="Бүгүнкү тобокелдик alert" value={riskSummary?.todayGenerated ?? 0} />
+                    <StatCard label="Критикалык alert" value={criticalCount} />
+                    <StatCard label="Каттоо окуялары" value={filteredEnrollmentEvents.length} />
                 </div>
 
                 <div className="grid md:grid-cols-3 gap-3 mt-3">
-                    <StatCard label="Pending webhook" value={integrationHealth?.pending ?? 0} />
-                    <StatCard label="Failed webhook" value={integrationHealth?.failed ?? 0} />
+                    <StatCard label="Күтүүдөгү webhook" value={integrationHealth?.pending ?? 0} />
+                    <StatCard label="Ишке ашпаган webhook" value={integrationHealth?.failed ?? 0} />
                     <StatCard label="Акыркы жөнөтүү" value={formatDateTime(integrationHealth?.lastSentAt)} />
                 </div>
             </div>
@@ -254,10 +254,10 @@ const IntegrationTab = ({ companyId = null }) => {
                         <thead>
                             <tr className="text-left text-gray-500 dark:text-[#a6adba] border-b border-gray-100 dark:border-gray-800">
                                 <th className="py-2 pr-3">Убакыт</th>
-                                <th className="py-2 pr-3">Severity</th>
-                                <th className="py-2 pr-3">LMS Student</th>
-                                <th className="py-2 pr-3">Enrollment</th>
-                                <th className="py-2 pr-3">CRM Lead</th>
+                                <th className="py-2 pr-3">Деңгээл</th>
+                                <th className="py-2 pr-3">LMS студент</th>
+                                <th className="py-2 pr-3">Каттоо</th>
+                                <th className="py-2 pr-3">CRM лид</th>
                                 <th className="py-2 pr-3">Кыскача</th>
                             </tr>
                         </thead>
@@ -305,17 +305,17 @@ const IntegrationTab = ({ companyId = null }) => {
 
             <section className="bg-white dark:bg-[#111111] shadow-sm rounded-2xl p-4 border border-gray-100 dark:border-gray-800">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-[#E8ECF3] mb-3">
-                    Enrollment status events
+                    Каттоо статус окуялары
                 </h3>
                 <div className="overflow-x-auto">
                     <table className="w-full text-sm">
                         <thead>
                             <tr className="text-left text-gray-500 dark:text-[#a6adba] border-b border-gray-100 dark:border-gray-800">
                                 <th className="py-2 pr-3">Убакыт</th>
-                                <th className="py-2 pr-3">Event ID</th>
-                                <th className="py-2 pr-3">Enrollment</th>
-                                <th className="py-2 pr-3">Student</th>
-                                <th className="py-2 pr-3">Delivery</th>
+                                <th className="py-2 pr-3">Окуя ID</th>
+                                <th className="py-2 pr-3">Каттоо</th>
+                                <th className="py-2 pr-3">Студент</th>
+                                <th className="py-2 pr-3">Жеткирүү</th>
                                 <th className="py-2 pr-3">Ката</th>
                             </tr>
                         </thead>
@@ -350,7 +350,7 @@ const IntegrationTab = ({ companyId = null }) => {
                             {filteredEnrollmentEvents.length === 0 && !loading && (
                                 <tr>
                                     <td colSpan={6} className="py-8 text-center text-gray-500 dark:text-[#a6adba]">
-                                        Enrollment event табылган жок.
+                                        Каттоо окуясы табылган жок.
                                     </td>
                                 </tr>
                             )}

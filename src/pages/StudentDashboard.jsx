@@ -45,7 +45,7 @@ const NAV_ITEMS = [
     { id: 'tasks', label: 'Тапшырмалар', icon: FiCheckCircle },
     { id: 'progress', label: 'Прогресс', icon: FiBarChart2 },
     { id: 'analytics', label: 'Аналитика', icon: FiBarChart2 },
-    { id: 'leaderboard', label: 'Leaderboard', icon: FiBarChart2 },
+    { id: 'leaderboard', label: 'Рейтинг', icon: FiBarChart2 },
     { id: 'notifications', label: 'Билдирүүлөр', icon: FiBell },
     { id: 'profile', label: 'Профиль', icon: FiUser },
     { id: 'chat', label: 'Чат', icon: FiMessageCircle },
@@ -61,7 +61,7 @@ const DEFAULT_NOTIFICATION_SETTINGS = {
 
 const NOTIFICATION_LABELS = {
     lessonReminders: {
-        label: 'Class reminders',
+        label: 'Сабак эскертмелери',
         description: 'Сабак башталар алдында эскертүү алыңыз.',
     },
     announcementEmails: {
@@ -69,7 +69,7 @@ const NOTIFICATION_LABELS = {
         description: 'Жаңы модулдар жана маанилүү окуу жаңылыктары email аркылуу жетет.',
     },
     taskUpdates: {
-        label: 'Homework reminders',
+        label: 'Тапшырма эскертмелери',
         description: 'Тапшырмалардын мөөнөтү жакындаганда эскертүү алыңыз.',
     },
     smsAlerts: {
@@ -77,7 +77,7 @@ const NOTIFICATION_LABELS = {
         description: 'Маанилүү окуялар боюнча SMS кабыл алыңыз.',
     },
     pushNotifications: {
-        label: 'Missed class alerts',
+        label: 'Калтырылган сабак эскертмелери',
         description: 'Калтырылган сабактар боюнча дароо билдирүү алыңыз.',
     },
 };
@@ -114,9 +114,9 @@ const isOfflineOrLiveCourse = (item = {}) => {
 };
 
 const courseTypeLabel = (type) => {
-    if (type === 'offline') return 'Offline';
-    if (type === 'online_live') return 'Online Live';
-    return 'Video';
+    if (type === 'offline') return 'Оффлайн';
+    if (type === 'online_live') return 'Онлайн түз эфир';
+    return 'Видео';
 };
 
 const formatCountdown = (targetMs, nowMs) => {
@@ -154,7 +154,7 @@ const resolveRecordings = (item = {}) => {
         return [
             {
                 id: `rec-${item.id || '1'}`,
-                title: item.recordingTitle || 'Session Recording',
+                title: item.recordingTitle || 'Сабактын жазуусу',
                 url: item.recordingUrl,
             },
         ];
@@ -588,25 +588,25 @@ const StudentDashboard = () => {
         if (incoming.length) {
             return incoming.map((item, index) => ({
                 id: item.id || item.milestoneId || `m-${index}`,
-                title: item.title || item.name || item.label || 'Milestone',
+                title: item.title || item.name || item.label || 'Этап',
                 value: item.value || item.description || item.progressText || '',
             }));
         }
         return [
             {
                 id: 'm1',
-                title: 'Course Completion',
-                value: `${overviewStats.lessonsCompleted || 0} lessons done`,
+                title: 'Курсту аяктоо',
+                value: `${overviewStats.lessonsCompleted || 0} сабак бүткөн`,
             },
             {
                 id: 'm2',
-                title: 'Attendance Target',
-                value: `${attendanceStats.rate}% monthly attendance`,
+                title: 'Катышуу максаты',
+                value: `${attendanceStats.rate}% айлык катышуу`,
             },
             {
                 id: 'm3',
-                title: 'Weekly Consistency',
-                value: `${engagement.streak} day learning streak`,
+                title: 'Жумалык туруктуулук',
+                value: `${engagement.streak} күн катары менен окуу`,
             },
         ];
     }, [summary, overviewStats.lessonsCompleted, attendanceStats.rate, engagement.streak]);
@@ -1136,9 +1136,9 @@ const OverviewTab = ({
                 <section className="bg-white dark:bg-[#222222] rounded-3xl border border-gray-100 dark:border-gray-800 p-5 space-y-3">
                     <div className="flex items-center justify-between">
                         <h3 className="text-lg font-semibold text-gray-900 dark:text-[#E8ECF3]">
-                            Upcoming classes
+                            Жакынкы сабактар
                         </h3>
-                        <span className="text-xs text-gray-500">{upcoming.length} items</span>
+                        <span className="text-xs text-gray-500">{upcoming.length} даана</span>
                     </div>
                     <div className="space-y-2">
                         {upcoming.map((item) => {
@@ -1156,7 +1156,7 @@ const OverviewTab = ({
                                 >
                                     <div className="flex items-center justify-between gap-2">
                                         <p className="font-medium text-gray-900 dark:text-[#E8ECF3]">
-                                            {item.courseTitle || item.course?.title || 'Class'}
+                                            {item.courseTitle || item.course?.title || 'Сабак'}
                                         </p>
                                         <span className="text-[11px] px-2 py-1 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
                                             {courseTypeLabel(type)}
@@ -1167,14 +1167,14 @@ const OverviewTab = ({
                                     </p>
                                     {type === 'offline' && (
                                         <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                                            {item.location || item.room || 'Classroom TBD'} •{' '}
+                                            {item.location || item.room || 'Класс али дайындала элек'} •{' '}
                                             {resolveInstructorName(item)}
                                         </p>
                                     )}
                                     {type === 'online_live' && (
                                         <div className="mt-2 flex items-center gap-2 flex-wrap">
                                             <span className="text-xs text-blue-700 dark:text-blue-300">
-                                                Countdown: {countdown}
+                                                Калган убакыт: {countdown}
                                             </span>
                                             {joinUrl && joinAllowed ? (
                                                 <a
@@ -1183,11 +1183,11 @@ const OverviewTab = ({
                                                     rel="noopener noreferrer"
                                                     className="px-3 py-1 rounded-full text-xs bg-blue-600 text-white"
                                                 >
-                                                    Join
+                                                    Кошулуу
                                                 </a>
                                             ) : (
                                                 <span className="text-xs text-amber-600">
-                                                    Join 10 мүнөт мурун ачылат
+                                                    Кошулуу 10 мүнөт калганда ачылат
                                                 </span>
                                             )}
                                         </div>
@@ -1203,8 +1203,8 @@ const OverviewTab = ({
 
                 <section className="grid md:grid-cols-2 gap-4">
                     <div className="bg-white dark:bg-[#222222] rounded-3xl border border-gray-100 dark:border-gray-800 p-5 space-y-3">
-                        <h3 className="text-lg font-semibold text-gray-900 dark:text-[#E8ECF3]">
-                            Homework
+                            <h3 className="text-lg font-semibold text-gray-900 dark:text-[#E8ECF3]">
+                            Тапшырмалар
                         </h3>
                         {pendingHomework.map((task) => (
                             <div
@@ -1215,7 +1215,7 @@ const OverviewTab = ({
                                     {task.title}
                                 </p>
                                 <p className="text-gray-500">
-                                    {task.due || task.dueAt || 'Due date pending'}
+                                    {task.due || task.dueAt || 'Тапшыруу мөөнөтү көрсөтүлгөн эмес'}
                                 </p>
                             </div>
                         ))}
@@ -1225,7 +1225,7 @@ const OverviewTab = ({
                     </div>
                     <div className="bg-white dark:bg-[#222222] rounded-3xl border border-gray-100 dark:border-gray-800 p-5 space-y-3">
                         <h3 className="text-lg font-semibold text-gray-900 dark:text-[#E8ECF3]">
-                            Announcements
+                            Жарыялар
                         </h3>
                         {announcements.map((item) => (
                             <div
@@ -1252,7 +1252,7 @@ const OverviewTab = ({
                 <section className="bg-white dark:bg-[#222222] rounded-3xl border border-gray-100 dark:border-gray-800 p-5">
                     <h3 className="font-semibold text-gray-900 dark:text-[#E8ECF3]">XP & Level</h3>
                     <p className="text-2xl font-bold text-blue-600 mt-1">{engagement.xp} XP</p>
-                    <p className="text-sm text-gray-500">Level {engagement.level}</p>
+                    <p className="text-sm text-gray-500">Деңгээл {engagement.level}</p>
                     <div className="h-2 rounded-full bg-gray-100 dark:bg-gray-700 mt-2">
                         <div
                             className="h-2 rounded-full bg-blue-500"
@@ -1268,7 +1268,7 @@ const OverviewTab = ({
                 </section>
 
                 <section className="bg-white dark:bg-[#222222] rounded-3xl border border-gray-100 dark:border-gray-800 p-5">
-                    <h3 className="font-semibold text-gray-900 dark:text-[#E8ECF3]">Leaderboard</h3>
+                    <h3 className="font-semibold text-gray-900 dark:text-[#E8ECF3]">Рейтинг</h3>
                     <div className="mt-2 space-y-2 text-sm">
                         {leaderboardItems.slice(0, 5).map((row, idx) => (
                             <div
@@ -1276,7 +1276,7 @@ const OverviewTab = ({
                                 className="flex items-center justify-between"
                             >
                                 <span className="text-gray-700 dark:text-gray-300">
-                                    {idx + 1}. {row.fullName || row.name || 'Student'}
+                                    {idx + 1}. {row.fullName || row.name || 'Студент'}
                                 </span>
                                 <span className="text-gray-500">{row.xp || 0} XP</span>
                             </div>
@@ -1285,7 +1285,7 @@ const OverviewTab = ({
                 </section>
 
                 <section className="bg-white dark:bg-[#222222] rounded-3xl border border-gray-100 dark:border-gray-800 p-5">
-                    <h3 className="font-semibold text-gray-900 dark:text-[#E8ECF3]">Milestones</h3>
+                    <h3 className="font-semibold text-gray-900 dark:text-[#E8ECF3]">Этаптар</h3>
                     <div className="mt-2 space-y-2 text-sm">
                         {milestoneItems.map((item) => (
                             <div key={item.id || item.title}>
@@ -1300,7 +1300,7 @@ const OverviewTab = ({
 
                 <section className="bg-white dark:bg-[#222222] rounded-3xl border border-gray-100 dark:border-gray-800 p-5">
                     <h3 className="font-semibold text-gray-900 dark:text-[#E8ECF3]">
-                        Achievement badges
+                        Жетишкендик белгилери
                     </h3>
                     <div className="mt-2 flex flex-wrap gap-2">
                         {badgeItems.map((badge) => (
@@ -1397,28 +1397,28 @@ const CoursesTab = ({ courses, offeringsByCourse }) => {
                                 {courseType === 'offline' && (
                                     <div className="text-sm text-gray-500">
                                         <p>
-                                            Location:{' '}
+                                            Жайгашкан жери:{' '}
                                             {nextSession?.location ||
                                                 nextSession?.room ||
-                                                'Classroom TBD'}
+                                                'Класс али дайындала элек'}
                                         </p>
-                                        <p>Schedule: {formatSessionDate(nextSession?.startAt)}</p>
+                                        <p>Жүгүртмө: {formatSessionDate(nextSession?.startAt)}</p>
                                         <p>
-                                            Teacher: {resolveInstructorName(nextSession || course)}
+                                            Мугалим: {resolveInstructorName(nextSession || course)}
                                         </p>
                                     </div>
                                 )}
                                 {courseType === 'online_live' && (
                                     <div className="text-sm text-gray-500">
-                                        <p>Next class: {formatSessionDate(nextSession?.startAt)}</p>
-                                        <p>Recordings: {recordingsCount}</p>
+                                        <p>Кийинки сабак: {formatSessionDate(nextSession?.startAt)}</p>
+                                        <p>Жазуулар: {recordingsCount}</p>
                                     </div>
                                 )}
                                 <Link
                                     to={courseId ? `/courses/${courseId}` : '#'}
                                     className="inline-flex px-4 py-2 rounded-full border text-sm text-blue-600 dark:text-blue-400 dark:border-gray-700"
                                 >
-                                    Open Course
+                                    Курсту ачуу
                                 </Link>
                             </div>
                         </div>
@@ -1492,6 +1492,7 @@ const ScheduleTab = ({ offerings, recordings }) => {
                                 <div>
                                     <p className="font-semibold text-gray-900 dark:text-[#E8ECF3]">
                                         {item.courseTitle || item.course?.title || 'Class'}
+                                        
                                     </p>
                                     <p className="text-sm text-gray-500">
                                         {formatSessionDate(item.startAt)}
@@ -1503,15 +1504,15 @@ const ScheduleTab = ({ offerings, recordings }) => {
                             </div>
                             {type === 'offline' && (
                                 <div className="mt-2 text-sm text-gray-500">
-                                    <p>Location: {item.location || item.room || 'Classroom TBD'}</p>
-                                    <p>Teacher: {resolveInstructorName(item)}</p>
-                                    <p>Schedule: {formatSessionDate(item.startAt)}</p>
+                                    <p>Жайгашкан жери: {item.location || item.room || 'Класс али дайындала элек'}</p>
+                                    <p>Мугалим: {resolveInstructorName(item)}</p>
+                                    <p>Жүгүртмө: {formatSessionDate(item.startAt)}</p>
                                 </div>
                             )}
                             {type === 'online_live' && (
                                 <div className="mt-2 flex flex-wrap items-center gap-2 text-sm">
                                     <span className="text-blue-700 dark:text-blue-300">
-                                        Countdown:{' '}
+                                        Калган убакыт:{' '}
                                         {item.startAt
                                             ? formatCountdown(
                                                   new Date(item.startAt).getTime(),
@@ -1526,7 +1527,7 @@ const ScheduleTab = ({ offerings, recordings }) => {
                                             rel="noopener noreferrer"
                                             className="px-3 py-1 rounded-full bg-blue-600 text-white text-xs"
                                         >
-                                            Join class
+                                            Сабакка кошулуу
                                         </a>
                                     ) : (
                                         <span className="text-xs text-amber-600">
@@ -1538,10 +1539,10 @@ const ScheduleTab = ({ offerings, recordings }) => {
                                         onClick={() => setSelectedLiveId(String(item.id))}
                                         className="px-3 py-1 rounded-full border text-xs text-gray-600 dark:text-gray-300 dark:border-gray-700"
                                     >
-                                        Live page
+                                        Түз эфир барагы
                                     </button>
                                     <span className="text-xs text-gray-500">
-                                        Recordings: {recordings.length}
+                                        Жазуулар: {recordings.length}
                                     </span>
                                 </div>
                             )}
@@ -1552,14 +1553,14 @@ const ScheduleTab = ({ offerings, recordings }) => {
 
             {selectedLive && resolveCourseType(selectedLive) === 'online_live' && (
                 <section className="bg-white dark:bg-[#222222] rounded-3xl border border-gray-100 dark:border-gray-800 p-5 space-y-3">
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-[#E8ECF3]">
-                        Live class page
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-[#E8ECF3]">
+                        Түз эфир сабак барагы
                     </h3>
                     <p className="text-sm text-gray-500">
                         {selectedLive.courseTitle || selectedLive.course?.title}
                     </p>
                     <p className="text-sm text-blue-700 dark:text-blue-300">
-                        Countdown:{' '}
+                        Калган убакыт:{' '}
                         {selectedLive.startAt
                             ? formatCountdown(new Date(selectedLive.startAt).getTime(), nowMs)
                             : '--:--:--'}
@@ -1572,7 +1573,7 @@ const ScheduleTab = ({ offerings, recordings }) => {
                                 rel="noopener noreferrer"
                                 className="px-4 py-2 rounded-full bg-blue-600 text-white text-sm"
                             >
-                                Join class
+                                Сабакка кошулуу
                             </a>
                         ) : (
                             <button
@@ -1580,12 +1581,12 @@ const ScheduleTab = ({ offerings, recordings }) => {
                                 disabled
                                 className="px-4 py-2 rounded-full border text-sm text-gray-400 cursor-not-allowed"
                             >
-                                Join class
+                                Сабакка кошулуу
                             </button>
                         )}
                     </div>
                     <div className="space-y-2">
-                        <p className="font-medium text-gray-900 dark:text-[#E8ECF3]">Recordings</p>
+                        <p className="font-medium text-gray-900 dark:text-[#E8ECF3]">Жазуулар</p>
                         {selectedRecordings.length ? (
                             selectedRecordings.map((rec) => (
                                 <a
@@ -1595,11 +1596,11 @@ const ScheduleTab = ({ offerings, recordings }) => {
                                     rel="noopener noreferrer"
                                     className="block text-sm text-blue-600 dark:text-blue-400 underline"
                                 >
-                                    {rec.title || 'Recording'}
+                                    {rec.title || 'Жазуу'}
                                 </a>
                             ))
                         ) : (
-                            <p className="text-sm text-gray-500">Азырынча recording жок.</p>
+                            <p className="text-sm text-gray-500">Азырынча жазуу жок.</p>
                         )}
                     </div>
                 </section>
@@ -1714,12 +1715,12 @@ const TasksTab = ({ tasks, onSubmitHomework, submittingTaskId }) => {
                                                         disabled={isSubmitting}
                                                         className="px-3 py-1 rounded bg-blue-600 text-white text-xs disabled:opacity-60"
                                                     >
-                                                        {isSubmitting ? 'Жөнөтүлүүдө...' : 'Submit'}
+                                                        {isSubmitting ? 'Жөнөтүлүүдө...' : 'Жөнөтүү'}
                                                     </button>
                                                 </div>
                                             ) : (
                                                 <span className="text-xs text-gray-500">
-                                                    Бул тапшырма submit APIга туташкан эмес.
+                                                    Бул тапшырма жөнөтүү API'ине туташкан эмес.
                                                 </span>
                                             )}
                                         </td>
@@ -1763,7 +1764,7 @@ const ProgressTab = ({
                     Прогресс жана сертификаттар
                 </h2>
                 <div className="bg-white dark:bg-[#222222] rounded-3xl border border-gray-100 dark:border-gray-800 p-6 text-center text-gray-500 dark:text-gray-400">
-                    No enrolled courses yet.
+                    Азырынча катталган курстар жок.
                 </div>
             </div>
         );
@@ -1776,19 +1777,19 @@ const ProgressTab = ({
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
                 <StatCard label="XP" value={engagement.xp} />
-                <StatCard label="Learning streak" value={`${engagement.streak} күн`} />
+                <StatCard label="Окуу сериясы" value={`${engagement.streak} күн`} />
                 {attendanceEnabled ? (
-                    <StatCard label="Attendance" value={`${attendanceStats.rate}%`} />
+                    <StatCard label="Катышуу" value={`${attendanceStats.rate}%`} />
                 ) : null}
                 <StatCard
-                    label="Leaderboard"
-                    value={`Top ${Math.max(1, leaderboardItems.length)}`}
+                    label="Рейтинг"
+                    value={`Топ ${Math.max(1, leaderboardItems.length)}`}
                 />
             </div>
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-3">
                 <div className="xl:col-span-2 bg-white dark:bg-[#222222] rounded-3xl border border-gray-100 dark:border-gray-800 p-4">
                     <h3 className="font-semibold text-gray-900 dark:text-[#E8ECF3]">
-                        Course milestones
+                        Курстагы этаптар
                     </h3>
                     <div className="mt-2 space-y-2 text-sm">
                         {milestoneItems.map((item) => (
@@ -1803,7 +1804,7 @@ const ProgressTab = ({
                 </div>
                 <div className="bg-white dark:bg-[#222222] rounded-3xl border border-gray-100 dark:border-gray-800 p-4">
                     <h3 className="font-semibold text-gray-900 dark:text-[#E8ECF3]">
-                        Achievement badges
+                        Жетишкендик белгилери
                     </h3>
                     <div className="mt-2 flex flex-wrap gap-2">
                         {badgeItems.map((badge) => (

@@ -7,7 +7,7 @@ export const fetchStudentDashboardSummary = async (studentId) => {
 
 export const fetchStudentCourses = async (studentId, params = {}) => {
     const { status } = params;
-    const { data } = await api.get(`/students/${studentId}/courses`, {
+    const { data } = await api.get('/student/courses', {
         params: clean({ status }),
     });
     return data;
@@ -27,22 +27,22 @@ export const fetchStudentTasks = async (studentId, params = {}) => {
 };
 
 export const fetchStudentProgress = async (studentId) => {
-    const { data } = await api.get(`/students/${studentId}/progress`);
+    const { data } = await api.get('/student/progress');
     return data;
 };
 
 export const fetchStudentCertificates = async (studentId) => {
-    const { data } = await api.get(`/students/${studentId}/certificates`);
+    const { data } = await api.get('/student/certificates');
     return data;
 };
 
 export const fetchStudentNotificationSettings = async (studentId) => {
-    const { data } = await api.get(`/students/${studentId}/notification-settings`);
+    const { data } = await api.get('/student/notification-settings');
     return data;
 };
 
 export const updateStudentNotificationSettings = async (studentId, payload) => {
-    const { data } = await api.patch(`/students/${studentId}/notification-settings`, payload);
+    const { data } = await api.patch('/student/notification-settings', payload);
     return data;
 };
 

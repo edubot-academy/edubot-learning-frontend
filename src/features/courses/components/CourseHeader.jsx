@@ -3,9 +3,9 @@ import { formatHoursToTime } from '../../../utils/timeUtils';
 
 const courseTypeLabel = (type) => {
     const normalized = String(type || 'video').toLowerCase();
-    if (normalized === 'offline') return 'Offline';
-    if (normalized === 'online_live') return 'Online Live';
-    return 'Video';
+    if (normalized === 'offline') return 'Оффлайн';
+    if (normalized === 'online_live') return 'Онлайн түз эфир';
+    return 'Видео';
 };
 
 const CourseHeader = ({ course, progress, enrolled }) => {

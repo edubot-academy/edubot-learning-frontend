@@ -36,23 +36,3 @@ export const deleteUser = async (userId) => {
         throw error;
     }
 };
-
-export const fetchMyStudents = async () => {
-    try {
-        const response = await api.get('/users/my-students');
-        return response.data;
-    } catch (error) {
-        console.error('Error fetching my students:', error);
-        throw error;
-    }
-};
-
-export const registerStudent = async (data) => {
-    try {
-        const response = await api.post('/users/register-by-sales', data);
-        return response.data;
-    } catch (error) {
-        console.error('Error registering student:', error);
-        throw error;
-    }
-};

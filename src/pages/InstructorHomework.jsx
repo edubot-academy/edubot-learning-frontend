@@ -1,6 +1,8 @@
-import { useEffect, useMemo, useState } from 'react';
-import { fetchCourses, fetchCourseGroups, fetchHomework, fetchHomeworkSummary } from '@services/api';
+import { useContext, useEffect, useMemo, useState } from 'react';
+import { fetchInstructorProfile, fetchCourseGroups, fetchHomework, fetchHomeworkSummary } from '@services/api';
 import Loader from '@shared/ui/Loader';
+import { AuthContext } from '../context/AuthContext';
+import { toast } from 'react-hot-toast';
 
 const toArray = (payload) => {
     if (Array.isArray(payload)) return payload;
@@ -9,7 +11,16 @@ const toArray = (payload) => {
     return [];
 };
 
+const getHomeworkErrorMessage = (error, fallback) => {
+    const status = error?.response?.status;
+    if (status === 401) return 'Сессия мөөнөтү бүттү. Кайра кириңиз.';
+    if (status === 403) return 'Бул курс же группа сизге бекитилген эмес.';
+    const message = error?.response?.data?.message || fallback;
+    return Array.isArray(message) ? message.join(', ') : message;
+};
+
 const InstructorHomework = () => {
+    const { user } = useContext(AuthContext);
     const [courses, setCourses] = useState([]);
     const [groups, setGroups] = useState([]);
     const [courseId, setCourseId] = useState('');
@@ -21,12 +32,16 @@ const InstructorHomework = () => {
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {
+        if (!user?.id || user.role !== 'instructor') return;
         const loadCourses = async () => {
-            const response = await fetchCourses({ limit: 200 });
-            setCourses(toArray(response));
+            const response = await fetchInstructorProfile(user.id);
+            setCourses(toArray(response?.courses || response));
         };
-        loadCourses().catch(() => setCourses([]));
-    }, []);
+        loadCourses().catch((error) => {
+            setCourses([]);
+            toast.error(getHomeworkErrorMessage(error, 'Курстар жүктөлгөн жок.'));
+        });
+    }, [user]);
 
     useEffect(() => {
         if (!courseId) {
@@ -38,7 +53,10 @@ const InstructorHomework = () => {
             const response = await fetchCourseGroups({ courseId: Number(courseId) });
             setGroups(toArray(response));
         };
-        loadGroups().catch(() => setGroups([]));
+        loadGroups().catch((error) => {
+            setGroups([]);
+            toast.error(getHomeworkErrorMessage(error, 'Группалар жүктөлгөн жок.'));
+        });
     }, [courseId]);
 
     useEffect(() => {
@@ -62,7 +80,11 @@ const InstructorHomework = () => {
                 setLoading(false);
             }
         };
-        load();
+        load().catch((error) => {
+            setSummary(null);
+            setItems([]);
+            toast.error(getHomeworkErrorMessage(error, 'Үй тапшырмалар жүктөлгөн жок.'));
+        });
     }, [courseId, groupId, limit]);
 
     const stats = useMemo(
@@ -76,7 +98,7 @@ const InstructorHomework = () => {
 
     return (
         <div className="pt-24 p-6 max-w-6xl mx-auto space-y-4">
-            <h1 className="text-2xl font-semibold">Homework Manager</h1>
+            <h1 className="text-2xl font-semibold">Үй тапшырмаларды башкаруу</h1>
 
             <div className="grid md:grid-cols-4 gap-3">
                 <select
@@ -84,7 +106,7 @@ const InstructorHomework = () => {
                     onChange={(e) => setCourseId(e.target.value)}
                     className="border rounded px-3 py-2"
                 >
-                    <option value="">All courses</option>
+                    <option value="">Бардык курстар</option>
                     {courses.map((course) => (
                         <option key={course.id} value={course.id}>
                             {course.title || course.name}
@@ -98,7 +120,7 @@ const InstructorHomework = () => {
                     className="border rounded px-3 py-2"
                     disabled={!courseId}
                 >
-                    <option value="">All groups</option>
+                    <option value="">Бардык группалар</option>
                     {groups.map((group) => (
                         <option key={group.id} value={group.id}>
                             {group.name || group.code}
@@ -113,14 +135,14 @@ const InstructorHomework = () => {
                     value={limit}
                     onChange={(e) => setLimit(Number(e.target.value || 20))}
                     className="border rounded px-3 py-2"
-                    placeholder="Limit"
+                    placeholder="Лимит"
                 />
             </div>
 
             <div className="grid md:grid-cols-3 gap-3">
-                <div className="p-4 rounded-xl border">Total: {stats.total}</div>
-                <div className="p-4 rounded-xl border">Pending: {stats.pending}</div>
-                <div className="p-4 rounded-xl border">Reviewed: {stats.checked}</div>
+                <div className="p-4 rounded-xl border">Жалпы: {stats.total}</div>
+                <div className="p-4 rounded-xl border">Күтүүдө: {stats.pending}</div>
+                <div className="p-4 rounded-xl border">Текшерилген: {stats.checked}</div>
             </div>
 
             {loading ? <Loader fullScreen={false} /> : null}
@@ -129,17 +151,17 @@ const InstructorHomework = () => {
                 <table className="w-full text-sm">
                     <thead className="bg-gray-50">
                         <tr>
-                            <th className="text-left px-3 py-2">Title</th>
-                            <th className="text-left px-3 py-2">Course</th>
-                            <th className="text-left px-3 py-2">Group</th>
-                            <th className="text-left px-3 py-2">Deadline</th>
-                            <th className="text-left px-3 py-2">Status</th>
+                            <th className="text-left px-3 py-2">Аталышы</th>
+                            <th className="text-left px-3 py-2">Курс</th>
+                            <th className="text-left px-3 py-2">Группа</th>
+                            <th className="text-left px-3 py-2">Мөөнөт</th>
+                            <th className="text-left px-3 py-2">Статус</th>
                         </tr>
                     </thead>
                     <tbody>
                         {items.map((item) => (
                             <tr key={item.id || `${item.title}-${item.deadline || ''}`} className="border-t">
-                                <td className="px-3 py-2">{item.title || item.name || 'Homework'}</td>
+                                <td className="px-3 py-2">{item.title || item.name || 'Үй тапшырма'}</td>
                                 <td className="px-3 py-2">{item.courseTitle || item.course?.title || '-'}</td>
                                 <td className="px-3 py-2">{item.groupName || item.group?.name || '-'}</td>
                                 <td className="px-3 py-2">{item.deadline || '-'}</td>
@@ -149,7 +171,7 @@ const InstructorHomework = () => {
                         {!items.length && !loading ? (
                             <tr>
                                 <td className="px-3 py-6 text-center text-gray-500" colSpan={5}>
-                                    Homework табылган жок.
+                                    Үй тапшырмалар табылган жок.
                                 </td>
                             </tr>
                         ) : null}

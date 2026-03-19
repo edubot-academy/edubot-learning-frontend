@@ -16,7 +16,6 @@ const CreateCourse = lazy(() => import('../pages/CreateCourse'));
 const InstructorCourses = lazy(() => import('../pages/InstructorCourses'));
 const EditInstructorCourse = lazy(() => import('../pages/EditInstructorCourse'));
 const AdminPanel = lazy(() => import('../pages/Admin'));
-const SalesManager = lazy(() => import('../pages/SalesManager'));
 const AboutPage = lazy(() => import('../pages/About'));
 const ContactPage = lazy(() => import('../pages/Contact'));
 const AssistantDashboard = lazy(() => import('../pages/Assistant'));
@@ -74,10 +73,6 @@ const AppRoutes = () => {
                             path="/admin/analytics"
                             element={<Navigate to="/admin?tab=analytics" replace />}
                         />
-                    </Route>
-
-                    <Route element={<PrivateRoute allowedRoles={['sales']} />}>
-                        <Route path="/sales-manager" element={<SalesManager />} />
                     </Route>
 
                     <Route path="/about" element={<AboutPage />} />
