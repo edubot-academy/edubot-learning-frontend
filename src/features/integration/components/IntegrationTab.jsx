@@ -233,21 +233,21 @@ const IntegrationTab = ({ companyId = null }) => {
                 </div>
 
                 <div className="grid md:grid-cols-3 gap-3 mt-4">
-                    <StatCard label="Бүгүнкү тобокелдик alert" value={riskSummary?.todayGenerated ?? 0} />
-                    <StatCard label="Критикалык alert" value={criticalCount} />
+                    <StatCard label="Бүгүнкү тобокелдик эскертмеси" value={riskSummary?.todayGenerated ?? 0} />
+                    <StatCard label="Критикалык эскертме" value={criticalCount} />
                     <StatCard label="Каттоо окуялары" value={filteredEnrollmentEvents.length} />
                 </div>
 
                 <div className="grid md:grid-cols-3 gap-3 mt-3">
-                    <StatCard label="Күтүүдөгү webhook" value={integrationHealth?.pending ?? 0} />
-                    <StatCard label="Ишке ашпаган webhook" value={integrationHealth?.failed ?? 0} />
+                    <StatCard label="Күтүүдөгү вебхук" value={integrationHealth?.pending ?? 0} />
+                    <StatCard label="Ишке ашпаган вебхук" value={integrationHealth?.failed ?? 0} />
                     <StatCard label="Акыркы жөнөтүү" value={formatDateTime(integrationHealth?.lastSentAt)} />
                 </div>
             </div>
 
             <section className="bg-white dark:bg-[#111111] shadow-sm rounded-2xl p-4 border border-gray-100 dark:border-gray-800">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-[#E8ECF3] mb-3">
-                    Акыркы критикалык Risk Alert'тар
+                    Акыркы критикалык тобокелдик эскертмелери
                 </h3>
                 <div className="overflow-x-auto">
                     <table className="w-full text-sm">
@@ -294,7 +294,7 @@ const IntegrationTab = ({ companyId = null }) => {
                             {filteredRiskAlerts.length === 0 && !loading && (
                                 <tr>
                                     <td colSpan={6} className="py-8 text-center text-gray-500 dark:text-[#a6adba]">
-                                        Критикалык risk alert табылган жок.
+                                        Критикалык тобокелдик эскертмеси табылган жок.
                                     </td>
                                 </tr>
                             )}

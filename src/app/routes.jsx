@@ -61,7 +61,7 @@ const AppRoutes = () => {
                         />
                     </Route>
 
-                    <Route element={<PrivateRoute allowedRoles={['student']} />}>
+                    <Route element={<PrivateRoute allowedRoles={['student']} requireStudentAccess />}>
                         <Route path="/student" element={<StudentDashboard />} />
                         <Route
                             path="/student/analytics"

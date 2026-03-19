@@ -169,8 +169,8 @@ const InternalLeaderboard = () => {
         <div className="min-h-screen bg-white dark:bg-[#111418] text-gray-900 dark:text-white px-4 md:px-10 py-10 space-y-6">
             <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                    <p className="text-sm uppercase tracking-wide text-orange-500 font-semibold">LMS Internal</p>
-                    <h1 className="text-3xl font-bold">Leaderboard</h1>
+                    <p className="text-sm uppercase tracking-wide text-orange-500 font-semibold">LMS ички рейтинги</p>
+                    <h1 className="text-3xl font-bold">Рейтинг</h1>
                 </div>
                 <div className="inline-flex rounded-xl border border-gray-200 dark:border-gray-700 p-1 bg-white dark:bg-[#1a1f27]">
                     {TRACKS.map((option) => (
@@ -194,34 +194,34 @@ const InternalLeaderboard = () => {
 
             <div className="grid lg:grid-cols-2 gap-6">
                 <section className="rounded-2xl border border-gray-100 dark:border-gray-800 p-4 bg-white dark:bg-[#1a1f27]">
-                    <h2 className="text-lg font-semibold mb-3">Weekly</h2>
+                    <h2 className="text-lg font-semibold mb-3">Апталык рейтинг</h2>
                     <div className="space-y-2">
                         {weeklyItems.length ? (
                             weeklyItems.map((item, idx) => (
                                 <LeaderRow key={item?.studentId || idx} item={item} rank={idx + 1} />
                             ))
                         ) : (
-                            <EmptyState message="Бул track боюнча лидерлер табылган жок." />
+                            <EmptyState message="Бул багыт боюнча лидерлер табылган жок." />
                         )}
                     </div>
                 </section>
 
                 <section className="rounded-2xl border border-gray-100 dark:border-gray-800 p-4 bg-white dark:bg-[#1a1f27]">
-                    <h2 className="text-lg font-semibold mb-3">Student of the Week</h2>
+                    <h2 className="text-lg font-semibold mb-3">Аптанын студенти</h2>
                     {studentOfWeek ? (
                         <LeaderRow item={studentOfWeek} rank={1} />
                     ) : (
-                        <EmptyState message="Бул track боюнча студент жок." />
+                        <EmptyState message="Бул багыт боюнча студент жок." />
                     )}
 
-                    <h3 className="text-base font-semibold mt-5 mb-3">Homepage Top</h3>
+                    <h3 className="text-base font-semibold mt-5 mb-3">Башкы беттеги мыктылар</h3>
                     <div className="space-y-2">
                         {homepageItems.length ? (
                             homepageItems.map((item, idx) => (
                                 <LeaderRow key={item?.studentId || idx} item={item} rank={idx + 1} />
                             ))
                         ) : (
-                            <EmptyState message="Homepage data empty for selected track." />
+                            <EmptyState message="Тандалган багыт үчүн башкы бет маалыматы жок." />
                         )}
                     </div>
                 </section>
@@ -229,7 +229,7 @@ const InternalLeaderboard = () => {
 
             <section className="rounded-2xl border border-gray-100 dark:border-gray-800 p-4 bg-white dark:bg-[#1a1f27] space-y-3">
                 <div className="flex flex-wrap items-center justify-between gap-3">
-                    <h2 className="text-lg font-semibold">Course Leaderboard</h2>
+                    <h2 className="text-lg font-semibold">Курс рейтинги</h2>
                     <select
                         value={selectedCourseId}
                         onChange={(event) => setSelectedCourseId(event.target.value)}
@@ -254,7 +254,7 @@ const InternalLeaderboard = () => {
                             <LeaderRow key={item?.studentId || idx} item={item} rank={idx + 1} />
                         ))
                     ) : (
-                        <EmptyState message="Бул курс жана track айкалышы үчүн маалымат жок." />
+                        <EmptyState message="Бул курс жана багыт айкалышы үчүн маалымат жок." />
                     )}
                 </div>
             </section>

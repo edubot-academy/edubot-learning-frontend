@@ -224,66 +224,66 @@ const AdminAnalyticsPage = () => {
                         onClick={() => setFilters({ from: '', to: '', courseId: '', groupId: '' })}
                         className="border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-gray-600 dark:text-gray-300"
                     >
-                        Clear
+                        Тазалоо
                     </button>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                     <KpiCard
-                        label="Attendance Rate"
+                        label="Катышуу көрсөткүчү"
                         value={`${attendanceKpi.rate}%`}
-                        hint={`${attendanceKpi.good}/${attendanceKpi.total} good`}
+                        hint={`${attendanceKpi.good}/${attendanceKpi.total} жакшы`}
                     />
                     <KpiCard
-                        label="Popular Courses"
+                        label="Популярдуу курстар"
                         value={coursePopularity.length}
-                        hint="enrollment ranking"
+                        hint="жазылуу рейтинги"
                     />
                     <KpiCard
-                        label="Groups Tracked"
+                        label="Көзөмөлдөгү топтор"
                         value={groupFillRate.length}
-                        hint="seat utilization"
+                        hint="орун колдонулушу"
                     />
                     <KpiCard
-                        label="At-Risk Students"
+                        label="Тобокелдеги студенттер"
                         value={riskSummary.topRisk.length}
-                        hint="dropout risk list"
+                        hint="чыгып кетүү тобокелдиги"
                     />
                 </div>
 
                 <div className="grid lg:grid-cols-2 gap-4">
                     <TableCard
-                        title="Course Popularity"
-                        columns={['Course', 'Enrollments']}
+                        title="Курстардын популярдуулугу"
+                        columns={['Курс', 'Жазылуулар']}
                         rows={coursePopularity.map((item) => [
-                            item.courseTitle || item.title || `Course #${item.courseId || '-'}`,
+                            item.courseTitle || item.title || `Курс #${item.courseId || '-'}`,
                             metricNumber(item.enrollments || item.count),
                         ])}
                     />
                     <TableCard
-                        title="Group Fill Rate"
-                        columns={['Group', 'Fill Rate', 'Seats']}
+                        title="Топтордун толуу деңгээли"
+                        columns={['Топ', 'Толуу', 'Орундар']}
                         rows={groupFillRate.map((item) => [
-                            item.groupName || item.name || `Group #${item.groupId || '-'}`,
+                            item.groupName || item.name || `Топ #${item.groupId || '-'}`,
                             `${metricNumber(item.fillRate || item.rate)}%`,
                             `${metricNumber(item.filledSeats || item.filled)}/${metricNumber(item.seatLimit || item.totalSeats)}`,
                         ])}
                     />
                     <TableCard
-                        title="Dropout Risk Distribution"
-                        columns={['Risk', 'Count']}
+                        title="Тобокелдик бөлүштүрүүсү"
+                        columns={['Тобокелдик', 'Саны']}
                         rows={riskSummary.distribution.map((item) => [
                             item.risk || item.level || item.severity || '-',
                             metricNumber(item.count || item.total),
                         ])}
                     />
                     <TableCard
-                        title="Top At-Risk Students"
-                        columns={['Student', 'Risk', 'Course/Group']}
+                        title="Тобокелдеги студенттер"
+                        columns={['Студент', 'Тобокелдик', 'Курс/Топ']}
                         rows={riskSummary.topRisk.map((item) => [
                             item.studentName ||
                                 item.fullName ||
-                                `Student #${item.studentId || '-'}`,
+                                `Студент #${item.studentId || '-'}`,
                             item.risk || item.severity || '-',
                             item.courseTitle || item.groupName || '-',
                         ])}
@@ -291,12 +291,12 @@ const AdminAnalyticsPage = () => {
                 </div>
 
                 <TableCard
-                    title="Instructor Performance"
-                    columns={['Instructor', 'Attendance', 'Completion', 'Engagement']}
+                    title="Инструктордун көрсөткүчү"
+                    columns={['Инструктор', 'Катышуу', 'Аяктоо', 'Активдүүлүк']}
                     rows={instructorPerformance.map((item) => [
                         item.instructorName ||
                             item.fullName ||
-                            `Instructor #${item.instructorId || '-'}`,
+                            `Инструктор #${item.instructorId || '-'}`,
                         `${metricNumber(item.attendanceRate)}%`,
                         `${metricNumber(item.homeworkCompletionRate || item.completionRate)}%`,
                         metricNumber(item.engagementScore || item.score),
