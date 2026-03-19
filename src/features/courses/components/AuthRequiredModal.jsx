@@ -2,6 +2,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaShoppingCart, FaUserPlus, FaSignInAlt } from 'react-icons/fa';
+import { getAuthAcquisitionPath, isPublicVideoSignupEnabled } from '@shared/auth-config';
 
 const AuthRequiredModal = ({
     isOpen,
@@ -19,7 +20,7 @@ const AuthRequiredModal = ({
     };
 
     const handleRegister = () => {
-        navigate('/register', { state: { from: '/cart' } });
+        navigate(getAuthAcquisitionPath(), { state: { from: '/cart' } });
         onClose();
     };
 
@@ -66,13 +67,15 @@ const AuthRequiredModal = ({
                             </div>
 
                             <div className="space-y-3">
-                                <button
-                                    onClick={handleRegister}
-                                    className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-4 px-6 rounded-xl flex items-center justify-center space-x-3 transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98]"
-                                >
-                                    <FaUserPlus className="w-5 h-5" />
-                                    <span>Аккаунт түзүү</span>
-                                </button>
+                                {isPublicVideoSignupEnabled ? (
+                                    <button
+                                        onClick={handleRegister}
+                                        className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-4 px-6 rounded-xl flex items-center justify-center space-x-3 transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98]"
+                                    >
+                                        <FaUserPlus className="w-5 h-5" />
+                                        <span>Аккаунт түзүү</span>
+                                    </button>
+                                ) : null}
 
                                 <button
                                     onClick={handleLogin}

@@ -4,6 +4,7 @@ import { AuthContext } from '../context/AuthContext';
 import { useContext } from 'react';
 import { Link } from 'react-router-dom';
 import Button from '@shared-ui/Button';
+import { isPublicVideoSignupEnabled } from '@shared/auth-config';
 
 const formatPrice = (price, currency = 'KGS') => {
     if (!price && price !== 0) return 'Цена не указана';
@@ -46,14 +47,18 @@ const Favourite = () => {
                         Тандалгандарга кирүү
                     </h2>
                     <p className="text-gray-600 dark:text-gray-300 mb-6">
-                        Курстарды тандалгандарга кошуу үчүн аккаунт түзүү же кирүү керек
+                        {isPublicVideoSignupEnabled
+                            ? 'Курстарды тандалгандарга кошуу үчүн аккаунт түзүү же кирүү керек'
+                            : 'Курстарды тандалгандарга кошуу үчүн кирүү керек'}
                     </p>
                     <div className="space-y-3">
-                        <Link to="/register" className="block">
-                            <Button variant="primary" className="w-full py-3">
-                                Катталуу
-                            </Button>
-                        </Link>
+                        {isPublicVideoSignupEnabled ? (
+                            <Link to="/register" className="block">
+                                <Button variant="primary" className="w-full py-3">
+                                    Катталуу
+                                </Button>
+                            </Link>
+                        ) : null}
                         <Link to="/login" className="block">
                             <Button variant="secondary" className="w-full py-3">
                                 Кирүү

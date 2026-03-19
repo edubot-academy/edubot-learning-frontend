@@ -9,6 +9,7 @@ import DefaultLabel from '@shared-ui/forms/DefaultLabel';
 import LabelPassword from '@shared-ui/forms/LabelPassword';
 import ForgotPassword from '@features/auth/components/ForgotPassword';
 import { toast } from 'react-hot-toast'; 
+import { getAuthAcquisitionPath, isPublicVideoSignupEnabled } from '@shared/auth-config';
 
 const LoginPage = () => {
     const { login } = useContext(AuthContext);
@@ -157,10 +158,16 @@ const LoginPage = () => {
                     </form>
 
                     <p className="mt-4 text-sm text-gray-600 dark:text-[#a6adba] text-center">
-                        Аккаунтуңуз жокпу?{' '}
-                        <Link to="/register" className="text-blue-500 hover:underline">
-                            Катталуу
-                        </Link>
+                        {isPublicVideoSignupEnabled ? (
+                            <>
+                                Аккаунтуңуз жокпу?{' '}
+                                <Link to={getAuthAcquisitionPath()} className="text-blue-500 hover:underline">
+                                    Катталуу
+                                </Link>
+                            </>
+                        ) : (
+                            'Эсеп CRM аркылуу ачылат. Кирүү же сырсөздү калыбына келтирүү жолун колдонуңуз.'
+                        )}
                     </p>
                 </div>
             </div>

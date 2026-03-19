@@ -8,6 +8,7 @@ import Modal from '@shared-ui/Modal';
 import ContactCourseModal from '@features/courses/components/ContactCourseModal';
 import UnauthModal from '../shared/ui/UnauthModal';
 import Loader from '@shared/ui/Loader';
+import { getAuthAcquisitionPath, isPublicVideoSignupEnabled } from '@shared/auth-config';
 
 const Cart = () => {
     const { cartItems, loading, removeFromCart, getTotalPrice, clearCart, user } = useCart();
@@ -28,7 +29,7 @@ const Cart = () => {
 
     const handleRegister = () => {
         setShowRegisterModal(false);
-        navigate('/register', { state: { from: '/cart' } });
+        navigate(getAuthAcquisitionPath(), { state: { from: '/cart' } });
     };
 
     if (loading) {
@@ -81,18 +82,19 @@ const Cart = () => {
                             <FaShoppingCart className="w-5 h-5 text-orange-500" />
                         </div>
                         <div>
-                            <h3 className="font-bold ">Катталуу керек</h3>
+                            <h3 className="font-bold ">{isPublicVideoSignupEnabled ? 'Катталуу керек' : 'Кирүү керек'}</h3>
                         </div>
                     </div>
 
                     <p className="text-gray-600">
-                        Сатып алууну аяктоо үчүн аккаунт түзүшүңүз керек. Ал учурда сиздин
-                        себеттеги курстар сакталып калат.
+                        {isPublicVideoSignupEnabled
+                            ? 'Сатып алууну аяктоо үчүн аккаунт түзүшүңүз керек. Ал учурда сиздин себеттеги курстар сакталып калат.'
+                            : 'Сатып алууну аяктоо үчүн киришиңиз керек. Себеттеги курстарыңыз сакталат.'}
                     </p>
 
                     <div className="space-y-3 pt-2">
                         <Button variant="primary" onClick={handleRegister} className="w-full py-3">
-                            Аккаунт түзүү
+                            {isPublicVideoSignupEnabled ? 'Аккаунт түзүү' : 'Кирүү'}
                         </Button>
 
                         <button

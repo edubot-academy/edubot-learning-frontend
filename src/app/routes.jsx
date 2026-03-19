@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import PrivateRoute from '@shared/PrivateRoute';
 import MainLayout from './layouts/MainLayout';
 import Loader from '@shared/ui/Loader';
+import { isPublicVideoSignupEnabled } from '@shared/auth-config';
 
 const HomePage = lazy(() => import('../pages/Home'));
 const LoginPage = lazy(() => import('../pages/Login'));
@@ -37,7 +38,11 @@ const AppRoutes = () => {
                 <Routes>
                     <Route path="/" element={<HomePage />} />
                     <Route path="/login" element={<LoginPage />} />
-                    <Route path="/register" element={<SignupPage />} />
+                    {isPublicVideoSignupEnabled ? (
+                        <Route path="/register" element={<SignupPage />} />
+                    ) : (
+                        <Route path="/register" element={<Navigate to="/login" replace />} />
+                    )}
                     <Route path="/courses" element={<CoursesPage />} />
                     <Route path="/profile" element={<ProfilePage />} />
                     <Route path="/unauthorized" element={<Unauthorized />} />

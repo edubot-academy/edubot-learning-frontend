@@ -118,6 +118,22 @@ CRM tracks:
 ## Secondary flow: same student buys another course
 1. CRM references existing contact
 2. CRM creates new deal
+
+---
+
+## Allowed public self-serve flow
+
+This is a limited LMS-owned flow for `video` only.
+
+1. Public signup is enabled explicitly with `ALLOW_PUBLIC_VIDEO_SIGNUP=true`
+2. Student creates LMS account
+3. Student buys a `video` course through LMS self-serve checkout
+4. LMS creates or reuses the student enrollment directly
+5. LMS grants access based on LMS-owned payment and enrollment rules
+
+Important boundary:
+- this flow is not used for CRM-driven academy enrollment
+- `offline` and `online_live` remain CRM-owned enrollment flows
 3. CRM sends another enrollment request
 4. LMS reuses existing student if mapped
 5. LMS creates new enrollment for new course/group

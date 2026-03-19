@@ -2,6 +2,7 @@ import { useContext } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { FaTimes } from 'react-icons/fa';
 import { AuthContext } from '@app/providers';
+import { isPublicVideoSignupEnabled } from '@shared/auth-config';
 import Button from './Button';
 import Person from '@assets/icons/grayPerson.svg';
 import BlackHeart from '@assets/icons/baseHeart.svg';
@@ -169,9 +170,11 @@ const SideBar = ({ setMenuOpen, setPosition }) => {
                             <Link to="/cart" className={`${active('/cart')} ${linkClass}`}>
                                 Себет
                             </Link>
-                            <Link to="/register" className={`${active('/register')} ${linkClass}`}>
-                                Катталуу
-                            </Link>
+                            {isPublicVideoSignupEnabled ? (
+                                <Link to="/register" className={`${active('/register')} ${linkClass}`}>
+                                    Катталуу
+                                </Link>
+                            ) : null}
                         </>
                     )}
                 </div>

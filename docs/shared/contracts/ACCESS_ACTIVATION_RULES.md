@@ -72,3 +72,12 @@ Do not unlock lessons only because:
 - payment record exists
 
 Only LMS enrollment activation should unlock academic access.
+
+---
+
+## Public signup toggle
+
+- Default academy mode: public signup should stay disabled.
+- Enable public signup only for self-serve `video` environments with `ALLOW_PUBLIC_VIDEO_SIGNUP=true`.
+- Frontend route exposure should follow `VITE_ALLOW_PUBLIC_VIDEO_SIGNUP`.
+- Public signup must not become a backdoor for `offline` or `online_live` enrollment.
