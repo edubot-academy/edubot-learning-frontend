@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import PropTypes from 'prop-types';
 import { toast } from 'react-hot-toast';
 import { ATTENDANCE_STATUS } from '@shared/contracts';
 import {
@@ -28,6 +29,11 @@ const toStudentList = (payload) => {
     if (Array.isArray(payload?.items)) return payload.items;
     if (Array.isArray(payload?.data)) return payload.data;
     return [];
+};
+
+const isAttendanceCourseType = (course = {}) => {
+    const type = String(course?.courseType || course?.type || '').toLowerCase();
+    return type === 'offline' || type === 'online_live';
 };
 
 const getAttendanceErrorMessage = (error) => {
@@ -67,8 +73,10 @@ const AttendancePage = ({ embedded = false }) => {
                 const response = await fetchCourses({ limit: 200 });
                 if (cancelled) return;
                 const list = toCourseList(response);
-                setCourses(list);
-                if (list.length > 0) setSelectedCourseId(String(list[0].id));
+                const eligibleCourses = list.filter(isAttendanceCourseType);
+                setCourses(eligibleCourses);
+                if (eligibleCourses.length > 0) setSelectedCourseId(String(eligibleCourses[0].id));
+                else setSelectedCourseId('');
             } catch (error) {
                 console.error('Failed to load courses', error);
                 toast.error('Курстарды жүктөө мүмкүн болгон жок.');
@@ -390,3 +398,7 @@ const AttendancePage = ({ embedded = false }) => {
 };
 
 export default AttendancePage;
+
+AttendancePage.propTypes = {
+    embedded: PropTypes.bool,
+};

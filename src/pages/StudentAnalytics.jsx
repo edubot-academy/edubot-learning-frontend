@@ -16,7 +16,7 @@ const metricNumber = (value, fallback = 0) => {
     return Number.isFinite(num) ? num : fallback;
 };
 
-const StudentAnalyticsPage = () => {
+const StudentAnalyticsPage = ({ embedded = false }) => {
     const { user } = useContext(AuthContext);
     const [filters, setFilters] = useState({ from: '', to: '', courseId: '', groupId: '' });
     const [loading, setLoading] = useState(false);
@@ -106,8 +106,14 @@ const StudentAnalyticsPage = () => {
     );
 
     return (
-        <div className="pt-24 min-h-screen bg-gray-50 dark:bg-[#1A1A1A] px-4 pb-12">
-            <div className="max-w-5xl mx-auto space-y-4">
+        <div
+            className={
+                embedded
+                    ? 'space-y-4'
+                    : 'pt-24 min-h-screen bg-gray-50 dark:bg-[#1A1A1A] px-4 pb-12'
+            }
+        >
+            <div className={embedded ? 'space-y-4' : 'max-w-5xl mx-auto space-y-4'}>
                 <div className="flex items-end gap-3 flex-wrap">
                     <div>
                         <h1 className="text-2xl font-semibold text-gray-900 dark:text-[#E8ECF3]">
@@ -241,3 +247,7 @@ KpiCard.propTypes = {
 };
 
 export default StudentAnalyticsPage;
+
+StudentAnalyticsPage.propTypes = {
+    embedded: PropTypes.bool,
+};

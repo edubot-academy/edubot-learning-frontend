@@ -12,12 +12,10 @@ const CourseDetailsPage = lazy(() => import('../pages/CourseDetails'));
 const ProfilePage = lazy(() => import('../pages/Profile'));
 const InstructorDashboard = lazy(() => import('../pages/InstructorDashboard'));
 const StudentDashboard = lazy(() => import('../pages/StudentDashboard'));
-const StudentAnalyticsPage = lazy(() => import('../pages/StudentAnalytics'));
 const CreateCourse = lazy(() => import('../pages/CreateCourse'));
 const InstructorCourses = lazy(() => import('../pages/InstructorCourses'));
 const EditInstructorCourse = lazy(() => import('../pages/EditInstructorCourse'));
 const AdminPanel = lazy(() => import('../pages/Admin'));
-const AdminAnalyticsPage = lazy(() => import('../pages/AdminAnalytics'));
 const SalesManager = lazy(() => import('../pages/SalesManager'));
 const AboutPage = lazy(() => import('../pages/About'));
 const ContactPage = lazy(() => import('../pages/Contact'));
@@ -61,7 +59,10 @@ const AppRoutes = () => {
 
                     <Route element={<PrivateRoute allowedRoles={['student']} />}>
                         <Route path="/student" element={<StudentDashboard />} />
-                        <Route path="/student/analytics" element={<StudentAnalyticsPage />} />
+                        <Route
+                            path="/student/analytics"
+                            element={<Navigate to="/student?tab=analytics" replace />}
+                        />
                         <Route path="/dashboard" element={<StudentDashboard />} />
                     </Route>
 
@@ -69,7 +70,10 @@ const AppRoutes = () => {
 
                     <Route element={<PrivateRoute allowedRoles={['admin']} />}>
                         <Route path="/admin" element={<AdminPanel />} />
-                        <Route path="/admin/analytics" element={<AdminAnalyticsPage />} />
+                        <Route
+                            path="/admin/analytics"
+                            element={<Navigate to="/admin?tab=analytics" replace />}
+                        />
                     </Route>
 
                     <Route element={<PrivateRoute allowedRoles={['sales']} />}>

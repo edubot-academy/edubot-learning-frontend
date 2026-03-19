@@ -2,8 +2,13 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import PropTypes from 'prop-types';
 import { useSearchParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { fetchEnrollmentStatusEvents, fetchLmsRiskAlerts } from '@features/integration/api';
+import {
+    fetchEnrollmentStatusEvents,
+    fetchIntegrationHealth,
+    fetchIntegrationRiskSummary,
+} from '@features/integration/api';
 import { ENROLLMENT_STATUS, RISK_ISSUE_TYPE, RISK_SEVERITY } from '@shared/contracts';
+import { parseApiError } from '@shared/api/error';
 
 const FILTER_KEYS = Object.freeze({
     severity: 'intSeverity',
@@ -12,13 +17,6 @@ const FILTER_KEYS = Object.freeze({
     from: 'intFrom',
     to: 'intTo',
 });
-
-const toList = (payload) => {
-    if (Array.isArray(payload)) return payload;
-    if (Array.isArray(payload?.items)) return payload.items;
-    if (Array.isArray(payload?.data)) return payload.data;
-    return [];
-};
 
 const formatDateTime = (value) => {
     if (!value) return '-';
@@ -71,6 +69,8 @@ const IntegrationTab = ({ companyId = null }) => {
     const [loading, setLoading] = useState(false);
     const [riskAlerts, setRiskAlerts] = useState([]);
     const [enrollmentEvents, setEnrollmentEvents] = useState([]);
+    const [riskSummary, setRiskSummary] = useState(null);
+    const [integrationHealth, setIntegrationHealth] = useState(null);
 
     const [severityFilter, setSeverityFilter] = useState(
         searchParams.get(FILTER_KEYS.severity) || ''
@@ -85,7 +85,6 @@ const IntegrationTab = ({ companyId = null }) => {
     useEffect(() => {
         setSearchParams((prev) => {
             const next = new URLSearchParams(prev);
-
             const pairs = [
                 [FILTER_KEYS.severity, severityFilter],
                 [FILTER_KEYS.issueType, issueTypeFilter],
@@ -106,36 +105,22 @@ const IntegrationTab = ({ companyId = null }) => {
     const loadData = useCallback(async () => {
         setLoading(true);
         try {
-            const [riskResponse, eventResponse] = await Promise.all([
-                fetchLmsRiskAlerts({
-                    page: 1,
-                    limit: 100,
-                    companyId,
-                    severity: severityFilter || undefined,
-                    issueType: issueTypeFilter || undefined,
-                    dateFrom: dateFrom || undefined,
-                    dateTo: dateTo || undefined,
-                }),
-                fetchEnrollmentStatusEvents({
-                    page: 1,
-                    limit: 100,
-                    companyId,
-                    enrollmentStatus: statusFilter || undefined,
-                    dateFrom: dateFrom || undefined,
-                    dateTo: dateTo || undefined,
-                }),
+            const [riskSummaryResponse, eventResponse, healthResponse] = await Promise.all([
+                fetchIntegrationRiskSummary(),
+                fetchEnrollmentStatusEvents({ page: 1, limit: 100, companyId }),
+                fetchIntegrationHealth(),
             ]);
-            setRiskAlerts(toList(riskResponse));
-            setEnrollmentEvents(toList(eventResponse));
+
+            setRiskSummary(riskSummaryResponse || null);
+            setRiskAlerts(riskSummaryResponse?.recentCriticalAlerts || []);
+            setEnrollmentEvents(eventResponse?.items || []);
+            setIntegrationHealth(healthResponse?.queue || null);
         } catch (error) {
-            console.error('Failed to load integration panel data', error);
-            toast.error('Интеграция маалыматтарын жүктөө мүмкүн болгон жок.');
-            setRiskAlerts([]);
-            setEnrollmentEvents([]);
+            toast.error(parseApiError(error, 'Интеграция маалыматы жүктөлгөн жок'));
         } finally {
             setLoading(false);
         }
-    }, [companyId, dateFrom, dateTo, issueTypeFilter, severityFilter, statusFilter]);
+    }, [companyId]);
 
     useEffect(() => {
         loadData();
@@ -149,7 +134,7 @@ const IntegrationTab = ({ companyId = null }) => {
             if (severityFilter && alert?.severity !== severityFilter) return false;
             if (issueTypeFilter && alert?.issueType !== issueTypeFilter) return false;
 
-            const occurred = parseDate(alert?.occurredAt);
+            const occurred = parseDate(alert?.createdAt || alert?.occurredAt);
             if (from && occurred && occurred < from) return false;
             if (to && occurred && occurred > to) return false;
             return true;
@@ -163,7 +148,7 @@ const IntegrationTab = ({ companyId = null }) => {
         return enrollmentEvents.filter((event) => {
             if (statusFilter && event?.enrollmentStatus !== statusFilter) return false;
 
-            const occurred = parseDate(event?.occurredAt);
+            const occurred = parseDate(event?.createdAt || event?.occurredAt);
             if (from && occurred && occurred < from) return false;
             if (to && occurred && occurred > to) return false;
             return true;
@@ -171,8 +156,7 @@ const IntegrationTab = ({ companyId = null }) => {
     }, [dateFrom, dateTo, enrollmentEvents, statusFilter]);
 
     const criticalCount = useMemo(
-        () =>
-            filteredRiskAlerts.filter((alert) => alert?.severity === RISK_SEVERITY.CRITICAL).length,
+        () => filteredRiskAlerts.filter((alert) => alert?.severity === RISK_SEVERITY.CRITICAL).length,
         [filteredRiskAlerts]
     );
 
@@ -193,7 +177,7 @@ const IntegrationTab = ({ companyId = null }) => {
                             CRM-LMS Интеграция
                         </h2>
                         <p className="text-sm text-gray-500 dark:text-[#a6adba]">
-                            LMSтен келген академиялык тобокелдик жана статус өзгөрүүлөрү.
+                            LMSтин webhook абалы, тобокелдик жыйынтыгы жана enrollment статус окуялары.
                         </p>
                     </div>
                     <button
@@ -249,42 +233,42 @@ const IntegrationTab = ({ companyId = null }) => {
                 </div>
 
                 <div className="grid md:grid-cols-3 gap-3 mt-4">
-                    <StatCard label="Жалпы Risk Alert" value={filteredRiskAlerts.length} />
+                    <StatCard label="Бүгүнкү Risk Alert" value={riskSummary?.todayGenerated ?? 0} />
                     <StatCard label="Критикалык Alert" value={criticalCount} />
                     <StatCard label="Enrollment окуялары" value={filteredEnrollmentEvents.length} />
+                </div>
+
+                <div className="grid md:grid-cols-3 gap-3 mt-3">
+                    <StatCard label="Pending webhook" value={integrationHealth?.pending ?? 0} />
+                    <StatCard label="Failed webhook" value={integrationHealth?.failed ?? 0} />
+                    <StatCard label="Акыркы жөнөтүү" value={formatDateTime(integrationHealth?.lastSentAt)} />
                 </div>
             </div>
 
             <section className="bg-white dark:bg-[#111111] shadow-sm rounded-2xl p-4 border border-gray-100 dark:border-gray-800">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-[#E8ECF3] mb-3">
-                    Risk Alert окуялары
+                    Акыркы критикалык Risk Alert'тар
                 </h3>
                 <div className="overflow-x-auto">
                     <table className="w-full text-sm">
                         <thead>
                             <tr className="text-left text-gray-500 dark:text-[#a6adba] border-b border-gray-100 dark:border-gray-800">
                                 <th className="py-2 pr-3">Убакыт</th>
-                                <th className="py-2 pr-3">Issue</th>
                                 <th className="py-2 pr-3">Severity</th>
                                 <th className="py-2 pr-3">LMS Student</th>
                                 <th className="py-2 pr-3">Enrollment</th>
+                                <th className="py-2 pr-3">CRM Lead</th>
                                 <th className="py-2 pr-3">Кыскача</th>
                             </tr>
                         </thead>
                         <tbody>
                             {filteredRiskAlerts.map((alert) => (
                                 <tr
-                                    key={
-                                        alert.eventId ||
-                                        `${alert.lmsEnrollmentId}-${alert.occurredAt}`
-                                    }
+                                    key={alert.eventId || `${alert.enrollmentId}-${alert.createdAt}`}
                                     className="border-b border-gray-50 dark:border-gray-900"
                                 >
                                     <td className="py-2 pr-3 text-gray-700 dark:text-gray-200">
-                                        {formatDateTime(alert.occurredAt)}
-                                    </td>
-                                    <td className="py-2 pr-3 text-gray-700 dark:text-gray-200">
-                                        {alert.issueType || '-'}
+                                        {formatDateTime(alert.createdAt || alert.occurredAt)}
                                     </td>
                                     <td className="py-2 pr-3">
                                         <span
@@ -294,10 +278,13 @@ const IntegrationTab = ({ companyId = null }) => {
                                         </span>
                                     </td>
                                     <td className="py-2 pr-3 text-gray-700 dark:text-gray-200">
-                                        {alert.lmsStudentId || '-'}
+                                        {alert.studentId || alert.lmsStudentId || '-'}
                                     </td>
                                     <td className="py-2 pr-3 text-gray-700 dark:text-gray-200">
-                                        {alert.lmsEnrollmentId || '-'}
+                                        {alert.enrollmentId || alert.lmsEnrollmentId || '-'}
+                                    </td>
+                                    <td className="py-2 pr-3 text-gray-700 dark:text-gray-200">
+                                        {alert.crmLeadId || '-'}
                                     </td>
                                     <td className="py-2 pr-3 text-gray-600 dark:text-gray-300 max-w-xs truncate">
                                         {alert.summary || '-'}
@@ -306,11 +293,8 @@ const IntegrationTab = ({ companyId = null }) => {
                             ))}
                             {filteredRiskAlerts.length === 0 && !loading && (
                                 <tr>
-                                    <td
-                                        colSpan={6}
-                                        className="py-8 text-center text-gray-500 dark:text-[#a6adba]"
-                                    >
-                                        Risk alert окуясы табылган жок.
+                                    <td colSpan={6} className="py-8 text-center text-gray-500 dark:text-[#a6adba]">
+                                        Критикалык risk alert табылган жок.
                                     </td>
                                 </tr>
                             )}
@@ -321,60 +305,52 @@ const IntegrationTab = ({ companyId = null }) => {
 
             <section className="bg-white dark:bg-[#111111] shadow-sm rounded-2xl p-4 border border-gray-100 dark:border-gray-800">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-[#E8ECF3] mb-3">
-                    Enrollment status timeline
+                    Enrollment status events
                 </h3>
                 <div className="overflow-x-auto">
                     <table className="w-full text-sm">
                         <thead>
                             <tr className="text-left text-gray-500 dark:text-[#a6adba] border-b border-gray-100 dark:border-gray-800">
                                 <th className="py-2 pr-3">Убакыт</th>
+                                <th className="py-2 pr-3">Event ID</th>
                                 <th className="py-2 pr-3">Enrollment</th>
                                 <th className="py-2 pr-3">Student</th>
-                                <th className="py-2 pr-3">Status</th>
-                                <th className="py-2 pr-3">Access</th>
-                                <th className="py-2 pr-3">Себеп</th>
+                                <th className="py-2 pr-3">Delivery</th>
+                                <th className="py-2 pr-3">Ката</th>
                             </tr>
                         </thead>
                         <tbody>
                             {filteredEnrollmentEvents.map((event) => (
                                 <tr
-                                    key={
-                                        event.eventId ||
-                                        `${event.lmsEnrollmentId}-${event.occurredAt}`
-                                    }
+                                    key={event.eventId || `${event.id}-${event.createdAt}`}
                                     className="border-b border-gray-50 dark:border-gray-900"
                                 >
                                     <td className="py-2 pr-3 text-gray-700 dark:text-gray-200">
-                                        {formatDateTime(event.occurredAt)}
+                                        {formatDateTime(event.createdAt || event.occurredAt)}
                                     </td>
                                     <td className="py-2 pr-3 text-gray-700 dark:text-gray-200">
-                                        {event.lmsEnrollmentId || '-'}
+                                        {event.eventId || '-'}
                                     </td>
                                     <td className="py-2 pr-3 text-gray-700 dark:text-gray-200">
-                                        {event.lmsStudentId || '-'}
+                                        {event.enrollmentId || event.lmsEnrollmentId || '-'}
+                                    </td>
+                                    <td className="py-2 pr-3 text-gray-700 dark:text-gray-200">
+                                        {event.studentId || event.lmsStudentId || '-'}
                                     </td>
                                     <td className="py-2 pr-3">
-                                        <span
-                                            className={`inline-flex px-2 py-1 text-xs rounded-full ${statusBadgeClass(event.enrollmentStatus)}`}
-                                        >
-                                            {event.enrollmentStatus || '-'}
+                                        <span className={`inline-flex px-2 py-1 text-xs rounded-full ${statusBadgeClass(event.status)}`}>
+                                            {event.status || '-'}
                                         </span>
                                     </td>
-                                    <td className="py-2 pr-3 text-gray-700 dark:text-gray-200">
-                                        {event.accessStatus || '-'}
-                                    </td>
                                     <td className="py-2 pr-3 text-gray-600 dark:text-gray-300 max-w-xs truncate">
-                                        {event.reason || '-'}
+                                        {event.lastError || '-'}
                                     </td>
                                 </tr>
                             ))}
                             {filteredEnrollmentEvents.length === 0 && !loading && (
                                 <tr>
-                                    <td
-                                        colSpan={6}
-                                        className="py-8 text-center text-gray-500 dark:text-[#a6adba]"
-                                    >
-                                        Enrollment статус окуясы табылган жок.
+                                    <td colSpan={6} className="py-8 text-center text-gray-500 dark:text-[#a6adba]">
+                                        Enrollment event табылган жок.
                                     </td>
                                 </tr>
                             )}

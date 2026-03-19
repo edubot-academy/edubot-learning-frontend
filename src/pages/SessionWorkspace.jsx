@@ -12,10 +12,13 @@ import {
 import {
     createCourseGroup,
     createCourseSession,
+    createSessionHomework,
     createSessionMeeting,
     deleteSessionMeeting,
     fetchCourseAttendance,
     fetchCourseGroups,
+    fetchSessionHomework,
+    fetchSessionHomeworkSubmissions,
     fetchSessionMeeting,
     fetchCourseSessions,
     fetchCourseStudents,
@@ -26,8 +29,10 @@ import {
     markSessionAttendanceBulk,
     syncSessionRecordings,
     updateCourseGroup,
+    updateSessionHomework,
     updateSessionMeeting,
     updateCourseSession,
+    reviewSessionHomeworkSubmission,
 } from '@services/api';
 
 const todayIso = new Date().toISOString().slice(0, 10);
@@ -219,6 +224,17 @@ const SessionWorkspace = () => {
     const [homeworkDescription, setHomeworkDescription] = useState('');
     const [homeworkDeadline, setHomeworkDeadline] = useState('');
     const [publishedHomework, setPublishedHomework] = useState([]);
+    const [loadingHomework, setLoadingHomework] = useState(false);
+    const [savingHomework, setSavingHomework] = useState(false);
+    const [selectedHomeworkId, setSelectedHomeworkId] = useState('');
+    const [homeworkSubmissions, setHomeworkSubmissions] = useState([]);
+    const [loadingHomeworkSubmissions, setLoadingHomeworkSubmissions] = useState(false);
+    const [reviewingSubmissionId, setReviewingSubmissionId] = useState('');
+    const [editingHomeworkId, setEditingHomeworkId] = useState('');
+    const [editHomeworkTitle, setEditHomeworkTitle] = useState('');
+    const [editHomeworkDescription, setEditHomeworkDescription] = useState('');
+    const [editHomeworkDeadline, setEditHomeworkDeadline] = useState('');
+    const [updatingHomework, setUpdatingHomework] = useState(false);
     const [nowMs, setNowMs] = useState(Date.now());
 
     useEffect(() => {
@@ -417,6 +433,76 @@ const SessionWorkspace = () => {
 
     useEffect(() => {
         if (!selectedSessionId) {
+            setPublishedHomework([]);
+            setSelectedHomeworkId('');
+            setHomeworkSubmissions([]);
+            setEditingHomeworkId('');
+            return;
+        }
+
+        let cancelled = false;
+        const loadSessionHomework = async () => {
+            setLoadingHomework(true);
+            try {
+                const response = await fetchSessionHomework(Number(selectedSessionId));
+                if (cancelled) return;
+                const items = toArray(response);
+                setPublishedHomework(items);
+                setSelectedHomeworkId((prev) => {
+                    if (prev && items.some((item) => String(item.id) === String(prev))) return prev;
+                    return items[0]?.id ? String(items[0].id) : '';
+                });
+            } catch (error) {
+                if (cancelled) return;
+                console.error(error);
+                toast.error('Үй тапшырмалар жүктөлгөн жок.');
+                setPublishedHomework([]);
+                setSelectedHomeworkId('');
+            } finally {
+                if (!cancelled) setLoadingHomework(false);
+            }
+        };
+
+        loadSessionHomework();
+        return () => {
+            cancelled = true;
+        };
+    }, [selectedSessionId]);
+
+    useEffect(() => {
+        if (!selectedSessionId || !selectedHomeworkId) {
+            setHomeworkSubmissions([]);
+            return;
+        }
+
+        let cancelled = false;
+        const loadSubmissions = async () => {
+            setLoadingHomeworkSubmissions(true);
+            try {
+                const response = await fetchSessionHomeworkSubmissions(
+                    Number(selectedSessionId),
+                    Number(selectedHomeworkId)
+                );
+                if (cancelled) return;
+                setHomeworkSubmissions(toArray(response));
+            } catch (error) {
+                if (cancelled) return;
+                console.error(error);
+                toast.error('Тапшырма жооптору жүктөлгөн жок.');
+                setHomeworkSubmissions([]);
+            } finally {
+                if (!cancelled) setLoadingHomeworkSubmissions(false);
+            }
+        };
+
+        loadSubmissions();
+        return () => {
+            cancelled = true;
+        };
+    }, [selectedHomeworkId, selectedSessionId]);
+
+    useEffect(() => {
+        if (!selectedSessionId) {
             setMeetingJoinUrl('');
             setMeetingId('');
             return;
@@ -460,6 +546,11 @@ const SessionWorkspace = () => {
     const selectedSession = useMemo(
         () => sessions.find((session) => String(session.id) === String(selectedSessionId)) || null,
         [sessions, selectedSessionId]
+    );
+    const selectedHomework = useMemo(
+        () =>
+            publishedHomework.find((item) => String(item.id) === String(selectedHomeworkId)) || null,
+        [publishedHomework, selectedHomeworkId]
     );
 
     useEffect(() => {
@@ -591,7 +682,14 @@ const SessionWorkspace = () => {
             .map((student) => {
                 const streak = studentStreaks[student.id] || 0;
                 const homeworkPoints =
-                    publishedHomework.filter((h) => h.assignedTo?.includes(student.id)).length * 5;
+                    publishedHomework.filter((h) => {
+                        const assignees =
+                            h.assignedTo ||
+                            h.assignedStudentIds ||
+                            h.assignedStudents?.map((item) => item.id) ||
+                            [];
+                        return assignees.includes(student.id);
+                    }).length * 5;
                 const attendancePoint =
                     attendanceRows[student.id]?.status === SESSION_ATTENDANCE_STATUS.PRESENT
                         ? 10
@@ -1021,26 +1119,113 @@ const SessionWorkspace = () => {
         toast.success('Материал кошулду.');
     };
 
-    const publishHomework = () => {
+    const publishHomework = async () => {
         if (!homeworkTitle.trim()) {
             toast.error('Үй тапшырманын аталышын жазыңыз.');
             return;
         }
+        if (!selectedSessionId) {
+            toast.error('Алгач сессия тандаңыз.');
+            return;
+        }
 
-        const assignedTo = students.map((s) => s.id);
-        const payload = {
-            id: `hw-${Date.now()}`,
-            title: homeworkTitle.trim(),
-            description: homeworkDescription.trim() || null,
-            deadline: homeworkDeadline || null,
-            assignedTo,
-        };
+        const assignedStudentIds = students.map((student) => student.id);
+        setSavingHomework(true);
+        try {
+            await createSessionHomework(Number(selectedSessionId), {
+                title: homeworkTitle.trim(),
+                description: homeworkDescription.trim() || undefined,
+                deadline: homeworkDeadline || undefined,
+                assignedStudentIds,
+            });
 
-        setPublishedHomework((prev) => [payload, ...prev]);
-        setHomeworkTitle('');
-        setHomeworkDescription('');
-        setHomeworkDeadline('');
-        toast.success('Үй тапшырма жарыяланды.');
+            const refreshed = await fetchSessionHomework(Number(selectedSessionId));
+            const items = toArray(refreshed);
+            setPublishedHomework(items);
+            setSelectedHomeworkId((prev) => {
+                if (prev && items.some((item) => String(item.id) === String(prev))) return prev;
+                return items[0]?.id ? String(items[0].id) : '';
+            });
+            setHomeworkTitle('');
+            setHomeworkDescription('');
+            setHomeworkDeadline('');
+            toast.success('Үй тапшырма жарыяланды.');
+        } catch (error) {
+            console.error(error);
+            const message = error?.response?.data?.message || 'Үй тапшырма жарыялоо катасы';
+            toast.error(Array.isArray(message) ? message.join(', ') : message);
+        } finally {
+            setSavingHomework(false);
+        }
+    };
+
+    const beginHomeworkEdit = (item) => {
+        if (!item?.id) return;
+        setEditingHomeworkId(String(item.id));
+        setEditHomeworkTitle(item.title || item.name || '');
+        setEditHomeworkDescription(item.description || '');
+        setEditHomeworkDeadline(item.deadline ? String(item.deadline).slice(0, 10) : '');
+    };
+
+    const cancelHomeworkEdit = () => {
+        setEditingHomeworkId('');
+        setEditHomeworkTitle('');
+        setEditHomeworkDescription('');
+        setEditHomeworkDeadline('');
+    };
+
+    const saveHomeworkEdit = async () => {
+        if (!selectedSessionId || !editingHomeworkId) return;
+        if (!editHomeworkTitle.trim()) {
+            toast.error('Тапшырманын аталышын жазыңыз.');
+            return;
+        }
+
+        setUpdatingHomework(true);
+        try {
+            await updateSessionHomework(Number(selectedSessionId), Number(editingHomeworkId), {
+                title: editHomeworkTitle.trim(),
+                description: editHomeworkDescription.trim() || undefined,
+                deadline: editHomeworkDeadline || undefined,
+            });
+
+            const refreshed = await fetchSessionHomework(Number(selectedSessionId));
+            const items = toArray(refreshed);
+            setPublishedHomework(items);
+            cancelHomeworkEdit();
+            toast.success('Үй тапшырма жаңыртылды.');
+        } catch (error) {
+            console.error(error);
+            const message = error?.response?.data?.message || 'Үй тапшырма жаңыртуу катасы';
+            toast.error(Array.isArray(message) ? message.join(', ') : message);
+        } finally {
+            setUpdatingHomework(false);
+        }
+    };
+
+    const reviewHomeworkSubmission = async (submissionId, status) => {
+        if (!selectedSessionId || !selectedHomeworkId || !submissionId) return;
+        setReviewingSubmissionId(String(submissionId));
+        try {
+            await reviewSessionHomeworkSubmission(
+                Number(selectedSessionId),
+                Number(selectedHomeworkId),
+                Number(submissionId),
+                { status }
+            );
+            const refreshed = await fetchSessionHomeworkSubmissions(
+                Number(selectedSessionId),
+                Number(selectedHomeworkId)
+            );
+            setHomeworkSubmissions(toArray(refreshed));
+            toast.success('Тапшырма жооп статусу жаңыртылды.');
+        } catch (error) {
+            console.error(error);
+            const message = error?.response?.data?.message || 'Тапшырма жоопун баалоо катасы';
+            toast.error(Array.isArray(message) ? message.join(', ') : message);
+        } finally {
+            setReviewingSubmissionId('');
+        }
     };
 
     return (
@@ -1933,46 +2118,199 @@ const SessionWorkspace = () => {
                     )}
 
                     {activeTab === 'homework' && (
-                        <div className="space-y-3">
-                            <input
-                                value={homeworkTitle}
-                                onChange={(e) => setHomeworkTitle(e.target.value)}
-                                placeholder="Тапшырманын аталышы"
-                                className="w-full border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 bg-white dark:bg-[#0E0E0E]"
-                            />
-                            <textarea
-                                value={homeworkDescription}
-                                onChange={(e) => setHomeworkDescription(e.target.value)}
-                                rows={4}
-                                placeholder="Түшүндүрмө"
-                                className="w-full border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 bg-white dark:bg-[#0E0E0E]"
-                            />
-                            <input
-                                type="date"
-                                value={homeworkDeadline}
-                                onChange={(e) => setHomeworkDeadline(e.target.value)}
-                                className="border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 bg-white dark:bg-[#0E0E0E]"
-                            />
-                            <button
-                                onClick={publishHomework}
-                                className="px-4 py-2 rounded-lg bg-blue-600 text-white"
-                            >
-                                Үй тапшырмасын жарыялоо
-                            </button>
-
-                            <div className="space-y-2">
-                                {publishedHomework.map((item) => (
-                                    <div
-                                        key={item.id}
-                                        className="border border-gray-100 dark:border-gray-800 rounded p-3"
+                        <div className="space-y-4">
+                            <div className="grid md:grid-cols-2 gap-4">
+                                <div className="space-y-3">
+                                    <h4 className="font-medium">Жаңы тапшырма</h4>
+                                    <input
+                                        value={homeworkTitle}
+                                        onChange={(e) => setHomeworkTitle(e.target.value)}
+                                        placeholder="Тапшырманын аталышы"
+                                        className="w-full border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 bg-white dark:bg-[#0E0E0E]"
+                                    />
+                                    <textarea
+                                        value={homeworkDescription}
+                                        onChange={(e) => setHomeworkDescription(e.target.value)}
+                                        rows={4}
+                                        placeholder="Түшүндүрмө"
+                                        className="w-full border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 bg-white dark:bg-[#0E0E0E]"
+                                    />
+                                    <input
+                                        type="date"
+                                        value={homeworkDeadline}
+                                        onChange={(e) => setHomeworkDeadline(e.target.value)}
+                                        className="border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 bg-white dark:bg-[#0E0E0E]"
+                                    />
+                                    <button
+                                        onClick={publishHomework}
+                                        disabled={!selectedSessionId || savingHomework}
+                                        className="px-4 py-2 rounded-lg bg-blue-600 text-white disabled:opacity-60"
                                     >
-                                        <div className="font-medium">{item.title}</div>
-                                        <div className="text-sm text-gray-500">
-                                            Deadline: {item.deadline || '-'}
-                                        </div>
+                                        {savingHomework ? 'Жарыяланып жатат...' : 'Үй тапшырмасын жарыялоо'}
+                                    </button>
+                                </div>
+
+                                <div className="space-y-3">
+                                    <h4 className="font-medium">Тапшырмалар тизмеси</h4>
+                                    {loadingHomework && (
+                                        <div className="text-sm text-gray-500">Үй тапшырмалар жүктөлүүдө...</div>
+                                    )}
+                                    <div className="space-y-2 max-h-72 overflow-auto">
+                                        {publishedHomework.map((item) => (
+                                            <button
+                                                key={item.id}
+                                                type="button"
+                                                onClick={() => setSelectedHomeworkId(String(item.id))}
+                                                className={`w-full text-left border rounded p-3 ${
+                                                    String(item.id) === String(selectedHomeworkId)
+                                                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                                                        : 'border-gray-100 dark:border-gray-800'
+                                                }`}
+                                            >
+                                                <div className="font-medium">
+                                                    {item.title || item.name || 'Homework'}
+                                                </div>
+                                                <div className="text-sm text-gray-500">
+                                                    Deadline: {item.deadline || '-'}
+                                                </div>
+                                            </button>
+                                        ))}
+                                        {!loadingHomework && publishedHomework.length === 0 && (
+                                            <div className="text-sm text-gray-500">
+                                                Бул сессия боюнча үй тапшырма азырынча жок.
+                                            </div>
+                                        )}
                                     </div>
-                                ))}
+                                </div>
                             </div>
+
+                            {selectedHomework ? (
+                                <div className="border border-gray-100 dark:border-gray-800 rounded-xl p-3 space-y-3">
+                                    <div className="flex items-center justify-between gap-2 flex-wrap">
+                                        <div>
+                                            <div className="font-medium">
+                                                {selectedHomework.title || selectedHomework.name || 'Homework'}
+                                            </div>
+                                            <div className="text-sm text-gray-500">
+                                                Deadline: {selectedHomework.deadline || '-'}
+                                            </div>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => beginHomeworkEdit(selectedHomework)}
+                                            className="px-3 py-1 rounded border border-gray-200 dark:border-gray-700 text-sm"
+                                        >
+                                            Edit
+                                        </button>
+                                    </div>
+
+                                    {editingHomeworkId === String(selectedHomework.id) && (
+                                        <div className="space-y-2 border border-gray-100 dark:border-gray-800 rounded-lg p-3">
+                                            <input
+                                                value={editHomeworkTitle}
+                                                onChange={(e) => setEditHomeworkTitle(e.target.value)}
+                                                className="w-full border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 bg-white dark:bg-[#0E0E0E]"
+                                            />
+                                            <textarea
+                                                value={editHomeworkDescription}
+                                                onChange={(e) =>
+                                                    setEditHomeworkDescription(e.target.value)
+                                                }
+                                                rows={3}
+                                                className="w-full border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 bg-white dark:bg-[#0E0E0E]"
+                                            />
+                                            <input
+                                                type="date"
+                                                value={editHomeworkDeadline}
+                                                onChange={(e) => setEditHomeworkDeadline(e.target.value)}
+                                                className="border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 bg-white dark:bg-[#0E0E0E]"
+                                            />
+                                            <div className="flex gap-2">
+                                                <button
+                                                    type="button"
+                                                    onClick={saveHomeworkEdit}
+                                                    disabled={updatingHomework}
+                                                    className="px-3 py-1 rounded bg-blue-600 text-white disabled:opacity-60"
+                                                >
+                                                    {updatingHomework ? 'Сакталып жатат...' : 'Сактоо'}
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={cancelHomeworkEdit}
+                                                    className="px-3 py-1 rounded border border-gray-200 dark:border-gray-700"
+                                                >
+                                                    Жокко чыгаруу
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    <div className="space-y-2">
+                                        <h5 className="font-medium">Submissionдер</h5>
+                                        {loadingHomeworkSubmissions && (
+                                            <div className="text-sm text-gray-500">
+                                                Submissionдер жүктөлүүдө...
+                                            </div>
+                                        )}
+                                        {!loadingHomeworkSubmissions && homeworkSubmissions.length === 0 && (
+                                            <div className="text-sm text-gray-500">Жооп азырынча жок.</div>
+                                        )}
+                                        {homeworkSubmissions.map((submission) => (
+                                            <div
+                                                key={submission.id}
+                                                className="border border-gray-100 dark:border-gray-800 rounded-lg p-3"
+                                            >
+                                                <div className="flex flex-wrap items-center justify-between gap-2">
+                                                    <div>
+                                                        <div className="font-medium text-sm">
+                                                            {submission.student?.fullName ||
+                                                                submission.fullName ||
+                                                                `#${submission.studentId || submission.userId}`}
+                                                        </div>
+                                                        <div className="text-xs text-gray-500">
+                                                            Status: {submission.status || 'submitted'}
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex gap-2">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() =>
+                                                                reviewHomeworkSubmission(
+                                                                    submission.id,
+                                                                    'approved'
+                                                                )
+                                                            }
+                                                            disabled={
+                                                                reviewingSubmissionId ===
+                                                                String(submission.id)
+                                                            }
+                                                            className="px-2 py-1 rounded bg-emerald-600 text-white text-xs disabled:opacity-60"
+                                                        >
+                                                            Approve
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() =>
+                                                                reviewHomeworkSubmission(
+                                                                    submission.id,
+                                                                    'rejected'
+                                                                )
+                                                            }
+                                                            disabled={
+                                                                reviewingSubmissionId ===
+                                                                String(submission.id)
+                                                            }
+                                                            className="px-2 py-1 rounded bg-red-600 text-white text-xs disabled:opacity-60"
+                                                        >
+                                                            Reject
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            ) : null}
                         </div>
                     )}
 

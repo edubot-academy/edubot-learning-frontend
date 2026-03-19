@@ -49,6 +49,7 @@ import NotificationsTab from '@features/notifications/components/NotificationsTa
 import Loader from '@shared/ui/Loader';
 import IntegrationTab from '@features/integration/components/IntegrationTab';
 import AttendancePage from './Attendance';
+import AdminAnalyticsPage from './AdminAnalytics';
 
 const ADMIN_TABS = [
     'stats',
@@ -62,6 +63,7 @@ const ADMIN_TABS = [
     'notifications',
     'integration',
     'attendance',
+    'analytics',
 ];
 
 const USERS_QUERY_KEYS = Object.freeze({
@@ -160,6 +162,7 @@ const AdminPanel = () => {
         { id: 'notifications', label: 'Билдирүүлөр', icon: FiBell },
         { id: 'integration', label: 'Интеграция', icon: FiActivity },
         { id: 'attendance', label: 'Катышуу', icon: FiCheckSquare },
+        { id: 'analytics', label: 'Аналитика', icon: FiBarChart2 },
     ];
 
     const updateSearchParams = useCallback(
@@ -178,18 +181,23 @@ const AdminPanel = () => {
 
     useEffect(() => {
         const tabFromUrl = searchParams.get('tab');
-        if (ADMIN_TABS.includes(tabFromUrl) && tabFromUrl !== activeTab) {
-            setActiveTab(tabFromUrl);
-            return;
+        if (ADMIN_TABS.includes(tabFromUrl)) {
+            setActiveTab((prev) => (prev === tabFromUrl ? prev : tabFromUrl));
         }
-        if (!tabFromUrl && activeTab !== 'stats') {
-            setActiveTab('stats');
-        }
-    }, [searchParams, activeTab]);
+    }, [searchParams]);
 
     useEffect(() => {
         updateSearchParams({ tab: activeTab });
     }, [activeTab, updateSearchParams]);
+
+    const handleTabSelect = useCallback(
+        (tabId) => {
+            if (!ADMIN_TABS.includes(tabId)) return;
+            setActiveTab(tabId);
+            updateSearchParams({ tab: tabId });
+        },
+        [updateSearchParams]
+    );
 
     const loadAdminStats = useCallback(async () => {
         setAdminStatsLoading(true);
@@ -764,7 +772,7 @@ const AdminPanel = () => {
                 <DashboardSidebar
                     items={NAV_ITEMS}
                     activeId={activeTab}
-                    onSelect={setActiveTab}
+                    onSelect={handleTabSelect}
                     isOpen={sidebarOpen}
                     onToggle={setSidebarOpen}
                     className="flex-shrink-0"
@@ -803,6 +811,12 @@ const AdminPanel = () => {
                     {activeTab === 'attendance' && (
                         <div className="bg-white dark:bg-[#111111] shadow-sm rounded-2xl p-4 border border-gray-100 dark:border-gray-800">
                             <AttendancePage embedded />
+                        </div>
+                    )}
+
+                    {activeTab === 'analytics' && (
+                        <div className="bg-white dark:bg-[#111111] shadow-sm rounded-2xl p-4 border border-gray-100 dark:border-gray-800">
+                            <AdminAnalyticsPage />
                         </div>
                     )}
 
@@ -1443,6 +1457,7 @@ const AdminPanel = () => {
                                         <option value="">Бардык ролдор</option>
                                         <option value="student">Студент</option>
                                         <option value="instructor">Окутуучу</option>
+                                        <option value="assistant">Ассистент</option>
                                         <option value="sales">Сатуу</option>
                                         <option value="admin">Admin</option>
                                     </select>
@@ -1485,6 +1500,7 @@ const AdminPanel = () => {
                                                 >
                                                     <option value="student">Студент</option>
                                                     <option value="instructor">Окутуучу</option>
+                                                    <option value="assistant">Ассистент</option>
                                                     <option value="sales">Сатуу</option>
                                                     <option value="admin">Admin</option>
                                                 </select>

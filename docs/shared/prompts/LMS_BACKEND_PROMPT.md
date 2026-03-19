@@ -94,7 +94,7 @@ Student entity fields:
 - fullName
 - phone
 - email
-- crmContactId (nullable mapping field)
+- crmLeadId (nullable mapping field)
 - externalStudentId (nullable)
 - status
 - createdAt
@@ -105,7 +105,7 @@ Enrollment entity fields:
 - studentId
 - courseId
 - groupId
-- crmContactId (nullable)
+- crmLeadId (nullable)
 - sourceSystem
 - paymentStatusSnapshot
 - enrollmentStatus
@@ -172,7 +172,7 @@ Create CRM webhook/event support from LMS for:
 - low quiz participation
 
 For each risk event, include:
-- crmContactId if available
+- crmLeadId if available
 - lmsStudentId
 - enrollmentId
 - courseId

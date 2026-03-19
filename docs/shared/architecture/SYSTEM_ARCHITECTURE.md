@@ -156,7 +156,7 @@ CRM should convert those signals into:
 Since CRM and LMS have separate databases, student identity must be linked through mapping fields and/or mapping tables.
 
 Recommended keys:
-- `crmContactId`
+- `crmLeadId`
 - `lmsStudentId`
 - `lmsEnrollmentId`
 - optional `externalStudentId`

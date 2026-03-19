@@ -50,7 +50,7 @@ Critical rules:
 Student identity:
 - CRM and LMS have separate databases
 - There must be a mapping strategy between CRM contacts/students and LMS students
-- Use mapping fields like crmContactId, lmsStudentId, externalStudentId where appropriate
+- Use mapping fields like crmLeadId, lmsStudentId, externalStudentId where appropriate
 
 Target industries:
 - education centers

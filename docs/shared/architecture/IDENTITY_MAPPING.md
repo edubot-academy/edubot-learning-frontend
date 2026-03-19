@@ -20,7 +20,7 @@ Without mapping, duplicates and broken integrations will appear.
 ## Recommended keys
 
 ### CRM-side identifiers
-- `crmContactId`
+- `crmLeadId`
 - `crmDealId`
 - `crmPaymentId`
 
@@ -37,7 +37,7 @@ Without mapping, duplicates and broken integrations will appear.
 
 ### In LMS student entity
 Store:
-- `crmContactId` nullable
+- `crmLeadId` nullable
 - `externalStudentId` nullable
 
 ### In CRM mapping table
@@ -46,7 +46,7 @@ Recommended table: `student_system_mappings`
 Fields:
 - `id`
 - `companyId`
-- `crmContactId`
+- `crmLeadId`
 - `lmsStudentId`
 - `lmsEnrollmentId` nullable
 - `lastSyncedAt` nullable
@@ -60,7 +60,7 @@ Fields:
 When CRM sends enrollment request to LMS:
 
 ### LMS should attempt matching in this order
-1. by existing `crmContactId`
+1. by existing `crmLeadId`
 2. by exact email if available
 3. by normalized phone number
 4. create new LMS student if no safe match is found
@@ -96,7 +96,7 @@ One CRM contact may have:
 - one LMS student
 - multiple LMS enrollments
 
-This means `crmContactId` to `lmsStudentId` is usually **one-to-one**, while `lmsStudentId` to `lmsEnrollmentId` is **one-to-many**.
+This means `crmLeadId` to `lmsStudentId` is usually **one-to-one**, while `lmsStudentId` to `lmsEnrollmentId` is **one-to-many**.
 
 ---
 
@@ -124,6 +124,6 @@ After successful enrollment request:
 ## Audit recommendation
 
 Store how mapping occurred:
-- `matchedBy = crmContactId | email | phone | created_new`
+- `matchedBy = crmLeadId | email | phone | created_new`
 - `matchedAt`
 - `matchedBySystem = lms`

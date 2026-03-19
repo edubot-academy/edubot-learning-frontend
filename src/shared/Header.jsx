@@ -68,14 +68,6 @@ const NavLinks = ({ isMobile, user }) => {
                     Dashboard
                 </Link>
             )}
-            {user && user.role === 'admin' && (
-                <Link
-                    to="/admin/analytics"
-                    className={`${active('/admin/analytics')} ${linkClass}`}
-                >
-                    Analytics
-                </Link>
-            )}
             {user && user.role === 'assistant' && (
                 <Link to="/assistant" className={`${active('/assistant')} ${linkClass}`}>
                     Dashboard
@@ -84,14 +76,6 @@ const NavLinks = ({ isMobile, user }) => {
             {user && user.role === 'student' && (
                 <Link to="/student" className={`${active('/student')} ${linkClass}`}>
                     Dashboard
-                </Link>
-            )}
-            {user && user.role === 'student' && (
-                <Link
-                    to="/student/analytics"
-                    className={`${active('/student/analytics')} ${linkClass}`}
-                >
-                    Analytics
                 </Link>
             )}
         </div>

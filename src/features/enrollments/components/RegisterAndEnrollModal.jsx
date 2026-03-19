@@ -124,7 +124,7 @@ const RegisterAndEnrollModal = ({ onClose, onSuccess }) => {
             if (selectedGroupId) {
                 const enrollmentResponse = await createIntegrationEnrollmentRequest({
                     crmCompanyId: String(companyId),
-                    crmContactId: String(selectedUser.id),
+                    crmLeadId: String(selectedUser.id),
                     student: {
                         fullName: selectedUser.fullName,
                         phone: selectedUser.phoneNumber || '',
@@ -158,7 +158,7 @@ const RegisterAndEnrollModal = ({ onClose, onSuccess }) => {
             if (integrationEnrollmentId) {
                 await activateIntegrationEnrollment(integrationEnrollmentId, {
                     crmCompanyId: String(companyId),
-                    crmContactId: String(selectedUser.id),
+                    crmLeadId: String(selectedUser.id),
                     crmPaymentId: paymentResponse?.id ? String(paymentResponse.id) : null,
                     paymentStatus: PAYMENT_STATUS.CONFIRMED,
                     activatedByUserId: actor?.id ? String(actor.id) : null,

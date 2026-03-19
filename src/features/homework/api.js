@@ -34,6 +34,26 @@ export const createSessionHomework = async (sessionId, payload) => {
     return data;
 };
 
+export const updateSessionHomework = async (sessionId, homeworkId, payload) => {
+    const validSessionId = ensurePositiveInt(sessionId, 'sessionId');
+    const validHomeworkId = ensurePositiveInt(homeworkId, 'homeworkId');
+    const { data } = await api.patch(
+        `/course-sessions/${validSessionId}/homework/${validHomeworkId}`,
+        payload
+    );
+    return data;
+};
+
+export const submitSessionHomework = async (sessionId, homeworkId, payload) => {
+    const validSessionId = ensurePositiveInt(sessionId, 'sessionId');
+    const validHomeworkId = ensurePositiveInt(homeworkId, 'homeworkId');
+    const { data } = await api.post(
+        `/course-sessions/${validSessionId}/homework/${validHomeworkId}/submissions`,
+        payload
+    );
+    return data;
+};
+
 export const fetchSessionHomeworkSubmissions = async (sessionId, homeworkId) => {
     const validSessionId = ensurePositiveInt(sessionId, 'sessionId');
     const validHomeworkId = ensurePositiveInt(homeworkId, 'homeworkId');

@@ -20,6 +20,10 @@ This folder contains the shared documentation needed to keep **EduBot CRM** and 
     - `SHARED_ARCHITECTURE_PROMPT.md`
     - `LMS_FRONTEND_PROMPT.md`
     - `LMS_BACKEND_PROMPT.md`
+- `NEW_FEATURES_USER_GUIDE_KY.md`
+    - Kyrgyz end-user guide for new CRM integration features (admin/instructor/student)
+- `LMS_FRONTEND_QA_CHECKLIST_KY.md`
+    - Kyrgyz QA checklist for LMS frontend (integration, attendance, homework, role flows)
 
 ## How to use
 

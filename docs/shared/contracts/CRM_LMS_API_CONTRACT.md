@@ -129,7 +129,7 @@ POST /api/integration/enrollments
 ```ts
 type CreateIntegrationEnrollmentRequestDto = {
   crmCompanyId: string;
-  crmContactId: string;
+  crmLeadId: string;
   crmDealId?: string | null;
   crmPaymentId?: string | null;
   student: {
@@ -152,7 +152,7 @@ type CreateIntegrationEnrollmentRequestDto = {
 
 ### Expected LMS behavior
 - find or create student
-- map `crmContactId`
+- map `crmLeadId`
 - create enrollment as `pending_activation` by default
 - keep academic access locked until activated
 
@@ -164,7 +164,7 @@ type CreateIntegrationEnrollmentResponseDto = {
   message: string;
   student: {
     id: string;
-    crmContactId: string | null;
+    crmLeadId: string | null;
     fullName: string;
     phone: string;
     email: string | null;
@@ -194,7 +194,7 @@ PATCH /api/integration/enrollments/:enrollmentId/activate
 ```ts
 type ActivateIntegrationEnrollmentRequestDto = {
   crmCompanyId: string;
-  crmContactId: string;
+  crmLeadId: string;
   crmPaymentId?: string | null;
   paymentStatus: 'confirmed';
   activatedByUserId?: string | null;
@@ -255,7 +255,7 @@ GET /api/integration/students/:studentId/summary
 type IntegrationStudentSummaryResponseDto = {
   student: {
     id: string;
-    crmContactId: string | null;
+    crmLeadId: string | null;
     fullName: string;
   };
   enrollments: Array<{
@@ -299,7 +299,7 @@ type LmsRiskAlertWebhookDto = {
   eventType: 'risk_alert';
   occurredAt: string;
   companyId: string;
-  crmContactId?: string | null;
+  crmLeadId?: string | null;
   lmsStudentId: string;
   lmsEnrollmentId: string;
   lmsCourseId: string;
@@ -351,7 +351,7 @@ type LmsEnrollmentStatusWebhookDto = {
   eventType: 'enrollment_status_changed';
   occurredAt: string;
   companyId: string;
-  crmContactId?: string | null;
+  crmLeadId?: string | null;
   lmsStudentId: string;
   lmsEnrollmentId: string;
   enrollmentStatus: 'pending_activation' | 'active' | 'paused' | 'completed' | 'cancelled';

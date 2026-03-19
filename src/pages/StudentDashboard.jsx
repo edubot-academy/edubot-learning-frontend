@@ -8,7 +8,10 @@ import {
     fetchStudentUpcomingSessions,
     fetchStudentRecordings,
     fetchStudentHomework,
-    fetchStudentAttendance,
+    fetchSessionHomework,
+    submitSessionHomework,
+    fetchUserProfile,
+    updateUserProfile,
     fetchStudentProgress,
     fetchStudentCertificates,
     fetchStudentNotificationSettings,
@@ -32,6 +35,8 @@ import NotificationsWidget from '@features/notifications/components/Notification
 import NotificationsTab from '@features/notifications/components/NotificationsTab';
 import Loader from '@shared/ui/Loader';
 import InternalLeaderboardPage from './InternalLeaderboard';
+import StudentAnalyticsPage from './StudentAnalytics';
+import PhoneInput from '@shared/ui/forms/PhoneInput';
 
 const NAV_ITEMS = [
     { id: 'overview', label: 'Кыскача', icon: FiHome },
@@ -39,6 +44,7 @@ const NAV_ITEMS = [
     { id: 'schedule', label: 'Жүгүртмө', icon: FiCalendar },
     { id: 'tasks', label: 'Тапшырмалар', icon: FiCheckCircle },
     { id: 'progress', label: 'Прогресс', icon: FiBarChart2 },
+    { id: 'analytics', label: 'Аналитика', icon: FiBarChart2 },
     { id: 'leaderboard', label: 'Leaderboard', icon: FiBarChart2 },
     { id: 'notifications', label: 'Билдирүүлөр', icon: FiBell },
     { id: 'profile', label: 'Профиль', icon: FiUser },
@@ -101,6 +107,11 @@ const isStudentJoinWindowOpen = (offering, nowMs) => {
 
 const resolveCourseType = (item = {}) =>
     item.courseType || item.type || item.course?.courseType || item.course?.type || 'video';
+
+const isOfflineOrLiveCourse = (item = {}) => {
+    const type = String(resolveCourseType(item)).toLowerCase();
+    return type === 'offline' || type === 'online_live';
+};
 
 const courseTypeLabel = (type) => {
     if (type === 'offline') return 'Offline';
@@ -168,6 +179,33 @@ const readArray = (obj, paths = []) => {
     return [];
 };
 
+const toItems = (payload) => {
+    if (Array.isArray(payload)) return payload;
+    if (Array.isArray(payload?.items)) return payload.items;
+    if (Array.isArray(payload?.data)) return payload.data;
+    return [];
+};
+
+const getTaskKey = (task = {}) =>
+    String(
+        task.id ||
+            task.taskId ||
+            `${task.sessionId || task.courseSessionId || 'task'}:${task.homeworkId || ''}`
+    );
+
+const resolveSessionHomeworkIds = (task = {}) => {
+    const sessionRaw = task.sessionId || task.courseSessionId || task.session?.id;
+    const homeworkRaw = task.homeworkId || task.id || task.taskId;
+
+    const sessionId = Number(sessionRaw);
+    const homeworkId = Number(homeworkRaw);
+
+    return {
+        sessionId: Number.isInteger(sessionId) && sessionId > 0 ? sessionId : null,
+        homeworkId: Number.isInteger(homeworkId) && homeworkId > 0 ? homeworkId : null,
+    };
+};
+
 const StudentDashboard = () => {
     const { user } = useContext(AuthContext);
     const [searchParams, setSearchParams] = useSearchParams();
@@ -180,13 +218,16 @@ const StudentDashboard = () => {
     const [offerings, setOfferings] = useState([]);
     const [tasks, setTasks] = useState([]);
     const [recordings, setRecordings] = useState([]);
-    const [attendanceRows, setAttendanceRows] = useState([]);
     const [filterCourseId, setFilterCourseId] = useState('');
     const [filterGroupId, setFilterGroupId] = useState('');
     const [progress, setProgress] = useState([]);
     const [certificates, setCertificates] = useState([]);
     const [leaderboardItems, setLeaderboardItems] = useState([]);
     const [notificationSettings, setNotificationSettings] = useState(null);
+    const [profileData, setProfileData] = useState(null);
+    const [profileLoaded, setProfileLoaded] = useState(false);
+    const [profileLoading, setProfileLoading] = useState(false);
+    const [savingProfile, setSavingProfile] = useState(false);
     const [tabLoading, setTabLoading] = useState(null);
     const [loadedTabs, setLoadedTabs] = useState({
         overview: false,
@@ -194,20 +235,15 @@ const StudentDashboard = () => {
         schedule: false,
         tasks: false,
         progress: false,
+        analytics: true,
         leaderboard: true,
         notifications: true,
+        profile: true,
     });
     const [notificationsLoaded, setNotificationsLoaded] = useState(false);
     const [notificationLoading, setNotificationLoading] = useState(false);
     const [savingNotifications, setSavingNotifications] = useState(false);
-
-    const analyticsLink = useMemo(() => {
-        const to = new Date();
-        const from = new Date(to.getTime() - 30 * 24 * 60 * 60 * 1000);
-        const toIso = to.toISOString().slice(0, 10);
-        const fromIso = from.toISOString().slice(0, 10);
-        return `/student/analytics?from=${fromIso}&to=${toIso}`;
-    }, []);
+    const [submittingTaskId, setSubmittingTaskId] = useState('');
 
     const studentFilters = useMemo(
         () => ({
@@ -235,36 +271,21 @@ const StudentDashboard = () => {
         if (!studentId) return;
         setTabLoading('overview');
         try {
-            const [summaryRes, leaderboardRes, offeringsRes, tasksRes, recordingsRes, attendanceRes] =
-                await Promise.all([
-                    fetchStudentDashboard(studentFilters),
-                    fetchWeeklyLeaderboard({ limit: 5 }),
-                    fetchStudentUpcomingSessions(studentFilters),
-                    fetchStudentHomework(studentFilters),
-                    fetchStudentRecordings(studentFilters),
-                    fetchStudentAttendance(studentFilters),
-                ]);
+            const [summaryRes, leaderboardRes] = await Promise.all([
+                fetchStudentDashboard(studentFilters),
+                fetchWeeklyLeaderboard({ limit: 5 }),
+            ]);
 
             setSummary(summaryRes || null);
             setLeaderboardItems(
                 Array.isArray(leaderboardRes?.items) ? leaderboardRes.items : leaderboardRes || []
-            );
-            setOfferings(
-                Array.isArray(offeringsRes?.items) ? offeringsRes.items : offeringsRes || []
-            );
-            setTasks(Array.isArray(tasksRes?.items) ? tasksRes.items : tasksRes || []);
-            setRecordings(
-                Array.isArray(recordingsRes?.items) ? recordingsRes.items : recordingsRes || []
-            );
-            setAttendanceRows(
-                Array.isArray(attendanceRes?.items) ? attendanceRes.items : attendanceRes || []
             );
         } catch (error) {
             console.error('Failed to load overview', error);
             toast.error('Кыскача маалымат жүктөлгөн жок');
         } finally {
             setTabLoading(null);
-            setLoadedTabs((prev) => ({ ...prev, overview: true, schedule: true, tasks: true }));
+            setLoadedTabs((prev) => ({ ...prev, overview: true }));
         }
     }, [studentId, studentFilters]);
 
@@ -281,7 +302,7 @@ const StudentDashboard = () => {
             setTabLoading(null);
             setLoadedTabs((prev) => ({ ...prev, 'my-courses': true }));
         }
-    }, [studentId, studentFilters]);
+    }, [studentId]);
 
     const loadSchedule = useCallback(async () => {
         if (!studentId) return;
@@ -310,8 +331,44 @@ const StudentDashboard = () => {
         if (!studentId) return;
         setTabLoading('tasks');
         try {
-            const tasksRes = await fetchStudentHomework(studentFilters);
-            setTasks(Array.isArray(tasksRes?.items) ? tasksRes.items : tasksRes || []);
+            const [tasksRes, sessionsRes] = await Promise.all([
+                fetchStudentHomework(studentFilters),
+                fetchStudentUpcomingSessions(studentFilters),
+            ]);
+
+            const sessionIds = [
+                ...new Set(
+                    toItems(sessionsRes)
+                        .map((session) => session?.sessionId || session?.id || session?.offeringId)
+                        .filter(Boolean)
+                ),
+            ].slice(0, 10);
+
+            let sessionHomeworkItems = [];
+            if (sessionIds.length > 0) {
+                const responses = await Promise.all(
+                    sessionIds.map((sessionId) =>
+                        fetchSessionHomework(sessionId)
+                            .then((data) => ({ data, sessionId }))
+                            .catch(() => null)
+                    )
+                );
+
+                sessionHomeworkItems = responses
+                    .filter(Boolean)
+                    .flatMap(({ data, sessionId }) =>
+                        toItems(data).map((item) => ({
+                            ...item,
+                            sessionId,
+                        }))
+                    );
+            }
+
+            if (sessionHomeworkItems.length > 0) {
+                setTasks(sessionHomeworkItems);
+            } else {
+                setTasks(toItems(tasksRes));
+            }
         } catch (error) {
             console.error('Failed to load tasks', error);
             toast.error('Тапшырмаларды жүктөө мүмкүн болбоду');
@@ -363,6 +420,22 @@ const StudentDashboard = () => {
         }
     }, [studentId]);
 
+    const loadProfileData = useCallback(async () => {
+        if (!studentId) return;
+        setProfileLoading(true);
+        try {
+            const data = await fetchUserProfile(studentId);
+            setProfileData(data || null);
+        } catch (error) {
+            console.error('Failed to load profile data', error);
+            toast.error('Профиль маалыматы жүктөлгөн жок');
+            setProfileData(null);
+        } finally {
+            setProfileLoading(false);
+            setProfileLoaded(true);
+        }
+    }, [studentId]);
+
     useEffect(() => {
         if (!studentId) return;
         setSearchParams((prev) => {
@@ -370,7 +443,7 @@ const StudentDashboard = () => {
             next.set('tab', activeTab);
             return next;
         });
-        const tab = activeTab === 'profile' ? 'overview' : activeTab;
+        const tab = activeTab;
         if (tab === 'overview') {
             loadOverview();
         } else if (tab === 'my-courses') {
@@ -381,6 +454,10 @@ const StudentDashboard = () => {
             loadTasks();
         } else if (tab === 'progress') {
             loadProgress();
+        } else if (tab === 'profile') {
+            if (!profileLoaded && !profileLoading) {
+                loadProfileData();
+            }
         }
         if (activeTab === 'profile' && !notificationsLoaded && !notificationLoading) {
             loadNotificationSettings();
@@ -393,9 +470,12 @@ const StudentDashboard = () => {
         loadSchedule,
         loadTasks,
         loadProgress,
+        loadProfileData,
         loadNotificationSettings,
         notificationsLoaded,
         notificationLoading,
+        profileLoaded,
+        profileLoading,
         setSearchParams,
     ]);
 
@@ -405,8 +485,7 @@ const StudentDashboard = () => {
             return;
         }
         const selected = courses.find((course) => String(course.id) === String(filterCourseId));
-        const selectedType = resolveCourseType(selected);
-        if (selectedType === 'video') {
+        if (!isOfflineOrLiveCourse(selected)) {
             setFilterGroupId('');
             return;
         }
@@ -419,9 +498,9 @@ const StudentDashboard = () => {
     const hasAttendanceEligibleCourses = useMemo(() => {
         if (filterCourseId) {
             const selected = courses.find((course) => String(course.id) === String(filterCourseId));
-            return resolveCourseType(selected) !== 'video';
+            return isOfflineOrLiveCourse(selected);
         }
-        return courses.some((course) => resolveCourseType(course) !== 'video');
+        return courses.some((course) => isOfflineOrLiveCourse(course));
     }, [courses, filterCourseId]);
 
     const overviewStudent = useMemo(
@@ -439,9 +518,9 @@ const StudentDashboard = () => {
                 activeCourses: 0,
                 lessonsCompleted: 0,
                 timeThisWeek: '—',
-                pendingTasks: tasks.length,
+                pendingTasks: 0,
             },
-        [summary, tasks.length]
+        [summary]
     );
 
     const attendanceStats = useMemo(() => {
@@ -457,13 +536,11 @@ const StudentDashboard = () => {
         const rate = rawRate !== null ? Math.round(rawRate) : null;
         const totalSessions =
             readNumber(summary, ['attendance.totalSessions', 'stats.totalSessions']) ||
-            attendanceRows.length ||
             offerings.filter(
                 (item) => item.startAt && new Date(item.startAt).getTime() < Date.now()
             ).length;
         const present =
             readNumber(summary, ['attendance.present', 'stats.attendedSessions']) ||
-            attendanceRows.filter((item) => String(item.status || '').toLowerCase() === 'present').length ||
             Math.round((totalSessions * (rate ?? 80)) / 100);
         const absent = Math.max(0, totalSessions - present);
         return {
@@ -472,7 +549,7 @@ const StudentDashboard = () => {
             present,
             absent,
         };
-    }, [summary, offerings, attendanceRows, hasAttendanceEligibleCourses]);
+    }, [summary, offerings, hasAttendanceEligibleCourses]);
 
     const engagement = useMemo(() => {
         const calculatedXp =
@@ -570,25 +647,19 @@ const StudentDashboard = () => {
             }));
         }
 
-        const homeworkAnnouncements = tasks
-            .filter((task) => task.status !== 'completed')
-            .slice(0, 2)
-            .map((task, idx) => ({
-                id: `a-task-${task.id || idx}`,
-                title: task.title || 'Үй тапшырма',
-                body: task.courseTitle || task.course || 'Курс жаңыртуусу',
-            }));
-
-        const classAnnouncements = offerings.slice(0, 2).map((offering, idx) => ({
-            id: `a-offering-${offering.id || idx}`,
-            title: offering.courseTitle || offering.course?.title || 'Класс жаңыртуусу',
-            body: `${formatSessionDate(offering.startAt)} • ${courseTypeLabel(
-                resolveCourseType(offering)
-            )}`,
-        }));
-
-        return [...homeworkAnnouncements, ...classAnnouncements].slice(0, 4);
-    }, [summary, tasks, offerings]);
+        return [
+            {
+                id: 'a-default-1',
+                title: 'Окуу графигиңизди текшериңиз',
+                body: 'Кийинки сабактарыңызды жана тапшырмаларды табдардан көрө аласыз.',
+            },
+            {
+                id: 'a-default-2',
+                title: 'Прогрессти көзөмөлдөңүз',
+                body: 'Прогресс жана аналитика табдары аркылуу жыйынтыктарды текшериңиз.',
+            },
+        ];
+    }, [summary]);
 
     const offeringsByCourse = useMemo(() => {
         const map = new Map();
@@ -704,6 +775,122 @@ const StudentDashboard = () => {
         }
     }, [studentId, notificationSettings]);
 
+    const handleSaveProfile = useCallback(
+        async ({ fullName, phoneNumber, avatarFile, newPassword, confirmPassword }) => {
+            if (!studentId) return false;
+
+            if (newPassword && newPassword !== confirmPassword) {
+                toast.error('Жаңы сырсөздөр дал келбейт.');
+                return false;
+            }
+            if (newPassword && newPassword.length < 6) {
+                toast.error('Сырсөз кеминде 6 белги болушу керек.');
+                return false;
+            }
+            if (phoneNumber) {
+                const digitsOnly = String(phoneNumber).replace(/\D/g, '');
+                if (digitsOnly.length < 10 || !/^\+\d{10,15}$/.test(String(phoneNumber))) {
+                    toast.error(
+                        'Телефон номери эл аралык форматта болсун. Мисалы: +996700123456'
+                    );
+                    return false;
+                }
+            }
+
+            setSavingProfile(true);
+            try {
+                const form = new FormData();
+                form.append('fullName', (fullName || '').trim());
+                if (phoneNumber) form.append('phoneNumber', String(phoneNumber).trim());
+                if (avatarFile instanceof File) form.append('avatar', avatarFile);
+                if (newPassword) form.append('password', newPassword);
+
+                const updated = await updateUserProfile(studentId, form);
+
+                setProfileData((prev) => ({
+                    ...(prev || {}),
+                    ...(updated || {}),
+                    fullName: updated?.fullName || fullName,
+                    phoneNumber: updated?.phoneNumber || phoneNumber,
+                }));
+
+                try {
+                    const storedRaw = localStorage.getItem('user');
+                    const stored = storedRaw ? JSON.parse(storedRaw) : {};
+                    localStorage.setItem(
+                        'user',
+                        JSON.stringify({
+                            ...stored,
+                            ...(updated || {}),
+                            fullName: updated?.fullName || fullName,
+                            phoneNumber: updated?.phoneNumber || phoneNumber,
+                        })
+                    );
+                } catch {
+                    // no-op: profile was saved on backend even if local cache sync fails
+                }
+
+                toast.success('Профиль ийгиликтүү жаңыртылды');
+                return true;
+            } catch (error) {
+                console.error('Failed to update profile', error);
+                const rawMessage = error?.response?.data?.message || 'Профилди сактоо мүмкүн болбоду';
+                const message = Array.isArray(rawMessage) ? rawMessage.join(', ') : rawMessage;
+                toast.error(message);
+                return false;
+            } finally {
+                setSavingProfile(false);
+            }
+        },
+        [studentId]
+    );
+
+    const handleSubmitHomework = useCallback(async (task, submission) => {
+        const { sessionId, homeworkId } = resolveSessionHomeworkIds(task);
+        if (!sessionId || !homeworkId) {
+            toast.error('Бул тапшырма үчүн submit жеткиликтүү эмес.');
+            return false;
+        }
+
+        const key = getTaskKey(task);
+        const text = submission?.text?.trim() || '';
+        const link = submission?.link?.trim() || '';
+        if (!text && !link) {
+            toast.error('Жооп же шилтеме киргизиңиз.');
+            return false;
+        }
+
+        setSubmittingTaskId(key);
+        try {
+            await submitSessionHomework(sessionId, homeworkId, {
+                text: text || undefined,
+                link: link || undefined,
+            });
+
+            setTasks((prev) =>
+                prev.map((item) => {
+                    if (getTaskKey(item) !== key) return item;
+                    return {
+                        ...item,
+                        status: 'submitted',
+                        submissionStatus: 'submitted',
+                        submittedAt: new Date().toISOString(),
+                    };
+                })
+            );
+            toast.success('Тапшырма ийгиликтүү жөнөтүлдү.');
+            return true;
+        } catch (error) {
+            console.error('Failed to submit session homework', error);
+            const rawMessage = error?.response?.data?.message || 'Тапшырманы жөнөтүү катасы';
+            const message = Array.isArray(rawMessage) ? rawMessage.join(', ') : rawMessage;
+            toast.error(message);
+            return false;
+        } finally {
+            setSubmittingTaskId('');
+        }
+    }, []);
+
     const mergedNotificationSettings = useMemo(
         () => ({
             ...DEFAULT_NOTIFICATION_SETTINGS,
@@ -712,11 +899,24 @@ const StudentDashboard = () => {
         [notificationSettings]
     );
 
-    const resolvedTab = activeTab === 'profile' ? 'overview' : activeTab;
+    const profileStudent = useMemo(
+        () => ({
+            name: profileData?.fullName || user?.fullName || overviewStudent.name,
+            email: profileData?.email || user?.email || '',
+            phone: profileData?.phoneNumber || user?.phoneNumber || '',
+            avatar: profileData?.avatar || user?.avatar || '',
+        }),
+        [overviewStudent.name, profileData, user]
+    );
+
+    const resolvedTab = activeTab;
     const isTabDataLoaded = loadedTabs[resolvedTab] || false;
-    const isProfileReady = activeTab !== 'profile' || (notificationsLoaded && !notificationLoading);
+    const isProfileReady =
+        activeTab !== 'profile' ||
+        ((notificationsLoaded && !notificationLoading) && (profileLoaded && !profileLoading));
     const isCurrentTabLoading =
-        tabLoading === resolvedTab || (activeTab === 'profile' && notificationLoading);
+        tabLoading === resolvedTab ||
+        (activeTab === 'profile' && (notificationLoading || profileLoading));
     const renderTab = () => {
         if (!isTabDataLoaded || !isProfileReady || isCurrentTabLoading) {
             return <Loader fullScreen={false} />;
@@ -727,7 +927,13 @@ const StudentDashboard = () => {
             case 'schedule':
                 return <ScheduleTab offerings={offerings} recordings={recordings} />;
             case 'tasks':
-                return <TasksTab tasks={tasks} />;
+                return (
+                    <TasksTab
+                        tasks={tasks}
+                        onSubmitHomework={handleSubmitHomework}
+                        submittingTaskId={submittingTaskId}
+                    />
+                );
             case 'progress':
                 return (
                     <ProgressTab
@@ -740,6 +946,8 @@ const StudentDashboard = () => {
                         badgeItems={badgeItems}
                     />
                 );
+            case 'analytics':
+                return <StudentAnalyticsPage embedded />;
             case 'leaderboard':
                 return <InternalLeaderboardPage />;
             case 'notifications':
@@ -747,8 +955,10 @@ const StudentDashboard = () => {
             case 'profile':
                 return (
                     <ProfileTab
-                        student={overviewStudent}
+                        student={profileStudent}
                         notificationSettings={mergedNotificationSettings}
+                        onSaveProfile={handleSaveProfile}
+                        savingProfile={savingProfile}
                         onNotificationChange={handleNotificationChange}
                         onSaveNotifications={handleSaveNotifications}
                         savingNotifications={savingNotifications}
@@ -793,10 +1003,6 @@ const StudentDashboard = () => {
                                     navigate('/chat');
                                     return;
                                 }
-                                if (id === 'profile') {
-                                    navigate('/profile');
-                                    return;
-                                }
                                 setActiveTab(id);
                             }}
                             isOpen={sidebarOpen}
@@ -836,7 +1042,7 @@ const StudentDashboard = () => {
                                 const selected = courses.find(
                                     (course) => String(course.id) === String(filterCourseId)
                                 );
-                                return filterCourseId && resolveCourseType(selected) !== 'video';
+                                return filterCourseId && isOfflineOrLiveCourse(selected);
                             })() ? (
                                 <select
                                     value={filterGroupId}
@@ -858,12 +1064,6 @@ const StudentDashboard = () => {
                             >
                                 {sidebarOpen ? 'Менюну жашыруу' : 'Менюну көрсөтүү'}
                             </button>
-                            <Link
-                                to={analyticsLink}
-                                className="inline-flex px-4 py-2 rounded-full bg-blue-600 text-white text-sm"
-                            >
-                                Analytics
-                            </Link>
                         </div>
                     </div>
                     {renderTab()}
@@ -1408,61 +1608,135 @@ const ScheduleTab = ({ offerings, recordings }) => {
     );
 };
 
-const TasksTab = ({ tasks }) => (
-    <div className="space-y-4">
-        <h2 className="text-2xl font-semibold text-gray-900 dark:text-[#E8ECF3]">Тапшырмалар</h2>
-        {tasks.length ? (
-            <div className="bg-white dark:bg-[#222222] rounded-3xl border border-gray-100 dark:border-gray-800 overflow-x-auto min-w-[600px] w-full text-sm">
-                <table className="w-full text-sm">
-                    <thead className="bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400">
-                        <tr>
-                            <th className="text-left px-4 py-3">Тапшырма</th>
-                            <th className="text-left px-4 py-3">Курс</th>
-                            <th className="text-left px-4 py-3">Бүтүү мөөнөтү</th>
-                            <th className="text-left px-4 py-3">Статус</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {tasks.map((task) => (
-                            <tr
-                                key={task.id || task.taskId}
-                                className="border-t border-gray-100 dark:border-gray-800"
-                            >
-                                <td className="px-4 py-3 font-medium text-gray-900 dark:text-[#E8ECF3]">
-                                    {task.title}
-                                </td>
-                                <td className="px-4 py-3 text-gray-500 dark:text-gray-400">
-                                    {task.courseTitle || task.course}
-                                </td>
-                                <td className="px-4 py-3 text-gray-500 dark:text-gray-400">
-                                    {task.due ||
-                                        (task.dueAt
-                                            ? new Date(task.dueAt).toLocaleDateString('ru-RU')
-                                            : '—')}
-                                </td>
-                                <td className="px-4 py-3">
-                                    <span
-                                        className={`px-3 py-1 rounded-full text-xs ${
-                                            task.status === 'completed'
-                                                ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
-                                                : 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400'
-                                        }`}
-                                    >
-                                        {task.status === 'completed' ? 'Жабылган' : 'Күтүүдө'}
-                                    </span>
-                                </td>
+const TasksTab = ({ tasks, onSubmitHomework, submittingTaskId }) => {
+    const [drafts, setDrafts] = useState({});
+
+    const updateDraft = (taskKey, field, value) => {
+        setDrafts((prev) => ({
+            ...prev,
+            [taskKey]: {
+                ...(prev[taskKey] || {}),
+                [field]: value,
+            },
+        }));
+    };
+
+    const submitTask = async (task) => {
+        if (!onSubmitHomework) return;
+        const key = getTaskKey(task);
+        const draft = drafts[key] || { text: '', link: '' };
+        const success = await onSubmitHomework(task, draft);
+        if (success) {
+            setDrafts((prev) => ({
+                ...prev,
+                [key]: { text: '', link: '' },
+            }));
+        }
+    };
+
+    return (
+        <div className="space-y-4">
+            <h2 className="text-2xl font-semibold text-gray-900 dark:text-[#E8ECF3]">Тапшырмалар</h2>
+            {tasks.length ? (
+                <div className="bg-white dark:bg-[#222222] rounded-3xl border border-gray-100 dark:border-gray-800 overflow-x-auto min-w-[600px] w-full text-sm">
+                    <table className="w-full text-sm">
+                        <thead className="bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400">
+                            <tr>
+                                <th className="text-left px-4 py-3">Тапшырма</th>
+                                <th className="text-left px-4 py-3">Курс</th>
+                                <th className="text-left px-4 py-3">Бүтүү мөөнөтү</th>
+                                <th className="text-left px-4 py-3">Статус</th>
+                                <th className="text-left px-4 py-3">Жооп</th>
                             </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
-        ) : (
-            <div className="bg-white dark:bg-[#222222] rounded-3xl border border-gray-100 dark:border-gray-800 p-6 text-center text-gray-500 dark:text-gray-400">
-                Азырынча тапшырмалар табылган жок.
-            </div>
-        )}
-    </div>
-);
+                        </thead>
+                        <tbody>
+                            {tasks.map((task) => {
+                                const key = getTaskKey(task);
+                                const draft = drafts[key] || { text: '', link: '' };
+                                const { sessionId, homeworkId } = resolveSessionHomeworkIds(task);
+                                const canSubmit = Boolean(sessionId && homeworkId);
+                                const isSubmitting = submittingTaskId === key;
+                                const isDone =
+                                    task.status === 'completed' || task.submissionStatus === 'approved';
+
+                                return (
+                                    <tr
+                                        key={key}
+                                        className="border-t border-gray-100 dark:border-gray-800 align-top"
+                                    >
+                                        <td className="px-4 py-3 font-medium text-gray-900 dark:text-[#E8ECF3]">
+                                            {task.title || task.name || 'Тапшырма'}
+                                        </td>
+                                        <td className="px-4 py-3 text-gray-500 dark:text-gray-400">
+                                            {task.courseTitle || task.course || '-'}
+                                        </td>
+                                        <td className="px-4 py-3 text-gray-500 dark:text-gray-400">
+                                            {task.due ||
+                                                task.deadline ||
+                                                (task.dueAt
+                                                    ? new Date(task.dueAt).toLocaleDateString('ru-RU')
+                                                    : '—')}
+                                        </td>
+                                        <td className="px-4 py-3">
+                                            <span
+                                                className={`px-3 py-1 rounded-full text-xs ${
+                                                    isDone
+                                                        ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
+                                                        : 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400'
+                                                }`}
+                                            >
+                                                {isDone ? 'Жабылган' : 'Күтүүдө'}
+                                            </span>
+                                        </td>
+                                        <td className="px-4 py-3 min-w-[280px]">
+                                            {canSubmit ? (
+                                                <div className="space-y-2">
+                                                    <textarea
+                                                        value={draft.text || ''}
+                                                        onChange={(e) =>
+                                                            updateDraft(key, 'text', e.target.value)
+                                                        }
+                                                        rows={2}
+                                                        placeholder="Жооп жазыңыз"
+                                                        className="w-full border border-gray-200 dark:border-gray-700 rounded-lg px-2 py-1 bg-white dark:bg-[#0E0E0E]"
+                                                    />
+                                                    <input
+                                                        value={draft.link || ''}
+                                                        onChange={(e) =>
+                                                            updateDraft(key, 'link', e.target.value)
+                                                        }
+                                                        placeholder="Шилтеме (эгер бар болсо)"
+                                                        className="w-full border border-gray-200 dark:border-gray-700 rounded-lg px-2 py-1 bg-white dark:bg-[#0E0E0E]"
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => submitTask(task)}
+                                                        disabled={isSubmitting}
+                                                        className="px-3 py-1 rounded bg-blue-600 text-white text-xs disabled:opacity-60"
+                                                    >
+                                                        {isSubmitting ? 'Жөнөтүлүүдө...' : 'Submit'}
+                                                    </button>
+                                                </div>
+                                            ) : (
+                                                <span className="text-xs text-gray-500">
+                                                    Бул тапшырма submit APIга туташкан эмес.
+                                                </span>
+                                            )}
+                                        </td>
+                                    </tr>
+                                );
+                            })}
+                        </tbody>
+                    </table>
+                </div>
+            ) : (
+                <div className="bg-white dark:bg-[#222222] rounded-3xl border border-gray-100 dark:border-gray-800 p-6 text-center text-gray-500 dark:text-gray-400">
+                    Азырынча тапшырмалар табылган жок.
+                </div>
+            )}
+        </div>
+    );
+};
 
 const ProgressTab = ({
     items,
@@ -1712,54 +1986,239 @@ const ProgressTab = ({
 const ProfileTab = ({
     student,
     notificationSettings,
+    onSaveProfile,
+    savingProfile,
     onNotificationChange,
     onSaveNotifications,
     savingNotifications,
 }) => {
+    const [isEditingProfile, setIsEditingProfile] = useState(false);
+    const [formData, setFormData] = useState({
+        fullName: student?.name || '',
+        email: student?.email || '',
+        phoneNumber: student?.phone || '',
+        avatar: null,
+    });
+    const [passwordData, setPasswordData] = useState({ newPassword: '', confirmPassword: '' });
+    const [preview, setPreview] = useState(student?.avatar || null);
+
+    useEffect(() => {
+        setFormData({
+            fullName: student?.name || '',
+            email: student?.email || '',
+            phoneNumber: student?.phone || '',
+            avatar: null,
+        });
+        setPreview(student?.avatar || null);
+        setPasswordData({ newPassword: '', confirmPassword: '' });
+    }, [student]);
+
+    useEffect(() => {
+        if (!formData.avatar) return undefined;
+        const objectUrl = URL.createObjectURL(formData.avatar);
+        setPreview(objectUrl);
+        return () => URL.revokeObjectURL(objectUrl);
+    }, [formData.avatar]);
+
+    const handleFileChange = (event) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+        setFormData((prev) => ({ ...prev, avatar: file }));
+    };
+
+    const handleSaveProfileClick = async () => {
+        if (!onSaveProfile) return;
+        const success = await onSaveProfile({
+            fullName: formData.fullName,
+            phoneNumber: formData.phoneNumber,
+            avatarFile: formData.avatar,
+            newPassword: passwordData.newPassword,
+            confirmPassword: passwordData.confirmPassword,
+        });
+        if (success) {
+            setPasswordData({ newPassword: '', confirmPassword: '' });
+            setFormData((prev) => ({ ...prev, avatar: null }));
+            setIsEditingProfile(false);
+        }
+    };
+
+    const handleResetProfile = () => {
+        setFormData({
+            fullName: student?.name || '',
+            email: student?.email || '',
+            phoneNumber: student?.phone || '',
+            avatar: null,
+        });
+        setPasswordData({ newPassword: '', confirmPassword: '' });
+        setPreview(student?.avatar || null);
+    };
+
+    const hasProfileChanges =
+        formData.fullName.trim() !== (student?.name || '').trim() ||
+        formData.phoneNumber.trim() !== (student?.phone || '').trim() ||
+        Boolean(formData.avatar) ||
+        Boolean(passwordData.newPassword) ||
+        Boolean(passwordData.confirmPassword);
+
     const notificationEntries = Object.entries(notificationSettings || {});
     return (
         <div className="space-y-4">
-            <h2 className="text-2xl font-semibold text-gray-900 dark:text-[#E8ECF3]">Профиль</h2>
+            <div className="flex items-center justify-between gap-3">
+                <h2 className="text-2xl font-semibold text-gray-900 dark:text-[#E8ECF3]">Профиль</h2>
+                {!isEditingProfile ? (
+                    <button
+                        type="button"
+                        onClick={() => setIsEditingProfile(true)}
+                        className="px-4 py-2 rounded-full border border-gray-300 dark:border-gray-700 text-sm font-semibold"
+                    >
+                        Өзгөртүү
+                    </button>
+                ) : null}
+            </div>
             <div className="bg-white dark:bg-[#222222] rounded-3xl border border-gray-100 dark:border-gray-800 p-6 space-y-4">
-                <div>
-                    <label className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                        Аты-жөнү
-                    </label>
-                    <input
-                        type="text"
-                        className="mt-1 w-full border rounded-2xl px-3 py-2 bg-white dark:bg-[#222222] text-gray-900 dark:text-[#E8ECF3] border-gray-200 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        defaultValue={student.name}
-                        disabled
-                    />
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                        <label className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                            Email
-                        </label>
-                        <input
-                            type="email"
-                            className="mt-1 w-full border rounded-2xl px-3 py-2 bg-white dark:bg-[#222222] text-gray-900 dark:text-[#E8ECF3] border-gray-200 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            defaultValue={student.email || 'student@example.com'}
-                            disabled
-                        />
+                <div className="flex items-center gap-4">
+                    <div className="w-20 h-20 rounded-full overflow-hidden bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 flex items-center justify-center text-xl font-semibold text-gray-500">
+                        {preview ? (
+                            <img
+                                src={preview}
+                                alt="Avatar preview"
+                                className="w-full h-full object-cover"
+                            />
+                        ) : (
+                            (formData.fullName || student?.name || 'U').charAt(0).toUpperCase()
+                        )}
                     </div>
-                    <div>
-                        <label className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                            Телефон
-                        </label>
+                    <div className="space-y-2">
+                        <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                            {isEditingProfile ? 'Профиль сүрөтү' : 'Каттоо сүрөтү'}
+                        </p>
+                        {isEditingProfile ? (
+                            <>
+                                <label className="inline-flex px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 text-sm cursor-pointer">
+                                    Аватар жүктөө
+                                    <input
+                                        type="file"
+                                        accept="image/*"
+                                        onChange={handleFileChange}
+                                        className="hidden"
+                                    />
+                                </label>
+                                {formData.avatar && (
+                                    <p className="text-xs text-gray-500">
+                                        Тандалды: {formData.avatar.name}
+                                    </p>
+                                )}
+                            </>
+                        ) : (
+                            <p className="text-sm text-gray-500 dark:text-gray-400">
+                                Өзгөртүү режимин ачуу үчүн жогортогу баскычты басыңыз.
+                            </p>
+                        )}
+                    </div>
+                </div>
+                <div>
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Аты-жөнү</p>
+                    {isEditingProfile ? (
                         <input
                             type="text"
                             className="mt-1 w-full border rounded-2xl px-3 py-2 bg-white dark:bg-[#222222] text-gray-900 dark:text-[#E8ECF3] border-gray-200 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            defaultValue={student.phone || '+996 (555) 123-456'}
-                            disabled
+                            value={formData.fullName}
+                            onChange={(e) =>
+                                setFormData((prev) => ({ ...prev, fullName: e.target.value }))
+                            }
                         />
+                    ) : (
+                        <div className="mt-1 rounded-2xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 px-3 py-2 text-gray-900 dark:text-[#E8ECF3]">
+                            {formData.fullName || '—'}
+                        </div>
+                    )}
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Email</p>
+                        <div className="mt-1 rounded-2xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 px-3 py-2 text-gray-900 dark:text-[#E8ECF3]">
+                            {formData.email || 'student@example.com'}
+                        </div>
+                    </div>
+                    <div>
+                        <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Телефон</p>
+                        {isEditingProfile ? (
+                            <div className="mt-1">
+                                <PhoneInput
+                                    value={formData.phoneNumber}
+                                    onChange={(value) =>
+                                        setFormData((prev) => ({ ...prev, phoneNumber: value }))
+                                    }
+                                />
+                            </div>
+                        ) : (
+                            <div className="mt-1 rounded-2xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 px-3 py-2 text-gray-900 dark:text-[#E8ECF3]">
+                                {formData.phoneNumber || '—'}
+                            </div>
+                        )}
                     </div>
                 </div>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                    Профиль маалыматтарын өзгөртүү жакында жеткиликтүү болот. Учурда сиз
-                    эскертмелерди башкарсаңыз болот.
-                </p>
+                {isEditingProfile && (
+                    <>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                                    Жаңы сырсөз
+                                </label>
+                                <input
+                                    type="password"
+                                    value={passwordData.newPassword}
+                                    onChange={(e) =>
+                                        setPasswordData((prev) => ({
+                                            ...prev,
+                                            newPassword: e.target.value,
+                                        }))
+                                    }
+                                    className="mt-1 w-full border rounded-2xl px-3 py-2 bg-white dark:bg-[#222222] text-gray-900 dark:text-[#E8ECF3] border-gray-200 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    placeholder="Кеминде 6 белги"
+                                />
+                            </div>
+                            <div>
+                                <label className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                                    Сырсөздү кайталоо
+                                </label>
+                                <input
+                                    type="password"
+                                    value={passwordData.confirmPassword}
+                                    onChange={(e) =>
+                                        setPasswordData((prev) => ({
+                                            ...prev,
+                                            confirmPassword: e.target.value,
+                                        }))
+                                    }
+                                    className="mt-1 w-full border rounded-2xl px-3 py-2 bg-white dark:bg-[#222222] text-gray-900 dark:text-[#E8ECF3] border-gray-200 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    placeholder="Сырсөздү дагы бир жолу киргизиңиз"
+                                />
+                            </div>
+                        </div>
+                        <div className="flex gap-3 flex-wrap">
+                            <button
+                                type="button"
+                                onClick={handleSaveProfileClick}
+                                disabled={!hasProfileChanges || savingProfile}
+                                className="px-5 py-3 rounded-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+                            >
+                                {savingProfile ? 'Сакталууда...' : 'Профилди сактоо'}
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    handleResetProfile();
+                                    setIsEditingProfile(false);
+                                }}
+                                disabled={savingProfile}
+                                className="px-5 py-3 rounded-full border border-gray-300 dark:border-gray-700 text-sm font-semibold disabled:opacity-60"
+                            >
+                                Жокко чыгаруу
+                            </button>
+                        </div>
+                    </>
+                )}
             </div>
             <div className="bg-white dark:bg-[#222222] rounded-3xl border border-gray-100 dark:border-gray-800 p-6 space-y-4">
                 <div>
@@ -1892,6 +2351,13 @@ ScheduleTab.defaultProps = {
 
 TasksTab.propTypes = {
     tasks: PropTypes.arrayOf(PropTypes.object).isRequired,
+    onSubmitHomework: PropTypes.func,
+    submittingTaskId: PropTypes.string,
+};
+
+TasksTab.defaultProps = {
+    onSubmitHomework: undefined,
+    submittingTaskId: '',
 };
 
 ProgressTab.propTypes = {
@@ -1914,8 +2380,11 @@ ProfileTab.propTypes = {
         name: PropTypes.string,
         email: PropTypes.string,
         phone: PropTypes.string,
+        avatar: PropTypes.string,
     }).isRequired,
     notificationSettings: PropTypes.object,
+    onSaveProfile: PropTypes.func,
+    savingProfile: PropTypes.bool,
     onNotificationChange: PropTypes.func,
     onSaveNotifications: PropTypes.func.isRequired,
     savingNotifications: PropTypes.bool,
@@ -1923,6 +2392,8 @@ ProfileTab.propTypes = {
 
 ProfileTab.defaultProps = {
     notificationSettings: {},
+    onSaveProfile: undefined,
+    savingProfile: false,
     onNotificationChange: undefined,
     savingNotifications: false,
 };
