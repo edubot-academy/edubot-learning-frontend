@@ -1,3 +1,4 @@
+import InlineRichText from '@shared/ui/InlineRichText';
 import React from 'react';
 import { createEmptyQuestion, createEmptyQuiz, cloneQuiz } from '@utils/quizUtils';
 
@@ -8,6 +9,14 @@ const LessonQuizEditor = ({ quiz, onChange, disabled = false }) => {
         const cloned = cloneQuiz(safeQuiz);
         updater(cloned);
         onChange?.(cloned);
+    };
+
+    const appendFormattingToken = (value, type) => {
+        if (type === 'bold') {
+            return `${value || ''}${value ? ' ' : ''}**калың текст**`;
+        }
+
+        return `${value || ''}${value ? ' ' : ''}\`код\``;
     };
 
     const handlePassingScoreChange = (value) => {
@@ -76,6 +85,24 @@ const LessonQuizEditor = ({ quiz, onChange, disabled = false }) => {
         });
     };
 
+    const addPromptFormatting = (questionIdx, type) => {
+        updateQuiz((q) => {
+            q.questions[questionIdx].prompt = appendFormattingToken(
+                q.questions[questionIdx].prompt,
+                type
+            );
+        });
+    };
+
+    const addOptionFormatting = (questionIdx, optionIdx, type) => {
+        updateQuiz((q) => {
+            q.questions[questionIdx].options[optionIdx].text = appendFormattingToken(
+                q.questions[questionIdx].options[optionIdx].text,
+                type
+            );
+        });
+    };
+
     return (
         <div className={`space-y-4 ${disabled ? 'opacity-70 pointer-events-none' : ''}`}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -110,6 +137,11 @@ const LessonQuizEditor = ({ quiz, onChange, disabled = false }) => {
                 </div>
             </div>
 
+            <p className="text-xs text-slate-500">
+                Текст форматтоо: <code>**калың**</code> жана <code>`код`</code>. Төмөндө алдын ала
+                көрүү чыгат.
+            </p>
+
             <div className="space-y-6">
                 {safeQuiz.questions.map((question, qIdx) => (
                     <div
@@ -128,19 +160,53 @@ const LessonQuizEditor = ({ quiz, onChange, disabled = false }) => {
                             </button>
                         </div>
 
-                        <input
-                            className="w-full border rounded p-2"
-                            placeholder="Суроонун тексти"
-                            value={question.prompt}
-                            onChange={(e) => handleQuestionPromptChange(qIdx, e.target.value)}
-                            disabled={disabled}
-                        />
+                        <div className="space-y-2">
+                            <textarea
+                                className="w-full border rounded p-2 min-h-20"
+                                placeholder="Суроонун тексти"
+                                value={question.prompt}
+                                onChange={(e) => handleQuestionPromptChange(qIdx, e.target.value)}
+                                disabled={disabled}
+                            />
+
+                            <div className="flex items-center gap-2">
+                                <button
+                                    type="button"
+                                    className="px-2 py-1 text-xs border border-slate-300 rounded hover:bg-slate-50"
+                                    onClick={() => addPromptFormatting(qIdx, 'bold')}
+                                    disabled={disabled}
+                                >
+                                    + **калың**
+                                </button>
+                                <button
+                                    type="button"
+                                    className="px-2 py-1 text-xs border border-slate-300 rounded hover:bg-slate-50"
+                                    onClick={() => addPromptFormatting(qIdx, 'code')}
+                                    disabled={disabled}
+                                >
+                                    + `код`
+                                </button>
+                            </div>
+
+                            {question.prompt?.trim() && (
+                                <div className="text-sm rounded border border-slate-200 bg-slate-50 p-2">
+                                    <p className="text-xs uppercase tracking-wide text-slate-500 mb-1">
+                                        Алдын ала көрүү
+                                    </p>
+                                    <InlineRichText text={question.prompt} />
+                                </div>
+                            )}
+                        </div>
 
                         <div className="space-y-3">
                             {question.options.map((option, oIdx) => (
-                                <div
+                                <label
                                     key={oIdx}
-                                    className="flex items-center gap-3 bg-gray-50 rounded p-2"
+                                    className={`flex items-start gap-3 rounded border p-2 transition ${
+                                        option.isCorrect
+                                            ? 'bg-emerald-50 border-emerald-400 ring-1 ring-emerald-200'
+                                            : 'bg-gray-50 border-gray-200'
+                                    } ${disabled ? '' : 'cursor-pointer'}`}
                                 >
                                     <input
                                         type="radio"
@@ -148,25 +214,65 @@ const LessonQuizEditor = ({ quiz, onChange, disabled = false }) => {
                                         checked={option.isCorrect}
                                         onChange={() => handleCorrectOptionChange(qIdx, oIdx)}
                                         disabled={disabled}
+                                        className="mt-2"
                                     />
-                                    <input
-                                        className="flex-1 border rounded p-2"
-                                        placeholder={`Вариант ${oIdx + 1}`}
-                                        value={option.text}
-                                        onChange={(e) =>
-                                            handleOptionTextChange(qIdx, oIdx, e.target.value)
-                                        }
-                                        disabled={disabled}
-                                    />
+
+                                    <div className="flex-1 space-y-2" onClick={(e) => e.stopPropagation()}>
+                                        <input
+                                            className="w-full border rounded p-2"
+                                            placeholder={`Вариант ${oIdx + 1}`}
+                                            value={option.text}
+                                            onChange={(e) =>
+                                                handleOptionTextChange(qIdx, oIdx, e.target.value)
+                                            }
+                                            disabled={disabled}
+                                        />
+
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                type="button"
+                                                className="px-2 py-1 text-xs border border-slate-300 rounded hover:bg-slate-50"
+                                                onClick={(e) => {
+                                                    e.preventDefault();
+                                                    addOptionFormatting(qIdx, oIdx, 'bold');
+                                                }}
+                                                disabled={disabled}
+                                            >
+                                                + **калың**
+                                            </button>
+                                            <button
+                                                type="button"
+                                                className="px-2 py-1 text-xs border border-slate-300 rounded hover:bg-slate-50"
+                                                onClick={(e) => {
+                                                    e.preventDefault();
+                                                    addOptionFormatting(qIdx, oIdx, 'code');
+                                                }}
+                                                disabled={disabled}
+                                            >
+                                                + `код`
+                                            </button>
+                                        </div>
+
+                                        {option.text?.trim() && (
+                                            <div className="text-sm rounded border border-slate-200 bg-white p-2">
+                                                <InlineRichText text={option.text} />
+                                            </div>
+                                        )}
+                                    </div>
+
                                     <button
                                         type="button"
-                                        className="text-xs text-red-600 hover:underline disabled:text-gray-400"
-                                        onClick={() => removeOption(qIdx, oIdx)}
+                                        className="text-xs text-red-600 hover:underline disabled:text-gray-400 mt-2"
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            removeOption(qIdx, oIdx);
+                                        }}
                                         disabled={disabled || question.options.length <= 2}
                                     >
                                         Өчүрүү
                                     </button>
-                                </div>
+                                </label>
                             ))}
                         </div>
 

@@ -34,3 +34,14 @@ export function formatHoursToTime(hours) {
     if (h > 0) return `${h} саат`;
     return `${m} мин`;
 }
+export function secondsToMinutesInput(seconds) {
+    if (!seconds || Number.isNaN(Number(seconds))) return '';
+    const minutes = Number(seconds) / 60;
+    return Number(minutes.toFixed(2)).toString();
+}
+
+export function minutesInputToSeconds(minutes) {
+    const parsed = Number(minutes);
+    if (!Number.isFinite(parsed) || parsed <= 0) return 0;
+    return Math.round(parsed * 60);
+}

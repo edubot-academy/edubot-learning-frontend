@@ -216,3 +216,41 @@ input[type='radio']:checked::after {
     aspect-ratio: auto;
     border-radius: 0;
 }
+
+.article-editor-content h1 {
+    @apply text-3xl font-bold mt-4 mb-2;
+}
+
+.article-editor-content h2 {
+    @apply text-2xl font-semibold mt-4 mb-2;
+}
+
+.article-editor-content p {
+    @apply my-2;
+}
+
+.article-editor-content ul {
+    @apply list-disc pl-6 my-2;
+}
+
+.article-editor-content ol {
+    @apply list-decimal pl-6 my-2;
+}
+
+.article-editor-content blockquote {
+    @apply border-l-4 border-edubot-orange bg-orange-50 text-slate-700 px-4 py-2 my-3 rounded-r;
+}
+
+.article-editor-content pre {
+    @apply bg-slate-900 text-slate-100 p-3 rounded-lg my-3 overflow-x-auto;
+}
+
+.article-editor-content code {
+    @apply font-mono text-[0.92em];
+}
+
+.article-editor-content a {
+    color: var(--edubot-orange);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}

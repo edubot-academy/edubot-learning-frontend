@@ -1,16 +1,47 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { FaBold, FaItalic, FaUnderline, FaListUl, FaListOl, FaLink } from 'react-icons/fa';
+import {
+    FaBold,
+    FaItalic,
+    FaUnderline,
+    FaListOl,
+    FaListUl,
+    FaLink,
+    FaUnlink,
+    FaUndo,
+    FaRedo,
+    FaEraser,
+    FaCode,
+    FaQuoteLeft,
+} from 'react-icons/fa';
 
-const TOOLBAR_BUTTONS = [
-    { label: 'H1', command: 'formatBlock', value: 'H1' },
-    { label: 'H2', command: 'formatBlock', value: 'H2' },
-    { label: 'Абзац', command: 'formatBlock', value: 'P' },
-    { icon: <FaBold />, command: 'bold' },
-    { icon: <FaItalic />, command: 'italic' },
-    { icon: <FaUnderline />, command: 'underline' },
-    { icon: <FaListUl />, command: 'insertUnorderedList' },
-    { icon: <FaListOl />, command: 'insertOrderedList' },
-    { icon: <FaLink />, command: 'createLink' },
+const TOOLBAR_GROUPS = [
+    [
+        { label: 'H1', command: 'formatBlock', value: 'H1' },
+        { label: 'H2', command: 'formatBlock', value: 'H2' },
+        { label: 'H3', command: 'formatBlock', value: 'H3' },
+        { label: 'H4', command: 'formatBlock', value: 'H4' },
+        { label: 'P', command: 'formatBlock', value: 'P' },
+    ],
+    [
+        { icon: <FaBold />, command: 'bold', title: 'Bold' },
+        { icon: <FaItalic />, command: 'italic', title: 'Italic' },
+        { icon: <FaUnderline />, command: 'underline', title: 'Underline' },
+    ],
+    [
+        { icon: <FaListUl />, command: 'insertUnorderedList', title: 'Bulleted list' },
+        { icon: <FaListOl />, command: 'insertOrderedList', title: 'Numbered list' },
+        { icon: <FaQuoteLeft />, command: 'formatBlock', value: 'BLOCKQUOTE', title: 'Quote' },
+        { icon: <FaCode />, command: 'formatBlock', value: 'PRE', title: 'Code block' },
+    ],
+    [
+        { icon: <FaLink />, command: 'createLink', title: 'Insert link' },
+        { icon: <FaUnlink />, command: 'unlink', title: 'Remove link' },
+    ],
+    [
+        { icon: <FaUndo />, command: 'undo', title: 'Undo' },
+        { icon: <FaRedo />, command: 'redo', title: 'Redo' },
+        { icon: <FaEraser />, command: 'removeFormat', title: 'Clear format' },
+    ],
 ];
 
 const DEFAULT_FORMATS = {
@@ -20,15 +51,32 @@ const DEFAULT_FORMATS = {
     underline: false,
     unorderedList: false,
     orderedList: false,
+    quote: false,
+    code: false,
+    hasLink: false,
+};
+
+const normalizeBlockValue = (value) => value?.replace(/[<>]/g, '').toUpperCase() || 'P';
+
+const ensureUrl = (rawUrl = '') => {
+    const value = rawUrl.trim();
+    if (!value) return null;
+
+    if (/^https?:\/\//i.test(value) || /^mailto:/i.test(value) || /^tel:/i.test(value)) {
+        return value;
+    }
+
+    return `https://${value}`;
 };
 
 const ArticleEditor = ({
     value = '',
     onChange,
-    placeholder = 'Текстти бул жерге жазыңыз...',
+    placeholder = 'Макаланын текстин бул жерге жазыңыз...',
     disabled = false,
 }) => {
     const editorRef = useRef(null);
+
     const showPlaceholder = useMemo(() => {
         if (!value) return true;
         const stripped = value.replace(/<[^>]*>/g, '').trim();
@@ -65,18 +113,23 @@ const ArticleEditor = ({
             return;
         }
 
-        const blockValue = document
-            .queryCommandValue('formatBlock')
-            ?.replace(/[<>]/g, '')
-            .toUpperCase();
+        const blockValue = normalizeBlockValue(document.queryCommandValue('formatBlock'));
+
+        const anchorNode =
+            selection.anchorNode?.nodeType === Node.TEXT_NODE
+                ? selection.anchorNode.parentElement
+                : selection.anchorNode;
 
         setActiveFormats({
-            block: blockValue || 'P',
+            block: blockValue,
             bold: document.queryCommandState('bold'),
             italic: document.queryCommandState('italic'),
             underline: document.queryCommandState('underline'),
             unorderedList: document.queryCommandState('insertUnorderedList'),
             orderedList: document.queryCommandState('insertOrderedList'),
+            quote: blockValue === 'BLOCKQUOTE',
+            code: blockValue === 'PRE',
+            hasLink: Boolean(anchorNode?.closest?.('a')),
         });
     }, [isNodeInsideEditor]);
 
@@ -92,17 +145,19 @@ const ArticleEditor = ({
     }, [refreshActiveFormats]);
 
     const handleCommand = (command, commandValue) => {
-        if (disabled) return;
-
-        if (typeof document === 'undefined') return;
+        if (disabled || typeof document === 'undefined') return;
 
         if (command === 'createLink') {
             if (typeof window === 'undefined') return;
+            const rawUrl = window.prompt('Шилтемени жазыңыз (https://...)');
+            const normalized = ensureUrl(rawUrl || '');
+            if (!normalized) return;
+
             const selection = window.getSelection();
             if (!selection) return;
 
             if (selection.isCollapsed) {
-                const linkText = window.prompt('Ссылка тексти:');
+                const linkText = window.prompt('Шилтеменин тексти');
                 if (!linkText) return;
                 const range = selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
                 if (!range) return;
@@ -114,12 +169,11 @@ const ArticleEditor = ({
                 selection.addRange(textRange);
             }
 
-            const url = window.prompt('Шилтеме кошуу (https:// менен):');
-            if (!url) return;
-            document.execCommand('createLink', false, url);
+            document.execCommand('createLink', false, normalized);
         } else {
             document.execCommand(command, false, commandValue || null);
         }
+
         editorRef.current?.focus();
         emitChange();
         refreshActiveFormats();
@@ -137,8 +191,10 @@ const ArticleEditor = ({
 
     const isButtonActive = (button) => {
         switch (button.command) {
-            case 'formatBlock':
-                return (button.value || 'P').toUpperCase() === activeFormats.block;
+            case 'formatBlock': {
+                const expected = normalizeBlockValue(button.value || 'P');
+                return activeFormats.block === expected;
+            }
             case 'bold':
                 return activeFormats.bold;
             case 'italic':
@@ -149,42 +205,58 @@ const ArticleEditor = ({
                 return activeFormats.unorderedList;
             case 'insertOrderedList':
                 return activeFormats.orderedList;
+            case 'unlink':
+                return activeFormats.hasLink;
             default:
                 return false;
         }
     };
 
     return (
-        <div>
-            <div className="flex flex-wrap gap-2 mb-3">
-                {TOOLBAR_BUTTONS.map(({ label, icon, command, value: commandValue }) => (
-                    <button
-                        type="button"
-                        key={`${command}-${label || commandValue || ''}`}
-                        onClick={() => handleCommand(command, commandValue)}
-                        className={`px-3 py-1 text-sm border rounded flex items-center gap-1 transition ${
-                            isButtonActive({ command, value: commandValue })
-                                ? 'bg-edubot-orange text-white border-edubot-orange'
-                                : 'bg-white text-gray-700 hover:bg-gray-100'
-                        }`}
-                        disabled={disabled}
-                    >
-                        {icon || label}
-                    </button>
-                ))}
+        <div className="rounded-xl border border-slate-200 bg-white shadow-sm">
+            <div className="sticky top-0 z-10 border-b border-slate-200 bg-gradient-to-r from-slate-50 to-white px-3 py-2">
+                <div className="flex flex-wrap items-center gap-2">
+                    {TOOLBAR_GROUPS.map((group, groupIdx) => (
+                        <div
+                            key={`group-${groupIdx}`}
+                            className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white p-1"
+                        >
+                            {group.map(({ label, icon, command, value: commandValue, title }) => (
+                                <button
+                                    type="button"
+                                    key={`${command}-${label || title || commandValue || ''}`}
+                                    onClick={() => handleCommand(command, commandValue)}
+                                    title={title || label}
+                                    className={`h-8 min-w-8 px-2 text-sm rounded-md flex items-center justify-center transition ${
+                                        isButtonActive({ command, value: commandValue })
+                                            ? 'bg-edubot-orange text-white'
+                                            : 'text-slate-700 hover:bg-slate-100'
+                                    }`}
+                                    disabled={disabled}
+                                >
+                                    {icon || label}
+                                </button>
+                            ))}
+                        </div>
+                    ))}
+                </div>
+
+                <p className="mt-2 text-[11px] text-slate-500">
+                    Кеңеш: `Ctrl/Cmd + B` калың, `Ctrl/Cmd + I` курсив. Код үчүн `&lt;/&gt;` баскычы.
+                </p>
             </div>
 
-            <div className="relative">
+            <div className="relative p-3">
                 {showPlaceholder && (
-                    <span className="absolute top-3 left-3 text-gray-400 pointer-events-none select-none">
+                    <span className="absolute top-6 left-6 text-slate-400 pointer-events-none select-none">
                         {placeholder}
                     </span>
                 )}
 
                 <div
                     ref={editorRef}
-                    className={`border rounded min-h-[220px] p-3 bg-white focus-within:ring-2 focus-within:ring-edubot-orange ${
-                        disabled ? 'opacity-60 cursor-not-allowed' : 'cursor-text'
+                    className={`article-editor-content min-h-[260px] rounded-lg border border-slate-200 bg-white p-4 text-[15px] leading-7 outline-none transition focus:border-edubot-orange focus:ring-2 focus:ring-edubot-orange/20 ${
+                        disabled ? 'opacity-60 cursor-not-allowed bg-slate-50' : 'cursor-text'
                     }`}
                     contentEditable={!disabled}
                     suppressContentEditableWarning
@@ -193,6 +265,8 @@ const ArticleEditor = ({
                     onKeyUp={refreshActiveFormats}
                     onMouseUp={refreshActiveFormats}
                     onPaste={handlePaste}
+                    role="textbox"
+                    aria-multiline="true"
                 />
             </div>
         </div>

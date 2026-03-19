@@ -29,6 +29,12 @@ import {
     normalizeChallengeForApi,
 } from '../utils/challengeUtils';
 import ArticleEditor from '@features/courses/components/ArticleEditor';
+import CourseBuilderStepNav from '@features/courses/components/CourseBuilderStepNav';
+import CoursePreviewPanel from '@features/courses/components/CoursePreviewPanel';
+import LessonCardHeader from '@features/courses/components/LessonCardHeader';
+import LessonMetaFields from '@features/courses/components/LessonMetaFields';
+import LessonAssetsPanel from '@features/courses/components/LessonAssetsPanel';
+import { minutesInputToSeconds, secondsToMinutesInput } from '@utils/timeUtils';
 
 const DEFAULT_COURSE_INFO = {
     title: '',
@@ -56,8 +62,13 @@ const CourseBuilder = () => {
         lessonIndex: null,
         title: '',
     });
+    const [expandedSections, setExpandedSections] = useState({});
+    const [singleSectionFocus, setSingleSectionFocus] = useState(true);
+    const [dragSectionIndex, setDragSectionIndex] = useState(null);
+    const [dragLesson, setDragLesson] = useState(null);
 
     const [courseInfo, setCourseInfo] = useState(DEFAULT_COURSE_INFO);
+    const [infoTouched, setInfoTouched] = useState({});
 
     const [skillOptions, setSkillOptions] = useState([
         { value: '', label: 'Skill тандаңыз (опция)' },
@@ -140,25 +151,36 @@ const CourseBuilder = () => {
         const { name, value, files, type, checked } = e.target;
 
         if (name === 'cover' && files && files[0]) {
+            const file = files[0];
+            if (!file.type.startsWith('image/')) {
+                toast.error('Сураныч, сүрөт файлын тандаңыз.');
+                return;
+            }
+            if (file.size > 5 * 1024 * 1024) {
+                toast.error('Сүрөт көлөмү 5MB ашпашы керек.');
+                return;
+            }
             setCourseInfo((prev) => ({
                 ...prev,
-                cover: files[0],
-                coverImageUrl: URL.createObjectURL(files[0]),
+                cover: file,
+                coverImageUrl: URL.createObjectURL(file),
             }));
+            setInfoTouched((prev) => ({ ...prev, cover: true }));
             return;
         }
 
         if (type === 'checkbox') {
-            setCourseInfo((prev) => ({ ...prev, [name]: checked }));
-            return;
-        }
-
-        if (name === 'title' && value.length > 200) {
-            toast.error('Аталыш өтө узун. Максимум 200 символ.');
+            if (name === 'isPaid') {
+                setCourseInfo((prev) => ({ ...prev, isPaid: checked, price: checked ? prev.price : 0 }));
+            } else {
+                setCourseInfo((prev) => ({ ...prev, [name]: checked }));
+            }
+            setInfoTouched((prev) => ({ ...prev, [name]: true }));
             return;
         }
 
         setCourseInfo((prev) => ({ ...prev, [name]: value }));
+        setInfoTouched((prev) => ({ ...prev, [name]: true }));
     };
 
     const addSection = () => {
@@ -338,15 +360,172 @@ const CourseBuilder = () => {
     const isUploading = curriculum.some((section) =>
         section.lessons.some((lesson) => lesson.uploading?.video || lesson.uploading?.resource)
     );
+    const totalLessons = curriculum.reduce((acc, section) => acc + section.lessons.length, 0);
+    const readyLessons = curriculum.reduce((acc, section) => acc + getSectionReadyCount(section), 0);
+    const completionPercent = totalLessons > 0 ? Math.round((readyLessons / totalLessons) * 100) : 0;
+
+    const getLessonIssue = (lesson) => {
+        if (!lesson.title?.trim()) return 'Аталыш жок';
+        if (lesson.kind === 'video' && !lesson.videoKey) return 'Видео жүктөлө элек';
+        if (
+            lesson.kind === 'article' &&
+            (!lesson.content?.trim() || !lesson.duration || lesson.duration <= 0)
+        ) {
+            return 'Макала толук эмес';
+        }
+        if (lesson.kind === 'quiz') {
+            const quizErr = validateQuiz(ensureQuizShape(lesson.quiz));
+            if (quizErr) return 'Квиз толук эмес';
+        }
+        if (lesson.kind === 'code') {
+            try {
+                normalizeChallengeForApi(ensureChallengeShape(lesson.challenge));
+            } catch {
+                return 'Код тапшырма толук эмес';
+            }
+        }
+        return null;
+    };
+
+    const getSectionIssueCount = (section) =>
+        section.lessons.reduce((count, lesson) => (getLessonIssue(lesson) ? count + 1 : count), 0);
+
+    const getSectionReadyCount = (section) =>
+        section.lessons.reduce((count, lesson) => (getLessonIssue(lesson) ? count : count + 1), 0);
+
+    const getFirstInvalidLessonTarget = () => {
+        for (let sIdx = 0; sIdx < curriculum.length; sIdx += 1) {
+            const section = curriculum[sIdx];
+            for (let lIdx = 0; lIdx < section.lessons.length; lIdx += 1) {
+                const issue = getLessonIssue(section.lessons[lIdx]);
+                if (issue) return { sIdx, lIdx, issue };
+            }
+        }
+        return null;
+    };
+
+    const expandInvalidSections = (indexes) => {
+        if (!indexes.length) return;
+        setExpandedSections((prev) => {
+            const next = { ...prev };
+            indexes.forEach((idx) => {
+                next[idx] = true;
+            });
+            return next;
+        });
+    };
+
+    const openSection = (sectionIdx) => {
+        if (singleSectionFocus) {
+            const next = {};
+            for (let idx = 0; idx < curriculum.length; idx += 1) next[idx] = idx === sectionIdx;
+            setExpandedSections(next);
+            return;
+        }
+        setExpandedSections((prev) => ({ ...prev, [sectionIdx]: true }));
+    };
+
+    const jumpToNextInvalidLesson = () => {
+        const target = getFirstInvalidLessonTarget();
+        if (!target) {
+            toast.success('Текшериле турган ката жок.');
+            return;
+        }
+        openSection(target.sIdx);
+        requestAnimationFrame(() => {
+            document
+                .getElementById(`lesson-${target.sIdx}-${target.lIdx}`)
+                ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        });
+        toast.error(`Текшерүү керек: ${target.issue}`);
+    };
+
+    const expandAllSections = (count) => {
+        const next = {};
+        for (let idx = 0; idx < count; idx += 1) next[idx] = true;
+        setExpandedSections(next);
+    };
+
+    const collapseAllSections = (count) => {
+        const next = {};
+        for (let idx = 0; idx < count; idx += 1) next[idx] = false;
+        setExpandedSections(next);
+    };
+
+    const scrollToSection = (sectionIdx) => {
+        openSection(sectionIdx);
+        requestAnimationFrame(() => {
+            document
+                .getElementById(`section-${sectionIdx}`)
+                ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+    };
+
+    const reorderExpandedMap = (prevMap, count, fromIdx, toIdx) => {
+        const flags = Array.from({ length: count }, (_, idx) => Boolean(prevMap[idx] ?? idx === 0));
+        const [moved] = flags.splice(fromIdx, 1);
+        flags.splice(toIdx, 0, moved);
+        return flags.reduce((acc, flag, idx) => {
+            acc[idx] = flag;
+            return acc;
+        }, {});
+    };
+
+    const handleSectionDrop = (targetIdx) => {
+        if (dragSectionIndex === null || dragSectionIndex === targetIdx) return;
+        setCurriculum((prev) => {
+            const next = [...prev];
+            const [moved] = next.splice(dragSectionIndex, 1);
+            next.splice(targetIdx, 0, moved);
+            setExpandedSections((prevExpanded) =>
+                reorderExpandedMap(prevExpanded, prev.length, dragSectionIndex, targetIdx)
+            );
+            return next;
+        });
+        setDragSectionIndex(null);
+    };
+
+    const handleLessonDrop = (sectionIdx, targetLessonIdx) => {
+        if (!dragLesson || dragLesson.sectionIdx !== sectionIdx) return;
+        if (dragLesson.lessonIdx === targetLessonIdx) return;
+
+        setCurriculum((prev) => {
+            const next = [...prev];
+            const lessons = [...next[sectionIdx].lessons];
+            const [moved] = lessons.splice(dragLesson.lessonIdx, 1);
+            lessons.splice(targetLessonIdx, 0, moved);
+            next[sectionIdx] = { ...next[sectionIdx], lessons };
+            return next;
+        });
+        setDragLesson(null);
+    };
+
+    const getCourseInfoErrors = (info) => {
+        const errors = {};
+        if (!info.title?.trim()) errors.title = 'Курс аталышы милдеттүү';
+        if (info.title?.length > 200) errors.title = 'Максимум 200 символ';
+        if (info.subtitle?.length > 255) errors.subtitle = 'Максимум 255 символ';
+        if (!info.description?.trim()) errors.description = 'Сүрөттөмө милдеттүү';
+        if (!info.categoryId) errors.categoryId = 'Категория тандаңыз';
+        if (!info.languageCode) errors.languageCode = 'Тилди тандаңыз';
+        if (info.isPaid && (!Number.isFinite(Number(info.price)) || Number(info.price) <= 0)) {
+            errors.price = 'Акы төлөнүүчү курс үчүн баа 0дөн чоң болушу керек';
+        }
+        return errors;
+    };
 
     const handleCourseSubmit = async () => {
-        if (
-            !courseInfo.title ||
-            !courseInfo.description ||
-            !courseInfo.categoryId ||
-            courseInfo.price === ''
-        ) {
-            toast.error('Сураныч, бардык талааларды толтуруңуз.');
+        const errors = getCourseInfoErrors(courseInfo);
+        if (Object.keys(errors).length) {
+            setInfoTouched({
+                title: true,
+                subtitle: true,
+                description: true,
+                categoryId: true,
+                price: true,
+                languageCode: true,
+            });
+            toast.error('Маалымат табындагы каталарды оңдоңуз.');
             return;
         }
 
@@ -360,12 +539,12 @@ const CourseBuilder = () => {
                 title: courseInfo.title,
                 description: courseInfo.description,
                 categoryId: parseInt(courseInfo.categoryId, 10),
-                price: Number(courseInfo.price),
+                price: Number(courseInfo.isPaid ? courseInfo.price : 0),
                 subtitle: courseInfo.subtitle || undefined,
                 languageCode: courseInfo.languageCode || 'ky',
                 learningOutcomes: learningOutcomes.length ? learningOutcomes : undefined,
                 aiAssistantEnabled: Boolean(courseInfo.aiAssistantEnabled),
-                isPaid: courseInfo.isPaid && Number(courseInfo.price) > 0,
+                isPaid: Boolean(courseInfo.isPaid),
             });
 
             setCourseId(course.id);
@@ -384,6 +563,27 @@ const CourseBuilder = () => {
 
     const handleCurriculumSubmit = async () => {
         try {
+            const invalidSectionIndexes = curriculum
+                .map((section, idx) => (getSectionIssueCount(section) > 0 ? idx : null))
+                .filter((idx) => idx !== null);
+
+            if (invalidSectionIndexes.length) {
+                expandInvalidSections(invalidSectionIndexes);
+                const target = getFirstInvalidLessonTarget();
+                if (target) {
+                    setExpandedSections((prev) => ({ ...prev, [target.sIdx]: true }));
+                    requestAnimationFrame(() => {
+                        document
+                            .getElementById(`lesson-${target.sIdx}-${target.lIdx}`)
+                            ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    });
+                    toast.error(`Текшерүү керек: ${target.issue}`);
+                } else {
+                    toast.error('Айрым сабактар толук эмес.');
+                }
+                return;
+            }
+
             for (const [sIdx, section] of curriculum.entries()) {
                 const sec = await createSection(courseId, {
                     title: section.sectionTitle,
@@ -395,39 +595,7 @@ const CourseBuilder = () => {
                     const isArticle = lesson.kind === 'article';
                     const isQuiz = lesson.kind === 'quiz';
                     const isCode = lesson.kind === 'code';
-                    const missingTitle = !lesson.title?.trim();
-                    const missingVideo = lesson.kind === 'video' && !lesson.videoKey;
-                    const missingContent = isArticle && !lesson.content?.trim();
-                    const missingReadTime = isArticle && (!lesson.duration || lesson.duration <= 0);
                     const quizData = isQuiz ? ensureQuizShape(lesson.quiz) : null;
-                    const quizError = isQuiz ? validateQuiz(quizData) : null;
-                    const challengeData = isCode ? ensureChallengeShape(lesson.challenge) : null;
-                    let challengePayload = null;
-                    if (isCode && challengeData) {
-                        try {
-                            challengePayload = normalizeChallengeForApi(challengeData);
-                        } catch (error) {
-                            toast.error(error.message);
-                            continue;
-                        }
-                    }
-
-                    if (
-                        missingTitle ||
-                        missingVideo ||
-                        missingContent ||
-                        missingReadTime ||
-                        quizError
-                    ) {
-                        toast.error(
-                            quizError
-                                ? quizError
-                                : isArticle
-                                  ? 'Макала үчүн аталыш, текст жана окуу убактысы талап кылынат.'
-                                  : 'Ар бир видео сабакта аталыш жана видео болушу керек.'
-                        );
-                        continue;
-                    }
 
                     const lessonPayload = {
                         title: lesson.title.trim(),
@@ -450,14 +618,13 @@ const CourseBuilder = () => {
 
                     if (isQuiz && quizData) {
                         const quizPayload = normalizeQuizForApi(quizData);
-                        if (!quizPayload) {
-                            toast.error('Квиз маалыматтарын сактоо мүмкүн эмес.');
-                            continue;
-                        }
                         await upsertLessonQuiz(courseId, sec.id, createdLesson.id, quizPayload);
                     }
 
-                    if (isCode && challengePayload) {
+                    if (isCode && lesson.challenge) {
+                        const challengePayload = normalizeChallengeForApi(
+                            ensureChallengeShape(lesson.challenge)
+                        );
                         await upsertLessonChallenge(
                             courseId,
                             sec.id,
@@ -476,259 +643,398 @@ const CourseBuilder = () => {
         }
     };
 
+    const stepItems = [
+        { id: 1, label: 'Маалымат', enabled: true },
+        { id: 2, label: 'Мазмун', enabled: Boolean(courseId) },
+        { id: 3, label: 'Превью', enabled: Boolean(courseId) },
+    ];
+
+    const handleSaveDraft = () => {
+        toast.success('Курс каралууга сакталды');
+        localStorage.removeItem('draftCourse');
+        navigate('/instructor/courses');
+    };
+
+    const handleSubmitForApproval = async () => {
+        try {
+            await markCoursePending(courseId);
+            toast.success('Курс тастыктоого жөнөтүлдү');
+            localStorage.removeItem('draftCourse');
+            navigate('/instructor/courses');
+        } catch (error) {
+            console.error('Failed to submit for approval', error);
+            toast.error('Жөнөтүүдө ката кетти');
+        }
+    };
+
     const renderPreview = () => (
-        <div className="space-y-6">
-            <h3 className="text-xl font-semibold">Курс Превью</h3>
-            <div>
-                <p className="text-lg font-bold">{courseInfo.title}</p>
-                {courseInfo.subtitle && (
-                    <p className="text-sm text-gray-600 dark:text-[#a6adba] mb-1">{courseInfo.subtitle}</p>
-                )}
-                <p>{courseInfo.description}</p>
-                <p className="italic text-gray-500 dark:text-[#a6adba] ">
-                    Баасы: {courseInfo.isPaid ? `${courseInfo.price} сом` : 'Акысыз курс'}
-                </p>
-                {courseInfo.coverImageUrl && (
-                    <img
-                        src={courseInfo.coverImageUrl}
-                        alt="cover"
-                        className="max-h-48 mt-2 rounded object-cover"
-                        decoding="async"
-                        loading="lazy"
-                    />
-                )}
-            </div>
-
-            {courseInfo.learningOutcomesText && (
-                <div>
-                    <h4 className="font-semibold mb-2">Бул курста эмнени үйрөнөсүз:</h4>
-                    <ul className="list-disc list-inside text-sm text-gray-700 dark:text-[#a6adba]">
-                        {courseInfo.learningOutcomesText
-                            .split('\n')
-                            .map((line) => line.trim())
-                            .filter(Boolean)
-                            .map((line, idx) => (
-                                <li key={idx}>{line}</li>
-                            ))}
-                    </ul>
-                </div>
-            )}
-
-            <div>
-                {curriculum.map((section, sIdx) => (
-                    <div key={sIdx} className="mb-4">
-                        <p className="font-semibold">{section.sectionTitle}</p>
-                        <ul className="list-disc list-inside text-sm text-gray-700 dark:text-[#a6adba]">
-                            {section.lessons.map((lesson, lIdx) => (
-                                <li key={lIdx}>
-                                    {lesson.title}
-                                    {lesson.previewVideo && (
-                                        <span className="text-xs text-gray-600 dark:text-[#a6adba]"> (Превью)</span>
-                                    )}
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
-                ))}
-            </div>
-
-            <div className="flex flex-wrap gap-4">
-                <button onClick={() => setStep(2)} className="px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded">
-                    Артка
-                </button>
-
-                <button
-                    onClick={() => {
-                        toast.success('Курс каралууга сакталды');
-                        localStorage.removeItem('draftCourse');
-                        navigate('/instructor/courses');
-                    }}
-                    className="px-6 py-2 bg-gray-800 text-white rounded"
-                >
-                    Сактап чыгуу
-                </button>
-
-                <button
-                    onClick={async () => {
-                        try {
-                            await markCoursePending(courseId);
-                            toast.success('Курс тастыктоого жөнөтүлдү');
-                            localStorage.removeItem('draftCourse');
-                            navigate('/instructor/courses');
-                        } catch (error) {
-                            console.error('Failed to submit for approval', error);
-                            toast.error('Жөнөтүүдө ката кетти');
-                        }
-                    }}
-                    className="px-6 py-2 bg-edubot-teal text-white rounded"
-                >
-                    Тастыктоого жөнөтүү
-                </button>
-            </div>
-        </div>
+        <CoursePreviewPanel
+            course={courseInfo}
+            sections={curriculum}
+            getSectionTitle={(section) => section.sectionTitle}
+            onBack={() => setStep(2)}
+            coverAlt="cover"
+            actions={[
+                {
+                    label: 'Сактап чыгуу',
+                    onClick: handleSaveDraft,
+                    className: 'rounded-lg bg-gray-800 px-6 py-2 text-sm font-medium text-white',
+                },
+                {
+                    label: 'Тастыктоого жөнөтүү',
+                    onClick: handleSubmitForApproval,
+                    requiresClean: true,
+                    className: 'rounded-lg bg-edubot-teal px-6 py-2 text-sm font-medium text-white',
+                },
+            ]}
+        />
     );
 
     return (
-        <div className="pt-24 p-6 max-w-4xl mx-auto">
-            <h2 className="text-2xl font-bold text-edubot-dark dark:text-white mb-6">Жаңы курс түзүү</h2>
 
-            <div className="flex gap-4 mb-6">
-                <button
-                    onClick={() => setStep(1)}
-                    className={step === 1 ? 'text-edubot-orange font-bold underline' : ''}
-                >
-                    1. Маалымат
-                </button>
-                <button
-                    onClick={() => setStep(2)}
-                    disabled={!courseId}
-                    className={step === 2 ? 'text-edubot-orange font-bold underline' : ''}
-                >
-                    2. Мазмун
-                </button>
-                <button
-                    onClick={() => setStep(3)}
-                    disabled={!courseId}
-                    className={step === 3 ? 'text-edubot-orange font-bold underline' : ''}
-                >
-                    3. Превью
-                </button>
+        <div className="mx-auto max-w-5xl p-6 pt-24">
+            <div className="mb-5 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-[#111111]">
+                <h2 className="text-2xl font-bold text-edubot-dark dark:text-white">Жаңы курс түзүү</h2>
+                <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                    Курсту үч кадам менен түзүңүз: маалымат, мазмун жана финалдык текшерүү.
+                </p>
             </div>
 
+            <CourseBuilderStepNav step={step} onStepChange={setStep} items={stepItems} />
+
             {step === 1 && (
-                <div className="space-y-4">
-                    <input
-                        name="title"
-                        value={courseInfo.title}
-                        onChange={handleCourseInfoChange}
-                        placeholder="Курс аталышы"
-                        className="w-full border p-2 rounded bg-white dark:bg-[#222222] dark:text-white"
-                    />
-                    <input
-                        name="subtitle"
-                        value={courseInfo.subtitle}
-                        onChange={handleCourseInfoChange}
-                        placeholder="Кыскача сүрөттөмө (подзаголовок)"
-                        className="w-full border p-2 rounded bg-white dark:bg-[#222222] dark:text-white"
-                    />
-                    <textarea
-                        name="description"
-                        value={courseInfo.description}
-                        onChange={handleCourseInfoChange}
-                        placeholder="Курс сүрөттөмөсү"
-                        className="w-full border p-2 rounded bg-white dark:bg-[#222222] dark:text-white"
-                    />
-                    <select
-                        name="categoryId"
-                        value={courseInfo.categoryId}
-                        onChange={handleCourseInfoChange}
-                        className="w-full border p-2 rounded bg-white dark:bg-[#222222] dark:text-white"
-                    >
-                        <option value="">Категорияны тандаңыз</option>
-                        {categories.map((cat) => (
-                            <option key={cat.id} value={cat.id}>
-                                {cat.name}
-                            </option>
-                        ))}
-                    </select>
-
-                    <div className="flex flex-col sm:flex-row gap-4">
-                        <div className="flex-1">
-                            <label className="block text-sm mb-1">Курс баасы (сом)</label>
-                            <input
-                                name="price"
-                                type="number"
-                                value={courseInfo.price}
-                                onChange={handleCourseInfoChange}
-                                placeholder="Курс баасы"
-                                className="w-full border p-2 rounded bg-white dark:bg-[#222222] dark:text-white"
-                            />
-                        </div>
-                        <div className="flex items-center gap-2 mt-2 sm:mt-7">
-                            <input
-                                id="isPaid"
-                                name="isPaid"
-                                type="checkbox"
-                                checked={courseInfo.isPaid}
-                                onChange={handleCourseInfoChange}
-                            />
-                            <label htmlFor="isPaid" className="text-sm">
-                                Бул курс акы төлөнүүчү
-                            </label>
+                <div className="space-y-5">
+                    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-[#111111]">
+                        <h3 className="mb-4 text-lg font-semibold">Негизги маалымат</h3>
+                        <div className="space-y-4">
+                            <div>
+                                <label className="mb-1 block text-sm font-medium">Курс аталышы</label>
+                                <input
+                                    name="title"
+                                    value={courseInfo.title}
+                                    onChange={handleCourseInfoChange}
+                                    placeholder="Курс аталышы"
+                                    className="w-full rounded-lg border p-2.5 bg-white dark:bg-[#222222] dark:text-white"
+                                />
+                                <div className="mt-1 flex items-center justify-between text-xs">
+                                    <span className="text-rose-500">{infoTouched.title ? getCourseInfoErrors(courseInfo).title : ''}</span>
+                                    <span className="text-slate-500">{courseInfo.title.length}/200</span>
+                                </div>
+                            </div>
+                            <div>
+                                <label className="mb-1 block text-sm font-medium">Подзаголовок</label>
+                                <input
+                                    name="subtitle"
+                                    value={courseInfo.subtitle}
+                                    onChange={handleCourseInfoChange}
+                                    placeholder="Кыскача сүрөттөмө"
+                                    className="w-full rounded-lg border p-2.5 bg-white dark:bg-[#222222] dark:text-white"
+                                />
+                                <div className="mt-1 flex items-center justify-between text-xs">
+                                    <span className="text-rose-500">{infoTouched.subtitle ? getCourseInfoErrors(courseInfo).subtitle : ''}</span>
+                                    <span className="text-slate-500">{courseInfo.subtitle.length}/255</span>
+                                </div>
+                            </div>
+                            <div>
+                                <label className="mb-1 block text-sm font-medium">Курс сүрөттөмөсү</label>
+                                <textarea
+                                    name="description"
+                                    value={courseInfo.description}
+                                    onChange={handleCourseInfoChange}
+                                    placeholder="Курс сүрөттөмөсү"
+                                    className="min-h-[120px] w-full rounded-lg border p-2.5 bg-white dark:bg-[#222222] dark:text-white"
+                                />
+                                <p className="mt-1 text-xs text-rose-500">{infoTouched.description ? getCourseInfoErrors(courseInfo).description : ''}</p>
+                            </div>
+                            <div>
+                                <label className="mb-1 block text-sm font-medium">Категория</label>
+                                <select
+                                    name="categoryId"
+                                    value={courseInfo.categoryId}
+                                    onChange={handleCourseInfoChange}
+                                    className="w-full rounded-lg border p-2.5 bg-white dark:bg-[#222222] dark:text-white"
+                                >
+                                    <option value="">Категорияны тандаңыз</option>
+                                    {categories.map((cat) => (
+                                        <option key={cat.id} value={cat.id}>
+                                            {cat.name}
+                                        </option>
+                                    ))}
+                                </select>
+                                <p className="mt-1 text-xs text-rose-500">{infoTouched.categoryId ? getCourseInfoErrors(courseInfo).categoryId : ''}</p>
+                            </div>
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-[#111111]">
+                        <h3 className="mb-4 text-lg font-semibold">Настройкалар</h3>
+                        <div className="space-y-4">
+                            <div className="flex flex-col sm:flex-row gap-4">
+                                <div className="flex-1">
+                                    <label className="block text-sm mb-1 font-medium">Курс баасы (сом)</label>
+                                    <input
+                                        name="price"
+                                        type="number"
+                                        value={courseInfo.isPaid ? courseInfo.price : 0}
+                                        onChange={handleCourseInfoChange}
+                                        placeholder="Курс баасы"
+                                        disabled={!courseInfo.isPaid}
+                                        className="w-full rounded-lg border p-2.5 bg-white disabled:bg-slate-100 dark:bg-[#222222] dark:text-white dark:disabled:bg-slate-800"
+                                    />
+                                    <p className="mt-1 text-xs text-rose-500">{infoTouched.price ? getCourseInfoErrors(courseInfo).price : ''}</p>
+                                </div>
+                                <div className="flex items-center gap-2 mt-2 sm:mt-7">
+                                    <input
+                                        id="isPaid"
+                                        name="isPaid"
+                                        type="checkbox"
+                                        checked={courseInfo.isPaid}
+                                        onChange={handleCourseInfoChange}
+                                    />
+                                    <label htmlFor="isPaid" className="text-sm">
+                                        Бул курс акы төлөнүүчү
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                                <input
+                                    id="aiAssistantEnabled"
+                                    name="aiAssistantEnabled"
+                                    type="checkbox"
+                                    checked={courseInfo.aiAssistantEnabled}
+                                    onChange={handleCourseInfoChange}
+                                />
+                                <label htmlFor="aiAssistantEnabled" className="text-sm">
+                                    EDU AI ассистенттин бул курста иштешине уруксат берүү
+                                </label>
+                            </div>
+
+                            <div>
+                                <label className="block text-sm mb-1 font-medium">Сабак тили</label>
+                                <select
+                                    name="languageCode"
+                                    value={courseInfo.languageCode}
+                                    onChange={handleCourseInfoChange}
+                                    className="w-full rounded-lg border p-2.5 bg-white dark:bg-[#222222] dark:text-white"
+                                >
+                                    <option value="ky">Кыргызча</option>
+                                    <option value="ru">Русский</option>
+                                    <option value="en">English</option>
+                                </select>
+                                <p className="mt-1 text-xs text-rose-500">{infoTouched.languageCode ? getCourseInfoErrors(courseInfo).languageCode : ''}</p>
+                            </div>
+
+                            <div>
+                                <label className="block text-sm mb-1 font-medium">
+                                    Бул курстан эмнени үйрөнөсүз? (ар бир сапка бир пункт)
+                                </label>
+                                <textarea
+                                    name="learningOutcomesText"
+                                    value={courseInfo.learningOutcomesText}
+                                    onChange={handleCourseInfoChange}
+                                    placeholder={
+                                        'Мисалы:\n- UX негиздери\n- Figma менен иштөө\n- UI китепкана түзүү'
+                                    }
+                                    className="w-full rounded-lg border p-2.5 text-sm min-h-[110px] bg-white dark:bg-[#222222] dark:text-white"
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-[#111111]">
+                        <h3 className="mb-3 text-lg font-semibold">Cover сүрөт</h3>
+                        {courseInfo.coverImageUrl && (
+                            <img
+                                src={courseInfo.coverImageUrl}
+                                alt="Курс сүрөтү"
+                                className="mb-3 max-h-52 w-full max-w-lg rounded-lg object-cover"
+                            />
+                        )}
                         <input
-                            id="aiAssistantEnabled"
-                            name="aiAssistantEnabled"
-                            type="checkbox"
-                            checked={courseInfo.aiAssistantEnabled}
+                            type="file"
+                            name="cover"
+                            accept="image/*"
                             onChange={handleCourseInfoChange}
+                            className="w-full rounded-lg border p-2.5 bg-white dark:bg-[#222222] dark:text-white"
                         />
-                        <label htmlFor="aiAssistantEnabled" className="text-sm">
-                            EDU AI ассистенттин бул курста иштешине уруксат берүү
-                        </label>
+                        <p className="mt-1 text-xs text-slate-500">PNG/JPG, максимум 5MB</p>
                     </div>
 
-                    <div>
-                        <label className="block text-sm mb-1">Сабак тили (Language)</label>
-                        <select
-                            name="languageCode"
-                            value={courseInfo.languageCode}
-                            onChange={handleCourseInfoChange}
-                            className="w-full border p-2 rounded bg-white dark:bg-[#222222] dark:text-white"
+                    <div className="sticky bottom-4 z-10 flex justify-end">
+                        <button
+                            onClick={handleCourseSubmit}
+                            disabled={Object.keys(getCourseInfoErrors(courseInfo)).length > 0}
+                            className="rounded-xl bg-slate-900 px-6 py-2.5 text-white disabled:opacity-50 dark:bg-blue-950"
                         >
-                            <option value="ky">Кыргызча</option>
-                            <option value="ru">Русский</option>
-                            <option value="en">English</option>
-                        </select>
+                            Сактоо жана улантуу
+                        </button>
                     </div>
-
-                    <div>
-                        <label className="block text-sm mb-1">
-                            Бул курстан эмнени үйрөнөсүз? (ар бир сапка бир пункт)
-                        </label>
-                        <textarea
-                            name="learningOutcomesText"
-                            value={courseInfo.learningOutcomesText}
-                            onChange={handleCourseInfoChange}
-                            placeholder={
-                                'Мисалы:\n- UX негиздери\n- Figma менен иштөө\n- UI китепкана түзүү'
-                            }
-                            className="w-full border p-2 rounded text-sm min-h-[100px] bg-white dark:bg-[#222222] dark:text-white"
-                        />
-                    </div>
-
-                    {courseInfo.coverImageUrl && (
-                        <img
-                            src={courseInfo.coverImageUrl}
-                            alt="Курс сүрөтү"
-                            className="max-h-48 object-cover rounded"
-                        />
-                    )}
-                    <input
-                        type="file"
-                        name="cover"
-                        accept="image/*"
-                        onChange={handleCourseInfoChange}
-                        className="w-full border p-2 rounded bg-white dark:bg-[#222222] dark:text-white"
-                    />
-
-                    <button
-                        onClick={handleCourseSubmit}
-                        className="bg-edubot-dark dark:bg-blue-950 text-white px-6 py-2 rounded"
-                    >
-                        Сактоо жана улантуу
-                    </button>
                 </div>
             )}
 
             {step === 2 && (
-                <div>
+                <div className="space-y-4">
+                    <div className="sticky top-20 z-20 rounded-2xl border border-slate-200/70 bg-white/90 backdrop-blur px-4 py-3 shadow-sm dark:border-slate-700 dark:bg-[#151515]/90">
+                        <div className="flex flex-wrap items-center justify-between gap-3">
+                            <div className="space-y-1">
+                                <p className="text-xs uppercase tracking-wide text-slate-500">Курулуш режими</p>
+                                <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                                    Бөлүмдөр: {curriculum.length} • Сабактар: {totalLessons}
+                                </p>
+                                <p className="text-xs text-slate-600 dark:text-slate-300">
+                                    Даярдык: {readyLessons}/{totalLessons} ({completionPercent}%)
+                                </p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <button
+                                    onClick={() => expandAllSections(curriculum.length)}
+                                    className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-[#1f1f1f] dark:text-slate-200"
+                                >
+                                    Баарын ачуу
+                                </button>
+                                <button
+                                    onClick={() => collapseAllSections(curriculum.length)}
+                                    className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-[#1f1f1f] dark:text-slate-200"
+                                >
+                                    Баарын жабуу
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        setSingleSectionFocus((prev) => {
+                                            const nextMode = !prev;
+                                            if (nextMode) {
+                                                const firstOpen = curriculum.findIndex((_, idx) => expandedSections[idx] ?? idx === 0);
+                                                const openIdx = firstOpen >= 0 ? firstOpen : 0;
+                                                const nextExpanded = {};
+                                                for (let idx = 0; idx < curriculum.length; idx += 1) {
+                                                    nextExpanded[idx] = idx === openIdx;
+                                                }
+                                                setExpandedSections(nextExpanded);
+                                            }
+                                            return nextMode;
+                                        });
+                                    }}
+                                    className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-[#1f1f1f] dark:text-slate-200"
+                                >
+                                    {singleSectionFocus ? 'Single focus: ON' : 'Single focus: OFF'}
+                                </button>
+                                <button
+                                    onClick={addSection}
+                                    className="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700"
+                                >
+                                    + Бөлүм кошуу
+                                </button>
+                                <button
+                                    onClick={jumpToNextInvalidLesson}
+                                    className="rounded-xl border border-rose-300 bg-rose-50 px-4 py-2 text-sm font-medium text-rose-700 hover:bg-rose-100 dark:border-rose-800 dark:bg-rose-900/30 dark:text-rose-200"
+                                >
+                                    Кийинки катаны табуу
+                                </button>
+                                <button
+                                    onClick={handleCurriculumSubmit}
+                                    disabled={isUploading}
+                                    className="rounded-xl bg-slate-900 px-5 py-2 text-sm font-medium text-white disabled:opacity-60 dark:bg-blue-950"
+                                >
+                                    Сактоо жана улантуу
+                                </button>
+                            </div>
+                        </div>
+                        <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
+                            {curriculum.map((section, sIdx) => {
+                                const hasIssues = getSectionIssueCount(section) > 0;
+                                const label = section.sectionTitle?.trim() || `Бөлүм ${sIdx + 1}`;
+                                return (
+                                    <button
+                                        key={`section-chip-${sIdx}`}
+                                        type="button"
+                                        onClick={() => scrollToSection(sIdx)}
+                                        className={`whitespace-nowrap rounded-full border px-3 py-1.5 text-xs font-medium transition ${
+                                            hasIssues
+                                                ? 'border-rose-300 bg-rose-50 text-rose-700 dark:border-rose-700 dark:bg-rose-900/30 dark:text-rose-200'
+                                                : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-[#1f1f1f] dark:text-slate-200'
+                                        }`}
+                                    >
+                                        {label}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
                     <h3 className="text-xl font-semibold mb-4">Окуу мазмуну</h3>
                     {curriculum.map((section, sIdx) => (
-                        <div key={sIdx} className="mb-6 border border-edubot-teal dark:border-white rounded p-4">
+                        <details
+                            id={`section-${sIdx}`}
+                            key={sIdx}
+                            onDragOver={(event) => event.preventDefault()}
+                            onDrop={() => handleSectionDrop(sIdx)}
+                            open={expandedSections[sIdx] ?? sIdx === 0}
+                            onToggle={(event) => {
+                                const isOpen = event.currentTarget.open;
+                                if (singleSectionFocus && isOpen) {
+                                    const next = {};
+                                    for (let idx = 0; idx < curriculum.length; idx += 1) next[idx] = idx === sIdx;
+                                    setExpandedSections(next);
+                                    return;
+                                }
+                                setExpandedSections((prev) => ({ ...prev, [sIdx]: isOpen }));
+                            }}
+                            className={`mb-5 overflow-hidden rounded-2xl border border-slate-200 bg-white/80 shadow-sm transition dark:border-slate-700 dark:bg-[#111111] ${dragSectionIndex === sIdx ? 'opacity-80 ring-2 ring-amber-300 dark:ring-amber-600' : ''}`}
+                        >
+                            <summary className="flex cursor-pointer list-none items-center justify-between gap-3 bg-gradient-to-r from-slate-50 to-white px-4 py-3 dark:from-[#191919] dark:to-[#131313]">
+                                <div>
+                                    <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                                        {section.sectionTitle || `Section ${sIdx + 1}`}
+                                    </p>
+                                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                                        {section.lessons.length} сабак · {getSectionReadyCount(section)}/{section.lessons.length} даяр
+                                    {getSectionIssueCount(section) > 0 ? (
+                                        <span className="ml-2 rounded-full bg-rose-100 px-2 py-0.5 text-[10px] font-medium text-rose-700 dark:bg-rose-900/40 dark:text-rose-200">
+                                            {getSectionIssueCount(section)} маселе
+                                        </span>
+                                    ) : (
+                                        <span className="ml-2 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-medium text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-200">
+                                            Даяр
+                                        </span>
+                                    )}
+                                    </p>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <button
+                                        type="button"
+                                        draggable
+                                        onDragStart={() => setDragSectionIndex(sIdx)}
+                                        onDragEnd={() => setDragSectionIndex(null)}
+                                        onMouseDown={(event) => event.stopPropagation()}
+                                        onClick={(event) => {
+                                            event.preventDefault();
+                                            event.stopPropagation();
+                                        }}
+                                        className="group relative cursor-grab rounded-lg border border-slate-300 bg-white p-2 text-slate-600 hover:bg-slate-50 active:scale-95 dark:border-slate-700 dark:bg-[#1f1f1f] dark:text-slate-300"
+                                        title="Бөлүмдү жылдыруу"
+                                        aria-label="Бөлүмдү жылдыруу"
+                                    >
+                                        <svg
+                                            aria-hidden="true"
+                                            viewBox="0 0 16 16"
+                                            className="h-4 w-4"
+                                            fill="currentColor"
+                                        >
+                                            <circle cx="5" cy="4" r="1.1" />
+                                            <circle cx="11" cy="4" r="1.1" />
+                                            <circle cx="5" cy="8" r="1.1" />
+                                            <circle cx="11" cy="8" r="1.1" />
+                                            <circle cx="5" cy="12" r="1.1" />
+                                            <circle cx="11" cy="12" r="1.1" />
+                                        </svg>
+                                        <span className="pointer-events-none absolute left-1/2 top-full z-10 mt-2 -translate-x-1/2 whitespace-nowrap rounded bg-slate-900 px-2 py-1 text-[10px] font-medium text-white opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100 dark:bg-slate-100 dark:text-slate-900">
+                                            Бөлүмдү жылдыруу
+                                        </span>
+                                    </button>
+                                    <span className="text-xs text-slate-500 dark:text-slate-400">Ачуу/жабуу</span>
+                                </div>
+                            </summary>
+                            <div className="p-4">
                         <div className="flex flex-col md:flex-row md:items-center md:gap-3 mb-2">
                             <div className="flex-1 flex flex-col gap-2">
                                 <input
@@ -775,35 +1081,49 @@ const CourseBuilder = () => {
                                 Өчүрүү
                             </button>
                         </div>
-                            {section.lessons.map((lesson, lIdx) => (
-                                <div key={lIdx} className="mb-4 p-2 bg-gray-50 dark:bg-[#222222] rounded border">
-                                    <input
-                                        className="w-full p-2 mb-2 border rounded bg-white dark:bg-[#222222] dark:text-white"
-                                        value={lesson.title}
-                                        onChange={(e) =>
-                                            updateLesson(sIdx, lIdx, 'title', e.target.value)
+                            {section.lessons.map((lesson, lIdx) => {
+                                const lessonIssue = getLessonIssue(lesson);
+                                return (
+                                <div
+                                    id={`lesson-${sIdx}-${lIdx}`}
+                                    key={lIdx}
+                                    onDragOver={(event) => event.preventDefault()}
+                                    onDrop={() => handleLessonDrop(sIdx, lIdx)}
+                                    className={`mb-4 rounded-xl border p-3 transition ${
+                                        lessonIssue
+                                            ? 'border-rose-200 bg-rose-50/70 dark:border-rose-900/70 dark:bg-rose-950/20'
+                                            : 'border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-[#222222]'
+                                    } ${
+                                        dragLesson?.sectionIdx === sIdx && dragLesson?.lessonIdx === lIdx
+                                            ? 'ring-2 ring-sky-300 dark:ring-sky-700 opacity-80'
+                                            : ''
+                                    }`}
+                                >
+                                    <LessonCardHeader
+                                        lessonIndex={lIdx}
+                                        lessonKind={lesson.kind}
+                                        lessonIssue={lessonIssue}
+                                        onDragStart={() => setDragLesson({ sectionIdx: sIdx, lessonIdx: lIdx })}
+                                        onDragEnd={() => setDragLesson(null)}
+                                        onDelete={() =>
+                                            setConfirmDelete({
+                                                type: 'lesson',
+                                                sectionIndex: sIdx,
+                                                lessonIndex: lIdx,
+                                                title: lesson.title,
+                                            })
                                         }
-                                        placeholder="Сабак аталышы"
+                                    />
+                                    <LessonMetaFields
+                                        title={lesson.title}
+                                        kind={lesson.kind || 'video'}
+                                        kindOptions={LESSON_KIND_OPTIONS}
+                                        onTitleChange={(value) => updateLesson(sIdx, lIdx, 'title', value)}
+                                        onKindChange={(value) => updateLesson(sIdx, lIdx, 'kind', value)}
                                     />
 
-                                    <label className="block text-sm font-medium mb-1">
-                                        Сабактын тиби
-                                    </label>
-                                    <select
-                                        className="w-full p-2 mb-2 border rounded bg-white dark:bg-[#222222] dark:text-white"
-                                        value={lesson.kind || 'video'}
-                                        onChange={(e) =>
-                                            updateLesson(sIdx, lIdx, 'kind', e.target.value)
-                                        }
-                                    >
-                                        {LESSON_KIND_OPTIONS.map((option) => (
-                                            <option key={option.value} value={option.value}>
-                                                {option.label}
-                                            </option>
-                                        ))}
-                                    </select>
-
                                     {lesson.kind === 'article' && (
+
                                         <>
                                             <label className="block mb-1 font-medium">
                                                 Макала тексти
@@ -820,22 +1140,16 @@ const CourseBuilder = () => {
                                             </label>
                                             <input
                                                 type="number"
-                                                min="1"
+                                                min="0.5"
+                                                step="0.5"
                                                 className="w-full p-2 mb-2 border rounded"
-                                                value={
-                                                    lesson.duration && lesson.duration > 0
-                                                        ? Math.round(lesson.duration / 60)
-                                                        : ''
-                                                }
+                                                value={secondsToMinutesInput(lesson.duration)}
                                                 onChange={(e) => {
-                                                    const minutes = Number(e.target.value);
                                                     updateLesson(
                                                         sIdx,
                                                         lIdx,
                                                         'duration',
-                                                        Number.isFinite(minutes) && minutes > 0
-                                                            ? minutes * 60
-                                                            : 0
+                                                        minutesInputToSeconds(e.target.value)
                                                     );
                                                 }}
                                                 placeholder="мисалы: 5"
@@ -860,148 +1174,56 @@ const CourseBuilder = () => {
                                             }
                                         />
                                     )}
-
-                                    {lesson.kind === 'video' && (
-                                        <>
-                                            <label className="block mb-1 font-medium">
-                                                Видео жүктөө
-                                            </label>
-                                            <input
-                                                type="file"
-                                                accept="video/*"
-                                                className="w-full mb-2"
-                                                onChange={(e) =>
-                                                    handleFileUpload(
-                                                        courseId,
-                                                        sIdx,
-                                                        lIdx,
-                                                        'video',
-                                                        e.target.files[0]
-                                                    )
-                                                }
-                                            />
-                                            {lesson.uploadProgress.video > 0 && (
-                                                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded h-2 mb-1">
-                                                    <div
-                                                        className="bg-blue-600 h-full rounded transition-all duration-200"
-                                                        style={{
-                                                            width: `${lesson.uploadProgress.video}%`,
-                                                        }}
-                                                    />
-                                                </div>
-                                            )}
-                                            {lesson.uploadProgress.video > 0 && (
-                                                <p className="text-xs text-gray-500 dark:text-[#a6adba] mb-2">
-                                                    {lesson.uploadProgress.video}% жүктөлдү
-                                                </p>
-                                            )}
-                                        </>
-                                    )}
-
-                                    <label className="block mt-2 mb-1 font-medium">
-                                        Материал жүктөө (PDF, ZIP)
-                                    </label>
-                                    <input
-                                        type="file"
-                                        accept=".pdf,.zip"
-                                        onChange={(e) =>
-                                            handleFileUpload(
-                                                courseId,
-                                                sIdx,
-                                                lIdx,
-                                                'resource',
-                                                e.target.files[0]
-                                            )
+                                    <LessonAssetsPanel
+                                        kind={lesson.kind}
+                                        onVideoFile={(file) =>
+                                            handleFileUpload(courseId, sIdx, lIdx, 'video', file)
                                         }
-                                        className="w-full mb-2"
-                                    />
-                                    {lesson.uploadProgress.resource > 0 && (
-                                        <>
-                                            <div className="w-full bg-gray-100 rounded h-2 mb-1">
-                                                <div
-                                                    className="bg-purple-500 h-full rounded transition-all duration-200"
-                                                    style={{
-                                                        width: `${lesson.uploadProgress.resource}%`,
-                                                    }}
-                                                />
-                                            </div>
-                                            <p className="text-xs text-gray-500 dark:text-[#a6adba] mb-2">
-                                                {lesson.uploadProgress.resource}% жүктөлдү
-                                            </p>
-                                        </>
-                                    )}
-
-                                    <label className="block text-sm font-medium">
-                                        Материалдын аталышы
-                                    </label>
-                                    <input
-                                        type="text"
-                                        className="w-full p-2 mb-2 border rounded bg-white dark:bg-[#222222] dark:text-white"
-                                        value={lesson.resourceName || ''}
-                                        onChange={(e) =>
-                                            updateLesson(sIdx, lIdx, 'resourceName', e.target.value)
+                                        videoExists={Boolean(lesson.videoUrl || lesson.videoKey)}
+                                        videoProgress={lesson.uploadProgress.video}
+                                        previewVideo={lesson.previewVideo}
+                                        onPreviewVideoChange={(checked) =>
+                                            updateLesson(sIdx, lIdx, 'previewVideo', checked)
                                         }
-                                        placeholder="мисалы: Практикалык тапшырмалар.pdf"
-                                        disabled={!lesson.resourceKey}
+                                        previewLabel="Превью видеосун белгилөө"
+                                        onResourceFile={(file) =>
+                                            handleFileUpload(courseId, sIdx, lIdx, 'resource', file)
+                                        }
+                                        resourceExists={Boolean(lesson.resourceUrl || lesson.resourceKey)}
+                                        resourceProgress={lesson.uploadProgress.resource}
+                                        resourceName={lesson.resourceName}
+                                        onResourceNameChange={(value) =>
+                                            updateLesson(sIdx, lIdx, 'resourceName', value)
+                                        }
+                                        resourceNameDisabled={!lesson.resourceKey}
                                     />
-                                    <p className="text-xs text-gray-500 dark:text-[#a6adba] mb-2">
-                                        Бул аталыш студенттерге көрсөтүлөт.
-                                    </p>
 
-                                    {lesson.kind === 'video' && (
-                                        <label className="flex items-center gap-2 mt-2">
-                                            <input
-                                                type="checkbox"
-                                                checked={lesson.previewVideo}
-                                                onChange={(e) =>
-                                                    updateLesson(
-                                                        sIdx,
-                                                        lIdx,
-                                                        'previewVideo',
-                                                        e.target.checked
-                                                    )
-                                                }
-                                            />
-                                            Превью видеосун белгилөө
-                                        </label>
-                                    )}
-
+                                </div>
+                            );
+                            })}
+                            <div className="sticky bottom-2 mt-3 flex items-center justify-between gap-2 rounded-xl border border-slate-200 bg-white/95 px-3 py-2 backdrop-blur dark:border-slate-700 dark:bg-[#151515]/95">
+                                <span className="text-xs text-slate-500 dark:text-slate-400">
+                                    Бул бөлүмдө сабактарды толтуруп, анан жалпы сактоону басыңыз.
+                                </span>
+                                <div className="flex items-center gap-2">
                                     <button
-                                        onClick={() =>
-                                            setConfirmDelete({
-                                                type: 'lesson',
-                                                sectionIndex: sIdx,
-                                                lessonIndex: lIdx,
-                                                title: lesson.title,
-                                            })
-                                        }
-                                        className="mt-2 px-3 py-1 bg-red-100 text-red-700 border border-red-300 rounded hover:bg-red-200 text-sm"
+                                        onClick={() => addLesson(sIdx)}
+                                        className="rounded-lg bg-amber-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-amber-600"
                                     >
-                                        Сабакты өчүрүү
+                                        + Сабак кошуу
+                                    </button>
+                                    <button
+                                        onClick={handleCurriculumSubmit}
+                                        className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-[#1f1f1f] dark:text-slate-200"
+                                    >
+                                        Жалпы сактоо
                                     </button>
                                 </div>
-                            ))}
-                            <button
-                                onClick={() => addLesson(sIdx)}
-                                className="bg-edubot-orange text-white px-4 py-1 rounded mt-2"
-                            >
-                                + Сабак кошуу
-                            </button>
-                        </div>
+                            </div>
+                            </div>
+                        </details>
                     ))}
-                    <button
-                        onClick={addSection}
-                        className="bg-edubot-green text-white px-4 py-2 rounded"
-                    >
-                        + Бөлүм кошуу
-                    </button>
-                    <button
-                        onClick={handleCurriculumSubmit}
-                        disabled={isUploading}
-                        className="bg-edubot-dark dark:bg-blue-950 text-white px-6 py-2 rounded ml-4 disabled:opacity-60"
-                    >
-                        Сактоо жана улантуу
-                    </button>
+
                 </div>
             )}
 

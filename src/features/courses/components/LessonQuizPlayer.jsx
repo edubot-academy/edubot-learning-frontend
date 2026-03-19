@@ -1,9 +1,10 @@
+import InlineRichText from '@shared/ui/InlineRichText';
 import Button from '@shared/ui/Button';
 import Loader from '@shared/ui/Loader';
 import React, { useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 import { FiCheckCircle, FiClock, FiXCircle } from 'react-icons/fi';
-import { IoIosArrowUp, IoIosArrowDown } from 'react-icons/io';
+import { IoIosArrowDown, IoIosArrowUp } from 'react-icons/io';
 import grade_A from '../../../assets/images/grade_A.png';
 import grade_B from '../../../assets/images/grade_B.png';
 import grade_C from '../../../assets/images/grade_C.png';
@@ -24,7 +25,6 @@ const LessonQuizPlayer = ({
     const [isShowAnswers, setIsShowAnswers] = useState(false);
     const [skippedQuestions, setSkippedQuestions] = useState([]);
 
-    // reset index when quiz changes
     useEffect(() => {
         setActiveQuestionIndex(0);
         setStartQuiz(false);
@@ -32,7 +32,6 @@ const LessonQuizPlayer = ({
         setSkippedQuestions([]);
     }, [quiz?.id]);
 
-    // result answers
     const resultAnswersMap = useMemo(() => {
         if (!result?.answers) return {};
         return result.answers.reduce((acc, ans) => {
@@ -48,35 +47,25 @@ const LessonQuizPlayer = ({
         }, {});
     }, [result]);
 
-    // current question
     const currentQuestion = useMemo(() => {
         if (!quiz?.questions) return null;
         return quiz.questions[activeQuestionIndex];
     }, [quiz?.questions, activeQuestionIndex]);
 
-    const currentAnswerInfo = currentQuestion ? resultAnswersMap[currentQuestion.id] : null;
-
     const selectedOption = currentQuestion ? answers[currentQuestion.id] : null;
-
-    const allAnswered = quiz?.questions?.every((q) => answers[q.id]) ?? false;
-
     const isLastQuestion = quiz?.questions && activeQuestionIndex === quiz.questions.length - 1;
 
-    // Function to handle skip question
     const handleSkipQuestion = () => {
         if (!currentQuestion) return;
 
-        // Mark this question as skipped
         const questionId = currentQuestion.id;
         setSkippedQuestions((prev) => [...prev, questionId]);
 
-        // Move to next question
         if (!isLastQuestion) {
             setActiveQuestionIndex((prev) => prev + 1);
         }
     };
 
-    // Prepare answers for submission with skipped questions marked as wrong
     const prepareAnswersForSubmission = () => {
         if (!quiz?.questions) return [];
 
@@ -84,11 +73,10 @@ const LessonQuizPlayer = ({
             const answerId = answers[question.id];
             const isSkipped = skippedQuestions.includes(question.id);
 
-            // If question is skipped or not answered, return null optionId
             if (!answerId || isSkipped) {
                 return {
                     questionId: question.id,
-                    optionId: null, // null indicates no answer or skipped
+                    optionId: null,
                 };
             }
 
@@ -99,13 +87,10 @@ const LessonQuizPlayer = ({
         });
     };
 
-    // Handle quiz submission
     const handleSubmit = async () => {
         if (!onSubmit) return;
 
         const preparedAnswers = prepareAnswersForSubmission();
-
-        // Check if all questions have answers (including null for skipped)
         const allQuestionsCovered = preparedAnswers.length === quiz?.questions?.length;
 
         if (!allQuestionsCovered) {
@@ -113,11 +98,9 @@ const LessonQuizPlayer = ({
             return;
         }
 
-        // Call the parent's onSubmit with prepared answers
         await onSubmit(preparedAnswers);
     };
 
-    // summaries
     const questionSummaries = useMemo(() => {
         if (!quiz?.questions) return [];
         return quiz.questions.map((question) => {
@@ -138,7 +121,6 @@ const LessonQuizPlayer = ({
                 selected,
                 correctOptions,
                 answeredCorrect,
-                hasCorrectMeta: Boolean(answerInfo),
             };
         });
     }, [quiz?.questions, resultAnswersMap]);
@@ -162,7 +144,6 @@ const LessonQuizPlayer = ({
         );
     }
 
-    // start screen
     if (!startQuiz && !result) {
         return (
             <div className="mb-6 rounded-lg shadow-md py-[20%] text-center">
@@ -177,7 +158,6 @@ const LessonQuizPlayer = ({
         );
     }
 
-    // quiz result screen
     if (result) {
         return (
             <div className="mb-6 rounded-lg shadow-md p-6 space-y-4">
@@ -230,31 +210,54 @@ const LessonQuizPlayer = ({
                                               : 'border-gray-200 bg-gray-50'
                                     }`}
                                 >
-                                    <p className="font-medium flex items-center gap-2">
-                                        {answeredCorrect ? (
-                                            <FiCheckCircle className="text-green-600" />
-                                        ) : answeredCorrect === false ? (
-                                            <FiXCircle className="text-red-600" />
-                                        ) : (
-                                            <FiClock className="text-gray-400" />
-                                        )}
-                                        {i + 1}. {question.prompt}
-                                    </p>
-
-                                    <p>
-                                        Сиздин жооп:{' '}
-                                        <span className="font-semibold bg-gray-100 px-1 rounded">
-                                            {selected?.text || 'Калтырылды'}
+                                    <p className="font-medium flex items-start gap-2">
+                                        <span className="pt-0.5">
+                                            {answeredCorrect ? (
+                                                <FiCheckCircle className="text-green-600" />
+                                            ) : answeredCorrect === false ? (
+                                                <FiXCircle className="text-red-600" />
+                                            ) : (
+                                                <FiClock className="text-gray-400" />
+                                            )}
+                                        </span>
+                                        <span>
+                                            {i + 1}. <InlineRichText text={question.prompt} />
                                         </span>
                                     </p>
 
+                                    <div className="mt-2">
+                                        <p className="text-xs uppercase tracking-wide text-slate-500 mb-1">
+                                            Сиздин жооп
+                                        </p>
+                                        <div
+                                            className={`rounded border px-2 py-1 ${
+                                                selected
+                                                    ? 'border-amber-300 bg-amber-50'
+                                                    : 'border-slate-200 bg-slate-100 text-slate-500'
+                                            }`}
+                                        >
+                                            {selected ? (
+                                                <InlineRichText text={selected.text} />
+                                            ) : (
+                                                'Калтырылды'
+                                            )}
+                                        </div>
+                                    </div>
+
                                     {(answeredCorrect === false || !selected) &&
                                         correctOptions.length > 0 && (
-                                            <div className="text-sm text-green-700">
-                                                <p>Туура жооп:</p>
-                                                <ul className="list-disc list-inside">
+                                            <div className="text-sm text-green-700 mt-2">
+                                                <p className="text-xs uppercase tracking-wide mb-1 text-green-800">
+                                                    Туура жооп
+                                                </p>
+                                                <ul className="space-y-1">
                                                     {correctOptions.map((opt) => (
-                                                        <li key={opt.id}>{opt.text}</li>
+                                                        <li
+                                                            key={opt.id}
+                                                            className="rounded border border-green-300 bg-white px-2 py-1"
+                                                        >
+                                                            <InlineRichText text={opt.text} />
+                                                        </li>
                                                     ))}
                                                 </ul>
                                             </div>
@@ -273,7 +276,7 @@ const LessonQuizPlayer = ({
             {currentQuestion ? (
                 <div className="space-y-4">
                     <p className="font-medium text-[20px] leading-[40px]">
-                        {activeQuestionIndex + 1}. {currentQuestion.prompt}
+                        {activeQuestionIndex + 1}. <InlineRichText text={currentQuestion.prompt} />
                     </p>
 
                     <div className="space-y-2">
@@ -283,9 +286,13 @@ const LessonQuizPlayer = ({
                             return (
                                 <label
                                     key={option.id}
-                                    className={`flex items-center gap-2 border rounded-xl p-4 cursor-pointer 
-                                        ${isSelected ? 'border-edubot-orange' : 'border-gray-200'}
-                                        ${disabled ? 'opacity-70 cursor-not-allowed' : ''}
+                                    className={`flex items-start gap-2 border rounded-xl p-4 transition 
+                                        ${
+                                            isSelected
+                                                ? 'border-edubot-orange bg-orange-50 ring-1 ring-orange-200'
+                                                : 'border-gray-200 bg-white'
+                                        }
+                                        ${disabled ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'}
                                     `}
                                 >
                                     <input
@@ -296,8 +303,11 @@ const LessonQuizPlayer = ({
                                         onChange={() =>
                                             onAnswerChange?.(currentQuestion.id, option.id)
                                         }
+                                        className="mt-1"
                                     />
-                                    <span>{option.text}</span>
+                                    <span className="leading-6">
+                                        <InlineRichText text={option.text} />
+                                    </span>
                                 </label>
                             );
                         })}
