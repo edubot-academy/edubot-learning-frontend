@@ -9,8 +9,20 @@ export const registerUser = async (userData) => await api.post('/auth/register',
 export const loginUser = async (userData) => await api.post('/auth/login', userData);
 
 export const logoutUser = async () => {
-    const response = await api.post('/auth/logout');
-    return response.data;
+    try {
+        console.log('🔄 Attempting logout...');
+        console.log('🍪 Cookies before logout:', document.cookie);
+
+        const response = await api.post('/auth/logout');
+
+        console.log('🍪 Cookies after logout:', document.cookie);
+        console.log('✅ Logout API response:', response.data);
+
+        return response.data;
+    } catch (error) {
+        console.error('❌ Logout API error:', error);
+        throw error;
+    }
 };
 
 export const fetchUserProfile = async (config = {}) => {
