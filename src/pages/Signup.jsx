@@ -10,7 +10,6 @@ import { AuthContext } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import { useFavourites } from '../context/FavouritesContext';
 import Loader from '@shared/ui/Loader';
-import { isPublicVideoSignupEnabled } from '@shared/auth-config';
 
 const SignupPage = () => {
     const [formData, setFormData] = useState({
@@ -41,37 +40,6 @@ const SignupPage = () => {
     const { login } = useContext(AuthContext);
     const { addToCart } = useCart();
     const { toggleFavourite } = useFavourites();
-
-    if (!isPublicVideoSignupEnabled) {
-        return (
-            <div className="min-h-screen flex items-center justify-center px-6">
-                <div className="w-full max-w-lg rounded-2xl border border-orange-100 bg-white p-8 shadow-sm">
-                    <h2 className="mb-4 text-2xl font-bold">Катталуу өчүрүлгөн</h2>
-                    <p className="mb-4 text-gray-600">
-                        Бул LMS чөйрөсүндө жаңы аккаунттар CRM аркылуу же чакыруу менен ачылат.
-                    </p>
-                    <p className="mb-6 text-gray-600">
-                        Эгер видео курс үчүн аккаунт ачуу керек болсо, администратор бул функцияны өзүнчө иштетиши керек.
-                    </p>
-                    <div className="flex flex-col gap-3 sm:flex-row">
-                        <Link
-                            to="/login"
-                            className="rounded-lg bg-orange-500 px-4 py-3 text-center font-semibold text-white hover:bg-orange-600"
-                        >
-                            Кирүүгө өтүү
-                        </Link>
-                        <button
-                            type="button"
-                            onClick={() => navigate('/courses')}
-                            className="rounded-lg border border-gray-200 px-4 py-3 text-center font-semibold text-gray-700 hover:bg-gray-50"
-                        >
-                            Курстарды көрүү
-                        </button>
-                    </div>
-                </div>
-            </div>
-        );
-    }
 
     const validatePassword = (password) => {
         setPasswordValidations({
@@ -250,7 +218,7 @@ const SignupPage = () => {
                             <PhoneInput onChange={handlePhoneChange} value={formData.phoneNumber} />
                         </div>
 
-                        <div className="relative py-2">
+                        <div className="py-2">
                             <LabelPassword
                                 label="Сырсөз ойлоп табыңыз"
                                 name="password"
@@ -262,6 +230,7 @@ const SignupPage = () => {
                                 onFocus={() => setShowTooltip(true)}
                                 onBlur={() => setTimeout(() => setShowTooltip(false), 100)}
                             />
+                            <p className="text-xs text-gray-500 mt-1">Сырсөз кеминде 8 белгиден болуу керек</p>
 
                             {showTooltip && (
                                 <ul className="absolute z-10 top-full left-0 mt-1 bg-white text-black rounded shadow-lg text-xs w-full px-3 py-2 border">

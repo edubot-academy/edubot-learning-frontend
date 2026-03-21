@@ -2,7 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import Button from '@shared-ui/Button';
 import Modal from '@shared-ui/Modal';
-import { getAuthAcquisitionPath, isPublicVideoSignupEnabled } from '@shared/auth-config';
+import { getAuthAcquisitionPath } from '@shared/auth-config';
 
 const UnauthModal = ({
     isOpen,
@@ -69,7 +69,7 @@ const UnauthModal = ({
     };
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title={isPublicVideoSignupEnabled ? 'Каттоо талап кылынат' : 'Кирүү талап кылынат'} size="md">
+        <Modal isOpen={isOpen} onClose={onClose} title='Каттоо талап кылынат' size="md">
             <div className="space-y-4">
                 <div className="flex items-center space-x-3">
                     <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
@@ -103,7 +103,7 @@ const UnauthModal = ({
                     </div>
                     <div>
                         <h3 className="font-bold">
-                            {isPublicVideoSignupEnabled ? 'Кириңиз же катталыңыз' : 'Кириңиз'}
+                            Кириңиз же катталыңыз
                         </h3>
                     </div>
                 </div>
@@ -111,27 +111,23 @@ const UnauthModal = ({
                 <p className="text-gray-600">
                     {courseTitle && actionType === 'favourite' ? (
                         <>
-                            {isPublicVideoSignupEnabled
-                                ? 'Курсту тандалгандарга кошуу үчүн каттодон өтүү керек'
-                                : 'Курсту тандалгандарга кошуу үчүн кирүү керек'}
+                            Курсту тандалгандарга кошуу үчүн каттодон өтүү керек
                         </>
                     ) : courseTitle && actionType === 'cart' ? (
                         <>
                             Курска заказ берүү үчүн "
                             <span className="font-semibold">{courseTitle}</span>"
-                            {isPublicVideoSignupEnabled ? 'каттоо талап кылынат.' : 'кирүү талап кылынат.'}
+                            каттоо талап кылынат.
                         </>
                     ) : (
-                        <>{getActionText()} үчүн {isPublicVideoSignupEnabled ? 'каттоо' : 'кирүү'} талап кылынат.</>
+                        <>{getActionText()} үчүн каттоо талап кылынат.</>
                     )}
                 </p>
 
                 <div className="space-y-3 pt-2">
-                    {isPublicVideoSignupEnabled ? (
-                        <Button variant="primary" onClick={handleRegister} className="w-full py-3">
-                            Катталуу
-                        </Button>
-                    ) : null}
+                    <Button variant="primary" onClick={handleRegister} className="w-full py-3">
+                        Катталуу
+                    </Button>
 
                     <div className="flex items-center justify-between">
                         <button

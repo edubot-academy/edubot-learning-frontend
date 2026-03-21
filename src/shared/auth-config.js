@@ -1,8 +1,6 @@
-const rawSignupFlag = import.meta.env.VITE_ALLOW_PUBLIC_VIDEO_SIGNUP;
-
-export const isPublicVideoSignupEnabled =
-    rawSignupFlag === 'true' || rawSignupFlag === '1';
+// Always allow public signup - no CRM restrictions
+export const isPublicVideoSignupEnabled = true;
 
 export function getAuthAcquisitionPath() {
-    return isPublicVideoSignupEnabled ? '/register' : '/login';
+    return '/register';
 }
