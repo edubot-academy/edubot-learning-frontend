@@ -30,7 +30,7 @@ Prettier config is checked in (`.prettierrc.json`) to keep formatting consistent
 
 ## Release docs
 
-- Current frontend version: `0.3.0`
+- Current frontend version: `0.3.1`
 - Changelog: `CHANGELOG.md`
 - Leaderboard release notes: `docs/shared/releases/LEADERBOARD_V2_RELEASE_NOTES.md`
 - Shared contracts: `docs/shared/contracts/`

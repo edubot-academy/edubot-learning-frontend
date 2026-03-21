@@ -1455,8 +1455,8 @@ const OverviewTab = ({
 
                 <AchievementCloud
                     items={badgeItems}
-                    title="Жетишкендик белгилери"
-                    subtitle="Окуу ритмиңиз жана сапатыңыз боюнча чогултулган статус белгилер."
+                    title="Жетишкендиктерди бөлүшүү"
+                    subtitle="Сиз ачкан жетишкендиктерди story, post же шилтеме катары бөлүшсөңүз болот."
                     embedded
                     shareMeta={{
                         displayName: student.name,

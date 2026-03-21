@@ -27,16 +27,6 @@ import {
     SkillSpotlightGrid,
 } from './LeaderboardExperience';
 
-const defaultSkillBoards = [
-    { slug: 'html', label: 'HTML' },
-    { slug: 'css', label: 'CSS' },
-    { slug: 'javascript', label: 'JavaScript' },
-    { slug: 'react', label: 'React' },
-    { slug: 'node', label: 'Node.js' },
-    { slug: 'vocab', label: 'Vocabulary' },
-    { slug: 'grammar', label: 'Grammar' },
-];
-
 const tabs = [
     { id: 'overview', label: 'Кыскача' },
     { id: 'weekly', label: 'Апталык рейтинг' },
@@ -69,7 +59,7 @@ const LeaderboardHub = ({ embedded = false, initialTrack = 'all', lockTrack = fa
     const [backendChallenges, setBackendChallenges] = useState(null);
     const [mySkillProgress, setMySkillProgress] = useState([]);
     const [skills, setSkills] = useState({});
-    const [skillBoards, setSkillBoards] = useState(defaultSkillBoards);
+    const [skillBoards, setSkillBoards] = useState([]);
     const [loading, setLoading] = useState(true);
     const [skillBoardsLoading, setSkillBoardsLoading] = useState(true);
 
@@ -115,13 +105,10 @@ const LeaderboardHub = ({ embedded = false, initialTrack = 'all', lockTrack = fa
                           label: skill.name || skill.slug || `Көндүм ${skill.id}`,
                       }))
                 : [];
-            const merged = [
-                ...defaultSkillBoards,
-                ...mapped.filter((item) => !defaultSkillBoards.some((base) => base.slug === item.slug)),
-            ];
-            setSkillBoards(merged);
+            setSkillBoards(mapped);
         } catch (error) {
             console.warn('Skills catalog refresh failed', error);
+            setSkillBoards([]);
         }
     }, []);
 
@@ -159,7 +146,7 @@ const LeaderboardHub = ({ embedded = false, initialTrack = 'all', lockTrack = fa
         if (shouldLoadSkillData) {
             refreshSkillCatalog();
         } else {
-            setSkillBoards(defaultSkillBoards);
+            setSkillBoards([]);
             setSkills({});
             setSkillBoardsLoading(false);
         }
@@ -455,26 +442,35 @@ const LeaderboardHub = ({ embedded = false, initialTrack = 'all', lockTrack = fa
             case 'skills':
                 return (
                     <div className="space-y-6">
-                        <MySkillProgressGrid items={mySkillProgress.slice(0, 6)} embedded={embedded} />
-                        <SkillSpotlightGrid boards={skillBoardCards} personalProgress={mySkillProgress} featuredSlug={normalizedSkillQuery} embedded={embedded} />
-                        <div className="grid gap-6 xl:grid-cols-2">
-                            {skillBoardsLoading ? (
-                                <div className="xl:col-span-2 py-12 flex justify-center">
-                                    <Loader fullScreen={false} />
+                        {skillBoardsLoading ? (
+                            <div className="py-12 flex justify-center">
+                                <Loader fullScreen={false} />
+                            </div>
+                        ) : skillBoardCards.length ? (
+                            <>
+                                <MySkillProgressGrid items={mySkillProgress.slice(0, 6)} embedded={embedded} />
+                                <SkillSpotlightGrid boards={skillBoardCards} personalProgress={mySkillProgress} featuredSlug={normalizedSkillQuery} embedded={embedded} />
+                                <div className="grid gap-6 xl:grid-cols-2">
+                                    {skillBoardCards.slice(0, 4).map((board) => (
+                                        <LeaderboardListCard
+                                            key={board.slug}
+                                            title={`${board.label} рейтинги`}
+                                            description={normalizedSkillQuery && board.slug === normalizedSkillQuery ? `Тандалган багыт: ${board.label}. Жогоруда жеке прогрессиңиз көрүнөт.` : 'Бул багыттагы алдыңкы студенттер. Жогоруда жеке прогрессиңиз көрүнөт.'}
+                                            items={board.items}
+                                            currentUserId={user?.id}
+                                            embedded={embedded}
+                                        />
+                                    ))}
                                 </div>
-                            ) : (
-                                skillBoardCards.slice(0, 4).map((board) => (
-                                    <LeaderboardListCard
-                                        key={board.slug}
-                                        title={`${board.label} рейтинги`}
-                                        description={normalizedSkillQuery && board.slug === normalizedSkillQuery ? `Тандалган багыт: ${board.label}. Жогоруда жеке прогрессиңиз көрүнөт.` : 'Бул багыттагы алдыңкы студенттер. Жогоруда жеке прогрессиңиз көрүнөт.'}
-                                        items={board.items}
-                                        currentUserId={user?.id}
-                                        embedded={embedded}
-                                    />
-                                ))
-                            )}
-                        </div>
+                            </>
+                        ) : (
+                            <div className={embedded ? 'rounded-[28px] border border-gray-100 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-[#222222]' : 'rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_18px_60px_-42px_rgba(15,23,42,0.45)] dark:border-slate-800 dark:bg-[#161b22]'}>
+                                <p className={embedded ? 'text-sm font-semibold uppercase tracking-[0.18em] text-blue-600 dark:text-blue-300' : 'text-sm font-semibold uppercase tracking-[0.18em] text-orange-500'}>Көндүмдөр күтүлүүдө</p>
+                                <p className={embedded ? 'mt-2 text-sm text-gray-500 dark:text-gray-400' : 'mt-2 text-sm text-slate-500 dark:text-slate-300'}>
+                                    Азырынча backend каталогунда көндүмдөр табылган жок. Көндүмдөр кошулганда бул жерде алардын рейтингдери жана жеке прогресс көрүнөт.
+                                </p>
+                            </div>
+                        )}
                     </div>
                 );
             case 'wins':

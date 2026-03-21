@@ -9,8 +9,11 @@ import {
     FiArrowRight,
     FiAward,
     FiBarChart2,
+    FiCamera,
     FiCopy,
     FiDownload,
+    FiFilm,
+    FiGlobe,
     FiLink,
     FiLinkedin,
     FiLoader,
@@ -316,13 +319,13 @@ const ShareOptionButton = ({ icon: Icon, title, description, onClick, disabled, 
         onClick={onClick}
         disabled={disabled}
         className={[
-            'group relative flex min-h-[124px] flex-col overflow-hidden rounded-[24px] border px-4 py-4 text-left transition duration-200 ease-out hover:-translate-y-0.5 hover:shadow-[0_18px_36px_-24px_rgba(15,23,42,0.45)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400 disabled:cursor-not-allowed disabled:opacity-60',
+            'group relative flex min-h-[108px] flex-col overflow-hidden rounded-[20px] border px-3.5 py-3.5 text-left transition duration-200 ease-out hover:-translate-y-0.5 hover:shadow-[0_18px_36px_-24px_rgba(15,23,42,0.45)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400 disabled:cursor-not-allowed disabled:opacity-60',
             accentClassName,
         ].join(' ')}
     >
-        <span className="pointer-events-none absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-white/35 to-transparent opacity-70 transition group-hover:opacity-100 dark:from-white/8" />
+        <span className="pointer-events-none absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-white/35 to-transparent opacity-70 transition group-hover:opacity-100 dark:from-white/8" />
         <div className="relative flex items-start justify-between gap-3">
-            <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-white/85 text-slate-900 shadow-sm ring-1 ring-black/5 transition duration-200 group-hover:scale-105 group-hover:shadow-md dark:bg-slate-950/70 dark:text-white dark:ring-white/10">
+            <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-white/85 text-slate-900 shadow-sm ring-1 ring-black/5 transition duration-200 group-hover:scale-105 group-hover:shadow-md dark:bg-slate-950/70 dark:text-white dark:ring-white/10">
                 <Icon className="text-lg" />
             </span>
             <div className="flex items-center gap-2">
@@ -330,12 +333,12 @@ const ShareOptionButton = ({ icon: Icon, title, description, onClick, disabled, 
                 <FiArrowRight className="mt-0.5 shrink-0 text-slate-400 transition duration-200 group-hover:translate-x-0.5 group-hover:text-slate-700 dark:group-hover:text-slate-200" />
             </div>
         </div>
-        <span className="relative mt-4 text-sm font-semibold text-slate-900 dark:text-white">{title}</span>
+        <span className="relative mt-3 text-sm font-semibold text-slate-900 dark:text-white">{title}</span>
         <span className="relative mt-1 text-xs leading-5 text-slate-600 dark:text-slate-300">{description}</span>
     </button>
 );
 
-const ShareDestinationModal = ({ isOpen, onClose, onAction, isBusy, canNativeShare, title }) => {
+const ShareDestinationModal = ({ isOpen, onClose, onAction, isBusy, canNativeShare, isAuthenticated, title }) => {
     const primaryOptions = [
         {
             id: 'telegram',
@@ -369,22 +372,58 @@ const ShareDestinationModal = ({ isOpen, onClose, onAction, isBusy, canNativeSha
             badge: 'Профиль',
             accentClassName: 'border-indigo-200 bg-indigo-50 hover:border-indigo-300 hover:bg-indigo-100/80 dark:border-indigo-500/20 dark:bg-indigo-500/10 dark:hover:bg-indigo-500/15',
         },
+        {
+            id: 'facebook',
+            icon: FiGlobe,
+            title: 'Facebook',
+            description: 'Жаңы вкладкада бөлүшүү барагын ачат.',
+            badge: 'Пост',
+            accentClassName: 'border-blue-200 bg-blue-50 hover:border-blue-300 hover:bg-blue-100/80 dark:border-blue-500/20 dark:bg-blue-500/10 dark:hover:bg-blue-500/15',
+        },
+        {
+            id: 'instagram',
+            icon: FiCamera,
+            title: 'Instagram',
+            description: 'Колдонмо болсо түз бөлүшүү, болбосо story үчүн PNG.',
+            badge: 'Story',
+            accentClassName: 'border-pink-200 bg-pink-50 hover:border-pink-300 hover:bg-pink-100/80 dark:border-pink-500/20 dark:bg-pink-500/10 dark:hover:bg-pink-500/15',
+        },
+        {
+            id: 'tiktok',
+            icon: FiFilm,
+            title: 'TikTok',
+            description: 'Колдонмо болсо түз бөлүшүү, болбосо post үчүн PNG.',
+            badge: 'Видео',
+            accentClassName: 'border-violet-200 bg-violet-50 hover:border-violet-300 hover:bg-violet-100/80 dark:border-violet-500/20 dark:bg-violet-500/10 dark:hover:bg-violet-500/15',
+        },
     ];
     const utilityOptions = [
+        ...(isAuthenticated
+            ? [
+                  {
+                      id: 'story',
+                      icon: FiCamera,
+                      title: 'Story’ге түз бөлүшүү',
+                      description: 'Телефондо бөлүшүү терезесин ачат, болбосо PNG жүктөйт.',
+                      badge: 'Story',
+                      accentClassName: 'border-rose-200 bg-rose-50 hover:border-rose-300 hover:bg-rose-100/80 dark:border-rose-500/20 dark:bg-rose-500/10 dark:hover:bg-rose-500/15',
+                  },
+              ]
+            : []),
         {
             id: 'copy',
             icon: FiLink,
-            title: 'Шилтемени көчүрүү',
-            description: 'Шилтемени өзүңүз каалаган жерге коюңуз.',
-            badge: 'Кол менен',
+            title: isAuthenticated ? 'Шилтемени көчүрүү' : 'Барак шилтемесин көчүрүү',
+            description: isAuthenticated ? 'Шилтемени өзүңүз каалаган жерге коюңуз.' : 'Жалпы барак шилтемесин өзүңүз каалаган жерге коюңуз.',
+            badge: isAuthenticated ? 'Кол менен' : 'Public',
             accentClassName: 'border-amber-200 bg-amber-50 hover:border-amber-300 hover:bg-amber-100/80 dark:border-amber-500/20 dark:bg-amber-500/10 dark:hover:bg-amber-500/15',
         },
         {
             id: 'download',
             icon: FiDownload,
-            title: 'PNG жүктөп алуу',
-            description: 'Сүрөттү сактап, кол менен тиркеңиз.',
-            badge: 'Файл',
+            title: isAuthenticated ? 'PNG жүктөп алуу' : 'Үлгү PNG жүктөп алуу',
+            description: isAuthenticated ? 'Сүрөттү сактап, кол менен тиркеңиз.' : 'Үлгү картаны сактап, кол менен колдонсоңуз болот.',
+            badge: isAuthenticated ? 'Файл' : 'Үлгү',
             accentClassName: 'border-fuchsia-200 bg-fuchsia-50 hover:border-fuchsia-300 hover:bg-fuchsia-100/80 dark:border-fuchsia-500/20 dark:bg-fuchsia-500/10 dark:hover:bg-fuchsia-500/15',
         },
     ];
@@ -395,41 +434,45 @@ const ShareDestinationModal = ({ isOpen, onClose, onAction, isBusy, canNativeSha
                 <div className="rounded-[28px] border border-slate-200 bg-[linear-gradient(135deg,_rgba(249,115,22,0.12),_rgba(255,255,255,0.96))] p-5 dark:border-slate-700 dark:bg-[linear-gradient(135deg,_rgba(249,115,22,0.18),_rgba(15,23,42,0.94))]">
                     <div className="flex flex-wrap items-start justify-between gap-3">
                         <div className="max-w-xl">
-                            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-orange-600">Жетишкендикти бөлүшүү</p>
+                            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-orange-600">{isAuthenticated ? 'Жетишкендикти бөлүшүү' : 'Үлгү картаны колдонуу'}</p>
                             <h3 className="mt-2 text-xl font-semibold text-slate-900 dark:text-white">{title}</h3>
                             <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
-                                Каналды тандаңыз. Ыкчам жөнөтүү үчүн Telegram/WhatsApp, ал эми сүрөт керек болсо PNG ылайыктуу.
+                                {isAuthenticated
+                                    ? 'Каналды тандаңыз. Ыкчам жөнөтүү үчүн Telegram/WhatsApp, ал эми сүрөт керек болсо PNG ылайыктуу.'
+                                    : 'Сиз кирген жоксуз. Азыр жеке жетишкендик эмес, үлгү карта же жалпы барак шилтемеси гана жеткиликтүү.'}
                             </p>
                         </div>
                         <div className="rounded-2xl border border-white/60 bg-white/70 px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-orange-700 dark:border-slate-700 dark:bg-slate-900/60 dark:text-orange-200">
-                            Ыкчам бөлүшүү
+                            {isAuthenticated ? 'Ыкчам бөлүшүү' : 'Public'}
                         </div>
                     </div>
                 </div>
 
-                <section className="space-y-3">
-                    <div className="flex items-center justify-between gap-3">
-                        <div>
-                            <p className="text-sm font-semibold text-slate-900 dark:text-white">Негизги каналдар</p>
-                            <p className="text-xs text-slate-500 dark:text-slate-300">Эң тез жана табигый бөлүшүү жолдору.</p>
+                {isAuthenticated ? (
+                    <section className="space-y-3">
+                        <div className="flex items-center justify-between gap-3">
+                            <div>
+                                <p className="text-sm font-semibold text-slate-900 dark:text-white">Негизги каналдар</p>
+                                <p className="text-xs text-slate-500 dark:text-slate-300">Эң тез жана табигый бөлүшүү жолдору.</p>
+                            </div>
+                            <span className="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-600 dark:bg-slate-800 dark:text-slate-200">Тез аракет</span>
                         </div>
-                        <span className="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-600 dark:bg-slate-800 dark:text-slate-200">Тез аракет</span>
-                    </div>
-                    <div className="grid gap-3 sm:grid-cols-2">
-                        {primaryOptions.map((option) => (
-                            <ShareOptionButton
-                                key={option.id}
-                                icon={option.icon}
-                                title={option.title}
-                                description={option.description}
-                                badge={option.badge}
-                                accentClassName={option.accentClassName}
-                                disabled={isBusy}
-                                onClick={() => onAction(option.id)}
-                            />
-                        ))}
-                    </div>
-                </section>
+                        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                            {primaryOptions.map((option) => (
+                                <ShareOptionButton
+                                    key={option.id}
+                                    icon={option.icon}
+                                    title={option.title}
+                                    description={option.description}
+                                    badge={option.badge}
+                                    accentClassName={option.accentClassName}
+                                    disabled={isBusy}
+                                    onClick={() => onAction(option.id)}
+                                />
+                            ))}
+                        </div>
+                    </section>
+                ) : null}
 
                 <section className="space-y-3">
                     <div>
@@ -449,7 +492,7 @@ const ShareDestinationModal = ({ isOpen, onClose, onAction, isBusy, canNativeSha
                                 onClick={() => onAction(option.id)}
                             />
                         ))}
-                        {canNativeShare ? (
+                        {canNativeShare && isAuthenticated ? (
                             <ShareOptionButton
                                 icon={FiMoreHorizontal}
                                 title="Башка колдонмолор"
@@ -465,9 +508,11 @@ const ShareDestinationModal = ({ isOpen, onClose, onAction, isBusy, canNativeSha
 
                 <div className="flex flex-col gap-3 rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-4 dark:border-slate-700 dark:bg-slate-900/70 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                        <p className="text-sm font-semibold text-slate-900 dark:text-white">Кеңеш</p>
+                            <p className="text-sm font-semibold text-slate-900 dark:text-white">Кеңеш</p>
                         <p className="text-xs text-slate-600 dark:text-slate-300">
-                            Telegram/WhatsApp тезирээк. Постко сүрөт керек болсо PNG ылайыктуу.
+                            {isAuthenticated
+                                ? 'Story үчүн эң ишенимдүү жол — native share же PNG жүктөп алып колдонмого кол менен жүктөө.'
+                                : 'Жеке жетишкендик шилтемеси жана социалдык бөлүшүү үчүн аккаунтка кирүү керек.'}
                         </p>
                     </div>
                     {isBusy ? (
@@ -502,16 +547,17 @@ export const ShareAchievementButton = ({
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [shareSession, setShareSession] = useState(null);
     const canNativeShare = typeof navigator !== 'undefined' && typeof navigator.share === 'function';
+    const isAuthenticated = typeof window !== 'undefined' && Boolean(window.localStorage.getItem('token'));
 
     const prepareShareSession = async () => {
         if (shareSession?.shareUrl) return shareSession;
 
         const filenameBase = `edubot-${slugifyFilename(title)}`;
         const svgMarkup = createAchievementShareSvg({ title, text, rarity, footer });
-        const hasAuthToken = typeof window !== 'undefined' && Boolean(window.localStorage.getItem('token'));
+        const ownerName = meta?.displayName || meta?.fullName || '';
         let shareUrl = typeof window !== 'undefined' ? window.location.href : footer;
 
-        if (hasAuthToken) {
+        if (isAuthenticated) {
             try {
                 const data = await createLeaderboardShare({
                     title,
@@ -538,10 +584,12 @@ export const ShareAchievementButton = ({
             filenameBase,
             svgMarkup,
             shareUrl,
-            shareText: `${title}
+            shareText: `${isAuthenticated ? (ownerName ? `${ownerName} жетишкендик ачты:` : 'Жетишкендик ачылды:') : 'Public үлгү карта:'}
+${title}
 ${text}
 ${shareUrl}`,
-            socialText: `${title}
+            socialText: `${isAuthenticated ? (ownerName ? `${ownerName} жетишкендик ачты:` : 'Жетишкендик ачылды:') : 'Public үлгү карта:'}
+${title}
 ${text}`,
         };
 
@@ -577,6 +625,21 @@ ${text}`,
         triggerDownload(asset.blob, asset.filename);
         trackShareEvent('download_card', title);
         toast.success('PNG карта жүктөлдү');
+        setIsModalOpen(false);
+    };
+
+    const prepareStoryFallback = async (session, platformLabel) => {
+        const asset = await ensureDownloadable(session);
+        triggerDownload(asset.blob, asset.filename);
+        trackShareEvent(`prepare_${String(platformLabel || 'story').toLowerCase()}`, title);
+        try {
+            if (navigator.clipboard?.writeText) {
+                await navigator.clipboard.writeText(session.shareUrl);
+            }
+        } catch (error) {
+            console.error('Copy failed during story fallback', error);
+        }
+        toast.success(`${platformLabel} үчүн PNG жана шилтеме даяр`);
         setIsModalOpen(false);
     };
 
@@ -625,6 +688,7 @@ ${text}`,
             whatsapp: `https://wa.me/?text=${encodeURIComponent(session.shareText)}`,
             x: `https://twitter.com/intent/tweet?text=${encodeURIComponent(session.socialText)}&url=${encodeURIComponent(session.shareUrl)}`,
             linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(session.shareUrl)}`,
+            facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(session.shareUrl)}`,
         };
 
         const target = intents[platform];
@@ -641,6 +705,22 @@ ${text}`,
         trackShareEvent('action_start', action);
         try {
             const session = await prepareShareSession();
+            if (action === 'story') {
+                if (canNativeShare) {
+                    await runNativeShare(session);
+                } else {
+                    await prepareStoryFallback(session, 'Story');
+                }
+                return;
+            }
+            if (action === 'instagram' || action === 'tiktok') {
+                if (canNativeShare) {
+                    await runNativeShare(session);
+                } else {
+                    await prepareStoryFallback(session, action === 'instagram' ? 'Instagram' : 'TikTok');
+                }
+                return;
+            }
             if (action === 'copy') {
                 await copyLink(session);
                 return;
@@ -689,6 +769,7 @@ ${text}`,
                 onAction={handleAction}
                 isBusy={isSharing}
                 canNativeShare={canNativeShare}
+                isAuthenticated={isAuthenticated}
                 title={title}
             />
         </>
@@ -997,7 +1078,7 @@ export const AchievementCloud = ({ items = [], title = 'Жетишкендикт
                 <p className={embedded ? 'text-sm text-gray-500 dark:text-gray-400' : 'text-sm text-slate-500 dark:text-slate-300'}>{subtitle}</p>
             </div>
         </div>
-        <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+        <div className={embedded ? 'mt-5 grid grid-cols-1 gap-3' : 'mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-3'}>
             {(items.length ? items : [{ title: 'Алгачкы кадам' }, { title: 'Ылдам башталыш' }, { title: 'Тест жаркылыгы' }]).map((item, index) => {
                 const rarityKey = String(item.rarity || (index === 0 ? 'epic' : index < 3 ? 'rare' : 'common')).toLowerCase();
                 const rarityLabel = rarityLabels[rarityKey] || rarityKey.toUpperCase();
@@ -1006,7 +1087,7 @@ export const AchievementCloud = ({ items = [], title = 'Жетишкендикт
                 return (
                     <article
                         key={item.id || item.title || index}
-                        className={embedded ? 'flex h-full min-h-[320px] flex-col rounded-[24px] border border-gray-100 bg-gray-50 p-5 dark:border-gray-800 dark:bg-[#1A1A1A]' : `flex h-full min-h-[320px] flex-col rounded-[24px] border bg-gradient-to-br ${accentSets[index % accentSets.length]} p-5`}
+                        className={embedded ? 'flex w-full min-w-0 flex-col rounded-[24px] border border-gray-100 bg-gray-50 p-5 dark:border-gray-800 dark:bg-[#1A1A1A]' : `flex h-full min-h-[320px] flex-col rounded-[24px] border bg-gradient-to-br ${accentSets[index % accentSets.length]} p-5`}
                     >
                         <div className="flex items-start justify-between gap-3">
                             <span className={embedded ? 'inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-gray-900 shadow-sm dark:bg-gray-900 dark:text-white' : 'inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-white/85 text-slate-900 shadow-sm dark:bg-slate-900/70 dark:text-white'}>
@@ -1016,9 +1097,9 @@ export const AchievementCloud = ({ items = [], title = 'Жетишкендикт
                                 {rarityLabel}
                             </span>
                         </div>
-                        <div className="mt-5 space-y-2">
-                            <p className={embedded ? 'line-clamp-2 text-xl font-semibold leading-tight text-gray-900 dark:text-[#E8ECF3]' : 'line-clamp-2 text-xl font-semibold leading-tight text-slate-900 dark:text-white'}>{shareTitle}</p>
-                            <p className={embedded ? 'line-clamp-3 text-sm leading-6 text-gray-500 dark:text-gray-400' : 'line-clamp-3 text-sm leading-6 text-slate-600 dark:text-slate-300'}>
+                        <div className="mt-5 min-w-0 space-y-2">
+                            <p className={embedded ? 'break-words text-xl font-semibold leading-tight text-gray-900 dark:text-[#E8ECF3]' : 'line-clamp-2 text-xl font-semibold leading-tight text-slate-900 dark:text-white'}>{shareTitle}</p>
+                            <p className={embedded ? 'break-words text-sm leading-6 text-gray-500 dark:text-gray-400' : 'line-clamp-3 text-sm leading-6 text-slate-600 dark:text-slate-300'}>
                                 {shareDescription}
                             </p>
                         </div>
@@ -1038,7 +1119,7 @@ export const AchievementCloud = ({ items = [], title = 'Жетишкендикт
                                 variant="light"
                                 className="w-full"
                                 meta={item.shareMeta || shareMeta}
-                                label="Жеңишти жарыялоо"
+                                label="Бөлүшүү"
                                 fullWidth
                             />
                         </div>

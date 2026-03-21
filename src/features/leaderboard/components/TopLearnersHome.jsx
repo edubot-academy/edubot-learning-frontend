@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { fetchHomepageLeaderboard } from '@services/api';
 import Loader from '@shared/ui/Loader';
 
-const badges = ['🚀 Fast Progress', '⚡ JavaScript Master', '⚛ React Leader'];
+const badges = ['🚀 Fast Progress', '⚡ Quiz Momentum', '🏅 Top Learner'];
 
 const pickBadge = (item, index) => {
     if (item?.progressPercent >= 100) return '⭐ Course Finisher';
@@ -140,7 +140,7 @@ const TopLearnersHome = () => {
                 <p className="text-gray-500">Лидерборд маалыматтары азырынча жок.</p>
             ) : (
                 <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                    {items.map((item, idx) => (
+                    {items.slice(0, 3).map((item, idx) => (
                         <HighlightCard key={item.studentId || idx} item={item} index={idx} />
                     ))}
                 </div>
