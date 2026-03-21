@@ -1,5 +1,5 @@
 import React, { createContext, useState, useEffect } from 'react';
-import { fetchUserProfile } from '@services/api';
+import { fetchUserProfile, logoutUser } from '@services/api';
 
 export const AuthContext = createContext();
 
@@ -17,32 +17,35 @@ export const AuthProvider = ({ children }) => {
     });
 
     useEffect(() => {
-        const token = localStorage.getItem('token');
-        if (token && !user) {
-            loadUserProfile();
-        }
+        loadUserProfile();
     }, []);
 
     const loadUserProfile = async () => {
         try {
-            const response = await fetchUserProfile();
-            setUser(response.data);
-            localStorage.setItem('user', JSON.stringify(response.data));
+            const profile = await fetchUserProfile({ skipAuthRedirect: true });
+            setUser(profile);
+            localStorage.setItem('user', JSON.stringify(profile));
         } catch (error) {
-            console.error('Failed to fetch user profile', error);
+            if (error?.response?.status !== 401) {
+                console.error('Failed to fetch user profile', error);
+            }
             logout(false); // just clear session; don't force redirect on initial load
         }
     };
 
-    const login = (userData, token) => {
+    const login = (userData) => {
         setUser(userData);
-        localStorage.setItem('token', token);
         localStorage.setItem('user', JSON.stringify(userData));
     };
 
-    const logout = (redirect = true) => {
+    const logout = async (redirect = true) => {
+        try {
+            await logoutUser();
+        } catch {
+            // Clear local session even if backend cookie was already missing or expired.
+        }
+
         setUser(null);
-        localStorage.removeItem('token');
         localStorage.removeItem('user');
         localStorage.removeItem('pendingAction');
         if (redirect) {

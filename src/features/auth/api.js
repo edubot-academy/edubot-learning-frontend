@@ -8,10 +8,20 @@ export const registerUser = async (userData) => await api.post('/auth/register',
 
 export const loginUser = async (userData) => await api.post('/auth/login', userData);
 
-export const fetchUserProfile = async () => await api.get('/auth/profile');
+export const logoutUser = async () => {
+    const response = await api.post('/auth/logout');
+    return response.data;
+};
 
-export const updateUserProfile = async (userId, data) =>
-    await api.patch(`/auth/update/${userId}`, data);
+export const fetchUserProfile = async (config = {}) => {
+    const response = await api.get('/auth/profile', config);
+    return response.data;
+};
+
+export const updateUserProfile = async (userId, data) => {
+    const response = await api.patch(`/auth/update/${userId}`, data);
+    return response.data;
+};
 
 export const fetchInstructorProfile = async (userId) => {
     const response = await api.get(`/users/${userId}/instructor-profile`);

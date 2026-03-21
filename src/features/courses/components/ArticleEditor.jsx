@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import DOMPurify from 'dompurify';
 import {
     FaBold,
     FaItalic,
@@ -69,6 +70,11 @@ const ensureUrl = (rawUrl = '') => {
     return `https://${value}`;
 };
 
+const sanitizeEditorHtml = (html = '') =>
+    DOMPurify.sanitize(html, {
+        ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto|tel):|data:image\/)/i,
+    });
+
 const ArticleEditor = ({
     value = '',
     onChange,
@@ -87,8 +93,9 @@ const ArticleEditor = ({
 
     useEffect(() => {
         if (!editorRef.current) return;
-        if (editorRef.current.innerHTML !== value) {
-            editorRef.current.innerHTML = value || '';
+        const sanitizedValue = sanitizeEditorHtml(value || '');
+        if (editorRef.current.innerHTML !== sanitizedValue) {
+            editorRef.current.innerHTML = sanitizedValue;
         }
     }, [value]);
 
@@ -101,7 +108,11 @@ const ArticleEditor = ({
 
     const emitChange = () => {
         if (!onChange || !editorRef.current) return;
-        onChange(editorRef.current.innerHTML);
+        const sanitized = sanitizeEditorHtml(editorRef.current.innerHTML);
+        if (editorRef.current.innerHTML !== sanitized) {
+            editorRef.current.innerHTML = sanitized;
+        }
+        onChange(sanitized);
     };
 
     const refreshActiveFormats = useCallback(() => {

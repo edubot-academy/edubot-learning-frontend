@@ -1531,19 +1531,20 @@ const OfferingsSection = ({ courses, offerings, loading, refreshOfferings }) => 
     const loadOfferingStudents = useCallback(async (offering) => {
         setLoadingEnrollStudents(true);
         try {
-            const courseDetails = await fetchCourseDetails(offering.course.id);
+            const studentResponse = await fetchCourseStudents(offering.course.id, {
+                page: 1,
+                limit: 100,
+            });
             const list =
-                courseDetails?.enrollments
+                studentResponse?.students
                     ?.filter(
-                        (enrollment) =>
-                            (enrollment.offeringId || enrollment.offering?.id) === offering.id &&
-                            enrollment.isActive !== false
+                        (student) => Number(student.offeringId) === Number(offering.id)
                     )
-                    .map((enrollment) => ({
-                        id: enrollment.user?.id || enrollment.userId || enrollment.id,
-                        name: enrollment.user?.fullName || enrollment.user?.email || 'Студент',
-                        email: enrollment.user?.email || '—',
-                        enrolledAt: enrollment.enrolledAt,
+                    .map((student) => ({
+                        id: student.id,
+                        name: student.fullName || student.email || 'Студент',
+                        email: student.email || '—',
+                        enrolledAt: student.enrolledAt,
                     })) || [];
             setEnrollStudents(list);
         } catch (error) {

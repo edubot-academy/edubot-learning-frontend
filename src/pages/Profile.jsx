@@ -10,6 +10,10 @@ import {
 } from '@services/api';
 import PhoneInput from '@shared/ui/forms/PhoneInput';
 import Loader from '@shared/ui/Loader';
+import {
+    isForbiddenError,
+    parseApiError,
+} from '@shared/api/error';
 
 const SOCIAL_LINK_FIELDS = ['website', 'twitter', 'linkedin', 'instagram', 'youtube', 'facebook'];
 const SOCIAL_LABELS = {
@@ -206,8 +210,7 @@ const ProfilePage = () => {
 
         const loadProfile = async () => {
             try {
-                const response = await fetchUserProfile();
-                const data = response.data;
+                const data = await fetchUserProfile();
                 setFormData({
                     fullName: data.fullName || '',
                     avatar: null,
@@ -310,13 +313,17 @@ const ProfilePage = () => {
             }
 
             const updated = await updateUserProfile(user.id, form);
-            setUser(updated.data.user);
+            setUser(updated.user);
             toast.success('Профиль ийгиликтүү жаңыртылды');
             setIsEditing(false);
             setPasswordData({ newPassword: '', confirmPassword: '' });
         } catch (err) {
             console.error(err);
-            toast.error('Профилди жаңыртуу мүмкүн болбоду');
+            if (isForbiddenError(err)) {
+                navigate('/unauthorized');
+                return;
+            }
+            toast.error(parseApiError(err, 'Профилди жаңыртуу мүмкүн болбоду').message);
         }
     };
 

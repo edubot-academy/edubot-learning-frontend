@@ -13,33 +13,29 @@ const api = axios.create({
 export const clean = (obj) =>
     Object.fromEntries(Object.entries(obj).filter(([, v]) => v !== undefined && v !== null));
 
-const isTokenExpired = (token) => {
-    if (!token) return true;
-
-    try {
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        const expiryTime = payload.exp * 1000;
-        const currentTime = Date.now();
-        return currentTime >= expiryTime;
-    } catch (error) {
-        console.error('Error checking token expiration:', error);
-        return true;
+const getCookieValue = (name) => {
+    if (typeof document === 'undefined') {
+        return null;
     }
+
+    const cookie = document.cookie
+        .split(';')
+        .map((chunk) => chunk.trim())
+        .find((chunk) => chunk.startsWith(`${name}=`));
+
+    return cookie ? decodeURIComponent(cookie.slice(name.length + 1)) : null;
 };
 
 api.interceptors.request.use(
     (config) => {
-        const token = localStorage.getItem('token');
-
-        if (token) {
-            if (!config.headers) config.headers = {};
-            config.headers['Authorization'] = `Bearer ${token}`;
-
-            if (isTokenExpired(token)) {
-                localStorage.removeItem('token');
-                localStorage.removeItem('user');
-                window.location.href = '/login';
-                return Promise.reject('Token expired');
+        const method = String(config.method || 'get').toUpperCase();
+        if (!['GET', 'HEAD', 'OPTIONS'].includes(method)) {
+            const csrfToken = getCookieValue('edubot_csrf_token');
+            if (csrfToken) {
+                if (!config.headers) {
+                    config.headers = {};
+                }
+                config.headers['X-CSRF-Token'] = csrfToken;
             }
         }
 
@@ -50,6 +46,24 @@ api.interceptors.request.use(
         return config;
     },
     (error) => Promise.reject(error)
+);
+
+api.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        const shouldSkipAuthRedirect = Boolean(error?.config?.skipAuthRedirect);
+
+        if (error?.response?.status === 401) {
+            localStorage.removeItem('user');
+            localStorage.removeItem('pendingAction');
+
+            if (!shouldSkipAuthRedirect && window.location.pathname !== '/login') {
+                window.location.href = '/login';
+            }
+        }
+
+        return Promise.reject(error);
+    }
 );
 
 export { api };

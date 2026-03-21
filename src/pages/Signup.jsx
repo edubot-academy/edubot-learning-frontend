@@ -178,8 +178,8 @@ const SignupPage = () => {
                 phoneNumber: formData.phoneNumber || undefined,
             });
 
-            const { access_token, user } = response.data;
-            login(user, access_token);
+            const { user } = response.data;
+            login(user);
 
             await executePendingAction();
 

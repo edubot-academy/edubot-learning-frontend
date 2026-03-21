@@ -1,6 +1,42 @@
 # Changelog
 
-## 0.3.1 - 2026-03-22
+## [0.4.0] - 2025-03-22
+
+### 🛡️ SECURITY
+- **Medium**: Updated all vulnerable dependencies to secure versions
+- **Medium**: Fixed 29 security vulnerabilities (0 remaining)
+- **Low**: Enhanced API parameter validation for enrollment checks
+
+### 🔧 IMPROVEMENTS
+- **API Integration**: 
+  - Enhanced parameter type conversion for backend compatibility
+  - Improved error handling for API requests
+  - Added proper integer parsing for courseId and userId parameters
+- **Security**: 
+  - All frontend dependencies updated to latest secure versions
+  - Zero remaining security vulnerabilities
+- **Developer Experience**: 
+  - Cleaned up debugging code from production
+  - Improved error logging consistency
+
+### 🐛 BUG FIXES
+- Fixed enrollment check API parameter validation (courseId/userId integer conversion)
+- Resolved 400 Bad Request errors for enrollment status checks
+- Added proper integer parsing in API calls to prevent backend validation errors
+- Removed debugging console.log statements from production code
+
+### 📦 DEPENDENCIES
+- **Security Updates**: All vulnerable packages updated to secure versions
+- **Vulnerability Status**: 0 remaining vulnerabilities (was 29)
+- **Package Health**: All dependencies now meet security standards
+
+### ⚠️ BREAKING CHANGES
+- API calls now properly convert string parameters to integers
+- Enrollment check functionality requires proper user authentication
+
+---
+
+## [0.3.1] - 2026-03-22
 
 ### Changed
 - Student dashboard leaderboard visuals now use an embedded variant aligned with the dashboard shell instead of the public leaderboard styling.

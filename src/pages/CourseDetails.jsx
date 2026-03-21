@@ -34,6 +34,7 @@ import InstructorChat from '@features/instructorChat/InstructorChat';
 import CourseHeader from '@features/courses/components/CourseHeader';
 import { HiChatAlt2 } from 'react-icons/hi';
 import Loader from '@shared/ui/Loader';
+import { isForbiddenError, parseApiError } from '@shared/api/error';
 
 const CHALLENGE_STORAGE_PREFIX = 'lessonChallengeState';
 
@@ -157,6 +158,40 @@ const CourseDetailsPage = () => {
         activeLessonRef.current = activeLesson;
     }, [activeLesson]);
 
+    const applyEnrollmentState = useCallback((isEnrolled) => {
+        setEnrolled(isEnrolled);
+        setSections((prevSections) =>
+            prevSections.map((section) => ({
+                ...section,
+                lessons: (section.lessons || []).map((lesson) => ({
+                    ...lesson,
+                    locked: !isEnrolled && !lesson.previewVideo,
+                })),
+            }))
+        );
+        setActiveLesson((prevLesson) =>
+            prevLesson
+                ? {
+                    ...prevLesson,
+                    locked: !isEnrolled && !prevLesson.previewVideo,
+                }
+                : prevLesson
+        );
+        if (!isEnrolled) {
+            setResumeVideoTime(0);
+            setLastViewedLessonId(null);
+            setActiveTab('program');
+        }
+    }, []);
+
+    const handleEnrollmentAccessError = useCallback((err, fallbackMessage) => {
+        if (!isForbiddenError(err)) return false;
+        const { message } = parseApiError(err, fallbackMessage);
+        applyEnrollmentState(false);
+        toast.error(message || fallbackMessage);
+        return true;
+    }, [applyEnrollmentState]);
+
     const scrollToLesson = (lessonId) => {
         if (!shouldScrollToLesson) return;
 
@@ -190,6 +225,14 @@ const CourseDetailsPage = () => {
                     setCompletedLessons((prev) => [...new Set([...prev, activeLesson.id])]);
                 }
             } catch (err) {
+                if (
+                    handleEnrollmentAccessError(
+                        err,
+                        'Бул сабакты белгилөө үчүн курска активдүү жеткиликтүүлүк керек.'
+                    )
+                ) {
+                    return;
+                }
                 console.error('Failed to auto-complete article', err);
             }
         }, 30000);
@@ -209,10 +252,20 @@ const CourseDetailsPage = () => {
                     courseId: Number(id),
                     lessonId: activeLessonRef.current.id,
                     time,
+                }).catch((err) => {
+                    if (
+                        handleEnrollmentAccessError(
+                            err,
+                            'Видеонун жүрүшүн сактоо үчүн курска активдүү жеткиликтүүлүк керек.'
+                        )
+                    ) {
+                        return;
+                    }
+                    console.error('Failed to persist video time', err);
                 });
             }
         }, 3000),
-        [id, user, enrolled]
+        [id, user, enrolled, handleEnrollmentAccessError]
     );
 
     const handleTimeUpdate = async (time) => {
@@ -266,7 +319,21 @@ const CourseDetailsPage = () => {
         if (currentTime < duration * 0.9) return;
 
         if (user && enrolled && activeLessonRef.current?.kind === 'video') {
-            updateVideoTime(user.id, activeLessonRef.current.id, currentTime);
+            updateVideoTime({
+                courseId: Number(id),
+                lessonId: activeLessonRef.current.id,
+                time: currentTime,
+            }).catch((err) => {
+                if (
+                    handleEnrollmentAccessError(
+                        err,
+                        'Видеонун жүрүшүн сактоо үчүн курска активдүү жеткиликтүүлүк керек.'
+                    )
+                ) {
+                    return;
+                }
+                console.error('Failed to persist paused video time', err);
+            });
         }
     };
 
@@ -295,6 +362,14 @@ const CourseDetailsPage = () => {
             setLessonQuizData((prev) => ({ ...prev, [lesson.id]: quiz }));
             setLessonQuizAnswers((prev) => ({ ...prev, [lesson.id]: {} }));
         } catch (err) {
+            if (
+                handleEnrollmentAccessError(
+                    err,
+                    'Квизге жетүү үчүн курска активдүү жеткиликтүүлүк керек.'
+                )
+            ) {
+                return;
+            }
             console.error(err);
             const message = err.response?.data?.message || 'Квиз жүктөлбөй калды';
             toast.error(message);
@@ -328,6 +403,14 @@ const CourseDetailsPage = () => {
 
             return challenge;
         } catch (err) {
+            if (
+                handleEnrollmentAccessError(
+                    err,
+                    'Код тапшырмага жетүү үчүн курска активдүү жеткиликтүүлүк керек.'
+                )
+            ) {
+                return null;
+            }
             console.error(err);
             const message = err.response?.data?.message || 'Код тапшырма жүктөлбөй калды';
             toast.error(message);
@@ -370,21 +453,33 @@ const CourseDetailsPage = () => {
         }
 
         if (user && enrolled && !lesson.locked) {
-            await updateLastViewedLesson({ courseId: Number(id), lessonId: lesson.id });
-            if (!isArticle && !isQuiz && !isCode) {
-                const videoTime = await getVideoTime(id, lesson.id);
+            try {
+                await updateLastViewedLesson({ courseId: Number(id), lessonId: lesson.id });
+                if (!isArticle && !isQuiz && !isCode) {
+                    const videoTime = await getVideoTime(id, lesson.id);
 
-                if (
-                    videoTime?.time &&
-                    videoTime.time < (lesson.duration || 9999) * 0.95 &&
-                    !completedLessons.includes(lesson.id)
-                ) {
-                    setResumeVideoTime(videoTime.time);
+                    if (
+                        videoTime?.time &&
+                        videoTime.time < (lesson.duration || 9999) * 0.95 &&
+                        !completedLessons.includes(lesson.id)
+                    ) {
+                        setResumeVideoTime(videoTime.time);
+                    } else {
+                        setResumeVideoTime(0);
+                    }
                 } else {
                     setResumeVideoTime(0);
                 }
-            } else {
-                setResumeVideoTime(0);
+            } catch (err) {
+                if (
+                    handleEnrollmentAccessError(
+                        err,
+                        'Бул сабакты улантуу үчүн курска активдүү жеткиликтүүлүк керек.'
+                    )
+                ) {
+                    return;
+                }
+                throw err;
             }
         } else {
             setResumeVideoTime(0);
@@ -525,6 +620,14 @@ const CourseDetailsPage = () => {
             );
             setCompletedLessons((prev) => [...new Set([...prev, activeLesson.id])]);
         } catch (err) {
+            if (
+                handleEnrollmentAccessError(
+                    err,
+                    'Квизди тапшыруу үчүн курска активдүү жеткиликтүүлүк керек.'
+                )
+            ) {
+                return;
+            }
             console.error(err);
             toast.error(err.response?.data?.message || 'Квизди тапшыруу мүмкүн болбоду');
         } finally {
@@ -566,6 +669,14 @@ const CourseDetailsPage = () => {
             toast.success(result.passed ? 'Бардык тесттер өттү!' : 'Кээ бир тесттер өтпөй калды');
             setCompletedLessons((prev) => [...new Set([...prev, activeLesson.id])]);
         } catch (err) {
+            if (
+                handleEnrollmentAccessError(
+                    err,
+                    'Код тапшырманы тапшыруу үчүн курска активдүү жеткиликтүүлүк керек.'
+                )
+            ) {
+                return;
+            }
             console.error(err);
             toast.error(err.response?.data?.message || 'Код тапшырма текшерилген жок');
         } finally {
@@ -600,6 +711,16 @@ const CourseDetailsPage = () => {
                 if (resp.completed) {
                     setCompletedLessons((prev) => [...new Set([...prev, activeLesson.id])]);
                 }
+            } catch (err) {
+                if (
+                    handleEnrollmentAccessError(
+                        err,
+                        'Сабакты аяктоо үчүн курска активдүү жеткиликтүүлүк керек.'
+                    )
+                ) {
+                    return;
+                }
+                throw err;
             } finally {
                 markingCompleteRef.current = false;
             }
@@ -618,21 +739,33 @@ const CourseDetailsPage = () => {
 
     const handleCheckboxToggle = async (lesson) => {
         if (!enrolled) return;
-        const response = await markLessonComplete(id, lesson.sectionId, lesson.id);
-        if (response.completed) {
-            setCompletedLessons((prev) => [...new Set([...prev, lesson.id])]);
-        } else {
-            if (lesson.kind === 'video') {
-                await updateVideoTime({
-                    courseId: Number(id),
-                    lessonId: lesson.id,
-                    time: 0,
-                });
+        try {
+            const response = await markLessonComplete(id, lesson.sectionId, lesson.id);
+            if (response.completed) {
+                setCompletedLessons((prev) => [...new Set([...prev, lesson.id])]);
+            } else {
+                if (lesson.kind === 'video') {
+                    await updateVideoTime({
+                        courseId: Number(id),
+                        lessonId: lesson.id,
+                        time: 0,
+                    });
+                }
+                if (activeLesson?.id === lesson.id) {
+                    setResumeVideoTime(0);
+                }
+                setCompletedLessons((prev) => prev.filter((lId) => lId !== lesson.id));
             }
-            if (activeLesson?.id === lesson.id) {
-                setResumeVideoTime(0);
+        } catch (err) {
+            if (
+                handleEnrollmentAccessError(
+                    err,
+                    'Сабактын прогрессин өзгөртүү үчүн курска активдүү жеткиликтүүлүк керек.'
+                )
+            ) {
+                return;
             }
-            setCompletedLessons((prev) => prev.filter((lId) => lId !== lesson.id));
+            throw err;
         }
     };
 
@@ -655,7 +788,7 @@ const CourseDetailsPage = () => {
                         enrollment = { enrolled: true };
                     }
                 }
-                setEnrolled(enrollment.enrolled);
+                applyEnrollmentState(enrollment.enrolled);
 
                 const data = await fetchCourseDetails(id);
 
@@ -680,9 +813,21 @@ const CourseDetailsPage = () => {
                 setSections(updatedSections.sort((a, b) => a.order - b.order));
 
                 if (enrollment.enrolled && user) {
-                    const progress = await fetchUserProgress(id);
-                    const completed = progress.completedLessonIds || [];
-                    setCompletedLessons(completed);
+                    try {
+                        const progress = await fetchUserProgress(id);
+                        const completed = progress.completedLessonIds || [];
+                        setCompletedLessons(completed);
+                    } catch (err) {
+                        if (
+                            !handleEnrollmentAccessError(
+                                err,
+                                'Курстун прогрессин көрүү үчүн активдүү жеткиликтүүлүк керек.'
+                            )
+                        ) {
+                            throw err;
+                        }
+                        enrollment = { enrolled: false };
+                    }
                 }
 
                 let lastLesson = null;
@@ -701,18 +846,30 @@ const CourseDetailsPage = () => {
                 }
 
                 if (!lastLesson && user && enrollment.enrolled) {
-                    const lastViewed = await getLastViewedLesson(id);
-                    if (lastViewed?.lessonId) {
-                        setLastViewedLessonId(lastViewed.lessonId);
-                        for (let sec of updatedSections) {
-                            for (let lesson of sec.lessons || []) {
-                                if (lesson.id === lastViewed.lessonId) {
-                                    lastLesson = lesson;
-                                    break;
+                    try {
+                        const lastViewed = await getLastViewedLesson(id);
+                        if (lastViewed?.lessonId) {
+                            setLastViewedLessonId(lastViewed.lessonId);
+                            for (let sec of updatedSections) {
+                                for (let lesson of sec.lessons || []) {
+                                    if (lesson.id === lastViewed.lessonId) {
+                                        lastLesson = lesson;
+                                        break;
+                                    }
                                 }
+                                if (lastLesson) break;
                             }
-                            if (lastLesson) break;
                         }
+                    } catch (err) {
+                        if (
+                            !handleEnrollmentAccessError(
+                                err,
+                                'Соңку көрүлгөн сабакты алуу үчүн активдүү жеткиликтүүлүк керек.'
+                            )
+                        ) {
+                            throw err;
+                        }
+                        enrollment = { enrolled: false };
                     }
                 }
 
@@ -753,14 +910,25 @@ const CourseDetailsPage = () => {
                         ) {
                             setResumeVideoTime(0);
                         } else {
-                            const videoTime = await getVideoTime(id, lastLesson.id);
-                            if (
-                                videoTime?.time &&
-                                videoTime.time < 0.95 * (lastLesson.duration || 9999)
-                            ) {
-                                setResumeVideoTime(videoTime.time);
-                            } else {
-                                setResumeVideoTime(0);
+                            try {
+                                const videoTime = await getVideoTime(id, lastLesson.id);
+                                if (
+                                    videoTime?.time &&
+                                    videoTime.time < 0.95 * (lastLesson.duration || 9999)
+                                ) {
+                                    setResumeVideoTime(videoTime.time);
+                                } else {
+                                    setResumeVideoTime(0);
+                                }
+                            } catch (err) {
+                                if (
+                                    !handleEnrollmentAccessError(
+                                        err,
+                                        'Видеону улантуу үчүн активдүү жеткиликтүүлүк керек.'
+                                    )
+                                ) {
+                                    throw err;
+                                }
                             }
                         }
                     } else {
@@ -782,7 +950,7 @@ const CourseDetailsPage = () => {
             }
         };
         fetchCourse();
-    }, [id, user]);
+    }, [id, user, applyEnrollmentState, handleEnrollmentAccessError]);
     /* eslint-enable react-hooks/exhaustive-deps */
 
     if (loading) return <Loader fullScreen />;

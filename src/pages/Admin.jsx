@@ -50,6 +50,7 @@ import Loader from '@shared/ui/Loader';
 import IntegrationTab from '@features/integration/components/IntegrationTab';
 import AttendancePage from './Attendance';
 import AdminAnalyticsPage from './AdminAnalytics';
+import { isForbiddenError, parseApiError } from '@shared/api/error';
 
 const ADMIN_TABS = [
     'stats',
@@ -150,6 +151,15 @@ const AdminPanel = () => {
         return ADMIN_TABS.includes(tabFromUrl) ? tabFromUrl : 'stats';
     }); // stats | users | courses | contacts | pending | companies | skills | ai-prompts | notifications | integration
 
+    const handleProtectedError = useCallback((error, fallbackMessage) => {
+        if (isForbiddenError(error)) {
+            window.location.href = '/unauthorized';
+            return;
+        }
+
+        toast.error(parseApiError(error, fallbackMessage).message);
+    }, []);
+
     const NAV_ITEMS = [
         { id: 'stats', label: 'Статистика', icon: FiBarChart2 },
         { id: 'users', label: 'Колдонуучулар', icon: FiUsers },
@@ -206,12 +216,12 @@ const AdminPanel = () => {
             setAdminStats(data || {});
         } catch (error) {
             console.error('Failed to fetch admin stats:', error);
-            toast.error('Статистика жүктөлгөн жок.');
+            handleProtectedError(error, 'Статистика жүктөлгөн жок.');
         } finally {
             setAdminStatsLoading(false);
             setAdminStatsLoaded(true);
         }
-    }, []);
+    }, [handleProtectedError]);
 
     const loadCoursesAndCategories = useCallback(async () => {
         try {
@@ -221,9 +231,9 @@ const AdminPanel = () => {
             setCategories(categoriesRes);
         } catch (error) {
             console.error('Failed to fetch courses/categories:', error);
-            toast.error('Курстар/категорияларды жүктөө катасы.');
+            handleProtectedError(error, 'Курстар/категорияларды жүктөө катасы.');
         }
-    }, []);
+    }, [handleProtectedError]);
 
     const loadContacts = useCallback(async () => {
         try {
@@ -231,9 +241,9 @@ const AdminPanel = () => {
             setContacts(res);
         } catch (error) {
             console.error(error);
-            toast.error('Байланыш каттарын жүктөө катасы.');
+            handleProtectedError(error, 'Байланыш каттарын жүктөө катасы.');
         }
-    }, []);
+    }, [handleProtectedError]);
 
     const loadUsers = useCallback(async () => {
         const key = JSON.stringify({

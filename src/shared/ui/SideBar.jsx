@@ -15,7 +15,7 @@ import { BsCart2 } from "react-icons/bs";
 import { FiBarChart2 } from 'react-icons/fi';
 
 const SideBar = ({ setMenuOpen, setPosition }) => {
-    const { user, setUser } = useContext(AuthContext);
+    const { user, logout } = useContext(AuthContext);
     const location = useLocation();
     const navigate = useNavigate();
 
@@ -68,12 +68,6 @@ const SideBar = ({ setMenuOpen, setPosition }) => {
         }
     };
 
-    const logout = () => {
-        setUser(null);
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        window.location.href = '/login';
-    };
     return (
         <>
             <div className="flex justify-end mt-5 mr-2 ">

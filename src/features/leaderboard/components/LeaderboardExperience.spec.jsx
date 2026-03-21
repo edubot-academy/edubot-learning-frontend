@@ -24,10 +24,12 @@ vi.mock('react-hot-toast', () => ({
 
 describe('ShareAchievementButton', () => {
     let openMock;
+    let clipboardWriteTextMock;
 
     beforeEach(() => {
         vi.clearAllMocks();
         openMock = vi.fn(() => ({}));
+        clipboardWriteTextMock = vi.fn().mockResolvedValue(undefined);
         createLeaderboardShare.mockResolvedValue({
             token: 'share-token',
             publicUrl: 'https://api.edubot.test/leaderboard/share/public/share-token',
@@ -45,6 +47,12 @@ describe('ShareAchievementButton', () => {
             configurable: true,
             value: undefined,
         });
+        Object.defineProperty(navigator, 'clipboard', {
+            configurable: true,
+            value: {
+                writeText: clipboardWriteTextMock,
+            },
+        });
     });
 
     it('opens a share modal with explicit social targets', async () => {
@@ -54,10 +62,8 @@ describe('ShareAchievementButton', () => {
         await user.click(screen.getByRole('button', { name: /бөлүшүү картасы/i }));
 
         expect(screen.getByRole('dialog')).toBeInTheDocument();
-        expect(screen.getByRole('button', { name: /telegram/i })).toBeInTheDocument();
-        expect(screen.getByRole('button', { name: /whatsapp/i })).toBeInTheDocument();
-        expect(screen.getByRole('button', { name: /шилтемени көчүрүү/i })).toBeInTheDocument();
-        expect(screen.getByRole('button', { name: /png жүктөп алуу/i })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /барак шилтемесин көчүрүү/i })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /үлгү png жүктөп алуу/i })).toBeInTheDocument();
     });
 
     it('uses current public page url for unauthenticated share', async () => {
@@ -65,20 +71,19 @@ describe('ShareAchievementButton', () => {
         render(<ShareAchievementButton title="React Hero" text="7 күн серия" />);
 
         await user.click(screen.getByRole('button', { name: /бөлүшүү картасы/i }));
-        await user.click(screen.getByRole('button', { name: /telegram/i }));
+        await user.click(screen.getByRole('button', { name: /барак шилтемесин көчүрүү/i }));
 
         expect(createLeaderboardShare).not.toHaveBeenCalled();
         await waitFor(() => {
-            expect(openMock).toHaveBeenCalledWith(
-                expect.stringContaining(encodeURIComponent(window.location.href)),
-                '_blank',
-                'noopener,noreferrer'
-            );
+            expect(toast.success).toHaveBeenCalledWith('Шилтеме көчүрүлдү');
         });
     });
 
     it('opens a Telegram share intent with the canonical public share url', async () => {
-        window.localStorage.setItem('token', 'demo-token');
+        window.localStorage.setItem(
+            'user',
+            JSON.stringify({ id: 1, fullName: 'Demo User', role: 'student' })
+        );
         const user = userEvent.setup();
         render(<ShareAchievementButton title="React Hero" text="7 күн серия" meta={{ rank: 3 }} />);
 

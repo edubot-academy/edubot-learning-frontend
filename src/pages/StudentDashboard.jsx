@@ -835,12 +835,13 @@ const StudentDashboard = () => {
                 if (newPassword) form.append('password', newPassword);
 
                 const updated = await updateUserProfile(studentId, form);
+                const nextUser = updated?.user || {};
 
                 setProfileData((prev) => ({
                     ...(prev || {}),
-                    ...(updated || {}),
-                    fullName: updated?.fullName || fullName,
-                    phoneNumber: updated?.phoneNumber || phoneNumber,
+                    ...nextUser,
+                    fullName: nextUser.fullName || fullName,
+                    phoneNumber: nextUser.phoneNumber || phoneNumber,
                 }));
 
                 try {
@@ -850,9 +851,9 @@ const StudentDashboard = () => {
                         'user',
                         JSON.stringify({
                             ...stored,
-                            ...(updated || {}),
-                            fullName: updated?.fullName || fullName,
-                            phoneNumber: updated?.phoneNumber || phoneNumber,
+                            ...nextUser,
+                            fullName: nextUser.fullName || fullName,
+                            phoneNumber: nextUser.phoneNumber || phoneNumber,
                         })
                     );
                 } catch {

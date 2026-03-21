@@ -5,8 +5,8 @@ export const enrollUserInCourse = async (userId, courseId, options = {}) => {
     const { discountPercentage, offeringId } = options || {};
     try {
         const response = await api.post('/enrollments/enroll', {
-            userId,
-            courseId,
+            userId: parseInt(userId, 10),
+            courseId: parseInt(courseId, 10),
             discountPercentage,
             offeringId,
         });
@@ -22,7 +22,7 @@ export const enrollUserInCourse = async (userId, courseId, options = {}) => {
 
 export const unenrollUserFromCourse = async (userId, courseId) => {
     try {
-        const response = await api.delete(`/enrollments/${courseId}/unenroll/${userId}`);
+        const response = await api.delete(`/enrollments/${parseInt(courseId, 10)}/unenroll/${parseInt(userId, 10)}`);
         return response.data;
     } catch (error) {
         console.error('Error enrolling user:', error);
@@ -33,9 +33,8 @@ export const unenrollUserFromCourse = async (userId, courseId) => {
 
 export const fetchEnrollment = async (courseId, userId) => {
     try {
-        const params = { courseId };
-        if (userId) params.userId = userId;
-
+        const params = { courseId: parseInt(courseId, 10) };
+        if (userId) params.userId = parseInt(userId, 10);
         const response = await api.get('/enrollments/check', { params });
         return response.data;
     } catch (error) {
@@ -47,8 +46,8 @@ export const fetchEnrollment = async (courseId, userId) => {
 export const checkEnrollments = async (courseIds, userIds = []) => {
     try {
         const response = await api.post('/enrollments/bulk-check', {
-            courseIds,
-            userIds,
+            courseIds: courseIds.map(id => parseInt(id, 10)),
+            userIds: userIds.map(id => parseInt(id, 10)),
         });
         return response.data;
     } catch (error) {

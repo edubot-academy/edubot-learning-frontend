@@ -547,7 +547,7 @@ export const ShareAchievementButton = ({
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [shareSession, setShareSession] = useState(null);
     const canNativeShare = typeof navigator !== 'undefined' && typeof navigator.share === 'function';
-    const isAuthenticated = typeof window !== 'undefined' && Boolean(window.localStorage.getItem('token'));
+    const isAuthenticated = typeof window !== 'undefined' && Boolean(window.localStorage.getItem('user'));
 
     const prepareShareSession = async () => {
         if (shareSession?.shareUrl) return shareSession;

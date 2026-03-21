@@ -46,6 +46,7 @@ import LessonCardHeader from '@features/courses/components/LessonCardHeader';
 import LessonMetaFields from '@features/courses/components/LessonMetaFields';
 import LessonAssetsPanel from '@features/courses/components/LessonAssetsPanel';
 import { minutesInputToSeconds, secondsToMinutesInput } from '@utils/timeUtils';
+import { isForbiddenError, parseApiError } from '@shared/api/error';
 
 const EditInstructorCourse = () => {
     const { id } = useParams();
@@ -232,7 +233,11 @@ const EditInstructorCourse = () => {
                 dirtyLessonIdsRef.current.clear();
             } catch (err) {
                 console.error(err);
-                toast.error('Маалыматты жүктөө катасы');
+                if (isForbiddenError(err)) {
+                    navigate('/unauthorized');
+                    return;
+                }
+                toast.error(parseApiError(err, 'Маалыматты жүктөө катасы').message);
             } finally {
                 setLoading(false);
             }
@@ -856,7 +861,11 @@ const EditInstructorCourse = () => {
             setStep(3);
         } catch (err) {
             console.error(err);
-            toast.error('Мазмунду сактоодо ката кетти.');
+            if (isForbiddenError(err)) {
+                navigate('/unauthorized');
+                return;
+            }
+            toast.error(parseApiError(err, 'Мазмунду сактоодо ката кетти.').message);
         } finally {
             setSaving(false);
         }
@@ -869,7 +878,11 @@ const EditInstructorCourse = () => {
             navigate('/instructor/courses');
         } catch (err) {
             console.error(err);
-            toast.error('Курс жөнөтүлбөй калды');
+            if (isForbiddenError(err)) {
+                navigate('/unauthorized');
+                return;
+            }
+            toast.error(parseApiError(err, 'Курс жөнөтүлбөй калды').message);
         }
     };
 

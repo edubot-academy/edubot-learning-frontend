@@ -35,6 +35,7 @@ import LessonCardHeader from '@features/courses/components/LessonCardHeader';
 import LessonMetaFields from '@features/courses/components/LessonMetaFields';
 import LessonAssetsPanel from '@features/courses/components/LessonAssetsPanel';
 import { minutesInputToSeconds, secondsToMinutesInput } from '@utils/timeUtils';
+import { isForbiddenError, parseApiError } from '@shared/api/error';
 
 const DEFAULT_COURSE_INFO = {
     title: '',
@@ -137,7 +138,11 @@ const CourseBuilder = () => {
                 }
             } catch (error) {
                 console.error('Failed to load categories', error);
-                toast.error('Маалымат жүктөлбөдү');
+                if (isForbiddenError(error)) {
+                    navigate('/unauthorized');
+                    return;
+                }
+                toast.error(parseApiError(error, 'Маалымат жүктөлбөдү').message);
             }
         };
         fetchData();
@@ -639,7 +644,11 @@ const CourseBuilder = () => {
             setStep(3);
         } catch (err) {
             console.error(err);
-            toast.error('Мазмунду сактоодо ката кетти.');
+            if (isForbiddenError(err)) {
+                navigate('/unauthorized');
+                return;
+            }
+            toast.error(parseApiError(err, 'Мазмунду сактоодо ката кетти.').message);
         }
     };
 
@@ -663,7 +672,11 @@ const CourseBuilder = () => {
             navigate('/instructor/courses');
         } catch (error) {
             console.error('Failed to submit for approval', error);
-            toast.error('Жөнөтүүдө ката кетти');
+            if (isForbiddenError(error)) {
+                navigate('/unauthorized');
+                return;
+            }
+            toast.error(parseApiError(error, 'Жөнөтүүдө ката кетти').message);
         }
     };
 
