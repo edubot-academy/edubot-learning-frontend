@@ -448,6 +448,11 @@ const StudentDashboard = () => {
     }, [studentId]);
 
     useEffect(() => {
+        const tabFromUrl = searchParams.get('tab') || 'overview';
+        setActiveTab((prev) => (tabFromUrl !== prev ? tabFromUrl : prev));
+    }, [searchParams]);
+
+    useEffect(() => {
         if (!studentId) return;
         setSearchParams((prev) => {
             const next = new URLSearchParams(prev);
@@ -1015,13 +1020,24 @@ const StudentDashboard = () => {
         }
     };
     const navigate = useNavigate();
+    const handleDashboardNavSelect = useCallback(
+        (id) => {
+            if (id === 'chat') {
+                navigate('/chat');
+                return;
+            }
+            setActiveTab(id);
+        },
+        [navigate]
+    );
+
     return (
         <div className="pt-24 min-h-screen bg-gray-50 dark:bg-[#1A1A1A] transition-colors duration-200 min-w-0 break-words">
             <div className="max-w-7xl mx-auto flex flex-col lg:flex-row gap-6 px-4 pb-12">
                 <div
                     className={`
     ${sidebarOpen ? 'lg:w-64' : 'lg:w-20'}
-    w-full lg:flex-shrink-0
+    hidden w-full lg:block lg:flex-shrink-0
     transition-all duration-300
   `}
                 >
@@ -1029,13 +1045,7 @@ const StudentDashboard = () => {
                         <DashboardSidebar
                             items={NAV_ITEMS}
                             activeId={activeTab}
-                            onSelect={(id) => {
-                                if (id === 'chat') {
-                                    navigate('/chat');
-                                    return;
-                                }
-                                setActiveTab(id);
-                            }}
+                            onSelect={handleDashboardNavSelect}
                             isOpen={sidebarOpen}
                             onToggle={setSidebarOpen}
                             className="h-full overflow-y-auto scrollbar-hide"
@@ -1056,6 +1066,13 @@ const StudentDashboard = () => {
                                 Чыгармачыл окуу жолуңузду көзөмөлдөңүз
                             </p>
                         </div>
+                        <button
+                            onClick={() => setSidebarOpen((prev) => !prev)}
+                            className="inline-flex lg:hidden px-4 py-2 rounded-full border text-sm text-gray-600 dark:text-[#E8ECF3] dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                            type="button"
+                        >
+                            {sidebarOpen ? 'Бөлүмдөрдү жашыруу' : 'Бөлүмдөрдү көрсөтүү'}
+                        </button>
                         <div className="flex items-center gap-2 flex-wrap justify-end">
                             <select
                                 value={filterCourseId}
@@ -1096,6 +1113,34 @@ const StudentDashboard = () => {
                                 {sidebarOpen ? 'Менюну жашыруу' : 'Менюну көрсөтүү'}
                             </button>
                         </div>
+                    </div>
+                    <div className="lg:hidden space-y-3">
+                        {sidebarOpen ? (
+                            <div className="rounded-3xl border border-gray-100 bg-white p-3 shadow-sm dark:border-gray-800 dark:bg-[#222222]">
+                                <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+                                    {NAV_ITEMS.map((item) => {
+                                        const Icon = item.icon;
+                                        const isActive = activeTab === item.id;
+                                        return (
+                                            <button
+                                                key={item.id}
+                                                type="button"
+                                                onClick={() => handleDashboardNavSelect(item.id)}
+                                                className={[
+                                                    'inline-flex shrink-0 items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-colors',
+                                                    isActive
+                                                        ? 'bg-blue-600 text-white'
+                                                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-[#1A1A1A] dark:text-gray-200 dark:hover:bg-gray-800',
+                                                ].join(' ')}
+                                            >
+                                                {Icon ? <Icon className="shrink-0" /> : null}
+                                                <span>{item.label}</span>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        ) : null}
                     </div>
                     {renderTab()}
                 </main>
@@ -1402,15 +1447,17 @@ const OverviewTab = ({
                         description="Жөн гана лидерлер эмес, сизге реалдуу жакын орундар да көрүнүшү керек."
                         items={leaderboardSnapshot.nearYou}
                         currentUserId={student.id}
+                        embedded
                     />
                 </div>
 
-                <ChallengeRail items={leaderboardChallenges} />
+                <ChallengeRail items={leaderboardChallenges} embedded />
 
                 <AchievementCloud
                     items={badgeItems}
                     title="Жетишкендик белгилери"
                     subtitle="Окуу ритмиңиз жана сапатыңыз боюнча чогултулган статус белгилер."
+                    embedded
                     shareMeta={{
                         displayName: student.name,
                         rank: leaderboardSnapshot.rank || null,

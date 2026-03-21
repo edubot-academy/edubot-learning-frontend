@@ -370,7 +370,7 @@ const LeaderboardHub = ({ embedded = false, initialTrack = 'all', lockTrack = fa
     const renderTrackSwitcher = () => {
         if (lockTrack) return null;
         return (
-        <div className="max-w-full overflow-hidden rounded-[24px] border border-slate-200 bg-white/90 p-2 shadow-sm backdrop-blur dark:border-slate-800 dark:bg-slate-900/70">
+        <div className={embedded ? 'max-w-full overflow-hidden rounded-[24px] border border-gray-100 bg-white p-2 shadow-sm dark:border-gray-800 dark:bg-[#222222]' : 'max-w-full overflow-hidden rounded-[24px] border border-slate-200 bg-white/90 p-2 shadow-sm backdrop-blur dark:border-slate-800 dark:bg-slate-900/70'}>
             <div className="flex flex-wrap gap-2 min-w-0">
                 {trackOptions.map((option) => {
                     const active = track === option.value;
@@ -382,12 +382,16 @@ const LeaderboardHub = ({ embedded = false, initialTrack = 'all', lockTrack = fa
                             className={[
                                 'group min-w-0 flex-1 rounded-2xl px-4 py-3 text-left transition-all sm:min-w-[132px] sm:flex-none',
                                 active
-                                    ? 'bg-slate-900 text-white shadow-lg shadow-slate-300/60 dark:bg-white dark:text-slate-900 dark:shadow-none'
-                                    : 'bg-slate-50 text-slate-600 hover:bg-slate-100 dark:bg-slate-950/60 dark:text-slate-300 dark:hover:bg-slate-800',
+                                    ? embedded
+                                        ? 'bg-blue-600 text-white shadow-sm dark:bg-blue-500 dark:text-white'
+                                        : 'bg-slate-900 text-white shadow-lg shadow-slate-300/60 dark:bg-white dark:text-slate-900 dark:shadow-none'
+                                    : embedded
+                                        ? 'bg-gray-50 text-gray-600 hover:bg-gray-100 dark:bg-[#1A1A1A] dark:text-gray-300 dark:hover:bg-gray-800'
+                                        : 'bg-slate-50 text-slate-600 hover:bg-slate-100 dark:bg-slate-950/60 dark:text-slate-300 dark:hover:bg-slate-800',
                             ].join(' ')}
                         >
                             <div className="text-sm font-semibold">{option.label}</div>
-                            <div className={['mt-1 text-xs', active ? 'text-white/75 dark:text-slate-600' : 'text-slate-400'].join(' ')}>
+                            <div className={['mt-1 text-xs', active ? (embedded ? 'text-white/80' : 'text-white/75 dark:text-slate-600') : (embedded ? 'text-gray-400 dark:text-gray-500' : 'text-slate-400')].join(' ')}>
                                 {option.helper}
                             </div>
                         </button>
@@ -416,6 +420,7 @@ const LeaderboardHub = ({ embedded = false, initialTrack = 'all', lockTrack = fa
                             description={`Азыркы 7 күн ичинде ${trackMeta.helper.toLowerCase()} боюнча эң активдүү студенттер.`}
                             items={weekly?.items || []}
                             currentUserId={user?.id}
+                            embedded={embedded}
                         />
                         {publicMode ? (
                             <div className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_18px_60px_-42px_rgba(15,23,42,0.45)] dark:border-slate-800 dark:bg-[#161b22] sm:p-6">
@@ -442,6 +447,7 @@ const LeaderboardHub = ({ embedded = false, initialTrack = 'all', lockTrack = fa
                                 }
                                 items={fast?.items || []}
                                 currentUserId={user?.id}
+                                embedded={embedded}
                             />
                         )}
                     </div>
@@ -449,8 +455,8 @@ const LeaderboardHub = ({ embedded = false, initialTrack = 'all', lockTrack = fa
             case 'skills':
                 return (
                     <div className="space-y-6">
-                        <MySkillProgressGrid items={mySkillProgress.slice(0, 6)} />
-                        <SkillSpotlightGrid boards={skillBoardCards} personalProgress={mySkillProgress} featuredSlug={normalizedSkillQuery} />
+                        <MySkillProgressGrid items={mySkillProgress.slice(0, 6)} embedded={embedded} />
+                        <SkillSpotlightGrid boards={skillBoardCards} personalProgress={mySkillProgress} featuredSlug={normalizedSkillQuery} embedded={embedded} />
                         <div className="grid gap-6 xl:grid-cols-2">
                             {skillBoardsLoading ? (
                                 <div className="xl:col-span-2 py-12 flex justify-center">
@@ -464,6 +470,7 @@ const LeaderboardHub = ({ embedded = false, initialTrack = 'all', lockTrack = fa
                                         description={normalizedSkillQuery && board.slug === normalizedSkillQuery ? `Тандалган багыт: ${board.label}. Жогоруда жеке прогрессиңиз көрүнөт.` : 'Бул багыттагы алдыңкы студенттер. Жогоруда жеке прогрессиңиз көрүнөт.'}
                                         items={board.items}
                                         currentUserId={user?.id}
+                                        embedded={embedded}
                                     />
                                 ))
                             )}
@@ -477,8 +484,9 @@ const LeaderboardHub = ({ embedded = false, initialTrack = 'all', lockTrack = fa
                             items={achievementItems}
                             title="Жетишкендиктер дубалы"
                             subtitle={`Бул жерде ${trackMeta.label.toLowerCase()} багыты боюнча упай, статус жана окуялар чыгат.`}
+                            embedded={embedded}
                         />
-                        <ChallengeRail items={challengeItems} />
+                        <ChallengeRail items={challengeItems} embedded={embedded} />
                     </div>
                 );
             default:
@@ -491,11 +499,13 @@ const LeaderboardHub = ({ embedded = false, initialTrack = 'all', lockTrack = fa
                                 description="Туруктуу окуу, жапкан сабактар жана күчтүү темп менен айырмаланган студенттер."
                                 items={weekly?.items || []}
                                 currentUserId={null}
+                                embedded={embedded}
                             />
                             <AchievementCloud
                                 items={achievementItems.slice(0, 3)}
                                 title="Бөлүшүүгө даяр учурлар"
                                 subtitle="Жетишкендиктерди карточкага айландырып, башкаларга көрсөтүңүз."
+                                embedded={embedded}
                             />
                         </div>
                     </div>
@@ -507,6 +517,7 @@ const LeaderboardHub = ({ embedded = false, initialTrack = 'all', lockTrack = fa
                                 description={`Жалпы көрүнүктүү прогресс ушул жерде. Азыр тандалган фокус: ${trackMeta.helper.toLowerCase()}.`}
                                 items={weekly?.items || []}
                                 currentUserId={user?.id}
+                                embedded={embedded}
                                 footer={
                                     embedded ? null : (
                                         <div className="flex flex-wrap gap-3 text-sm text-slate-500 dark:text-slate-300">
@@ -523,16 +534,18 @@ const LeaderboardHub = ({ embedded = false, initialTrack = 'all', lockTrack = fa
                                 currentUserId={user?.id}
                                 targetGap={snapshot.targetGap}
                                 nextTargetName={snapshot.nextTargetEntry?.fullName || ''}
+                                embedded={embedded}
                             />
                         </div>
                         <div className="space-y-6">
-                            <ChallengeRail items={challengeItems} />
+                            <ChallengeRail items={challengeItems} embedded={embedded} />
                             <AchievementCloud
                                 items={achievementItems}
                                 title="Бөлүшүүгө даяр учурлар"
                                 subtitle={`Бөлүшүүгө ылайыктуу эң күчтүү учурлар. Багыт: ${trackMeta.label}.`}
+                                embedded={embedded}
                             />
-                            <SkillSpotlightGrid boards={skillBoardCards} personalProgress={mySkillProgress} featuredSlug={normalizedSkillQuery} />
+                            <SkillSpotlightGrid boards={skillBoardCards} personalProgress={mySkillProgress} featuredSlug={normalizedSkillQuery} embedded={embedded} />
                         </div>
                     </div>
                 );
@@ -542,15 +555,16 @@ const LeaderboardHub = ({ embedded = false, initialTrack = 'all', lockTrack = fa
     return (
         <div
             className={embedded
-                ? 'space-y-8 overflow-x-clip'
-                : 'min-h-screen overflow-x-clip bg-[linear-gradient(180deg,_#fff7ed_0%,_#ffffff_16%,_#f8fafc_100%)] px-4 py-10 text-slate-900 dark:bg-[#0b1120] dark:text-white md:px-8 xl:px-10'}
+                ? 'w-full max-w-full space-y-8 overflow-x-hidden'
+                : 'min-h-screen w-full max-w-full overflow-x-hidden bg-[linear-gradient(180deg,_#fff7ed_0%,_#ffffff_16%,_#f8fafc_100%)] px-4 py-10 text-slate-900 dark:bg-[#0b1120] dark:text-white md:px-8 xl:px-10'}
         >
-            <div className={embedded ? 'space-y-8 min-w-0' : 'mx-auto max-w-7xl min-w-0 space-y-8'}>
+            <div className={embedded ? 'w-full max-w-full min-w-0 space-y-8' : 'mx-auto w-full max-w-7xl min-w-0 space-y-8'}>
                 <LeaderboardHero
                     userName={user?.fullName || user?.name || ''}
                     snapshot={snapshot}
                     xp={currentXp}
                     streakDays={currentStreak}
+                    embedded={embedded}
                     levelLabel={embedded ? 'Жеке кабинет рейтинги' : publicMode ? 'Ачык рейтинг' : 'Жаңыланган рейтинг'}
                     title={embedded ? 'Рейтинг жана жеңиш картасы' : publicMode ? 'Ачык рейтинг' : 'Рейтингди мотивацияга айландырган мейкиндик'}
                     description={
@@ -563,7 +577,7 @@ const LeaderboardHub = ({ embedded = false, initialTrack = 'all', lockTrack = fa
                 />
 
                 {hasLeaderboardServiceIssue ? (
-                    <div className="rounded-[24px] border border-amber-200 bg-amber-50/90 px-5 py-4 text-amber-900 shadow-sm dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100">
+                    <div className={embedded ? 'rounded-[24px] border border-amber-200 bg-amber-50/90 px-5 py-4 text-amber-900 shadow-sm dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100' : 'rounded-[24px] border border-amber-200 bg-amber-50/90 px-5 py-4 text-amber-900 shadow-sm dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100'}>
                         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                             <div>
                                 <p className="text-sm font-semibold uppercase tracking-[0.18em] text-amber-700 dark:text-amber-200">Рейтинг эскертүүсү</p>
@@ -577,8 +591,8 @@ const LeaderboardHub = ({ embedded = false, initialTrack = 'all', lockTrack = fa
                 ) : null}
 
                 {emptyWeeklyBoard ? (
-                    <div className="rounded-[24px] border border-slate-200 bg-white/90 px-5 py-4 text-slate-700 shadow-sm dark:border-slate-800 dark:bg-slate-900/70 dark:text-slate-200">
-                        <p className="text-sm font-semibold uppercase tracking-[0.18em] text-orange-500">Рейтинг жаңы толуп жатат</p>
+                    <div className={embedded ? 'rounded-[24px] border border-gray-100 bg-white px-5 py-4 text-gray-700 shadow-sm dark:border-gray-800 dark:bg-[#222222] dark:text-gray-200' : 'rounded-[24px] border border-slate-200 bg-white/90 px-5 py-4 text-slate-700 shadow-sm dark:border-slate-800 dark:bg-slate-900/70 dark:text-slate-200'}>
+                            <p className={embedded ? 'text-sm font-semibold uppercase tracking-[0.18em] text-blue-600 dark:text-blue-300' : 'text-sm font-semibold uppercase tracking-[0.18em] text-orange-500'}>Рейтинг жаңы толуп жатат</p>
                         <p className="mt-1 text-sm">
                             Бул багыт боюнча азырынча рейтингке чыга турган жетиштүү активдүүлүк жок. Биринчи сабактарды аяктагандан кийин таблица толо баштайт.
                         </p>
@@ -588,11 +602,11 @@ const LeaderboardHub = ({ embedded = false, initialTrack = 'all', lockTrack = fa
                 <div className="grid max-w-full min-w-0 gap-4 xl:grid-cols-[1fr_auto] xl:items-end">
                     <div className="min-w-0 space-y-4">
                         <div>
-                            <p className="text-sm font-semibold uppercase tracking-[0.26em] text-orange-500">EduBot өсүү цикли</p>
-                            <h2 className="mt-2 text-2xl font-semibold text-slate-900 dark:text-white sm:text-3xl">
+                            <p className={embedded ? 'text-sm font-semibold uppercase tracking-[0.26em] text-blue-600 dark:text-blue-300' : 'text-sm font-semibold uppercase tracking-[0.26em] text-orange-500'}>EduBot өсүү цикли</p>
+                            <h2 className={embedded ? 'mt-2 text-2xl font-semibold text-gray-900 dark:text-[#E8ECF3] sm:text-3xl' : 'mt-2 text-2xl font-semibold text-slate-900 dark:text-white sm:text-3xl'}>
                                 Кайра келтирген рейтинг тажрыйбасы
                             </h2>
-                            <p className="mt-2 max-w-3xl text-sm text-slate-600 dark:text-slate-300 sm:text-base">
+                            <p className={embedded ? 'mt-2 max-w-3xl text-sm text-gray-500 dark:text-gray-400 sm:text-base' : 'mt-2 max-w-3xl text-sm text-slate-600 dark:text-slate-300 sm:text-base'}>
                                 Көрүнүктүү жеңиштер, өзгөчө көрүнгөн көндүмдөр жана кыска циклдеги максаттар студентти кайра кайтууга түртүшү керек.
                                 {mySummary?.rankDelta
                                     ? ` Азырынча сиздин өзгөрүүңүз: ${mySummary.rankDelta > 0 ? '+' : ''}${mySummary.rankDelta} орун.`
@@ -601,7 +615,7 @@ const LeaderboardHub = ({ embedded = false, initialTrack = 'all', lockTrack = fa
                         </div>
                         {renderTrackSwitcher()}
                     </div>
-                    <div className="grid w-full max-w-full min-w-0 grid-cols-2 gap-2 rounded-[24px] border border-slate-200 bg-white/85 p-1 shadow-sm backdrop-blur dark:border-slate-800 dark:bg-slate-900/70 sm:flex sm:flex-wrap xl:w-auto xl:rounded-full">
+                    <div className={embedded ? 'grid w-full max-w-full min-w-0 grid-cols-2 gap-2 rounded-[24px] border border-gray-100 bg-white p-1 shadow-sm dark:border-gray-800 dark:bg-[#222222] sm:flex sm:flex-wrap xl:w-auto xl:rounded-full' : 'grid w-full max-w-full min-w-0 grid-cols-2 gap-2 rounded-[24px] border border-slate-200 bg-white/85 p-1 shadow-sm backdrop-blur dark:border-slate-800 dark:bg-slate-900/70 sm:flex sm:flex-wrap xl:w-auto xl:rounded-full'}>
                         {visibleTabs.map((tab) => (
                             <button
                                 key={tab.id}
@@ -610,8 +624,12 @@ const LeaderboardHub = ({ embedded = false, initialTrack = 'all', lockTrack = fa
                                 className={[
                                     'min-w-0 rounded-full px-3 py-2 text-sm font-medium transition-colors sm:px-4',
                                     activeTab === tab.id
-                                        ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900'
-                                        : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800',
+                                        ? embedded
+                                            ? 'bg-blue-600 text-white dark:bg-blue-500 dark:text-white'
+                                            : 'bg-slate-900 text-white dark:bg-white dark:text-slate-900'
+                                        : embedded
+                                            ? 'text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800'
+                                            : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800',
                                 ].join(' ')}
                             >
                                 {tab.label}

@@ -116,7 +116,7 @@ const Header = () => {
     useEffect(() => {
         if (location.pathname === '/cart') {
             setActiveIcon('cart');
-        } else if (location.pathname === '/favourite') {
+        } else if (location.pathname === '/favourites') {
             setActiveIcon('heart');
         } else {
             setActiveIcon(null);
