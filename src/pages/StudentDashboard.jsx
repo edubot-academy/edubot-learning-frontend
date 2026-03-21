@@ -34,9 +34,15 @@ import {
 import NotificationsWidget from '@features/notifications/components/NotificationsWidget';
 import NotificationsTab from '@features/notifications/components/NotificationsTab';
 import Loader from '@shared/ui/Loader';
-import InternalLeaderboardPage from './InternalLeaderboard';
+import LeaderboardHub from '../features/leaderboard/components/LeaderboardHub';
 import StudentAnalyticsPage from './StudentAnalytics';
 import PhoneInput from '@shared/ui/forms/PhoneInput';
+import {
+    AchievementCloud,
+    buildLeaderboardSnapshot,
+    ChallengeRail,
+    LeaderboardListCard,
+} from '../features/leaderboard/components/LeaderboardExperience';
 
 const NAV_ITEMS = [
     { id: 'overview', label: 'Кыскача', icon: FiHome },
@@ -223,6 +229,7 @@ const StudentDashboard = () => {
     const [progress, setProgress] = useState([]);
     const [certificates, setCertificates] = useState([]);
     const [leaderboardItems, setLeaderboardItems] = useState([]);
+    const [leaderboardPreviewMeta, setLeaderboardPreviewMeta] = useState({ fallback: false, message: '' });
     const [notificationSettings, setNotificationSettings] = useState(null);
     const [profileData, setProfileData] = useState(null);
     const [profileLoaded, setProfileLoaded] = useState(false);
@@ -280,6 +287,10 @@ const StudentDashboard = () => {
             setLeaderboardItems(
                 Array.isArray(leaderboardRes?.items) ? leaderboardRes.items : leaderboardRes || []
             );
+            setLeaderboardPreviewMeta({
+                fallback: Boolean(leaderboardRes?._fallback),
+                message: leaderboardRes?._fallbackMessage || '',
+            });
         } catch (error) {
             console.error('Failed to load overview', error);
             toast.error('Кыскача маалымат жүктөлгөн жок');
@@ -505,6 +516,7 @@ const StudentDashboard = () => {
 
     const overviewStudent = useMemo(
         () => ({
+            id: user?.id || null,
             name: summary?.name || user?.fullName || 'Студент',
             streak: summary?.streak || 0,
             lastLesson: summary?.lastLesson || null,
@@ -960,6 +972,7 @@ const StudentDashboard = () => {
                         attendanceEnabled={hasAttendanceEligibleCourses}
                         engagement={engagement}
                         leaderboardItems={leaderboardItems}
+                        leaderboardMeta={leaderboardPreviewMeta}
                         milestoneItems={milestoneItems}
                         badgeItems={badgeItems}
                     />
@@ -967,7 +980,7 @@ const StudentDashboard = () => {
             case 'analytics':
                 return <StudentAnalyticsPage embedded />;
             case 'leaderboard':
-                return <InternalLeaderboardPage />;
+                return <LeaderboardHub embedded />;
             case 'notifications':
                 return <NotificationsTab />;
             case 'profile':
@@ -1132,6 +1145,7 @@ const OverviewTab = ({
     attendanceEnabled,
     engagement,
     leaderboardItems,
+    leaderboardMeta,
     milestoneItems,
     badgeItems,
 }) => {
@@ -1153,6 +1167,47 @@ const OverviewTab = ({
     const pendingHomework = useMemo(
         () => tasks.filter((task) => task.status !== 'completed').slice(0, 4),
         [tasks]
+    );
+    const leaderboardSnapshot = useMemo(
+        () =>
+            buildLeaderboardSnapshot({
+                items: leaderboardItems,
+                user: { id: student.id, fullName: student.name },
+                xp: engagement.xp,
+                streakDays: engagement.streak,
+                badges: badgeItems,
+                label: 'Dashboard',
+            }),
+        [leaderboardItems, student, engagement, badgeItems]
+    );
+    const hasLeaderboardPreviewIssue = Boolean(leaderboardMeta?.fallback);
+    const emptyLeaderboardPreview = !hasLeaderboardPreviewIssue && !leaderboardItems.length;
+
+    const leaderboardChallenges = useMemo(
+        () => [
+            {
+                id: 'overview-rank',
+                title: leaderboardSnapshot.rank
+                    ? `#${leaderboardSnapshot.rank} орунду бекемдөө`
+                    : 'Алгачкы рейтингге чыгуу',
+                detail: leaderboardSnapshot.targetGap
+                    ? `Дагы ${leaderboardSnapshot.targetGap} XP кийинки тепкичке жеткирет.`
+                    : '1 сабак жана 1 тест сизди таблицага алып кирет.',
+            },
+            {
+                id: 'overview-streak',
+                title: `${engagement.streak} күндүк серияны сактоо`,
+                detail: 'Эртең дагы кирсеңиз, туруктуулук сигналы күчөйт.',
+            },
+            {
+                id: 'overview-homework',
+                title: 'Ачык тапшырманы жабуу',
+                detail: pendingHomework.length
+                    ? `${pendingHomework.length} тапшырма күтүп турат.`
+                    : 'Азырынча тапшырма жок, ушул темпти сактаңыз.',
+            },
+        ],
+        [leaderboardSnapshot, engagement.streak, pendingHomework.length]
     );
 
     return (
@@ -1299,10 +1354,23 @@ const OverviewTab = ({
 
             <div className="space-y-4">
                 <section className="bg-white dark:bg-[#222222] rounded-3xl border border-gray-100 dark:border-gray-800 p-5">
-                    <h3 className="font-semibold text-gray-900 dark:text-[#E8ECF3]">XP & Level</h3>
-                    <p className="text-2xl font-bold text-blue-600 mt-1">{engagement.xp} XP</p>
-                    <p className="text-sm text-gray-500">Деңгээл {engagement.level}</p>
-                    <div className="h-2 rounded-full bg-gray-100 dark:bg-gray-700 mt-2">
+                    <div className="flex items-start justify-between gap-3">
+                        <div>
+                            <h3 className="font-semibold text-gray-900 dark:text-[#E8ECF3]">XP & Level</h3>
+                            <p className="text-2xl font-bold text-blue-600 mt-1">{engagement.xp} XP</p>
+                            <p className="text-sm text-gray-500">
+                                Деңгээл {engagement.level}
+                                {leaderboardSnapshot.rank ? ` · #${leaderboardSnapshot.rank} орун` : ''}
+                            </p>
+                        </div>
+                        <div className="rounded-2xl bg-blue-50 px-3 py-2 text-right dark:bg-blue-900/30">
+                            <p className="text-[11px] uppercase tracking-[0.2em] text-blue-600 dark:text-blue-300">Next push</p>
+                            <p className="mt-1 text-sm font-semibold text-blue-700 dark:text-blue-200">
+                                {leaderboardSnapshot.targetGap ? `${leaderboardSnapshot.targetGap} XP` : 'Баштаңыз'}
+                            </p>
+                        </div>
+                    </div>
+                    <div className="h-2 rounded-full bg-gray-100 dark:bg-gray-700 mt-4">
                         <div
                             className="h-2 rounded-full bg-blue-500"
                             style={{
@@ -1316,52 +1384,41 @@ const OverviewTab = ({
                     </div>
                 </section>
 
-                <section className="bg-white dark:bg-[#222222] rounded-3xl border border-gray-100 dark:border-gray-800 p-5">
-                    <h3 className="font-semibold text-gray-900 dark:text-[#E8ECF3]">Рейтинг</h3>
-                    <div className="mt-2 space-y-2 text-sm">
-                        {leaderboardItems.slice(0, 5).map((row, idx) => (
-                            <div
-                                key={row.studentId || row.id || idx}
-                                className="flex items-center justify-between"
-                            >
-                                <span className="text-gray-700 dark:text-gray-300">
-                                    {idx + 1}. {row.fullName || row.name || 'Студент'}
-                                </span>
-                                <span className="text-gray-500">{row.xp || 0} XP</span>
-                            </div>
-                        ))}
-                    </div>
-                </section>
+                <div className="space-y-3">
+                    {hasLeaderboardPreviewIssue ? (
+                        <div className="rounded-3xl border border-amber-200 bg-amber-50/90 px-4 py-3 text-sm text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100">
+                            <p className="font-semibold uppercase tracking-[0.18em] text-amber-700 dark:text-amber-200">Рейтинг эскертүүсү</p>
+                            <p className="mt-1">Азыр кыска preview үчүн чыныгы рейтинг алынган жок. Жасалма студенттер көрсөтүлгөн жок.</p>
+                            {leaderboardMeta?.message ? <p className="mt-2 text-xs opacity-80">{leaderboardMeta.message}</p> : null}
+                        </div>
+                    ) : null}
+                    {emptyLeaderboardPreview ? (
+                        <div className="rounded-3xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-600 dark:border-gray-800 dark:bg-[#222222] dark:text-slate-300">
+                            Бул кыска preview үчүн азырынча рейтинг маалыматтары толо элек.
+                        </div>
+                    ) : null}
+                    <LeaderboardListCard
+                        title="Сизге жакын рейтинг"
+                        description="Жөн гана лидерлер эмес, сизге реалдуу жакын орундар да көрүнүшү керек."
+                        items={leaderboardSnapshot.nearYou}
+                        currentUserId={student.id}
+                    />
+                </div>
 
-                <section className="bg-white dark:bg-[#222222] rounded-3xl border border-gray-100 dark:border-gray-800 p-5">
-                    <h3 className="font-semibold text-gray-900 dark:text-[#E8ECF3]">Этаптар</h3>
-                    <div className="mt-2 space-y-2 text-sm">
-                        {milestoneItems.map((item) => (
-                            <div key={item.id || item.title}>
-                                <p className="font-medium text-gray-900 dark:text-[#E8ECF3]">
-                                    {item.title}
-                                </p>
-                                <p className="text-gray-500">{item.value || item.description}</p>
-                            </div>
-                        ))}
-                    </div>
-                </section>
+                <ChallengeRail items={leaderboardChallenges} />
 
-                <section className="bg-white dark:bg-[#222222] rounded-3xl border border-gray-100 dark:border-gray-800 p-5">
-                    <h3 className="font-semibold text-gray-900 dark:text-[#E8ECF3]">
-                        Жетишкендик белгилери
-                    </h3>
-                    <div className="mt-2 flex flex-wrap gap-2">
-                        {badgeItems.map((badge) => (
-                            <span
-                                key={badge.id || badge.title}
-                                className="px-2 py-1 text-xs rounded-full bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300"
-                            >
-                                {badge.title || badge.name}
-                            </span>
-                        ))}
-                    </div>
-                </section>
+                <AchievementCloud
+                    items={badgeItems}
+                    title="Жетишкендик белгилери"
+                    subtitle="Окуу ритмиңиз жана сапатыңыз боюнча чогултулган статус белгилер."
+                    shareMeta={{
+                        displayName: student.name,
+                        rank: leaderboardSnapshot.rank || null,
+                        xp: engagement.xp || null,
+                        streakDays: engagement.streak || null,
+                        trackLabel: 'Dashboard',
+                    }}
+                />
             </div>
         </div>
     );
@@ -1832,7 +1889,7 @@ const ProgressTab = ({
                 ) : null}
                 <StatCard
                     label="Рейтинг"
-                    value={`Топ ${Math.max(1, leaderboardItems.length)}`}
+                    value={leaderboardItems.length ? `Top ${leaderboardItems.length}` : 'Tracked'}
                 />
             </div>
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-3">
@@ -2350,6 +2407,7 @@ const StatCard = ({ label, value }) => (
 
 OverviewTab.propTypes = {
     student: PropTypes.shape({
+        id: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
         name: PropTypes.string,
         streak: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
         lastLesson: PropTypes.shape({
@@ -2427,6 +2485,7 @@ ProgressTab.propTypes = {
 
 ProfileTab.propTypes = {
     student: PropTypes.shape({
+        id: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
         name: PropTypes.string,
         email: PropTypes.string,
         phone: PropTypes.string,

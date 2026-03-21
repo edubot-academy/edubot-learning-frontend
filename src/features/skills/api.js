@@ -19,3 +19,8 @@ export const deleteSkill = async (skillId) => {
     const { data } = await api.delete(`/skills/${skillId}`);
     return data;
 };
+
+export const fetchMySkillProgress = async () => {
+    const { data } = await api.get('/skills/me/progress');
+    return data;
+};

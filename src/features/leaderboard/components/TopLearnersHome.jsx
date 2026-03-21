@@ -83,6 +83,7 @@ const HighlightCard = ({ item, index }) => {
 const TopLearnersHome = () => {
     const [items, setItems] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [fallbackMeta, setFallbackMeta] = useState({ fallback: false, message: '' });
 
     useEffect(() => {
         const load = async () => {
@@ -90,6 +91,10 @@ const TopLearnersHome = () => {
                 setLoading(true);
                 const res = await fetchHomepageLeaderboard();
                 setItems(res?.items || res || []);
+                setFallbackMeta({
+                    fallback: Boolean(res?._fallback),
+                    message: res?._fallbackMessage || '',
+                });
             } catch (error) {
                 setItems([]);
             } finally {
@@ -107,7 +112,7 @@ const TopLearnersHome = () => {
                         Бул жуманын мыктылары
                     </p>
                     <h2 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mt-1">
-                        Top Learners This Week
+                        Бул жуманын лидерлери
                     </h2>
                     <p className="text-gray-500 dark:text-gray-300 mt-1 max-w-xl">
                         Эң активдүү студенттер, ырааттуу прогресс жана тесттердеги жеңиштер.
@@ -117,13 +122,19 @@ const TopLearnersHome = () => {
                     to="/leaderboard"
                     className="inline-flex items-center justify-center rounded-full px-4 py-2 bg-orange-500 text-white font-semibold shadow-md hover:shadow-lg hover:translate-y-[-1px] transition"
                 >
-                    View Full Leaderboard →
+                    Толук рейтингди көрүү →
                 </Link>
             </div>
 
             {loading ? (
                 <div className="flex justify-center py-10">
                     <Loader fullScreen={false} />
+                </div>
+            ) : fallbackMeta.fallback ? (
+                <div className="rounded-2xl border border-amber-200 bg-amber-50/90 px-5 py-4 text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100">
+                    <p className="text-sm font-semibold uppercase tracking-[0.18em] text-amber-700 dark:text-amber-200">Рейтинг эскертүүсү</p>
+                    <p className="mt-1 text-sm">Бул жуманын мыктылары азырынча жүктөлгөн жок. Жасалма студенттер көрсөтүлгөн жок.</p>
+                    {fallbackMeta.message ? <p className="mt-2 text-xs opacity-80">{fallbackMeta.message}</p> : null}
                 </div>
             ) : items.length === 0 ? (
                 <p className="text-gray-500">Лидерборд маалыматтары азырынча жок.</p>

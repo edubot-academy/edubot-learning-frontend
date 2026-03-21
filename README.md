@@ -27,3 +27,10 @@ Prettier config is checked in (`.prettierrc.json`) to keep formatting consistent
 
 - single quotes, trailing commas (es5), tab width 4, semicolons, print width 100.
 - run `npx prettier .` before committing if your editor is not auto-formatting.
+
+## Release docs
+
+- Current frontend version: `0.3.0`
+- Changelog: `CHANGELOG.md`
+- Leaderboard release notes: `docs/shared/releases/LEADERBOARD_V2_RELEASE_NOTES.md`
+- Shared contracts: `docs/shared/contracts/`

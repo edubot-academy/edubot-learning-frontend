@@ -30,6 +30,7 @@ const CartPage = lazy(() => import('../pages/Cart'));
 const Chat = lazy(() => import('../pages/Chat'));
 const LeaderboardPage = lazy(() => import('../pages/Leaderboard'));
 const InternalLeaderboardPage = lazy(() => import('../pages/InternalLeaderboard'));
+const LeaderboardSharePage = lazy(() => import('../pages/LeaderboardShare'));
 
 const AppRoutes = () => {
     return (
@@ -92,8 +93,9 @@ const AppRoutes = () => {
                     <Route path="/companies/:id" element={<CompanyDetail />} />
                     <Route path="/chat" element={<Chat />} />
                     <Route path="/leaderboard" element={<LeaderboardPage />} />
+                    <Route path="/share/achievement/:token" element={<LeaderboardSharePage />} />
 
-                    <Route element={<PrivateRoute allowedRoles={['admin', 'instructor', 'assistant', 'student']} />}>
+                    <Route element={<PrivateRoute allowedRoles={['admin', 'instructor', 'assistant']} />}>
                         <Route path="/leaderboard/internal" element={<InternalLeaderboardPage />} />
                     </Route>
                 </Routes>

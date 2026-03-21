@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import PropTypes from 'prop-types';
+import { createPortal } from 'react-dom';
 
 const Modal = ({
     isOpen,
@@ -14,11 +15,16 @@ const Modal = ({
     children,
 }) => {
     const [localIsOpen, setLocalIsOpen] = useState(isOpen);
+    const [portalTarget, setPortalTarget] = useState(null);
     const modalRef = useRef(null);
 
     useEffect(() => {
         setLocalIsOpen(isOpen);
     }, [isOpen]);
+
+    useEffect(() => {
+        setPortalTarget(document.body);
+    }, []);
 
     useEffect(() => {
         if (!localIsOpen) return;
@@ -61,10 +67,10 @@ const Modal = ({
         full: 'max-w-full mx-4',
     };
 
-    if (!localIsOpen) return null;
+    if (!localIsOpen || !portalTarget) return null;
 
-    return (
-        <div className="fixed inset-0 z-50 overflow-y-auto min-h-screen px-4 pt-28 pb-10">
+    return createPortal(
+        <div className="fixed inset-0 z-[100] overflow-y-auto min-h-screen px-4 pt-28 pb-10">
             {showBackdrop && (
                 <div
                     className="fixed inset-0 bg-black/50 backdrop-blur-sm"
@@ -76,18 +82,14 @@ const Modal = ({
             <div className="relative z-10 flex justify-center">
                 <div
                     ref={modalRef}
-                    className={`
-        w-full ${sizeClasses[size] || sizeClasses.md}
-        bg-white dark:bg-gray-800 rounded-xl shadow-2xl
-        focus:outline-none
-      `}
+                    className={`w-full ${sizeClasses[size] || sizeClasses.md} rounded-xl bg-white shadow-2xl focus:outline-none dark:bg-gray-800`}
                     role="dialog"
                     aria-modal="true"
                     tabIndex={-1}
                 >
                     <div className="p-6">
                         {(title || showCloseButton) && (
-                            <div className="flex items-start justify-between gap-4 mb-6">
+                            <div className="mb-6 flex items-start justify-between gap-4">
                                 {title && (
                                     <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
                                         {title}
@@ -96,24 +98,24 @@ const Modal = ({
 
                                 {showCloseButton && (
                                     <button
-                                        type='button'
+                                        type="button"
                                         onClick={handleCloseClick}
-                                        className='text-gray-500 hover:text-black font-bold text-3xl leading-none transition-colors duration-200 rounded-full p-1 px-2 hover:bg-gray-100'
-                                    >×</button>
+                                        className="rounded-full p-1 px-2 text-3xl font-bold leading-none text-gray-500 transition-colors duration-200 hover:bg-gray-100 hover:text-black"
+                                    >
+                                        ×
+                                    </button>
                                 )}
                             </div>
                         )}
 
-                        <div className="modal-content">
-                            {children}
-                        </div>
+                        <div className="modal-content">{children}</div>
                     </div>
                 </div>
             </div>
-        </div>
+        </div>,
+        portalTarget
     );
 };
-
 
 Modal.propTypes = {
     isOpen: PropTypes.bool.isRequired,

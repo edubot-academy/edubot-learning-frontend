@@ -1,58 +1,16 @@
 import api, { clean } from '../../shared/api/client';
 
-// Lightweight mock data so the UI can render offline or when the API is unavailable.
-const mockStudents = [
-    {
-        studentId: 1,
-        fullName: 'Айсулуу Турсунбаева',
-        avatarUrl: null,
-        xp: 12450,
-        progressPercent: 92,
-        lessonsCompleted: 41,
-        quizzesPassed: 18,
-        lastActivityAt: new Date().toISOString(),
-        streakDays: 6,
-    },
-    {
-        studentId: 2,
-        fullName: 'Нурбек Бакытбеков',
-        avatarUrl: null,
-        xp: 11040,
-        progressPercent: 78,
-        lessonsCompleted: 35,
-        quizzesPassed: 15,
-        lastActivityAt: new Date().toISOString(),
-        streakDays: 4,
-    },
-    {
-        studentId: 3,
-        fullName: 'Аделина Калыкова',
-        avatarUrl: null,
-        xp: 9680,
-        progressPercent: 70,
-        lessonsCompleted: 30,
-        quizzesPassed: 12,
-        lastActivityAt: new Date().toISOString(),
-        streakDays: 3,
-    },
-    {
-        studentId: 4,
-        fullName: 'Азиз Сатаров',
-        avatarUrl: null,
-        xp: 8100,
-        progressPercent: 65,
-        lessonsCompleted: 25,
-        quizzesPassed: 9,
-        lastActivityAt: new Date().toISOString(),
-        streakDays: 1,
-    },
-];
-
-const buildFallback = (page = 1, limit = 10) => ({
-    items: mockStudents.slice(0, limit),
-    total: mockStudents.length,
+const buildEmptyLeaderboard = (page = 1, limit = 10) => ({
+    items: [],
+    total: 0,
     page,
     limit,
+});
+
+const withFallbackMeta = (value, error) => ({
+    ...(value || {}),
+    _fallback: true,
+    _fallbackMessage: error?.response?.data?.error?.message || error?.message || 'Leaderboard unavailable',
 });
 
 const safeRequest = async (fn, fallback) => {
@@ -60,21 +18,32 @@ const safeRequest = async (fn, fallback) => {
         const { data } = await fn();
         return data;
     } catch (error) {
-        console.warn('Leaderboard API fallback used', error);
-        return typeof fallback === 'function' ? fallback() : fallback;
+        console.warn('Leaderboard API request failed', error);
+        const resolved = typeof fallback === 'function' ? fallback() : fallback;
+        return withFallbackMeta(resolved, error);
     }
 };
 
-export const fetchWeeklyLeaderboard = async ({ page = 1, limit = 10 } = {}) =>
+const requestOrNull = async (fn) => {
+    try {
+        const { data } = await fn();
+        return data;
+    } catch (error) {
+        console.warn('Leaderboard optional endpoint unavailable', error);
+        return null;
+    }
+};
+
+export const fetchWeeklyLeaderboard = async ({ page = 1, limit = 10, track = 'all' } = {}) =>
     safeRequest(
-        () => api.get('/leaderboard/weekly', { params: clean({ page, limit }) }),
-        () => buildFallback(page, limit)
+        () => api.get('/leaderboard/weekly', { params: clean({ page, limit, track }) }),
+        () => buildEmptyLeaderboard(page, limit)
     );
 
 export const fetchFastProgressLeaderboard = async ({ page = 1, limit = 10 } = {}) =>
     safeRequest(
         () => api.get('/leaderboard/fast-progress', { params: clean({ page, limit }) }),
-        () => buildFallback(page, limit)
+        () => buildEmptyLeaderboard(page, limit)
     );
 
 export const fetchCourseLeaderboard = async (courseId, { page = 1, limit = 10 } = {}) =>
@@ -83,7 +52,7 @@ export const fetchCourseLeaderboard = async (courseId, { page = 1, limit = 10 } 
             api.get(`/leaderboard/course/${courseId}`, {
                 params: clean({ page, limit }),
             }),
-        () => buildFallback(page, limit)
+        () => buildEmptyLeaderboard(page, limit)
     );
 
 export const fetchSkillLeaderboard = async (skillSlug, { page = 1, limit = 10 } = {}) =>
@@ -92,15 +61,15 @@ export const fetchSkillLeaderboard = async (skillSlug, { page = 1, limit = 10 } 
             api.get(`/leaderboard/skills/${skillSlug}`, {
                 params: clean({ page, limit }),
             }),
-        () => buildFallback(page, limit)
+        () => buildEmptyLeaderboard(page, limit)
     );
 
-export const fetchStudentOfWeek = async () =>
-    safeRequest(() => api.get('/leaderboard/student-of-week'), mockStudents[0]);
+export const fetchStudentOfWeek = async ({ track = 'all' } = {}) =>
+    safeRequest(() => api.get('/leaderboard/student-of-week', { params: clean({ track }) }), () => ({}));
 
-export const fetchHomepageLeaderboard = async () =>
-    safeRequest(() => api.get('/leaderboard/homepage'), {
-        items: mockStudents.slice(0, 3),
+export const fetchHomepageLeaderboard = async ({ track = 'all' } = {}) =>
+    safeRequest(() => api.get('/leaderboard/homepage', { params: clean({ track }) }), {
+        items: [],
     });
 
 export const fetchInternalWeeklyLeaderboard = async ({ page = 1, limit = 10, track = 'all' } = {}) =>
@@ -109,7 +78,7 @@ export const fetchInternalWeeklyLeaderboard = async ({ page = 1, limit = 10, tra
             api.get('/leaderboard/internal/weekly', {
                 params: clean({ page, limit, track }),
             }),
-        () => buildFallback(page, limit)
+        () => buildEmptyLeaderboard(page, limit)
     );
 
 export const fetchInternalCourseLeaderboard = async (
@@ -121,7 +90,7 @@ export const fetchInternalCourseLeaderboard = async (
             api.get(`/leaderboard/internal/course/${courseId}`, {
                 params: clean({ page, limit, track }),
             }),
-        () => buildFallback(page, limit)
+        () => buildEmptyLeaderboard(page, limit)
     );
 
 export const fetchInternalStudentOfWeek = async ({ track = 'all' } = {}) =>
@@ -130,7 +99,7 @@ export const fetchInternalStudentOfWeek = async ({ track = 'all' } = {}) =>
             api.get('/leaderboard/internal/student-of-week', {
                 params: clean({ track }),
             }),
-        mockStudents[0]
+        () => ({})
     );
 
 export const fetchInternalHomepageLeaderboard = async ({ track = 'all' } = {}) =>
@@ -139,5 +108,31 @@ export const fetchInternalHomepageLeaderboard = async ({ track = 'all' } = {}) =
             api.get('/leaderboard/internal/homepage', {
                 params: clean({ track }),
             }),
-        { items: mockStudents.slice(0, 3) }
+        { items: [] }
     );
+
+export const fetchMyLeaderboardSummary = async (params = {}) =>
+    requestOrNull(() => api.get('/leaderboard/me', { params: clean(params) }));
+
+export const fetchNearMeLeaderboard = async ({ limit = 5, ...params } = {}) =>
+    requestOrNull(() =>
+        api.get('/leaderboard/near-me', {
+            params: clean({ limit, ...params }),
+        })
+    );
+
+export const fetchLeaderboardAchievements = async (params = {}) =>
+    requestOrNull(() => api.get('/leaderboard/achievements', { params: clean(params) }));
+
+export const fetchLeaderboardChallenges = async (params = {}) =>
+    requestOrNull(() => api.get('/leaderboard/challenges', { params: clean(params) }));
+
+export const createLeaderboardShare = async (payload) => {
+    const { data } = await api.post('/leaderboard/share', payload);
+    return data;
+};
+
+export const fetchLeaderboardSharePayload = async (token) => {
+    const { data } = await api.get(`/leaderboard/share/${token}`);
+    return data;
+};

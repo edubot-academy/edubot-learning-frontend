@@ -16,10 +16,13 @@ This folder contains the shared documentation needed to keep **EduBot CRM** and 
     - `WEBHOOK_EVENTS.md`
     - `ACCESS_ACTIVATION_RULES.md`
     - `LMS_FRONTEND_ENDPOINTS_HANDOFF.md`
+    - `LEADERBOARD_SKILLS_SHARE_CONTRACT.md`
 - `prompts/`
     - `SHARED_ARCHITECTURE_PROMPT.md`
     - `LMS_FRONTEND_PROMPT.md`
     - `LMS_BACKEND_PROMPT.md`
+- `releases/`
+    - `LEADERBOARD_V2_RELEASE_NOTES.md`
 - `NEW_FEATURES_USER_GUIDE_KY.md`
     - Kyrgyz end-user guide for new CRM integration features (admin/instructor/student)
 - `LMS_FRONTEND_QA_CHECKLIST_KY.md`

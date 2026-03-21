@@ -1,14 +1,16 @@
 {
     "name": "frontend",
     "private": true,
-    "version": "0.2.0",
+    "version": "0.3.0",
     "type": "module",
     "scripts": {
         "dev": "vite",
         "build": "vite build",
         "lint": "eslint .",
         "preview": "vite preview",
-        "format": "prettier --write ."
+        "format": "prettier --write .",
+        "test": "vitest run",
+        "test:watch": "vitest"
     },
     "dependencies": {
         "@chepchik/react-rating": "^0.0.5",
@@ -32,6 +34,9 @@
     },
     "devDependencies": {
         "@eslint/js": "^9.19.0",
+        "@testing-library/jest-dom": "^6.9.1",
+        "@testing-library/react": "^16.3.2",
+        "@testing-library/user-event": "^14.6.1",
         "@types/react": "^19.0.8",
         "@types/react-dom": "^19.0.3",
         "@vitejs/plugin-react": "^4.3.4",
@@ -40,8 +45,10 @@
         "eslint-plugin-react-hooks": "^5.0.0",
         "eslint-plugin-react-refresh": "^0.4.18",
         "globals": "^15.14.0",
+        "jsdom": "^24.1.3",
         "prettier": "^3.4.1",
         "tailwindcss": "^3.4.17",
-        "vite": "^6.1.0"
+        "vite": "^6.1.0",
+        "vitest": "^4.1.0"
     }
 }
