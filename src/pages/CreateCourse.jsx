@@ -4,6 +4,8 @@ import {
     createCourse,
     createLesson,
     createSection,
+    updateSection,
+    updateLesson,
     fetchCategories,
     fetchSkills,
     uploadCourseImage,
@@ -619,11 +621,31 @@ const CourseBuilder = () => {
             }
 
             for (const [sIdx, section] of curriculum.entries()) {
-                const sec = await createSection(courseId, {
-                    title: section.sectionTitle,
-                    order: sIdx,
-                    skillId: normalizeSkillValue(section.skillId),
-                });
+                let sec;
+
+                // Check if section already exists
+                if (section.id) {
+                    // Update existing section
+                    sec = await updateSection(courseId, section.id, {
+                        title: section.sectionTitle,
+                        order: sIdx,
+                        skillId: normalizeSkillValue(section.skillId),
+                    });
+                } else {
+                    // Create new section
+                    sec = await createSection(courseId, {
+                        title: section.sectionTitle,
+                        order: sIdx,
+                        skillId: normalizeSkillValue(section.skillId),
+                    });
+
+                    // Store the section ID
+                    setCurriculum((prev) => {
+                        const updated = [...prev];
+                        updated[sIdx].id = sec.id;
+                        return updated;
+                    });
+                }
 
                 for (const [lIdx, lesson] of section.lessons.entries()) {
                     const isArticle = lesson.kind === 'article';
@@ -648,7 +670,23 @@ const CourseBuilder = () => {
                                     : undefined,
                     };
 
-                    const createdLesson = await createLesson(courseId, sec.id, lessonPayload);
+                    let createdLesson;
+
+                    // Check if lesson already exists
+                    if (lesson.id) {
+                        // Update existing lesson
+                        createdLesson = await updateLesson(courseId, sec.id, lesson.id, lessonPayload);
+                    } else {
+                        // Create new lesson
+                        createdLesson = await createLesson(courseId, sec.id, lessonPayload);
+
+                        // Store the lesson ID
+                        setCurriculum((prev) => {
+                            const updated = [...prev];
+                            updated[sIdx].lessons[lIdx].id = createdLesson.id;
+                            return updated;
+                        });
+                    }
 
                     if (isQuiz && quizData) {
                         const quizPayload = normalizeQuizForApi(quizData);

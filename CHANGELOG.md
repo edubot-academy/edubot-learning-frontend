@@ -1,5 +1,40 @@
 # Changelog
 
+## [0.4.2] - 2026-03-23
+
+### 🐛 BUG FIXES
+- **Drag/Drop System**: 
+  - Fixed duplicate section creation during course editing after drag/drop reordering
+  - Fixed duplicate lesson creation during drag/drop reordering
+  - Resolved section order preservation issues in EditInstructorCourse
+  - Fixed section/lesson ID tracking in CreateCourse
+- **Course Management**:
+  - Added proper existing ID checks before creating new sections/lessons
+  - Enhanced drag/drop dirty tracking to only mark moved items
+  - Fixed variable initialization order in CreateCourse
+  - Improved file upload workflow for both new and existing courses
+
+### 🔧 IMPROVEMENTS
+- **Drag/Drop UX**: 
+  - Accurate section/lesson reordering without duplicate creation
+  - Better state management for existing vs new items
+  - Minimal API calls - only update what actually changed
+  - Consistent behavior across CreateCourse and EditInstructorCourse
+- **Validation System**:
+  - Enhanced ID checking logic before API operations
+  - Improved dirty tracking precision for drag/drop operations
+  - Better error handling for section/lesson management
+
+### 📦 TECHNICAL CHANGES
+- Updated `handleSectionDrop` to only mark moved sections as dirty (range-based tracking)
+- Updated `handleLessonDrop` to only mark moved lessons as dirty (range-based tracking)
+- Added existing ID checks in CreateCourse `handleCurriculumSubmit` function
+- Enhanced section/lesson creation logic to prevent duplicates
+- Improved state management for drag/drop operations
+- Fixed variable declaration order in CreateCourse component
+
+---
+
 ## [0.4.1] - 2026-03-23
 
 ### 🐛 BUG FIXES

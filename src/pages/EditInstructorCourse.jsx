@@ -695,9 +695,17 @@ const EditInstructorCourse = () => {
             setExpandedSections((prevExpanded) =>
                 reorderExpandedMap(prevExpanded, prev.length, dragSectionIndex, targetIdx)
             );
-            next.forEach((section) => {
-                if (section.id) dirtySectionIdsRef.current.add(section.id);
-            });
+
+            // Only mark the moved section and affected sections as dirty
+            const minIndex = Math.min(dragSectionIndex, targetIdx);
+            const maxIndex = Math.max(dragSectionIndex, targetIdx);
+
+            for (let i = minIndex; i <= maxIndex; i++) {
+                if (next[i]?.id) {
+                    dirtySectionIdsRef.current.add(next[i].id);
+                }
+            }
+
             return next;
         });
         setDragSectionIndex(null);
@@ -713,9 +721,17 @@ const EditInstructorCourse = () => {
             const [moved] = lessons.splice(dragLesson.lessonIdx, 1);
             lessons.splice(targetLessonIdx, 0, moved);
             next[sectionIdx] = { ...next[sectionIdx], lessons };
-            lessons.forEach((lesson) => {
-                if (lesson.id) dirtyLessonIdsRef.current.add(lesson.id);
-            });
+
+            // Only mark the moved lesson and affected lessons as dirty
+            const minIndex = Math.min(dragLesson.lessonIdx, targetLessonIdx);
+            const maxIndex = Math.max(dragLesson.lessonIdx, targetLessonIdx);
+
+            for (let i = minIndex; i <= maxIndex; i++) {
+                if (lessons[i]?.id) {
+                    dirtyLessonIdsRef.current.add(lessons[i].id);
+                }
+            }
+
             return next;
         });
         setDragLesson(null);
