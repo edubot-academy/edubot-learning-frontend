@@ -128,11 +128,11 @@ const EditInstructorCourse = () => {
                 const mappedSkillOptions =
                     Array.isArray(skillsData) && skillsData.length
                         ? skillsData
-                              .filter((s) => s.slug || s.id)
-                              .map((s) => ({
-                                  value: toSkillValue(s.id ?? s.slug ?? ''),
-                                  label: s.name || s.slug,
-                              }))
+                            .filter((s) => s.slug || s.id)
+                            .map((s) => ({
+                                value: toSkillValue(s.id ?? s.slug ?? ''),
+                                label: s.name || s.slug,
+                            }))
                         : [];
                 const skillOptionsWithBlank = [
                     { value: '', label: 'Skill тандаңыз (опция)' },
@@ -410,10 +410,33 @@ const EditInstructorCourse = () => {
     const handleFileUpload = async (sectionIndex, lessonIndex, type, file) => {
         if (!file) return;
 
-        const sectionId = sections[sectionIndex]?.id;
+        let sectionId = sections[sectionIndex]?.id;
+
+        // Auto-save section if it doesn't have an ID
         if (!sectionId) {
-            toast.error('Адегенде бөлүмдү сактап, андан кийин файл жүктөңүз.');
-            return;
+            try {
+                const sectionPayload = {
+                    title: sections[sectionIndex].title || `Бөлүм ${sectionIndex + 1}`,
+                    order: sectionIndex,
+                    skillId: normalizeSkillValue(sections[sectionIndex].skillId),
+                };
+
+                const createdSection = await createSection(id, sectionPayload);
+                sectionId = createdSection.id;
+
+                // Update the section with the new ID
+                setSections((prev) => {
+                    const updated = [...prev];
+                    updated[sectionIndex].id = sectionId;
+                    return updated;
+                });
+
+                toast.success('Бөлүм автоматтык түрдө сакталды');
+            } catch (error) {
+                console.error('Failed to create section:', error);
+                toast.error('Бөлүмдү түзүүдө ката кетти. Адегенде кол менен сактаңыз.');
+                return;
+            }
         }
 
         setSections((prev) => {
@@ -558,7 +581,10 @@ const EditInstructorCourse = () => {
 
     const getLessonIssue = (lesson) => {
         if (!lesson.title?.trim()) return 'Аталыш жок';
-        if (lesson.kind === 'video' && !lesson.videoKey) return 'Видео жүктөлө элек';
+
+        // Check for video using multiple possible property names
+        const hasVideo = lesson.videoKey || lesson.videoUrl || lesson.video || lesson.videoFile || lesson.videoPath || lesson.videoSrc;
+        if (lesson.kind === 'video' && !hasVideo) return 'Видео жүктөлгөн эмес.';
         if (
             lesson.kind === 'article' &&
             (!lesson.content?.trim() || !lesson.duration || lesson.duration <= 0)
@@ -585,7 +611,8 @@ const EditInstructorCourse = () => {
         for (let sIdx = 0; sIdx < sections.length; sIdx += 1) {
             const section = sections[sIdx];
             for (let lIdx = 0; lIdx < section.lessons.length; lIdx += 1) {
-                const issue = getLessonIssue(section.lessons[lIdx]);
+                const lesson = section.lessons[lIdx];
+                const issue = getLessonIssue(lesson);
                 if (issue) return { sIdx, lIdx, issue };
             }
         }
@@ -745,7 +772,7 @@ const EditInstructorCourse = () => {
                     section.title !== originalSection.title ||
                     (originalSectionIndex !== -1 && sectionIdx !== originalSectionIndex) ||
                     toComparableSectionSkill(section.skillId) !==
-                        toComparableSectionSkill(originalSection.skillId);
+                    toComparableSectionSkill(originalSection.skillId);
 
                 if (!section.id) {
                     const createdSection = await createSection(id, sectionPayload);
@@ -837,7 +864,7 @@ const EditInstructorCourse = () => {
                         Boolean(challengePayload) &&
                         (!originalLesson ||
                             JSON.stringify(challengePayload) !==
-                                JSON.stringify(originalChallengePayload));
+                            JSON.stringify(originalChallengePayload));
 
                     if (isCode && savedLessonId && challengePayload && challengeChanged) {
                         await upsertLessonChallenge(id, section.id, savedLessonId, challengePayload);
@@ -916,6 +943,20 @@ const EditInstructorCourse = () => {
     const readyLessons = sections.reduce((acc, section) => acc + getSectionReadyCount(section), 0);
     const completionPercent = totalLessons > 0 ? Math.round((readyLessons / totalLessons) * 100) : 0;
     const courseInfoErrors = getCourseInfoErrors(course || {});
+    const handleStepChange = (newStep) => {
+        if (newStep === 3) {
+            // Validate before going to preview
+            const firstInvalid = getFirstInvalidLessonTarget();
+            if (firstInvalid) {
+                toast.error(
+                    `Жөнөтүүдөн мурун текшерүү керек: ${firstInvalid.issue} (Бөлүм ${firstInvalid.sIdx + 1}, Сабак ${firstInvalid.lIdx + 1})`
+                );
+                return;
+            }
+        }
+        setStep(newStep);
+    };
+
     const stepItems = [
         { id: 1, label: 'Маалымат', enabled: true },
         { id: 2, label: 'Мазмун', enabled: Boolean(course) },
@@ -950,7 +991,7 @@ const EditInstructorCourse = () => {
                 </p>
             </div>
 
-            <CourseBuilderStepNav step={step} onStepChange={setStep} items={stepItems} />
+            <CourseBuilderStepNav step={step} onStepChange={handleStepChange} items={stepItems} />
 
             {step === 1 && (
                 <div className="space-y-5">
@@ -1216,11 +1257,10 @@ const EditInstructorCourse = () => {
                                         key={`section-chip-${sIdx}`}
                                         type="button"
                                         onClick={() => scrollToSection(sIdx)}
-                                        className={`whitespace-nowrap rounded-full border px-3 py-1.5 text-xs font-medium transition ${
-                                            hasIssues
-                                                ? 'border-rose-300 bg-rose-50 text-rose-700 dark:border-rose-700 dark:bg-rose-900/30 dark:text-rose-200'
-                                                : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-[#1f1f1f] dark:text-slate-200'
-                                        }`}
+                                        className={`whitespace-nowrap rounded-full border px-3 py-1.5 text-xs font-medium transition ${hasIssues
+                                            ? 'border-rose-300 bg-rose-50 text-rose-700 dark:border-rose-700 dark:bg-rose-900/30 dark:text-rose-200'
+                                            : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-[#1f1f1f] dark:text-slate-200'
+                                            }`}
                                     >
                                         {label}
                                     </button>
@@ -1254,15 +1294,15 @@ const EditInstructorCourse = () => {
                                     </p>
                                     <p className="text-xs text-slate-500 dark:text-slate-400">
                                         {section.lessons.length} сабак · {getSectionReadyCount(section)}/{section.lessons.length} даяр
-                                    {getSectionIssueCount(section) > 0 ? (
-                                        <span className="ml-2 rounded-full bg-rose-100 px-2 py-0.5 text-[10px] font-medium text-rose-700 dark:bg-rose-900/40 dark:text-rose-200">
-                                            {getSectionIssueCount(section)} маселе
-                                        </span>
-                                    ) : (
-                                        <span className="ml-2 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-medium text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-200">
-                                            Даяр
-                                        </span>
-                                    )}
+                                        {getSectionIssueCount(section) > 0 ? (
+                                            <span className="ml-2 rounded-full bg-rose-100 px-2 py-0.5 text-[10px] font-medium text-rose-700 dark:bg-rose-900/40 dark:text-rose-200">
+                                                {getSectionIssueCount(section)} маселе
+                                            </span>
+                                        ) : (
+                                            <span className="ml-2 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-medium text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-200">
+                                                Даяр
+                                            </span>
+                                        )}
                                     </p>
                                 </div>
                                 <div className="flex items-center gap-2">
@@ -1301,207 +1341,306 @@ const EditInstructorCourse = () => {
                                 </div>
                             </summary>
                             <div className="p-4">
-                            <div className="flex flex-col md:flex-row md:items-center gap-3 mb-2">
-                                <div className="flex-1 flex flex-col gap-2">
-                                    <input
-                                        className="w-full p-2 border rounded bg-white dark:bg-[#222222] dark:text-white"
-                                        value={section.title}
-                                        onChange={(e) => updateSectionTitle(sIdx, e.target.value)}
-                                        placeholder="Бөлүм аталышы"
-                                    />
-                                    <div className="flex flex-col sm:flex-row gap-2 items-start">
-                                        <select
-                                            className="w-full p-2 border rounded bg-white dark:bg-[#222222] dark:text-white text-sm"
-                                            value={section.skillId || ''}
-                                            onChange={(e) => updateSectionSkill(sIdx, e.target.value)}
-                                        >
-                                            {skillOptions.map((opt) => (
-                                                <option key={opt.value} value={opt.value}>
-                                                    {opt.label}
-                                                </option>
-                                            ))}
-                                        </select>
-                                        <button
-                                            type="button"
-                                            onClick={loadSkillsList}
-                                            className="px-3 py-2 text-sm rounded border bg-white dark:bg-[#222222]"
-                                            disabled={skillsLoading}
-                                        >
-                                            {skillsLoading ? '...' : 'Жаңыртуу'}
-                                        </button>
+                                <div className="flex flex-col md:flex-row md:items-center gap-3 mb-2">
+                                    <div className="flex-1 flex flex-col gap-2">
+                                        <input
+                                            className="w-full p-2 border rounded bg-white dark:bg-[#222222] dark:text-white"
+                                            value={section.title}
+                                            onChange={(e) => updateSectionTitle(sIdx, e.target.value)}
+                                            placeholder="Бөлүм аталышы"
+                                        />
+                                        <div className="flex flex-col sm:flex-row gap-2 items-start">
+                                            <select
+                                                className="w-full p-2 border rounded bg-white dark:bg-[#222222] dark:text-white text-sm"
+                                                value={section.skillId || ''}
+                                                onChange={(e) => updateSectionSkill(sIdx, e.target.value)}
+                                            >
+                                                {skillOptions.map((opt) => (
+                                                    <option key={opt.value} value={opt.value}>
+                                                        {opt.label}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                            <button
+                                                type="button"
+                                                onClick={loadSkillsList}
+                                                className="px-3 py-2 text-sm rounded border bg-white dark:bg-[#222222]"
+                                                disabled={skillsLoading}
+                                            >
+                                                {skillsLoading ? '...' : 'Жаңыртуу'}
+                                            </button>
+                                        </div>
+                                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                                            Skill тандасаңыз, ушул бөлүмдүн прогресси skill лидербордго кошулат.
+                                        </p>
                                     </div>
-                                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                                        Skill тандасаңыз, ушул бөлүмдүн прогресси skill лидербордго кошулат.
-                                    </p>
-                                </div>
-                                <button
-                                    onClick={() =>
-                                        setConfirmDelete({
-                                            type: 'section',
-                                            sectionIndex: sIdx,
-                                            title: section.title,
-                                        })
-                                    }
-                                    className="px-3 py-1 bg-red-100 text-red-700 border border-red-300 rounded hover:bg-red-200 text-sm h-10 md:mt-7"
-                                >
-                                    Өчүрүү
-                                </button>
-                            </div>
-                            {section.lessons.map((lesson, lIdx) => {
-                                const lessonIssue = getLessonIssue(lesson);
-                                return (
-                                <div
-                                    id={`lesson-${sIdx}-${lIdx}`}
-                                    key={lIdx}
-                                    onDragOver={(event) => event.preventDefault()}
-                                    onDrop={() => handleLessonDrop(sIdx, lIdx)}
-                                    className={`mb-4 rounded-xl border p-3 transition ${
-                                        lessonIssue
-                                            ? 'border-rose-200 bg-rose-50/70 dark:border-rose-900/70 dark:bg-rose-950/20'
-                                            : 'border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-[#222222]'
-                                    } ${
-                                        dragLesson?.sectionIdx === sIdx && dragLesson?.lessonIdx === lIdx
-                                            ? 'ring-2 ring-sky-300 dark:ring-sky-700 opacity-80'
-                                            : ''
-                                    }`}
-                                >
-                                    <LessonCardHeader
-                                        lessonIndex={lIdx}
-                                        lessonKind={lesson.kind}
-                                        lessonIssue={lessonIssue}
-                                        onDragStart={() => setDragLesson({ sectionIdx: sIdx, lessonIdx: lIdx })}
-                                        onDragEnd={() => setDragLesson(null)}
-                                        onDelete={() => {
-                                            if (sIdx === 0 && sections[sIdx].lessons.length === 1) {
-                                                toast.error('Кеминде бир сабак болушу керек.');
-                                                return;
-                                            }
+                                    <button
+                                        onClick={() =>
                                             setConfirmDelete({
-                                                type: 'lesson',
+                                                type: 'section',
                                                 sectionIndex: sIdx,
-                                                lessonIndex: lIdx,
-                                                lessonTitle: lesson?.title,
-                                            });
-                                        }}
-                                    />
-                                    <LessonMetaFields
-                                        title={lesson.title}
-                                        kind={lesson.kind || 'video'}
-                                        kindOptions={LESSON_KIND_OPTIONS}
-                                        onTitleChange={(value) =>
-                                            handleLessonFieldChange(sIdx, lIdx, 'title', value)
+                                                title: section.title,
+                                            })
                                         }
-                                        onKindChange={(value) =>
-                                            handleLessonFieldChange(sIdx, lIdx, 'kind', value)
-                                        }
-                                    />
-
-                                    {lesson.kind === 'article' && (
-
-                                        <>
-                                            <label className="block mb-1 font-medium">
-                                                Макала тексти
-                                            </label>
-                                            <ArticleEditor
-                                                value={lesson.content || ''}
-                                                onChange={(val) =>
-                                                    handleLessonFieldChange(
-                                                        sIdx,
-                                                        lIdx,
-                                                        'content',
-                                                        val
-                                                    )
-                                                }
-                                                placeholder="Сабактын негизги тексти"
+                                        className="px-3 py-1 bg-red-100 text-red-700 border border-red-300 rounded hover:bg-red-200 text-sm h-10 md:mt-7"
+                                    >
+                                        Өчүрүү
+                                    </button>
+                                </div>
+                                {section.lessons.map((lesson, lIdx) => {
+                                    const lessonIssue = getLessonIssue(lesson);
+                                    return (
+                                        <div
+                                            id={`lesson-${sIdx}-${lIdx}`}
+                                            key={lIdx}
+                                            onDragOver={(event) => event.preventDefault()}
+                                            onDrop={() => handleLessonDrop(sIdx, lIdx)}
+                                            className={`mb-4 rounded-xl border p-3 transition ${lessonIssue
+                                                ? 'border-rose-200 bg-rose-50/70 dark:border-rose-900/70 dark:bg-rose-950/20'
+                                                : 'border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-[#222222]'
+                                                } ${dragLesson?.sectionIdx === sIdx && dragLesson?.lessonIdx === lIdx
+                                                    ? 'ring-2 ring-sky-300 dark:ring-sky-700 opacity-80'
+                                                    : ''
+                                                }`}
+                                        >
+                                            <LessonCardHeader
+                                                lessonIndex={lIdx}
+                                                lessonKind={lesson.kind}
+                                                lessonIssue={lessonIssue}
+                                                onDragStart={() => setDragLesson({ sectionIdx: sIdx, lessonIdx: lIdx })}
+                                                onDragEnd={() => setDragLesson(null)}
+                                                onDelete={() => {
+                                                    if (sIdx === 0 && sections[sIdx].lessons.length === 1) {
+                                                        toast.error('Кеминде бир сабак болушу керек.');
+                                                        return;
+                                                    }
+                                                    setConfirmDelete({
+                                                        type: 'lesson',
+                                                        sectionIndex: sIdx,
+                                                        lessonIndex: lIdx,
+                                                        lessonTitle: lesson?.title,
+                                                    });
+                                                }}
                                             />
-                                            <label className="block mb-1 font-medium">
-                                                Окуу убактысы (мүнөт)
+                                            <LessonMetaFields
+                                                title={lesson.title}
+                                                kind={lesson.kind || 'video'}
+                                                kindOptions={LESSON_KIND_OPTIONS}
+                                                onTitleChange={(value) =>
+                                                    handleLessonFieldChange(sIdx, lIdx, 'title', value)
+                                                }
+                                                onKindChange={(value) =>
+                                                    handleLessonFieldChange(sIdx, lIdx, 'kind', value)
+                                                }
+                                            />
+
+                                            {lesson.kind === 'article' && (
+
+                                                <>
+                                                    <label className="block mb-1 font-medium">
+                                                        Макала тексти
+                                                    </label>
+                                                    <ArticleEditor
+                                                        value={lesson.content || ''}
+                                                        onChange={(val) =>
+                                                            handleLessonFieldChange(
+                                                                sIdx,
+                                                                lIdx,
+                                                                'content',
+                                                                val
+                                                            )
+                                                        }
+                                                        placeholder="Сабактын негизги тексти"
+                                                    />
+                                                    <label className="block mb-1 font-medium">
+                                                        Окуу убактысы (мүнөт)
+                                                    </label>
+                                                    <input
+                                                        type="number"
+                                                        min="0.5"
+                                                        step="0.5"
+                                                        className="w-full p-2 mb-2 border rounded"
+                                                        value={secondsToMinutesInput(lesson.duration)}
+                                                        onChange={(e) => {
+                                                            handleLessonFieldChange(
+                                                                sIdx,
+                                                                lIdx,
+                                                                'duration',
+                                                                minutesInputToSeconds(e.target.value)
+                                                            );
+                                                        }}
+                                                        placeholder="мисалы: 5"
+                                                    />
+                                                </>
+                                            )}
+
+                                            {lesson.kind === 'quiz' && (
+                                                <LessonQuizEditor
+                                                    quiz={lesson.quiz}
+                                                    onChange={(newQuiz) =>
+                                                        handleLessonQuizChange(sIdx, lIdx, newQuiz)
+                                                    }
+                                                />
+                                            )}
+
+                                            {lesson.kind === 'code' && (
+                                                <LessonChallengeEditor
+                                                    challenge={lesson.challenge}
+                                                    onChange={(newChallenge) =>
+                                                        handleLessonChallengeChange(
+                                                            sIdx,
+                                                            lIdx,
+                                                            newChallenge
+                                                        )
+                                                    }
+                                                />
+                                            )}
+
+                                            {lesson.kind === 'video' && (
+                                                <>
+                                                    <label className="block mb-1 font-medium">
+                                                        Видео жүктөө
+                                                    </label>
+                                                    <div className="flex items-center justify-between gap-2">
+                                                        <input
+                                                            type="file"
+                                                            accept="video/*"
+                                                            onChange={(e) =>
+                                                                handleFileUpload(
+                                                                    sIdx,
+                                                                    lIdx,
+                                                                    'video',
+                                                                    e.target.files[0]
+                                                                )
+                                                            }
+                                                            className="w-full mb-2"
+                                                        />
+                                                        {(lesson.videoUrl || lesson.videoKey || lesson.video || lesson.videoFile || lesson.videoPath || lesson.videoSrc) && (
+                                                            <span className="text-xs text-blue-500 whitespace-nowrap">
+                                                                Видео файл бар
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    {lesson.uploadProgress.video > 0 && (
+                                                        <div className="mb-2">
+                                                            <div className="w-full bg-gray-200 rounded h-2">
+                                                                <div
+                                                                    className="bg-blue-600 h-full rounded"
+                                                                    style={{
+                                                                        width: `${lesson.uploadProgress.video}%`,
+                                                                    }}
+                                                                ></div>
+                                                            </div>
+                                                            <p className="text-xs text-gray-500">
+                                                                {lesson.uploadProgress.video}% жүктөлдү
+                                                            </p>
+                                                        </div>
+                                                    )}
+                                                </>
+                                            )}
+
+                                            <label className="block mt-3 mb-1 font-medium">
+                                                Материал жүктөө (PDF, ZIP)
+                                            </label>
+                                            <div className="flex items-center justify-between gap-2">
+                                                <input
+                                                    type="file"
+                                                    accept=".pdf,.zip"
+                                                    onChange={(e) =>
+                                                        handleFileUpload(
+                                                            sIdx,
+                                                            lIdx,
+                                                            'resource',
+                                                            e.target.files[0]
+                                                        )
+                                                    }
+                                                    className="w-full mb-2"
+                                                />
+                                                {(lesson.resourceUrl || lesson.resourceKey) && (
+                                                    <span className="text-xs text-purple-500 whitespace-nowrap">
+                                                        Материал файл бар
+                                                    </span>
+                                                )}
+                                            </div>
+                                            {lesson.uploadProgress.resource > 0 && (
+                                                <div className="mb-2">
+                                                    <div className="w-full bg-gray-100 rounded h-2">
+                                                        <div
+                                                            className="bg-purple-500 h-full rounded"
+                                                            style={{
+                                                                width: `${lesson.uploadProgress.resource}%`,
+                                                            }}
+                                                        ></div>
+                                                    </div>
+                                                    <p className="text-xs text-gray-500">
+                                                        {lesson.uploadProgress.resource}% жүктөлдү
+                                                    </p>
+                                                </div>
+                                            )}
+
+                                            <label className="block text-sm font-medium">
+                                                Материалдын аталышы
                                             </label>
                                             <input
-                                                type="number"
-                                                min="0.5"
-                                                step="0.5"
-                                                className="w-full p-2 mb-2 border rounded"
-                                                value={secondsToMinutesInput(lesson.duration)}
-                                                onChange={(e) => {
+                                                type="text"
+                                                className="w-full p-2 mb-2 border rounded  bg-white dark:bg-[#222222] dark:text-white"
+                                                value={lesson.resourceName || ''}
+                                                onChange={(e) =>
                                                     handleLessonFieldChange(
                                                         sIdx,
                                                         lIdx,
-                                                        'duration',
-                                                        minutesInputToSeconds(e.target.value)
-                                                    );
-                                                }}
-                                                placeholder="мисалы: 5"
+                                                        'resourceName',
+                                                        e.target.value
+                                                    )
+                                                }
+                                                placeholder="мисалы: Практикалык тапшырмалар.pdf"
+                                                disabled={!lesson.resourceKey}
                                             />
-                                        </>
-                                    )}
+                                            <p className="text-xs text-gray-500 mb-2">
+                                                Бул аталыш студенттерге көрсөтүлөт.
+                                            </p>
 
-                                    {lesson.kind === 'quiz' && (
-                                        <LessonQuizEditor
-                                            quiz={lesson.quiz}
-                                            onChange={(newQuiz) =>
-                                                handleLessonQuizChange(sIdx, lIdx, newQuiz)
-                                            }
-                                        />
-                                    )}
+                                            {lesson.kind === 'video' && (
+                                                <label className="flex items-center gap-2 mt-2">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={lesson.previewVideo}
+                                                        onChange={(e) =>
+                                                            handleLessonFieldChange(
+                                                                sIdx,
+                                                                lIdx,
+                                                                'previewVideo',
+                                                                e.target.checked
+                                                            )
+                                                        }
+                                                    />
+                                                    Превью видео катары белгилөө
+                                                </label>
+                                            )}
 
-                                    {lesson.kind === 'code' && (
-                                        <LessonChallengeEditor
-                                            challenge={lesson.challenge}
-                                            onChange={(newChallenge) =>
-                                                handleLessonChallengeChange(
-                                                    sIdx,
-                                                    lIdx,
-                                                    newChallenge
-                                                )
-                                            }
-                                        />
-                                    )}
-                                    <LessonAssetsPanel
-                                        kind={lesson.kind}
-                                        onVideoFile={(file) => handleFileUpload(sIdx, lIdx, 'video', file)}
-                                        videoExists={Boolean(lesson.videoUrl || lesson.videoKey)}
-                                        videoProgress={lesson.uploadProgress.video}
-                                        previewVideo={lesson.previewVideo}
-                                        onPreviewVideoChange={(checked) =>
-                                            handleLessonFieldChange(sIdx, lIdx, 'previewVideo', checked)
-                                        }
-                                        previewLabel="Превью видео катары белгилөө"
-                                        onResourceFile={(file) =>
-                                            handleFileUpload(sIdx, lIdx, 'resource', file)
-                                        }
-                                        resourceExists={Boolean(lesson.resourceUrl || lesson.resourceKey)}
-                                        resourceProgress={lesson.uploadProgress.resource}
-                                        resourceName={lesson.resourceName}
-                                        onResourceNameChange={(value) =>
-                                            handleLessonFieldChange(sIdx, lIdx, 'resourceName', value)
-                                        }
-                                        resourceNameDisabled={!lesson.resourceKey}
-                                    />
-
+                                        </div>
+                                    );
+                                })}
+                                <div className="sticky bottom-2 mt-3 flex items-center justify-between gap-2 rounded-xl border border-slate-200 bg-white/95 px-3 py-2 backdrop-blur dark:border-slate-700 dark:bg-[#151515]/95">
+                                    <span className="text-xs text-slate-500 dark:text-slate-400">
+                                        Бул бөлүм даяр болгондо жалпы мазмунду сактаңыз.
+                                    </span>
+                                    <div className="flex items-center gap-2">
+                                        <button
+                                            onClick={() => addLesson(sIdx)}
+                                            className="rounded-lg bg-amber-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-amber-600"
+                                        >
+                                            + Сабак кошуу
+                                        </button>
+                                        <button
+                                            onClick={handleSaveAll}
+                                            disabled={isUploading || saving}
+                                            className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-60 dark:border-slate-700 dark:bg-[#1f1f1f] dark:text-slate-200"
+                                        >
+                                            {saving ? 'Сакталууда...' : 'Жалпы сактоо'}
+                                        </button>
+                                    </div>
                                 </div>
-                            );
-                            })}
-                            <div className="sticky bottom-2 mt-3 flex items-center justify-between gap-2 rounded-xl border border-slate-200 bg-white/95 px-3 py-2 backdrop-blur dark:border-slate-700 dark:bg-[#151515]/95">
-                                <span className="text-xs text-slate-500 dark:text-slate-400">
-                                    Бул бөлүм даяр болгондо жалпы мазмунду сактаңыз.
-                                </span>
-                                <div className="flex items-center gap-2">
-                                    <button
-                                        onClick={() => addLesson(sIdx)}
-                                        className="rounded-lg bg-amber-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-amber-600"
-                                    >
-                                        + Сабак кошуу
-                                    </button>
-                                    <button
-                                        onClick={handleSaveAll}
-                                        disabled={isUploading || saving}
-                                        className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-60 dark:border-slate-700 dark:bg-[#1f1f1f] dark:text-slate-200"
-                                    >
-                                        {saving ? 'Сакталууда...' : 'Жалпы сактоо'}
-                                    </button>
-                                </div>
-                            </div>
                             </div>
                         </details>
                     ))}

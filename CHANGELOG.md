@@ -1,5 +1,36 @@
 # Changelog
 
+## [0.4.1] - 2026-03-23
+
+### 🐛 BUG FIXES
+- **File Upload System**: 
+  - Fixed "Адегенде бөлүмдү сактап, андан кийин файл жүктөңүз." error in course creation/editing
+  - Fixed "Section not found" (404) error during file uploads in CreateCourse
+  - Fixed "Бөлүм 1, Сабак 1: видео жүктөлгөн эмес." validation error for existing video lessons
+- **Course Management**:
+  - Added auto-save section functionality before file uploads
+  - Fixed video validation to check both `videoKey` and `videoUrl` properties
+  - Resolved variable initialization order issue in CreateCourse
+  - Enhanced file upload workflow for both new and existing courses
+
+### 🔧 IMPROVEMENTS
+- **File Upload UX**: 
+  - Seamless file upload without requiring manual section saving first
+  - Better error handling and user feedback during uploads
+  - Consistent validation logic across CreateCourse and EditInstructorCourse
+- **Validation System**:
+  - Updated video validation to support multiple video property formats
+  - Fixed preview validation in CoursePreviewPanel component
+  - Improved step navigation validation before course preview
+
+### 📦 TECHNICAL CHANGES
+- Updated `getLessonIssue` functions in both course pages to check `videoKey || videoUrl`
+- Added auto-section creation logic in `handleFileUpload` functions
+- Fixed variable declaration order in CreateCourse component
+- Enhanced API error handling for section creation failures
+
+---
+
 ## [0.4.0] - 2025-03-22
 
 ### 🛡️ SECURITY

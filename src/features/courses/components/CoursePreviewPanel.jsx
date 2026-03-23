@@ -104,7 +104,7 @@ const CoursePreviewPanel = ({
                     items.push(`${prefix}: аталышы жок.`);
                 }
 
-                if (lesson?.kind === 'video' && !lesson?.videoKey) {
+                if (lesson?.kind === 'video' && !lesson?.videoKey && !lesson?.videoUrl) {
                     items.push(`${prefix}: видео жүктөлгөн эмес.`);
                 }
 
