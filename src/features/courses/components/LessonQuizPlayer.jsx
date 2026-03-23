@@ -40,8 +40,8 @@ const LessonQuizPlayer = ({
                 correctIds: Array.isArray(ans.correctOptionIds)
                     ? ans.correctOptionIds
                     : ans.correctOptionId
-                      ? [ans.correctOptionId]
-                      : [],
+                        ? [ans.correctOptionId]
+                        : [],
             };
             return acc;
         }, {});
@@ -138,16 +138,16 @@ const LessonQuizPlayer = ({
 
     if (!quiz) {
         return (
-            <div className="mb-6 rounded-lg shadow-md p-6">
-                <p className="text-gray-500">Квиз табылган жок.</p>
+            <div className="mb-6 rounded-lg shadow-md p-6 bg-white dark:bg-gray-800">
+                <p className="text-gray-500 dark:text-gray-400">Квиз табылган жок.</p>
             </div>
         );
     }
 
     if (!startQuiz && !result) {
         return (
-            <div className="mb-6 rounded-lg shadow-md py-[20%] text-center">
-                <h2 className="font-bold text-[200%] leading-[44px] tracking-[0.01em] mb-[5%]">
+            <div className="mb-6 rounded-lg shadow-md py-[20%] text-center bg-white dark:bg-gray-800">
+                <h2 className="font-bold text-[200%] leading-[44px] tracking-[0.01em] mb-[5%] text-gray-900 dark:text-white">
                     Тестти баштайбыз! Даярсыңбы?
                 </h2>
                 <div className="flex justify-center gap-[16px]">
@@ -160,7 +160,7 @@ const LessonQuizPlayer = ({
 
     if (result) {
         return (
-            <div className="mb-6 rounded-lg shadow-md p-6 space-y-4">
+            <div className="mb-6 rounded-lg shadow-md p-6 space-y-4 bg-white dark:bg-gray-800">
                 <div className="flex flex-col items-center gap-3 text-center">
                     {result.passed ? (
                         <img src={grade_A} alt="grade" className="w-24" />
@@ -170,11 +170,11 @@ const LessonQuizPlayer = ({
                         <img src={grade_C} alt="grade" className="w-24" />
                     )}
 
-                    <p className="text-2xl font-bold">
+                    <p className="text-2xl font-bold text-gray-900 dark:text-white">
                         {result.score}% ({result.correctAnswers}/{result.totalQuestions}) туура
                     </p>
 
-                    <p className="text-gray-600">
+                    <p className="text-gray-600 dark:text-gray-400">
                         {result.passed
                             ? 'Сиз терең билим көрсөттүңүз!'
                             : 'Өтө албай калдыңыз. Кайра аракет кылуу.'}
@@ -190,7 +190,7 @@ const LessonQuizPlayer = ({
 
                 <div
                     onClick={() => setIsShowAnswers(!isShowAnswers)}
-                    className="flex items-center gap-1 cursor-pointer mt-6 text-lg font-medium"
+                    className="flex items-center gap-1 cursor-pointer mt-6 text-lg font-medium text-gray-900 dark:text-white"
                 >
                     <span>Жоопторун көрүү</span>
                     {isShowAnswers ? <IoIosArrowUp /> : <IoIosArrowDown />}
@@ -202,13 +202,12 @@ const LessonQuizPlayer = ({
                             ({ question, selected, correctOptions, answeredCorrect }, i) => (
                                 <div
                                     key={question.id}
-                                    className={`border rounded p-3 text-sm text-black ${
-                                        answeredCorrect
-                                            ? 'border-green-500 bg-green-50'
-                                            : answeredCorrect === false
-                                              ? 'border-red-500 bg-red-50'
-                                              : 'border-gray-200 bg-gray-50'
-                                    }`}
+                                    className={`border rounded p-3 text-sm text-black dark:text-white ${answeredCorrect
+                                        ? 'border-green-500 bg-green-50 dark:bg-green-900/20'
+                                        : answeredCorrect === false
+                                            ? 'border-red-500 bg-red-50 dark:bg-red-900/20'
+                                            : 'border-gray-200 bg-gray-50 dark:bg-gray-700'
+                                        }`}
                                 >
                                     <p className="font-medium flex items-start gap-2">
                                         <span className="pt-0.5">
@@ -217,7 +216,7 @@ const LessonQuizPlayer = ({
                                             ) : answeredCorrect === false ? (
                                                 <FiXCircle className="text-red-600" />
                                             ) : (
-                                                <FiClock className="text-gray-400" />
+                                                <FiClock className="text-gray-400 dark:text-gray-500" />
                                             )}
                                         </span>
                                         <span>
@@ -226,15 +225,14 @@ const LessonQuizPlayer = ({
                                     </p>
 
                                     <div className="mt-2">
-                                        <p className="text-xs uppercase tracking-wide text-slate-500 mb-1">
+                                        <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-gray-400 mb-1">
                                             Сиздин жооп
                                         </p>
                                         <div
-                                            className={`rounded border px-2 py-1 ${
-                                                selected
-                                                    ? 'border-amber-300 bg-amber-50'
-                                                    : 'border-slate-200 bg-slate-100 text-slate-500'
-                                            }`}
+                                            className={`rounded border px-2 py-1 ${selected
+                                                ? 'border-amber-300 bg-amber-50 dark:bg-amber-900/20'
+                                                : 'border-slate-200 bg-slate-100 text-slate-500 dark:bg-gray-600 dark:text-gray-400'
+                                                }`}
                                         >
                                             {selected ? (
                                                 <InlineRichText text={selected.text} />
@@ -254,7 +252,7 @@ const LessonQuizPlayer = ({
                                                     {correctOptions.map((opt) => (
                                                         <li
                                                             key={opt.id}
-                                                            className="rounded border border-green-300 bg-white px-2 py-1"
+                                                            className="rounded border border-green-300 bg-white dark:bg-gray-800 px-2 py-1"
                                                         >
                                                             <InlineRichText text={opt.text} />
                                                         </li>
@@ -272,10 +270,10 @@ const LessonQuizPlayer = ({
     }
 
     return (
-        <div className="mb-6 rounded-lg shadow-md p-6 space-y-4">
+        <div className="mb-6 rounded-lg shadow-md p-6 space-y-4 bg-white dark:bg-gray-800">
             {currentQuestion ? (
                 <div className="space-y-4">
-                    <p className="font-medium text-[20px] leading-[40px]">
+                    <p className="font-medium text-[20px] leading-[40px] text-gray-900 dark:text-white">
                         {activeQuestionIndex + 1}. <InlineRichText text={currentQuestion.prompt} />
                     </p>
 
@@ -287,10 +285,9 @@ const LessonQuizPlayer = ({
                                 <label
                                     key={option.id}
                                     className={`flex items-start gap-2 border rounded-xl p-4 transition 
-                                        ${
-                                            isSelected
-                                                ? 'border-edubot-orange bg-orange-50 ring-1 ring-orange-200'
-                                                : 'border-gray-200 bg-white'
+                                        ${isSelected
+                                            ? 'border-edubot-orange bg-orange-50 ring-1 ring-orange-200 dark:bg-orange-900/20'
+                                            : 'border-gray-200 bg-white dark:bg-gray-700 dark:border-gray-600'
                                         }
                                         ${disabled ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'}
                                     `}
@@ -305,7 +302,7 @@ const LessonQuizPlayer = ({
                                         }
                                         className="mt-1"
                                     />
-                                    <span className="leading-6">
+                                    <span className="leading-6 text-gray-900 dark:text-white">
                                         <InlineRichText text={option.text} />
                                     </span>
                                 </label>
@@ -340,7 +337,7 @@ const LessonQuizPlayer = ({
                         </div>
                     )}
 
-                    <div className="text-sm text-gray-500 mt-2">
+                    <div className="text-sm text-gray-500 dark:text-gray-400 mt-2">
                         Калтырылкан суроолор: {skippedQuestions.length} из{' '}
                         {quiz.questions?.length || 0}
                     </div>

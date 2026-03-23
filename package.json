@@ -1,7 +1,7 @@
 {
     "name": "frontend",
     "private": true,
-    "version": "0.4.2",
+    "version": "1.0.0",
     "type": "module",
     "scripts": {
         "dev": "vite",
@@ -15,6 +15,8 @@
     "dependencies": {
         "@chepchik/react-rating": "^0.0.5",
         "@fontsource/inter": "^5.2.5",
+        "@tailwindcss/forms": "^0.5.11",
+        "@tailwindcss/typography": "^0.5.19",
         "autoprefixer": "^10.4.20",
         "axios": "^1.7.9",
         "dompurify": "^3.3.1",

@@ -21,7 +21,7 @@ const CourseVideoPlayer = ({
     React.useEffect(() => {
         // При смене урока обновляем ключ
         setVideoKey(Date.now());
-        
+
         // Принудительно запускаем воспроизведение через небольшую задержку
         const timer = setTimeout(() => {
             if (videoRef.current && !activeLesson.locked) {
@@ -55,7 +55,7 @@ const CourseVideoPlayer = ({
                 onClick={() => prevLesson && handleLessonClick(prevLesson)}
                 disabled={!prevLesson}
                 aria-label="Предыдущий урок"
-                className="absolute top-1/2 left-2 -translate-y-1/2 text-3xl bg-white/50 rounded-full px-3 py-1 hover:bg-white/80 disabled:opacity-30"
+                className="absolute top-1/2 left-2 -translate-y-1/2 text-3xl bg-white/50 dark:bg-gray-800/50 rounded-full px-3 py-1 hover:bg-white/80 dark:hover:bg-gray-800/80 disabled:opacity-30"
             >
                 ←
             </button>
@@ -64,7 +64,7 @@ const CourseVideoPlayer = ({
                 onClick={() => nextLesson && handleLessonClick(nextLesson)}
                 disabled={!nextLesson}
                 aria-label="Следующий урок"
-                className="absolute top-1/2 right-2 -translate-y-1/2 text-3xl bg-white/50 rounded-full px-3 py-1 hover:bg-white/80 disabled:opacity-30"
+                className="absolute top-1/2 right-2 -translate-y-1/2 text-3xl bg-white/50 dark:bg-gray-800/50 rounded-full px-3 py-1 hover:bg-white/80 dark:hover:bg-gray-800/80 disabled:opacity-30"
             >
                 →
             </button>

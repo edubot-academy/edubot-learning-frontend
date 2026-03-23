@@ -53,7 +53,7 @@ const LessonChallengePlayer = ({
     if (!challenge) {
         return (
             <div className="mb-6 bg-[#262729] rounded-lg shadow-md p-6">
-                <p className="text-gray-500">Код тапшырма табылган жок.</p>
+                <p className="text-gray-500 dark:text-gray-400">Код тапшырма табылган жок.</p>
             </div>
         );
     }
@@ -172,11 +172,10 @@ const LessonChallengePlayer = ({
 
                         <div className="p-4 overflow-y-auto max-h-[60vh]">
                             <div
-                                className={`rounded p-4 mb-4 ${
-                                    result.passed
+                                className={`rounded p-4 mb-4 ${result.passed
                                         ? 'bg-green-900 bg-opacity-20 border border-green-800 text-green-400'
                                         : 'bg-red-900 bg-opacity-20 border border-red-800 text-red-400'
-                                }`}
+                                    }`}
                             >
                                 <p className="font-semibold">
                                     {result.passed
@@ -189,11 +188,10 @@ const LessonChallengePlayer = ({
                                 {result.results?.map((testResult, idx) => (
                                     <div
                                         key={testResult.testId || idx}
-                                        className={`border rounded p-3 text-sm ${
-                                            testResult.passed
+                                        className={`border rounded p-3 text-sm ${testResult.passed
                                                 ? 'border-green-500 bg-green-900 bg-opacity-10'
                                                 : 'border-red-500 bg-red-900 bg-opacity-10'
-                                        }`}
+                                            }`}
                                     >
                                         <p className="font-semibold flex items-center gap-2 text-white mb-2">
                                             {testResult.passed ? (

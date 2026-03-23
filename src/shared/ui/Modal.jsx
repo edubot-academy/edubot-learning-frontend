@@ -100,7 +100,7 @@ const Modal = ({
                                     <button
                                         type="button"
                                         onClick={handleCloseClick}
-                                        className="rounded-full p-1 px-2 text-3xl font-bold leading-none text-gray-500 transition-colors duration-200 hover:bg-gray-100 hover:text-black"
+                                        className="rounded-full p-1 px-2 text-3xl font-bold leading-none text-gray-500 transition-colors duration-200 hover:bg-gray-100 hover:text-black dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white"
                                     >
                                         ×
                                     </button>

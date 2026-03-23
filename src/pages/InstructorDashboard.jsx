@@ -512,10 +512,10 @@ const InstructorDashboard = () => {
                 <main className="flex-1 min-w-0 space-y-6">
                     <div className="flex items-center justify-between flex-wrap gap-3">
                         <div>
-                            <p className="text-sm uppercase tracking-wide text-gray-400">
+                            <p className="text-sm uppercase tracking-wide text-gray-400 dark:text-gray-500">
                                 Инструктор
                             </p>
-                            <h1 className="text-3xl font-bold">{user.fullName || user.email}</h1>
+                            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{user.fullName || user.email}</h1>
                             <p className="text-sm text-gray-500 dark:text-[#a6adba]">
                                 Курстарыңызды жана студенттерди толук көзөмөлдөңүз
                             </p>
@@ -667,11 +667,11 @@ const CoursesSection = ({
                 {courses.map((course) => (
                     <div
                         key={course.id || course.title}
-                        className="border border-gray-200 rounded-2xl p-4 flex flex-col gap-3"
+                        className="border border-gray-200 dark:border-gray-700 rounded-2xl p-4 flex flex-col gap-3"
                     >
                         <div className="flex items-start justify-between gap-3">
                             <div>
-                                <p className="text-lg font-semibold">{course.title}</p>
+                                <p className="text-lg font-semibold text-gray-900 dark:text-white">{course.title}</p>
                                 {course.category?.name && (
                                     <p className="text-sm text-gray-500 dark:text-[#a6adba]">
                                         {course.category.name}
@@ -679,11 +679,10 @@ const CoursesSection = ({
                                 )}
                             </div>
                             <span
-                                className={`text-xs px-2 py-1 rounded-full ${
-                                    course.isPublished
-                                        ? 'bg-green-100 text-green-700'
-                                        : 'bg-yellow-100 text-yellow-700'
-                                }`}
+                                className={`text-xs px-2 py-1 rounded-full ${course.isPublished
+                                    ? 'bg-green-100 text-green-700'
+                                    : 'bg-yellow-100 text-yellow-700'
+                                    }`}
                             >
                                 {course.isPublished ? 'Жарыяланды' : 'Каралууда'}
                             </span>
@@ -708,7 +707,7 @@ const CoursesSection = ({
                         <div className="flex gap-2">
                             <Link
                                 to={`/courses/${course.id}`}
-                                className="flex-1 text-center border border-gray-200 rounded-full px-4 py-2 text-sm"
+                                className="flex-1 text-center border border-gray-200 dark:border-gray-600 rounded-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
                             >
                                 Көрүү
                             </Link>
@@ -949,11 +948,10 @@ const StudentsSection = ({
                                                 {course.title}
                                             </p>
                                             <span
-                                                className={`text-xs px-2 py-1 rounded-full ${
-                                                    course.isPublished
-                                                        ? 'bg-green-100 text-green-700'
-                                                        : 'bg-yellow-100 text-yellow-700'
-                                                }`}
+                                                className={`text-xs px-2 py-1 rounded-full ${course.isPublished
+                                                    ? 'bg-green-100 text-green-700'
+                                                    : 'bg-yellow-100 text-yellow-700'
+                                                    }`}
                                             >
                                                 {course.isPublished
                                                     ? 'Жарыяланды'
@@ -991,9 +989,8 @@ const StudentsSection = ({
                         </h3>
                         <p className="text-sm text-gray-500 dark:text-[#a6adba]">
                             {courseMeta
-                                ? `Сабактар: ${courseMeta.lessonCount ?? '—'} • Студенттер: ${
-                                      courseMeta.studentCount ?? 0
-                                  }`
+                                ? `Сабактар: ${courseMeta.lessonCount ?? '—'} • Студенттер: ${courseMeta.studentCount ?? 0
+                                }`
                                 : 'Курс тандаңыз.'}
                         </p>
                     </div>
@@ -1121,11 +1118,10 @@ const StudentsSection = ({
                                             </td>
                                             <td className="py-3 pr-4">
                                                 <span
-                                                    className={`text-xs px-2 py-1 rounded-full ${
-                                                        student.completed
-                                                            ? 'bg-green-100 text-green-700'
-                                                            : 'bg-blue-100 text-blue-700'
-                                                    }`}
+                                                    className={`text-xs px-2 py-1 rounded-full ${student.completed
+                                                        ? 'bg-green-100 text-green-700'
+                                                        : 'bg-blue-100 text-blue-700'
+                                                        }`}
                                                 >
                                                     {student.completed ? 'Бүттү' : 'Уланууда'}
                                                 </span>
@@ -1142,11 +1138,10 @@ const StudentsSection = ({
                                                                     {test.lessonTitle}
                                                                 </span>
                                                                 <span
-                                                                    className={`px-2 py-0.5 rounded-full ${
-                                                                        test.passed
-                                                                            ? 'bg-green-100 text-green-700'
-                                                                            : 'bg-red-100 text-red-700'
-                                                                    }`}
+                                                                    className={`px-2 py-0.5 rounded-full ${test.passed
+                                                                        ? 'bg-green-100 text-green-700'
+                                                                        : 'bg-red-100 text-red-700'
+                                                                        }`}
                                                                 >
                                                                     {test.passed
                                                                         ? 'Өттү'
@@ -1373,8 +1368,8 @@ const OfferingsSection = ({ courses, offerings, loading, refreshOfferings }) => 
             courseId: base?.courseId
                 ? String(base.courseId)
                 : courses[0]?.id
-                  ? String(courses[0].id)
-                  : '',
+                    ? String(courses[0].id)
+                    : '',
             title: base?.title || '',
             modality: base?.modality || 'ONLINE',
             visibility: base?.visibility || 'PRIVATE',
@@ -1383,10 +1378,10 @@ const OfferingsSection = ({ courses, offerings, loading, refreshOfferings }) => 
             scheduleNote: base?.scheduleNote || '',
             scheduleBlocks: base?.scheduleBlocks
                 ? base.scheduleBlocks.map((block) => ({
-                      day: block.day || '',
-                      startTime: block.startTime || '',
-                      endTime: block.endTime || '',
-                  }))
+                    day: block.day || '',
+                    startTime: block.startTime || '',
+                    endTime: block.endTime || '',
+                }))
                 : [],
             capacity: base?.capacity ? String(base.capacity) : '',
             priceOverride: base?.priceOverride || '',
@@ -1496,8 +1491,8 @@ const OfferingsSection = ({ courses, offerings, loading, refreshOfferings }) => 
                 scheduleBlocks:
                     createForm.scheduleBlocks && createForm.scheduleBlocks.length
                         ? createForm.scheduleBlocks.filter(
-                              (block) => block.day && block.startTime && block.endTime
-                          )
+                            (block) => block.day && block.startTime && block.endTime
+                        )
                         : null,
                 capacity: createForm.capacity ? Number(createForm.capacity) : null,
                 priceOverride: createForm.priceOverride.trim() || null,
@@ -2165,8 +2160,8 @@ const CreateOfferingModal = ({ courses, form, onChange, onClose, onSubmit, creat
                             {creating
                                 ? 'Сакталууда...'
                                 : mode === 'edit'
-                                  ? 'Өзгөртүүлөрдү сактоо'
-                                  : 'Offering түзүү'}
+                                    ? 'Өзгөртүүлөрдү сактоо'
+                                    : 'Offering түзүү'}
                         </button>
                     </div>
                 </form>
@@ -2202,11 +2197,10 @@ const OfferingCard = ({ offering, onEdit, onEnroll }) => {
                     </p>
                 </div>
                 <span
-                    className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                        visibility === 'PUBLIC'
-                            ? 'bg-green-100 text-green-700'
-                            : 'bg-gray-100 text-gray-600 dark:text-[#a6adba]'
-                    }`}
+                    className={`px-3 py-1 rounded-full text-xs font-semibold ${visibility === 'PUBLIC'
+                        ? 'bg-green-100 text-green-700'
+                        : 'bg-gray-100 text-gray-600 dark:text-[#a6adba]'
+                        }`}
                 >
                     {visibility === 'PUBLIC' ? 'Публичный' : 'Жабык'}
                 </span>
@@ -2354,11 +2348,10 @@ const EnrollStudentModal = ({
                                     <button
                                         key={student.id}
                                         type="button"
-                                        className={`w-full text-left px-3 py-2 text-sm ${
-                                            String(student.id) === form.userId
-                                                ? 'bg-blue-50 text-blue-700'
-                                                : 'hover:bg-gray-50'
-                                        }`}
+                                        className={`w-full text-left px-3 py-2 text-sm ${String(student.id) === form.userId
+                                            ? 'bg-blue-50 text-blue-700'
+                                            : 'hover:bg-gray-50'
+                                            }`}
                                         onClick={() => {
                                             onChange('userId', String(student.id));
                                             onSearchChange(student.name || student.email || '');

@@ -99,11 +99,11 @@ const LeaderboardHub = ({ embedded = false, initialTrack = 'all', lockTrack = fa
             const catalog = await fetchSkills();
             const mapped = Array.isArray(catalog)
                 ? catalog
-                      .filter((skill) => skill.slug || skill.id)
-                      .map((skill) => ({
-                          slug: skill.slug || String(skill.id),
-                          label: skill.name || skill.slug || `Көндүм ${skill.id}`,
-                      }))
+                    .filter((skill) => skill.slug || skill.id)
+                    .map((skill) => ({
+                        slug: skill.slug || String(skill.id),
+                        label: skill.name || skill.slug || `Көндүм ${skill.id}`,
+                    }))
                 : [];
             setSkillBoards(mapped);
         } catch (error) {
@@ -202,9 +202,9 @@ const LeaderboardHub = ({ embedded = false, initialTrack = 'all', lockTrack = fa
             targetGap: mySummary?.nextTarget?.xpGap ?? fallback.targetGap,
             nextTargetEntry: mySummary?.nextTarget
                 ? {
-                      fullName: mySummary.nextTarget.label || `#${mySummary.nextTarget.rank || ''}`,
-                      xp: mySummary.nextTarget.xp || null,
-                  }
+                    fullName: mySummary.nextTarget.label || `#${mySummary.nextTarget.rank || ''}`,
+                    xp: mySummary.nextTarget.xp || null,
+                }
                 : fallback.nextTargetEntry,
             nearYou: Array.isArray(nearMe?.items) ? nearMe.items : fallback.nearYou,
             momentum: [
@@ -357,35 +357,35 @@ const LeaderboardHub = ({ embedded = false, initialTrack = 'all', lockTrack = fa
     const renderTrackSwitcher = () => {
         if (lockTrack) return null;
         return (
-        <div className={embedded ? 'max-w-full overflow-hidden rounded-[24px] border border-gray-100 bg-white p-2 shadow-sm dark:border-gray-800 dark:bg-[#222222]' : 'max-w-full overflow-hidden rounded-[24px] border border-slate-200 bg-white/90 p-2 shadow-sm backdrop-blur dark:border-slate-800 dark:bg-slate-900/70'}>
-            <div className="flex flex-wrap gap-2 min-w-0">
-                {trackOptions.map((option) => {
-                    const active = track === option.value;
-                    return (
-                        <button
-                            key={option.value}
-                            type="button"
-                            onClick={() => setTrack(option.value)}
-                            className={[
-                                'group min-w-0 flex-1 rounded-2xl px-4 py-3 text-left transition-all sm:min-w-[132px] sm:flex-none',
-                                active
-                                    ? embedded
-                                        ? 'bg-blue-600 text-white shadow-sm dark:bg-blue-500 dark:text-white'
-                                        : 'bg-slate-900 text-white shadow-lg shadow-slate-300/60 dark:bg-white dark:text-slate-900 dark:shadow-none'
-                                    : embedded
-                                        ? 'bg-gray-50 text-gray-600 hover:bg-gray-100 dark:bg-[#1A1A1A] dark:text-gray-300 dark:hover:bg-gray-800'
-                                        : 'bg-slate-50 text-slate-600 hover:bg-slate-100 dark:bg-slate-950/60 dark:text-slate-300 dark:hover:bg-slate-800',
-                            ].join(' ')}
-                        >
-                            <div className="text-sm font-semibold">{option.label}</div>
-                            <div className={['mt-1 text-xs', active ? (embedded ? 'text-white/80' : 'text-white/75 dark:text-slate-600') : (embedded ? 'text-gray-400 dark:text-gray-500' : 'text-slate-400')].join(' ')}>
-                                {option.helper}
-                            </div>
-                        </button>
-                    );
-                })}
+            <div className={embedded ? 'max-w-full overflow-hidden rounded-[24px] border border-gray-100 bg-white p-2 shadow-sm dark:border-gray-800 dark:bg-[#222222]' : 'max-w-full overflow-hidden rounded-[24px] border border-slate-200 bg-white/90 p-2 shadow-sm backdrop-blur dark:border-slate-800 dark:bg-slate-900/70'}>
+                <div className="flex flex-wrap gap-2 min-w-0">
+                    {trackOptions.map((option) => {
+                        const active = track === option.value;
+                        return (
+                            <button
+                                key={option.value}
+                                type="button"
+                                onClick={() => setTrack(option.value)}
+                                className={[
+                                    'group min-w-0 flex-1 rounded-2xl px-4 py-3 text-left transition-all sm:min-w-[132px] sm:flex-none',
+                                    active
+                                        ? embedded
+                                            ? 'bg-blue-600 text-white shadow-sm dark:bg-blue-500 dark:text-white'
+                                            : 'bg-slate-900 text-white shadow-lg shadow-slate-300/60 dark:bg-white dark:text-slate-900 dark:shadow-none'
+                                        : embedded
+                                            ? 'bg-gray-50 text-gray-600 hover:bg-gray-100 dark:bg-[#1A1A1A] dark:text-gray-300 dark:hover:bg-gray-800'
+                                            : 'bg-slate-50 text-slate-600 hover:bg-slate-100 dark:bg-slate-950/60 dark:text-slate-300 dark:hover:bg-slate-800',
+                                ].join(' ')}
+                            >
+                                <div className="text-sm font-semibold">{option.label}</div>
+                                <div className={['mt-1 text-xs', active ? (embedded ? 'text-white/80' : 'text-white/75 dark:text-slate-600') : (embedded ? 'text-gray-400 dark:text-gray-500' : 'text-slate-400')].join(' ')}>
+                                    {option.helper}
+                                </div>
+                            </button>
+                        );
+                    })}
+                </div>
             </div>
-        </div>
         );
     };
 
@@ -509,7 +509,7 @@ const LeaderboardHub = ({ embedded = false, initialTrack = 'all', lockTrack = fa
                     <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
                         <div className="space-y-6">
                             <LeaderboardListCard
-                                title={`${trackMeta.label} мыкты 10`} 
+                                title={`${trackMeta.label} мыкты 10`}
                                 description={`Жалпы көрүнүктүү прогресс ушул жерде. Азыр тандалган фокус: ${trackMeta.helper.toLowerCase()}.`}
                                 items={weekly?.items || []}
                                 currentUserId={user?.id}
@@ -552,7 +552,7 @@ const LeaderboardHub = ({ embedded = false, initialTrack = 'all', lockTrack = fa
         <div
             className={embedded
                 ? 'w-full max-w-full space-y-8 overflow-x-hidden'
-                : 'min-h-screen w-full max-w-full overflow-x-hidden bg-[linear-gradient(180deg,_#fff7ed_0%,_#ffffff_16%,_#f8fafc_100%)] px-4 py-10 text-slate-900 dark:bg-[#0b1120] dark:text-white md:px-8 xl:px-10'}
+                : 'min-h-screen w-full max-w-full overflow-x-hidden bg-[linear-gradient(180deg,_#fff7ed_0%,_#ffffff_16%,_#f8fafc_100%)] px-4 py-10 text-slate-900 dark:bg-[linear-gradient(180deg,_#0b1120_0%,_#1a1f2e_16%,_#1e293b_100%)] dark:text-white md:px-8 xl:px-10'}
         >
             <div className={embedded ? 'w-full max-w-full min-w-0 space-y-8' : 'mx-auto w-full max-w-7xl min-w-0 space-y-8'}>
                 <LeaderboardHero
@@ -588,7 +588,7 @@ const LeaderboardHub = ({ embedded = false, initialTrack = 'all', lockTrack = fa
 
                 {emptyWeeklyBoard ? (
                     <div className={embedded ? 'rounded-[24px] border border-gray-100 bg-white px-5 py-4 text-gray-700 shadow-sm dark:border-gray-800 dark:bg-[#222222] dark:text-gray-200' : 'rounded-[24px] border border-slate-200 bg-white/90 px-5 py-4 text-slate-700 shadow-sm dark:border-slate-800 dark:bg-slate-900/70 dark:text-slate-200'}>
-                            <p className={embedded ? 'text-sm font-semibold uppercase tracking-[0.18em] text-blue-600 dark:text-blue-300' : 'text-sm font-semibold uppercase tracking-[0.18em] text-orange-500'}>Рейтинг жаңы толуп жатат</p>
+                        <p className={embedded ? 'text-sm font-semibold uppercase tracking-[0.18em] text-blue-600 dark:text-blue-300' : 'text-sm font-semibold uppercase tracking-[0.18em] text-orange-500'}>Рейтинг жаңы толуп жатат</p>
                         <p className="mt-1 text-sm">
                             Бул багыт боюнча азырынча рейтингке чыга турган жетиштүү активдүүлүк жок. Биринчи сабактарды аяктагандан кийин таблица толо баштайт.
                         </p>

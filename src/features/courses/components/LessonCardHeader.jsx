@@ -46,7 +46,7 @@ const LessonCardHeader = ({
                 </button>
                 <button
                     onClick={onDelete}
-                    className="rounded-lg border border-rose-300 bg-rose-50 px-2.5 py-1.5 text-xs font-medium text-rose-700 hover:bg-rose-100"
+                    className="rounded-lg border border-rose-300 bg-rose-50 px-2.5 py-1.5 text-xs font-medium text-rose-700 hover:bg-rose-100 dark:border-rose-600 dark:bg-rose-900/30 dark:text-rose-300 dark:hover:bg-rose-900/50"
                 >
                     Өчүрүү
                 </button>

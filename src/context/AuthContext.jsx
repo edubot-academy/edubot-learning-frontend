@@ -17,7 +17,13 @@ export const AuthProvider = ({ children }) => {
     });
 
     useEffect(() => {
-        loadUserProfile();
+        // Only try to fetch profile if we have a user in localStorage or a session cookie
+        const hasStoredUser = localStorage.getItem('user') && localStorage.getItem('user') !== 'undefined';
+        const hasSessionCookie = document.cookie.includes('edubot_session=');
+
+        if (hasStoredUser || hasSessionCookie) {
+            loadUserProfile();
+        }
     }, []);
 
     const loadUserProfile = async () => {
@@ -26,7 +32,8 @@ export const AuthProvider = ({ children }) => {
             setUser(profile);
             localStorage.setItem('user', JSON.stringify(profile));
         } catch (error) {
-            if (error?.response?.status !== 401) {
+            // Silently handle 401 errors and suppressed errors (user not logged in)
+            if (error?.response?.status !== 401 && !error?.suppressed) {
                 console.error('Failed to fetch user profile', error);
             }
             logout(false); // just clear session; don't force redirect on initial load

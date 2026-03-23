@@ -43,7 +43,7 @@ const LeaderRow = ({ item, rank }) => {
             </div>
             <Avatar src={item?.avatarUrl} name={item?.fullName} />
             <div className="flex-1 min-w-0">
-                <p className="font-medium truncate">{item?.fullName || 'Студент'}</p>
+                <p className="font-medium truncate text-gray-900 dark:text-white">{item?.fullName || 'Студент'}</p>
                 <p className="text-xs text-gray-500 dark:text-gray-300">
                     {item?.xp || 0} XP
                     {item?.progressPercent ? ` · ${item.progressPercent}%` : ''}
@@ -170,7 +170,7 @@ const InternalLeaderboard = () => {
             <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
                     <p className="text-sm uppercase tracking-wide text-orange-500 font-semibold">LMS ички рейтинги</p>
-                    <h1 className="text-3xl font-bold">Рейтинг</h1>
+                    <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Рейтинг</h1>
                 </div>
                 <div className="inline-flex rounded-xl border border-gray-200 dark:border-gray-700 p-1 bg-white dark:bg-[#1a1f27]">
                     {TRACKS.map((option) => (
@@ -178,11 +178,10 @@ const InternalLeaderboard = () => {
                             key={option.value}
                             type="button"
                             onClick={() => setTrack(option.value)}
-                            className={`px-3 py-1.5 text-sm rounded-lg ${
-                                track === option.value
-                                    ? 'bg-orange-500 text-white'
-                                    : 'text-gray-600 dark:text-gray-300'
-                            }`}
+                            className={`px-3 py-1.5 text-sm rounded-lg ${track === option.value
+                                ? 'bg-orange-500 text-white'
+                                : 'text-gray-600 dark:text-gray-300'
+                                }`}
                         >
                             {option.label}
                         </button>
@@ -194,7 +193,7 @@ const InternalLeaderboard = () => {
 
             <div className="grid lg:grid-cols-2 gap-6">
                 <section className="rounded-2xl border border-gray-100 dark:border-gray-800 p-4 bg-white dark:bg-[#1a1f27]">
-                    <h2 className="text-lg font-semibold mb-3">Апталык рейтинг</h2>
+                    <h2 className="text-lg font-semibold mb-3 text-gray-900 dark:text-white">Апталык рейтинг</h2>
                     <div className="space-y-2">
                         {weeklyItems.length ? (
                             weeklyItems.map((item, idx) => (
@@ -207,14 +206,14 @@ const InternalLeaderboard = () => {
                 </section>
 
                 <section className="rounded-2xl border border-gray-100 dark:border-gray-800 p-4 bg-white dark:bg-[#1a1f27]">
-                    <h2 className="text-lg font-semibold mb-3">Аптанын студенти</h2>
+                    <h2 className="text-lg font-semibold mb-3 text-gray-900 dark:text-white">Аптанын студенти</h2>
                     {studentOfWeek ? (
                         <LeaderRow item={studentOfWeek} rank={1} />
                     ) : (
                         <EmptyState message="Бул багыт боюнча студент жок." />
                     )}
 
-                    <h3 className="text-base font-semibold mt-5 mb-3">Башкы беттеги мыктылар</h3>
+                    <h3 className="text-base font-semibold mt-5 mb-3 text-gray-900 dark:text-white">Башкы беттеги мыктылар</h3>
                     <div className="space-y-2">
                         {homepageItems.length ? (
                             homepageItems.map((item, idx) => (
@@ -229,7 +228,7 @@ const InternalLeaderboard = () => {
 
             <section className="rounded-2xl border border-gray-100 dark:border-gray-800 p-4 bg-white dark:bg-[#1a1f27] space-y-3">
                 <div className="flex flex-wrap items-center justify-between gap-3">
-                    <h2 className="text-lg font-semibold">Курс рейтинги</h2>
+                    <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Курс рейтинги</h2>
                     <select
                         value={selectedCourseId}
                         onChange={(event) => setSelectedCourseId(event.target.value)}

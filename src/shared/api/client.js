@@ -60,6 +60,11 @@ api.interceptors.response.use(
             if (!shouldSkipAuthRedirect && window.location.pathname !== '/login') {
                 window.location.href = '/login';
             }
+
+            // If we're skipping auth redirect, suppress the error to avoid console noise
+            if (shouldSkipAuthRedirect) {
+                return Promise.reject({ ...error, suppressed: true });
+            }
         }
 
         return Promise.reject(error);

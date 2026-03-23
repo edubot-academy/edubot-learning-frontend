@@ -224,13 +224,13 @@ const ArticleEditor = ({
     };
 
     return (
-        <div className="rounded-xl border border-slate-200 bg-white shadow-sm">
-            <div className="sticky top-0 z-10 border-b border-slate-200 bg-gradient-to-r from-slate-50 to-white px-3 py-2">
+        <div className="rounded-xl border border-slate-200 dark:border-gray-600 bg-white dark:bg-gray-800 shadow-sm">
+            <div className="sticky top-0 z-10 border-b border-slate-200 dark:border-gray-600 bg-gradient-to-r from-slate-50 to-white dark:from-gray-700 dark:to-gray-800 px-3 py-2">
                 <div className="flex flex-wrap items-center gap-2">
                     {TOOLBAR_GROUPS.map((group, groupIdx) => (
                         <div
                             key={`group-${groupIdx}`}
-                            className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white p-1"
+                            className="inline-flex items-center gap-1 rounded-lg border border-slate-200 dark:border-gray-600 bg-white dark:bg-gray-700 p-1"
                         >
                             {group.map(({ label, icon, command, value: commandValue, title }) => (
                                 <button
@@ -238,11 +238,10 @@ const ArticleEditor = ({
                                     key={`${command}-${label || title || commandValue || ''}`}
                                     onClick={() => handleCommand(command, commandValue)}
                                     title={title || label}
-                                    className={`h-8 min-w-8 px-2 text-sm rounded-md flex items-center justify-center transition ${
-                                        isButtonActive({ command, value: commandValue })
-                                            ? 'bg-edubot-orange text-white'
-                                            : 'text-slate-700 hover:bg-slate-100'
-                                    }`}
+                                    className={`h-8 min-w-8 px-2 text-sm rounded-md flex items-center justify-center transition ${isButtonActive({ command, value: commandValue })
+                                        ? 'bg-edubot-orange text-white'
+                                        : 'text-slate-700 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-gray-600'
+                                        }`}
                                     disabled={disabled}
                                 >
                                     {icon || label}
@@ -252,23 +251,22 @@ const ArticleEditor = ({
                     ))}
                 </div>
 
-                <p className="mt-2 text-[11px] text-slate-500">
+                <p className="mt-2 text-[11px] text-slate-500 dark:text-gray-400">
                     Кеңеш: `Ctrl/Cmd + B` калың, `Ctrl/Cmd + I` курсив. Код үчүн `&lt;/&gt;` баскычы.
                 </p>
             </div>
 
             <div className="relative p-3">
                 {showPlaceholder && (
-                    <span className="absolute top-6 left-6 text-slate-400 pointer-events-none select-none">
+                    <span className="absolute top-6 left-6 text-slate-400 dark:text-gray-500 pointer-events-none select-none">
                         {placeholder}
                     </span>
                 )}
 
                 <div
                     ref={editorRef}
-                    className={`article-editor-content min-h-[260px] rounded-lg border border-slate-200 bg-white p-4 text-[15px] leading-7 outline-none transition focus:border-edubot-orange focus:ring-2 focus:ring-edubot-orange/20 ${
-                        disabled ? 'opacity-60 cursor-not-allowed bg-slate-50' : 'cursor-text'
-                    }`}
+                    className={`article-editor-content min-h-[260px] rounded-lg border border-slate-200 dark:border-gray-600 bg-white dark:bg-gray-800 p-4 text-[15px] leading-7 outline-none transition focus:border-edubot-orange focus:ring-2 focus:ring-edubot-orange/20 text-gray-900 dark:text-white ${disabled ? 'opacity-60 cursor-not-allowed bg-slate-50 dark:bg-gray-700' : 'cursor-text'
+                        }`}
                     contentEditable={!disabled}
                     suppressContentEditableWarning
                     onInput={emitChange}

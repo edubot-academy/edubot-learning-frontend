@@ -98,13 +98,13 @@ const InstructorHomework = () => {
 
     return (
         <div className="pt-24 p-6 max-w-6xl mx-auto space-y-4">
-            <h1 className="text-2xl font-semibold">Үй тапшырмаларды башкаруу</h1>
+            <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">Үй тапшырмаларды башкаруу</h1>
 
             <div className="grid md:grid-cols-4 gap-3">
                 <select
                     value={courseId}
                     onChange={(e) => setCourseId(e.target.value)}
-                    className="border rounded px-3 py-2"
+                    className="border rounded px-3 py-2 bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                 >
                     <option value="">Бардык курстар</option>
                     {courses.map((course) => (
@@ -117,7 +117,7 @@ const InstructorHomework = () => {
                 <select
                     value={groupId}
                     onChange={(e) => setGroupId(e.target.value)}
-                    className="border rounded px-3 py-2"
+                    className="border rounded px-3 py-2 bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                     disabled={!courseId}
                 >
                     <option value="">Бардык группалар</option>
@@ -134,43 +134,43 @@ const InstructorHomework = () => {
                     max="200"
                     value={limit}
                     onChange={(e) => setLimit(Number(e.target.value || 20))}
-                    className="border rounded px-3 py-2"
+                    className="border rounded px-3 py-2 bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                     placeholder="Лимит"
                 />
             </div>
 
             <div className="grid md:grid-cols-3 gap-3">
-                <div className="p-4 rounded-xl border">Жалпы: {stats.total}</div>
-                <div className="p-4 rounded-xl border">Күтүүдө: {stats.pending}</div>
-                <div className="p-4 rounded-xl border">Текшерилген: {stats.checked}</div>
+                <div className="p-4 rounded-xl border bg-white dark:bg-gray-800 dark:border-gray-700 text-gray-900 dark:text-white">Жалпы: {stats.total}</div>
+                <div className="p-4 rounded-xl border bg-white dark:bg-gray-800 dark:border-gray-700 text-gray-900 dark:text-white">Күтүүдө: {stats.pending}</div>
+                <div className="p-4 rounded-xl border bg-white dark:bg-gray-800 dark:border-gray-700 text-gray-900 dark:text-white">Текшерилген: {stats.checked}</div>
             </div>
 
             {loading ? <Loader fullScreen={false} /> : null}
 
-            <div className="rounded-xl border overflow-x-auto">
+            <div className="rounded-xl border overflow-x-auto bg-white dark:bg-gray-800 dark:border-gray-700">
                 <table className="w-full text-sm">
-                    <thead className="bg-gray-50">
+                    <thead className="bg-gray-50 dark:bg-gray-700">
                         <tr>
-                            <th className="text-left px-3 py-2">Аталышы</th>
-                            <th className="text-left px-3 py-2">Курс</th>
-                            <th className="text-left px-3 py-2">Группа</th>
-                            <th className="text-left px-3 py-2">Мөөнөт</th>
-                            <th className="text-left px-3 py-2">Статус</th>
+                            <th className="text-left px-3 py-2 text-gray-900 dark:text-white">Аталышы</th>
+                            <th className="text-left px-3 py-2 text-gray-900 dark:text-white">Курс</th>
+                            <th className="text-left px-3 py-2 text-gray-900 dark:text-white">Группа</th>
+                            <th className="text-left px-3 py-2 text-gray-900 dark:text-white">Мөөнөт</th>
+                            <th className="text-left px-3 py-2 text-gray-900 dark:text-white">Статус</th>
                         </tr>
                     </thead>
                     <tbody>
                         {items.map((item) => (
-                            <tr key={item.id || `${item.title}-${item.deadline || ''}`} className="border-t">
-                                <td className="px-3 py-2">{item.title || item.name || 'Үй тапшырма'}</td>
-                                <td className="px-3 py-2">{item.courseTitle || item.course?.title || '-'}</td>
-                                <td className="px-3 py-2">{item.groupName || item.group?.name || '-'}</td>
-                                <td className="px-3 py-2">{item.deadline || '-'}</td>
-                                <td className="px-3 py-2">{item.status || '-'}</td>
+                            <tr key={item.id || `${item.title}-${item.deadline || ''}`} className="border-t dark:border-gray-700">
+                                <td className="px-3 py-2 text-gray-900 dark:text-white">{item.title || item.name || 'Үй тапшырма'}</td>
+                                <td className="px-3 py-2 text-gray-900 dark:text-white">{item.courseTitle || item.course?.title || '-'}</td>
+                                <td className="px-3 py-2 text-gray-900 dark:text-white">{item.groupName || item.group?.name || '-'}</td>
+                                <td className="px-3 py-2 text-gray-900 dark:text-white">{item.deadline || '-'}</td>
+                                <td className="px-3 py-2 text-gray-900 dark:text-white">{item.status || '-'}</td>
                             </tr>
                         ))}
                         {!items.length && !loading ? (
                             <tr>
-                                <td className="px-3 py-6 text-center text-gray-500" colSpan={5}>
+                                <td className="px-3 py-6 text-center text-gray-500 dark:text-gray-400" colSpan={5}>
                                     Үй тапшырмалар табылган жок.
                                 </td>
                             </tr>

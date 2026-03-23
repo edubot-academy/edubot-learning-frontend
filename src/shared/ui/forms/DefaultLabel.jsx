@@ -58,11 +58,10 @@ const DefaultLabel = ({
                 >
                     <label
                         className={`absolute left-2 sm:left-3 transition-all duration-200 ease-in-out
-              ${
-                  isActive
-                      ? '-top-2 sm:-top-3 text-xs sm:text-sm'
-                      : 'top-2 sm:top-3 text-gray-500 dark:text-[#a6adba] text-sm sm:text-base'
-              }
+              ${isActive
+                                ? '-top-2 sm:-top-3 text-xs sm:text-sm'
+                                : 'top-2 sm:top-3 text-gray-500 dark:text-[#a6adba] text-sm sm:text-base'
+                            }
               ${hasError ? 'text-red-600' : focused ? 'text-amber-600' : 'text-gray-500 dark:text-[#a6adba]'}
               bg-white dark:bg-[#222222] px-1 pointer-events-none  
             `}

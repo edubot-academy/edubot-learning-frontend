@@ -400,15 +400,15 @@ const ShareDestinationModal = ({ isOpen, onClose, onAction, isBusy, canNativeSha
     const utilityOptions = [
         ...(isAuthenticated
             ? [
-                  {
-                      id: 'story',
-                      icon: FiCamera,
-                      title: 'Story’ге түз бөлүшүү',
-                      description: 'Телефондо бөлүшүү терезесин ачат, болбосо PNG жүктөйт.',
-                      badge: 'Story',
-                      accentClassName: 'border-rose-200 bg-rose-50 hover:border-rose-300 hover:bg-rose-100/80 dark:border-rose-500/20 dark:bg-rose-500/10 dark:hover:bg-rose-500/15',
-                  },
-              ]
+                {
+                    id: 'story',
+                    icon: FiCamera,
+                    title: 'Story’ге түз бөлүшүү',
+                    description: 'Телефондо бөлүшүү терезесин ачат, болбосо PNG жүктөйт.',
+                    badge: 'Story',
+                    accentClassName: 'border-rose-200 bg-rose-50 hover:border-rose-300 hover:bg-rose-100/80 dark:border-rose-500/20 dark:bg-rose-500/10 dark:hover:bg-rose-500/15',
+                },
+            ]
             : []),
         {
             id: 'copy',
@@ -429,7 +429,7 @@ const ShareDestinationModal = ({ isOpen, onClose, onAction, isBusy, canNativeSha
     ];
 
     return (
-        <Modal isOpen={isOpen} onClose={isBusy ? () => {} : onClose} title="Кайда бөлүшөсүз?" size="lg">
+        <Modal isOpen={isOpen} onClose={isBusy ? () => { } : onClose} title="Кайда бөлүшөсүз?" size="lg">
             <div className="space-y-6">
                 <div className="rounded-[28px] border border-slate-200 bg-[linear-gradient(135deg,_rgba(249,115,22,0.12),_rgba(255,255,255,0.96))] p-5 dark:border-slate-700 dark:bg-[linear-gradient(135deg,_rgba(249,115,22,0.18),_rgba(15,23,42,0.94))]">
                     <div className="flex flex-wrap items-start justify-between gap-3">
@@ -508,7 +508,7 @@ const ShareDestinationModal = ({ isOpen, onClose, onAction, isBusy, canNativeSha
 
                 <div className="flex flex-col gap-3 rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-4 dark:border-slate-700 dark:bg-slate-900/70 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                            <p className="text-sm font-semibold text-slate-900 dark:text-white">Кеңеш</p>
+                        <p className="text-sm font-semibold text-slate-900 dark:text-white">Кеңеш</p>
                         <p className="text-xs text-slate-600 dark:text-slate-300">
                             {isAuthenticated
                                 ? 'Story үчүн эң ишенимдүү жол — native share же PNG жүктөп алып колдонмого кол менен жүктөө.'
@@ -978,8 +978,8 @@ export const NearYouRail = ({ items = [], currentUserId = null, targetGap = null
                             <div
                                 key={item?.studentId || item?.id || index}
                                 className={[
-                                'flex items-center gap-3 rounded-[22px] border px-4 py-3',
-                                isCurrentUser
+                                    'flex items-center gap-3 rounded-[22px] border px-4 py-3',
+                                    isCurrentUser
                                         ? embedded
                                             ? 'border-blue-100 bg-blue-50/80 dark:border-blue-500/20 dark:bg-blue-500/10'
                                             : 'border-orange-200 bg-[linear-gradient(135deg,_rgba(251,146,60,0.16),_rgba(255,255,255,0.96))] dark:border-orange-500/30 dark:bg-orange-500/10'
@@ -1213,7 +1213,7 @@ export const PublicSpotlightPanel = ({ studentOfWeek = null, highlights = [], me
     ];
 
     return (
-        <section className="w-full max-w-full overflow-hidden rounded-[28px] border border-slate-200 bg-[linear-gradient(135deg,_#fff7ed_0%,_#ffffff_50%,_#eff6ff_100%)] p-4 shadow-[0_18px_60px_-42px_rgba(15,23,42,0.45)] dark:border-slate-800 dark:bg-[#161b22] sm:p-6">
+        <section className="w-full max-w-full overflow-hidden rounded-[28px] border border-slate-200 bg-[linear-gradient(135deg,_#fff7ed_0%,_#ffffff_50%,_#eff6ff_100%)] p-4 shadow-[0_18px_60px_-42px_rgba(15,23,42,0.45)] dark:border-slate-800 dark:bg-[linear-gradient(135deg,_#1e293b_0%,_#334155_50%,_#1e3a8a_100%)] sm:p-6">
             <div className="flex min-w-0 flex-col items-start justify-between gap-4 lg:flex-row lg:items-start">
                 <div className="min-w-0 max-w-xl">
                     <p className="text-xs font-semibold uppercase tracking-[0.22em] text-orange-500">Аптанын өзөгү</p>
@@ -1231,10 +1231,10 @@ export const PublicSpotlightPanel = ({ studentOfWeek = null, highlights = [], me
                         {(metrics.length
                             ? metrics
                             : [
-                                  { label: 'Бул жума', value: '10+', helper: 'Жигердүү студент' },
-                                  { label: 'Жеңиштер', value: '3', helper: 'Бөлүшүүгө даяр учур' },
-                                  { label: 'Өсүш', value: '120 XP', helper: 'Аптанын импульсу' },
-                              ]
+                                { label: 'Бул жума', value: '10+', helper: 'Жигердүү студент' },
+                                { label: 'Жеңиштер', value: '3', helper: 'Бөлүшүүгө даяр учур' },
+                                { label: 'Өсүш', value: '120 XP', helper: 'Аптанын импульсу' },
+                            ]
                         ).slice(0, 3).map((metric, index) => (
                             <div key={`${metric.label}-${index}`} className="min-w-0 w-full max-w-full rounded-[20px] border border-slate-200 bg-white/85 p-4 dark:border-slate-700 dark:bg-slate-900/60">
                                 <p className="break-words text-xs font-semibold uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">{metric.label}</p>
@@ -1322,10 +1322,10 @@ export const ChallengeRail = ({ items = [], embedded = false }) => (
             {(items.length
                 ? items
                 : [
-                      { title: '1 сабак аяктоо', detail: 'Минималдуу +20 XP' },
-                      { title: '1 тестти ийгиликтүү бүтүрүү', detail: 'Рейтингге эң тез таасир' },
-                      { title: 'Серияны үзбөө', detail: 'Эртең дагы кирип окуу' },
-                  ]
+                    { title: '1 сабак аяктоо', detail: 'Минималдуу +20 XP' },
+                    { title: '1 тестти ийгиликтүү бүтүрүү', detail: 'Рейтингге эң тез таасир' },
+                    { title: 'Серияны үзбөө', detail: 'Эртең дагы кирип окуу' },
+                ]
             ).map((item, index) => {
                 const progress = Number(item.progress || 0);
                 const target = Number(item.target || 0);
@@ -1448,10 +1448,10 @@ export const SkillSpotlightGrid = ({ boards = [], personalProgress = [], feature
                             ? personalPercent >= 100
                                 ? 'Бул багытта негиз бекем. Эми рейтингде көтөрүлүүгө басым жасаңыз.'
                                 : xpGap && xpGap > 0
-                                  ? `Лидерге жакындаш үчүн дагы ${xpGap} XP топтоңуз.`
-                                  : remainingProgress > 0
-                                    ? `Дагы ${remainingProgress}% өздөштүрсөңүз, бул багыт кыйла күчөйт.`
-                                    : 'Бул багытта кийинки чоң кадамга даярсыз.'
+                                    ? `Лидерге жакындаш үчүн дагы ${xpGap} XP топтоңуз.`
+                                    : remainingProgress > 0
+                                        ? `Дагы ${remainingProgress}% өздөштүрсөңүз, бул багыт кыйла күчөйт.`
+                                        : 'Бул багытта кийинки чоң кадамга даярсыз.'
                             : 'Бул багытта биринчи сабакты жаап, жеке прогрессти ачып алыңыз.';
 
                         return (

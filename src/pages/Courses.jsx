@@ -28,10 +28,10 @@ const CoursesPage = () => {
     }
 
     return (
-        <div className="min-h-screen p-6 pt-0">
+        <div className="min-h-screen p-6 pt-0 bg-white dark:bg-gray-900">
             <div className="ml-10 mt-5">
-                <h1 className="text-4xl font-bold text-start mb-0">Биздин курстар</h1>
-                <p className="font-inter text-sm md:text-base lg:text-lg">
+                <h1 className="text-4xl font-bold text-start mb-0 text-gray-900 dark:text-white">Биздин курстар</h1>
+                <p className="font-inter text-sm md:text-base lg:text-lg text-gray-600 dark:text-gray-400">
                     Сиз үчүн сунушталган курстар
                 </p>
             </div>

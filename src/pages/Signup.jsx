@@ -233,7 +233,7 @@ const SignupPage = () => {
                             <p className="text-xs text-gray-500 mt-1">Сырсөз кеминде 8 белгиден болуу керек</p>
 
                             {showTooltip && (
-                                <ul className="absolute z-10 top-full left-0 mt-1 bg-white text-black rounded shadow-lg text-xs w-full px-3 py-2 border">
+                                <ul className="absolute z-10 top-full left-0 mt-1 bg-white dark:bg-gray-800 text-black dark:text-white rounded shadow-lg text-xs w-full px-3 py-2 border border-gray-200 dark:border-gray-700">
                                     <li
                                         className={
                                             passwordValidations.length

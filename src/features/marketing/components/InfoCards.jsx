@@ -26,10 +26,10 @@ function InfoCards() {
             {infoCards.map((x, index) => (
                 <div
                     key={index}
-                    className="flex flex-col items-start gap-2 border border-[#C5C9D1] rounded p-3 h-64"
+                    className="flex flex-col items-start gap-2 border border-[#C5C9D1] dark:border-gray-600 rounded p-3 h-64 bg-white dark:bg-gray-800"
                 >
-                    <img src={x.icon} alt="" />
-                    <h3 className="font-bold text-lg ">{x.name}</h3>
+                    <img src={x.icon} alt="" className="dark:brightness-90 dark:contrast-110" />
+                    <h3 className="font-bold text-lg text-gray-900 dark:text-white">{x.name}</h3>
                     <p className="font-normal text-[#3E424A] dark:text-[#a6adba] max-w-md ">{x.title}</p>
                 </div>
             ))}

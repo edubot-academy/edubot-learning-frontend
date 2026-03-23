@@ -3,9 +3,10 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { FaBars } from 'react-icons/fa';
 import { IoSearch } from 'react-icons/io5';
 import { GrLanguage } from 'react-icons/gr';
-import ThemeToggle from '@shared-ui/ThemeToggle';
+import { useDarkMode } from '../contexts/DarkModeContext';
 import { BsChevronDown } from 'react-icons/bs';
 import EduBotLogo from '@assets/images/edubot-signup.png';
+import ThemeToggle from '@shared-ui/ThemeToggle';
 
 import { IoHeartOutline, IoHeart, IoChatbubblesOutline } from 'react-icons/io5';
 import { BsCart2 } from 'react-icons/bs';
@@ -89,20 +90,13 @@ const Header = () => {
     const { user } = useContext(AuthContext);
     const location = useLocation();
     const navigate = useNavigate();
-
+    const { darkMode, setDarkMode } = useDarkMode();
     const { favourites } = useFavourites();
-
     const [menuOpen, setMenuOpen] = useState(false);
     const [positionBar, setPositionBar] = useState(false);
     const [search, setSearch] = useState('');
-    const [langOpen, setLangOpen] = useState(false);
     const [lang, setLang] = useState('Кыргызча');
-    const [dark, setDark] = useState(() => {
-        if (typeof window === 'undefined') return false;
-        const stored = localStorage.getItem('theme');
-        if (stored) return stored === 'dark';
-        return window.matchMedia?.('(prefers-color-scheme: dark)').matches ?? false;
-    });
+    const [langOpen, setLangOpen] = useState(false);
     const [searchOpen, setSearchOpen] = useState(false);
     const [userMenuOpen, setUserMenuOpen] = useState(false);
     const [activeIcon, setActiveIcon] = useState(null);
@@ -136,14 +130,6 @@ const Header = () => {
     useEffect(() => {
         setMenuOpen(false);
     }, [location.pathname]);
-
-    useEffect(() => {
-        const root = document.documentElement;
-        root.classList.toggle('dark', dark);
-        if (typeof window !== 'undefined') {
-            localStorage.setItem('theme', dark ? 'dark' : 'light');
-        }
-    }, [dark]);
 
     useEffect(() => {
         const handleClickOutside = (e) => {
@@ -240,14 +226,14 @@ const Header = () => {
                             className="relative flex items-center border rounded hover:border-[#F06743] flex-1 max-w-xs ml-6 border-[#7B818C] dark:border-[#2A2E35] bg-white dark:bg-[#1A1A1A] overflow-visible min-w-48"
                             ref={searchContainerRef}
                         >
-                            <IoSearch className="w-5 h-5 ml-2 text-[#7B818C] dark:text-gray-400" />
+                            <IoSearch className="w-5 h-5 ml-2 text-[#7B818C] dark:text-gray-300" />
                             <input
                                 type="text"
                                 placeholder="Издөө"
                                 value={search}
                                 onChange={(e) => handleSearch(e.target.value)}
                                 onFocus={() => search.length >= 2 && setShowDropdown(true)}
-                                className="px-3 py-2 focus:outline-none bg-transparent w-full text-base text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400"
+                                className="px-3 py-2 focus:outline-none focus:ring-1 focus:ring-[#EA580C] dark:focus:ring-[#F97316] bg-transparent w-full text-base text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400"
                             />
 
                             {/* Search Dropdown */}
@@ -323,17 +309,16 @@ const Header = () => {
                         </div>
 
                         <div className="relative top-[-12px]">
-                            <ThemeToggle dark={dark} setDark={setDark} />
+                            <ThemeToggle dark={darkMode} setDark={setDarkMode} />
                         </div>
 
                         {user ? (
                             <div className="flex items-center gap-3">
                                 <button
-                                    className={`relative w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-300 ${
-                                        isFavouritesPage || activeIcon === 'heart'
-                                            ? 'bg-orange-500 border-orange-500'
-                                            : 'border-black dark:border-gray-400 hover:border-gray-600 dark:hover:border-gray-300'
-                                    }`}
+                                    className={`relative w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-300 ${isFavouritesPage || activeIcon === 'heart'
+                                        ? 'bg-orange-500 border-orange-500'
+                                        : 'border-black dark:border-gray-400 hover:border-gray-600 dark:hover:border-gray-300'
+                                        }`}
                                     onClick={handleFavouriteClick}
                                     aria-label="Избранное"
                                     aria-current={isFavouritesPage ? 'page' : undefined}
@@ -351,22 +336,20 @@ const Header = () => {
                                 </button>
                                 <div className="relative">
                                     <button
-                                        className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-300 ${
-                                            activeIcon === 'cart' || location.pathname === '/cart'
-                                                ? 'bg-orange-500 border-orange-500'
-                                                : 'border-black dark:border-gray-400 hover:border-gray-600 dark:hover:border-gray-300'
-                                        }`}
+                                        className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-300 ${activeIcon === 'cart' || location.pathname === '/cart'
+                                            ? 'bg-orange-500 border-orange-500'
+                                            : 'border-black dark:border-gray-400 hover:border-gray-600 dark:hover:border-gray-300'
+                                            }`}
                                         onClick={() =>
                                             handleIconClick('cart', () => navigate('/cart'))
                                         }
                                     >
                                         <BsCart2
-                                            className={`w-5 h-5 transition-colors duration-300 ${
-                                                activeIcon === 'cart' ||
+                                            className={`w-5 h-5 transition-colors duration-300 ${activeIcon === 'cart' ||
                                                 location.pathname === '/cart'
-                                                    ? 'text-white'
-                                                    : 'text-black dark:text-gray-300'
-                                            }`}
+                                                ? 'text-white'
+                                                : 'text-black dark:text-gray-300'
+                                                }`}
                                         />
                                         {cartItemsCount > 0 && (
                                             <span className="absolute -top-1 -right-1 bg-orange-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-medium">
@@ -377,11 +360,10 @@ const Header = () => {
                                 </div>
                                 <div className="relative group">
                                     <button
-                                        className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-300 ${
-                                            activeIcon === 'user' || userMenuOpen
-                                                ? 'bg-orange-500 border-orange-500'
-                                                : 'border-black dark:border-gray-400 hover:border-gray-600 dark:hover:border-gray-300'
-                                        }`}
+                                        className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-300 ${activeIcon === 'user' || userMenuOpen
+                                            ? 'bg-orange-500 border-orange-500'
+                                            : 'border-black dark:border-gray-400 hover:border-gray-600 dark:hover:border-gray-300'
+                                            }`}
                                         onClick={() => {
                                             handleIconClick('user');
                                             setUserMenuOpen(!userMenuOpen);
@@ -395,11 +377,10 @@ const Header = () => {
                                             />
                                         ) : (
                                             <FaRegUser
-                                                className={`w-5 h-5 transition-colors duration-300 ${
-                                                    activeIcon === 'user' || userMenuOpen
-                                                        ? 'text-white'
-                                                        : 'text-black dark:text-gray-300'
-                                                }`}
+                                                className={`w-5 h-5 transition-colors duration-300 ${activeIcon === 'user' || userMenuOpen
+                                                    ? 'text-white'
+                                                    : 'text-black dark:text-gray-300'
+                                                    }`}
                                             />
                                         )}
 
@@ -411,7 +392,7 @@ const Header = () => {
                                     <div className="absolute top-full right-0 pt-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible lg:group-hover:opacity-100 lg:group-hover:visible transform translate-y-2 group-hover:translate-y-0 transition-all duration-300 ease-out z-60">
                                         <div className="relative">
                                             <div className="absolute -top-2 left-0 right-0 h-2 bg-transparent"></div>
-                                            <UserMenuDropdown user={user} onClose={() => {}} />
+                                            <UserMenuDropdown user={user} onClose={() => { }} />
                                         </div>
                                     </div>
                                 </div>
@@ -419,11 +400,10 @@ const Header = () => {
                         ) : (
                             <div className="flex items-center gap-3">
                                 <button
-                                    className={`relative w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-300 ${
-                                        isFavouritesPage || activeIcon === 'heart'
-                                            ? 'border-orange-500'
-                                            : 'border-black dark:border-[#E8ECF3] hover:border-gray-600 dark:hover:border-[#E8ECF3]/70'
-                                    }`}
+                                    className={`relative w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-300 ${isFavouritesPage || activeIcon === 'heart'
+                                        ? 'border-orange-500'
+                                        : 'border-black dark:border-[#E8ECF3] hover:border-gray-600 dark:hover:border-[#E8ECF3]/70'
+                                        }`}
                                     onClick={handleFavouriteClick}
                                     aria-label="Избранное"
                                 >
@@ -432,22 +412,20 @@ const Header = () => {
 
                                 <div className="relative">
                                     <button
-                                        className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-300 ${
-                                            activeIcon === 'cart' || location.pathname === '/cart'
-                                                ? 'bg-orange-500 border-orange-500'
-                                                : 'border-black dark:border-gray-400 hover:border-gray-600 dark:hover:border-gray-300'
-                                        }`}
+                                        className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-300 ${activeIcon === 'cart' || location.pathname === '/cart'
+                                            ? 'bg-orange-500 border-orange-500'
+                                            : 'border-black dark:border-gray-400 hover:border-gray-600 dark:hover:border-gray-300'
+                                            }`}
                                         onClick={() =>
                                             handleIconClick('cart', () => navigate('/cart'))
                                         }
                                     >
                                         <BsCart2
-                                            className={`w-5 h-5 transition-colors duration-300 ${
-                                                activeIcon === 'cart' ||
+                                            className={`w-5 h-5 transition-colors duration-300 ${activeIcon === 'cart' ||
                                                 location.pathname === '/cart'
-                                                    ? 'text-white'
-                                                    : 'text-black dark:text-gray-300'
-                                            }`}
+                                                ? 'text-white'
+                                                : 'text-black dark:text-gray-300'
+                                                }`}
                                         />
 
                                         {cartItemsCount > 0 && (
@@ -509,11 +487,10 @@ const Header = () => {
                             {user && (
                                 <div className="relative hidden md:block">
                                     <button
-                                        className={`w-9 h-9 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${
-                                            userMenuOpen
-                                                ? 'bg-orange-500 border-orange-500'
-                                                : 'border-black dark:border-gray-400 hover:border-gray-600 dark:hover:border-gray-300'
-                                        }`}
+                                        className={`w-9 h-9 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${userMenuOpen
+                                            ? 'bg-orange-500 border-orange-500'
+                                            : 'border-black dark:border-gray-400 hover:border-gray-600 dark:hover:border-gray-300'
+                                            }`}
                                         onClick={() => setUserMenuOpen(!userMenuOpen)}
                                     >
                                         {user.avatar ? (
@@ -546,14 +523,14 @@ const Header = () => {
                     {searchOpen && (
                         <div className="mt-3" ref={searchContainerRef}>
                             <div className="relative flex items-center border rounded border-[#7B818C] dark:border-gray-600 bg-white dark:bg-gray-800 overflow-visible">
-                                <IoSearch className="w-5 h-5 ml-2 text-[#7B818C] dark:text-gray-400" />
+                                <IoSearch className="w-5 h-5 ml-2 text-[#7B818C] dark:text-gray-300" />
                                 <input
                                     type="text"
                                     placeholder="Издөө"
                                     value={search}
                                     onChange={(e) => handleSearch(e.target.value)}
                                     onFocus={() => search.length >= 2 && setShowDropdown(true)}
-                                    className="px-3 py-2 focus:outline-none bg-transparent w-full text-base text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400"
+                                    className="px-3 py-2 focus:outline-none focus:ring-1 focus:ring-[#EA580C] dark:focus:ring-[#F97316] bg-transparent w-full text-base text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400"
                                 />
                             </div>
 

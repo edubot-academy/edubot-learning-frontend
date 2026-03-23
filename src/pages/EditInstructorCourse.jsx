@@ -1000,7 +1000,7 @@ const EditInstructorCourse = () => {
 
     return (
         <div className="mx-auto max-w-5xl p-6 pt-24">
-            <div className="mb-5 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-[#111111]">
+            <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800 p-5 shadow-sm">
                 <h2 className="text-2xl font-bold text-edubot-dark dark:text-white">Курсту түзөтүү</h2>
                 <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
                     Өзгөртүүлөрдү кадам-кадам менен текшерип, акырында превью аркылуу бекитиңиз.
@@ -1011,7 +1011,7 @@ const EditInstructorCourse = () => {
 
             {step === 1 && (
                 <div className="space-y-5">
-                    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-[#111111]">
+                    <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800 p-5 shadow-sm">
                         <h3 className="mb-4 text-lg font-semibold">Негизги маалымат</h3>
                         <div className="space-y-4">
                             <div>
@@ -1021,7 +1021,7 @@ const EditInstructorCourse = () => {
                                     value={course.title || ''}
                                     onChange={handleCourseChange}
                                     placeholder="Курс аталышы"
-                                    className="w-full rounded-lg border p-2.5 bg-white dark:bg-[#222222] dark:text-white"
+                                    className="w-full p-2 border rounded bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                                 />
                                 <div className="mt-1 flex items-center justify-between text-xs">
                                     <span className="text-rose-500">{infoTouched.title ? courseInfoErrors.title : ''}</span>
@@ -1036,7 +1036,7 @@ const EditInstructorCourse = () => {
                                     value={course.subtitle || ''}
                                     onChange={handleCourseChange}
                                     placeholder="Кыскача сүрөттөмө"
-                                    className="w-full rounded-lg border p-2.5 bg-white dark:bg-[#222222] dark:text-white"
+                                    className="w-full p-2 border rounded bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                                 />
                                 <div className="mt-1 flex items-center justify-between text-xs">
                                     <span className="text-rose-500">{infoTouched.subtitle ? courseInfoErrors.subtitle : ''}</span>
@@ -1051,7 +1051,7 @@ const EditInstructorCourse = () => {
                                     value={course.description || ''}
                                     onChange={handleCourseChange}
                                     placeholder="Курс сүрөттөмөсү"
-                                    className="min-h-[120px] w-full rounded-lg border p-2.5 bg-white dark:bg-[#222222] dark:text-white"
+                                    className="min-h-[120px] w-full p-2 border rounded bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                                 />
                                 <p className="mt-1 text-xs text-rose-500">
                                     {infoTouched.description ? courseInfoErrors.description : ''}
@@ -1064,7 +1064,7 @@ const EditInstructorCourse = () => {
                                     name="categoryId"
                                     value={course.categoryId || ''}
                                     disabled
-                                    className="w-full rounded-lg border p-2.5 bg-slate-100 text-slate-500 dark:bg-[#1c1c1c] dark:text-slate-400"
+                                    className="w-full rounded-lg border p-2.5 input-field disabled:opacity-50"
                                 >
                                     <option value="">Категорияны тандаңыз</option>
                                     {categories.map((cat) => (
@@ -1080,7 +1080,7 @@ const EditInstructorCourse = () => {
                         </div>
                     </div>
 
-                    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-[#111111]">
+                    <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800 p-5 shadow-sm">
                         <h3 className="mb-4 text-lg font-semibold">Орнотуулар</h3>
                         <div className="space-y-4">
                             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -1093,7 +1093,7 @@ const EditInstructorCourse = () => {
                                         onChange={handleCourseChange}
                                         placeholder="Курс баасы"
                                         disabled={!course.isPaid}
-                                        className="w-full rounded-lg border p-2.5 bg-white disabled:bg-slate-100 dark:bg-[#222222] dark:text-white dark:disabled:bg-[#1c1c1c]"
+                                        className="w-full rounded-lg border p-2.5 input-field disabled:opacity-50"
                                     />
                                     <p className="mt-1 text-xs text-rose-500">{infoTouched.price ? courseInfoErrors.price : ''}</p>
                                 </div>
@@ -1130,7 +1130,7 @@ const EditInstructorCourse = () => {
                                     name="languageCode"
                                     value={course.languageCode || 'ky'}
                                     onChange={handleCourseChange}
-                                    className="w-full rounded-lg border p-2.5 bg-white dark:bg-[#222222] dark:text-white"
+                                    className="w-full p-2 border rounded bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                                 >
                                     <option value="ky">Кыргызча</option>
                                     <option value="ru">Русский</option>
@@ -1152,13 +1152,13 @@ const EditInstructorCourse = () => {
                                     placeholder={
                                         'Мисалы:\n- UX негиздери\n- Figma менен иштөө\n- UI китепкана түзүү'
                                     }
-                                    className="w-full rounded-lg border p-2.5 text-sm min-h-[110px] bg-white dark:bg-[#222222] dark:text-white"
+                                    className="w-full p-2 border rounded bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white min-h-[110px]"
                                 />
                             </div>
                         </div>
                     </div>
 
-                    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-[#111111]">
+                    <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800 p-5 shadow-sm">
                         <h3 className="mb-3 text-lg font-semibold">Cover сүрөт</h3>
                         {course.coverImageUrl && (
                             <img
@@ -1172,7 +1172,7 @@ const EditInstructorCourse = () => {
                             name="cover"
                             accept="image/*"
                             onChange={handleCourseChange}
-                            className="w-full rounded-lg border p-2.5 bg-white dark:bg-[#222222] dark:text-white"
+                            className="w-full p-2 border rounded bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                         />
                         <p className="mt-1 text-xs text-slate-500">PNG/JPG, максимум 5MB</p>
                     </div>
@@ -1180,7 +1180,7 @@ const EditInstructorCourse = () => {
                     <div className="sticky bottom-4 z-10 flex justify-end gap-3">
                         <button
                             onClick={confirmCancel}
-                            className="rounded-xl border border-slate-300 bg-white px-6 py-2.5 dark:border-slate-700 dark:bg-[#1c1c1c]"
+                            className="rounded-xl border border-gray-200 bg-white px-6 py-2.5 dark:border-gray-600 dark:bg-gray-700"
                         >
                             Артка
                         </button>
@@ -1199,27 +1199,27 @@ const EditInstructorCourse = () => {
 
             {step === 2 && (
                 <div className="space-y-4">
-                    <div className="sticky top-20 z-20 rounded-2xl border border-slate-200/70 bg-white/90 backdrop-blur px-4 py-3 shadow-sm dark:border-slate-700 dark:bg-[#151515]/90">
+                    <div className="sticky top-20 z-20 rounded-2xl border border-gray-200 bg-white/90 dark:border-gray-700 dark:bg-gray-800/90 backdrop-blur px-4 py-3 shadow-sm">
                         <div className="flex flex-wrap items-center justify-between gap-3">
                             <div className="space-y-1">
-                                <p className="text-xs uppercase tracking-wide text-slate-500">Курулуш режими</p>
-                                <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                                <p className="text-xs uppercase tracking-wide text-gray-600 dark:text-gray-400">Курулуш режими</p>
+                                <p className="text-sm font-semibold text-gray-900 dark:text-white">
                                     Бөлүмдөр: {sections.length} • Сабактар: {totalLessons}
                                 </p>
-                                <p className="text-xs text-slate-600 dark:text-slate-300">
+                                <p className="text-xs text-gray-600 dark:text-gray-400">
                                     Даярдык: {readyLessons}/{totalLessons} ({completionPercent}%)
                                 </p>
                             </div>
                             <div className="flex items-center gap-2">
                                 <button
                                     onClick={() => expandAllSections(sections.length)}
-                                    className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-[#1f1f1f] dark:text-slate-200"
+                                    className="rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
                                 >
                                     Баарын ачуу
                                 </button>
                                 <button
                                     onClick={() => collapseAllSections(sections.length)}
-                                    className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-[#1f1f1f] dark:text-slate-200"
+                                    className="rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
                                 >
                                     Баарын жабуу
                                 </button>
@@ -1239,7 +1239,7 @@ const EditInstructorCourse = () => {
                                             return nextMode;
                                         });
                                     }}
-                                    className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-[#1f1f1f] dark:text-slate-200"
+                                    className="rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
                                 >
                                     {singleSectionFocus ? 'Single focus: ON' : 'Single focus: OFF'}
                                 </button>
@@ -1275,7 +1275,7 @@ const EditInstructorCourse = () => {
                                         onClick={() => scrollToSection(sIdx)}
                                         className={`whitespace-nowrap rounded-full border px-3 py-1.5 text-xs font-medium transition ${hasIssues
                                             ? 'border-rose-300 bg-rose-50 text-rose-700 dark:border-rose-700 dark:bg-rose-900/30 dark:text-rose-200'
-                                            : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-[#1f1f1f] dark:text-slate-200'
+                                            : 'border-light bg-surface text-primary hover:bg-surface-secondary dark:border-slate-700 dark:bg-[#1f1f1f] dark:text-slate-200'
                                             }`}
                                     >
                                         {label}
@@ -1301,14 +1301,14 @@ const EditInstructorCourse = () => {
                                 }
                                 setExpandedSections((prev) => ({ ...prev, [sIdx]: isOpen }));
                             }}
-                            className={`mb-5 overflow-hidden rounded-2xl border border-slate-200 bg-white/80 shadow-sm transition dark:border-slate-700 dark:bg-[#111111] ${dragSectionIndex === sIdx ? 'opacity-80 ring-2 ring-amber-300 dark:ring-amber-600' : ''}`}
+                            className={`mb-5 overflow-hidden rounded-2xl border border-light bg-surface/80 shadow-sm transition ${dragSectionIndex === sIdx ? 'opacity-80 ring-2 ring-amber-300 dark:ring-amber-600' : ''}`}
                         >
-                            <summary className="flex cursor-pointer list-none items-center justify-between gap-3 bg-gradient-to-r from-slate-50 to-white px-4 py-3 dark:from-[#191919] dark:to-[#131313]">
+                            <summary className="flex cursor-pointer list-none items-center justify-between gap-3 bg-gradient-to-r from-slate-50 to-white px-4 py-3 dark:from-slate-800 dark:to-slate-700">
                                 <div>
-                                    <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                                    <p className="text-sm font-semibold text-primary">
                                         {section.title || `Section ${sIdx + 1}`}
                                     </p>
-                                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                                    <p className="text-sm text-secondary">
                                         {section.lessons.length} сабак · {getSectionReadyCount(section)}/{section.lessons.length} даяр
                                         {getSectionIssueCount(section) > 0 ? (
                                             <span className="ml-2 rounded-full bg-rose-100 px-2 py-0.5 text-[10px] font-medium text-rose-700 dark:bg-rose-900/40 dark:text-rose-200">
@@ -1332,7 +1332,7 @@ const EditInstructorCourse = () => {
                                             event.preventDefault();
                                             event.stopPropagation();
                                         }}
-                                        className="group relative cursor-grab rounded-lg border border-slate-300 bg-white p-2 text-slate-600 hover:bg-slate-50 active:scale-95 dark:border-slate-700 dark:bg-[#1f1f1f] dark:text-slate-300"
+                                        className="group relative cursor-grab rounded-lg border border-light bg-surface p-2 text-secondary hover:bg-surface-secondary active:scale-95 dark:border-slate-700 dark:bg-[#1f1f1f] dark:text-slate-300"
                                         title="Бөлүмдү жылдыруу"
                                         aria-label="Бөлүмдү жылдыруу"
                                     >
@@ -1353,21 +1353,21 @@ const EditInstructorCourse = () => {
                                             Бөлүмдү жылдыруу
                                         </span>
                                     </button>
-                                    <span className="text-xs text-slate-500 dark:text-slate-400">Ачуу/жабуу</span>
+                                    <span className="text-sm text-secondary">Ачуу/жабуу</span>
                                 </div>
                             </summary>
                             <div className="p-4">
                                 <div className="flex flex-col md:flex-row md:items-center gap-3 mb-2">
                                     <div className="flex-1 flex flex-col gap-2">
                                         <input
-                                            className="w-full p-2 border rounded bg-white dark:bg-[#222222] dark:text-white"
+                                            className="w-full p-2 border rounded text-sm bg-white dark:bg-gray-800 dark:text-white"
                                             value={section.title}
                                             onChange={(e) => updateSectionTitle(sIdx, e.target.value)}
                                             placeholder="Бөлүм аталышы"
                                         />
                                         <div className="flex flex-col sm:flex-row gap-2 items-start">
                                             <select
-                                                className="w-full p-2 border rounded bg-white dark:bg-[#222222] dark:text-white text-sm"
+                                                className="w-full p-2 border rounded bg-white dark:bg-gray-800 dark:text-white text-sm"
                                                 value={section.skillId || ''}
                                                 onChange={(e) => updateSectionSkill(sIdx, e.target.value)}
                                             >
@@ -1398,7 +1398,7 @@ const EditInstructorCourse = () => {
                                                 title: section.title,
                                             })
                                         }
-                                        className="px-3 py-1 bg-red-100 text-red-700 border border-red-300 rounded hover:bg-red-200 text-sm h-10 md:mt-7"
+                                        className="px-3 py-1 bg-red-100 text-red-700 border border-red-300 rounded hover:bg-red-200 text-sm h-10 md:mt-7 dark:bg-red-900/30 dark:text-red-300 dark:border-red-600 dark:hover:bg-red-900/50"
                                     >
                                         Өчүрүү
                                     </button>
@@ -1413,7 +1413,7 @@ const EditInstructorCourse = () => {
                                             onDrop={() => handleLessonDrop(sIdx, lIdx)}
                                             className={`mb-4 rounded-xl border p-3 transition ${lessonIssue
                                                 ? 'border-rose-200 bg-rose-50/70 dark:border-rose-900/70 dark:bg-rose-950/20'
-                                                : 'border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-[#222222]'
+                                                : 'border-light bg-surface dark:border-slate-700 dark:bg-[#222222]'
                                                 } ${dragLesson?.sectionIdx === sIdx && dragLesson?.lessonIdx === lIdx
                                                     ? 'ring-2 ring-sky-300 dark:ring-sky-700 opacity-80'
                                                     : ''
@@ -1475,7 +1475,7 @@ const EditInstructorCourse = () => {
                                                         type="number"
                                                         min="0.5"
                                                         step="0.5"
-                                                        className="w-full p-2 mb-2 border rounded"
+                                                        className="w-full p-2 mb-2 border rounded bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                                                         value={secondsToMinutesInput(lesson.duration)}
                                                         onChange={(e) => {
                                                             handleLessonFieldChange(
@@ -1599,7 +1599,7 @@ const EditInstructorCourse = () => {
                                             </label>
                                             <input
                                                 type="text"
-                                                className="w-full p-2 mb-2 border rounded  bg-white dark:bg-[#222222] dark:text-white"
+                                                className="w-full p-2 border rounded text-sm bg-white dark:bg-gray-800 dark:text-white"
                                                 value={lesson.resourceName || ''}
                                                 onChange={(e) =>
                                                     handleLessonFieldChange(
@@ -1637,8 +1637,8 @@ const EditInstructorCourse = () => {
                                         </div>
                                     );
                                 })}
-                                <div className="sticky bottom-2 mt-3 flex items-center justify-between gap-2 rounded-xl border border-slate-200 bg-white/95 px-3 py-2 backdrop-blur dark:border-slate-700 dark:bg-[#151515]/95">
-                                    <span className="text-xs text-slate-500 dark:text-slate-400">
+                                <div className="sticky bottom-2 mt-3 flex items-center justify-between gap-2 rounded-xl border border-light bg-surface/95 px-3 py-2 backdrop-blur dark:border-slate-700 dark:bg-[#151515]/95">
+                                    <span className="text-sm text-secondary">
                                         Бул бөлүм даяр болгондо жалпы мазмунду сактаңыз.
                                     </span>
                                     <div className="flex items-center gap-2">
@@ -1651,7 +1651,7 @@ const EditInstructorCourse = () => {
                                         <button
                                             onClick={handleSaveAll}
                                             disabled={isUploading || saving}
-                                            className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-60 dark:border-slate-700 dark:bg-[#1f1f1f] dark:text-slate-200"
+                                            className="rounded-lg border border-light bg-surface px-3 py-1.5 text-sm font-medium text-primary hover:bg-surface-secondary dark:border-slate-700 dark:bg-[#1f1f1f] dark:text-slate-200"
                                         >
                                             {saving ? 'Сакталууда...' : 'Жалпы сактоо'}
                                         </button>
@@ -1670,7 +1670,7 @@ const EditInstructorCourse = () => {
             {/* Cancel confirm modal */}
             {showCancelConfirm && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white dark:bg-[#222222] p-6 rounded shadow max-w-sm w-full">
+                    <div className="bg-surface p-6 rounded shadow max-w-sm w-full">
                         <h4 className="text-lg font-semibold mb-4">Ырастоо</h4>
                         <p className="mb-6">Өзгөртүүлөр сакталбайт. Чын эле артка кайтасызбы?</p>
                         <div className="flex justify-end gap-4">
@@ -1694,9 +1694,9 @@ const EditInstructorCourse = () => {
             {/* Delete lesson confirm */}
             {confirmDelete.type && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white dark:bg-[#222222] p-6 rounded shadow max-w-sm w-full">
-                        <h4 className="text-lg font-semibold mb-4">Ырастоо</h4>
-                        <p className="mb-6">
+                    <div className="bg-white dark:bg-gray-800 p-6 rounded shadow max-w-sm w-full border border-gray-200 dark:border-gray-700">
+                        <h4 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Ырастоо</h4>
+                        <p className="mb-6 text-gray-700 dark:text-gray-300">
                             <strong>{confirmDelete.lessonTitle}</strong> сабагын өчүрүүнү
                             каалайсызбы?
                         </p>

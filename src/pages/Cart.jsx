@@ -34,15 +34,15 @@ const Cart = () => {
 
     if (loading) {
         return (
-           <Loader fullScreen />
+            <Loader fullScreen />
         );
     }
 
     if (cartItems.length === 0) {
         return (
             <div className="min-h-screen flex flex-col items-center justify-center p-4">
-                <BsCartX className="w-24 h-24 text-gray-300 mb-6" />
-                <h2 className="text-2xl font-bold mb-4">Себетиңиз бош</h2>
+                <BsCartX className="w-24 h-24 text-gray-300 dark:text-gray-600 mb-6" />
+                <h2 className="text-2xl font-bold mb-4 text-gray-900 dark:text-white">Себетиңиз бош</h2>
                 <p className="text-gray-600 dark:text-[#a6adba] mb-8 text-center max-w-md">
                     Сиздин себетиңизде эч кандай курс жок. Биздин курстарды изилдеп, биринчисин
                     кошуңуз!
@@ -86,7 +86,7 @@ const Cart = () => {
                         </div>
                     </div>
 
-                    <p className="text-gray-600">
+                    <p className="text-gray-600 dark:text-gray-400">
                         {isPublicVideoSignupEnabled
                             ? 'Сатып алууну аяктоо үчүн аккаунт түзүшүңүз керек. Ал учурда сиздин себеттеги курстар сакталып калат.'
                             : 'Сатып алууну аяктоо үчүн киришиңиз керек. Себеттеги курстарыңыз сакталат.'}
@@ -99,7 +99,7 @@ const Cart = () => {
 
                         <button
                             onClick={() => setShowRegisterModal(false)}
-                            className="w-full text-gray-500 hover:text-gray-700 py-2 text-sm text-center"
+                            className="w-full text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 py-2 text-sm text-center"
                         >
                             Кийинчерээк
                         </button>
@@ -142,8 +142,8 @@ const Cart = () => {
                                                     className="w-full h-full object-cover"
                                                 />
                                             ) : (
-                                                <div className="w-full h-full bg-gray-100 flex items-center justify-center">
-                                                    <span className="text-gray-400">Сүрөт жок</span>
+                                                <div className="w-full h-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+                                                    <span className="text-gray-400 dark:text-gray-600">Сүрөт жок</span>
                                                 </div>
                                             )}
                                         </div>

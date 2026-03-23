@@ -12,7 +12,7 @@
 @tailwind utilities;
 
 :root {
-    @apply font-sans text-gray-900 bg-white;
+    @apply font-sans text-gray-900 bg-white dark:bg-[#222222] dark:text-[#E8ECF3];
     --edubot-dark: #122144;
     --edubot-orange: #f17e22;
     --edubot-green: #0ea78b;

@@ -17,5 +17,33 @@ module.exports = {
             },
         },
     },
-    plugins: [],
+    plugins: [
+        require('@tailwindcss/typography'),
+        function ({ addUtilities, addComponents, theme }) {
+            // Define consistent dark mode utilities
+            addComponents({
+                '.card': {
+                    '@apply bg-white dark:bg-gray-900 rounded-lg shadow-lg': {},
+                },
+                '.input-field': {
+                    '@apply w-full rounded-lg border p-2.5 text-sm bg-white dark:bg-gray-800 dark:text-white': {},
+                },
+                '.text-primary': {
+                    '@apply text-gray-900 dark:text-gray-100': {},
+                },
+                '.text-secondary': {
+                    '@apply text-gray-600 dark:text-gray-400': {},
+                },
+                '.border-light': {
+                    '@apply border-gray-200 dark:border-gray-700': {},
+                },
+                '.bg-surface': {
+                    '@apply bg-white dark:bg-gray-800': {},
+                },
+                '.bg-surface-secondary': {
+                    '@apply bg-gray-50 dark:bg-gray-900': {},
+                },
+            });
+        },
+    ],
 };

@@ -15,8 +15,8 @@ const SectionContainer = ({
         cols === '4'
             ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4'
             : cols === '2'
-              ? 'grid-cols-1 sm:grid-cols-2'
-              : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3';
+                ? 'grid-cols-1 sm:grid-cols-2'
+                : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3';
 
     return (
         <div className="px-4 py-16 sm:px-6 lg:px-12 bg-transparent">
@@ -41,7 +41,7 @@ const SectionContainer = ({
             {loading ? (
                 <Loader fullScreen={false} />
             ) : !items?.length ? (
-                <p className="text-sm text-gray-500">{emptyText}</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">{emptyText}</p>
             ) : (
                 <div className={`grid ${colClasses} gap-6`}>
                     {items.map((item, idx) => (

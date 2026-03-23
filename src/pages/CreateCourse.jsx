@@ -773,9 +773,9 @@ const CourseBuilder = () => {
     return (
 
         <div className="mx-auto max-w-5xl p-6 pt-24">
-            <div className="mb-5 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-[#111111]">
+            <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800 p-5 shadow-sm">
                 <h2 className="text-2xl font-bold text-edubot-dark dark:text-white">Жаңы курс түзүү</h2>
-                <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
                     Курсту үч кадам менен түзүңүз: маалымат, мазмун жана финалдык текшерүү.
                 </p>
             </div>
@@ -784,7 +784,7 @@ const CourseBuilder = () => {
 
             {step === 1 && (
                 <div className="space-y-5">
-                    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-[#111111]">
+                    <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800 p-5 shadow-sm">
                         <h3 className="mb-4 text-lg font-semibold">Негизги маалымат</h3>
                         <div className="space-y-4">
                             <div>
@@ -794,11 +794,11 @@ const CourseBuilder = () => {
                                     value={courseInfo.title}
                                     onChange={handleCourseInfoChange}
                                     placeholder="Курс аталышы"
-                                    className="w-full rounded-lg border p-2.5 bg-white dark:bg-[#222222] dark:text-white"
+                                    className="w-full p-2 border rounded bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                                 />
                                 <div className="mt-1 flex items-center justify-between text-xs">
                                     <span className="text-rose-500">{infoTouched.title ? getCourseInfoErrors(courseInfo).title : ''}</span>
-                                    <span className="text-slate-500">{courseInfo.title.length}/200</span>
+                                    <span className="text-gray-600 dark:text-gray-400">{courseInfo.title.length}/200</span>
                                 </div>
                             </div>
                             <div>
@@ -808,11 +808,11 @@ const CourseBuilder = () => {
                                     value={courseInfo.subtitle}
                                     onChange={handleCourseInfoChange}
                                     placeholder="Кыскача сүрөттөмө"
-                                    className="w-full rounded-lg border p-2.5 bg-white dark:bg-[#222222] dark:text-white"
+                                    className="w-full p-2 border rounded bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                                 />
                                 <div className="mt-1 flex items-center justify-between text-xs">
                                     <span className="text-rose-500">{infoTouched.subtitle ? getCourseInfoErrors(courseInfo).subtitle : ''}</span>
-                                    <span className="text-slate-500">{courseInfo.subtitle.length}/255</span>
+                                    <span className="text-gray-600 dark:text-gray-400">{courseInfo.subtitle.length}/255</span>
                                 </div>
                             </div>
                             <div>
@@ -822,7 +822,7 @@ const CourseBuilder = () => {
                                     value={courseInfo.description}
                                     onChange={handleCourseInfoChange}
                                     placeholder="Курс сүрөттөмөсү"
-                                    className="min-h-[120px] w-full rounded-lg border p-2.5 bg-white dark:bg-[#222222] dark:text-white"
+                                    className="min-h-[120px] w-full p-2 border rounded bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                                 />
                                 <p className="mt-1 text-xs text-rose-500">{infoTouched.description ? getCourseInfoErrors(courseInfo).description : ''}</p>
                             </div>
@@ -832,7 +832,7 @@ const CourseBuilder = () => {
                                     name="categoryId"
                                     value={courseInfo.categoryId}
                                     onChange={handleCourseInfoChange}
-                                    className="w-full rounded-lg border p-2.5 bg-white dark:bg-[#222222] dark:text-white"
+                                    className="w-full p-2 border rounded bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                                 >
                                     <option value="">Категорияны тандаңыз</option>
                                     {categories.map((cat) => (
@@ -846,7 +846,7 @@ const CourseBuilder = () => {
                         </div>
                     </div>
 
-                    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-[#111111]">
+                    <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800 p-5 shadow-sm">
                         <h3 className="mb-4 text-lg font-semibold">Настройкалар</h3>
                         <div className="space-y-4">
                             <div className="flex flex-col sm:flex-row gap-4">
@@ -859,7 +859,7 @@ const CourseBuilder = () => {
                                         onChange={handleCourseInfoChange}
                                         placeholder="Курс баасы"
                                         disabled={!courseInfo.isPaid}
-                                        className="w-full rounded-lg border p-2.5 bg-white disabled:bg-slate-100 dark:bg-[#222222] dark:text-white dark:disabled:bg-slate-800"
+                                        className="w-full p-2 border rounded bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                                     />
                                     <p className="mt-1 text-xs text-rose-500">{infoTouched.price ? getCourseInfoErrors(courseInfo).price : ''}</p>
                                 </div>
@@ -896,7 +896,7 @@ const CourseBuilder = () => {
                                     name="languageCode"
                                     value={courseInfo.languageCode}
                                     onChange={handleCourseInfoChange}
-                                    className="w-full rounded-lg border p-2.5 bg-white dark:bg-[#222222] dark:text-white"
+                                    className="w-full p-2 border rounded bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                                 >
                                     <option value="ky">Кыргызча</option>
                                     <option value="ru">Русский</option>
@@ -916,13 +916,13 @@ const CourseBuilder = () => {
                                     placeholder={
                                         'Мисалы:\n- UX негиздери\n- Figma менен иштөө\n- UI китепкана түзүү'
                                     }
-                                    className="w-full rounded-lg border p-2.5 text-sm min-h-[110px] bg-white dark:bg-[#222222] dark:text-white"
+                                    className="w-full p-2 border rounded bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white min-h-[110px]"
                                 />
                             </div>
                         </div>
                     </div>
 
-                    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-[#111111]">
+                    <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800 p-5 shadow-sm">
                         <h3 className="mb-3 text-lg font-semibold">Cover сүрөт</h3>
                         {courseInfo.coverImageUrl && (
                             <img
@@ -936,9 +936,9 @@ const CourseBuilder = () => {
                             name="cover"
                             accept="image/*"
                             onChange={handleCourseInfoChange}
-                            className="w-full rounded-lg border p-2.5 bg-white dark:bg-[#222222] dark:text-white"
+                            className="w-full p-2 border rounded bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                         />
-                        <p className="mt-1 text-xs text-slate-500">PNG/JPG, максимум 5MB</p>
+                        <p className="mt-1 text-xs text-rose-500">PNG/JPG, максимум 5MB</p>
                     </div>
 
                     <div className="sticky bottom-4 z-10 flex justify-end">
@@ -955,27 +955,27 @@ const CourseBuilder = () => {
 
             {step === 2 && (
                 <div className="space-y-4">
-                    <div className="sticky top-20 z-20 rounded-2xl border border-slate-200/70 bg-white/90 backdrop-blur px-4 py-3 shadow-sm dark:border-slate-700 dark:bg-[#151515]/90">
+                    <div className="sticky top-20 z-20 rounded-2xl border border-gray-200 bg-white/90 dark:border-gray-700 dark:bg-gray-800/90 backdrop-blur px-4 py-3 shadow-sm">
                         <div className="flex flex-wrap items-center justify-between gap-3">
                             <div className="space-y-1">
-                                <p className="text-xs uppercase tracking-wide text-slate-500">Курулуш режими</p>
-                                <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                                <p className="text-xs uppercase tracking-wide text-gray-600 dark:text-gray-400">Курулуш режими</p>
+                                <p className="text-sm font-semibold text-gray-900 dark:text-white">
                                     Бөлүмдөр: {curriculum.length} • Сабактар: {totalLessons}
                                 </p>
-                                <p className="text-xs text-slate-600 dark:text-slate-300">
+                                <p className="text-xs text-gray-600 dark:text-gray-400">
                                     Даярдык: {readyLessons}/{totalLessons} ({completionPercent}%)
                                 </p>
                             </div>
                             <div className="flex items-center gap-2">
                                 <button
                                     onClick={() => expandAllSections(curriculum.length)}
-                                    className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-[#1f1f1f] dark:text-slate-200"
+                                    className="rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
                                 >
                                     Баарын ачуу
                                 </button>
                                 <button
                                     onClick={() => collapseAllSections(curriculum.length)}
-                                    className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-[#1f1f1f] dark:text-slate-200"
+                                    className="rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
                                 >
                                     Баарын жабуу
                                 </button>
@@ -995,7 +995,7 @@ const CourseBuilder = () => {
                                             return nextMode;
                                         });
                                     }}
-                                    className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-[#1f1f1f] dark:text-slate-200"
+                                    className="rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
                                 >
                                     {singleSectionFocus ? 'Single focus: ON' : 'Single focus: OFF'}
                                 </button>
@@ -1058,11 +1058,11 @@ const CourseBuilder = () => {
                                 }
                                 setExpandedSections((prev) => ({ ...prev, [sIdx]: isOpen }));
                             }}
-                            className={`mb-5 overflow-hidden rounded-2xl border border-slate-200 bg-white/80 shadow-sm transition dark:border-slate-700 dark:bg-[#111111] ${dragSectionIndex === sIdx ? 'opacity-80 ring-2 ring-amber-300 dark:ring-amber-600' : ''}`}
+                            className={`mb-5 overflow-hidden rounded-2xl border border-gray-200 bg-white/80 shadow-sm transition dark:border-gray-700 dark:bg-gray-800/80 ${dragSectionIndex === sIdx ? 'opacity-80 ring-2 ring-amber-300 dark:ring-amber-600' : ''}`}
                         >
-                            <summary className="flex cursor-pointer list-none items-center justify-between gap-3 bg-gradient-to-r from-slate-50 to-white px-4 py-3 dark:from-[#191919] dark:to-[#131313]">
+                            <summary className="flex cursor-pointer list-none items-center justify-between gap-3 bg-gradient-to-r from-slate-50 to-white px-4 py-3 dark:from-slate-800 dark:to-slate-700">
                                 <div>
-                                    <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                                    <p className="text-sm font-semibold text-gray-900 dark:text-white">
                                         {section.sectionTitle || `Section ${sIdx + 1}`}
                                     </p>
                                     <p className="text-xs text-slate-500 dark:text-slate-400">
@@ -1117,14 +1117,14 @@ const CourseBuilder = () => {
                                 <div className="flex flex-col md:flex-row md:items-center md:gap-3 mb-2">
                                     <div className="flex-1 flex flex-col gap-2">
                                         <input
-                                            className="w-full p-2 border rounded bg-white dark:bg-[#222222] dark:text-white"
+                                            className="w-full p-2 border rounded bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                                             value={section.sectionTitle}
                                             onChange={(e) => updateSectionTitle(sIdx, e.target.value)}
                                             placeholder="Бөлүм аталышы"
                                         />
                                         <div className="flex flex-col sm:flex-row gap-2 items-start">
                                             <select
-                                                className="w-full p-2 border rounded bg-white dark:bg-[#222222] dark:text-white text-sm"
+                                                className="w-full p-2 border rounded bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                                                 value={section.skillId || ''}
                                                 onChange={(e) => updateSectionSkill(sIdx, e.target.value)}
                                             >
@@ -1155,7 +1155,7 @@ const CourseBuilder = () => {
                                                 title: section.sectionTitle,
                                             })
                                         }
-                                        className="px-3 py-1 bg-red-100 text-red-700 border border-red-300 rounded hover:bg-red-200 text-sm h-10 mt-2 md:mt-0"
+                                        className="px-3 py-1 bg-red-100 text-red-700 border border-red-300 rounded hover:bg-red-200 text-sm h-10 mt-2 md:mt-0 dark:bg-red-900/30 dark:text-red-300 dark:border-red-600 dark:hover:bg-red-900/50"
                                     >
                                         Өчүрүү
                                     </button>
@@ -1170,7 +1170,7 @@ const CourseBuilder = () => {
                                             onDrop={() => handleLessonDrop(sIdx, lIdx)}
                                             className={`mb-4 rounded-xl border p-3 transition ${lessonIssue
                                                 ? 'border-rose-200 bg-rose-50/70 dark:border-rose-900/70 dark:bg-rose-950/20'
-                                                : 'border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-[#222222]'
+                                                : 'border-gray-200 bg-white dark:border-gray-600 dark:bg-gray-800'
                                                 } ${dragLesson?.sectionIdx === sIdx && dragLesson?.lessonIdx === lIdx
                                                     ? 'ring-2 ring-sky-300 dark:ring-sky-700 opacity-80'
                                                     : ''
@@ -1219,7 +1219,7 @@ const CourseBuilder = () => {
                                                         type="number"
                                                         min="0.5"
                                                         step="0.5"
-                                                        className="w-full p-2 mb-2 border rounded"
+                                                        className="w-full p-2 mb-2 border rounded bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                                                         value={secondsToMinutesInput(lesson.duration)}
                                                         onChange={(e) => {
                                                             updateLesson(
@@ -1308,9 +1308,9 @@ const CourseBuilder = () => {
 
             {confirmDelete.type && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white dark:bg-[#222222] p-6 rounded shadow max-w-sm w-full">
-                        <h4 className="text-lg font-semibold mb-4">Ырастоо</h4>
-                        <p className="mb-6">
+                    <div className="bg-white dark:bg-gray-800 p-6 rounded shadow max-w-sm w-full border border-gray-200 dark:border-gray-700">
+                        <h4 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Ырастоо</h4>
+                        <p className="mb-6 text-gray-700 dark:text-gray-300">
                             {confirmDelete.type === 'section' ? (
                                 <span>
                                     <strong>{confirmDelete.title}</strong> бөлүмүн өчүрүүнү

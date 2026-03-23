@@ -763,11 +763,10 @@ const AdminPanel = () => {
                     key={p}
                     type="button"
                     onClick={() => handleUsersPageChange(p)}
-                    className={`w-9 h-9 rounded border text-sm font-medium transition ${
-                        p === usersPage
+                    className={`w-9 h-9 rounded border text-sm font-medium transition ${p === usersPage
                             ? 'bg-blue-600 text-white border-blue-600'
                             : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800'
-                    }`}
+                        }`}
                 >
                     {p}
                 </button>
@@ -795,7 +794,7 @@ const AdminPanel = () => {
                             <h1 className="text-3xl font-bold text-gray-900 dark:text-[#E8ECF3]">
                                 Админ Панель
                             </h1>
-                            <p className="text-sm text-gray-500">
+                            <p className="text-sm text-gray-500 dark:text-gray-400">
                                 Платформанын бардык секцияларына көзөмөл
                             </p>
                         </div>
@@ -1191,9 +1190,9 @@ const AdminPanel = () => {
                                     onChange={(e) =>
                                         editingSkillId
                                             ? setEditingSkill((p) => ({
-                                                  ...p,
-                                                  name: e.target.value,
-                                              }))
+                                                ...p,
+                                                name: e.target.value,
+                                            }))
                                             : setNewSkill((p) => ({ ...p, name: e.target.value }))
                                     }
                                     className="border border-gray-200 dark:border-gray-700 px-3 py-2 rounded-lg w-full bg-white dark:bg-[#0E0E0E] text-gray-900 dark:text-[#E8ECF3]"
@@ -1204,9 +1203,9 @@ const AdminPanel = () => {
                                     onChange={(e) =>
                                         editingSkillId
                                             ? setEditingSkill((p) => ({
-                                                  ...p,
-                                                  slug: e.target.value,
-                                              }))
+                                                ...p,
+                                                slug: e.target.value,
+                                            }))
                                             : setNewSkill((p) => ({ ...p, slug: e.target.value }))
                                     }
                                     className="border border-gray-200 dark:border-gray-700 px-3 py-2 rounded-lg w-full bg-white dark:bg-[#0E0E0E] text-gray-900 dark:text-[#E8ECF3]"
@@ -1718,9 +1717,8 @@ const AdminStatsView = ({ stats, loading, onRefresh }) => {
 
 const MetricCard = ({ label, value, accent, sub }) => (
     <div
-        className={`rounded-2xl border border-gray-100 dark:border-gray-800 p-4 shadow-sm ${
-            accent || 'bg-white dark:bg-[#1B1B1B]'
-        }`}
+        className={`rounded-2xl border border-gray-100 dark:border-gray-800 p-4 shadow-sm ${accent || 'bg-white dark:bg-[#1B1B1B]'
+            }`}
     >
         <p className={`text-sm ${accent ? 'text-white/80' : 'text-gray-500 dark:text-gray-400'}`}>
             {label}

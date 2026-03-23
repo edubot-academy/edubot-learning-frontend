@@ -114,7 +114,7 @@ const LessonQuizEditor = ({ quiz, onChange, disabled = false }) => {
                         max="100"
                         value={safeQuiz.passingScore ?? 70}
                         onChange={(e) => handlePassingScoreChange(e.target.value)}
-                        className="w-full border rounded p-2"
+                        className="w-full border rounded p-2 bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                         disabled={disabled}
                     />
                 </div>
@@ -131,7 +131,7 @@ const LessonQuizEditor = ({ quiz, onChange, disabled = false }) => {
                                 : ''
                         }
                         onChange={(e) => handleTimeLimitChange(e.target.value)}
-                        className="w-full border rounded p-2"
+                        className="w-full border rounded p-2 bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                         disabled={disabled}
                     />
                 </div>
@@ -146,7 +146,7 @@ const LessonQuizEditor = ({ quiz, onChange, disabled = false }) => {
                 {safeQuiz.questions.map((question, qIdx) => (
                     <div
                         key={qIdx}
-                        className="border border-edubot-teal rounded p-4 bg-white space-y-3"
+                        className="border border-edubot-teal rounded p-4 bg-white dark:bg-gray-800 space-y-3"
                     >
                         <div className="flex justify-between items-center gap-3">
                             <h4 className="font-semibold">Суроо {qIdx + 1}</h4>
@@ -162,7 +162,7 @@ const LessonQuizEditor = ({ quiz, onChange, disabled = false }) => {
 
                         <div className="space-y-2">
                             <textarea
-                                className="w-full border rounded p-2 min-h-20"
+                                className="w-full border rounded p-2 min-h-20 bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                                 placeholder="Суроонун тексти"
                                 value={question.prompt}
                                 onChange={(e) => handleQuestionPromptChange(qIdx, e.target.value)}
@@ -172,7 +172,7 @@ const LessonQuizEditor = ({ quiz, onChange, disabled = false }) => {
                             <div className="flex items-center gap-2">
                                 <button
                                     type="button"
-                                    className="px-2 py-1 text-xs border border-slate-300 rounded hover:bg-slate-50"
+                                    className="px-2 py-1 text-xs border border-slate-300 rounded hover:bg-slate-50 dark:border-gray-600 dark:hover:bg-gray-700"
                                     onClick={() => addPromptFormatting(qIdx, 'bold')}
                                     disabled={disabled}
                                 >
@@ -180,7 +180,7 @@ const LessonQuizEditor = ({ quiz, onChange, disabled = false }) => {
                                 </button>
                                 <button
                                     type="button"
-                                    className="px-2 py-1 text-xs border border-slate-300 rounded hover:bg-slate-50"
+                                    className="px-2 py-1 text-xs border border-slate-300 rounded hover:bg-slate-50 dark:border-gray-600 dark:hover:bg-gray-700"
                                     onClick={() => addPromptFormatting(qIdx, 'code')}
                                     disabled={disabled}
                                 >
@@ -189,8 +189,8 @@ const LessonQuizEditor = ({ quiz, onChange, disabled = false }) => {
                             </div>
 
                             {question.prompt?.trim() && (
-                                <div className="text-sm rounded border border-slate-200 bg-slate-50 p-2">
-                                    <p className="text-xs uppercase tracking-wide text-slate-500 mb-1">
+                                <div className="text-sm rounded border border-slate-200 bg-slate-50 p-2 dark:border-gray-600 dark:bg-gray-700">
+                                    <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-gray-400 mb-1">
                                         Алдын ала көрүү
                                     </p>
                                     <InlineRichText text={question.prompt} />
@@ -202,11 +202,10 @@ const LessonQuizEditor = ({ quiz, onChange, disabled = false }) => {
                             {question.options.map((option, oIdx) => (
                                 <label
                                     key={oIdx}
-                                    className={`flex items-start gap-3 rounded border p-2 transition ${
-                                        option.isCorrect
-                                            ? 'bg-emerald-50 border-emerald-400 ring-1 ring-emerald-200'
-                                            : 'bg-gray-50 border-gray-200'
-                                    } ${disabled ? '' : 'cursor-pointer'}`}
+                                    className={`flex items-start gap-3 rounded border p-2 transition ${option.isCorrect
+                                        ? 'bg-emerald-50 border-emerald-400 ring-1 ring-emerald-200 dark:bg-emerald-900/20'
+                                        : 'bg-gray-50 border-gray-200 dark:bg-gray-700 dark:border-gray-600'
+                                        } ${disabled ? '' : 'cursor-pointer'}`}
                                 >
                                     <input
                                         type="radio"
@@ -219,7 +218,7 @@ const LessonQuizEditor = ({ quiz, onChange, disabled = false }) => {
 
                                     <div className="flex-1 space-y-2" onClick={(e) => e.stopPropagation()}>
                                         <input
-                                            className="w-full border rounded p-2"
+                                            className="w-full border rounded p-2 bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                                             placeholder={`Вариант ${oIdx + 1}`}
                                             value={option.text}
                                             onChange={(e) =>
@@ -231,7 +230,7 @@ const LessonQuizEditor = ({ quiz, onChange, disabled = false }) => {
                                         <div className="flex items-center gap-2">
                                             <button
                                                 type="button"
-                                                className="px-2 py-1 text-xs border border-slate-300 rounded hover:bg-slate-50"
+                                                className="px-2 py-1 text-xs border border-slate-300 rounded hover:bg-slate-50 dark:border-gray-600 dark:hover:bg-gray-700"
                                                 onClick={(e) => {
                                                     e.preventDefault();
                                                     addOptionFormatting(qIdx, oIdx, 'bold');
@@ -242,7 +241,7 @@ const LessonQuizEditor = ({ quiz, onChange, disabled = false }) => {
                                             </button>
                                             <button
                                                 type="button"
-                                                className="px-2 py-1 text-xs border border-slate-300 rounded hover:bg-slate-50"
+                                                className="px-2 py-1 text-xs border border-slate-300 rounded hover:bg-slate-50 dark:border-gray-600 dark:hover:bg-gray-700"
                                                 onClick={(e) => {
                                                     e.preventDefault();
                                                     addOptionFormatting(qIdx, oIdx, 'code');
@@ -254,7 +253,7 @@ const LessonQuizEditor = ({ quiz, onChange, disabled = false }) => {
                                         </div>
 
                                         {option.text?.trim() && (
-                                            <div className="text-sm rounded border border-slate-200 bg-white p-2">
+                                            <div className="text-sm rounded border border-slate-200 bg-white p-2 dark:border-gray-600 dark:bg-gray-800">
                                                 <InlineRichText text={option.text} />
                                             </div>
                                         )}

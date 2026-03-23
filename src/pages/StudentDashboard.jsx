@@ -195,8 +195,8 @@ const toItems = (payload) => {
 const getTaskKey = (task = {}) =>
     String(
         task.id ||
-            task.taskId ||
-            `${task.sessionId || task.courseSessionId || 'task'}:${task.homeworkId || ''}`
+        task.taskId ||
+        `${task.sessionId || task.courseSessionId || 'task'}:${task.homeworkId || ''}`
     );
 
 const resolveSessionHomeworkIds = (task = {}) => {
@@ -587,7 +587,7 @@ const StudentDashboard = () => {
                 (acc, item) => acc + Math.round((Number(item.progressPercent || 0) || 0) * 4),
                 0
             ) +
-                tasks.filter((task) => task.status === 'completed').length * 30;
+            tasks.filter((task) => task.status === 'completed').length * 30;
         const xp = Math.max(0, calculatedXp);
         const level = Math.max(1, Math.floor(xp / 500) + 1);
         const currentLevelStart = (level - 1) * 500;
@@ -749,7 +749,7 @@ const StudentDashboard = () => {
                 item.lastViewedLesson && item.lastViewedLesson.lessonId
                     ? item.lastViewedLesson
                     : flatOrderedLessons.find((lesson) => !lesson.completed) ||
-                      flatOrderedLessons[0];
+                    flatOrderedLessons[0];
             const hasCertificate =
                 item.certificate ??
                 certificates.some(
@@ -1353,7 +1353,7 @@ const OverviewTab = ({
 
                 <section className="grid md:grid-cols-2 gap-4">
                     <div className="bg-white dark:bg-[#222222] rounded-3xl border border-gray-100 dark:border-gray-800 p-5 space-y-3">
-                            <h3 className="text-lg font-semibold text-gray-900 dark:text-[#E8ECF3]">
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-[#E8ECF3]">
                             Тапшырмалар
                         </h3>
                         {pendingHomework.map((task) => (
@@ -1364,13 +1364,13 @@ const OverviewTab = ({
                                 <p className="font-medium text-gray-900 dark:text-[#E8ECF3]">
                                     {task.title}
                                 </p>
-                                <p className="text-gray-500">
+                                <p className="text-gray-500 dark:text-gray-400">
                                     {task.due || task.dueAt || 'Тапшыруу мөөнөтү көрсөтүлгөн эмес'}
                                 </p>
                             </div>
                         ))}
                         {pendingHomework.length === 0 && (
-                            <p className="text-sm text-gray-500">Тапшырмалар жок.</p>
+                            <p className="text-sm text-gray-500 dark:text-gray-400">Тапшырмалар жок.</p>
                         )}
                     </div>
                     <div className="bg-white dark:bg-[#222222] rounded-3xl border border-gray-100 dark:border-gray-800 p-5 space-y-3">
@@ -1385,13 +1385,13 @@ const OverviewTab = ({
                                 <p className="font-medium text-gray-900 dark:text-[#E8ECF3]">
                                     {item.title}
                                 </p>
-                                <p className="text-gray-500">
+                                <p className="text-gray-500 dark:text-gray-400">
                                     {item.body || item.message || 'Жаңы жаңылык'}
                                 </p>
                             </div>
                         ))}
                         {announcements.length === 0 && (
-                            <p className="text-sm text-gray-500">Жаңылыктар жок.</p>
+                            <p className="text-sm text-gray-500 dark:text-gray-400">Жаңылыктар жок.</p>
                         )}
                     </div>
                 </section>
@@ -1423,7 +1423,7 @@ const OverviewTab = ({
                                 width: `${Math.round(
                                     (engagement.currentLevelXp /
                                         Math.max(1, engagement.nextLevelGap)) *
-                                        100
+                                    100
                                 )}%`,
                             }}
                         />
@@ -1646,7 +1646,7 @@ const ScheduleTab = ({ offerings, recordings }) => {
                                 <div>
                                     <p className="font-semibold text-gray-900 dark:text-[#E8ECF3]">
                                         {item.courseTitle || item.course?.title || 'Class'}
-                                        
+
                                     </p>
                                     <p className="text-sm text-gray-500">
                                         {formatSessionDate(item.startAt)}
@@ -1669,9 +1669,9 @@ const ScheduleTab = ({ offerings, recordings }) => {
                                         Калган убакыт:{' '}
                                         {item.startAt
                                             ? formatCountdown(
-                                                  new Date(item.startAt).getTime(),
-                                                  nowMs
-                                              )
+                                                new Date(item.startAt).getTime(),
+                                                nowMs
+                                            )
                                             : '--:--:--'}
                                     </span>
                                     {joinUrl && joinAllowed ? (
@@ -1707,7 +1707,7 @@ const ScheduleTab = ({ offerings, recordings }) => {
 
             {selectedLive && resolveCourseType(selectedLive) === 'online_live' && (
                 <section className="bg-white dark:bg-[#222222] rounded-3xl border border-gray-100 dark:border-gray-800 p-5 space-y-3">
-                        <h3 className="text-lg font-semibold text-gray-900 dark:text-[#E8ECF3]">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-[#E8ECF3]">
                         Түз эфир сабак барагы
                     </h3>
                     <p className="text-sm text-gray-500">
@@ -1834,11 +1834,10 @@ const TasksTab = ({ tasks, onSubmitHomework, submittingTaskId }) => {
                                         </td>
                                         <td className="px-4 py-3">
                                             <span
-                                                className={`px-3 py-1 rounded-full text-xs ${
-                                                    isDone
-                                                        ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
-                                                        : 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400'
-                                                }`}
+                                                className={`px-3 py-1 rounded-full text-xs ${isDone
+                                                    ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
+                                                    : 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400'
+                                                    }`}
                                             >
                                                 {isDone ? 'Жабылган' : 'Күтүүдө'}
                                             </span>
@@ -1951,7 +1950,7 @@ const ProgressTab = ({
                                 <p className="font-medium text-gray-900 dark:text-[#E8ECF3]">
                                     {item.title}
                                 </p>
-                                <p className="text-gray-500">{item.value || item.description}</p>
+                                <p className="text-gray-500 dark:text-gray-400">{item.value || item.description}</p>
                             </div>
                         ))}
                     </div>
@@ -1995,15 +1994,13 @@ const ProgressTab = ({
                                     <Link
                                         to={
                                             item.courseId
-                                                ? `/courses/${item.courseId}?resumeLessonId=${
-                                                      item.resumeLesson.lessonId || ''
-                                                  }${
-                                                      item.resumeLesson.lastVideoTime
-                                                          ? `&resumeTime=${Math.floor(
-                                                                item.resumeLesson.lastVideoTime
-                                                            )}`
-                                                          : ''
-                                                  }`
+                                                ? `/courses/${item.courseId}?resumeLessonId=${item.resumeLesson.lessonId || ''
+                                                }${item.resumeLesson.lastVideoTime
+                                                    ? `&resumeTime=${Math.floor(
+                                                        item.resumeLesson.lastVideoTime
+                                                    )}`
+                                                    : ''
+                                                }`
                                                 : '#'
                                         }
                                         className="inline-flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400 px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-900/30"
@@ -2054,17 +2051,17 @@ const ProgressTab = ({
                                                 const quizBadge = isQuiz
                                                     ? lesson.quizPassed === true
                                                         ? {
-                                                              label: 'Квиз өттү',
-                                                              className:
-                                                                  'bg-green-100 text-green-700',
-                                                          }
+                                                            label: 'Квиз өттү',
+                                                            className:
+                                                                'bg-green-100 text-green-700',
+                                                        }
                                                         : lesson.quizPassed === false
-                                                          ? {
+                                                            ? {
                                                                 label: 'Квиз өтпөдү',
                                                                 className:
                                                                     'bg-red-100 text-red-700',
                                                             }
-                                                          : null
+                                                            : null
                                                     : null;
                                                 return (
                                                     <div
@@ -2073,11 +2070,10 @@ const ProgressTab = ({
                                                     >
                                                         <div className="flex items-center gap-3">
                                                             <span
-                                                                className={`w-5 h-5 rounded-full flex items-center justify-center text-xs ${
-                                                                    lesson.completed
-                                                                        ? 'bg-green-100 text-green-700'
-                                                                        : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-400'
-                                                                }`}
+                                                                className={`w-5 h-5 rounded-full flex items-center justify-center text-xs ${lesson.completed
+                                                                    ? 'bg-green-100 text-green-700'
+                                                                    : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-400'
+                                                                    }`}
                                                             >
                                                                 {lesson.completed ? '✓' : ''}
                                                             </span>
@@ -2091,11 +2087,11 @@ const ProgressTab = ({
                                                                             ? 'Квиз'
                                                                             : lesson.kind ===
                                                                                 'article'
-                                                                              ? 'Макала'
-                                                                              : lesson.kind ===
-                                                                                  'code'
-                                                                                ? 'Код'
-                                                                                : 'Видео'}
+                                                                                ? 'Макала'
+                                                                                : lesson.kind ===
+                                                                                    'code'
+                                                                                    ? 'Код'
+                                                                                    : 'Видео'}
                                                                     </span>
                                                                     {quizBadge ? (
                                                                         <span
@@ -2103,14 +2099,14 @@ const ProgressTab = ({
                                                                         >
                                                                             {quizBadge.label}
                                                                             {typeof lesson.quizScore ===
-                                                                            'number'
+                                                                                'number'
                                                                                 ? ` (${lesson.quizScore}%)`
                                                                                 : ''}
                                                                         </span>
                                                                     ) : null}
                                                                 </div>
                                                                 {!lesson.completed &&
-                                                                lesson.lastVideoTime ? (
+                                                                    lesson.lastVideoTime ? (
                                                                     <span className="text-xs text-gray-500 dark:text-gray-400">
                                                                         Акыркы убакыт:{' '}
                                                                         {formatTime(

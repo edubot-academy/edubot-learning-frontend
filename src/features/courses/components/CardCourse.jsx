@@ -148,13 +148,13 @@ const CardCourse = ({
                     <button
                         type="button"
                         onClick={handleFavoriteClick}
-                        className="absolute top-3 right-3 z-10 bg-white p-2 rounded-full shadow-md hover:shadow-lg transition-shadow"
+                        className="absolute top-3 right-3 z-10 bg-white dark:bg-gray-800 p-2 rounded-full shadow-md hover:shadow-lg transition-shadow"
                         aria-label={isCourseFavourite ? 'Тандалгандар өчүрүү' : 'Тандалгандарга кошуу'}
                         aria-pressed={isCourseFavourite}
                     >
                         <svg
                             xmlns="http://www.w3.org/2000/svg"
-                            className={`h-6 w-6 ${isCourseFavourite ? 'text-red-500 fill-current' : 'text-gray-400 hover:text-red-500'}`}
+                            className={`h-6 w-6 ${isCourseFavourite ? 'text-red-500 fill-current' : 'text-gray-400 dark:text-gray-500 hover:text-red-500'}`}
                             viewBox="0 0 20 20"
                             fill="currentColor"
                             role="img"
@@ -204,7 +204,7 @@ const CardCourse = ({
                                             {star <= (ratingAverage || 0) ? (
                                                 <AiFillStar className="text-yellow-500" />
                                             ) : (
-                                                <AiOutlineStar className="text-gray-300" />
+                                                <AiOutlineStar className="text-gray-300 dark:text-gray-600" />
                                             )}
                                         </span>
                                     ))}
@@ -280,15 +280,15 @@ const CardCourse = ({
                 <>
                     <div className="fixed inset-0 bg-black bg-opacity-50 z-40" onClick={closePopup} />
                     <div
-                        className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white rounded-lg shadow-2xl z-50 w-[calc(100%-2rem)] max-w-lg"
+                        className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white dark:bg-gray-800 rounded-lg shadow-2xl z-50 w-[calc(100%-2rem)] max-w-lg"
                         onClick={handlePopupClick}
                     >
                         <div className="p-4 sm:p-6">
                             <div className="flex items-center justify-between mb-4">
-                                <h3 className="text-lg font-bold text-gray-800">Ийгиликтүү кошулду!</h3>
-                                <button onClick={closePopup} className="text-gray-400 hover:text-gray-600 text-2xl">×</button>
+                                <h3 className="text-lg font-bold text-gray-800 dark:text-white">Ийгиликтүү кошулду!</h3>
+                                <button onClick={closePopup} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 text-2xl">×</button>
                             </div>
-                            <p className="text-gray-600 mb-4">
+                            <p className="text-gray-600 dark:text-gray-300 mb-4">
                                 Курс "<span className="font-semibold">{title}</span>" себетке кошулду
                             </p>
                             <div className="mt-6 flex flex-col-reverse sm:flex-row justify-between gap-3">
@@ -328,7 +328,7 @@ const FavoritePopupModal = ({ isOpen, onClose, onGoToFavourites, course }) => {
                 <div className="p-6">
                     <div className="flex items-center justify-between mb-4">
                         <h3 className="text-lg font-bold text-gray-800 dark:text-white">Тандалгандарга ийгиликтүү кошулду!</h3>
-                        <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-2xl">×</button>
+                        <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 text-2xl">×</button>
                     </div>
                     <div className="mb-4 p-3 border rounded-lg bg-gray-50 dark:bg-gray-700">
                         <div className="flex items-center gap-3">
@@ -341,11 +341,11 @@ const FavoritePopupModal = ({ isOpen, onClose, onGoToFavourites, course }) => {
                                 }}
                             />
                             <div className="flex-1 min-w-0">
-                                <h4 className="font-medium text-sm truncate">{course?.title}</h4>
-                                <p className="text-xs text-gray-500 truncate">
+                                <h4 className="font-medium text-sm truncate text-gray-900 dark:text-white">{course?.title}</h4>
+                                <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
                                     {course?.instructor || 'Белгисиз инструктор'}
                                 </p>
-                                <p className="text-sm font-bold mt-1">
+                                <p className="text-sm font-bold mt-1 text-gray-900 dark:text-white">
                                     {formatPrice(course?.price, 'KGS')}
                                 </p>
                             </div>

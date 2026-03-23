@@ -5,10 +5,10 @@ import Loader from '@shared/ui/Loader';
 import { fetchLeaderboardSharePayload } from '@services/api';
 
 const rarityThemes = {
-    common: 'from-slate-100 via-white to-slate-50 border-slate-200 text-slate-700',
-    rare: 'from-sky-100 via-white to-cyan-50 border-sky-200 text-sky-700',
-    epic: 'from-pink-100 via-white to-rose-50 border-pink-200 text-rose-700',
-    legendary: 'from-amber-100 via-white to-orange-50 border-amber-200 text-amber-700',
+    common: 'from-slate-100 via-white to-slate-50 border-slate-200 text-slate-700 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 dark:border-slate-700 dark:text-slate-300',
+    rare: 'from-sky-100 via-white to-cyan-50 border-sky-200 text-sky-700 dark:from-sky-900 dark:via-slate-800 dark:to-sky-900 dark:border-sky-700 dark:text-sky-300',
+    epic: 'from-pink-100 via-white to-rose-50 border-pink-200 text-rose-700 dark:from-pink-900 dark:via-slate-800 dark:to-pink-900 dark:border-pink-700 dark:text-pink-300',
+    legendary: 'from-amber-100 via-white to-orange-50 border-amber-200 text-amber-700 dark:from-amber-900 dark:via-slate-800 dark:to-amber-900 dark:border-amber-700 dark:text-amber-300',
 };
 
 const setMetaTag = (selector, attributes) => {
