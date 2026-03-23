@@ -253,6 +253,12 @@ export async function uploadLessonFile(courseId, sectionId, type, file, lessonOr
         });
     } catch (err) {
         const msg = err.response?.data?.message || err.message;
+
+        // Handle specific 404 Section not found error
+        if (err.response?.status === 404 && msg?.includes('Section not found')) {
+            throw new Error('Бул курс жок же же болушу мүмкүн. Жаңы курс түзүңүз же керек.');
+        }
+
         throw new Error(Array.isArray(msg) ? msg.join(', ') : msg);
     }
 

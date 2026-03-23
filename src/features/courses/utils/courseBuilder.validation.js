@@ -6,7 +6,11 @@ export const getCourseInfoErrors = (info) => {
     if (!info.title?.trim()) errors.title = 'Курс аталышы милдеттүү';
     if (info.title?.length > 200) errors.title = 'Максимум 200 символ';
     if (info.subtitle?.length > 255) errors.subtitle = 'Максимум 255 символ';
-    if (!info.description?.trim()) errors.description = 'Сүрөттөмө милдеттүү';
+    if (!info.description?.trim()) {
+        errors.description = 'Сүрөттөмө милдеттүү';
+    } else if (info.description?.trim().length < 10) {
+        errors.description = 'Сүрөттөмө минималдуу 10 символ болуу керек';
+    }
     if (!info.categoryId) errors.categoryId = 'Категория тандаңыз';
     if (!info.languageCode) errors.languageCode = 'Тилди тандаңыз';
     if (info.isPaid && (!Number.isFinite(Number(info.price)) || Number(info.price) <= 0)) {
@@ -59,7 +63,7 @@ export const validateCurriculum = (curriculum) => {
     const invalidSectionIndexes = curriculum
         .map((section, idx) => (getSectionIssueCount(section) > 0 ? idx : null))
         .filter((idx) => idx !== null);
-    
+
     return {
         isValid: invalidSectionIndexes.length === 0,
         invalidSectionIndexes,

@@ -77,6 +77,7 @@ export const useCourseBuilder = ({ mode = 'create', courseId: initialCourseId = 
 
     const dirtySectionIdsRef = useRef(new Set());
     const dirtyLessonIdsRef = useRef(new Set());
+    const addLessonOperationRef = useRef(''); // Track current operation
 
     const loadSkillsList = useCallback(async () => {
         setSkillsLoading(true);
@@ -288,10 +289,13 @@ export const useCourseBuilder = ({ mode = 'create', courseId: initialCourseId = 
         ]);
     };
 
-    const addLesson = (sectionIndex) => {
+    const updateSectionSkill = (index, skillId) => {
         setCurriculum((prev) => {
             const updated = [...prev];
-            updated[sectionIndex].lessons.push(createDefaultLesson());
+            updated[index].skillId = toSkillValue(skillId);
+            if (mode === 'edit') {
+                markSectionDirtyByIndex(index, updated);
+            }
             return updated;
         });
     };
@@ -307,13 +311,19 @@ export const useCourseBuilder = ({ mode = 'create', courseId: initialCourseId = 
         });
     };
 
-    const updateSectionSkill = (index, skillId) => {
+    const addLesson = (sectionIndex) => {
+        // Use a ref to track if we're currently adding a lesson to this section
+        const currentOperation = `${sectionIndex}-${Date.now()}`;
+
+        if (addLessonOperationRef.current === currentOperation) {
+            return;
+        }
+
+        addLessonOperationRef.current = currentOperation;
+
         setCurriculum((prev) => {
             const updated = [...prev];
-            updated[index].skillId = toSkillValue(skillId);
-            if (mode === 'edit') {
-                markSectionDirtyByIndex(index, updated);
-            }
+            updated[sectionIndex].lessons.push(createDefaultLesson());
             return updated;
         });
     };
@@ -426,7 +436,7 @@ export const useCourseBuilder = ({ mode = 'create', courseId: initialCourseId = 
         if (!file) return;
 
         const uploadCourseId = mode === 'create' ? courseId : courseId;
-        const sectionId = mode === 'create' ? uploadCourseId : curriculum[sectionIndex]?.id;
+        const sectionId = mode === 'create' ? sectionIndex : curriculum[sectionIndex]?.id;
 
         if (!uploadCourseId || (mode === 'edit' && !sectionId)) {
             toast.error(mode === 'create' ? 'Адегенде курс маалыматын сактап, андан кийин файл жүктөңүз.' : 'Адегенде бөлүмдү сактап, андан кийин файл жүктөңүз.');
@@ -446,7 +456,7 @@ export const useCourseBuilder = ({ mode = 'create', courseId: initialCourseId = 
         try {
             const key = await uploadLessonFile(
                 uploadCourseId,
-                mode === 'create' ? sectionIndex : sectionId,
+                sectionId,
                 type,
                 file,
                 lessonIndex,
@@ -524,7 +534,23 @@ export const useCourseBuilder = ({ mode = 'create', courseId: initialCourseId = 
             }
         } catch (err) {
             console.error(err);
-            toast.error(mode === 'create' ? 'Курс түзүүдө ката кетти.' : 'Курс сактоодо ката кетти.');
+
+            // Show specific API error if available
+            if (err?.response?.data?.message) {
+                const apiErrors = err.response.data.message;
+                if (Array.isArray(apiErrors)) {
+                    apiErrors.forEach(error => {
+                        toast.error(error);
+                    });
+                } else {
+                    toast.error(apiErrors);
+                }
+            } else if (err?.response?.data?.error) {
+                toast.error(err.response.data.error);
+            } else {
+                // Fallback to generic error
+                toast.error(mode === 'create' ? 'Курс түзүүдө ката кетти.' : 'Курс сактоодо ката кетти.');
+            }
         }
     };
 
@@ -551,7 +577,7 @@ export const useCourseBuilder = ({ mode = 'create', courseId: initialCourseId = 
             if (mode === 'create') {
                 for (const [sIdx, section] of curriculum.entries()) {
                     const sec = await createSection(courseId, {
-                        title: section.sectionTitle,
+                        title: section.title,
                         order: sIdx,
                         skillId: normalizeSkillValue(section.skillId),
                     });
@@ -584,11 +610,26 @@ export const useCourseBuilder = ({ mode = 'create', courseId: initialCourseId = 
             setStep(3);
         } catch (err) {
             console.error(err);
-            if (isForbiddenError(err)) {
+
+            // Show specific API error if available
+            if (err?.response?.data?.message) {
+                const apiErrors = err.response.data.message;
+                if (Array.isArray(apiErrors)) {
+                    apiErrors.forEach(error => {
+                        toast.error(error);
+                    });
+                } else {
+                    toast.error(apiErrors);
+                }
+            } else if (err?.response?.data?.error) {
+                toast.error(err.response.data.error);
+            } else if (isForbiddenError(err)) {
                 navigate('/unauthorized');
                 return;
+            } else {
+                // Fallback to generic error
+                toast.error('Мазмунду сактоодо ката кетти.');
             }
-            toast.error(parseApiError(err, 'Мазмунду сактоодо ката кетти.').message);
         }
     };
 

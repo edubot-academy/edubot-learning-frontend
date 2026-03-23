@@ -16,7 +16,7 @@ export const DEFAULT_COURSE_INFO = {
 };
 
 export const createDefaultSection = (index) => ({
-    sectionTitle: `Бөлүм ${index + 1}`,
+    title: `Бөлүм ${index + 1}`,
     skillId: '',
     lessons: [],
 });
@@ -101,7 +101,7 @@ export const hydrateCourseFromApi = (courseData) => {
     const learningOutcomesText = Array.isArray(courseData.learningOutcomes)
         ? courseData.learningOutcomes.join('\n')
         : '';
-    
+
     return {
         ...courseData,
         languageCode: courseData.languageCode || 'ky',
@@ -127,7 +127,10 @@ export const reorderExpandedMap = (prevMap, count, fromIdx, toIdx) => {
 
 export const handleLessonKindChange = (lesson, value) => {
     const updatedLesson = { ...lesson };
-    
+
+    // Set the kind field
+    updatedLesson.kind = value;
+
     if (value === 'article') {
         updatedLesson.previewVideo = false;
     }
@@ -141,6 +144,6 @@ export const handleLessonKindChange = (lesson, value) => {
         updatedLesson.videoKey = '';
         updatedLesson.challenge = ensureChallengeShape(updatedLesson.challenge);
     }
-    
+
     return updatedLesson;
 };
