@@ -1,4 +1,3 @@
-// AdminPanel.jsx — with Companies tab added (KY labels kept)
 import { useEffect, useState, useCallback, useRef } from 'react';
 import {
     fetchCourses,
@@ -85,7 +84,6 @@ const AdminPanel = () => {
     const [editingCategoryName, setEditingCategoryName] = useState('');
     const [pendingCourses, setPendingCourses] = useState([]);
 
-    // ✅ Companies state
     const [companies, setCompanies] = useState([]);
     const [companiesTotalPages, setCompaniesTotalPages] = useState(1);
     const [companySearch, setCompanySearch] = useState('');
@@ -102,13 +100,16 @@ const AdminPanel = () => {
     const [newPromptIsActive, setNewPromptIsActive] = useState(true);
     const [newPromptIsGlobal, setNewPromptIsGlobal] = useState(false);
     const [editingPromptId, setEditingPromptId] = useState(null);
+
     const [transcodeCourseId, setTranscodeCourseId] = useState('');
     const [transcodeSectionId, setTranscodeSectionId] = useState('');
     const [transcodeLessonId, setTranscodeLessonId] = useState('');
     const [transcodeLoading, setTranscodeLoading] = useState(false);
+
     const [adminStats, setAdminStats] = useState(null);
     const [adminStatsLoading, setAdminStatsLoading] = useState(false);
     const [adminStatsLoaded, setAdminStatsLoaded] = useState(false);
+
     const [skills, setSkills] = useState([]);
     const [skillsLoading, setSkillsLoading] = useState(false);
     const [newSkill, setNewSkill] = useState({ name: '', slug: '' });
@@ -134,6 +135,7 @@ const AdminPanel = () => {
     const [usersPage, setUsersPage] = useState(initialUsersPage);
     const [usersTotalPages, setUsersTotalPages] = useState(1);
     const [usersTotal, setUsersTotal] = useState(0);
+
     const usersFiltersInitialized = useRef(false);
     const usersSearchInitialized = useRef(false);
     const usersPageInitialized = useRef(false);
@@ -149,7 +151,7 @@ const AdminPanel = () => {
     const [activeTab, setActiveTab] = useState(() => {
         const tabFromUrl = searchParams.get('tab');
         return ADMIN_TABS.includes(tabFromUrl) ? tabFromUrl : 'stats';
-    }); // stats | users | courses | contacts | pending | companies | skills | ai-prompts | notifications | integration
+    });
 
     const handleProtectedError = useCallback((error, fallbackMessage) => {
         if (isForbiddenError(error)) {
@@ -180,7 +182,7 @@ const AdminPanel = () => {
             setSearchParams((prev) => {
                 const updated = new URLSearchParams(prev);
                 Object.entries(params).forEach(([key, value]) => {
-                    if (value) updated.set(key, value);
+                    if (value !== undefined && value !== null && value !== '') updated.set(key, value);
                     else updated.delete(key);
                 });
                 return updated;
@@ -225,10 +227,13 @@ const AdminPanel = () => {
 
     const loadCoursesAndCategories = useCallback(async () => {
         try {
-            const coursesRes = await fetchCourses();
-            const categoriesRes = await fetchCategories();
-            setCourses(coursesRes.courses);
-            setCategories(categoriesRes);
+            const [coursesRes, categoriesRes] = await Promise.all([
+                fetchCourses(),
+                fetchCategories(),
+            ]);
+
+            setCourses(Array.isArray(coursesRes?.courses) ? coursesRes.courses : []);
+            setCategories(Array.isArray(categoriesRes) ? categoriesRes : []);
         } catch (error) {
             console.error('Failed to fetch courses/categories:', error);
             handleProtectedError(error, 'Курстар/категорияларды жүктөө катасы.');
@@ -238,7 +243,7 @@ const AdminPanel = () => {
     const loadContacts = useCallback(async () => {
         try {
             const res = await fetchContactMessages();
-            setContacts(res);
+            setContacts(Array.isArray(res) ? res : []);
         } catch (error) {
             console.error(error);
             handleProtectedError(error, 'Байланыш каттарын жүктөө катасы.');
@@ -253,8 +258,10 @@ const AdminPanel = () => {
             df: dateFrom,
             dt: dateTo,
         });
+
         if (lastUsersFetchKeyRef.current === key) return;
         lastUsersFetchKeyRef.current = key;
+
         try {
             const res = await fetchUsers({
                 page: usersPage,
@@ -264,35 +271,52 @@ const AdminPanel = () => {
                 dateFrom: dateFrom ? new Date(dateFrom).toISOString() : undefined,
                 dateTo: dateTo ? new Date(dateTo).toISOString() : undefined,
             });
-            setUsers(res.data);
-            setUsersTotal(res?.total ?? res?.data?.length ?? 0);
+
+            const rows = Array.isArray(res?.data) ? res.data : [];
+            setUsers(rows);
+            setUsersTotal(res?.total ?? rows.length);
+
             const fallbackTotalPages =
-                res?.total && res?.data?.length
-                    ? Math.max(1, Math.ceil(res.total / res.data.length))
-                    : 1;
+                res?.total && rows.length ? Math.max(1, Math.ceil(res.total / rows.length)) : 1;
+
             setUsersTotalPages(res?.totalPages ?? fallbackTotalPages);
         } catch (error) {
             console.error(error);
-            toast.error('Колдонуучуларды жүктөө катасы.');
+            handleProtectedError(error, 'Колдонуучуларды жүктөө катасы.');
         }
-    }, [usersPage, search, roleFilter, dateFrom, dateTo]);
+    }, [usersPage, search, roleFilter, dateFrom, dateTo, handleProtectedError]);
+
+    const loadUsersForEnrollment = useCallback(async () => {
+        if (users.length > 0) return;
+
+        try {
+            const res = await fetchUsers({
+                page: 1,
+                limit: 100,
+            });
+            setUsers(Array.isArray(res?.data) ? res.data : []);
+        } catch (error) {
+            console.error(error);
+            handleProtectedError(error, 'Колдонуучуларды жүктөө катасы.');
+        }
+    }, [users.length, handleProtectedError]);
 
     const loadPendingCourses = useCallback(async () => {
         try {
             const data = await getPendingCourses();
-            setPendingCourses(data);
-            toast.success('Каралуудагы курстар жүктөлдү.');
+            setPendingCourses(Array.isArray(data) ? data : []);
         } catch (error) {
             console.error(error);
-            toast.error('Каралуудагы курстарды жүктөө катасы.');
+            handleProtectedError(error, 'Каралуудагы курстарды жүктөө катасы.');
         }
-    }, []);
+    }, [handleProtectedError]);
 
     const handleTranscode = useCallback(async () => {
         if (!transcodeCourseId || !transcodeSectionId || !transcodeLessonId) {
             toast.error('Course, section, жана lesson ID киргизиңиз');
             return;
         }
+
         setTranscodeLoading(true);
         try {
             await transcodeLessonHls({
@@ -310,18 +334,18 @@ const AdminPanel = () => {
         }
     }, [transcodeCourseId, transcodeSectionId, transcodeLessonId]);
 
-    // ✅ Companies loader
     const loadCompanies = useCallback(
         async (p = companyPage, q = companySearch) => {
             try {
                 const { items, totalPages } = await listCompanies({ page: p, limit: 12, q });
-                setCompanies(items || []);
+                setCompanies(Array.isArray(items) ? items : []);
                 setCompaniesTotalPages(totalPages || 1);
-            } catch {
-                toast.error('Компанияларды жүктөө катасы.');
+            } catch (error) {
+                console.error(error);
+                handleProtectedError(error, 'Компанияларды жүктөө катасы.');
             }
         },
-        [companyPage, companySearch]
+        [companyPage, companySearch, handleProtectedError]
     );
 
     const handleDeleteCourse = async (id) => {
@@ -390,6 +414,8 @@ const AdminPanel = () => {
     };
 
     const handleEnrollUser = async (userId, courseId) => {
+        if (!userId) return;
+
         if (window.confirm(`Колдонуучу #${userId} курс #${courseId} га жазылсынбы?`)) {
             try {
                 await enrollUserInCourse(userId, courseId);
@@ -436,11 +462,11 @@ const AdminPanel = () => {
         }
     };
 
-    // ✅ Create company quick action
     const handleCreateCompany = async (e) => {
         e.preventDefault();
         const name = newCompanyName.trim();
         if (!name) return;
+
         try {
             await createCompany({ name });
             setNewCompanyName('');
@@ -453,86 +479,6 @@ const AdminPanel = () => {
             toast.error('Компания түзүү катасы.');
         }
     };
-
-    const handleAddSkill = async () => {
-        const name = newSkill.name.trim();
-        const slug = newSkill.slug.trim();
-        if (!name || !slug) {
-            toast.error('Skill аталышы жана slug толтуруңуз.');
-            return;
-        }
-        try {
-            await createSkill({ name, slug });
-            toast.success('Skill кошулду.');
-            setNewSkill({ name: '', slug: '' });
-            loadSkillsList();
-        } catch (error) {
-            console.error('Skill create error', error);
-            toast.error('Skill кошуу катасы.');
-        }
-    };
-
-    const handleUpdateSkill = async () => {
-        if (!editingSkillId) return;
-        const name = editingSkill.name.trim();
-        const slug = editingSkill.slug.trim();
-        if (!name || !slug) {
-            toast.error('Аталыш жана slug талап кылынат.');
-            return;
-        }
-        try {
-            await updateSkill(editingSkillId, { name, slug });
-            toast.success('Skill сакталды.');
-            setEditingSkillId(null);
-            setEditingSkill({ name: '', slug: '' });
-            loadSkillsList();
-        } catch (error) {
-            console.error('Skill update error', error);
-            toast.error('Skill сактоо катасы.');
-        }
-    };
-
-    const handleDeleteSkill = async (id) => {
-        if (!window.confirm('Skill өчүрүлсүнбү?')) return;
-        try {
-            await deleteSkill(id);
-            toast.success('Skill өчүрүлдү.');
-            loadSkillsList();
-        } catch (error) {
-            console.error('Skill delete error', error);
-            toast.error('Skill өчүрүү катасы.');
-        }
-    };
-
-    const loadPromptsForCourse = useCallback(async (courseId) => {
-        if (!courseId) return;
-        setAiPromptsLoading(true);
-        try {
-            const data = await fetchCourseAiPrompts(courseId);
-            setAiPrompts(data || []);
-        } catch (error) {
-            console.error('Failed to load prompts:', error);
-            toast.error('AI сунуштарын жүктөө катасы.');
-        } finally {
-            setAiPromptsLoading(false);
-        }
-    }, []);
-
-    // Tab-driven loaders
-    useEffect(() => {
-        if (activeTab === 'courses' || activeTab === 'ai-prompts') {
-            loadCoursesAndCategories();
-        }
-        if (activeTab === 'contacts') {
-            loadContacts();
-        }
-        if (activeTab === 'pending') {
-            loadPendingCourses();
-        }
-        if (activeTab === 'companies') {
-            loadCompanies();
-        }
-    }, [activeTab, loadCoursesAndCategories, loadContacts, loadPendingCourses, loadCompanies]);
 
     const loadSkillsList = useCallback(async () => {
         setSkillsLoading(true);
@@ -547,6 +493,102 @@ const AdminPanel = () => {
         }
     }, []);
 
+    const handleAddSkill = async () => {
+        const name = newSkill.name.trim();
+        const slug = newSkill.slug.trim();
+
+        if (!name || !slug) {
+            toast.error('Skill аталышы жана slug толтуруңуз.');
+            return;
+        }
+
+        try {
+            await createSkill({ name, slug });
+            toast.success('Skill кошулду.');
+            setNewSkill({ name: '', slug: '' });
+            loadSkillsList();
+        } catch (error) {
+            console.error('Skill create error', error);
+            toast.error('Skill кошуу катасы.');
+        }
+    };
+
+    const handleUpdateSkill = async () => {
+        if (!editingSkillId) return;
+
+        const name = editingSkill.name.trim();
+        const slug = editingSkill.slug.trim();
+
+        if (!name || !slug) {
+            toast.error('Аталыш жана slug талап кылынат.');
+            return;
+        }
+
+        try {
+            await updateSkill(editingSkillId, { name, slug });
+            toast.success('Skill сакталды.');
+            setEditingSkillId(null);
+            setEditingSkill({ name: '', slug: '' });
+            loadSkillsList();
+        } catch (error) {
+            console.error('Skill update error', error);
+            toast.error('Skill сактоо катасы.');
+        }
+    };
+
+    const handleDeleteSkill = async (id) => {
+        if (!window.confirm('Skill өчүрүлсүнбү?')) return;
+
+        try {
+            await deleteSkill(id);
+            toast.success('Skill өчүрүлдү.');
+            loadSkillsList();
+        } catch (error) {
+            console.error('Skill delete error', error);
+            toast.error('Skill өчүрүү катасы.');
+        }
+    };
+
+    const loadPromptsForCourse = useCallback(async (courseId) => {
+        if (!courseId) return;
+
+        setAiPromptsLoading(true);
+        try {
+            const data = await fetchCourseAiPrompts(courseId);
+            setAiPrompts(Array.isArray(data) ? data : []);
+        } catch (error) {
+            console.error('Failed to load prompts:', error);
+            toast.error('AI сунуштарын жүктөө катасы.');
+        } finally {
+            setAiPromptsLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        if (activeTab === 'courses' || activeTab === 'ai-prompts') {
+            loadCoursesAndCategories();
+        }
+        if (activeTab === 'contacts') {
+            loadContacts();
+        }
+        if (activeTab === 'pending') {
+            loadPendingCourses();
+        }
+        if (activeTab === 'companies') {
+            loadCompanies();
+        }
+        if (activeTab === 'courses') {
+            loadUsersForEnrollment();
+        }
+    }, [
+        activeTab,
+        loadCoursesAndCategories,
+        loadContacts,
+        loadPendingCourses,
+        loadCompanies,
+        loadUsersForEnrollment,
+    ]);
+
     useEffect(() => {
         if (activeTab === 'stats' && !adminStatsLoaded) {
             loadAdminStats();
@@ -556,11 +598,12 @@ const AdminPanel = () => {
         }
     }, [activeTab, adminStatsLoaded, loadAdminStats, loadSkillsList]);
 
-    // Sync page from URL when landing on Users tab (e.g., back/forward)
     useEffect(() => {
         if (activeTab !== 'users') return;
+
         const pageFromUrl =
             Number(searchParams.get(USERS_QUERY_KEYS.page) || searchParams.get('page')) || 1;
+
         if (pendingUsersPageRef.current !== null) {
             if (pageFromUrl === pendingUsersPageRef.current && pageFromUrl !== usersPage) {
                 setUsersPage(pageFromUrl);
@@ -570,17 +613,18 @@ const AdminPanel = () => {
             }
             return;
         }
+
         if (!usersPageInitialized.current) {
             usersPageInitialized.current = true;
             setUsersPage(pageFromUrl);
             return;
         }
+
         if (pageFromUrl !== usersPage) {
             setUsersPage(pageFromUrl);
         }
     }, [activeTab, searchParams, usersPage]);
 
-    // Remove page query when leaving Users tab
     useEffect(() => {
         if (activeTab !== 'users') {
             updateSearchParams({ [USERS_QUERY_KEYS.page]: undefined });
@@ -596,6 +640,7 @@ const AdminPanel = () => {
     const handleUsersPageChange = useCallback(
         (nextPage) => {
             if (nextPage < 1) return;
+
             pendingUsersPageRef.current = nextPage;
             setUsersPage(nextPage);
             updateSearchParams({
@@ -609,16 +654,18 @@ const AdminPanel = () => {
         [dateFrom, dateTo, roleFilter, search, updateSearchParams]
     );
 
-    // Debounce for Users search
     useEffect(() => {
         if (activeTab !== 'users') return;
+
         if (!usersSearchInitialized.current) {
             usersSearchInitialized.current = true;
             lastSearchRef.current = search;
             return;
         }
+
         if (search === lastSearchRef.current) return;
         lastSearchRef.current = search;
+
         const delayDebounce = setTimeout(() => {
             if (search.length >= 3 || search === '') {
                 setUsersPage(1);
@@ -631,21 +678,24 @@ const AdminPanel = () => {
                 });
             }
         }, 500);
+
         return () => clearTimeout(delayDebounce);
     }, [activeTab, dateFrom, dateTo, roleFilter, search, updateSearchParams]);
 
-    // Users filters (role/date) -> reset page & sync params
     useEffect(() => {
         if (activeTab !== 'users') return;
+
         if (!usersFiltersInitialized.current) {
             usersFiltersInitialized.current = true;
             lastFilterRef.current = { role: roleFilter, dateFrom, dateTo };
             return;
         }
+
         const last = lastFilterRef.current;
         if (last.role === roleFilter && last.dateFrom === dateFrom && last.dateTo === dateTo) {
             return;
         }
+
         lastFilterRef.current = { role: roleFilter, dateFrom, dateTo };
         setUsersPage(1);
         updateSearchParams({
@@ -657,13 +707,14 @@ const AdminPanel = () => {
         });
     }, [activeTab, roleFilter, dateFrom, dateTo, search, updateSearchParams]);
 
-    // Debounce for Companies search
     useEffect(() => {
         if (activeTab !== 'companies') return;
+
         const t = setTimeout(() => {
             setCompanyPage(1);
             loadCompanies(1, companySearch);
         }, 400);
+
         return () => clearTimeout(t);
     }, [companySearch, activeTab, loadCompanies]);
 
@@ -699,14 +750,17 @@ const AdminPanel = () => {
 
     const handleCreatePrompt = async (e) => {
         e.preventDefault();
+
         if (!aiPromptCourseId) {
             toast.error('Курс тандаңыз.');
             return;
         }
+
         if (!newPromptText.trim()) {
             toast.error('Сунуш текстин жазыңыз.');
             return;
         }
+
         const payload = {
             text: newPromptText.trim(),
             language: newPromptLanguage,
@@ -723,6 +777,7 @@ const AdminPanel = () => {
                 await addCourseAiPrompt(aiPromptCourseId, payload);
                 toast.success('Сунуш кошулду.');
             }
+
             resetPromptForm();
             loadPromptsForCourse(aiPromptCourseId);
         } catch (error) {
@@ -734,6 +789,7 @@ const AdminPanel = () => {
     const handleDeletePrompt = async (promptId) => {
         if (!aiPromptCourseId) return;
         if (!window.confirm('Бул AI сунушту өчүрүүнү каалайсызбы?')) return;
+
         try {
             await deleteCourseAiPrompt(aiPromptCourseId, promptId);
             toast.success('Сунуш өчүрүлдү.');
@@ -749,13 +805,16 @@ const AdminPanel = () => {
 
     const renderUserPageButtons = () => {
         if (usersTotalPages <= 1) return null;
+
         const maxButtons = 10;
         let start = Math.max(1, usersPage - Math.floor(maxButtons / 2));
         let end = start + maxButtons - 1;
+
         if (end > usersTotalPages) {
             end = usersTotalPages;
             start = Math.max(1, end - maxButtons + 1);
         }
+
         const pages = [];
         for (let p = start; p <= end; p += 1) {
             pages.push(
@@ -772,11 +831,12 @@ const AdminPanel = () => {
                 </button>
             );
         }
+
         return pages;
     };
 
     return (
-        <div className="pt-24 min-h-screen bg-gray-50 dark:bg-[#1A1A1A]">
+        <div className="pt-24 min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
             <div className="max-w-7xl mx-auto flex gap-6 px-4 pb-12">
                 <DashboardSidebar
                     items={NAV_ITEMS}
@@ -788,7 +848,7 @@ const AdminPanel = () => {
                     toggleLabels={{ collapse: 'Менюну жыйуу', expand: '' }}
                 />
 
-                <main className="flex-1 space-y-6 ">
+                <main className="flex-1 space-y-6">
                     <div className="flex items-center justify-between flex-wrap gap-3">
                         <div>
                             <h1 className="text-3xl font-bold text-gray-900 dark:text-[#E8ECF3]">
@@ -805,26 +865,28 @@ const AdminPanel = () => {
                             {sidebarOpen ? 'Менюну жашыруу' : 'Менюну көрсөтүү'}
                         </button>
                     </div>
+
                     {activeTab === 'notifications' && (
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                            <div className="bg-white dark:bg-[#111111] shadow-sm rounded-2xl p-4 border border-gray-100 dark:border-gray-800">
+                            <div className="bg-white dark:bg-gray-800 shadow-lg rounded-2xl p-4 border border-slate-200 dark:border-slate-700">
                                 <NotificationsWidget />
                             </div>
-                            <div className="bg-white dark:bg-[#111111] shadow-sm rounded-2xl p-4 border border-gray-100 dark:border-gray-800">
+                            <div className="bg-white dark:bg-gray-800 shadow-lg rounded-2xl p-4 border border-slate-200 dark:border-slate-700">
                                 <NotificationsTab />
                             </div>
                         </div>
                     )}
+
                     {activeTab === 'integration' && <IntegrationTab />}
 
                     {activeTab === 'attendance' && (
-                        <div className="bg-white dark:bg-[#111111] shadow-sm rounded-2xl p-4 border border-gray-100 dark:border-gray-800">
+                        <div className="bg-white dark:bg-gray-800 shadow-lg rounded-2xl p-4 border border-slate-200 dark:border-slate-700">
                             <AttendancePage embedded />
                         </div>
                     )}
 
                     {activeTab === 'analytics' && (
-                        <div className="bg-white dark:bg-[#111111] shadow-sm rounded-2xl p-4 border border-gray-100 dark:border-gray-800">
+                        <div className="bg-white dark:bg-gray-800 shadow-lg rounded-2xl p-4 border border-slate-200 dark:border-slate-700">
                             <AdminAnalyticsPage />
                         </div>
                     )}
@@ -838,8 +900,8 @@ const AdminPanel = () => {
                     )}
 
                     {activeTab === 'contacts' && (
-                        <div className="bg-white dark:bg-[#111111] shadow-sm rounded-2xl p-4 border border-gray-100 dark:border-gray-800">
-                            <h2 className="text-2xl font-semibold mb-4 text-gray-900 dark:text-[#E8ECF3]">
+                        <div className="bg-white dark:bg-gray-800 shadow-lg rounded-2xl p-4 border border-slate-200 dark:border-slate-700">
+                            <h2 className="text-2xl font-semibold mb-4 text-slate-900 dark:text-white">
                                 Байланыш Каттары
                             </h2>
                             <div className="overflow-x-auto">
@@ -886,8 +948,8 @@ const AdminPanel = () => {
 
                     {activeTab === 'courses' && (
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                            <div className="bg-white dark:bg-[#111111] shadow-sm rounded-2xl p-4 border border-gray-100 dark:border-gray-800">
-                                <h2 className="text-2xl font-semibold mb-4 text-gray-900 dark:text-[#E8ECF3]">
+                            <div className="bg-white dark:bg-gray-800 shadow-lg rounded-2xl p-4 border border-slate-200 dark:border-slate-700">
+                                <h2 className="text-2xl font-semibold mb-4 text-slate-900 dark:text-white">
                                     Курстар
                                 </h2>
                                 <ul className="space-y-3">
@@ -902,7 +964,7 @@ const AdminPanel = () => {
                                                         {course.title}
                                                     </p>
                                                     <p className="text-sm text-gray-500 dark:text-[#a6adba]">
-                                                        Окутуучу: {course.instructor?.fullName}
+                                                        Окутуучу: {course.instructor?.fullName || '—'}
                                                     </p>
                                                 </div>
                                                 <div className="flex items-center gap-3 text-sm">
@@ -913,23 +975,20 @@ const AdminPanel = () => {
                                                         Көрүү
                                                     </Link>
                                                     <button
-                                                        onClick={() =>
-                                                            handleDeleteCourse(course.id)
-                                                        }
+                                                        onClick={() => handleDeleteCourse(course.id)}
                                                         className="text-red-500 hover:underline"
                                                     >
                                                         Өчүрүү
                                                     </button>
                                                 </div>
                                             </div>
+
                                             <div className="mt-3">
                                                 <label className="text-sm text-gray-500 dark:text-[#a6adba]">
                                                     Колдонуучуну курска жазуу:
                                                 </label>
                                                 <select
-                                                    onChange={(e) =>
-                                                        handleEnrollUser(e.target.value, course.id)
-                                                    }
+                                                    onChange={(e) => handleEnrollUser(e.target.value, course.id)}
                                                     className="mt-1 w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#0E0E0E] text-sm text-gray-900 dark:text-[#E8ECF3]"
                                                     defaultValue=""
                                                 >
@@ -945,6 +1004,7 @@ const AdminPanel = () => {
                                             </div>
                                         </li>
                                     ))}
+
                                     {courses.length === 0 && (
                                         <li className="text-center text-gray-500 dark:text-[#a6adba] p-4 border border-dashed rounded-2xl">
                                             Курстар табылган жок.
@@ -953,8 +1013,8 @@ const AdminPanel = () => {
                                 </ul>
                             </div>
 
-                            <div className="bg-white dark:bg-[#111111] shadow-sm rounded-2xl p-4 border border-gray-100 dark:border-gray-800">
-                                <h2 className="text-2xl font-semibold mb-4 text-gray-900 dark:text-[#E8ECF3]">
+                            <div className="bg-white dark:bg-gray-800 shadow-lg rounded-2xl p-4 border border-slate-200 dark:border-slate-700">
+                                <h2 className="text-2xl font-semibold mb-4 text-slate-900 dark:text-white">
                                     Категориялар
                                 </h2>
                                 <div className="flex gap-2 mb-4">
@@ -971,6 +1031,7 @@ const AdminPanel = () => {
                                         Кошуу
                                     </button>
                                 </div>
+
                                 <ul className="space-y-3">
                                     {categories.map((category) => (
                                         <li
@@ -981,15 +1042,11 @@ const AdminPanel = () => {
                                                 <div className="flex flex-col sm:flex-row gap-2 w-full">
                                                     <input
                                                         value={editingCategoryName}
-                                                        onChange={(e) =>
-                                                            setEditingCategoryName(e.target.value)
-                                                        }
+                                                        onChange={(e) => setEditingCategoryName(e.target.value)}
                                                         className="border border-gray-200 dark:border-gray-700 px-3 py-2 rounded-lg flex-1 bg-white dark:bg-[#0E0E0E] text-gray-900 dark:text-[#E8ECF3]"
                                                     />
                                                     <button
-                                                        onClick={() =>
-                                                            handleUpdateCategory(category.id)
-                                                        }
+                                                        onClick={() => handleUpdateCategory(category.id)}
                                                         className="bg-green-600 text-white px-4 py-2 rounded-lg"
                                                     >
                                                         Сактоо
@@ -1004,18 +1061,14 @@ const AdminPanel = () => {
                                                         <button
                                                             onClick={() => {
                                                                 setEditingCategoryId(category.id);
-                                                                setEditingCategoryName(
-                                                                    category.name
-                                                                );
+                                                                setEditingCategoryName(category.name);
                                                             }}
                                                             className="text-blue-500 hover:underline"
                                                         >
                                                             Өзгөртүү
                                                         </button>
                                                         <button
-                                                            onClick={() =>
-                                                                handleDeleteCategory(category.id)
-                                                            }
+                                                            onClick={() => handleDeleteCategory(category.id)}
                                                             className="text-red-500 hover:underline"
                                                         >
                                                             Өчүрүү
@@ -1033,8 +1086,7 @@ const AdminPanel = () => {
                                     HLS транс коддоо
                                 </h2>
                                 <p className="text-sm text-gray-600 dark:text-[#a6adba] mb-3">
-                                    MP4 сабакты HLSке айландыруу үчүн Course / Section / Lesson ID
-                                    киргизиңиз.
+                                    MP4 сабакты HLSке айландыруу үчүн Course / Section / Lesson ID киргизиңиз.
                                 </p>
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
                                     <input
@@ -1064,11 +1116,7 @@ const AdminPanel = () => {
                                     disabled={transcodeLoading}
                                     className="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg disabled:opacity-60"
                                 >
-                                    {transcodeLoading ? (
-                                        <Loader fullScreen={false} />
-                                    ) : (
-                                        'Транс коддоо'
-                                    )}
+                                    {transcodeLoading ? <Loader fullScreen={false} /> : 'Транс коддоо'}
                                 </button>
                                 <p className="text-xs text-gray-500 dark:text-[#a6adba] mt-2">
                                     ffmpeg серверде орнотулган болушу керек.
@@ -1089,6 +1137,7 @@ const AdminPanel = () => {
                                     className="border border-gray-200 dark:border-gray-700 px-3 py-2 rounded-lg w-full bg-white dark:bg-[#0E0E0E] text-gray-900 dark:text-[#E8ECF3]"
                                     placeholder="Компаниянын аталышы"
                                 />
+
                                 <ul className="space-y-3">
                                     {companies.map((c) => (
                                         <li
@@ -1113,6 +1162,7 @@ const AdminPanel = () => {
                                             </Link>
                                         </li>
                                     ))}
+
                                     {companies.length === 0 && (
                                         <li className="text-center text-gray-500 dark:text-[#a6adba] p-6 border border-dashed rounded-2xl">
                                             Компаниялар табылган жок.
@@ -1120,18 +1170,18 @@ const AdminPanel = () => {
                                     )}
                                 </ul>
 
-                                <div className="flex gap-2 justify-center">
-                                    {Array.from(
-                                        { length: companiesTotalPages },
-                                        (_, i) => i + 1
-                                    ).map((p) => (
+                                <div className="flex gap-2 justify-center flex-wrap">
+                                    {Array.from({ length: companiesTotalPages }, (_, i) => i + 1).map((p) => (
                                         <button
                                             key={p}
                                             onClick={() => {
                                                 setCompanyPage(p);
                                                 loadCompanies(p, companySearch);
                                             }}
-                                            className={`px-3 py-1 rounded border border-gray-200 dark:border-gray-700 ${p === companyPage ? 'bg-blue-600 text-white' : 'text-gray-700 dark:text-[#E8ECF3]'}`}
+                                            className={`px-3 py-1 rounded border border-gray-200 dark:border-gray-700 ${p === companyPage
+                                                    ? 'bg-blue-600 text-white'
+                                                    : 'text-gray-700 dark:text-[#E8ECF3]'
+                                                }`}
                                         >
                                             {p}
                                         </button>
@@ -1169,8 +1219,7 @@ const AdminPanel = () => {
                                         Skills каталогу
                                     </h2>
                                     <p className="text-sm text-gray-500 dark:text-[#a6adba]">
-                                        Skill тандагыч курстагы секциялар үчүн; лидерборддор ушул
-                                        тегдерге таянат.
+                                        Skill тандагыч курстагы секциялар үчүн; лидерборддор ушул тегдерге таянат.
                                     </p>
                                 </div>
                                 <button
@@ -1185,32 +1234,29 @@ const AdminPanel = () => {
                                 <div className="md:col-span-3 text-sm text-gray-600 dark:text-[#a6adba]">
                                     Skill ID же slug тандагычка жөнөтүлөт; slug уникалдуу болсун.
                                 </div>
+
                                 <input
                                     value={editingSkillId ? editingSkill.name : newSkill.name}
                                     onChange={(e) =>
                                         editingSkillId
-                                            ? setEditingSkill((p) => ({
-                                                ...p,
-                                                name: e.target.value,
-                                            }))
+                                            ? setEditingSkill((p) => ({ ...p, name: e.target.value }))
                                             : setNewSkill((p) => ({ ...p, name: e.target.value }))
                                     }
                                     className="border border-gray-200 dark:border-gray-700 px-3 py-2 rounded-lg w-full bg-white dark:bg-[#0E0E0E] text-gray-900 dark:text-[#E8ECF3]"
                                     placeholder="Skill аталышы"
                                 />
+
                                 <input
                                     value={editingSkillId ? editingSkill.slug : newSkill.slug}
                                     onChange={(e) =>
                                         editingSkillId
-                                            ? setEditingSkill((p) => ({
-                                                ...p,
-                                                slug: e.target.value,
-                                            }))
+                                            ? setEditingSkill((p) => ({ ...p, slug: e.target.value }))
                                             : setNewSkill((p) => ({ ...p, slug: e.target.value }))
                                     }
                                     className="border border-gray-200 dark:border-gray-700 px-3 py-2 rounded-lg w-full bg-white dark:bg-[#0E0E0E] text-gray-900 dark:text-[#E8ECF3]"
                                     placeholder="Slug (мисалы: javascript)"
                                 />
+
                                 <div className="flex gap-2">
                                     {editingSkillId && (
                                         <button
@@ -1226,9 +1272,7 @@ const AdminPanel = () => {
                                     )}
                                     <button
                                         type="button"
-                                        onClick={
-                                            editingSkillId ? handleUpdateSkill : handleAddSkill
-                                        }
+                                        onClick={editingSkillId ? handleUpdateSkill : handleAddSkill}
                                         className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm"
                                     >
                                         {editingSkillId ? 'Сактоо' : 'Кошуу'}
@@ -1293,9 +1337,7 @@ const AdminPanel = () => {
                                     </label>
                                     <select
                                         value={aiPromptCourseId || ''}
-                                        onChange={(e) =>
-                                            setAiPromptCourseId(Number(e.target.value))
-                                        }
+                                        onChange={(e) => setAiPromptCourseId(Number(e.target.value))}
                                         className="mt-1 w-full border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 bg-white dark:bg-[#0E0E0E] text-gray-900 dark:text-[#E8ECF3]"
                                     >
                                         <option value="">Курс...</option>
@@ -1306,10 +1348,9 @@ const AdminPanel = () => {
                                         ))}
                                     </select>
                                 </div>
+
                                 <button
-                                    onClick={() =>
-                                        aiPromptCourseId && loadPromptsForCourse(aiPromptCourseId)
-                                    }
+                                    onClick={() => aiPromptCourseId && loadPromptsForCourse(aiPromptCourseId)}
                                     className="px-4 py-2 rounded-full bg-gray-100 dark:bg-[#1B1B1B] text-sm text-gray-700 dark:text-[#E8ECF3]"
                                 >
                                     Жаңыртуу
@@ -1332,6 +1373,7 @@ const AdminPanel = () => {
                                         placeholder="Суроо же сунуш текстин жазыңыз..."
                                     />
                                 </div>
+
                                 <div>
                                     <label className="text-sm font-semibold text-gray-600 dark:text-[#a6adba]">
                                         Тил
@@ -1346,6 +1388,7 @@ const AdminPanel = () => {
                                         <option value="en">English</option>
                                     </select>
                                 </div>
+
                                 <div>
                                     <label className="text-sm font-semibold text-gray-600 dark:text-[#a6adba]">
                                         Тартип
@@ -1357,6 +1400,7 @@ const AdminPanel = () => {
                                         className="mt-1 w-full border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 bg-white dark:bg-[#0E0E0E] text-gray-900 dark:text-[#E8ECF3]"
                                     />
                                 </div>
+
                                 <label className="flex items-center gap-2 text-sm font-semibold text-gray-600 dark:text-[#a6adba]">
                                     <input
                                         type="checkbox"
@@ -1365,6 +1409,7 @@ const AdminPanel = () => {
                                     />
                                     Активдүү
                                 </label>
+
                                 <label className="flex items-center gap-2 text-sm font-semibold text-gray-600 dark:text-[#a6adba]">
                                     <input
                                         type="checkbox"
@@ -1373,6 +1418,7 @@ const AdminPanel = () => {
                                     />
                                     Глобалдык
                                 </label>
+
                                 <div className="md:col-span-2 flex justify-end gap-3">
                                     {editingPromptId && (
                                         <button
@@ -1408,16 +1454,8 @@ const AdminPanel = () => {
                                                 <div className="text-xs text-gray-500 dark:text-[#a6adba] flex flex-wrap gap-3 mt-1">
                                                     <span>Тил: {prompt.language}</span>
                                                     <span>Тартип: {prompt.order}</span>
-                                                    <span>
-                                                        {prompt.courseId
-                                                            ? 'Курс үчүн'
-                                                            : 'Глобалдык'}
-                                                    </span>
-                                                    {!prompt.isActive && (
-                                                        <span className="text-red-500">
-                                                            Өчүрүлгөн
-                                                        </span>
-                                                    )}
+                                                    <span>{prompt.courseId ? 'Курс үчүн' : 'Глобалдык'}</span>
+                                                    {!prompt.isActive && <span className="text-red-500">Өчүрүлгөн</span>}
                                                 </div>
                                             </div>
                                             <div className="flex gap-3">
@@ -1483,9 +1521,10 @@ const AdminPanel = () => {
                                     />
                                 </div>
                             </div>
-                            <table className="w-full text-left text-sm ">
+
+                            <table className="w-full text-left text-sm">
                                 <thead>
-                                    <tr className="border-b ">
+                                    <tr className="border-b">
                                         <th className="p-2">Аты</th>
                                         <th className="p-2">Email</th>
                                         <th className="p-2">Роль</th>
@@ -1501,9 +1540,7 @@ const AdminPanel = () => {
                                             <td className="p-2 flex gap-2">
                                                 <select
                                                     value={user.role}
-                                                    onChange={(e) =>
-                                                        handleRoleChange(user.id, e.target.value)
-                                                    }
+                                                    onChange={(e) => handleRoleChange(user.id, e.target.value)}
                                                     className="border px-2 py-1 rounded dark:bg-black dark:text-[#E8ECF3]"
                                                 >
                                                     <option value="student">Студент</option>
@@ -1522,6 +1559,7 @@ const AdminPanel = () => {
                                     ))}
                                 </tbody>
                             </table>
+
                             <div className="flex flex-wrap items-center justify-between gap-3 mt-4 text-sm">
                                 <span className="text-gray-500 dark:text-gray-400">
                                     Баракча {usersPage} / {usersTotalPages} · Бардыгы: {usersTotal}
@@ -1535,9 +1573,7 @@ const AdminPanel = () => {
                                     >
                                         Алдыңкы
                                     </button>
-                                    <div className="flex items-center gap-1">
-                                        {renderUserPageButtons()}
-                                    </div>
+                                    <div className="flex items-center gap-1">{renderUserPageButtons()}</div>
                                     <button
                                         type="button"
                                         onClick={() => handleUsersPageChange(usersPage + 1)}
@@ -1586,6 +1622,7 @@ const AdminPanel = () => {
                                         </div>
                                     </div>
                                 ))}
+
                                 {!pendingCourses.length && (
                                     <div className="text-sm text-gray-500 dark:text-[#a6adba] p-4 border border-dashed rounded-2xl">
                                         Каралууда курс жок.
@@ -1612,7 +1649,9 @@ const AdminStatsView = ({ stats, loading, onRefresh }) => {
         Number(value ?? 0).toLocaleString('ru-RU', {
             maximumFractionDigits: 0,
         });
+
     const formatPercent = (value) => `${Math.round(Number(value ?? 0))}%`;
+
     const formatCurrency = (value) =>
         `${Number(value ?? 0).toLocaleString('ru-RU', {
             maximumFractionDigits: 0,
@@ -1640,6 +1679,7 @@ const AdminStatsView = ({ stats, loading, onRefresh }) => {
                         Жалпы көрсөткүчтөр, активдүүлүк жана тренддер
                     </p>
                 </div>
+
                 <div className="flex flex-wrap items-center gap-2">
                     <GrowthBadge label="Жаңы студенттер" value={growth.newStudents7d} tone="blue" />
                     <GrowthBadge label="Каттоолор" value={growth.enrollments7d} tone="emerald" />
@@ -1657,15 +1697,9 @@ const AdminStatsView = ({ stats, loading, onRefresh }) => {
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4">
                 <MetricCard label="Студенттер" value={formatNumber(totals.students)} />
                 <MetricCard label="Курстар" value={formatNumber(totals.courses)} />
-                <MetricCard
-                    label="Жарияланган курстар"
-                    value={formatNumber(totals.publishedCourses)}
-                />
+                <MetricCard label="Жарияланган курстар" value={formatNumber(totals.publishedCourses)} />
                 <MetricCard label="Жалпы каттоолор" value={formatNumber(totals.enrollments)} />
-                <MetricCard
-                    label="Активдүү каттоолор"
-                    value={formatNumber(totals.activeEnrollments)}
-                />
+                <MetricCard label="Активдүү каттоолор" value={formatNumber(totals.activeEnrollments)} />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -1723,8 +1757,14 @@ const MetricCard = ({ label, value, accent, sub }) => (
         <p className={`text-sm ${accent ? 'text-white/80' : 'text-gray-500 dark:text-gray-400'}`}>
             {label}
         </p>
-        <p className="text-2xl font-semibold mt-1 text-gray-900 dark:text-[#E8ECF3]">{value}</p>
-        {sub ? <p className="text-xs mt-1 text-white/80 dark:text-gray-400">{sub}</p> : null}
+        <p className={`text-2xl font-semibold mt-1 ${accent ? 'text-white' : 'text-gray-900 dark:text-[#E8ECF3]'}`}>
+            {value}
+        </p>
+        {sub ? (
+            <p className={`text-xs mt-1 ${accent ? 'text-white/80' : 'text-gray-500 dark:text-gray-400'}`}>
+                {sub}
+            </p>
+        ) : null}
     </div>
 );
 
@@ -1734,11 +1774,11 @@ const GrowthBadge = ({ label, value, tone = 'blue' }) => {
         emerald:
             'bg-emerald-50 text-emerald-700 border-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-200 dark:border-emerald-800',
     };
+
     const classes = toneMap[tone] || toneMap.blue;
+
     return (
-        <span
-            className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm border ${classes}`}
-        >
+        <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm border ${classes}`}>
             <span className="inline-flex h-2 w-2 rounded-full bg-current" aria-hidden />
             <span className="font-medium">+{Number(value ?? 0).toLocaleString('ru-RU')}</span>
             <span className="text-xs opacity-70">{label}</span>
@@ -1749,24 +1789,48 @@ const GrowthBadge = ({ label, value, tone = 'blue' }) => {
 const TrendCard = ({ title, series, color }) => {
     const safeSeries = Array.isArray(series) && series.length ? series : [{ date: '—', count: 0 }];
     const latest = safeSeries[safeSeries.length - 1];
+
     return (
-        <div className="bg-white dark:bg-[#1B1B1B] rounded-2xl border border-gray-100 dark:border-gray-800 p-4">
-            <div className="flex items-start justify-between gap-2">
-                <div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">{title}</p>
-                    <p className="text-2xl font-semibold text-gray-900 dark:text-[#E8ECF3]">
-                        {(latest?.count ?? 0).toLocaleString('ru-RU')}
-                    </p>
+        <div className="group relative">
+            <div className="absolute inset-0 bg-gradient-to-br from-white/80 to-white/40 dark:from-gray-800/80 dark:to-gray-800/40 backdrop-blur-xl rounded-2xl border border-white/20 dark:border-gray-700/20 shadow-lg hover:shadow-2xl transition-all duration-500" />
+            <div className="absolute inset-0 bg-gradient-to-br from-edubot-orange/5 via-transparent to-edubot-soft/5 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+
+            <div className="relative p-6 z-10">
+                <div className="absolute top-2 right-2 w-16 h-16 bg-gradient-to-br from-edubot-orange/20 to-edubot-soft/10 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-500 transform group-hover:scale-110" />
+
+                <div className="w-10 h-10 bg-gradient-to-br from-edubot-orange/20 to-edubot-soft/10 rounded-xl mb-3 flex items-center justify-center">
+                    <div className="w-5 h-5 bg-edubot-orange rounded-full animate-pulse" />
                 </div>
-                <span className="text-xs text-gray-400">7 күн</span>
-            </div>
-            <Sparkline series={safeSeries} color={color} />
-            <div className="flex justify-between text-[11px] text-gray-400 mt-2">
-                {safeSeries.map((point) => (
-                    <span key={point.date} className="truncate">
-                        {point.date?.slice(5) || '—'}
+
+                <div className="flex items-start justify-between gap-2">
+                    <div>
+                        <p className="text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">
+                            {title}
+                        </p>
+                        <p className="text-3xl font-bold text-slate-900 dark:text-white bg-gradient-to-r from-slate-900 to-slate-700 dark:from-white dark:to-slate-200 bg-clip-text text-transparent">
+                            {(latest?.count ?? 0).toLocaleString('ru-RU')}
+                        </p>
+                    </div>
+                    <span className="text-xs text-slate-400 bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded-full">
+                        7 күн
                     </span>
-                ))}
+                </div>
+
+                <div className="mt-3 h-1 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                    <div className="h-full bg-gradient-to-r from-edubot-orange to-edubot-soft rounded-full w-3/4 animate-pulse" />
+                </div>
+
+                <div className="mt-4">
+                    <Sparkline series={safeSeries} color={color} />
+                </div>
+
+                <div className="flex justify-between text-[11px] text-gray-400 mt-2 gap-2">
+                    {safeSeries.map((point, idx) => (
+                        <span key={`${point.date}-${idx}`} className="truncate">
+                            {point.date?.slice(5) || '—'}
+                        </span>
+                    ))}
+                </div>
             </div>
         </div>
     );
@@ -1776,6 +1840,7 @@ const Sparkline = ({ series, color = '#2563EB' }) => {
     const width = 100;
     const height = 40;
     const maxVal = Math.max(...series.map((p) => Number(p.count) || 0), 1);
+
     const points = series
         .map((point, idx) => {
             const x = (idx / Math.max(series.length - 1, 1)) * width;
@@ -1808,6 +1873,7 @@ const TopCoursesTable = ({ courses, formatNumber, formatPercent, formatCurrency,
                 </h3>
             </div>
         </div>
+
         <div className="overflow-x-auto">
             {loading ? (
                 <div className="py-6">

@@ -1033,7 +1033,7 @@ const StudentDashboard = () => {
     );
 
     return (
-        <div className="pt-24 min-h-screen bg-gray-50 dark:bg-[#1A1A1A] transition-colors duration-200 min-w-0 break-words">
+        <div className="pt-24 min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 transition-colors duration-200 min-w-0 break-words">
             <div className="max-w-7xl mx-auto flex flex-col lg:flex-row gap-6 px-4 pb-12">
                 <div
                     className={`
@@ -1259,7 +1259,7 @@ const OverviewTab = ({
     return (
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
             <div className="xl:col-span-2 space-y-4">
-                <div className="bg-gradient-to-r from-blue-600 via-blue-700 to-cyan-600 text-white rounded-3xl p-6 sm:p-8">
+                <div className="bg-gradient-to-r from-edubot-orange to-edubot-soft text-white rounded-2xl p-6 sm:p-8 shadow-xl border border-edubot-orange/20">
                     <p className="text-sm uppercase tracking-wide opacity-80">
                         Streak: {engagement.streak} күн
                     </p>
@@ -1475,7 +1475,7 @@ const OverviewTab = ({
 const CoursesTab = ({ courses, offeringsByCourse }) => {
     if (!courses.length) {
         return (
-            <div className="bg-white dark:bg-[#222222] rounded-3xl border border-gray-100 dark:border-gray-800 p-6 text-center text-gray-500 dark:text-gray-400">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6 text-center text-slate-500 dark:text-slate-400 shadow-lg">
                 Сизде активдүү курстар жок.
             </div>
         );
@@ -1486,7 +1486,7 @@ const CoursesTab = ({ courses, offeringsByCourse }) => {
 
     return (
         <div className="space-y-4">
-            <h2 className="text-2xl font-semibold text-gray-900 dark:text-[#E8ECF3]">
+            <h2 className="text-2xl font-semibold text-slate-900 dark:text-white">
                 Менин курстарым
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1517,7 +1517,7 @@ const CoursesTab = ({ courses, offeringsByCourse }) => {
                     return (
                         <div
                             key={courseId || course.title}
-                            className="bg-white dark:bg-[#222222] rounded-3xl border border-gray-100 dark:border-gray-800 overflow-hidden"
+                            className="bg-white dark:bg-gray-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden"
                         >
                             <img
                                 src={cover}
@@ -1629,7 +1629,7 @@ const ScheduleTab = ({ offerings, recordings }) => {
 
     return (
         <div className="space-y-4">
-            <h2 className="text-2xl font-semibold text-gray-900 dark:text-[#E8ECF3]">Жүгүртмө</h2>
+            <h2 className="text-2xl font-semibold text-slate-900 dark:text-white">Жүгүртмө</h2>
             <div className="space-y-3">
                 {sorted.map((item) => {
                     const type = resolveCourseType(item);
@@ -1640,7 +1640,7 @@ const ScheduleTab = ({ offerings, recordings }) => {
                     return (
                         <div
                             key={item.id || `${item.courseId}-${item.startAt}`}
-                            className="bg-white dark:bg-[#222222] border border-gray-100 dark:border-gray-800 rounded-2xl p-4"
+                            className="bg-white dark:bg-gray-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-4 shadow-lg hover:shadow-xl transition-all duration-300"
                         >
                             <div className="flex flex-wrap items-center justify-between gap-3">
                                 <div>
@@ -1791,11 +1791,11 @@ const TasksTab = ({ tasks, onSubmitHomework, submittingTaskId }) => {
 
     return (
         <div className="space-y-4">
-            <h2 className="text-2xl font-semibold text-gray-900 dark:text-[#E8ECF3]">Тапшырмалар</h2>
+            <h2 className="text-2xl font-semibold text-slate-900 dark:text-white">Тапшырмалар</h2>
             {tasks.length ? (
-                <div className="bg-white dark:bg-[#222222] rounded-3xl border border-gray-100 dark:border-gray-800 overflow-x-auto min-w-[600px] w-full text-sm">
+                <div className="bg-white dark:bg-gray-800 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-x-auto min-w-[600px] w-full text-sm shadow-lg">
                     <table className="w-full text-sm">
-                        <thead className="bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400">
+                        <thead className="bg-slate-50 dark:bg-slate-900 text-slate-500 dark:text-slate-400">
                             <tr>
                                 <th className="text-left px-4 py-3">Тапшырма</th>
                                 <th className="text-left px-4 py-3">Курс</th>
@@ -2443,9 +2443,31 @@ const ProfileTab = ({
 };
 
 const StatCard = ({ label, value }) => (
-    <div className="bg-white dark:bg-[#222222] rounded-3xl p-4 border border-gray-100 dark:border-gray-800 shadow-sm hover:shadow-md transition-shadow">
-        <p className="text-sm text-gray-500 dark:text-gray-400">{label}</p>
-        <p className="text-2xl font-semibold text-gray-900 dark:text-[#E8ECF3] mt-1">{value}</p>
+    <div className="group relative">
+        {/* Glass morphism background */}
+        <div className="absolute inset-0 bg-gradient-to-br from-white/80 to-white/40 dark:from-gray-800/80 dark:to-gray-800/40 backdrop-blur-xl rounded-2xl border border-white/20 dark:border-gray-700/20 shadow-lg hover:shadow-2xl transition-all duration-500"></div>
+
+        {/* Animated gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-br from-edubot-orange/5 via-transparent to-edubot-soft/5 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+
+        {/* Content */}
+        <div className="relative p-6 z-10">
+            {/* Animated corner accent */}
+            <div className="absolute top-2 right-2 w-16 h-16 bg-gradient-to-br from-edubot-orange/20 to-edubot-soft/10 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-500 transform group-hover:scale-110"></div>
+
+            {/* Icon placeholder */}
+            <div className="w-10 h-10 bg-gradient-to-br from-edubot-orange/20 to-edubot-soft/10 rounded-xl mb-3 flex items-center justify-center">
+                <div className="w-5 h-5 bg-edubot-orange rounded-full animate-pulse"></div>
+            </div>
+
+            <p className="text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">{label}</p>
+            <p className="text-3xl font-bold text-slate-900 dark:text-white bg-gradient-to-r from-slate-900 to-slate-700 dark:from-white dark:to-slate-200 bg-clip-text text-transparent">{value}</p>
+
+            {/* Subtle progress indicator */}
+            <div className="mt-3 h-1 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                <div className="h-full bg-gradient-to-r from-edubot-orange to-edubot-soft rounded-full w-3/4 animate-pulse"></div>
+            </div>
+        </div>
     </div>
 );
 

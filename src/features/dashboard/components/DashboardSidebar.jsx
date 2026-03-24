@@ -24,9 +24,8 @@ const DashboardSidebar = ({
 
     return (
         <aside
-            className={`rounded-2xl shadow-xl transition-all duration-300 bg-white dark:bg-black ${
-                resolvedOpen ? 'w-64 p-6' : 'w-20 p-4'
-            } ${className}`}
+            className={`rounded-2xl shadow-xl transition-all duration-300 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 ${resolvedOpen ? 'w-64 p-6' : 'w-20 p-4'
+                } ${className}`}
         >
             <button
                 onClick={handleToggle}
@@ -44,19 +43,16 @@ const DashboardSidebar = ({
                         <button
                             key={item.id}
                             onClick={() => onSelect(item.id)}
-                            className={`w-full flex items-center ${
-                                resolvedOpen ? 'justify-start' : 'justify-center'
-                            } px-3 py-2 rounded-xl transition ${
-                                isActive
-                                    ? 'bg-blue-600 text-white'
-                                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
-                            }`}
+                            className={`w-full flex items-center ${resolvedOpen ? 'justify-start' : 'justify-center'
+                                } px-3 py-2 rounded-xl transition-all duration-200 ${isActive
+                                    ? 'bg-edubot-orange text-white shadow-lg'
+                                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:shadow-md'
+                                }`}
                         >
                             {Icon && (
                                 <Icon
-                                    className={`text-lg ${resolvedOpen ? 'mr-3' : ''} ${
-                                        isActive ? 'text-white' : 'text-gray-500 dark:text-gray-400'
-                                    }`}
+                                    className={`text-lg ${resolvedOpen ? 'mr-3' : ''} ${isActive ? 'text-white' : 'text-gray-500 dark:text-gray-400'
+                                        }`}
                                 />
                             )}
                             {resolvedOpen && <span className="font-medium">{item.label}</span>}

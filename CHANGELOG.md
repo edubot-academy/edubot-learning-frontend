@@ -1,5 +1,67 @@
 # Changelog
 
+## [1.2.1] - 2026-03-24
+
+### 🎨 **TASK 2: ENHANCED CARDS & INTERACTIONS - COMPLETE**
+
+**Objective**: Enhance dashboard UI/UX by implementing glass morphism effects, animated hover states, and interactive elements to improve visual appeal and user engagement.
+
+### 🎯 **DASHBOARD ENHANCEMENTS**
+- **Instructor Dashboard**:
+  - Applied glass morphism effects to `StatCard` and `QuickActionCard` components
+  - Enhanced course cards with animated gradient overlays and hover effects
+  - Integrated edubot brand colors (orange, green, teal, soft, dark)
+  - Added smooth transitions and micro-interactions
+
+- **Student Dashboard**:
+  - Enhanced stat cards with glass morphism effects and animated indicators
+  - Improved overview cards with gradient effects and better shadows
+  - Updated course cards with hover states and brand color integration
+  - Applied consistent visual hierarchy across all components
+
+- **Admin Dashboard**:
+  - Redesigned `TrendCard` components with glass morphism effects
+  - Added animated gradient overlays and hover animations
+  - Enhanced visual hierarchy with improved typography and spacing
+  - Applied edubot-orange theme accents consistently
+
+- **Assistant Dashboard**:
+  - Complete UI overhaul with brand color integration
+  - Enhanced table styling and loading states
+  - Improved mobile responsiveness and touch interactions
+  - Applied consistent glass morphism effects
+
+### 🧩 **NEW UI COMPONENT LIBRARY**
+- **Created Reusable Components**:
+  - `Button.jsx` - Enhanced button components with micro-interactions
+  - `Progress.jsx` - Progress indicators and status badges
+  - `Skeleton.jsx` - Loading skeleton components for better UX
+  - **Note**: Components created for future use, not integrated into existing dashboards
+
+### ✨ **KEY IMPLEMENTATIONS**
+- **Glass Morphism Effects**: Applied to stat cards, course cards, quick action cards
+- **Animated Hover States**: Scale transforms, color transitions, gradient sweeps
+- **Brand Color Integration**: Comprehensive implementation of edubot brand colors
+  - **edubot-orange (#f17e22)**: Primary accent for buttons, highlights, and active states
+  - **edubot-green (#0ea78b)**: Success states and positive indicators
+  - **edubot-teal (#1e605e)**: Navigation and secondary accents
+  - **edubot-soft (#f39647)**: Light accents and hover states
+  - **edubot-dark (#122144)**: Backgrounds and primary text
+  - Applied consistently across all dashboard components for unified brand identity
+- **Micro-interactions**: Button press effects, ripple animations
+- **Visual Hierarchy**: Improved typography, spacing, and card designs
+
+### 🎯 **RESULTS ACHIEVED**
+- **Premium Modern UI**: Glass morphism effects create sophisticated visual appeal
+- **Enhanced User Engagement**: Smooth animations and interactive elements
+- **Brand Consistency**: Unified edubot color scheme across all dashboards
+- **Better User Experience**: Improved visual feedback and loading states
+- **Mobile Responsive**: Enhanced touch interactions and mobile layouts
+
+**Task Status**: ✅ **COMPLETE** - All objectives achieved successfully
+
+---
+
 ## [1.2.0] - 2024-03-24
 
 ### 🐛 **BUG FIXES**

@@ -4,7 +4,6 @@ import { AuthContext } from '../context/AuthContext';
 import DashboardSidebar from '@features/dashboard/components/DashboardSidebar';
 import {
     fetchInstructorProfile,
-    fetchCourseDetails,
     fetchUsers,
     listOfferingsForCourse,
     createOffering,
@@ -14,7 +13,6 @@ import {
     fetchCourseStudents,
     createCourse,
     fetchCategories,
-    fetchCourses,
     fetchInstructorCourses,
 } from '@services/api';
 import toast from 'react-hot-toast';
@@ -54,11 +52,22 @@ const NAV_ITEMS = [
     { id: 'notifications', label: 'Билдирүүлөр', icon: FiBell },
 ];
 
+const formatDateTimeForInput = (value) => {
+    if (!value) return '';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '';
+    const offset = date.getTimezoneOffset();
+    const local = new Date(date.getTime() - offset * 60000);
+    return local.toISOString().slice(0, 16);
+};
+
 const InstructorDashboard = () => {
     const { user } = useContext(AuthContext);
     const [sidebarOpen, setSidebarOpen] = useState(true);
     const [searchParams, setSearchParams] = useSearchParams();
+
     const initialTab = searchParams.get('tab') || 'overview';
+
     const [activeTab, setActiveTab] = useState(
         NAV_ITEMS.some((item) => item.id === initialTab) ? initialTab : 'overview'
     );
@@ -68,6 +77,7 @@ const InstructorDashboard = () => {
     const [offeringsByCourse, setOfferingsByCourse] = useState({});
     const [loadingOfferings, setLoadingOfferings] = useState(false);
     const [loadingCourses, setLoadingCourses] = useState(false);
+
     const [studentCourses, setStudentCourses] = useState([]);
     const [studentCoursesTotal, setStudentCoursesTotal] = useState(null);
     const [loadingStudentCourses, setLoadingStudentCourses] = useState(false);
@@ -80,6 +90,7 @@ const InstructorDashboard = () => {
     const [progressMin, setProgressMin] = useState('');
     const [progressMax, setProgressMax] = useState('');
     const [studentsError, setStudentsError] = useState('');
+
     const [showDeliveryModal, setShowDeliveryModal] = useState(false);
     const [creatingDeliveryCourse, setCreatingDeliveryCourse] = useState(false);
     const [deliveryCategories, setDeliveryCategories] = useState([]);
@@ -91,34 +102,6 @@ const InstructorDashboard = () => {
         price: '',
         languageCode: 'ky',
     });
-
-    useEffect(() => {
-        const tabFromQuery = searchParams.get('tab');
-        const resolvedTab =
-            tabFromQuery && NAV_ITEMS.some((item) => item.id === tabFromQuery)
-                ? tabFromQuery
-                : 'overview';
-        if (resolvedTab !== activeTab) {
-            setActiveTab(resolvedTab);
-        }
-    }, [searchParams]);
-
-    const handleTabSelect = useCallback(
-        (tabId) => {
-            if (!NAV_ITEMS.some((item) => item.id === tabId)) return;
-            setActiveTab(tabId);
-            setSearchParams(
-                (prev) => {
-                    const next = new URLSearchParams(prev);
-                    if (tabId === 'overview') next.delete('tab');
-                    else next.set('tab', tabId);
-                    return next;
-                },
-                { replace: true }
-            );
-        },
-        [setSearchParams]
-    );
 
     const analyticsLink = useMemo(() => {
         const to = new Date();
@@ -133,8 +116,82 @@ const InstructorDashboard = () => {
         [courseList, profile]
     );
 
+    const aiCourses = useMemo(
+        () => courses.filter((course) => course.aiAssistantEnabled),
+        [courses]
+    );
+
+    const publishedCount = useMemo(
+        () => courses.filter((course) => course.isPublished).length,
+        [courses]
+    );
+
+    const pendingCount = useMemo(
+        () => courses.filter((course) => !course.isPublished).length,
+        [courses]
+    );
+
+    const aiEnabledCount = aiCourses.length;
+
+    const offerings = useMemo(
+        () => courses.flatMap((course) => offeringsByCourse[course.id] || []),
+        [courses, offeringsByCourse]
+    );
+
+    const expertiseTags = useMemo(() => {
+        if (Array.isArray(profile?.expertiseTags) && profile.expertiseTags.length) {
+            return profile.expertiseTags;
+        }
+        if (typeof profile?.expertiseTagsText === 'string' && profile.expertiseTagsText.trim()) {
+            return profile.expertiseTagsText
+                .split(',')
+                .map((tag) => tag.trim())
+                .filter(Boolean);
+        }
+        return [];
+    }, [profile]);
+
+    const socialLinks = useMemo(
+        () =>
+            Object.entries(profile?.socialLinks || {}).filter(
+                ([, value]) => typeof value === 'string' && value.trim().length
+            ),
+        [profile]
+    );
+
+    useEffect(() => {
+        const tabFromQuery = searchParams.get('tab');
+        const resolvedTab =
+            tabFromQuery && NAV_ITEMS.some((item) => item.id === tabFromQuery)
+                ? tabFromQuery
+                : 'overview';
+
+        if (resolvedTab !== activeTab) {
+            setActiveTab(resolvedTab);
+        }
+    }, [searchParams, activeTab]);
+
+    const handleTabSelect = useCallback(
+        (tabId) => {
+            if (!NAV_ITEMS.some((item) => item.id === tabId)) return;
+
+            setActiveTab(tabId);
+            setSearchParams(
+                (prev) => {
+                    const next = new URLSearchParams(prev);
+                    if (tabId === 'overview') next.delete('tab');
+                    else next.set('tab', tabId);
+                    return next;
+                },
+                { replace: true }
+            );
+        },
+        [setSearchParams]
+    );
+
     useEffect(() => {
         if (!user?.id || user.role !== 'instructor') return;
+
         const loadProfile = async () => {
             setLoadingProfile(true);
             try {
@@ -153,13 +210,12 @@ const InstructorDashboard = () => {
 
     useEffect(() => {
         if (!user?.id || user.role !== 'instructor') return;
+
         const loadCourses = async () => {
             setLoadingCourses(true);
             try {
-                // Single API call to get all approved courses of all types
                 const data = await fetchInstructorCourses({ status: 'approved' });
                 const allCourses = Array.isArray(data?.courses) ? data.courses : [];
-                console.log('fetchInstructorCourses response:', data);
                 setCourseList(allCourses);
             } catch (error) {
                 console.error('Failed to load instructor courses', error);
@@ -174,22 +230,27 @@ const InstructorDashboard = () => {
 
     const loadStudentCourses = useCallback(async () => {
         if (!user?.id || user.role !== 'instructor') return;
+
         setLoadingStudentCourses(true);
         setStudentsError('');
+
         try {
             const data = await fetchInstructorStudentCourses();
             const list = data?.courses || [];
+
             setStudentCourses(list);
             setStudentCoursesTotal(
                 typeof data?.total === 'number'
                     ? data.total
                     : list.reduce((acc, course) => acc + (course.studentCount || 0), 0)
             );
+
             setSelectedStudentCourseId((prev) => {
                 if (!list.length) return null;
                 const exists = list.some((course) => course.id === prev);
                 return exists ? prev : null;
             });
+
             if (!list.length) {
                 setCourseStudents([]);
                 setCourseStudentsMeta(null);
@@ -213,8 +274,10 @@ const InstructorDashboard = () => {
                 setCourseStudentsMeta(null);
                 return;
             }
+
             setLoadingCourseStudents(true);
             setStudentsError('');
+
             try {
                 const data = await fetchCourseStudents(courseId, {
                     page: studentsPage,
@@ -223,6 +286,7 @@ const InstructorDashboard = () => {
                     progressGte: progressMin === '' ? undefined : Number(progressMin),
                     progressLte: progressMax === '' ? undefined : Number(progressMax),
                 });
+
                 setCourseStudents(data?.students || []);
                 setCourseStudentsMeta({
                     ...(data?.course || {}),
@@ -235,6 +299,7 @@ const InstructorDashboard = () => {
                 console.error('Failed to load course students', error);
                 setCourseStudents([]);
                 setCourseStudentsMeta(null);
+
                 if (error?.response?.status === 403) {
                     setStudentsError('Бул курс сизге бекитилген эмес');
                 } else {
@@ -257,7 +322,9 @@ const InstructorDashboard = () => {
             setOfferingsByCourse({});
             return;
         }
+
         setLoadingOfferings(true);
+
         try {
             const summaries = {};
             await Promise.all(
@@ -280,42 +347,12 @@ const InstructorDashboard = () => {
     }, []);
 
     useEffect(() => {
-        if (!courses.length) return;
+        if (!courses.length) {
+            setOfferingsByCourse({});
+            return;
+        }
         loadOfferingsForCourses(courses);
     }, [courses, loadOfferingsForCourses]);
-
-    if (!user || user.role !== 'instructor') {
-        return <Navigate to="/" replace />;
-    }
-
-    const aiCourses = courses.filter((course) => course.aiAssistantEnabled);
-    const publishedCount = courses.filter((course) => course.isPublished).length;
-    const pendingCount = courses.filter((course) => !course.isPublished).length;
-    const aiEnabledCount = aiCourses.length;
-    const offerings = useMemo(
-        () => courses.flatMap((course) => offeringsByCourse[course.id] || []),
-        [courses, offeringsByCourse]
-    );
-    const expertiseTags = useMemo(() => {
-        if (Array.isArray(profile?.expertiseTags) && profile.expertiseTags.length) {
-            return profile.expertiseTags;
-        }
-        if (typeof profile?.expertiseTagsText === 'string' && profile.expertiseTagsText.trim()) {
-            return profile.expertiseTagsText
-                .split(',')
-                .map((tag) => tag.trim())
-                .filter(Boolean);
-        }
-        return [];
-    }, [profile]);
-
-    const socialLinks = useMemo(
-        () =>
-            Object.entries(profile?.socialLinks || {}).filter(
-                ([, value]) => typeof value === 'string' && value.trim().length
-            ),
-        [profile]
-    );
 
     const handleRefreshOfferings = useCallback(() => {
         if (courses.length) {
@@ -325,6 +362,7 @@ const InstructorDashboard = () => {
 
     useEffect(() => {
         if (activeTab !== 'students') return;
+
         if (selectedStudentCourseId) {
             loadCourseStudents(selectedStudentCourseId);
         } else {
@@ -373,6 +411,7 @@ const InstructorDashboard = () => {
                 toast.error('Категориялар жүктөлгөн жок');
             }
         }
+
         setShowDeliveryModal(true);
     };
 
@@ -383,6 +422,7 @@ const InstructorDashboard = () => {
         }
 
         setCreatingDeliveryCourse(true);
+
         try {
             await createCourse({
                 title: deliveryCourse.title,
@@ -398,7 +438,7 @@ const InstructorDashboard = () => {
             closeDeliveryModal();
             setActiveTab('courses');
 
-            const data = await fetchInstructorCourses();
+            const data = await fetchInstructorCourses({ status: 'approved' });
             setCourseList(Array.isArray(data?.courses) ? data.courses : []);
         } catch (error) {
             console.error('Failed to create delivery course', error);
@@ -429,6 +469,7 @@ const InstructorDashboard = () => {
                         deliveryCategories={deliveryCategories}
                     />
                 );
+
             case 'students':
                 return (
                     <StudentsSection
@@ -452,6 +493,7 @@ const InstructorDashboard = () => {
                         onProgressMaxChange={setProgressMax}
                     />
                 );
+
             case 'profile':
                 return (
                     <ProfileSection
@@ -460,8 +502,10 @@ const InstructorDashboard = () => {
                         socialLinks={socialLinks}
                     />
                 );
+
             case 'ai':
                 return <AiSection aiCourses={aiCourses} totalCourses={courses.length} />;
+
             case 'offerings':
                 return (
                     <OfferingsSection
@@ -471,18 +515,25 @@ const InstructorDashboard = () => {
                         refreshOfferings={handleRefreshOfferings}
                     />
                 );
+
             case 'sessions':
                 return <SessionWorkspacePage />;
+
             case 'attendance':
                 return <AttendancePage embedded />;
+
             case 'analytics':
                 return <InstructorAnalyticsPage />;
+
             case 'leaderboard':
                 return <InternalLeaderboardPage />;
+
             case 'homework':
                 return <InstructorHomeworkPage />;
+
             case 'notifications':
                 return <NotificationsTab />;
+
             case 'overview':
             default:
                 return (
@@ -499,6 +550,10 @@ const InstructorDashboard = () => {
         }
     };
 
+    if (!user || user.role !== 'instructor') {
+        return <Navigate to="/" replace />;
+    }
+
     return (
         <div className="pt-24 min-h-screen">
             <div className="max-w-7xl mx-auto flex gap-6 px-4 pb-12">
@@ -512,29 +567,37 @@ const InstructorDashboard = () => {
                 />
 
                 <main className="flex-1 min-w-0 space-y-6">
-                    <div className="flex items-center justify-between flex-wrap gap-3">
-                        <div>
-                            <p className="text-sm uppercase tracking-wide text-gray-400 dark:text-gray-500">
-                                Инструктор
-                            </p>
-                            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{user.fullName || user.email}</h1>
-                            <p className="text-sm text-gray-500 dark:text-[#a6adba]">
-                                Курстарыңызды жана студенттерди толук көзөмөлдөңүз
-                            </p>
+                    <div className="bg-gradient-to-r from-edubot-dark to-slate-900 rounded-2xl p-6 shadow-xl border border-slate-800 text-white">
+                        <div className="flex items-center justify-between flex-wrap gap-3">
+                            <div>
+                                <p className="text-sm uppercase tracking-wide text-edubot-orange font-medium">
+                                    Инструктор Панели
+                                </p>
+                                <h1 className="text-3xl font-bold text-white mt-1">
+                                    {user.fullName || user.email}
+                                </h1>
+                                <p className="text-sm text-slate-300 mt-2">
+                                    Курстарыңызды жана студенттерди толук көзөмөлдөңүз
+                                </p>
+                            </div>
+
+                            <div className="flex items-center gap-3">
+                                <button
+                                    onClick={() => setSidebarOpen((prev) => !prev)}
+                                    className="hidden md:inline-flex px-4 py-2 rounded-xl border border-slate-600 text-sm text-slate-300 hover:bg-slate-700 transition-colors"
+                                    type="button"
+                                >
+                                    {sidebarOpen ? 'Менюну жашыруу' : 'Менюну көрсөтүү'}
+                                </button>
+
+                                <Link
+                                    to={analyticsLink}
+                                    className="inline-flex px-6 py-3 rounded-xl bg-gradient-to-r from-edubot-orange to-edubot-soft hover:from-edubot-soft hover:to-edubot-orange text-white text-sm font-medium transform hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-xl"
+                                >
+                                    Аналитика
+                                </Link>
+                            </div>
                         </div>
-                        <button
-                            onClick={() => setSidebarOpen((prev) => !prev)}
-                            className="hidden md:inline-flex px-4 py-2 rounded-full border text-sm text-gray-600 dark:text-[#a6adba]"
-                            type="button"
-                        >
-                            {sidebarOpen ? 'Менюну жашыруу' : 'Менюну көрсөтүү'}
-                        </button>
-                        <Link
-                            to={analyticsLink}
-                            className="inline-flex px-4 py-2 rounded-full bg-blue-600 text-white text-sm"
-                        >
-                            Аналитика
-                        </Link>
                     </div>
 
                     {renderContent()}
@@ -547,41 +610,38 @@ const InstructorDashboard = () => {
 const OverviewSection = ({
     user,
     profile,
-    courses,
     publishedCount,
     pendingCount,
     aiEnabledCount,
     analyticsLink,
 }) => {
     const stats = [
-        {
-            label: 'Жарыяланган курстар',
-            value: publishedCount,
-        },
-        {
-            label: 'Каралуудагы курстар',
-            value: pendingCount,
-        },
-        {
-            label: 'AI ассистент иштетилген',
-            value: aiEnabledCount,
-        },
-        {
-            label: 'Студенттер',
-            value: profile?.numberOfStudents ?? '—',
-        },
+        { label: 'Жарыяланган курстар', value: publishedCount },
+        { label: 'Каралуудагы курстар', value: pendingCount },
+        { label: 'AI ассистент иштетилген', value: aiEnabledCount },
+        { label: 'Студенттер', value: profile?.numberOfStudents ?? '—' },
     ];
 
     return (
         <>
-            <div className="rounded-3xl p-6 shadow-sm">
-                <p className="text-sm text-gray-500 dark:text-[#a6adba]">Кош келиңиз</p>
-                <h2 className="text-2xl font-semibold">{user.fullName || user.email}</h2>
-                <p className="mt-2 text-gray-600 dark:text-[#a6adba]">
+            <div className="bg-gradient-to-br from-white to-slate-50 dark:from-gray-800 dark:to-slate-900 rounded-2xl p-6 shadow-lg border border-slate-200 dark:border-slate-700">
+                <div className="flex items-center gap-2 mb-4">
+                    <div className="w-8 h-8 bg-edubot-orange rounded-lg flex items-center justify-center">
+                        <span className="text-white text-lg">👋</span>
+                    </div>
+                    <p className="text-sm font-medium text-edubot-orange">Кош келиңиз</p>
+                </div>
+
+                <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">
+                    {user.fullName || user.email}
+                </h2>
+
+                <p className="text-slate-600 dark:text-slate-300 mb-6">
                     Профилди толтуруңуз, курстарды жаңыртыңыз жана студенттерге баалуулук
                     тартуулаңыз.
                 </p>
-                <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     {stats.map((stat) => (
                         <StatCard key={stat.label} label={stat.label} value={stat.value} />
                     ))}
@@ -643,74 +703,109 @@ const CoursesSection = ({
                     Активдүү жана каралуудагы курстар
                 </p>
             </div>
+
             <div className="flex items-center gap-2">
                 <button
                     type="button"
                     onClick={onOpenDeliveryModal}
-                    className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-edubot-teal text-edubot-teal text-sm"
+                    className="inline-flex items-center gap-2 px-6 py-3 rounded-xl border-2 border-edubot-teal text-edubot-teal text-sm font-medium hover:bg-edubot-teal hover:text-white transform hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-xl"
                 >
                     Оффлайн/Live курс
                 </button>
+
                 <Link
                     to="/instructor/course/create"
-                    className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-600 text-white text-sm"
+                    className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-edubot-green to-emerald-600 hover:from-emerald-600 hover:to-edubot-green text-white text-sm font-medium transform hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-xl"
                 >
                     Жаңы курс
                 </Link>
             </div>
         </div>
+
         {loading && !courses.length ? (
             <Loader fullScreen={false} />
         ) : courses.length ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {courses.map((course) => (
-                    <div
-                        key={course.id || course.title}
-                        className="border border-gray-200 dark:border-gray-700 rounded-2xl p-4 flex flex-col gap-3"
-                    >
-                        <div className="flex items-start justify-between gap-3">
-                            <div>
-                                <p className="text-lg font-semibold text-gray-900 dark:text-white">{course.title}</p>
-                                {course.category?.name && (
-                                    <p className="text-sm text-gray-500 dark:text-[#a6adba]">
-                                        {course.category.name}
-                                    </p>
-                                )}
+                    <div key={course.id || course.title} className="group relative">
+                        <div className="absolute inset-0 bg-gradient-to-br from-white/80 to-white/40 dark:from-gray-800/80 dark:to-gray-800/40 backdrop-blur-xl rounded-2xl border border-white/20 dark:border-gray-700/20 shadow-lg hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2" />
+                        <div className="absolute inset-0 bg-gradient-to-br from-edubot-orange/5 via-transparent to-edubot-soft/5 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+
+                        <div className="relative p-6 z-10 flex flex-col gap-4">
+                            <div className="absolute top-4 right-4 w-8 h-8 bg-gradient-to-br from-edubot-green to-emerald-600 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-500 transform group-hover:scale-110 group-hover:rotate-12 flex items-center justify-center">
+                                <span className="text-white text-xs">✓</span>
                             </div>
-                            <span
-                                className={`text-xs px-2 py-1 rounded-full ${course.isPublished
-                                    ? 'bg-green-100 text-green-700'
-                                    : 'bg-yellow-100 text-yellow-700'
-                                    }`}
-                            >
-                                {course.isPublished ? 'Жарыяланды' : 'Каралууда'}
-                            </span>
-                        </div>
-                        <div className="flex items-center justify-between text-sm text-gray-500 dark:text-[#a6adba]">
-                            <span>
-                                {course.studentsCount
-                                    ? `${course.studentsCount} студент`
-                                    : 'Студенттер маалымат жок'}
-                            </span>
-                            <span>
-                                {course.updatedAt
-                                    ? new Date(course.updatedAt).toLocaleDateString()
-                                    : ''}
-                            </span>
-                        </div>
-                        <div className="flex gap-2">
-                            <Link
-                                to={`/courses/${course.id}`}
-                                className="flex-1 text-center border border-gray-200 dark:border-gray-600 rounded-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
-                            >
-                                Көрүү
-                            </Link>
-                            <Link
-                                to={`/instructor/courses/edit/${course.id}`}
-                                className="flex-1 text-center rounded-full px-4 py-2 text-sm bg-blue-600 text-white"
-                            >
-                                Өзгөртүү
-                            </Link>
+
+                            <div>
+                                <div className="flex items-start justify-between gap-3 mb-2">
+                                    <div>
+                                        <h3 className="text-lg font-semibold text-slate-900 dark:text-white group-hover:text-edubot-orange transition-colors duration-300">
+                                            {course.title}
+                                        </h3>
+                                        {course.category?.name && (
+                                            <p className="text-sm text-gray-500 dark:text-[#a6adba]">
+                                                {course.category.name}
+                                            </p>
+                                        )}
+                                    </div>
+
+                                    <span
+                                        className={`text-xs px-2 py-1 rounded-full ${course.isPublished
+                                                ? 'bg-green-100 text-green-700'
+                                                : 'bg-yellow-100 text-yellow-700'
+                                            }`}
+                                    >
+                                        {course.isPublished ? 'Жарыяланды' : 'Каралууда'}
+                                    </span>
+                                </div>
+
+                                <p className="text-sm text-slate-600 dark:text-slate-400 line-clamp-2">
+                                    {course.description || 'Сүрөттөмө жок'}
+                                </p>
+                            </div>
+
+                            <div className="flex items-center justify-between text-sm text-gray-500 dark:text-[#a6adba]">
+                                <span>
+                                    {course.studentsCount
+                                        ? `${course.studentsCount} студент`
+                                        : 'Студенттер маалымат жок'}
+                                </span>
+                                <span>
+                                    {course.updatedAt
+                                        ? new Date(course.updatedAt).toLocaleDateString()
+                                        : ''}
+                                </span>
+                            </div>
+
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                    <span className="inline-flex items-center px-2 py-1 bg-edubot-orange/10 text-edubot-orange dark:bg-edubot-orange/20 rounded-full text-xs font-medium">
+                                        {course.category?.name || course.category || 'Категориясыз'}
+                                    </span>
+                                    <span className="text-xs text-slate-500 dark:text-slate-400">
+                                        {course.price ? `${course.price} сом` : 'Акысыз'}
+                                    </span>
+                                </div>
+
+                                <div className="flex gap-2">
+                                    <Link
+                                        to={`/courses/${course.id}`}
+                                        className="px-4 py-2 rounded-full border border-gray-200 dark:border-gray-600 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                                    >
+                                        Көрүү
+                                    </Link>
+                                    <Link
+                                        to={`/instructor/courses/edit/${course.id}`}
+                                        className="px-4 py-2 rounded-full text-sm bg-blue-600 text-white"
+                                    >
+                                        Өзгөртүү
+                                    </Link>
+                                </div>
+                            </div>
+
+                            <div className="h-1 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                                <div className="h-full bg-gradient-to-r from-edubot-orange to-edubot-soft rounded-full w-1/3 transition-all duration-500 group-hover:w-2/3" />
+                            </div>
                         </div>
                     </div>
                 ))}
@@ -726,7 +821,7 @@ const CoursesSection = ({
 
         {showDeliveryModal && (
             <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-                <div className="w-full max-w-xl bg-white dark:bg-[#161616] rounded-2xl shadow-xl p-5 space-y-4">
+                <div className="w-full max-w-xl bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-6 space-y-4 border border-gray-200 dark:border-gray-700">
                     <div className="flex items-center justify-between">
                         <h3 className="text-lg font-semibold text-edubot-dark dark:text-white">
                             Оффлайн / Онлайн түз эфир курс түзүү
@@ -753,6 +848,7 @@ const CoursesSection = ({
                                 <option value="online_live">Онлайн түз эфир</option>
                             </select>
                         </div>
+
                         <div>
                             <label className="block text-sm mb-1">Сабак тили</label>
                             <select
@@ -766,6 +862,7 @@ const CoursesSection = ({
                                 <option value="en">English</option>
                             </select>
                         </div>
+
                         <div className="sm:col-span-2">
                             <label className="block text-sm mb-1">Курс аталышы</label>
                             <input
@@ -775,6 +872,7 @@ const CoursesSection = ({
                                 className="w-full border p-2 rounded bg-white dark:bg-[#222222] dark:text-white"
                             />
                         </div>
+
                         <div className="sm:col-span-2">
                             <label className="block text-sm mb-1">Сүрөттөмө</label>
                             <textarea
@@ -784,6 +882,7 @@ const CoursesSection = ({
                                 className="w-full border p-2 rounded bg-white dark:bg-[#222222] dark:text-white"
                             />
                         </div>
+
                         <div>
                             <label className="block text-sm mb-1">Категория</label>
                             <select
@@ -800,6 +899,7 @@ const CoursesSection = ({
                                 ))}
                             </select>
                         </div>
+
                         <div>
                             <label className="block text-sm mb-1">Баасы (сом)</label>
                             <input
@@ -858,7 +958,9 @@ const StudentsSection = ({
 }) => {
     const fallbackCover =
         'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&w=600&q=80';
+
     const selectedCourse = courses.find((course) => course.id === selectedCourseId);
+
     const sortedStudents = (courseStudents || []).slice().sort((a, b) => {
         const aDate = a.enrolledAt ? new Date(a.enrolledAt).getTime() : 0;
         const bDate = b.enrolledAt ? new Date(b.enrolledAt).getTime() : 0;
@@ -890,6 +992,7 @@ const StudentsSection = ({
                         Курстарыңыздагы студенттерди курстар боюнча карап чыгыңыз.
                     </p>
                 </div>
+
                 <div className="flex items-center gap-3">
                     <StatCard label="Жалпы студенттер" value={total ?? '—'} />
                     <button
@@ -913,11 +1016,13 @@ const StudentsSection = ({
                             </p>
                         </div>
                     </div>
+
                     {error ? (
                         <div className="p-3 rounded-lg bg-red-50 text-red-700 border border-red-100">
                             {error}
                         </div>
                     ) : null}
+
                     {loadingCourses && !courses.length ? (
                         <Loader fullScreen={false} />
                     ) : courses.length ? (
@@ -936,29 +1041,23 @@ const StudentsSection = ({
                                             className="w-full h-full object-cover"
                                         />
                                     </div>
+
                                     <div className="p-4 space-y-2">
                                         <div className="flex items-start justify-between gap-2">
-                                            <p className="font-semibold line-clamp-2">
-                                                {course.title}
-                                            </p>
+                                            <p className="font-semibold line-clamp-2">{course.title}</p>
                                             <span
                                                 className={`text-xs px-2 py-1 rounded-full ${course.isPublished
-                                                    ? 'bg-green-100 text-green-700'
-                                                    : 'bg-yellow-100 text-yellow-700'
+                                                        ? 'bg-green-100 text-green-700'
+                                                        : 'bg-yellow-100 text-yellow-700'
                                                     }`}
                                             >
-                                                {course.isPublished
-                                                    ? 'Жарыяланды'
-                                                    : course.status || 'Каралууда'}
+                                                {course.isPublished ? 'Жарыяланды' : course.status || 'Каралууда'}
                                             </span>
                                         </div>
+
                                         <div className="flex items-center justify-between text-sm text-gray-600 dark:text-[#a6adba]">
                                             <span>{course.studentCount ?? 0} студент</span>
-                                            <span>
-                                                {course.createdAt
-                                                    ? formatDate(course.createdAt)
-                                                    : ''}
-                                            </span>
+                                            <span>{course.createdAt ? formatDate(course.createdAt) : ''}</span>
                                         </div>
                                     </div>
                                 </button>
@@ -988,6 +1087,7 @@ const StudentsSection = ({
                                 : 'Курс тандаңыз.'}
                         </p>
                     </div>
+
                     {selectedCourseId ? (
                         <button
                             type="button"
@@ -1002,9 +1102,7 @@ const StudentsSection = ({
                 {selectedCourseId ? (
                     <div className="flex flex-wrap gap-3 items-end">
                         <div className="flex flex-col">
-                            <label className="text-xs text-gray-500 dark:text-[#a6adba]">
-                                Издөө
-                            </label>
+                            <label className="text-xs text-gray-500 dark:text-[#a6adba]">Издөө</label>
                             <input
                                 type="text"
                                 value={search}
@@ -1016,6 +1114,7 @@ const StudentsSection = ({
                                 className="px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#111] text-sm"
                             />
                         </div>
+
                         <div className="flex flex-col">
                             <label className="text-xs text-gray-500 dark:text-[#a6adba]">
                                 Прогресс кеминде (%)
@@ -1032,6 +1131,7 @@ const StudentsSection = ({
                                 className="w-24 px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#111] text-sm"
                             />
                         </div>
+
                         <div className="flex flex-col">
                             <label className="text-xs text-gray-500 dark:text-[#a6adba]">
                                 Прогресс жогору (%)
@@ -1076,6 +1176,7 @@ const StudentsSection = ({
                                     <th className="py-2">Акыркы көргөн</th>
                                 </tr>
                             </thead>
+
                             <tbody className="divide-y divide-gray-100">
                                 {sortedStudents.map((student) => {
                                     const progress = Math.max(
@@ -1083,20 +1184,25 @@ const StudentsSection = ({
                                         Math.min(100, Number(student.progressPercent || 0))
                                     );
                                     const tests = Array.isArray(student.tests) ? student.tests : [];
+
                                     return (
                                         <tr key={student.id} className="bg-white dark:bg-[#0B0B0D]">
                                             <td className="py-3 pr-4">
                                                 <p className="font-medium">{student.fullName}</p>
                                             </td>
+
                                             <td className="py-3 pr-4 text-sm text-gray-600 dark:text-[#a6adba] break-words">
                                                 {student.email || '—'}
                                             </td>
+
                                             <td className="py-3 pr-4 text-sm text-gray-600 dark:text-[#a6adba] whitespace-nowrap">
                                                 {student.phoneNumber || '—'}
                                             </td>
+
                                             <td className="py-3 pr-4 text-sm text-gray-600 dark:text-[#a6adba] whitespace-nowrap">
                                                 {formatDate(student.enrolledAt)}
                                             </td>
+
                                             <td className="py-3 pr-4">
                                                 <div className="flex items-center gap-2">
                                                     <div className="w-28 bg-gray-100 rounded-full h-2 overflow-hidden">
@@ -1110,16 +1216,18 @@ const StudentsSection = ({
                                                     </span>
                                                 </div>
                                             </td>
+
                                             <td className="py-3 pr-4">
                                                 <span
                                                     className={`text-xs px-2 py-1 rounded-full ${student.completed
-                                                        ? 'bg-green-100 text-green-700'
-                                                        : 'bg-blue-100 text-blue-700'
+                                                            ? 'bg-green-100 text-green-700'
+                                                            : 'bg-blue-100 text-blue-700'
                                                         }`}
                                                 >
                                                     {student.completed ? 'Бүттү' : 'Уланууда'}
                                                 </span>
                                             </td>
+
                                             <td className="py-3 pr-4 align-top">
                                                 {tests.length ? (
                                                     <div className="flex flex-col gap-1">
@@ -1133,13 +1241,11 @@ const StudentsSection = ({
                                                                 </span>
                                                                 <span
                                                                     className={`px-2 py-0.5 rounded-full ${test.passed
-                                                                        ? 'bg-green-100 text-green-700'
-                                                                        : 'bg-red-100 text-red-700'
+                                                                            ? 'bg-green-100 text-green-700'
+                                                                            : 'bg-red-100 text-red-700'
                                                                         }`}
                                                                 >
-                                                                    {test.passed
-                                                                        ? 'Өттү'
-                                                                        : 'Өтпөдү'}
+                                                                    {test.passed ? 'Өттү' : 'Өтпөдү'}
                                                                 </span>
                                                                 {typeof test.score === 'number' && (
                                                                     <span className="text-gray-500 dark:text-[#a6adba]">
@@ -1155,6 +1261,7 @@ const StudentsSection = ({
                                                     </span>
                                                 )}
                                             </td>
+
                                             <td className="py-3 text-sm text-gray-600 dark:text-[#a6adba] whitespace-normal break-words leading-5">
                                                 {formatLastViewed(student)}
                                             </td>
@@ -1180,9 +1287,11 @@ const StudentsSection = ({
                         >
                             Алдыңкы
                         </button>
+
                         <span>
                             Барак {studentsPage} / {courseMeta.totalPages}
                         </span>
+
                         <button
                             type="button"
                             onClick={() =>
@@ -1205,8 +1314,11 @@ const ProfileSection = ({ profile, expertiseTags, socialLinks }) => (
         <div className="flex items-center justify-between gap-3 flex-wrap">
             <div>
                 <h2 className="text-2xl font-semibold">Профиль</h2>
-                <p className="text-sm text-gray-500 dark:text-[#a6adba]">Өзүңүз жөнүндө маалымат</p>
+                <p className="text-sm text-gray-500 dark:text-[#a6adba]">
+                    Өзүңүз жөнүндө маалымат
+                </p>
             </div>
+
             <Link
                 to="/profile"
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-full border text-sm"
@@ -1214,12 +1326,14 @@ const ProfileSection = ({ profile, expertiseTags, socialLinks }) => (
                 Профилди өзгөртүү
             </Link>
         </div>
+
         <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-[#141619] p-4">
             <p className="text-gray-600 dark:text-[#a6adba] font-medium mb-2">Био / Өзүм жөнүндө</p>
             <p className="text-gray-800 dark:text-white whitespace-pre-line">
                 {profile?.bio?.trim() || 'Маалымат кошула элек'}
             </p>
         </div>
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
                 <p className="text-gray-600 dark:text-[#a6adba] font-medium mb-1">Наам</p>
@@ -1236,6 +1350,7 @@ const ProfileSection = ({ profile, expertiseTags, socialLinks }) => (
                 <p className="text-gray-800 dark:text-white">{profile?.numberOfStudents ?? '—'}</p>
             </div>
         </div>
+
         <div>
             <p className="text-gray-600 dark:text-[#a6adba] font-medium mb-1">Экспертиза</p>
             {expertiseTags.length ? (
@@ -1253,6 +1368,7 @@ const ProfileSection = ({ profile, expertiseTags, socialLinks }) => (
                 <p className="text-sm text-gray-500 dark:text-[#a6adba]">Экспертиза кошула элек</p>
             )}
         </div>
+
         <div>
             <p className="text-gray-600 dark:text-[#a6adba] font-medium mb-1">
                 Социалдык тармактар
@@ -1289,6 +1405,7 @@ const AiSection = ({ aiCourses, totalCourses }) => (
                     Курстарыңызда AI жардамчыны кантип колдонуп жатканыңызды көзөмөлдөңүз.
                 </p>
             </div>
+
             <Link
                 to="/instructor/courses"
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-full border text-sm"
@@ -1296,16 +1413,19 @@ const AiSection = ({ aiCourses, totalCourses }) => (
                 AI жөндөөлөрүнө өтүү
             </Link>
         </div>
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <StatCard label="AI активдүү курстар" value={aiCourses.length} />
             <StatCard label="Жалпы курстар" value={totalCourses} />
             <StatCard label="AI жабдылбаган курстар" value={totalCourses - aiCourses.length} />
         </div>
+
         {aiCourses.length ? (
             <div className="space-y-2">
                 <p className="text-sm text-gray-500 dark:text-[#a6adba]">
                     AI жардамчысы иштетилген курстар
                 </p>
+
                 {aiCourses.map((course) => (
                     <div
                         key={course.id}
@@ -1319,6 +1439,7 @@ const AiSection = ({ aiCourses, totalCourses }) => (
                                     : 'Жаңыртуу маалыматы жок'}
                             </p>
                         </div>
+
                         <Link
                             to={`/instructor/courses/edit/${course.id}`}
                             className="text-sm text-blue-600 hover:underline"
@@ -1336,6 +1457,7 @@ const AiSection = ({ aiCourses, totalCourses }) => (
                 actionLink="/instructor/course/create"
             />
         )}
+
         <div className="bg-gradient-to-r from-orange-100 to-orange-200 rounded-2xl p-4 text-sm text-gray-700">
             <p className="font-semibold">Кантип пайдалансам болот?</p>
             <ul className="list-disc list-inside mt-2 space-y-1">
@@ -1346,15 +1468,6 @@ const AiSection = ({ aiCourses, totalCourses }) => (
         </div>
     </div>
 );
-
-const formatDateTimeForInput = (value) => {
-    if (!value) return '';
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return '';
-    const offset = date.getTimezoneOffset();
-    const local = new Date(date.getTime() - offset * 60000);
-    return local.toISOString().slice(0, 16);
-};
 
 const OfferingsSection = ({ courses, offerings, loading, refreshOfferings }) => {
     const getInitialForm = useCallback(
@@ -1394,6 +1507,7 @@ const OfferingsSection = ({ courses, offerings, loading, refreshOfferings }) => 
     const [modalMode, setModalMode] = useState('create');
     const [editingOffering, setEditingOffering] = useState(null);
     const [createForm, setCreateForm] = useState(() => getInitialForm());
+
     const [showEnrollModal, setShowEnrollModal] = useState(false);
     const [enrollOffering, setEnrollOffering] = useState(null);
     const [enrollForm, setEnrollForm] = useState({ userId: '', discountPercentage: '' });
@@ -1408,7 +1522,7 @@ const OfferingsSection = ({ courses, offerings, loading, refreshOfferings }) => 
     useEffect(() => {
         setCreateForm((prev) => ({
             ...prev,
-            courseId: courses[0]?.id ? String(courses[0].id) : '',
+            courseId: prev.courseId || (courses[0]?.id ? String(courses[0].id) : ''),
         }));
     }, [courses]);
 
@@ -1425,6 +1539,7 @@ const OfferingsSection = ({ courses, offerings, loading, refreshOfferings }) => 
             acc[key] = (acc[key] || 0) + 1;
             return acc;
         }, {});
+
         return {
             total: offerings.length,
             upcoming: upcoming.length,
@@ -1442,18 +1557,22 @@ const OfferingsSection = ({ courses, offerings, loading, refreshOfferings }) => 
             if (filterCourseId !== 'all' && offering.course.id !== Number(filterCourseId)) {
                 return false;
             }
+
             if (statusFilter !== 'all') {
                 const now = Date.now();
                 const start = offering.startAt ? new Date(offering.startAt).getTime() : null;
                 if (statusFilter === 'upcoming' && start && start < now) return false;
                 if (statusFilter === 'past' && start && start >= now) return false;
             }
+
             if (search.trim()) {
                 const term = search.toLowerCase();
                 const haystack =
-                    `${offering.title || ''} ${offering.course.title || ''} ${offering.company?.name || ''}`.toLowerCase();
+                    `${offering.title || ''} ${offering.course.title || ''} ${offering.company?.name || ''
+                        }`.toLowerCase();
                 return haystack.includes(term);
             }
+
             return true;
         });
     }, [offerings, filterCourseId, statusFilter, search]);
@@ -1470,16 +1589,16 @@ const OfferingsSection = ({ courses, offerings, loading, refreshOfferings }) => 
             toast.error('Курс тандаңыз');
             return;
         }
+
         setCreating(true);
+
         try {
             const payload = {
                 courseId: Number(createForm.courseId),
                 title: createForm.title.trim() || null,
                 modality: createForm.modality,
                 visibility: createForm.visibility,
-                startAt: createForm.startAt
-                    ? new Date(createForm.startAt).toISOString()
-                    : undefined,
+                startAt: createForm.startAt ? new Date(createForm.startAt).toISOString() : undefined,
                 endAt: createForm.endAt ? new Date(createForm.endAt).toISOString() : undefined,
                 scheduleNote: createForm.scheduleNote.trim() || null,
                 scheduleBlocks:
@@ -1494,6 +1613,7 @@ const OfferingsSection = ({ courses, offerings, loading, refreshOfferings }) => 
                 status: createForm.status,
                 isFeatured: Boolean(createForm.isFeatured),
             };
+
             if (modalMode === 'edit' && editingOffering) {
                 const patch = { ...payload };
                 delete patch.courseId;
@@ -1503,6 +1623,7 @@ const OfferingsSection = ({ courses, offerings, loading, refreshOfferings }) => 
                 await createOffering(payload);
                 toast.success('Offering ийгиликтүү түзүлдү');
             }
+
             setShowCreateModal(false);
             setCreateForm(getInitialForm());
             setEditingOffering(null);
@@ -1519,49 +1640,55 @@ const OfferingsSection = ({ courses, offerings, loading, refreshOfferings }) => 
 
     const loadOfferingStudents = useCallback(async (offering) => {
         setLoadingEnrollStudents(true);
+
         try {
             const studentResponse = await fetchCourseStudents(offering.course.id, {
                 page: 1,
                 limit: 100,
             });
+
             const list =
                 studentResponse?.students
-                    ?.filter(
-                        (student) => Number(student.offeringId) === Number(offering.id)
-                    )
+                    ?.filter((student) => Number(student.offeringId) === Number(offering.id))
                     .map((student) => ({
                         id: student.id,
                         name: student.fullName || student.email || 'Студент',
                         email: student.email || '—',
                         enrolledAt: student.enrolledAt,
                     })) || [];
+
             setEnrollStudents(list);
         } catch (error) {
             console.error('Failed to load offering students', error);
-            toast.error('Студенттердин тизмесин жүктөө мүмкүн болбoду');
+            toast.error('Студенттердин тизмесин жүктөө мүмкүн болбоду');
             setEnrollStudents([]);
         } finally {
             setLoadingEnrollStudents(false);
         }
     }, []);
+
     const handleOpenEnrollModal = (offering) => {
         setEnrollOffering(offering);
         setEnrollForm({ userId: '', discountPercentage: '' });
         setEnrollUserSearch('');
         setEnrollStudentOptions([]);
+        setShowUserDropdown(false);
         setShowEnrollModal(true);
         loadOfferingStudents(offering);
     };
 
     useEffect(() => {
         if (!showEnrollModal) return;
+
         if (!enrollUserSearch || enrollUserSearch.trim().length < 2) {
             setEnrollStudentOptions([]);
             setLoadingUserOptions(false);
             return;
         }
+
         let cancelled = false;
         setLoadingUserOptions(true);
+
         fetchUsers({
             page: 1,
             limit: 10,
@@ -1570,19 +1697,15 @@ const OfferingsSection = ({ courses, offerings, loading, refreshOfferings }) => 
         })
             .then((res) => {
                 if (cancelled) return;
+
                 const rows = res?.data || res?.items || [];
                 const options = rows.map((user) => ({
                     id: user.id,
                     name: user.fullName || user.email || `ID: ${user.id}`,
                     email: user.email || '',
                 }));
+
                 setEnrollStudentOptions(options);
-                if (
-                    options.length &&
-                    !options.some((opt) => String(opt.id) === enrollForm.userId)
-                ) {
-                    setEnrollForm((prev) => ({ ...prev, userId: String(options[0].id) }));
-                }
             })
             .catch((error) => {
                 console.error('Failed to fetch users', error);
@@ -1594,19 +1717,23 @@ const OfferingsSection = ({ courses, offerings, loading, refreshOfferings }) => 
             .finally(() => {
                 if (!cancelled) setLoadingUserOptions(false);
             });
+
         return () => {
             cancelled = true;
         };
-    }, [showEnrollModal, enrollUserSearch, enrollForm.userId]);
+    }, [showEnrollModal, enrollUserSearch]);
 
     const handleEnrollStudent = async () => {
         if (!enrollOffering) return;
+
         const userIdValue = Number(enrollForm.userId);
         if (!userIdValue || Number.isNaN(userIdValue)) {
             toast.error('Колдонуучу ID туура эмес');
             return;
         }
+
         setEnrolling(true);
+
         try {
             await enrollUserInCourse(userIdValue, enrollOffering.course.id, {
                 offeringId: enrollOffering.id,
@@ -1614,10 +1741,13 @@ const OfferingsSection = ({ courses, offerings, loading, refreshOfferings }) => 
                     ? Number(enrollForm.discountPercentage)
                     : undefined,
             });
+
             toast.success('Студент offeringге кошулду');
             setShowEnrollModal(false);
             setEnrollOffering(null);
             setEnrollForm({ userId: '', discountPercentage: '' });
+            setEnrollUserSearch('');
+            setEnrollStudentOptions([]);
             refreshOfferings();
         } catch (error) {
             console.error('Failed to enroll student', error);
@@ -1643,6 +1773,7 @@ const OfferingsSection = ({ courses, offerings, loading, refreshOfferings }) => 
                         Курстарыңызга арналган корпоративдик же атайын сунуштарды көзөмөлдөңүз.
                     </p>
                 </div>
+
                 <button
                     type="button"
                     className="px-4 py-2 rounded-full bg-blue-600 text-white text-sm"
@@ -1658,6 +1789,7 @@ const OfferingsSection = ({ courses, offerings, loading, refreshOfferings }) => 
                 <StatCard label="Компаниялар үчүн" value={summary.company} />
                 <StatCard label="Публичный offeringдер" value={summary.public} />
             </div>
+
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <StatCard label="Активдүү" value={summary.active} />
                 <StatCard label="Долбоор (Draft)" value={summary.draft} />
@@ -1670,6 +1802,7 @@ const OfferingsSection = ({ courses, offerings, loading, refreshOfferings }) => 
                         <FiFilter />
                         Фильтр
                     </div>
+
                     <select
                         value={filterCourseId}
                         onChange={(e) => setFilterCourseId(e.target.value)}
@@ -1682,6 +1815,7 @@ const OfferingsSection = ({ courses, offerings, loading, refreshOfferings }) => 
                             </option>
                         ))}
                     </select>
+
                     <select
                         value={statusFilter}
                         onChange={(e) => setStatusFilter(e.target.value)}
@@ -1692,6 +1826,7 @@ const OfferingsSection = ({ courses, offerings, loading, refreshOfferings }) => 
                         <option value="all">Баары</option>
                     </select>
                 </div>
+
                 <input
                     type="text"
                     value={search}
@@ -1745,6 +1880,7 @@ const OfferingsSection = ({ courses, offerings, loading, refreshOfferings }) => 
                     mode={modalMode}
                 />
             )}
+
             {showEnrollModal && enrollOffering && (
                 <EnrollStudentModal
                     offering={enrollOffering}
@@ -1760,6 +1896,7 @@ const OfferingsSection = ({ courses, offerings, loading, refreshOfferings }) => 
                         setEnrollOffering(null);
                         setEnrollUserSearch('');
                         setEnrollStudentOptions([]);
+                        setShowUserDropdown(false);
                     }}
                     onSubmit={handleEnrollStudent}
                     enrolling={enrolling}
@@ -1778,31 +1915,73 @@ const OfferingsSection = ({ courses, offerings, loading, refreshOfferings }) => 
 };
 
 const StatCard = ({ label, value }) => (
-    <div className="border border-gray-200 rounded-2xl p-4">
-        <p className="text-sm text-gray-500 dark:text-[#a6adba]">{label}</p>
-        <p className="text-2xl font-semibold mt-1">{value}</p>
+    <div className="group relative">
+        <div className="absolute inset-0 bg-gradient-to-br from-white/80 to-white/40 dark:from-gray-800/80 dark:to-gray-800/40 backdrop-blur-xl rounded-2xl border border-white/20 dark:border-gray-700/20 shadow-lg hover:shadow-2xl transition-all duration-500" />
+        <div className="absolute inset-0 bg-gradient-to-br from-edubot-orange/5 via-transparent to-edubot-soft/5 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+
+        <div className="relative p-6 z-10">
+            <div className="absolute top-2 right-2 w-16 h-16 bg-gradient-to-br from-edubot-orange/20 to-edubot-soft/10 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-500 transform group-hover:scale-110" />
+
+            <div className="w-10 h-10 bg-gradient-to-br from-edubot-orange/20 to-edubot-soft/10 rounded-xl mb-3 flex items-center justify-center">
+                <div className="w-5 h-5 bg-edubot-orange rounded-full animate-pulse" />
+            </div>
+
+            <p className="text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">{label}</p>
+            <p className="text-3xl font-bold text-slate-900 dark:text-white bg-gradient-to-r from-slate-900 to-slate-700 dark:from-white dark:to-slate-200 bg-clip-text text-transparent">
+                {value}
+            </p>
+
+            <div className="mt-3 h-1 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                <div className="h-full bg-gradient-to-r from-edubot-orange to-edubot-soft rounded-full w-3/4 animate-pulse" />
+            </div>
+        </div>
     </div>
 );
 
-const QuickActionCard = ({ title, description, link, buttonText, accent = 'blue' }) => {
-    const accentClasses = {
-        blue: 'bg-blue-600 hover:bg-blue-700',
-        green: 'bg-green-600 hover:bg-green-700',
-        amber: 'bg-amber-500 hover:bg-amber-600',
-    }[accent];
+const QuickActionCard = ({ title, description, link, buttonText, accent = 'orange' }) => {
+    const accentClasses =
+        {
+            orange:
+                'bg-gradient-to-r from-edubot-orange to-edubot-soft hover:from-edubot-soft hover:to-edubot-orange',
+            green:
+                'bg-gradient-to-r from-edubot-green to-emerald-600 hover:from-emerald-600 hover:to-edubot-green',
+            teal: 'bg-gradient-to-r from-edubot-teal to-teal-600 hover:from-teal-600 hover:to-edubot-teal',
+            amber: 'bg-gradient-to-r from-amber-500 to-orange-500 hover:from-orange-500 hover:to-amber-500',
+            blue: 'bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-cyan-600 hover:to-blue-600',
+        }[accent] || 'bg-gradient-to-r from-edubot-orange to-edubot-soft';
 
     return (
-        <div className="rounded-3xl p-5 shadow-sm flex flex-col gap-3">
-            <div>
-                <h3 className="text-lg font-semibold">{title}</h3>
-                <p className="text-sm text-gray-500 dark:text-[#a6adba]">{description}</p>
+        <div className="group relative">
+            <div className="absolute inset-0 bg-gradient-to-br from-white/80 to-white/40 dark:from-gray-800/80 dark:to-gray-800/40 backdrop-blur-xl rounded-2xl border border-white/20 dark:border-gray-700/20 shadow-lg hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-1" />
+            <div className={`absolute inset-0 ${accentClasses} opacity-0 group-hover:opacity-10 transition-opacity duration-500 rounded-2xl`} />
+
+            <div className="relative p-6 z-10">
+                <div className="absolute -top-3 -right-3 w-12 h-12 bg-gradient-to-br from-edubot-orange to-edubot-soft rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-all duration-500 transform group-hover:scale-110 group-hover:rotate-12 flex items-center justify-center">
+                    <span className="text-white text-lg">✨</span>
+                </div>
+
+                <div className="mb-4">
+                    <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2 group-hover:text-edubot-orange transition-colors duration-300">
+                        {title}
+                    </h3>
+                    <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+                        {description}
+                    </p>
+                </div>
+
+                <Link
+                    to={link}
+                    className={`${accentClasses} text-white rounded-xl px-6 py-3 text-sm font-medium transform transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 relative overflow-hidden group`}
+                >
+                    <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
+                    <span className="relative z-10 flex items-center justify-center gap-2">
+                        {buttonText}
+                        <span className="transform group-hover:translate-x-1 transition-transform duration-300">
+                            →
+                        </span>
+                    </span>
+                </Link>
             </div>
-            <Link
-                to={link}
-                className={`inline-flex items-center justify-center rounded-full px-4 py-2 text-white text-sm font-semibold transition ${accentClasses}`}
-            >
-                {buttonText}
-            </Link>
         </div>
     );
 };
@@ -1819,60 +1998,26 @@ const EmptyState = ({ title, description, actionLabel, actionLink }) => (
     </div>
 );
 
-const OfferingsSummary = ({ offerings, loading, onViewOfferings }) => {
-    if (loading) {
-        return <Loader fullScreen={false} />;
-    }
-    if (!offerings.length) {
-        return (
-            <div className="border border-dashed border-gray-200 rounded-2xl p-3 text-xs text-gray-500 dark:text-[#a6adba] flex flex-col gap-2">
-                <span>Offering түзүлө элек.</span>
-                <button
-                    type="button"
-                    onClick={onViewOfferings}
-                    className="text-blue-600 hover:underline text-left"
-                >
-                    Offering түзүү
-                </button>
-            </div>
-        );
-    }
-    const upcoming = offerings
-        .filter((offering) => offering.startAt)
-        .sort((a, b) => new Date(a.startAt) - new Date(b.startAt));
-    return (
-        <div className="border border-gray-100 rounded-2xl p-3 text-xs text-gray-600 dark:text-[#a6adba] flex flex-col gap-1">
-            <span className="font-semibold text-gray-700">{offerings.length} offering</span>
-            {upcoming[0] && (
-                <span>Жакынкысы: {new Date(upcoming[0].startAt).toLocaleDateString()}</span>
-            )}
-            <button
-                type="button"
-                onClick={onViewOfferings}
-                className="text-blue-600 hover:underline text-xs text-left"
-            >
-                Offering'дерди башкаруу
-            </button>
-        </div>
-    );
-};
-
 const CreateOfferingModal = ({ courses, form, onChange, onClose, onSubmit, creating, mode }) => {
     const modalityDescriptions = {
         ONLINE: 'Zoom же Google Meet аркылуу жандуу сабак.',
         OFFLINE: 'Офлайн тренинг – жайгашкан жерди көрсөтүңүз.',
         HYBRID: 'Онлайн жана офлайн аралаш формат.',
     };
+
     const scheduleBlocks = form.scheduleBlocks || [];
+
     const handleBlockChange = (index, field, value) => {
         const next = scheduleBlocks.map((block, idx) =>
             idx === index ? { ...block, [field]: value } : block
         );
         onChange('scheduleBlocks', next);
     };
+
     const handleBlockAdd = () => {
         onChange('scheduleBlocks', [...scheduleBlocks, { day: '', startTime: '', endTime: '' }]);
     };
+
     const handleBlockRemove = (index) => {
         onChange(
             'scheduleBlocks',
@@ -1882,7 +2027,7 @@ const CreateOfferingModal = ({ courses, form, onChange, onClose, onSubmit, creat
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 px-4">
-            <div className="rounded-3xl shadow-xl max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
+            <div className="rounded-3xl shadow-xl max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto bg-white dark:bg-[#141619]">
                 <div className="flex items-center justify-between mb-4">
                     <div>
                         <p className="text-sm uppercase tracking-wide text-gray-400">
@@ -1892,6 +2037,7 @@ const CreateOfferingModal = ({ courses, form, onChange, onClose, onSubmit, creat
                             {mode === 'edit' ? 'Offeringди өзгөртүү' : 'Курс сунушун түзүү'}
                         </h2>
                     </div>
+
                     <button
                         type="button"
                         onClick={onClose}
@@ -1900,6 +2046,7 @@ const CreateOfferingModal = ({ courses, form, onChange, onClose, onSubmit, creat
                         Жабуу
                     </button>
                 </div>
+
                 <form
                     className="space-y-4"
                     onSubmit={(e) => {
@@ -1926,6 +2073,7 @@ const CreateOfferingModal = ({ courses, form, onChange, onClose, onSubmit, creat
                                 ))}
                             </select>
                         </div>
+
                         <div>
                             <label className="text-sm font-medium text-gray-600 dark:text-[#a6adba]">
                                 Offering аталышы (опция)
@@ -1939,6 +2087,7 @@ const CreateOfferingModal = ({ courses, form, onChange, onClose, onSubmit, creat
                             />
                         </div>
                     </div>
+
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label className="text-sm font-medium text-gray-600 dark:text-[#a6adba]">
@@ -1957,6 +2106,7 @@ const CreateOfferingModal = ({ courses, form, onChange, onClose, onSubmit, creat
                                 {modalityDescriptions[form.modality]}
                             </p>
                         </div>
+
                         <div>
                             <label className="text-sm font-medium text-gray-600 dark:text-[#a6adba]">
                                 Көрүнүү
@@ -1972,6 +2122,7 @@ const CreateOfferingModal = ({ courses, form, onChange, onClose, onSubmit, creat
                             </select>
                         </div>
                     </div>
+
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label className="text-sm font-medium text-gray-600 dark:text-[#a6adba]">
@@ -1984,6 +2135,7 @@ const CreateOfferingModal = ({ courses, form, onChange, onClose, onSubmit, creat
                                 className="mt-1 w-full border rounded-2xl px-3 py-2"
                             />
                         </div>
+
                         <div>
                             <label className="text-sm font-medium text-gray-600 dark:text-[#a6adba]">
                                 Аяктоосу
@@ -1996,6 +2148,7 @@ const CreateOfferingModal = ({ courses, form, onChange, onClose, onSubmit, creat
                             />
                         </div>
                     </div>
+
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label className="text-sm font-medium text-gray-600 dark:text-[#a6adba]">
@@ -2012,6 +2165,7 @@ const CreateOfferingModal = ({ courses, form, onChange, onClose, onSubmit, creat
                                 <option value="ARCHIVED">Archived</option>
                             </select>
                         </div>
+
                         <label className="flex items-center gap-2 text-sm font-medium text-gray-600 dark:text-[#a6adba] mt-6">
                             <input
                                 type="checkbox"
@@ -2021,6 +2175,7 @@ const CreateOfferingModal = ({ courses, form, onChange, onClose, onSubmit, creat
                             Featured offering катары белгилөө
                         </label>
                     </div>
+
                     <div>
                         <label className="text-sm font-medium text-gray-600 dark:text-[#a6adba]">
                             Жайгашкан жери / Zoom шилтемеси / Расписаниеси
@@ -2032,6 +2187,7 @@ const CreateOfferingModal = ({ courses, form, onChange, onClose, onSubmit, creat
                             placeholder="Мисалы: Бишкек, Бизнес борбор 3-кабат. Же: Zoom — https://zoom.us/..."
                         />
                     </div>
+
                     <div>
                         <div className="flex items-center justify-between">
                             <label className="text-sm font-medium text-gray-600 dark:text-[#a6adba]">
@@ -2045,6 +2201,7 @@ const CreateOfferingModal = ({ courses, form, onChange, onClose, onSubmit, creat
                                 Блок кошуу
                             </button>
                         </div>
+
                         {scheduleBlocks.length ? (
                             <div className="mt-2 space-y-2">
                                 {scheduleBlocks.map((block, index) => (
@@ -2057,29 +2214,19 @@ const CreateOfferingModal = ({ courses, form, onChange, onClose, onSubmit, creat
                                             className="col-span-4 border rounded-xl px-2 py-1 text-sm"
                                             placeholder="Күн (мисалы: Дүйшөмбү)"
                                             value={block.day}
-                                            onChange={(e) =>
-                                                handleBlockChange(index, 'day', e.target.value)
-                                            }
+                                            onChange={(e) => handleBlockChange(index, 'day', e.target.value)}
                                         />
                                         <input
                                             type="time"
                                             className="col-span-3 border rounded-xl px-2 py-1 text-sm"
                                             value={block.startTime}
-                                            onChange={(e) =>
-                                                handleBlockChange(
-                                                    index,
-                                                    'startTime',
-                                                    e.target.value
-                                                )
-                                            }
+                                            onChange={(e) => handleBlockChange(index, 'startTime', e.target.value)}
                                         />
                                         <input
                                             type="time"
                                             className="col-span-3 border rounded-xl px-2 py-1 text-sm"
                                             value={block.endTime}
-                                            onChange={(e) =>
-                                                handleBlockChange(index, 'endTime', e.target.value)
-                                            }
+                                            onChange={(e) => handleBlockChange(index, 'endTime', e.target.value)}
                                         />
                                         <button
                                             type="button"
@@ -2093,11 +2240,11 @@ const CreateOfferingModal = ({ courses, form, onChange, onClose, onSubmit, creat
                             </div>
                         ) : (
                             <p className="text-xs text-gray-500 dark:text-[#a6adba] mt-1">
-                                Жума күндөрү жана убакыттарын кошуу үчүн "Блок кошуу" баскычын
-                                басыңыз.
+                                Жума күндөрү жана убакыттарын кошуу үчүн "Блок кошуу" баскычын басыңыз.
                             </p>
                         )}
                     </div>
+
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
                             <label className="text-sm font-medium text-gray-600 dark:text-[#a6adba]">
@@ -2112,6 +2259,7 @@ const CreateOfferingModal = ({ courses, form, onChange, onClose, onSubmit, creat
                                 placeholder="Мисалы: 25"
                             />
                         </div>
+
                         <div>
                             <label className="text-sm font-medium text-gray-600 dark:text-[#a6adba]">
                                 Бааны өзгөртүү (опция)
@@ -2124,6 +2272,7 @@ const CreateOfferingModal = ({ courses, form, onChange, onClose, onSubmit, creat
                                 placeholder="Мисалы: 4500 сом"
                             />
                         </div>
+
                         <div>
                             <label className="text-sm font-medium text-gray-600 dark:text-[#a6adba]">
                                 Компания ID (опция)
@@ -2137,6 +2286,7 @@ const CreateOfferingModal = ({ courses, form, onChange, onClose, onSubmit, creat
                             />
                         </div>
                     </div>
+
                     <div className="flex justify-end gap-3 pt-2">
                         <button
                             type="button"
@@ -2175,12 +2325,14 @@ const OfferingCard = ({ offering, onEdit, onEnroll }) => {
     const visibility = offering.visibility || 'PRIVATE';
     const companyName = offering.company?.name;
     const status = offering.status || 'DRAFT';
+
     const statusStyles = {
         ACTIVE: 'bg-green-100 text-green-700',
         DRAFT: 'bg-gray-200 text-gray-700',
         COMPLETED: 'bg-blue-100 text-blue-700',
         ARCHIVED: 'bg-orange-100 text-orange-700',
     };
+
     return (
         <div className="border border-gray-200 rounded-2xl p-4 space-y-3">
             <div className="flex items-start justify-between gap-3">
@@ -2190,25 +2342,29 @@ const OfferingCard = ({ offering, onEdit, onEnroll }) => {
                         Курс: {offering.course.title}
                     </p>
                 </div>
+
                 <span
                     className={`px-3 py-1 rounded-full text-xs font-semibold ${visibility === 'PUBLIC'
-                        ? 'bg-green-100 text-green-700'
-                        : 'bg-gray-100 text-gray-600 dark:text-[#a6adba]'
+                            ? 'bg-green-100 text-green-700'
+                            : 'bg-gray-100 text-gray-600 dark:text-[#a6adba]'
                         }`}
                 >
                     {visibility === 'PUBLIC' ? 'Публичный' : 'Жабык'}
                 </span>
             </div>
+
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm text-gray-600 dark:text-[#a6adba]">
                 <div className="flex items-center gap-2">
                     <FiCalendar className="text-gray-400" />
                     <span>{start}</span>
                     {end && <span className="text-gray-400">— {end}</span>}
                 </div>
+
                 <div className="flex items-center gap-2">
                     <FiGlobe className="text-gray-400" />
                     <span>{modalityLabel}</span>
                 </div>
+
                 <div>
                     <p>{capacity}</p>
                     {companyName && (
@@ -2216,9 +2372,11 @@ const OfferingCard = ({ offering, onEdit, onEnroll }) => {
                     )}
                 </div>
             </div>
+
             <div className="flex items-center gap-2 text-xs">
                 <span
-                    className={`px-3 py-1 rounded-full font-semibold ${statusStyles[status] || 'bg-gray-200 text-gray-700'}`}
+                    className={`px-3 py-1 rounded-full font-semibold ${statusStyles[status] || 'bg-gray-200 text-gray-700'
+                        }`}
                 >
                     {status}
                 </span>
@@ -2228,12 +2386,12 @@ const OfferingCard = ({ offering, onEdit, onEnroll }) => {
                     </span>
                 )}
             </div>
+
             <div className="flex flex-wrap gap-4 text-xs text-gray-600 dark:text-[#a6adba]">
                 <span>Катталган: {offering.enrolledCount ?? 0}</span>
-                {offering.seatsRemaining != null && (
-                    <span>Калган орун: {offering.seatsRemaining}</span>
-                )}
+                {offering.seatsRemaining != null && <span>Калган орун: {offering.seatsRemaining}</span>}
             </div>
+
             {offering.scheduleBlocks?.length ? (
                 <div className="text-sm text-gray-600 dark:text-[#a6adba]">
                     <p className="font-semibold text-gray-700 mb-1">Жүгүртмө:</p>
@@ -2250,6 +2408,7 @@ const OfferingCard = ({ offering, onEdit, onEnroll }) => {
                     Белгилей кетүү: {offering.scheduleNote}
                 </p>
             ) : null}
+
             <div className="flex flex-wrap gap-2">
                 <Link
                     to={`/instructor/courses/edit/${offering.course.id}`}
@@ -2257,6 +2416,7 @@ const OfferingCard = ({ offering, onEdit, onEnroll }) => {
                 >
                     Курсту өзгөртүү
                 </Link>
+
                 <button
                     type="button"
                     className="px-4 py-2 rounded-full border text-sm"
@@ -2264,6 +2424,7 @@ const OfferingCard = ({ offering, onEdit, onEnroll }) => {
                 >
                     Offeringди өзгөртүү
                 </button>
+
                 <button
                     type="button"
                     className="px-4 py-2 rounded-full border text-sm text-green-700"
@@ -2271,6 +2432,7 @@ const OfferingCard = ({ offering, onEdit, onEnroll }) => {
                 >
                     Студент кошуу
                 </button>
+
                 <button
                     type="button"
                     className="px-4 py-2 rounded-full bg-blue-600 text-white text-sm"
@@ -2299,7 +2461,7 @@ const EnrollStudentModal = ({
     setShowDropdown,
 }) => (
     <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 px-4">
-        <div className="rounded-3xl shadow-xl max-w-md w-full p-6">
+        <div className="rounded-3xl shadow-xl max-w-md w-full p-6 bg-white dark:bg-[#141619]">
             <div className="flex items-center justify-between mb-4">
                 <div>
                     <p className="text-sm uppercase tracking-wide text-gray-400">Студент кошуу</p>
@@ -2308,6 +2470,7 @@ const EnrollStudentModal = ({
                         {offering.title || 'Offering'}
                     </p>
                 </div>
+
                 <button
                     type="button"
                     onClick={onClose}
@@ -2316,6 +2479,7 @@ const EnrollStudentModal = ({
                     Жабуу
                 </button>
             </div>
+
             <form
                 className="space-y-4"
                 onSubmit={(e) => {
@@ -2327,24 +2491,30 @@ const EnrollStudentModal = ({
                     <label className="text-sm font-medium text-gray-600 dark:text-[#a6adba]">
                         Студентти издөө жана тандоо
                     </label>
+
                     <div className="relative">
                         <input
                             type="text"
                             value={userSearch}
-                            onChange={(e) => onSearchChange(e.target.value)}
+                            onChange={(e) => {
+                                onSearchChange(e.target.value);
+                                setShowDropdown(true);
+                                onChange('userId', '');
+                            }}
                             className="mt-1 w-full border rounded-2xl px-3 py-2"
                             placeholder="Аты же email (кеминде 2 тамга)"
                             onFocus={() => setShowDropdown(true)}
                         />
+
                         {showDropdown && studentOptions?.length > 0 && (
-                            <div className="absolute mt-1 w-full border border-gray-200 rounded-2xl shadow-lg max-h-48 overflow-auto z-10">
+                            <div className="absolute mt-1 w-full border border-gray-200 rounded-2xl shadow-lg max-h-48 overflow-auto z-10 bg-white dark:bg-[#141619]">
                                 {studentOptions.map((student) => (
                                     <button
                                         key={student.id}
                                         type="button"
                                         className={`w-full text-left px-3 py-2 text-sm ${String(student.id) === form.userId
-                                            ? 'bg-blue-50 text-blue-700'
-                                            : 'hover:bg-gray-50'
+                                                ? 'bg-blue-50 text-blue-700'
+                                                : 'hover:bg-gray-50 dark:hover:bg-gray-800'
                                             }`}
                                         onClick={() => {
                                             onChange('userId', String(student.id));
@@ -2363,18 +2533,22 @@ const EnrollStudentModal = ({
                             </div>
                         )}
                     </div>
+
                     {loadingUserOptions && <Loader fullScreen={false} />}
+
                     {!studentOptions?.length && userSearch.length >= 2 && !loadingUserOptions && (
                         <p className="text-xs text-gray-500 dark:text-[#a6adba] mt-2">
                             Студент табылган жок.
                         </p>
                     )}
+
                     <p className="text-xs text-gray-500 dark:text-[#a6adba] mt-1">
                         {form.userId
                             ? `Тандалган студент ID: ${form.userId}`
                             : 'Кеминде эки тамга издөө үчүн жазыңыз жана тизмеден тандаңыз.'}
                     </p>
                 </div>
+
                 <div>
                     <label className="text-sm font-medium text-gray-600 dark:text-[#a6adba]">
                         Скидка % (опция)
@@ -2389,12 +2563,36 @@ const EnrollStudentModal = ({
                         placeholder="Мисалы: 10"
                     />
                 </div>
+
                 <div className="text-xs text-gray-500 dark:text-[#a6adba]">
                     Offering ID: {offering.id}. Орундар:{' '}
                     {offering.capacity != null
                         ? `${offering.enrolledCount ?? 0}/${offering.capacity}`
                         : 'Чектелбеген'}
                 </div>
+
+                <div className="border rounded-2xl p-3">
+                    <p className="text-sm font-medium mb-2">Азыркы студенттер</p>
+                    {loadingStudents ? (
+                        <Loader fullScreen={false} />
+                    ) : students?.length ? (
+                        <div className="space-y-2 max-h-40 overflow-auto">
+                            {students.map((student) => (
+                                <div key={student.id} className="text-sm">
+                                    <div className="font-medium">{student.name}</div>
+                                    <div className="text-xs text-gray-500 dark:text-[#a6adba]">
+                                        {student.email}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <p className="text-xs text-gray-500 dark:text-[#a6adba]">
+                            Бул offeringде азырынча студент жок.
+                        </p>
+                    )}
+                </div>
+
                 <div className="flex justify-end gap-3 pt-2">
                     <button
                         type="button"
@@ -2404,6 +2602,7 @@ const EnrollStudentModal = ({
                     >
                         Жабуу
                     </button>
+
                     <button
                         type="submit"
                         className="px-5 py-2 rounded-full bg-green-600 text-white text-sm disabled:opacity-60"
