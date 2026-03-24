@@ -163,18 +163,19 @@ const AdminPanel = () => {
     }, []);
 
     const NAV_ITEMS = [
-        { id: 'stats', label: 'Статистика', icon: FiBarChart2 },
-        { id: 'users', label: 'Колдонуучулар', icon: FiUsers },
-        { id: 'courses', label: 'Курстар & Категориялар', icon: FiBookOpen },
-        { id: 'contacts', label: 'Байланыш каттары', icon: FiMail },
-        { id: 'pending', label: 'Каралуудагы курстар', icon: FiClock },
-        { id: 'companies', label: 'Компаниялар', icon: FiBriefcase },
-        { id: 'skills', label: 'Skills', icon: FiTag },
-        { id: 'ai-prompts', label: 'AI сунуштары', icon: FiCpu },
-        { id: 'notifications', label: 'Билдирүүлөр', icon: FiBell },
-        { id: 'integration', label: 'Интеграция', icon: FiActivity },
-        { id: 'attendance', label: 'Катышуу', icon: FiCheckSquare },
-        { id: 'analytics', label: 'Аналитика', icon: FiBarChart2 },
+        // Content Management - Primary Admin Tasks
+        { id: 'stats', label: 'Статистика', icon: FiBarChart2, category: 'content', priority: 1 },
+        { id: 'courses', label: 'Курстар & Категориялар', icon: FiBookOpen, category: 'content', priority: 2 },
+
+        // User Management - People & Access
+        { id: 'users', label: 'Колдонуучулар', icon: FiUsers, category: 'users', priority: 1 },
+        { id: 'companies', label: 'Компаниялар', icon: FiBriefcase, category: 'users', priority: 2 },
+
+        // System Administration - Settings & Configuration
+        { id: 'contacts', label: 'Байланыштар', icon: FiMail, category: 'admin', priority: 1 },
+        { id: 'ai-prompts', label: 'AI промпттар', icon: FiCpu, category: 'admin', priority: 2 },
+        { id: 'skills', label: 'Скиллдер', icon: FiTag, category: 'admin', priority: 3 },
+        { id: 'integrations', label: 'Интеграциялар', icon: FiActivity, category: 'admin', priority: 4 },
     ];
 
     const updateSearchParams = useCallback(
@@ -823,8 +824,8 @@ const AdminPanel = () => {
                     type="button"
                     onClick={() => handleUsersPageChange(p)}
                     className={`w-9 h-9 rounded border text-sm font-medium transition ${p === usersPage
-                            ? 'bg-blue-600 text-white border-blue-600'
-                            : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800'
+                        ? 'bg-blue-600 text-white border-blue-600'
+                        : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800'
                         }`}
                 >
                     {p}
@@ -1179,8 +1180,8 @@ const AdminPanel = () => {
                                                 loadCompanies(p, companySearch);
                                             }}
                                             className={`px-3 py-1 rounded border border-gray-200 dark:border-gray-700 ${p === companyPage
-                                                    ? 'bg-blue-600 text-white'
-                                                    : 'text-gray-700 dark:text-[#E8ECF3]'
+                                                ? 'bg-blue-600 text-white'
+                                                : 'text-gray-700 dark:text-[#E8ECF3]'
                                                 }`}
                                         >
                                             {p}

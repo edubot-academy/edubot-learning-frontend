@@ -45,16 +45,20 @@ import {
 } from '../features/leaderboard/components/LeaderboardExperience';
 
 const NAV_ITEMS = [
-    { id: 'overview', label: 'Кыскача', icon: FiHome },
-    { id: 'my-courses', label: 'Курстарым', icon: FiBookOpen },
-    { id: 'schedule', label: 'Жүгүртмө', icon: FiCalendar },
-    { id: 'tasks', label: 'Тапшырмалар', icon: FiCheckCircle },
-    { id: 'progress', label: 'Прогресс', icon: FiBarChart2 },
-    { id: 'analytics', label: 'Аналитика', icon: FiBarChart2 },
-    { id: 'leaderboard', label: 'Рейтинг', icon: FiBarChart2 },
-    { id: 'notifications', label: 'Билдирүүлөр', icon: FiBell },
-    { id: 'profile', label: 'Профиль', icon: FiUser },
-    { id: 'chat', label: 'Чат', icon: FiMessageCircle },
+    // Primary Navigation - Core Learning Activities
+    { id: 'overview', label: 'Кыскача', icon: FiHome, category: 'primary', priority: 1 },
+    { id: 'my-courses', label: 'Курстарым', icon: FiBookOpen, category: 'primary', priority: 2 },
+    { id: 'schedule', label: 'Жүгүртмө', icon: FiCalendar, category: 'primary', priority: 3 },
+
+    // Learning Progress - Performance & Achievement
+    { id: 'progress', label: 'Прогресс', icon: FiBarChart2, category: 'progress', priority: 1 },
+    { id: 'leaderboard', label: 'Рейтинг', icon: FiFilter, category: 'progress', priority: 2 },
+    { id: 'certificates', label: 'Сертификаттар', icon: FiCheckCircle, category: 'progress', priority: 3 },
+
+    // Personal Management - Settings & Communication
+    { id: 'profile', label: 'Профиль', icon: FiUser, category: 'personal', priority: 1 },
+    { id: 'notifications', label: 'Билдирүүлөр', icon: FiBell, category: 'personal', priority: 2 },
+    { id: 'chat', label: 'Чат', icon: FiMessageCircle, category: 'personal', priority: 3 },
 ];
 
 const DEFAULT_NOTIFICATION_SETTINGS = {

@@ -38,18 +38,25 @@ import InternalLeaderboardPage from './InternalLeaderboard';
 import InstructorHomeworkPage from './InstructorHomework';
 
 const NAV_ITEMS = [
-    { id: 'overview', label: 'Кыскача', icon: FiHome },
-    { id: 'courses', label: 'Курстарым', icon: FiBookOpen },
-    { id: 'students', label: 'Студенттер', icon: FiUsers },
-    { id: 'profile', label: 'Профиль', icon: FiUser },
-    { id: 'ai', label: 'AI ассистент', icon: FiCpu },
-    { id: 'offerings', label: 'Агымдар', icon: FiLayers },
-    { id: 'sessions', label: 'Сессиялар', icon: FiCalendar },
-    { id: 'attendance', label: 'Катышуу', icon: FiUsers },
-    { id: 'analytics', label: 'Аналитика', icon: FiGlobe },
-    { id: 'leaderboard', label: 'Рейтинг', icon: FiFilter },
-    { id: 'homework', label: 'Үй тапшырма', icon: FiBookOpen },
-    { id: 'notifications', label: 'Билдирүүлөр', icon: FiBell },
+    // Primary Navigation - Core Daily Tasks
+    { id: 'overview', label: 'Кыскача', icon: FiHome, category: 'primary', priority: 1 },
+    { id: 'courses', label: 'Курстарым', icon: FiBookOpen, category: 'primary', priority: 2 },
+    { id: 'students', label: 'Студенттер', icon: FiUsers, category: 'primary', priority: 3 },
+
+    // Secondary Navigation - Learning Management
+    { id: 'offerings', label: 'Агымдар', icon: FiLayers, category: 'secondary', priority: 1 },
+    { id: 'sessions', label: 'Сессиялар', icon: FiCalendar, category: 'secondary', priority: 2 },
+    { id: 'homework', label: 'Үй тапшырма', icon: FiBookOpen, category: 'secondary', priority: 3 },
+
+    // Performance & Analytics
+    { id: 'analytics', label: 'Аналитика', icon: FiGlobe, category: 'analytics', priority: 1 },
+    { id: 'leaderboard', label: 'Рейтинг', icon: FiFilter, category: 'analytics', priority: 2 },
+
+    // Administrative - Settings & Management
+    { id: 'profile', label: 'Профиль', icon: FiUser, category: 'admin', priority: 1 },
+    { id: 'ai', label: 'AI ассистент', icon: FiCpu, category: 'admin', priority: 2 },
+    { id: 'attendance', label: 'Катышуу', icon: FiUsers, category: 'admin', priority: 3 },
+    { id: 'notifications', label: 'Билдирүүлөр', icon: FiBell, category: 'admin', priority: 4 },
 ];
 
 const formatDateTimeForInput = (value) => {
@@ -751,8 +758,8 @@ const CoursesSection = ({
 
                                     <span
                                         className={`text-xs px-2 py-1 rounded-full ${course.isPublished
-                                                ? 'bg-green-100 text-green-700'
-                                                : 'bg-yellow-100 text-yellow-700'
+                                            ? 'bg-green-100 text-green-700'
+                                            : 'bg-yellow-100 text-yellow-700'
                                             }`}
                                     >
                                         {course.isPublished ? 'Жарыяланды' : 'Каралууда'}
@@ -1047,8 +1054,8 @@ const StudentsSection = ({
                                             <p className="font-semibold line-clamp-2">{course.title}</p>
                                             <span
                                                 className={`text-xs px-2 py-1 rounded-full ${course.isPublished
-                                                        ? 'bg-green-100 text-green-700'
-                                                        : 'bg-yellow-100 text-yellow-700'
+                                                    ? 'bg-green-100 text-green-700'
+                                                    : 'bg-yellow-100 text-yellow-700'
                                                     }`}
                                             >
                                                 {course.isPublished ? 'Жарыяланды' : course.status || 'Каралууда'}
@@ -1220,8 +1227,8 @@ const StudentsSection = ({
                                             <td className="py-3 pr-4">
                                                 <span
                                                     className={`text-xs px-2 py-1 rounded-full ${student.completed
-                                                            ? 'bg-green-100 text-green-700'
-                                                            : 'bg-blue-100 text-blue-700'
+                                                        ? 'bg-green-100 text-green-700'
+                                                        : 'bg-blue-100 text-blue-700'
                                                         }`}
                                                 >
                                                     {student.completed ? 'Бүттү' : 'Уланууда'}
@@ -1241,8 +1248,8 @@ const StudentsSection = ({
                                                                 </span>
                                                                 <span
                                                                     className={`px-2 py-0.5 rounded-full ${test.passed
-                                                                            ? 'bg-green-100 text-green-700'
-                                                                            : 'bg-red-100 text-red-700'
+                                                                        ? 'bg-green-100 text-green-700'
+                                                                        : 'bg-red-100 text-red-700'
                                                                         }`}
                                                                 >
                                                                     {test.passed ? 'Өттү' : 'Өтпөдү'}
@@ -2345,8 +2352,8 @@ const OfferingCard = ({ offering, onEdit, onEnroll }) => {
 
                 <span
                     className={`px-3 py-1 rounded-full text-xs font-semibold ${visibility === 'PUBLIC'
-                            ? 'bg-green-100 text-green-700'
-                            : 'bg-gray-100 text-gray-600 dark:text-[#a6adba]'
+                        ? 'bg-green-100 text-green-700'
+                        : 'bg-gray-100 text-gray-600 dark:text-[#a6adba]'
                         }`}
                 >
                     {visibility === 'PUBLIC' ? 'Публичный' : 'Жабык'}
@@ -2513,8 +2520,8 @@ const EnrollStudentModal = ({
                                         key={student.id}
                                         type="button"
                                         className={`w-full text-left px-3 py-2 text-sm ${String(student.id) === form.userId
-                                                ? 'bg-blue-50 text-blue-700'
-                                                : 'hover:bg-gray-50 dark:hover:bg-gray-800'
+                                            ? 'bg-blue-50 text-blue-700'
+                                            : 'hover:bg-gray-50 dark:hover:bg-gray-800'
                                             }`}
                                         onClick={() => {
                                             onChange('userId', String(student.id));
