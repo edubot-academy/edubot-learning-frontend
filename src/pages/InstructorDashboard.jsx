@@ -591,17 +591,21 @@ const InstructorDashboard = () => {
                             <div className="flex items-center gap-3">
                                 <button
                                     onClick={() => setSidebarOpen((prev) => !prev)}
-                                    className="hidden md:inline-flex px-4 py-2 rounded-xl border border-slate-600 text-sm text-slate-300 hover:bg-slate-700 transition-colors"
+                                    className="hidden md:inline-flex px-4 py-2 rounded-xl border border-slate-600 text-sm text-slate-300 hover:bg-slate-700 hover:border-edubot-orange hover:text-edubot-orange transition-all duration-300 transform hover:scale-105 hover:shadow-lg hover:shadow-edubot-orange/20 group"
                                     type="button"
                                 >
-                                    {sidebarOpen ? 'Менюну жашыруу' : 'Менюну көрсөтүү'}
+                                    <span className="transition-transform duration-300 group-hover:scale-110">
+                                        {sidebarOpen ? 'Менюну жашыруу' : 'Менюну көрсөтүү'}
+                                    </span>
                                 </button>
 
                                 <Link
                                     to={analyticsLink}
-                                    className="inline-flex px-6 py-3 rounded-xl bg-gradient-to-r from-edubot-orange to-edubot-soft hover:from-edubot-soft hover:to-edubot-orange text-white text-sm font-medium transform hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-xl"
+                                    className="inline-flex px-6 py-3 rounded-xl bg-gradient-to-r from-edubot-orange to-edubot-soft hover:from-edubot-soft hover:to-edubot-orange text-white text-sm font-medium transform hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-edubot-orange/30 group animate-pulse-glow"
                                 >
-                                    Аналитика
+                                    <span className="transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3">
+                                        📊 Аналитика
+                                    </span>
                                 </Link>
                             </div>
                         </div>
@@ -715,16 +719,26 @@ const CoursesSection = ({
                 <button
                     type="button"
                     onClick={onOpenDeliveryModal}
-                    className="inline-flex items-center gap-2 px-6 py-3 rounded-xl border-2 border-edubot-teal text-edubot-teal text-sm font-medium hover:bg-edubot-teal hover:text-white transform hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-xl"
+                    className="inline-flex items-center gap-2 px-6 py-3 rounded-xl border-2 border-edubot-teal text-edubot-teal text-sm font-medium hover:bg-edubot-teal hover:text-white transform hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-edubot-teal/30 group"
                 >
-                    Оффлайн/Live курс
+                    <span className="transition-transform duration-300 group-hover:scale-110 group-hover:rotate-12">
+                        🎓
+                    </span>
+                    <span className="transition-transform duration-300 group-hover:scale-105">
+                        Оффлайн/Live курс
+                    </span>
                 </button>
 
                 <Link
                     to="/instructor/course/create"
-                    className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-edubot-green to-emerald-600 hover:from-emerald-600 hover:to-edubot-green text-white text-sm font-medium transform hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-xl"
+                    className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-edubot-green to-emerald-600 hover:from-emerald-600 hover:to-edubot-green text-white text-sm font-medium transform hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-edubot-green/30 group"
                 >
-                    Жаңы курс
+                    <span className="transition-transform duration-300 group-hover:scale-110 group-hover:rotate-12">
+                        ✨
+                    </span>
+                    <span className="transition-transform duration-300 group-hover:scale-105">
+                        Жаңы курс
+                    </span>
                 </Link>
             </div>
         </div>
@@ -1039,7 +1053,7 @@ const StudentsSection = ({
                                     type="button"
                                     key={course.id || course.title}
                                     onClick={() => onSelectCourse(course.id)}
-                                    className="text-left rounded-2xl border transition-shadow overflow-hidden border-gray-200 hover:shadow-sm"
+                                    className="text-left rounded-2xl border transition-all duration-300 overflow-hidden border-gray-200 hover:shadow-lg hover:border-edubot-orange hover:shadow-edubot-orange/20 transform hover:scale-102 group"
                                 >
                                     <div className="h-32 w-full overflow-hidden">
                                         <img
@@ -1290,9 +1304,11 @@ const StudentsSection = ({
                             type="button"
                             onClick={() => onChangePage(Math.max(1, studentsPage - 1))}
                             disabled={studentsPage <= 1}
-                            className="px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 disabled:opacity-50"
+                            className="px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 disabled:opacity-50 hover:border-edubot-orange hover:bg-edubot-orange/10 hover:text-edubot-orange transition-all duration-300 transform hover:scale-105 disabled:hover:scale-100 disabled:hover:translate-y-0 group"
                         >
-                            Алдыңкы
+                            <span className="transition-transform duration-300 group-hover:scale-110 group-hover:-translate-x-1">
+                                ← Алдыңкы
+                            </span>
                         </button>
 
                         <span>
@@ -1305,9 +1321,11 @@ const StudentsSection = ({
                                 onChangePage(Math.min(courseMeta.totalPages || 1, studentsPage + 1))
                             }
                             disabled={studentsPage >= (courseMeta.totalPages || 1)}
-                            className="px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 disabled:opacity-50"
+                            className="px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 disabled:opacity-50 hover:border-edubot-orange hover:bg-edubot-orange/10 hover:text-edubot-orange transition-all duration-300 transform hover:scale-105 disabled:hover:scale-100 disabled:hover:translate-y-0 group"
                         >
-                            Кийинки
+                            <span className="transition-transform duration-300 group-hover:scale-110 group-hover:translate-x-1">
+                                Кийинки →
+                            </span>
                         </button>
                     </div>
                 ) : null}

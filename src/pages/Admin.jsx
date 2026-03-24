@@ -823,9 +823,9 @@ const AdminPanel = () => {
                     key={p}
                     type="button"
                     onClick={() => handleUsersPageChange(p)}
-                    className={`w-9 h-9 rounded border text-sm font-medium transition ${p === usersPage
-                        ? 'bg-blue-600 text-white border-blue-600'
-                        : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800'
+                    className={`w-9 h-9 rounded border text-sm font-medium transition-all duration-300 transform hover:scale-110 ${p === usersPage
+                        ? 'bg-blue-600 text-white border-blue-600 scale-110 ring-2 ring-blue-600/50'
+                        : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 hover:border-edubot-orange hover:text-edubot-orange hover:shadow-md'
                         }`}
                 >
                     {p}
@@ -861,9 +861,11 @@ const AdminPanel = () => {
                         </div>
                         <button
                             onClick={() => setSidebarOpen((prev) => !prev)}
-                            className="hidden md:inline-flex px-4 py-2 rounded-full border text-sm text-gray-600 dark:text-[#E8ECF3]"
+                            className="hidden md:inline-flex px-4 py-2 rounded-full border text-sm text-gray-600 dark:text-[#E8ECF3] hover:border-edubot-orange hover:text-edubot-orange hover:bg-edubot-orange/10 transition-all duration-300 transform hover:scale-105 hover:shadow-lg hover:shadow-edubot-orange/20 group"
                         >
-                            {sidebarOpen ? 'Менюну жашыруу' : 'Менюну көрсөтүү'}
+                            <span className="transition-transform duration-300 group-hover:scale-110">
+                                {sidebarOpen ? 'Менюну жашыруу' : 'Менюну көрсөтүү'}
+                            </span>
                         </button>
                     </div>
 
@@ -1027,9 +1029,11 @@ const AdminPanel = () => {
                                     />
                                     <button
                                         onClick={handleAddCategory}
-                                        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg whitespace-nowrap"
+                                        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg whitespace-nowrap transition-all duration-300 transform hover:scale-105 hover:shadow-lg hover:shadow-blue-500/30 group"
                                     >
-                                        Кошуу
+                                        <span className="transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3">
+                                            ➕ Кошуу
+                                        </span>
                                     </button>
                                 </div>
 
@@ -1048,9 +1052,11 @@ const AdminPanel = () => {
                                                     />
                                                     <button
                                                         onClick={() => handleUpdateCategory(category.id)}
-                                                        className="bg-green-600 text-white px-4 py-2 rounded-lg"
+                                                        className="bg-green-600 text-white px-4 py-2 rounded-lg transition-all duration-300 transform hover:scale-105 hover:shadow-lg hover:shadow-green-500/30 group"
                                                     >
-                                                        Сактоо
+                                                        <span className="transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3">
+                                                            💾 Сактоо
+                                                        </span>
                                                     </button>
                                                 </div>
                                             ) : (
@@ -1064,15 +1070,19 @@ const AdminPanel = () => {
                                                                 setEditingCategoryId(category.id);
                                                                 setEditingCategoryName(category.name);
                                                             }}
-                                                            className="text-blue-500 hover:underline"
+                                                            className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/20 px-2 py-1 rounded transition-all duration-300 transform hover:scale-105 group"
                                                         >
-                                                            Өзгөртүү
+                                                            <span className="transition-transform duration-300 group-hover:scale-110 group-hover:rotate-12">
+                                                                ✏️ Өзгөртүү
+                                                            </span>
                                                         </button>
                                                         <button
                                                             onClick={() => handleDeleteCategory(category.id)}
-                                                            className="text-red-500 hover:underline"
+                                                            className="text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 px-2 py-1 rounded transition-all duration-300 transform hover:scale-105 group"
                                                         >
-                                                            Өчүрүү
+                                                            <span className="transition-transform duration-300 group-hover:scale-110 group-hover:rotate-12">
+                                                                🗑️ Өчүрүү
+                                                            </span>
                                                         </button>
                                                     </div>
                                                 </>
@@ -1115,9 +1125,11 @@ const AdminPanel = () => {
                                 <button
                                     onClick={handleTranscode}
                                     disabled={transcodeLoading}
-                                    className="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg disabled:opacity-60"
+                                    className="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg disabled:opacity-60 transition-all duration-300 transform hover:scale-105 hover:shadow-lg hover:shadow-orange-500/30 group disabled:hover:scale-100"
                                 >
-                                    {transcodeLoading ? <Loader fullScreen={false} /> : 'Транс коддоо'}
+                                    <span className="transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3">
+                                        {transcodeLoading ? <Loader fullScreen={false} /> : '🔄 Транс коддоо'}
+                                    </span>
                                 </button>
                                 <p className="text-xs text-gray-500 dark:text-[#a6adba] mt-2">
                                     ffmpeg серверде орнотулган болушу керек.

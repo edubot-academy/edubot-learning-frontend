@@ -24,16 +24,20 @@ const DashboardSidebar = ({
 
     return (
         <aside
-            className={`rounded-2xl shadow-xl transition-all duration-300 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 ${resolvedOpen ? 'w-64 p-6' : 'w-20 p-4'
+            className={`rounded-2xl shadow-xl transition-all duration-500 ease-in-out bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:shadow-2xl transform hover:scale-[1.02] ${resolvedOpen ? 'w-64 p-6' : 'w-20 p-4'
                 } ${className}`}
         >
             <button
                 onClick={handleToggle}
-                className="w-full flex items-center justify-between text-sm font-semibold text-gray-500 dark:text-gray-400"
+                className="w-full flex items-center justify-between text-sm font-semibold text-gray-500 dark:text-gray-400 hover:text-edubot-orange dark:hover:text-edubot-soft transition-all duration-200 group"
                 type="button"
             >
-                <span>{resolvedOpen ? toggleLabels.collapse : toggleLabels.expand}</span>
-                <span className="text-lg">{resolvedOpen ? '‹' : '›'}</span>
+                <span className={`transition-all duration-300 ${resolvedOpen ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-2'}`}>
+                    {resolvedOpen ? toggleLabels.collapse : toggleLabels.expand}
+                </span>
+                <span className="text-lg transition-transform duration-300 group-hover:scale-110 group-hover:rotate-180">
+                    {resolvedOpen ? '‹' : '›'}
+                </span>
             </button>
             <nav className="mt-6 space-y-1">
                 {(() => {
@@ -63,10 +67,12 @@ const DashboardSidebar = ({
                         if (!categoryItems || categoryItems.length === 0) return null;
 
                         return (
-                            <div key={category} className="mb-4">
+                            <div key={category} className="mb-4 animate-fade-in">
                                 {resolvedOpen && (
-                                    <div className="px-3 py-1 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
-                                        {categoryLabels[category] || category}
+                                    <div className="px-3 py-1 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 transition-all duration-300 hover:text-gray-700 dark:hover:text-gray-300">
+                                        <span className="inline-block transition-transform duration-300 hover:scale-105">
+                                            {categoryLabels[category] || category}
+                                        </span>
                                     </div>
                                 )}
                                 <div className="space-y-1">
@@ -78,46 +84,50 @@ const DashboardSidebar = ({
                                                 key={item.id}
                                                 onClick={() => onSelect(item.id)}
                                                 className={`w-full flex items-center ${resolvedOpen ? 'justify-start' : 'justify-center'
-                                                    } px-3 py-2 rounded-xl transition-all duration-200 ${isActive
-                                                        ? 'bg-edubot-orange text-white shadow-lg'
+                                                    } px-3 py-2 rounded-xl transition-all duration-300 ease-out transform hover:scale-105 hover:-translate-y-0.5 ${isActive
+                                                        ? 'bg-edubot-orange text-white shadow-lg scale-105 ring-2 ring-edubot-orange/50'
                                                         : category === 'primary'
-                                                            ? 'text-edubot-dark dark:text-edubot-soft hover:bg-edubot-orange/10 dark:hover:bg-edubot-orange/20 hover:shadow-md'
+                                                            ? 'text-edubot-dark dark:text-edubot-soft hover:bg-edubot-orange/10 dark:hover:bg-edubot-orange/20 hover:shadow-md hover:ring-2 hover:ring-edubot-orange/20'
                                                             : category === 'secondary'
-                                                                ? 'text-edubot-green dark:text-edubot-teal hover:bg-edubot-green/10 dark:hover:bg-edubot-green/20 hover:shadow-md'
+                                                                ? 'text-edubot-green dark:text-edubot-teal hover:bg-edubot-green/10 dark:hover:bg-edubot-green/20 hover:shadow-md hover:ring-2 hover:ring-edubot-green/20'
                                                                 : category === 'progress'
-                                                                    ? 'text-edubot-teal dark:text-edubot-soft hover:bg-edubot-teal/10 dark:hover:bg-edubot-teal/20 hover:shadow-md'
+                                                                    ? 'text-edubot-teal dark:text-edubot-soft hover:bg-edubot-teal/10 dark:hover:bg-edubot-teal/20 hover:shadow-md hover:ring-2 hover:ring-edubot-teal/20'
                                                                     : category === 'personal'
-                                                                        ? 'text-purple-600 dark:text-purple-400 hover:bg-purple-100 dark:hover:bg-purple-900/20 hover:shadow-md'
+                                                                        ? 'text-purple-600 dark:text-purple-400 hover:bg-purple-100 dark:hover:bg-purple-900/20 hover:shadow-md hover:ring-2 hover:ring-purple-200/50'
                                                                         : category === 'content'
-                                                                            ? 'text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/20 hover:shadow-md'
+                                                                            ? 'text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/20 hover:shadow-md hover:ring-2 hover:ring-indigo-200/50'
                                                                             : category === 'users'
-                                                                                ? 'text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/20 hover:shadow-md'
+                                                                                ? 'text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/20 hover:shadow-md hover:ring-2 hover:ring-blue-200/50'
                                                                                 : category === 'analytics'
-                                                                                    ? 'text-edubot-teal dark:text-edubot-green hover:bg-edubot-teal/10 dark:hover:bg-edubot-teal/20 hover:shadow-md'
-                                                                                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:shadow-md'
+                                                                                    ? 'text-edubot-teal dark:text-edubot-green hover:bg-edubot-teal/10 dark:hover:bg-edubot-teal/20 hover:shadow-md hover:ring-2 hover:ring-edubot-teal/20'
+                                                                                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:shadow-md hover:ring-2 hover:ring-gray-200/50'
                                                     }`}
                                             >
                                                 {Icon && (
                                                     <Icon
-                                                        className={`text-lg ${resolvedOpen ? 'mr-3' : ''} ${isActive ? 'text-white' : category === 'primary'
-                                                            ? 'text-edubot-orange dark:text-edubot-soft'
+                                                        className={`text-lg transition-all duration-300 ${resolvedOpen ? 'mr-3' : ''} ${isActive ? 'text-white scale-110' : category === 'primary'
+                                                            ? 'text-edubot-orange dark:text-edubot-soft group-hover:scale-110 group-hover:rotate-12'
                                                             : category === 'secondary'
-                                                                ? 'text-edubot-green dark:text-edubot-teal'
+                                                                ? 'text-edubot-green dark:text-edubot-teal group-hover:scale-110 group-hover:rotate-12'
                                                                 : category === 'progress'
-                                                                    ? 'text-edubot-teal dark:text-edubot-soft'
+                                                                    ? 'text-edubot-teal dark:text-edubot-soft group-hover:scale-110 group-hover:rotate-12'
                                                                     : category === 'personal'
-                                                                        ? 'text-purple-600 dark:text-purple-400'
+                                                                        ? 'text-purple-600 dark:text-purple-400 group-hover:scale-110 group-hover:rotate-12'
                                                                         : category === 'content'
-                                                                            ? 'text-indigo-600 dark:text-indigo-400'
+                                                                            ? 'text-indigo-600 dark:text-indigo-400 group-hover:scale-110 group-hover:rotate-12'
                                                                             : category === 'users'
-                                                                                ? 'text-blue-600 dark:text-blue-400'
+                                                                                ? 'text-blue-600 dark:text-blue-400 group-hover:scale-110 group-hover:rotate-12'
                                                                                 : category === 'analytics'
-                                                                                    ? 'text-edubot-teal dark:text-edubot-green'
-                                                                                    : 'text-gray-500 dark:text-gray-400'
+                                                                                    ? 'text-edubot-teal dark:text-edubot-green group-hover:scale-110 group-hover:rotate-12'
+                                                                                    : 'text-gray-500 dark:text-gray-400 group-hover:scale-110 group-hover:rotate-12'
                                                             }`}
                                                     />
                                                 )}
-                                                {resolvedOpen && <span className="font-medium text-sm">{item.label}</span>}
+                                                {resolvedOpen && (
+                                                    <span className={`font-medium text-sm transition-all duration-300 ${isActive ? 'text-white' : ''}`}>
+                                                        {item.label}
+                                                    </span>
+                                                )}
                                             </button>
                                         );
                                     })}

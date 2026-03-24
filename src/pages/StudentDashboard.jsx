@@ -1073,10 +1073,12 @@ const StudentDashboard = () => {
                         </div>
                         <button
                             onClick={() => setSidebarOpen((prev) => !prev)}
-                            className="inline-flex lg:hidden px-4 py-2 rounded-full border text-sm text-gray-600 dark:text-[#E8ECF3] dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                            className="inline-flex lg:hidden px-4 py-2 rounded-full border text-sm text-gray-600 dark:text-[#E8ECF3] dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 hover:border-edubot-orange hover:text-edubot-orange transition-all duration-300 transform hover:scale-105 hover:shadow-lg hover:shadow-edubot-orange/20 group"
                             type="button"
                         >
-                            {sidebarOpen ? 'Бөлүмдөрдү жашыруу' : 'Бөлүмдөрдү көрсөтүү'}
+                            <span className="transition-transform duration-300 group-hover:scale-110">
+                                {sidebarOpen ? 'Бөлүмдөрдү жашыруу' : 'Бөлүмдөрдү көрсөтүү'}
+                            </span>
                         </button>
                         <div className="flex items-center gap-2 flex-wrap justify-end">
                             <select
@@ -1112,10 +1114,12 @@ const StudentDashboard = () => {
                             ) : null}
                             <button
                                 onClick={() => setSidebarOpen((prev) => !prev)}
-                                className="hidden md:inline-flex px-4 py-2 rounded-full border text-sm text-gray-600 dark:text-[#E8ECF3] dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                                className="hidden md:inline-flex px-4 py-2 rounded-full border text-sm text-gray-600 dark:text-[#E8ECF3] dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 hover:border-edubot-orange hover:text-edubot-orange transition-all duration-300 transform hover:scale-105 hover:shadow-lg hover:shadow-edubot-orange/20 group"
                                 type="button"
                             >
-                                {sidebarOpen ? 'Менюну жашыруу' : 'Менюну көрсөтүү'}
+                                <span className="transition-transform duration-300 group-hover:scale-110">
+                                    {sidebarOpen ? 'Менюну жашыруу' : 'Менюну көрсөтүү'}
+                                </span>
                             </button>
                         </div>
                     </div>
@@ -1132,14 +1136,14 @@ const StudentDashboard = () => {
                                                 type="button"
                                                 onClick={() => handleDashboardNavSelect(item.id)}
                                                 className={[
-                                                    'inline-flex shrink-0 items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-colors',
+                                                    'inline-flex shrink-0 items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-all duration-300 transform hover:scale-105 hover:shadow-md group',
                                                     isActive
                                                         ? 'bg-blue-600 text-white'
                                                         : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-[#1A1A1A] dark:text-gray-200 dark:hover:bg-gray-800',
                                                 ].join(' ')}
                                             >
-                                                {Icon ? <Icon className="shrink-0" /> : null}
-                                                <span>{item.label}</span>
+                                                {Icon ? <Icon className="shrink-0 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-12" /> : null}
+                                                <span className="transition-transform duration-300 group-hover:scale-105">{item.label}</span>
                                             </button>
                                         );
                                     })}
@@ -1695,9 +1699,11 @@ const ScheduleTab = ({ offerings, recordings }) => {
                                     <button
                                         type="button"
                                         onClick={() => setSelectedLiveId(String(item.id))}
-                                        className="px-3 py-1 rounded-full border text-xs text-gray-600 dark:text-gray-300 dark:border-gray-700"
+                                        className="px-3 py-1 rounded-full border text-xs text-gray-600 dark:text-gray-300 dark:border-gray-700 hover:border-edubot-orange hover:text-edubot-orange hover:bg-edubot-orange/10 transition-all duration-300 transform hover:scale-105 hover:shadow-md group"
                                     >
-                                        Түз эфир барагы
+                                        <span className="transition-transform duration-300 group-hover:scale-110">
+                                            🔴 Түз эфир барагы
+                                        </span>
                                     </button>
                                     <span className="text-xs text-gray-500">
                                         Жазуулар: {recordings.length}
@@ -2224,9 +2230,11 @@ const ProfileTab = ({
                     <button
                         type="button"
                         onClick={() => setIsEditingProfile(true)}
-                        className="px-4 py-2 rounded-full border border-gray-300 dark:border-gray-700 text-sm font-semibold"
+                        className="px-4 py-2 rounded-full border border-gray-300 dark:border-gray-700 text-sm font-semibold hover:border-edubot-orange hover:text-edubot-orange hover:bg-edubot-orange/10 transition-all duration-300 transform hover:scale-105 hover:shadow-md group"
                     >
-                        Өзгөртүү
+                        <span className="transition-transform duration-300 group-hover:scale-110">
+                            ✏️ Өзгөртүү
+                        </span>
                     </button>
                 ) : null}
             </div>
@@ -2356,9 +2364,11 @@ const ProfileTab = ({
                                 type="button"
                                 onClick={handleSaveProfileClick}
                                 disabled={!hasProfileChanges || savingProfile}
-                                className="px-5 py-3 rounded-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+                                className="px-5 py-3 rounded-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold disabled:opacity-60 disabled:cursor-not-allowed transition-all duration-300 transform hover:scale-105 hover:shadow-lg hover:shadow-blue-500/30 group disabled:hover:scale-100"
                             >
-                                {savingProfile ? 'Сакталууда...' : 'Профилди сактоо'}
+                                <span className="transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3">
+                                    {savingProfile ? 'Сакталууда...' : '💾 Профилди сактоо'}
+                                </span>
                             </button>
                             <button
                                 type="button"
@@ -2367,9 +2377,11 @@ const ProfileTab = ({
                                     setIsEditingProfile(false);
                                 }}
                                 disabled={savingProfile}
-                                className="px-5 py-3 rounded-full border border-gray-300 dark:border-gray-700 text-sm font-semibold disabled:opacity-60"
+                                className="px-5 py-3 rounded-full border border-gray-300 dark:border-gray-700 text-sm font-semibold disabled:opacity-60 hover:border-red-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all duration-300 transform hover:scale-105 hover:shadow-md group disabled:hover:scale-100"
                             >
-                                Жокко чыгаруу
+                                <span className="transition-transform duration-300 group-hover:scale-110">
+                                    ❌ Жокко чыгаруу
+                                </span>
                             </button>
                         </div>
                     </>
