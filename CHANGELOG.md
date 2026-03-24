@@ -1,5 +1,49 @@
 # Changelog
 
+## [1.2.6] - 2026-03-25
+
+### 🔧 **ADMIN PANEL ENHANCEMENTS - TAB CONTENT EXTRACTION**
+
+**Objective**: Continue admin panel refactoring by extracting inline tab content components into dedicated functions for better code organization and maintainability.
+
+### ✨ **IMPROVEMENTS IMPLEMENTED**
+
+#### **🎯 Tab Content Extraction**:
+- **Enhanced `renderTabContent()` Function**: Consolidated all tab rendering logic into centralized function
+- **Extracted Inline Components**: Moved remaining inline tab components out of JSX for cleaner code structure
+- **Improved Code Organization**: Better separation between rendering logic and component structure
+- **Maintained Functionality**: All existing behavior preserved without breaking changes
+
+#### **📁 Specific Changes**:
+- **AdminPanel.jsx**: 
+  - Added `renderTabContent()` function to handle all tab rendering logic
+  - Extracted `notifications`, `attendance`, and `analytics` tab content into function
+  - Removed inline JSX components from main render method
+  - Preserved existing styling and behavior for all tabs
+
+- **adminPanel.constants.js**:
+  - Added `FiCalendar` and `FiTrendingUp` icons from react-icons/fi
+  - Updated NAV_ITEMS array to include new tabs:
+    - `notifications` (Билдирүүлөр) with FiBell icon - priority 4
+    - `attendance` (Катышуу) with FiCalendar icon - priority 6  
+    - `analytics` (Аналитика) with FiTrendingUp icon - priority 7
+  - Reordered integration tab to priority 5 to accommodate new entries
+
+#### **🔧 Technical Improvements**:
+- **Code Readability**: Main render method now cleaner and more focused
+- **Maintainability**: Tab content logic centralized and easier to modify
+- **Consistency**: All tab rendering follows same pattern through `renderTabContent()`
+- **Import Optimization**: Added necessary icon imports for new tab navigation
+
+### 🎯 **RESULTS ACHIEVED**
+- **Cleaner Code Structure**: Reduced JSX complexity in main component
+- **Better Organization**: Tab rendering logic properly separated
+- **Preserved Functionality**: All admin tabs work exactly as before
+- **Enhanced Navigation**: New tabs properly integrated with icons and priorities
+- **Future Ready**: Structure prepared for further tab content extraction
+
+---
+
 ## [1.2.5] - 2026-03-25
 
 ### 🏗️ **MAJOR REFACTOR: ADMIN PANEL CODE SPLIT**

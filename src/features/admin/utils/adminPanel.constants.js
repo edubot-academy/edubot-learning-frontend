@@ -8,6 +8,8 @@ import {
     FiBarChart2,
     FiTag,
     FiActivity,
+    FiCalendar,
+    FiTrendingUp,
 } from 'react-icons/fi';
 
 export const ADMIN_TABS = [
@@ -46,7 +48,10 @@ export const NAV_ITEMS = [
     { id: 'contacts', label: 'Байланыштар', icon: FiMail, category: 'admin', priority: 1 },
     { id: 'ai-prompts', label: 'AI промпттар', icon: FiCpu, category: 'admin', priority: 2 },
     { id: 'skills', label: 'Скиллдер', icon: FiTag, category: 'admin', priority: 3 },
-    { id: 'integration', label: 'Интеграциялар', icon: FiActivity, category: 'admin', priority: 4 },
+    { id: 'notifications', label: 'Билдирүүлөр', icon: FiBell, category: 'admin', priority: 4 },
+    { id: 'integration', label: 'Интеграциялар', icon: FiActivity, category: 'admin', priority: 5 },
+    { id: 'attendance', label: 'Катышуу', icon: FiCalendar, category: 'admin', priority: 6 },
+    { id: 'analytics', label: 'Аналитика', icon: FiTrendingUp, category: 'admin', priority: 7 },
 ];
 
 // Pagination helper constants

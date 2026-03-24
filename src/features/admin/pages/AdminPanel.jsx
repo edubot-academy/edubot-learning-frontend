@@ -17,6 +17,12 @@ import {
     markCourseRejected,
     listCompanies,
     createCompany,
+    updateCompany,
+    deleteCompany,
+    assignCourseToCompany,
+    unassignCourseFromCompany,
+    clearCourseCompany,
+    uploadCompanyLogo,
     fetchCourseAiPrompts,
     addCourseAiPrompt,
     updateCourseAiPrompt,
@@ -27,6 +33,7 @@ import {
     createSkill,
     updateSkill,
     deleteSkill,
+    markNotificationRead as markNotificationReadApi,
 } from '@services/api';
 import DashboardSidebar from '@features/dashboard/components/DashboardSidebar';
 import toast from 'react-hot-toast';
@@ -49,7 +56,7 @@ import { calculateVisiblePages, debounce } from '../utils/adminPanel.helpers';
 
 const AdminPanel = () => {
     const [searchParams, setSearchParams] = useSearchParams();
-    
+
     // State
     const [courses, setCourses] = useState([]);
     const [categories, setCategories] = useState([]);
@@ -187,7 +194,7 @@ const AdminPanel = () => {
                 className={`w-9 h-9 rounded border text-sm font-medium transition-all duration-300 transform hover:scale-110 ${p === usersPage
                     ? 'bg-blue-600 text-white border-blue-600 scale-110 ring-2 ring-blue-600/50'
                     : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 hover:border-edubot-orange hover:text-edubot-orange hover:shadow-md'
-                }`}
+                    }`}
             >
                 {p}
             </button>
@@ -426,6 +433,202 @@ const AdminPanel = () => {
         }
     };
 
+    // Company management handlers
+    const handleCreateCompany = async () => {
+        if (!newCompanyName.trim()) return;
+        try {
+            const created = await createCompany({ name: newCompanyName.trim() });
+            setCompanies((prev) => [...prev, created]);
+            setNewCompanyName('');
+            toast.success('Компания ийгиликтүү кошулду');
+        } catch (error) {
+            toast.error('Компания кошууда ката кетти');
+        }
+    };
+
+    const handleUpdateCompany = async (companyId, newName) => {
+        if (!newName.trim()) return;
+        try {
+            await updateCompany(companyId, { name: newName.trim() });
+            setCompanies((prev) => prev.map((company) =>
+                company.id === companyId ? { ...company, name: newName.trim() } : company
+            ));
+            toast.success('Компания ийгиликтүү жаңыртылды');
+        } catch (error) {
+            toast.error('Компанияны жаңыртууда ката кетти');
+        }
+    };
+
+    const handleDeleteCompany = async (companyId) => {
+        if (window.confirm('Бул компанияны өчүрүүгө ишенимдүүсүзбү?')) {
+            try {
+                await deleteCompany(companyId);
+                setCompanies((prev) => prev.filter((company) => company.id !== companyId));
+                toast.success('Компания ийгиликтүү өчүрүлдү');
+            } catch (error) {
+                toast.error('Компанияны өчүрүүдө ката кетти');
+            }
+        }
+    };
+
+    // Advanced company management handlers
+    const handleAssignCourseToCompany = async (courseId, companyId) => {
+        try {
+            await assignCourseToCompany(courseId, companyId);
+            toast.success('Курс компанияга ийгиликтүү таанды');
+            // Reload courses to update company assignments
+            loadCoursesAndCategories();
+        } catch (error) {
+            toast.error('Курс таандоодо ката кетти');
+        }
+    };
+
+    const handleUnassignCourseFromCompany = async (courseId, companyId) => {
+        try {
+            await unassignCourseFromCompany(courseId, companyId);
+            toast.success('Курс компаниядан ийгиликтүү алынды');
+            // Reload courses to update company assignments
+            loadCoursesAndCategories();
+        } catch (error) {
+            toast.error('Курс алындоодо ката кетти');
+        }
+    };
+
+    const handleClearCourseCompany = async (courseId) => {
+        if (window.confirm('Бул курстун бардык компания таандоолорун алырга ишенимдүүсүзбү?')) {
+            try {
+                await clearCourseCompany(courseId);
+                toast.success('Курстун компания таандоолору тазаланды');
+                // Reload courses to update company assignments
+                loadCoursesAndCategories();
+            } catch (error) {
+                toast.error('Компания таандоолорду тазалоодо ката кетти');
+            }
+        }
+    };
+
+    const handleUploadCompanyLogo = async (companyId, file) => {
+        if (!file) {
+            toast.error('Файл тандаңыз');
+            return;
+        }
+        try {
+            await uploadCompanyLogo(companyId, file);
+            toast.success('Компания логотипи ийгиликтүү жүктөлдү');
+            // Reload companies to show updated logo
+            loadCompanies();
+        } catch (error) {
+            toast.error('Логотип жүктөөдө ката кетти');
+        }
+    };
+
+    // Skill management handlers
+    const handleCreateSkill = async () => {
+        if (!newSkillName.trim()) return;
+        try {
+            const created = await createSkill({ name: newSkillName.trim() });
+            setSkills((prev) => [...prev, created]);
+            setNewSkillName('');
+            toast.success('Скилл ийгиликтүү кошулду');
+        } catch (error) {
+            toast.error('Скилл кошууда ката кетти');
+        }
+    };
+
+    const handleUpdateSkill = async (skillId, newName) => {
+        if (!newName.trim()) return;
+        try {
+            await updateSkill(skillId, { name: newName.trim() });
+            setSkills((prev) => prev.map((skill) =>
+                skill.id === skillId ? { ...skill, name: newName.trim() } : skill
+            ));
+            toast.success('Скилл ийгиликтүү жаңыртылды');
+        } catch (error) {
+            toast.error('Скиллди жаңыртууда ката кетти');
+        }
+    };
+
+    const handleDeleteSkill = async (skillId) => {
+        if (window.confirm('Бул скилди өчүрүүгө ишенимдүүсүзбү?')) {
+            try {
+                await deleteSkill(skillId);
+                setSkills((prev) => prev.filter((skill) => skill.id !== skillId));
+                toast.success('Скилл ийгиликтүү өчүрүлдү');
+            } catch (error) {
+                toast.error('Скилди өчүрүүдө ката кетти');
+            }
+        }
+    };
+
+    // AI Prompt management handlers
+    const handleCreatePrompt = async () => {
+        if (!newPromptText.trim()) return;
+        try {
+            await addCourseAiPrompt(aiPromptCourseId, {
+                text: newPromptText.trim(),
+                language: newPromptLanguage,
+                order: Number(newPromptOrder),
+                isActive: newPromptIsActive,
+            });
+            setNewPromptText('');
+            setNewPromptLanguage('ky');
+            setNewPromptOrder(0);
+            setNewPromptIsActive(true);
+            toast.success('AI промпт ийгиликтүү кошулду');
+            // Reload prompts to show new one
+            loadPromptsForCourse(aiPromptCourseId);
+        } catch (error) {
+            toast.error('AI промпт кошууда ката кетти');
+        }
+    };
+
+    const handleUpdatePrompt = async (promptId, updates) => {
+        try {
+            await updateCourseAiPrompt(promptId, updates);
+            setAiPrompts((prev) => prev.map((prompt) =>
+                prompt.id === promptId ? { ...prompt, ...updates } : prompt
+            ));
+            toast.success('AI промпт ийгиликтүү жаңыртылды');
+        } catch (error) {
+            toast.error('AI промптти жаңыртууда ката кетти');
+        }
+    };
+
+    const handleDeletePrompt = async (promptId) => {
+        if (window.confirm('Бул AI промптти өчүрүүгө ишенимдүүсүзбү?')) {
+            try {
+                await deleteCourseAiPrompt(promptId);
+                setAiPrompts((prev) => prev.filter((prompt) => prompt.id !== promptId));
+                toast.success('AI промпт ийгиликтүү өчүрүлдү');
+            } catch (error) {
+                toast.error('AI промптти өчүрүүдө ката кетти');
+            }
+        }
+    };
+
+    // Notification management handlers
+    const markNotificationRead = async (notificationId) => {
+        try {
+            await markNotificationReadApi(notificationId);
+            toast.success('Билдирүү окулган деп белгиленди');
+        } catch (error) {
+            toast.error('Билдирүүнү окулган деп белгилөөдө ката кетти');
+        }
+    };
+
+    const deleteNotification = async (notificationId) => {
+        if (window.confirm('Бул билдирүүнү өчүрүүгө ишенимдүүсүзбү?')) {
+            try {
+                // For contact messages, we'll remove from local state
+                // In a real implementation, this would call a delete API
+                setContacts((prev) => prev.filter((contact) => contact.id !== notificationId));
+                toast.success('Билдирүү ийгиликтүү өчүрүлдү');
+            } catch (error) {
+                toast.error('Билдирүүнү өчүрүүдө ката кетти');
+            }
+        }
+    };
+
     // Effects for loading data based on active tab
     useEffect(() => {
         if (activeTab === 'courses' || activeTab === 'ai-prompts') {
@@ -489,7 +692,7 @@ const AdminPanel = () => {
                         onRefresh={loadAdminStats}
                     />
                 );
-            
+
             case 'users':
                 return (
                     <AdminUsersTab
@@ -511,7 +714,7 @@ const AdminPanel = () => {
                         renderUserPageButtons={renderUserPageButtons}
                     />
                 );
-            
+
             case 'courses':
                 return (
                     <AdminCoursesTab
@@ -539,7 +742,467 @@ const AdminPanel = () => {
                         handleTranscode={handleTranscode}
                     />
                 );
-            
+
+            case 'companies':
+                return (
+                    <div className="bg-white dark:bg-gray-800 shadow-lg rounded-2xl p-4 border border-slate-200 dark:border-slate-700">
+                        <h2 className="text-2xl font-semibold mb-4">Компаниялар</h2>
+
+                        {/* Company Creation */}
+                        <div className="flex gap-2 mb-4">
+                            <input
+                                value={newCompanyName}
+                                onChange={(e) => setNewCompanyName(e.target.value)}
+                                className="border border-gray-200 dark:border-gray-700 px-3 py-2 rounded-lg w-full bg-white dark:bg-[#0E0E0E] text-gray-900 dark:text-[#E8ECF3]"
+                                placeholder="Жаңы компаниянын аталышы"
+                            />
+                            <button
+                                onClick={handleCreateCompany}
+                                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg whitespace-nowrap transition-all duration-300 transform hover:scale-105 hover:shadow-lg hover:shadow-blue-500/30 group"
+                            >
+                                <span className="transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3">
+                                    ➕ Компания кошуу
+                                </span>
+                            </button>
+                        </div>
+
+                        {/* Company Search */}
+                        <div className="flex gap-2 mb-4">
+                            <input
+                                value={companySearch}
+                                onChange={(e) => setCompanySearch(e.target.value)}
+                                className="border border-gray-200 dark:border-gray-700 px-3 py-2 rounded-lg w-full bg-white dark:bg-[#0E0E0E] text-gray-900 dark:text-[#E8ECF3]"
+                                placeholder="Компаниянын аталышы боюнча издөө"
+                            />
+                        </div>
+
+                        {/* Company List */}
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-sm">
+                                <thead>
+                                    <tr className="border-b">
+                                        <th className="p-2 text-left">Аты</th>
+                                        <th className="p-2 text-left">Каттоолор</th>
+                                        <th className="p-2 text-left">Аракеттер</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {companies.map((company) => (
+                                        <tr key={company.id} className="border-b">
+                                            <td className="p-2">{company.name}</td>
+                                            <td className="p-2">{company.enrollmentCount || 0}</td>
+                                            <td className="p-2">
+                                                <div className="flex gap-2 flex-wrap">
+                                                    {/* Basic Actions */}
+                                                    <button
+                                                        onClick={() => {
+                                                            const newName = prompt('Компаниянын жаңы аталышы:', company.name);
+                                                            if (newName && newName !== company.name) {
+                                                                handleUpdateCompany(company.id, newName);
+                                                            }
+                                                        }}
+                                                        className="text-blue-500 hover:underline text-xs"
+                                                    >
+                                                        Өзгөртүү
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleDeleteCompany(company.id)}
+                                                        className="text-red-500 hover:underline text-xs"
+                                                    >
+                                                        Өчүрүү
+                                                    </button>
+
+                                                    {/* Advanced Actions */}
+                                                    <div className="border-l border-gray-300 pl-2 ml-2">
+                                                        <button
+                                                            onClick={() => {
+                                                                const fileInput = document.createElement('input');
+                                                                fileInput.type = 'file';
+                                                                fileInput.accept = 'image/*';
+                                                                fileInput.onchange = (e) => {
+                                                                    if (e.target.files[0]) {
+                                                                        handleUploadCompanyLogo(company.id, e.target.files[0]);
+                                                                    }
+                                                                };
+                                                                fileInput.click();
+                                                            }}
+                                                            className="text-green-500 hover:underline text-xs"
+                                                        >
+                                                            Логотип жүктөө
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        {/* Course Assignment Section */}
+                        <div className="mt-6 p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
+                            <h3 className="text-lg font-semibold mb-4">Курс таандоолор</h3>
+                            <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                                Курстарды компанияларга таандоңуз үчүн бөлүмү
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {courses.slice(0, 6).map((course) => (
+                                    <div key={course.id} className="p-3 border border-gray-200 dark:border-gray-600 rounded">
+                                        <div className="flex justify-between items-start">
+                                            <div>
+                                                <p className="font-medium text-sm">{course.title}</p>
+                                                <p className="text-xs text-gray-500">
+                                                    Азыркы компания: {course.company?.name || 'Таандылган эмес'}
+                                                </p>
+                                            </div>
+                                            <div className="flex gap-1">
+                                                <select
+                                                    value={course.company?.id || ''}
+                                                    onChange={(e) => {
+                                                        if (e.target.value) {
+                                                            handleAssignCourseToCompany(course.id, e.target.value);
+                                                        } else {
+                                                            handleClearCourseCompany(course.id);
+                                                        }
+                                                    }}
+                                                    className="text-xs border border-gray-300 rounded px-2 py-1"
+                                                >
+                                                    <option value="">Компания тандаңыз</option>
+                                                    {companies.map((company) => (
+                                                        <option key={company.id} value={company.id}>
+                                                            {company.name}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                                {course.company?.id && (
+                                                    <button
+                                                        onClick={() => handleUnassignCourseFromCompany(course.id, course.company.id)}
+                                                        className="text-xs text-red-500 hover:underline"
+                                                    >
+                                                        Алынды
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                );
+
+            case 'skills':
+                return (
+                    <div className="bg-white dark:bg-gray-800 shadow-lg rounded-2xl p-4 border border-slate-200 dark:border-slate-700">
+                        <h2 className="text-2xl font-semibold mb-4">Скиллдер</h2>
+                        <div className="flex gap-2 mb-4">
+                            <input
+                                value={newSkillName}
+                                onChange={(e) => setNewSkillName(e.target.value)}
+                                className="border border-gray-200 dark:border-gray-700 px-3 py-2 rounded-lg w-full bg-white dark:bg-[#0E0E0E] text-gray-900 dark:text-[#E8ECF3]"
+                                placeholder="Жаңы скиллдин аталышы"
+                            />
+                            <button
+                                onClick={handleCreateSkill}
+                                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg whitespace-nowrap transition-all duration-300 transform hover:scale-105 hover:shadow-lg hover:shadow-blue-500/30 group"
+                            >
+                                <span className="transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3">
+                                    ➕ Кошуу
+                                </span>
+                            </button>
+                        </div>
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-sm">
+                                <thead>
+                                    <tr className="border-b">
+                                        <th className="p-2 text-left">Скилл</th>
+                                        <th className="p-2 text-left">Аракеттер</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {skills.map((skill) => (
+                                        <tr key={skill.id} className="border-b">
+                                            <td className="p-2">{skill.name}</td>
+                                            <td className="p-2">
+                                                <div className="flex gap-2">
+                                                    <button
+                                                        onClick={() => {
+                                                            const newName = prompt('Скиллдин жаңы аталышы:', skill.name);
+                                                            if (newName && newName !== skill.name) {
+                                                                handleUpdateSkill(skill.id, newName);
+                                                            }
+                                                        }}
+                                                        className="text-blue-500 hover:underline mr-2"
+                                                    >
+                                                        Өзгөртүү
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleDeleteSkill(skill.id)}
+                                                        className="text-red-500 hover:underline"
+                                                    >
+                                                        Өчүрүү
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                );
+
+            case 'ai-prompts':
+                return (
+                    <div className="bg-white dark:bg-gray-800 shadow-lg rounded-2xl p-4 border border-slate-200 dark:border-slate-700">
+                        <h2 className="text-2xl font-semibold mb-4">AI Промпттар</h2>
+                        <div className="mb-4">
+                            <label className="block text-sm mb-2">Курс тандаңыз</label>
+                            <select
+                                value={aiPromptCourseId}
+                                onChange={(e) => setAiPromptCourseId(e.target.value)}
+                                className="border border-gray-200 dark:border-gray-700 px-3 py-2 rounded-lg w-full bg-white dark:bg-[#0E0E0E] text-gray-900 dark:text-[#E8ECF3]"
+                            >
+                                <option value="">Курс тандаңыз</option>
+                                {courses.map((course) => (
+                                    <option key={course.id} value={course.id}>
+                                        {course.title}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                        <div className="mb-4">
+                            <label className="block text-sm mb-2">Жаңы промпт</label>
+                            <div className="flex gap-2">
+                                <input
+                                    type="text"
+                                    value={newPromptText}
+                                    onChange={(e) => setNewPromptText(e.target.value)}
+                                    className="border border-gray-200 dark:border-gray-700 px-3 py-2 rounded-lg flex-1 bg-white dark:bg-[#0E0E0E] text-gray-900 dark:text-[#E8ECF3]"
+                                    placeholder="Промпт текстин киргизиңиз"
+                                />
+                                <select
+                                    value={newPromptLanguage}
+                                    onChange={(e) => setNewPromptLanguage(e.target.value)}
+                                    className="border border-gray-200 dark:border-gray-700 px-3 py-2 rounded-lg bg-white dark:bg-[#0E0E0E] text-gray-900 dark:text-[#E8ECF3]"
+                                >
+                                    <option value="ky">Кыргызча</option>
+                                    <option value="ru">Русский</option>
+                                    <option value="en">English</option>
+                                </select>
+                                <select
+                                    value={newPromptOrder}
+                                    onChange={(e) => setNewPromptOrder(e.target.value)}
+                                    className="border border-gray-200 dark:border-gray-700 px-3 py-2 rounded-lg bg-white dark:bg-[#0E0E0E] text-gray-900 dark:text-[#E8ECF3]"
+                                >
+                                    <option value="0">Жогорку</option>
+                                    <option value="1">Ортосу</option>
+                                    <option value="2">Аягы</option>
+                                </select>
+                                <input
+                                    type="checkbox"
+                                    checked={newPromptIsActive}
+                                    onChange={(e) => setNewPromptIsActive(e.target.checked)}
+                                    className="ml-2"
+                                />
+                                <label className="text-sm">Активдүү</label>
+                            </div>
+                            <button
+                                onClick={handleCreatePrompt}
+                                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg whitespace-nowrap transition-all duration-300 transform hover:scale-105 hover:shadow-lg hover:shadow-blue-500/30 group"
+                            >
+                                <span className="transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3">
+                                    ➕ Промпт кошуу
+                                </span>
+                            </button>
+                        </div>
+                        {aiPromptsLoading ? (
+                            <div className="py-6">
+                                <Loader fullScreen={false} />
+                            </div>
+                        ) : aiPrompts.length ? (
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-sm">
+                                    <thead>
+                                        <tr className="border-b">
+                                            <th className="p-2 text-left">Промпт</th>
+                                            <th className="p-2 text-left">Тил</th>
+                                            <th className="p-2 text-left">Тартип</th>
+                                            <th className="p-2 text-left">Аракеттер</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {aiPrompts.map((prompt) => (
+                                            <tr key={prompt.id} className="border-b">
+                                                <td className="p-2">{prompt.text}</td>
+                                                <td className="p-2">{prompt.language}</td>
+                                                <td className="p-2">{prompt.order}</td>
+                                                <td className="p-2">
+                                                    <div className="flex gap-2">
+                                                        <button
+                                                            onClick={() => {
+                                                                const newText = prompt('AI промпттин жаңы текстин киргизиңиз:', prompt.text);
+                                                                const newLanguage = prompt('Тил (ky/ru/en):', prompt.language);
+                                                                const newOrder = prompt('Тартип (0/1/2):', prompt.order.toString());
+                                                                const newActive = confirm('Активдүү өзгөртүүбү?', prompt.isActive ? 'Yes' : 'No');
+
+                                                                if (newText !== prompt.text || newLanguage !== prompt.language || newOrder !== prompt.order.toString() || newActive !== (prompt.isActive ? 'Yes' : 'No')) {
+                                                                    handleUpdatePrompt(prompt.id, {
+                                                                        text: newText,
+                                                                        language: newLanguage,
+                                                                        order: Number(newOrder),
+                                                                        isActive: newActive === 'Yes',
+                                                                    });
+                                                                }
+                                                            }}
+                                                            className="text-blue-500 hover:underline mr-2"
+                                                        >
+                                                            Өзгөртүү
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleDeletePrompt(prompt.id)}
+                                                            className="text-red-500 hover:underline"
+                                                        >
+                                                            Өчүрүү
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        ) : (
+                            <p className="text-sm text-gray-500 dark:text-gray-400 py-4">
+                                AI промпттар табылган жок
+                            </p>
+                        )}
+                    </div>
+                );
+
+            case 'notifications':
+                return (
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div className="bg-white dark:bg-gray-800 shadow-lg rounded-2xl p-4 border border-slate-200 dark:border-slate-700">
+                            <NotificationsWidget />
+                        </div>
+                        <div className="bg-white dark:bg-gray-800 shadow-lg rounded-2xl p-4 border border-slate-200 dark:border-slate-700">
+                            <NotificationsTab />
+                        </div>
+                    </div>
+                );
+
+            case 'contacts':
+                return (
+                    <div className="bg-white dark:bg-gray-800 shadow-lg rounded-2xl p-4 border border-slate-200 dark:border-slate-700">
+                        <h2 className="text-2xl font-semibold mb-4">Байланыштар</h2>
+                        {contacts.length ? (
+                            <ul className="space-y-3">
+                                {contacts.map((contact) => (
+                                    <li key={contact.id} className="border border-gray-200 dark:border-gray-800 rounded-2xl p-4 bg-gray-50 dark:bg-[#1B1B1B]">
+                                        <div className="flex justify-between items-start gap-3">
+                                            <div className="min-w-0">
+                                                <p className="font-semibold text-gray-900 dark:text-[#E8ECF3] truncate">
+                                                    {contact.subject || contact.name}
+                                                </p>
+                                                <p className="text-sm text-gray-500 dark:text-[#a6adba]">
+                                                    {contact.email}
+                                                </p>
+                                            </div>
+                                            <div className="flex gap-2">
+                                                <button
+                                                    onClick={() => markNotificationRead(contact.id)}
+                                                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg whitespace-nowrap transition-all duration-300 transform hover:scale-105 hover:shadow-lg hover:shadow-blue-500/30 group"
+                                                >
+                                                    <span className="transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3">
+                                                        ✅ Окулган деп белгилөө
+                                                    </span>
+                                                </button>
+                                                <button
+                                                    onClick={() => deleteNotification(contact.id)}
+                                                    className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg whitespace-nowrap transition-all duration-300 transform hover:scale-105 hover:shadow-lg hover:shadow-red-500/30 group"
+                                                >
+                                                    <span className="transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3">
+                                                        ❌ Өчүрүү
+                                                    </span>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </li>
+                                ))}
+                            </ul>
+                        ) : (
+                            <p className="text-center text-gray-500 dark:text-[#a6adba] p-4 border border-dashed rounded-2xl">
+                                Байланыштар табылган жок.
+                            </p>
+                        )}
+                    </div>
+                );
+
+            case 'pending':
+                return (
+                    <div className="bg-white dark:bg-gray-800 shadow-lg rounded-2xl p-4 border border-slate-200 dark:border-slate-700">
+                        <h2 className="text-2xl font-semibold mb-4">Каралуудагы курстар</h2>
+                        {pendingCourses.length ? (
+                            <ul className="space-y-3">
+                                {pendingCourses.map((course) => (
+                                    <li key={course.id} className="border border-gray-200 dark:border-gray-800 rounded-2xl p-4 bg-gray-50 dark:bg-[#1B1B1B]">
+                                        <div className="flex justify-between items-start gap-3">
+                                            <div className="min-w-0">
+                                                <p className="font-semibold text-gray-900 dark:text-[#E8ECF3] truncate">
+                                                    {course.title}
+                                                </p>
+                                                <p className="text-sm text-gray-500 dark:text-[#a6adba]">
+                                                    Окутуучу: {course.instructor?.fullName || '—'}
+                                                </p>
+                                            </div>
+                                            <div className="flex gap-2">
+                                                <button
+                                                    onClick={() => markCourseApproved(course.id)}
+                                                    className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg whitespace-nowrap transition-all duration-300 transform hover:scale-105 hover:shadow-lg hover:shadow-green-500/30 group"
+                                                >
+                                                    <span className="transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3">
+                                                        ✅ Бекитүү
+                                                    </span>
+                                                </button>
+                                                <button
+                                                    onClick={() => markCourseRejected(course.id)}
+                                                    className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg whitespace-nowrap transition-all duration-300 transform hover:scale-105 hover:shadow-lg hover:shadow-red-500/30 group"
+                                                >
+                                                    <span className="transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3">
+                                                        ❌ Баш тартуу
+                                                    </span>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </li>
+                                ))}
+                            </ul>
+                        ) : (
+                            <p className="text-center text-gray-500 dark:text-[#a6adba] p-4 border border-dashed rounded-2xl">
+                                Каралуудагы курстар табылган жок.
+                            </p>
+                        )}
+                    </div>
+                );
+
+            case 'integration':
+                return <IntegrationTab />;
+
+            case 'attendance':
+                return (
+                    <div className="bg-white dark:bg-gray-800 shadow-lg rounded-2xl p-4 border border-slate-200 dark:border-slate-700">
+                        <AttendancePage embedded />
+                    </div>
+                );
+
+            case 'analytics':
+                return (
+                    <div className="bg-white dark:bg-gray-800 shadow-lg rounded-2xl p-4 border border-slate-200 dark:border-slate-700">
+                        <AdminAnalyticsPage />
+                    </div>
+                );
+
             default:
                 // For other tabs, render the original inline components
                 // This maintains existing behavior while allowing gradual migration
@@ -563,34 +1226,6 @@ const AdminPanel = () => {
                 <div className="flex-1 space-y-6">
                     {/* Extracted tab content */}
                     {renderTabContent()}
-
-                    {/* Original inline components for non-extracted tabs */}
-                    {/* TODO: Gradually migrate these to separate components */}
-                    
-                    {activeTab === 'notifications' && (
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                            <div className="bg-white dark:bg-gray-800 shadow-lg rounded-2xl p-4 border border-slate-200 dark:border-slate-700">
-                                <NotificationsWidget />
-                            </div>
-                            <div className="bg-white dark:bg-gray-800 shadow-lg rounded-2xl p-4 border border-slate-200 dark:border-slate-700">
-                                <NotificationsTab />
-                            </div>
-                        </div>
-                    )}
-
-                    {activeTab === 'integration' && <IntegrationTab />}
-
-                    {activeTab === 'attendance' && (
-                        <div className="bg-white dark:bg-gray-800 shadow-lg rounded-2xl p-4 border border-slate-200 dark:border-slate-700">
-                            <AttendancePage embedded />
-                        </div>
-                    )}
-
-                    {activeTab === 'analytics' && (
-                        <div className="bg-white dark:bg-gray-800 shadow-lg rounded-2xl p-4 border border-slate-200 dark:border-slate-700">
-                            <AdminAnalyticsPage />
-                        </div>
-                    )}
                 </div>
             </div>
         </div>
