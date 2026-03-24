@@ -23,6 +23,7 @@ import {
     fetchCourseSessions,
     fetchCourseStudents,
     fetchInstructorProfile,
+    fetchInstructorCourses,
     fetchSessionAttendance,
     importSessionAttendance,
     markAttendanceSession,
@@ -258,14 +259,13 @@ const SessionWorkspace = () => {
         const loadCourses = async () => {
             setLoadingCourses(true);
             try {
-                const response = await fetchInstructorProfile(user.id);
+                // Single API call to get both offline and online_live courses
+                const data = await fetchInstructorCourses({ courseType: 'offline,online_live', status: 'approved' });
                 if (cancelled) return;
-                const list = toArray(response?.courses || response);
-                const teachingCourses = list.filter((course) => {
-                    const type = String(course?.courseType || course?.type || 'video').toLowerCase();
-                    return type === COURSE_TYPE.OFFLINE || type === COURSE_TYPE.ONLINE_LIVE;
-                });
+
+                const teachingCourses = Array.isArray(data?.courses) ? data.courses : [];
                 setCourses(teachingCourses);
+
                 if (teachingCourses.length > 0) {
                     setSelectedCourseId(String(teachingCourses[0].id));
                 } else {
@@ -287,7 +287,6 @@ const SessionWorkspace = () => {
 
     useEffect(() => {
         if (!selectedCourseId) {
-            setGroups([]);
             setSelectedGroupId('');
             return;
         }
@@ -840,11 +839,11 @@ const SessionWorkspace = () => {
             const materials =
                 quickSession.materialTitle.trim() && quickSession.materialUrl.trim()
                     ? [
-                          {
-                              title: quickSession.materialTitle.trim(),
-                              url: quickSession.materialUrl.trim(),
-                          },
-                      ]
+                        {
+                            title: quickSession.materialTitle.trim(),
+                            url: quickSession.materialUrl.trim(),
+                        },
+                    ]
                     : undefined;
 
             const payload = {
@@ -1804,11 +1803,10 @@ const SessionWorkspace = () => {
                             <button
                                 key={tab.id}
                                 onClick={() => setActiveTab(tab.id)}
-                                className={`px-3 py-1.5 rounded-full text-sm border ${
-                                    activeTab === tab.id
-                                        ? 'bg-blue-600 text-white border-blue-600'
-                                        : 'border-gray-200 dark:border-gray-700 text-gray-700 dark:text-[#E8ECF3]'
-                                }`}
+                                className={`px-3 py-1.5 rounded-full text-sm border ${activeTab === tab.id
+                                    ? 'bg-blue-600 text-white border-blue-600'
+                                    : 'border-gray-200 dark:border-gray-700 text-gray-700 dark:text-[#E8ECF3]'
+                                    }`}
                             >
                                 {tab.label}
                             </button>
@@ -1817,7 +1815,7 @@ const SessionWorkspace = () => {
 
                     {selectedSession &&
                         normalizeCourseType(selectedCourse, selectedSession, selectedGroup) ===
-                            COURSE_TYPE.ONLINE_LIVE && (
+                        COURSE_TYPE.ONLINE_LIVE && (
                             <div className="rounded-xl border border-blue-200 dark:border-blue-900 bg-blue-50 dark:bg-blue-900/20 p-3 flex flex-wrap gap-3 items-center justify-between">
                                 <div className="text-sm">
                                     <div className="font-medium text-blue-800 dark:text-blue-200">
@@ -1897,12 +1895,11 @@ const SessionWorkspace = () => {
                                                                     status.value
                                                                 )
                                                             }
-                                                            className={`px-2 py-1 rounded text-xs ${
-                                                                attendanceRows[student.id]
-                                                                    ?.status === status.value
-                                                                    ? status.className
-                                                                    : 'bg-gray-100 text-gray-600'
-                                                            }`}
+                                                            className={`px-2 py-1 rounded text-xs ${attendanceRows[student.id]
+                                                                ?.status === status.value
+                                                                ? status.className
+                                                                : 'bg-gray-100 text-gray-600'
+                                                                }`}
                                                         >
                                                             {status.label}
                                                         </button>
@@ -2029,8 +2026,8 @@ const SessionWorkspace = () => {
                                     {savingMeeting
                                         ? 'Сакталууда...'
                                         : meetingId
-                                          ? 'Meeting жаңыртуу'
-                                          : 'Meeting түзүү'}
+                                            ? 'Meeting жаңыртуу'
+                                            : 'Meeting түзүү'}
                                 </button>
                                 <button
                                     onClick={restoreMeetingState}
@@ -2155,11 +2152,10 @@ const SessionWorkspace = () => {
                                                 key={item.id}
                                                 type="button"
                                                 onClick={() => setSelectedHomeworkId(String(item.id))}
-                                                className={`w-full text-left border rounded p-3 ${
-                                                    String(item.id) === String(selectedHomeworkId)
-                                                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
-                                                        : 'border-gray-100 dark:border-gray-800'
-                                                }`}
+                                                className={`w-full text-left border rounded p-3 ${String(item.id) === String(selectedHomeworkId)
+                                                    ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                                                    : 'border-gray-100 dark:border-gray-800'
+                                                    }`}
                                             >
                                                 <div className="font-medium">
                                                     {item.title || item.name || 'Homework'}
@@ -2381,11 +2377,10 @@ const SessionWorkspace = () => {
                                 <button
                                     key={session.id}
                                     onClick={() => setSelectedSessionId(String(session.sessionId))}
-                                    className={`w-full text-left border rounded p-2 ${
-                                        String(selectedSessionId) === String(session.sessionId)
-                                            ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
-                                            : 'border-gray-100 dark:border-gray-800'
-                                    }`}
+                                    className={`w-full text-left border rounded p-2 ${String(selectedSessionId) === String(session.sessionId)
+                                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                                        : 'border-gray-100 dark:border-gray-800'
+                                        }`}
                                 >
                                     <div className="font-medium">{session.courseTitle}</div>
                                     <div className="text-gray-500">
@@ -2427,11 +2422,10 @@ const SessionWorkspace = () => {
                                                             joinLiveSession(session.joinUrl);
                                                         }
                                                     }}
-                                                    className={`inline-flex px-2 py-1 rounded text-white text-xs ${
-                                                        session.joinAllowed
-                                                            ? 'bg-blue-600'
-                                                            : 'bg-gray-400 cursor-not-allowed'
-                                                    }`}
+                                                    className={`inline-flex px-2 py-1 rounded text-white text-xs ${session.joinAllowed
+                                                        ? 'bg-blue-600'
+                                                        : 'bg-gray-400 cursor-not-allowed'
+                                                        }`}
                                                 >
                                                     Join
                                                 </span>

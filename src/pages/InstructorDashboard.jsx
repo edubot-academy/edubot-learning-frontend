@@ -14,6 +14,8 @@ import {
     fetchCourseStudents,
     createCourse,
     fetchCategories,
+    fetchCourses,
+    fetchInstructorCourses,
 } from '@services/api';
 import toast from 'react-hot-toast';
 import {
@@ -154,8 +156,11 @@ const InstructorDashboard = () => {
         const loadCourses = async () => {
             setLoadingCourses(true);
             try {
-                const profileData = await fetchInstructorProfile(user.id);
-                setCourseList(Array.isArray(profileData?.courses) ? profileData.courses : []);
+                // Single API call to get all approved courses of all types
+                const data = await fetchInstructorCourses({ status: 'approved' });
+                const allCourses = Array.isArray(data?.courses) ? data.courses : [];
+                console.log('fetchInstructorCourses response:', data);
+                setCourseList(allCourses);
             } catch (error) {
                 console.error('Failed to load instructor courses', error);
                 toast.error('Инструктор курстарын жүктөө мүмкүн болбоду');
@@ -393,8 +398,8 @@ const InstructorDashboard = () => {
             closeDeliveryModal();
             setActiveTab('courses');
 
-            const profileData = await fetchInstructorProfile(user.id);
-            setCourseList(Array.isArray(profileData?.courses) ? profileData.courses : []);
+            const data = await fetchInstructorCourses();
+            setCourseList(Array.isArray(data?.courses) ? data.courses : []);
         } catch (error) {
             console.error('Failed to create delivery course', error);
             toast.error('Курсту түзүүдө ката кетти.');
@@ -414,9 +419,6 @@ const InstructorDashboard = () => {
                     <CoursesSection
                         courses={courses}
                         loading={loadingCourses}
-                        offeringsByCourse={offeringsByCourse}
-                        loadingOfferings={loadingOfferings}
-                        onViewOfferings={() => setActiveTab('offerings')}
                         onOpenDeliveryModal={openDeliveryModal}
                         showDeliveryModal={showDeliveryModal}
                         onCloseDeliveryModal={closeDeliveryModal}
@@ -624,9 +626,6 @@ const OverviewSection = ({
 const CoursesSection = ({
     courses,
     loading,
-    offeringsByCourse,
-    loadingOfferings,
-    onViewOfferings,
     onOpenDeliveryModal,
     showDeliveryModal,
     onCloseDeliveryModal,
@@ -699,11 +698,6 @@ const CoursesSection = ({
                                     : ''}
                             </span>
                         </div>
-                        <OfferingsSummary
-                            offerings={offeringsByCourse?.[course.id] || []}
-                            loading={loadingOfferings}
-                            onViewOfferings={onViewOfferings}
-                        />
                         <div className="flex gap-2">
                             <Link
                                 to={`/courses/${course.id}`}

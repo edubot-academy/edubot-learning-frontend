@@ -51,6 +51,24 @@ export const fetchInstructorStudentCourses = async () => {
     return response.data;
 };
 
+export const fetchInstructorCourses = async ({
+    page = 1,
+    limit = 20,
+    q = '',
+    status = 'all',
+    courseType = 'all'
+} = {}) => {
+    const params = clean({
+        page,
+        limit,
+        q: q || undefined,
+        status: status === 'all' ? undefined : status,
+        courseType: courseType === 'all' ? undefined : courseType
+    });
+    const response = await api.get('/courses/instructor/my-courses', { params });
+    return response.data;
+};
+
 export const fetchCourseStudents = async (
     courseId,
     { page = 1, limit = 20, q, progressGte, progressLte } = {}
