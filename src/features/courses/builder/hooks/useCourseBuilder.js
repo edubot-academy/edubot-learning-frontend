@@ -41,6 +41,7 @@ import {
     markCoursePending,
     createSection,
     updateSection,
+    deleteSection,
     createLesson,
     updateLesson,
     deleteLesson as deleteLessonApi,
@@ -70,6 +71,7 @@ import { isForbiddenError, parseApiError } from '../../../../shared/api/error';
  */
 export const useCourseBuilder = ({ mode = 'create', courseId: initialCourseId = null } = {}) => {
     const navigate = useNavigate();
+    const dataLoadedRef = useRef(false);
     const [courseId, setCourseId] = useState(initialCourseId);
 
     // Basic state (identical to both components)
@@ -94,6 +96,7 @@ export const useCourseBuilder = ({ mode = 'create', courseId: initialCourseId = 
     const [originalCourse, setOriginalCourse] = useState(null);
     const [originalSections, setOriginalSections] = useState([]);
     const [deletedLessons, setDeletedLessons] = useState([]);
+    const [deletedSections, setDeletedSections] = useState([]);
     const [showCancelConfirm, setShowCancelConfirm] = useState(false);
 
     // Data state
@@ -134,6 +137,8 @@ export const useCourseBuilder = ({ mode = 'create', courseId: initialCourseId = 
         originalSections,
         deletedLessons,
         setDeletedLessons,
+        deletedSections,
+        setDeletedSections,
         showCancelConfirm,
         setShowCancelConfirm,
         categories,
@@ -145,6 +150,7 @@ export const useCourseBuilder = ({ mode = 'create', courseId: initialCourseId = 
         setCourseId,
         mode,
         navigate,
+        deleteSection,
     };
 
     // Use sub-hooks
@@ -179,118 +185,110 @@ export const useCourseBuilder = ({ mode = 'create', courseId: initialCourseId = 
                 toast.error(parseApiError(error, 'Маалымат жүктөлбөдү').message);
             }
         } else {
-            // Edit mode - load existing course data
-            try {
-                const [courseData, categoryData, sectionData, skillsData] = await Promise.all([
-                    fetchCourseDetails(courseId),
-                    fetchCategories(),
-                    fetchSections(courseId),
-                    fetchSkills().catch(() => []),
-                ]);
+            // Edit mode - load existing course data only if not already loaded
+            // Check both ref and localStorage to handle component remounts
+            // But only skip loading if we actually have meaningful data (more than default curriculum)
+            const hasLoadedData = dataLoadedRef.current || (
+                localStorage.getItem(`course_${courseId}_data_loaded`) &&
+                curriculum.length > 0 // Only consider data loaded if we have more than default section
+            );
 
-                // Process skills data
-                const mappedSkillOptions = Array.isArray(skillsData) && skillsData.length
-                    ? skillsData
-                        .filter((s) => s.slug || s.id)
-                        .map((s) => ({
-                            value: String(s.id ?? s.slug ?? ''),
-                            label: s.name || s.slug,
-                        }))
-                    : [];
-                const skillOptionsWithBlank = [
-                    { value: '', label: 'Skill тандаңыз (опция)' },
-                    ...mappedSkillOptions,
-                ];
+            if (!hasLoadedData) {
+                dataLoadedRef.current = true;
+                localStorage.setItem(`course_${courseId}_data_loaded`, 'true');
+                try {
+                    const [courseData, categoryData, sectionData, skillsData] = await Promise.all([
+                        fetchCourseDetails(courseId),
+                        fetchCategories(),
+                        fetchSections(courseId),
+                        fetchSkills().catch(() => []),
+                    ]);
 
-                // Load lessons for each section
-                const allSections = await Promise.all(
-                    sectionData.map(async (sec) => {
-                        const lessons = await fetchLessons(courseId, sec.id);
-                        const sortedLessons = lessons.sort((a, b) => a.order - b.order);
-                        const lessonsWithExtras = await Promise.all(
-                            sortedLessons.map(async (l) => {
-                                const baseLesson = {
-                                    ...l,
-                                    kind: l.kind || 'video',
-                                    content: l.content || '',
-                                    resourceName: l.resourceName || '',
-                                    quiz: l.kind === 'quiz' ? createEmptyQuiz() : undefined,
-                                    challenge: l.kind === 'code' ? createEmptyChallenge() : undefined,
-                                    uploadProgress: { video: 0, resource: 0 },
-                                    uploading: { video: false, resource: false },
-                                };
+                    // Process skills data
+                    const mappedSkillOptions = Array.isArray(skillsData) && skillsData.length
+                        ? skillsData
+                            .filter((s) => s.slug || s.id)
+                            .map((s) => ({
+                                value: String(s.id ?? s.slug ?? ''),
+                                label: s.name || s.slug,
+                            }))
+                        : [];
+                    const skillOptionsWithBlank = [
+                        { value: '', label: 'Skill тандаңыз (опция)' },
+                        ...mappedSkillOptions,
+                    ];
 
-                                // Load quiz data if needed
-                                if (baseLesson.kind === 'quiz') {
-                                    try {
-                                        const quizData = await fetchLessonQuiz(courseId, sec.id, l.id, true);
-                                        baseLesson.quiz = mapQuizFromApi(quizData, true);
-                                    } catch (error) {
-                                        console.error('Failed to load quiz', error);
-                                        toast.error('Квизди жүктөө мүмкүн болбоду');
+                    // Load lessons for each section
+                    const allSections = await Promise.all(
+                        sectionData.map(async (sec) => {
+                            const lessons = await fetchLessons(courseId, sec.id);
+                            const sortedLessons = lessons.sort((a, b) => a.order - b.order);
+                            const lessonsWithExtras = await Promise.all(
+                                sortedLessons.map(async (l) => {
+                                    const baseLesson = {
+                                        ...l,
+                                        kind: l.kind || 'video',
+                                        content: l.content || '',
+                                        resourceName: l.resourceName || '',
+                                        quiz: l.kind === 'quiz' ? createEmptyQuiz() : undefined,
+                                        challenge: l.kind === 'code' ? createEmptyChallenge() : undefined,
+                                        uploadProgress: { video: 0, resource: 0 },
+                                        uploading: { video: false, resource: false },
+                                    };
+
+                                    // Load quiz data if needed
+                                    if (baseLesson.kind === 'quiz') {
+                                        try {
+                                            const quizData = await fetchLessonQuiz(courseId, sec.id, l.id, true);
+                                            baseLesson.quiz = mapQuizFromApi(quizData, true);
+                                        } catch (error) {
+                                            console.error('Failed to load quiz', error);
+                                            toast.error('Квизди жүктөө мүмкүн болбоду');
+                                        }
                                     }
-                                }
 
-                                // Load challenge data if needed
-                                if (baseLesson.kind === 'code') {
-                                    try {
-                                        const challengeData = await fetchLessonChallenge(courseId, sec.id, l.id, true);
-                                        baseLesson.challenge = mapChallengeFromApi(challengeData, true);
-                                    } catch (error) {
-                                        console.error('Failed to load challenge', error);
-                                        toast.error('Код тапшырманы жүктөө мүмкүн болбоду');
+                                    // Load challenge data if needed
+                                    if (baseLesson.kind === 'code') {
+                                        try {
+                                            const challengeData = await fetchLessonChallenge(courseId, sec.id, l.id, true);
+                                            baseLesson.challenge = mapChallengeFromApi(challengeData, true);
+                                        } catch (error) {
+                                            console.error('Failed to load challenge', error);
+                                            toast.error('Код тапшырманы жүктөө мүмкүн болбоду');
+                                        }
                                     }
-                                }
 
-                                return baseLesson;
-                            })
-                        );
+                                    return baseLesson;
+                                })
+                            );
 
-                        return {
-                            id: sec.id,
-                            title: sec.title,
-                            sectionTitle: sec.title, // Keep both for compatibility
-                            order: sec.order,
-                            skillId: resolveSectionSkillValue(sec, skillOptionsWithBlank),
-                            lessons: lessonsWithExtras,
-                        };
-                    })
-                );
+                            return {
+                                ...sec,
+                                lessons: lessonsWithExtras,
+                            };
+                        })
+                    );
 
-                allSections.sort((a, b) => a.order - b.order);
-
-                // Map backend → UI shape for course data
-                const learningOutcomesText = Array.isArray(courseData.learningOutcomes)
-                    ? courseData.learningOutcomes.join('\n')
-                    : '';
-                const hydratedCourse = {
-                    ...courseData,
-                    languageCode: courseData.languageCode || 'ky',
-                    isPaid:
-                        typeof courseData.isPaid === 'boolean'
-                            ? courseData.isPaid
-                            : Number(courseData.price) > 0,
-                    learningOutcomesText,
-                    aiAssistantEnabled: Boolean(courseData.aiAssistantEnabled),
-                    categoryId: String(courseData.category?.id ?? courseData.categoryId ?? ''),
-                };
-
-                // Set all state
-                setSkillOptions(skillOptionsWithBlank);
-                setCourseInfo(hydratedCourse);
-                setOriginalCourse(hydratedCourse);
-                setCategories(categoryData);
-                setCurriculum(allSections);
-                setOriginalSections(JSON.parse(JSON.stringify(allSections)));
-            } catch (err) {
-                console.error(err);
-                if (isForbiddenError(err)) {
-                    navigate('/unauthorized');
-                    return;
+                    const hydratedCourse = hydrateCourseInfo(courseData);
+                    setCourseInfo(hydratedCourse);
+                    setOriginalCourse(hydratedCourse);
+                    setCategories(categoryData);
+                    setSkillOptions(skillOptionsWithBlank);
+                    setCurriculum(allSections);
+                    setOriginalSections(JSON.parse(JSON.stringify(allSections)));
+                } catch (err) {
+                    console.error(err);
+                    if (isForbiddenError(err)) {
+                        navigate('/unauthorized');
+                        return;
+                    }
+                    toast.error(parseApiError(err, 'Маалыматты жүктөө катасы').message);
+                } finally {
+                    setLoading(false);
                 }
-                toast.error(parseApiError(err, 'Маалыматты жүктөө катасы').message);
-            } finally {
-                setLoading(false);
+            } else {
+                // Data already loaded, but we need to preserve local deletions
+                setLoading(false); // Ensure loading is turned off
             }
         }
     }, [mode, courseId, navigate]);
@@ -308,6 +306,30 @@ export const useCourseBuilder = ({ mode = 'create', courseId: initialCourseId = 
             .filter(Boolean);
         const match = candidates.find((val) => optionSet.has(val));
         return match ?? (candidates[0] || '');
+    };
+
+    // Helper function to hydrate course data from API
+    const hydrateCourseInfo = (courseData) => {
+        const learningOutcomesText = Array.isArray(courseData.learningOutcomes)
+            ? courseData.learningOutcomes.map((lo) => lo.description || '').filter(Boolean).join('\n')
+            : courseData.learningOutcomesText || '';
+
+        return {
+            id: courseData.id,
+            title: courseData.title || '',
+            subtitle: courseData.subtitle || '',
+            description: courseData.description || '',
+            price: courseData.price || '',
+            cover: courseData.cover || null,
+            coverImageUrl: courseData.coverImageUrl || '',
+            languageCode: courseData.languageCode || 'ky',
+            isPaid: typeof courseData.isPaid === 'boolean'
+                ? courseData.isPaid
+                : Number(courseData.price) > 0,
+            learningOutcomesText,
+            aiAssistantEnabled: Boolean(courseData.aiAssistantEnabled),
+            categoryId: String(courseData.category?.id ?? courseData.categoryId ?? ''),
+        };
     };
 
     // Load skills list

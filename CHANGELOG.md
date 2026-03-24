@@ -1,5 +1,70 @@
 # Changelog
 
+## [1.2.0] - 2024-03-24
+
+### 🐛 **BUG FIXES**
+- **Section Deletion Issues** - Fixed complete section deletion workflow
+  - Fixed backend section deletion API integration
+  - Implemented proper deletion tracking for sections and lessons
+  - Added graceful handling of 404 errors from backend API inconsistencies
+  - Fixed sections reappearing after navigation with localStorage persistence
+- **Data Loading Issues** - Resolved infinite loading and data reload problems
+  - Fixed data loading state management
+  - Implemented smart data loading with localStorage persistence
+  - Prevented unnecessary server data reloads while preserving initial data load
+- **React Hooks Order Violations** - Fixed React strict mode compliance
+  - Corrected hook order in useCourseBuilder hook
+  - Removed problematic useEffect that changed hook sequence
+  - Ensured consistent hook calling order across renders
+- **Validation Issues** - Fixed curriculum validation for section deletion
+  - Made validation more lenient for empty sections during editing
+  - Fixed section title validation to check both `title` and `sectionTitle` fields
+  - Updated lesson validation to skip empty sections
+- **Article Editor Code Formatting** - Improved inline code editing experience
+  - Removed browser prompt for code formatting
+  - Implemented direct inline code toggle like standard text editors
+  - Added proper cursor positioning for inline code elements
+
+### 🔧 **TECHNICAL IMPROVEMENTS**
+- **Backend API Workaround** - Implemented frontend workaround for backend inconsistencies
+  - Added graceful 404 error handling for section/lesson deletion
+  - Implemented localStorage-based state persistence across component remounts
+  - Prevented data overwrites from inconsistent backend responses
+- **State Management** - Enhanced curriculum state management
+  - Added proper deletion tracking with duplicate prevention
+  - Implemented dirty tracking refs cleanup after successful saves
+  - Enhanced error handling for deletion operations
+- **Performance** - Optimized data loading and component lifecycle
+  - Reduced unnecessary API calls through smart caching
+  - Improved component remount handling
+  - Enhanced loading state management
+
+### 🎯 **USER EXPERIENCE**
+- **Section Deletion** - Now works completely end-to-end
+  - Sections can be deleted and stay deleted after navigation
+  - No more unexpected section reappearance
+  - Clean deletion workflow with proper feedback
+- **Data Persistence** - User changes preserved across navigation
+  - Local deletions maintained when switching between steps
+  - No loss of work during normal course builder workflow
+  - Consistent behavior across component remounts
+- **Loading Performance** - Improved loading experience
+  - No more infinite loading states
+  - Proper loading indicators with accurate state management
+  - Faster navigation between steps
+
+### 🔍 **BACKEND COMPATIBILITY**
+- **API Error Handling** - Enhanced compatibility with backend issues
+  - Graceful handling of backend API inconsistencies
+  - Proper 404 error management for deletion operations
+  - Fallback behavior when backend deletion fails
+- **Data Synchronization** - Improved frontend-backend sync
+  - Better handling of backend response inconsistencies
+  - Preserved user experience despite backend limitations
+  - Robust error recovery mechanisms
+
+---
+
 ## [1.1.0] - 2026-03-24
 
 ### 🚀 MAJOR REFACTOR: SHARED COURSE BUILDER ARCHITECTURE

@@ -197,7 +197,7 @@ const ArticleEditor = ({
         const handler = () => refreshActiveFormats();
         document.addEventListener('selectionchange', handler);
         return () => document.removeEventListener('selectionchange', handler);
-    }, [refreshActiveFormats]);
+    }, [isNodeInsideEditor]);
 
     const handleCommand = (command, commandValue) => {
         if (disabled || typeof document === 'undefined') return;
@@ -236,14 +236,13 @@ const ArticleEditor = ({
 
             document.execCommand('createLink', false, normalized);
         } else if (command === 'inlineCode') {
-            // Handle inline code formatting (toggle)
+            // Handle inline code formatting (toggle) - like normal text editors
             const selection = window.getSelection();
             if (!selection) return;
 
-            const anchorNode =
-                selection.anchorNode?.nodeType === Node.TEXT_NODE
-                    ? selection.anchorNode.parentElement
-                    : selection.anchorNode;
+            const anchorNode = selection.isCollapsed
+                ? selection.anchorNode.parentElement
+                : selection.anchorNode;
 
             // Check if we're inside a code tag
             const isInsideCode = anchorNode?.tagName === 'CODE' || anchorNode?.closest?.('code');
@@ -263,32 +262,34 @@ const ArticleEditor = ({
                         const newRange = document.createRange();
                         newRange.selectNodeContents(textNode);
                         selection.addRange(newRange);
+
+                        emitChange();
                     } catch (error) {
                         console.error('Error removing code formatting:', error);
                     }
                 }
             } else {
-                // Add code formatting
+                // Add code formatting - normal text editor behavior
                 if (selection.isCollapsed) {
-                    // If no selection, insert a code tag with placeholder text
-                    const codeText = window.prompt('Код текстин жазыңыз:');
-                    if (!codeText) return;
-
+                    // If no selection, insert code tags and position cursor inside
                     const range = selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
                     if (!range) return;
 
                     const codeElement = document.createElement('code');
-                    codeElement.textContent = codeText;
+                    codeElement.textContent = ''; // Empty code element
+
                     range.insertNode(codeElement);
 
-                    // Move cursor after the code element
+                    // Position cursor inside the code element
                     selection.removeAllRanges();
                     const newRange = document.createRange();
-                    newRange.setStartAfter(codeElement);
-                    newRange.collapse(true);
+                    newRange.selectNodeContents(codeElement);
+                    newRange.collapse(false); // Collapse to end
                     selection.addRange(newRange);
+
+                    emitChange();
                 } else {
-                    // Wrap selected text in code tags
+                    // If there's selection, wrap it in code tags
                     const range = selection.getRangeAt(0);
                     const selectedText = range.toString();
 
@@ -305,14 +306,14 @@ const ArticleEditor = ({
                             const newRange = document.createRange();
                             newRange.selectNodeContents(codeElement);
                             selection.addRange(newRange);
+
+                            emitChange();
                         } catch (error) {
                             console.error('Error wrapping text in code tags:', error);
                         }
                     }
                 }
             }
-        } else {
-            document.execCommand(command, false, commandValue || null);
         }
 
         editorRef.current?.focus();

@@ -64,6 +64,9 @@ export const useCourseBuilderCurriculum = (courseBuilderState) => {
         originalSections,
         deletedLessons,
         setDeletedLessons,
+        deletedSections,
+        setDeletedSections,
+        deleteSection,
         saving,
         setSaving,
         mode,
@@ -115,8 +118,34 @@ export const useCourseBuilderCurriculum = (courseBuilderState) => {
             return;
         }
 
+        const sectionToDelete = curriculum[sectionIndex];
+
+        // Track the section deletion for server sync
+        if (sectionToDelete.id) {
+            setDeletedSections(prev => {
+                // Prevent duplicates
+                if (prev.includes(sectionToDelete.id)) {
+                    return prev;
+                }
+                return [...prev, sectionToDelete.id];
+            });
+
+            // Also track lessons within the deleted section
+            const lessonsToDelete = sectionToDelete.lessons.map(lesson => ({
+                sectionId: sectionToDelete.id,
+                lessonId: lesson.id
+            }));
+
+            setDeletedLessons(prev => {
+                // Prevent duplicates
+                const existingLessonIds = new Set(prev.map(l => `${l.sectionId}-${l.lessonId}`));
+                const newLessons = lessonsToDelete.filter(l => !existingLessonIds.has(`${l.sectionId}-${l.lessonId}`));
+                return [...prev, ...newLessons];
+            });
+        }
+
         setCurriculum(removeSection(curriculum, sectionIndex));
-    }, [curriculum, setCurriculum]);
+    }, [curriculum, setCurriculum, setDeletedLessons, setDeletedSections]);
 
     // Lesson operations
     const handleAddLesson = useCallback((sectionIndex) => {
@@ -573,13 +602,37 @@ export const useCourseBuilderCurriculum = (courseBuilderState) => {
                     try {
                         await deleteLessonApi(courseId, sectionId, lessonId);
                     } catch (error) {
-                        console.warn('Failed to delete lesson:', error);
+                        if (error.response?.status === 404) {
+                            // Lesson already deleted or not found, skip
+                        } else {
+                            console.warn('Failed to delete lesson:', error);
+                        }
                     }
                 }
 
-                // Clear deleted lessons after successful save
+                // Delete sections marked for deletion
+                for (const sectionId of deletedSections) {
+                    try {
+                        await deleteSection(courseId, sectionId);
+                    } catch (error) {
+                        if (error.response?.status === 404) {
+                            // Section already deleted or not found, skip
+                        } else {
+                            console.warn('Failed to delete section:', error);
+                            // Don't skip other errors - they might indicate real problems
+                            throw error;
+                        }
+                    }
+                }
+
+                // Clear deleted lessons and sections after successful save
                 setDeletedLessons([]);
+                setDeletedSections([]);
             }
+
+            // Clear dirty tracking refs after successful save
+            dirtySectionIdsRef.current.clear();
+            dirtyLessonIdsRef.current.clear();
 
             toast.success(mode === 'create' ? 'Мазмун сакталды!' : 'Бардык өзгөрүүлөр сакталды!');
             return true; // Indicate success

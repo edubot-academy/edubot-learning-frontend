@@ -67,6 +67,12 @@ export const getSectionReadyCount = (section) =>
 export const getFirstInvalidLessonTarget = (curriculum) => {
     for (let sIdx = 0; sIdx < curriculum.length; sIdx += 1) {
         const section = curriculum[sIdx];
+
+        // Skip validation for empty sections (more lenient approach)
+        if (!section.lessons || section.lessons.length === 0) {
+            continue;
+        }
+
         for (let lIdx = 0; lIdx < section.lessons.length; lIdx += 1) {
             const issue = getLessonIssue(section.lessons[lIdx]);
             if (issue) return { sIdx, lIdx, issue };
@@ -125,16 +131,24 @@ export const validateCurriculumStructure = (curriculum) => {
 
     // Check each section
     curriculum.forEach((section, index) => {
-        // Section must have a title
-        if (!section.sectionTitle?.trim()) {
+        // Section must have a title (check both possible field names)
+        const sectionTitle = section.sectionTitle || section.title;
+        if (!sectionTitle?.trim()) {
             errors.push(`Бөлүм ${index + 1}: Аталыш жок`);
             invalidSectionIndexes.push(index);
         }
 
-        // Section must have at least one lesson
-        if (!section.lessons || section.lessons.length === 0) {
-            errors.push(`Бөлүм ${index + 1}: Кеминде бир сабак болушу керек`);
-            invalidSectionIndexes.push(index);
+        // Only validate lessons if the section has lessons
+        // Allow empty sections during editing (more lenient approach)
+        if (section.lessons && section.lessons.length > 0) {
+            // Check each lesson in the section
+            section.lessons.forEach((lesson, lessonIndex) => {
+                const lessonIssue = getLessonIssue(lesson);
+                if (lessonIssue) {
+                    errors.push(`Бөлүм ${index + 1}, Сабак ${lessonIndex + 1}: ${lessonIssue}`);
+                    invalidSectionIndexes.push(index);
+                }
+            });
         }
     });
 
