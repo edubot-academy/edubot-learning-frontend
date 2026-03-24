@@ -32,7 +32,7 @@ const TOOLBAR_GROUPS = [
         { icon: <FaListUl />, command: 'insertUnorderedList', title: 'Bulleted list' },
         { icon: <FaListOl />, command: 'insertOrderedList', title: 'Numbered list' },
         { icon: <FaQuoteLeft />, command: 'formatBlock', value: 'BLOCKQUOTE', title: 'Quote' },
-        { icon: <FaCode />, command: 'formatBlock', value: 'PRE', title: 'Code block' },
+        { icon: <FaCode />, command: 'inlineCode', title: 'Inline code' },
     ],
     [
         { icon: <FaLink />, command: 'createLink', title: 'Insert link' },
@@ -82,6 +82,9 @@ const ArticleEditor = ({
     disabled = false,
 }) => {
     const editorRef = useRef(null);
+    const [history, setHistory] = useState([value || '']);
+    const [historyIndex, setHistoryIndex] = useState(0);
+    const [isUndoing, setIsUndoing] = useState(false);
 
     const showPlaceholder = useMemo(() => {
         if (!value) return true;
@@ -112,7 +115,45 @@ const ArticleEditor = ({
         if (editorRef.current.innerHTML !== sanitized) {
             editorRef.current.innerHTML = sanitized;
         }
+
+        // Add to history if not undoing
+        if (!isUndoing) {
+            const newHistory = history.slice(0, historyIndex + 1);
+            newHistory.push(sanitized);
+
+            // Limit history to 50 items
+            if (newHistory.length > 50) {
+                newHistory.shift();
+            } else {
+                setHistoryIndex(newHistory.length - 1);
+            }
+            setHistory(newHistory);
+        }
+
         onChange(sanitized);
+    };
+
+    const canUndo = historyIndex > 0;
+    const canRedo = historyIndex < history.length - 1;
+
+    const handleUndo = () => {
+        if (!canUndo || !editorRef.current) return;
+        setIsUndoing(true);
+        const newIndex = historyIndex - 1;
+        setHistoryIndex(newIndex);
+        editorRef.current.innerHTML = history[newIndex];
+        setIsUndoing(false);
+        refreshActiveFormats();
+    };
+
+    const handleRedo = () => {
+        if (!canRedo || !editorRef.current) return;
+        setIsUndoing(true);
+        const newIndex = historyIndex + 1;
+        setHistoryIndex(newIndex);
+        editorRef.current.innerHTML = history[newIndex];
+        setIsUndoing(false);
+        refreshActiveFormats();
     };
 
     const refreshActiveFormats = useCallback(() => {
@@ -131,6 +172,9 @@ const ArticleEditor = ({
                 ? selection.anchorNode.parentElement
                 : selection.anchorNode;
 
+        // Check if cursor is inside a code tag
+        const isInsideCode = anchorNode?.tagName === 'CODE' || anchorNode?.closest?.('code');
+
         setActiveFormats({
             block: blockValue,
             bold: document.queryCommandState('bold'),
@@ -139,7 +183,7 @@ const ArticleEditor = ({
             unorderedList: document.queryCommandState('insertUnorderedList'),
             orderedList: document.queryCommandState('insertOrderedList'),
             quote: blockValue === 'BLOCKQUOTE',
-            code: blockValue === 'PRE',
+            code: blockValue === 'PRE' || isInsideCode,
             hasLink: Boolean(anchorNode?.closest?.('a')),
         });
     }, [isNodeInsideEditor]);
@@ -157,6 +201,16 @@ const ArticleEditor = ({
 
     const handleCommand = (command, commandValue) => {
         if (disabled || typeof document === 'undefined') return;
+
+        if (command === 'undo') {
+            handleUndo();
+            return;
+        }
+
+        if (command === 'redo') {
+            handleRedo();
+            return;
+        }
 
         if (command === 'createLink') {
             if (typeof window === 'undefined') return;
@@ -181,6 +235,82 @@ const ArticleEditor = ({
             }
 
             document.execCommand('createLink', false, normalized);
+        } else if (command === 'inlineCode') {
+            // Handle inline code formatting (toggle)
+            const selection = window.getSelection();
+            if (!selection) return;
+
+            const anchorNode =
+                selection.anchorNode?.nodeType === Node.TEXT_NODE
+                    ? selection.anchorNode.parentElement
+                    : selection.anchorNode;
+
+            // Check if we're inside a code tag
+            const isInsideCode = anchorNode?.tagName === 'CODE' || anchorNode?.closest?.('code');
+
+            if (isInsideCode) {
+                // Remove code formatting
+                const codeElement = anchorNode?.tagName === 'CODE' ? anchorNode : anchorNode?.closest?.('code');
+                if (codeElement) {
+                    const textContent = codeElement.textContent;
+                    const textNode = document.createTextNode(textContent);
+
+                    try {
+                        codeElement.parentNode.replaceChild(textNode, codeElement);
+
+                        // Select the text that was in the code element
+                        selection.removeAllRanges();
+                        const newRange = document.createRange();
+                        newRange.selectNodeContents(textNode);
+                        selection.addRange(newRange);
+                    } catch (error) {
+                        console.error('Error removing code formatting:', error);
+                    }
+                }
+            } else {
+                // Add code formatting
+                if (selection.isCollapsed) {
+                    // If no selection, insert a code tag with placeholder text
+                    const codeText = window.prompt('Код текстин жазыңыз:');
+                    if (!codeText) return;
+
+                    const range = selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
+                    if (!range) return;
+
+                    const codeElement = document.createElement('code');
+                    codeElement.textContent = codeText;
+                    range.insertNode(codeElement);
+
+                    // Move cursor after the code element
+                    selection.removeAllRanges();
+                    const newRange = document.createRange();
+                    newRange.setStartAfter(codeElement);
+                    newRange.collapse(true);
+                    selection.addRange(newRange);
+                } else {
+                    // Wrap selected text in code tags
+                    const range = selection.getRangeAt(0);
+                    const selectedText = range.toString();
+
+                    if (selectedText) {
+                        const codeElement = document.createElement('code');
+                        codeElement.textContent = selectedText;
+
+                        try {
+                            range.deleteContents();
+                            range.insertNode(codeElement);
+
+                            // Select the code element
+                            selection.removeAllRanges();
+                            const newRange = document.createRange();
+                            newRange.selectNodeContents(codeElement);
+                            selection.addRange(newRange);
+                        } catch (error) {
+                            console.error('Error wrapping text in code tags:', error);
+                        }
+                    }
+                }
+            }
         } else {
             document.execCommand(command, false, commandValue || null);
         }
@@ -188,6 +318,81 @@ const ArticleEditor = ({
         editorRef.current?.focus();
         emitChange();
         refreshActiveFormats();
+    };
+
+    const handleKeyDown = (e) => {
+        // Handle backtick wrapping for inline code
+        if (e.key === '`') {
+            e.preventDefault();
+            const selection = window.getSelection();
+            if (!selection || !editorRef.current) return;
+
+            const range = selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
+            if (!range) return;
+
+            if (selection.isCollapsed) {
+                // Insert backticks and position cursor in middle
+                const backticks = document.createTextNode('``');
+                range.insertNode(backticks);
+
+                // Move cursor between the backticks
+                selection.removeAllRanges();
+                const newRange = document.createRange();
+                newRange.setStart(backticks, 1);
+                newRange.setEnd(backticks, 1);
+                selection.addRange(newRange);
+            } else {
+                // Wrap selected text in backticks
+                const selectedText = range.toString();
+                const codeElement = document.createElement('code');
+                codeElement.textContent = selectedText;
+
+                try {
+                    range.deleteContents();
+                    range.insertNode(codeElement);
+
+                    // Select the code element
+                    selection.removeAllRanges();
+                    const newRange = document.createRange();
+                    newRange.selectNodeContents(codeElement);
+                    selection.addRange(newRange);
+                } catch (error) {
+                    console.error('Error wrapping text in code tags:', error);
+                }
+            }
+
+            emitChange();
+            refreshActiveFormats();
+            return;
+        }
+
+        // Handle other keyboard shortcuts
+        if (e.ctrlKey || e.metaKey) {
+            switch (e.key) {
+                case 'z':
+                    e.preventDefault();
+                    if (e.shiftKey) {
+                        handleRedo();
+                    } else {
+                        handleUndo();
+                    }
+                    break;
+                case 'y':
+                    e.preventDefault();
+                    handleRedo();
+                    break;
+                case 'b':
+                    e.preventDefault();
+                    handleCommand('bold');
+                    break;
+                case 'i':
+                    e.preventDefault();
+                    handleCommand('italic');
+                    break;
+                default:
+                    break;
+            }
+        }
     };
 
     const handlePaste = (e) => {
@@ -204,8 +409,13 @@ const ArticleEditor = ({
         switch (button.command) {
             case 'formatBlock': {
                 const expected = normalizeBlockValue(button.value || 'P');
+                if (expected === 'PRE') {
+                    return activeFormats.code;
+                }
                 return activeFormats.block === expected;
             }
+            case 'inlineCode':
+                return activeFormats.code;
             case 'bold':
                 return activeFormats.bold;
             case 'italic':
@@ -232,27 +442,35 @@ const ArticleEditor = ({
                             key={`group-${groupIdx}`}
                             className="inline-flex items-center gap-1 rounded-lg border border-slate-200 dark:border-gray-600 bg-white dark:bg-gray-700 p-1"
                         >
-                            {group.map(({ label, icon, command, value: commandValue, title }) => (
-                                <button
-                                    type="button"
-                                    key={`${command}-${label || title || commandValue || ''}`}
-                                    onClick={() => handleCommand(command, commandValue)}
-                                    title={title || label}
-                                    className={`h-8 min-w-8 px-2 text-sm rounded-md flex items-center justify-center transition ${isButtonActive({ command, value: commandValue })
-                                        ? 'bg-edubot-orange text-white'
-                                        : 'text-slate-700 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-gray-600'
-                                        }`}
-                                    disabled={disabled}
-                                >
-                                    {icon || label}
-                                </button>
-                            ))}
+                            {group.map(({ label, icon, command, value: commandValue, title }) => {
+                                const isDisabled = disabled ||
+                                    (command === 'undo' && !canUndo) ||
+                                    (command === 'redo' && !canRedo);
+
+                                return (
+                                    <button
+                                        type="button"
+                                        key={`${command}-${label || title || commandValue || ''}`}
+                                        onClick={() => handleCommand(command, commandValue)}
+                                        title={title || label}
+                                        disabled={isDisabled}
+                                        className={`h-8 min-w-8 px-2 text-sm rounded-md flex items-center justify-center transition ${isButtonActive({ command, value: commandValue })
+                                            ? 'bg-edubot-orange text-white'
+                                            : isDisabled
+                                                ? 'text-slate-400 dark:text-gray-500 cursor-not-allowed'
+                                                : 'text-slate-700 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-gray-600'
+                                            }`}
+                                    >
+                                        {icon || label}
+                                    </button>
+                                );
+                            })}
                         </div>
                     ))}
                 </div>
 
                 <p className="mt-2 text-[11px] text-slate-500 dark:text-gray-400">
-                    Кеңеш: `Ctrl/Cmd + B` калың, `Ctrl/Cmd + I` курсив. Код үчүн `&lt;/&gt;` баскычы.
+                    Кеңеш: `Ctrl/Cmd + B` калың, `Ctrl/Cmd + I` курсив. Код үчүн `&lt;/&gt;` баскычы же `` баскычын басыңыз.
                 </p>
             </div>
 
@@ -273,6 +491,7 @@ const ArticleEditor = ({
                     onBlur={emitChange}
                     onKeyUp={refreshActiveFormats}
                     onMouseUp={refreshActiveFormats}
+                    onKeyDown={handleKeyDown}
                     onPaste={handlePaste}
                     role="textbox"
                     aria-multiline="true"
