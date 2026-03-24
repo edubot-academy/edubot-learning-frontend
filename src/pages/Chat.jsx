@@ -240,7 +240,7 @@ export default function Chat() {
                 }}
                 className="p-4 border rounded-lg hover:bg-gray-50 dark:hover:bg-[#222222] cursor-pointer"
               >
-                <p className="text-xs">{chat.course.title}</p>
+                <p className="text-xs">{chat.course?.title || 'Course'}</p>
                 <p className="font-medium text-sm">{companion.fullName}</p>
                 <p className="text-xs text-sky-600">{chat.status}</p>
               </div>
@@ -397,11 +397,10 @@ export default function Chat() {
                   return (
                     <label
                       key={courseItem.id || courseItem.courseId}
-                      className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-colors ${
-                        String(newChatCourseId) === String(courseItem.id || courseItem.courseId)
+                      className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-colors ${String(newChatCourseId) === String(courseItem.id || courseItem.courseId)
                           ? "border-orange-500 bg-orange-50 dark:border-orange-400 dark:bg-orange-900/40"
                           : "border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1e1e1e]"
-                      }`}
+                        }`}
                     >
                       <input
                         type="radio"
