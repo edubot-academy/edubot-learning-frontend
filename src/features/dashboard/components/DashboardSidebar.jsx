@@ -49,7 +49,7 @@ const DashboardSidebar = ({
                         return groups;
                     }, {});
 
-                    const categoryOrder = ['primary', 'secondary', 'progress', 'personal', 'content', 'users', 'admin', 'other'];
+                    const categoryOrder = ['primary', 'secondary', 'analytics', 'progress', 'personal', 'content', 'users', 'admin', 'other'];
                     const categoryLabels = {
                         primary: 'Негизги функциялар',
                         secondary: 'Окутуу башкаруу',

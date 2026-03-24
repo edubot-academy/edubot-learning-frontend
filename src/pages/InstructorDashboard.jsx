@@ -1,14 +1,10 @@
 import { useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import { Link, Navigate, useSearchParams } from 'react-router-dom';
+import { Navigate, useSearchParams } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import DashboardSidebar from '@features/dashboard/components/DashboardSidebar';
 import {
     fetchInstructorProfile,
-    fetchUsers,
     listOfferingsForCourse,
-    createOffering,
-    updateOffering,
-    enrollUserInCourse,
     fetchInstructorStudentCourses,
     fetchCourseStudents,
     createCourse,
@@ -17,13 +13,12 @@ import {
 } from '@services/api';
 import toast from 'react-hot-toast';
 import Loader from '@shared/ui/Loader';
-import NotificationsWidget from '@features/notifications/components/NotificationsWidget';
 import NotificationsTab from '@features/notifications/components/NotificationsTab';
 import AttendancePage from './Attendance';
 import SessionWorkspacePage from './SessionWorkspace';
 import InstructorAnalyticsPage from './InstructorAnalytics';
-import InternalLeaderboardPage from './InternalLeaderboard';
-import InstructorHomeworkPage from './InstructorHomework';
+import InternalLeaderboard from './InternalLeaderboard';
+import InstructorHomework from './InstructorHomework';
 import {
     InstructorDashboardHeader,
     InstructorOverviewSection,
@@ -433,10 +428,10 @@ const InstructorDashboard = () => {
                 return <InstructorAnalyticsPage />;
 
             case 'leaderboard':
-                return <InternalLeaderboardPage />;
+                return <InternalLeaderboard />;
 
             case 'homework':
-                return <InstructorHomeworkPage />;
+                return <InstructorHomework />;
 
             case 'notifications':
                 return <NotificationsTab />;
