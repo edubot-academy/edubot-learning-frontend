@@ -1,27 +1,28 @@
-import React, { useState, useContext, useEffect } from 'react'; 
-import { useNavigate, Link, useLocation } from 'react-router-dom'; 
+import React, { useState, useContext, useEffect } from 'react';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { loginUser } from '@services/api';
 import { AuthContext } from '../context/AuthContext';
-import { useCart } from '../context/CartContext'; 
-import { useFavourites } from '../context/FavouritesContext'; 
+import { useCart } from '../context/CartContext';
+import { useFavourites } from '../context/FavouritesContext';
 import SignInImg from '../assets/images/edubot-signup.png';
 import DefaultLabel from '@shared-ui/forms/DefaultLabel';
 import LabelPassword from '@shared-ui/forms/LabelPassword';
 import ForgotPassword from '@features/auth/components/ForgotPassword';
-import { toast } from 'react-hot-toast'; 
+import { toast } from 'react-hot-toast';
 import { getAuthAcquisitionPath, isPublicVideoSignupEnabled } from '@shared/auth-config';
+import { getAuthDebugInfo } from '@shared/utils/auth';
 
 const LoginPage = () => {
     const { login } = useContext(AuthContext);
     const { addToCart } = useCart();
-    const { toggleFavourite } = useFavourites(); 
+    const { toggleFavourite } = useFavourites();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [forgotPassword, setForgotPassword] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const navigate = useNavigate();
-    const location = useLocation(); 
+    const location = useLocation();
 
     const executePendingAction = async () => {
         const pendingActionStr = localStorage.getItem('pendingAction');
@@ -29,11 +30,11 @@ const LoginPage = () => {
 
         try {
             const pendingAction = JSON.parse(pendingActionStr);
-            
+
             const now = Date.now();
             const actionAge = now - pendingAction.timestamp;
-            const MAX_ACTION_AGE = 24 * 60 * 60 * 1000; 
-            
+            const MAX_ACTION_AGE = 24 * 60 * 60 * 1000;
+
             if (actionAge > MAX_ACTION_AGE) {
                 localStorage.removeItem('pendingAction');
                 return;
@@ -60,9 +61,9 @@ const LoginPage = () => {
                     navigate('/cart');
                 }
             }
-            
+
             localStorage.removeItem('pendingAction');
-            
+
         } catch (error) {
             console.error('Failed to execute pending action:', error);
             localStorage.removeItem('pendingAction');
@@ -76,15 +77,28 @@ const LoginPage = () => {
 
         try {
             const response = await loginUser({ email, password });
-            const { user } = response.data;
+            const { user, access_token } = response.data;
+
+            // Debug logging for cross-domain development
+            const debugInfo = getAuthDebugInfo();
+            console.log('Login debug info:', debugInfo);
+            console.log('Login response:', { user: !!user, tokenLength: access_token?.length });
+
             login(user);
-            
+
+            // Token is automatically stored by the API client interceptor
+            // but we can ensure it's stored here as well
+            if (access_token) {
+                localStorage.setItem('auth_token', access_token);
+            }
+
             await executePendingAction();
-            
+
             if (!localStorage.getItem('pendingAction')) {
                 navigate('/');
             }
         } catch (err) {
+            console.error('Login error:', err);
             setError('Email же сырсөз туура эмес. Кайра аракет кылыңыз.');
         } finally {
             setLoading(false);

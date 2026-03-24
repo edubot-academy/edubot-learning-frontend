@@ -17,11 +17,12 @@ export const AuthProvider = ({ children }) => {
     });
 
     useEffect(() => {
-        // Only try to fetch profile if we have a user in localStorage or a session cookie
+        // Only try to fetch profile if we have a user in localStorage, session cookie, or stored token
         const hasStoredUser = localStorage.getItem('user') && localStorage.getItem('user') !== 'undefined';
         const hasSessionCookie = document.cookie.includes('edubot_session=');
+        const hasStoredToken = localStorage.getItem('auth_token');
 
-        if (hasStoredUser || hasSessionCookie) {
+        if (hasStoredUser || hasSessionCookie || hasStoredToken) {
             loadUserProfile();
         }
     }, []);
@@ -55,6 +56,7 @@ export const AuthProvider = ({ children }) => {
         setUser(null);
         localStorage.removeItem('user');
         localStorage.removeItem('pendingAction');
+        localStorage.removeItem('auth_token'); // Clear stored token
         if (redirect) {
             window.location.href = '/login';
         }
