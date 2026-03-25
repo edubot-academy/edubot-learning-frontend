@@ -55,15 +55,15 @@ const OverviewTab = ({
             buildLeaderboardSnapshot({
                 items: leaderboardItems,
                 user: { id: student.id, fullName: student.name },
-                xp: engagement.xp,
-                streakDays: engagement.streak,
+                xp: engagement?.xp || 0,
+                streakDays: engagement?.streak || 0,
                 badges: badgeItems,
                 label: 'Dashboard',
             }),
         [leaderboardItems, student, engagement, badgeItems]
     );
     const hasLeaderboardPreviewIssue = Boolean(leaderboardMeta?.fallback);
-    const emptyLeaderboardPreview = !hasLeaderboardPreviewIssue && !leaderboardItems.length;
+    const emptyLeaderboardPreview = !hasLeaderboardPreviewIssue && !(leaderboardItems || []).length;
 
     const leaderboardChallenges = useMemo(
         () => [
@@ -78,18 +78,18 @@ const OverviewTab = ({
             },
             {
                 id: 'overview-streak',
-                title: `${engagement.streak} күндүк серияны сактоо`,
+                title: `${engagement?.streak || 0} күндүк серияны сактоо`,
                 detail: 'Эртең дагы кирсеңиз, туруктуулук сигналы күчөйт.',
             },
             {
                 id: 'overview-homework',
                 title: 'Ачык тапшырманы жабуу',
-                detail: pendingHomework.length
+                detail: pendingHomework?.length
                     ? `${pendingHomework.length} тапшырма күтүп турат.`
                     : 'Азырынча тапшырма жок, ушул темпти сактаңыз.',
             },
         ],
-        [leaderboardSnapshot, engagement.streak, pendingHomework.length]
+        [leaderboardSnapshot, engagement?.streak, pendingHomework?.length]
     );
 
     return (
@@ -97,7 +97,7 @@ const OverviewTab = ({
             <div className="xl:col-span-2 space-y-4">
                 <div className="bg-gradient-to-r from-edubot-orange to-edubot-soft text-white rounded-2xl p-6 sm:p-8 shadow-xl border border-edubot-orange/20">
                     <p className="text-sm uppercase tracking-wide opacity-80">
-                        Streak: {engagement.streak} күн
+                        Streak: {engagement?.streak || 0} күн
                     </p>
                     <h2 className="text-2xl sm:text-3xl font-semibold mt-1">
                         Кош келиңиз, {student.name.split(' ')[0]}!
@@ -111,11 +111,11 @@ const OverviewTab = ({
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                    <StudentStatCard label="Активдүү курстар" value={stats.activeCourses} />
-                    <StudentStatCard label="Жалпы сабактар" value={stats.lessonsCompleted} />
-                    <StudentStatCard label="Күтүүдө тапшырма" value={pendingHomework.length} />
+                    <StudentStatCard label="Активдүү курстар" value={stats?.activeCourses || 0} />
+                    <StudentStatCard label="Жалпы сабактар" value={stats?.lessonsCompleted || 0} />
+                    <StudentStatCard label="Күтүүдө тапшырма" value={pendingHomework?.length || 0} />
                     {attendanceEnabled ? (
-                        <StudentStatCard label="Катышуу" value={`${attendanceStats.rate}%`} />
+                        <StudentStatCard label="Катышуу" value={`${attendanceStats?.rate || 0}%`} />
                     ) : null}
                 </div>
 
@@ -124,10 +124,10 @@ const OverviewTab = ({
                         <h3 className="text-lg font-semibold text-gray-900 dark:text-[#E8ECF3]">
                             Жакынкы сабактар
                         </h3>
-                        <span className="text-xs text-gray-500">{upcoming.length} даана</span>
+                        <span className="text-xs text-gray-500">{(upcoming || []).length} даана</span>
                     </div>
                     <div className="space-y-2">
-                        {upcoming.map((item) => {
+                        {(upcoming || []).map((item) => {
                             const type = resolveCourseType(item);
                             const joinUrl = item.joinLink || item.link || item.joinUrl || '';
                             const joinAllowed =
@@ -181,7 +181,7 @@ const OverviewTab = ({
                                 </div>
                             );
                         })}
-                        {upcoming.length === 0 && (
+                        {!(upcoming || []).length && (
                             <p className="text-sm text-gray-500">Жакынкы класстар жок.</p>
                         )}
                     </div>
@@ -192,7 +192,7 @@ const OverviewTab = ({
                         <h3 className="text-lg font-semibold text-gray-900 dark:text-[#E8ECF3]">
                             Тапшырмалар
                         </h3>
-                        {pendingHomework.map((task) => (
+                        {(pendingHomework || []).map((task) => (
                             <div
                                 key={task.id || task.taskId}
                                 className="text-sm border-b border-gray-100 dark:border-gray-800 pb-2"
@@ -200,12 +200,12 @@ const OverviewTab = ({
                                 <p className="font-medium text-gray-900 dark:text-[#E8ECF3]">
                                     {task.title}
                                 </p>
-                                <p className="text-gray-500 dark:text-gray-400">
-                                    {task.due || task.dueAt || 'Тапшыруу мөөнөтү көрсөтүлгөн эмес'}
+                                <p className="text-gray-500 dark:text-gray-400 mt-1">
+                                    {task.courseTitle}
                                 </p>
                             </div>
                         ))}
-                        {pendingHomework.length === 0 && (
+                        {(!pendingHomework || pendingHomework.length === 0) && (
                             <p className="text-sm text-gray-500 dark:text-gray-400">Тапшырмалар жок.</p>
                         )}
                     </div>
@@ -213,7 +213,7 @@ const OverviewTab = ({
                         <h3 className="text-lg font-semibold text-gray-900 dark:text-[#E8ECF3]">
                             Жарыялар
                         </h3>
-                        {announcements.map((item) => (
+                        {(announcements || []).map((item) => (
                             <div
                                 key={item.id || item.title}
                                 className="text-sm border-b border-gray-100 dark:border-gray-800 pb-2"
@@ -226,7 +226,7 @@ const OverviewTab = ({
                                 </p>
                             </div>
                         ))}
-                        {announcements.length === 0 && (
+                        {!(announcements || []).length && (
                             <p className="text-sm text-gray-500 dark:text-gray-400">Жаңылыктар жок.</p>
                         )}
                     </div>
@@ -239,9 +239,9 @@ const OverviewTab = ({
                     <div className="flex items-start justify-between gap-3">
                         <div>
                             <h3 className="font-semibold text-gray-900 dark:text-[#E8ECF3]">XP & Level</h3>
-                            <p className="text-2xl font-bold text-blue-600 mt-1">{engagement.xp} XP</p>
+                            <p className="text-2xl font-bold text-blue-600 mt-1">{engagement?.xp || 0} XP</p>
                             <p className="text-sm text-gray-500">
-                                Деңгээл {engagement.level}
+                                Деңгэел {engagement?.level || 1}
                                 {leaderboardSnapshot.rank ? ` · #${leaderboardSnapshot.rank} орун` : ''}
                             </p>
                         </div>
@@ -257,8 +257,8 @@ const OverviewTab = ({
                             className="h-2 rounded-full bg-blue-500"
                             style={{
                                 width: `${Math.round(
-                                    (engagement.currentLevelXp /
-                                        Math.max(1, engagement.nextLevelGap)) *
+                                    ((engagement?.currentLevelXp || 0) /
+                                        Math.max(1, engagement?.nextLevelGap || 1)) *
                                     100
                                 )}%`,
                             }}
@@ -298,8 +298,8 @@ const OverviewTab = ({
                     shareMeta={{
                         displayName: student.name,
                         rank: leaderboardSnapshot.rank || null,
-                        xp: engagement.xp || null,
-                        streakDays: engagement.streak || null,
+                        xp: engagement?.xp || null,
+                        streakDays: engagement?.streak || null,
                         trackLabel: 'Dashboard',
                     }}
                 />

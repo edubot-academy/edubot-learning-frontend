@@ -1,6 +1,7 @@
 import { useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { Navigate, useSearchParams } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
+import { SmoothTabTransition } from '@components/ui';
 import DashboardSidebar from '@features/dashboard/components/DashboardSidebar';
 import SkipNavigation from '../components/ui/SkipNavigation';
 import {
@@ -523,11 +524,38 @@ const InstructorDashboard = () => {
         }
     };
 
+    // Calculate tab loading state at component level for access in both render functions
+    const isTabLoading = loadingStudentCourses || loadingCourseStudents || loadingOfferings;
+
     const renderContent = () => {
-        if ((loadingProfile && !profile) || (loadingCourses && !courses.length)) {
+        const isInitialLoading = (loadingProfile && !profile) || (loadingCourses && !courses.length);
+        const hasDataLoaded = profile && courses.length > 0;
+
+        // Only show loader for initial load, not tab switching
+        if (isInitialLoading && !hasDataLoaded) {
             return <Loader fullScreen={false} />;
         }
 
+        // For tab switching, show content with overlay if any tab is loading
+        if (isTabLoading && hasDataLoaded) {
+            return (
+                <div className="relative">
+                    {renderTabContent()}
+                    {isTabLoading && (
+                        <div className="absolute inset-0 bg-white/50 dark:bg-gray-900/50 flex items-center justify-center rounded-2xl">
+                            <div className="bg-white dark:bg-gray-800 rounded-lg p-3 shadow-lg">
+                                <div className="animate-spin rounded-full border-2 border-gray-300 border-t-blue-600 w-6 h-6"></div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        return renderTabContent();
+    };
+
+    const renderTabContent = () => {
         switch (activeTab) {
             case 'sessions':
                 return <SessionWorkspacePage />;
@@ -581,21 +609,10 @@ const InstructorDashboard = () => {
                         refreshCourses={loadStudentCourses}
                         studentsPage={studentsPage}
                         onChangePage={setStudentsPage}
-                        search={studentSearch}
-                        onSearchChange={setStudentSearch}
                         progressMin={progressMin}
                         progressMax={progressMax}
-                        onProgressMinChange={setProgressMin}
-                        onProgressMaxChange={setProgressMax}
-                    />
-                );
-
-            case 'profile':
-                return (
-                    <ProfileSection
-                        profile={profile}
-                        expertiseTags={expertiseTags}
-                        socialLinks={socialLinks}
+                        onProgressFilterChange={setProgressMin}
+                        onStudentSearchChange={setStudentSearch}
                     />
                 );
 

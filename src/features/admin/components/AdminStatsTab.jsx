@@ -1,4 +1,5 @@
-import Loader from '@shared/ui/Loader';
+import React from 'react';
+import { SmoothTabTransition } from '@components/ui';
 import MetricCard from '../stats/MetricCard';
 import GrowthBadge from '../stats/GrowthBadge';
 import TrendCard from '../stats/TrendCard';
@@ -24,32 +25,21 @@ const AdminStatsTab = ({ stats, loading, onRefresh }) => {
             maximumFractionDigits: 0,
         })} сом`;
 
-    if (loading && !stats) {
-        return (
-            <div className="bg-white dark:bg-[#1B1B1B] rounded-2xl border border-gray-100 dark:border-gray-800 p-6">
-                <Loader fullScreen={false} />
-            </div>
-        );
-    }
-
     return (
-        <div className="space-y-6">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-                <div>
-                    <p className="text-sm uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                        Акыркы 7 күн
-                    </p>
-                    <h2 className="text-3xl font-semibold text-gray-900 dark:text-[#E8ECF3]">
-                        Платформанын статистикасы
-                    </h2>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                        Жалпы көрсөткүчтөр, активдүүлүк жана тренддер
-                    </p>
-                </div>
-
-                <div className="flex flex-wrap items-center gap-2">
-                    <GrowthBadge label="Жаңы студенттер" value={growth.newStudents7d} tone="blue" />
-                    <GrowthBadge label="Каттоолор" value={growth.enrollments7d} tone="emerald" />
+        <SmoothTabTransition isLoading={loading && !stats} isDataLoaded={!!stats}>
+            <div className="space-y-6">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                        <p className="text-sm uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                            Акыркы 7 күн
+                        </p>
+                        <h2 className="text-3xl font-semibold text-gray-900 dark:text-[#E8ECF3]">
+                            Платформанын статистикасы
+                        </h2>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                            Жалпы көрсөткүчтөр, активдүүлүк жана тренддер
+                        </p>
+                    </div>
                     <button
                         type="button"
                         onClick={onRefresh}
@@ -112,7 +102,7 @@ const AdminStatsTab = ({ stats, loading, onRefresh }) => {
                 formatCurrency={formatCurrency}
                 loading={loading}
             />
-        </div>
+        </SmoothTabTransition>
     );
 };
 

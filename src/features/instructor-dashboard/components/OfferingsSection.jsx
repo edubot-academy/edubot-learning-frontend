@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import { FiFilter } from 'react-icons/fi';
 import toast from 'react-hot-toast';
+import { EmptyCoursesState, DashboardCardSkeleton } from '@components/ui';
 import {
     createOffering,
     updateOffering,
@@ -8,15 +9,13 @@ import {
     fetchUsers,
     fetchCourseStudents,
 } from '@services/api';
-import Loader from '@shared/ui/Loader';
 import InstructorStatCard from './InstructorStatCard.jsx';
-import InstructorEmptyState from './InstructorEmptyState.jsx';
 import OfferingCard from './OfferingCard.jsx';
 import CreateOfferingModal from './modals/CreateOfferingModal.jsx';
 import EnrollStudentModal from './modals/EnrollStudentModal.jsx';
 import { formatDateTimeForInput } from '../utils/instructorDashboard.constants.js';
 
-const OfferingsSection = ({ courses, offerings, loading, refreshOfferings }) => {
+const OfferingsSection = ({ courses = [], offerings = [], loading, refreshOfferings }) => {
     const getInitialForm = useCallback(
         (base = null) => ({
             courseId: base?.courseId
@@ -64,12 +63,11 @@ const OfferingsSection = ({ courses, offerings, loading, refreshOfferings }) => 
     const [enrollUserSearch, setEnrollUserSearch] = useState('');
     const [enrollStudentOptions, setEnrollStudentOptions] = useState([]);
     const [loadingUserOptions, setLoadingUserOptions] = useState(false);
-    const [showUserDropdown, setShowUserDropdown] = useState(false);
 
     const updateCreateForm = useCallback((field, value) => {
-        setCreateForm(prev => ({
+        setCreateForm((prev) => ({
             ...prev,
-            [field]: value
+            [field]: value,
         }));
     }, []);
 
@@ -82,6 +80,7 @@ const OfferingsSection = ({ courses, offerings, loading, refreshOfferings }) => 
 
     const summary = useMemo(() => {
         const now = Date.now();
+
         const upcoming = offerings.filter(
             (offering) => offering.startAt && new Date(offering.startAt).getTime() >= now
         );
@@ -108,22 +107,23 @@ const OfferingsSection = ({ courses, offerings, loading, refreshOfferings }) => 
 
     const filteredOfferings = useMemo(() => {
         return offerings.filter((offering) => {
-            if (filterCourseId !== 'all' && offering.course.id !== Number(filterCourseId)) {
+            if (filterCourseId !== 'all' && offering.course?.id !== Number(filterCourseId)) {
                 return false;
             }
 
             if (statusFilter !== 'all') {
                 const now = Date.now();
                 const start = offering.startAt ? new Date(offering.startAt).getTime() : null;
+
                 if (statusFilter === 'upcoming' && start && start < now) return false;
                 if (statusFilter === 'past' && start && start >= now) return false;
             }
 
             if (search.trim()) {
                 const term = search.toLowerCase();
-                const haystack =
-                    `${offering.title || ''} ${offering.course.title || ''} ${offering.company?.name || ''
-                        }`.toLowerCase();
+                const haystack = `${offering.title || ''} ${offering.course?.title || ''} ${offering.company?.name || ''
+                    }`.toLowerCase();
+
                 return haystack.includes(term);
             }
 
@@ -183,7 +183,7 @@ const OfferingsSection = ({ courses, offerings, loading, refreshOfferings }) => 
             setEditingOffering(null);
             refreshOfferings();
         } catch (error) {
-            console.error('Failed to create offering', error);
+            console.error('Failed to save offering', error);
             const message =
                 error.response?.data?.message || error.message || 'Offering түзүүдө ката кетти';
             toast.error(Array.isArray(message) ? message.join(', ') : message);
@@ -226,7 +226,6 @@ const OfferingsSection = ({ courses, offerings, loading, refreshOfferings }) => 
         setEnrollForm({ userId: '', discountPercentage: '' });
         setEnrollUserSearch('');
         setEnrollStudentOptions([]);
-        setShowUserDropdown(false);
         setShowEnrollModal(true);
         loadOfferingStudents(offering);
     };
@@ -309,6 +308,7 @@ const OfferingsSection = ({ courses, offerings, loading, refreshOfferings }) => 
                 error.response?.data?.message ||
                 error.message ||
                 'Студентти offeringге кошууда ката кетти';
+
             toast.error(Array.isArray(message) ? message.join(', ') : message);
         } finally {
             setEnrolling(false);
@@ -390,59 +390,44 @@ const OfferingsSection = ({ courses, offerings, loading, refreshOfferings }) => 
                 />
             </div>
 
-            <div className="rounded-3xl p-6 shadow-sm">
-                {loading ? (
-                    <Loader fullScreen={false} />
-                ) : filteredOfferings.length ? (
-                    <div className="space-y-4">
-                        {filteredOfferings.map((offering) => (
-                            <OfferingCard
-                                key={offering.id}
-                                offering={offering}
-                                onEdit={(item) => handleOpenModal('edit', item)}
-                                onEnroll={handleOpenEnrollModal}
-                            />
-                        ))}
-                    </div>
-                ) : (
-                    <InstructorEmptyState
-                        title="Offeringдер табылган жок"
-                        description="Курстарыңыз үчүн атайын сунуштарды түзүп баштаңыз."
-                        actionLabel="Курс түзүү"
-                        actionLink="/instructor/course/create"
-                    />
-                )}
-            </div>
-
-            {showCreateModal && (
-                <CreateOfferingModal
-                    courses={courses}
-                    form={createForm}
-                    onChange={(field, value) =>
-                        updateCreateForm(field, value)
-                    }
-                    onClose={() => setShowCreateModal(false)}
-                    onSubmit={async (formData) => {
-                        try {
-                            setCreating(true);
-                            const response = await createOffering(formData);
-                            toast.success('Offering ийгиликтүү бүттү!');
-                            refreshOfferings();
-                            setShowCreateModal(false);
-                            setCreateForm(getInitialForm());
-                        } catch (error) {
-                            console.error('Offering түзүүдө ката кетти:', error);
-                            toast.error('Offering түзүүдө ката кетти');
-                        } finally {
-                            setCreating(false);
-                        }
-                    }}
-                    creating={creating}
-                    mode="create"
+            {loading ? (
+                <DashboardCardSkeleton cards={4} />
+            ) : filteredOfferings.length ? (
+                <div className="space-y-4">
+                    {filteredOfferings.map((offering) => (
+                        <OfferingCard
+                            key={offering.id}
+                            offering={offering}
+                            onEdit={(item) => handleOpenModal('edit', item)}
+                            onEnroll={handleOpenEnrollModal}
+                        />
+                    ))}
+                </div>
+            ) : (
+                <EmptyCoursesState
+                    role="instructor"
+                    actionLabel="Offering түзүү"
+                    onAction={() => setShowCreateModal(true)}
                 />
             )}
 
-            {showEnrollModal && enrollOffering && (
+            {showCreateModal ? (
+                <CreateOfferingModal
+                    courses={courses}
+                    form={createForm}
+                    onChange={updateCreateForm}
+                    onClose={() => {
+                        setShowCreateModal(false);
+                        setEditingOffering(null);
+                        setCreateForm(getInitialForm());
+                    }}
+                    onSubmit={handleCreateOffering}
+                    creating={creating}
+                    mode={modalMode}
+                />
+            ) : null}
+
+            {showEnrollModal && enrollOffering ? (
                 <EnrollStudentModal
                     offering={enrollOffering}
                     form={enrollForm}
@@ -457,7 +442,6 @@ const OfferingsSection = ({ courses, offerings, loading, refreshOfferings }) => 
                         setEnrollOffering(null);
                         setEnrollUserSearch('');
                         setEnrollStudentOptions([]);
-                        setShowUserDropdown(false);
                     }}
                     onSubmit={handleEnrollStudent}
                     enrolling={enrolling}
@@ -467,10 +451,8 @@ const OfferingsSection = ({ courses, offerings, loading, refreshOfferings }) => 
                     userSearch={enrollUserSearch}
                     onSearchChange={setEnrollUserSearch}
                     loadingUserOptions={loadingUserOptions}
-                    showDropdown={showUserDropdown}
-                    setShowDropdown={setShowUserDropdown}
                 />
-            )}
+            ) : null}
         </div>
     );
 };

@@ -737,6 +737,31 @@ const AdminPanel = () => {
         }
     }, [companySearch, activeTab, loadCompanies]);
 
+    // Anti-flickering wrapper for tab content
+    const renderTab = () => {
+        const isLoading = adminStatsLoading || aiPromptsLoading || transcodeLoading;
+        const isDataLoaded = true; // Admin data is generally loaded on mount
+
+        // For tab switching, show content with overlay if loading
+        if (isLoading && isDataLoaded) {
+            return (
+                <div className="relative">
+                    {renderTabContent()}
+                    <div className="absolute inset-0 bg-white/50 dark:bg-gray-900/50 flex items-center justify-center rounded-2xl backdrop-blur-sm">
+                        <div className="bg-white dark:bg-gray-800 rounded-lg p-3 shadow-lg border border-gray-200 dark:border-gray-700">
+                            <div className="flex items-center gap-3">
+                                <div className="animate-spin rounded-full border-2 border-gray-300 border-t-blue-600 w-5 h-5"></div>
+                                <span className="text-sm text-gray-600 dark:text-gray-400">Жүктөлүүдө...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        return renderTabContent();
+    };
+
     // Render content based on active tab
     const renderTabContent = () => {
         switch (activeTab) {
@@ -1015,7 +1040,7 @@ const AdminPanel = () => {
                         <div className="mb-4">
                             <label className="block text-sm mb-2">Курс тандаңыз</label>
                             <select
-                                value={aiPromptCourseId}
+                                value={aiPromptCourseId || ''}
                                 onChange={(e) => setAiPromptCourseId(e.target.value)}
                                 className="border border-gray-200 dark:border-gray-700 px-3 py-2 rounded-lg w-full bg-white dark:bg-[#0E0E0E] text-gray-900 dark:text-[#E8ECF3]"
                             >
@@ -1288,7 +1313,7 @@ const AdminPanel = () => {
                     aria-label="Админ панель мазмуну"
                 >
                     {/* Extracted tab content */}
-                    {renderTabContent()}
+                    {renderTab()}
                 </div>
 
                 {/* Floating Action Button */}

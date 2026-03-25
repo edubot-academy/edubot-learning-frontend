@@ -148,18 +148,18 @@ const InstructorAnalyticsPage = () => {
                 <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-3 bg-white dark:bg-[#111111] border border-gray-100 dark:border-gray-800 rounded-2xl p-3">
                     <input
                         type="date"
-                        value={filters.from}
+                        value={filters.from || ''}
                         onChange={(e) => setFilters((prev) => ({ ...prev, from: e.target.value }))}
                         className="border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 bg-white dark:bg-[#0E0E0E]"
                     />
                     <input
                         type="date"
-                        value={filters.to}
+                        value={filters.to || ''}
                         onChange={(e) => setFilters((prev) => ({ ...prev, to: e.target.value }))}
                         className="border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 bg-white dark:bg-[#0E0E0E]"
                     />
                     <select
-                        value={filters.courseId}
+                        value={filters.courseId || ''}
                         onChange={(e) =>
                             setFilters((prev) => ({
                                 ...prev,

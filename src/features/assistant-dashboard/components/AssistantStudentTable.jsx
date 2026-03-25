@@ -1,4 +1,5 @@
 import React from "react";
+import { EmptyStudentsState, DashboardTableSkeleton } from "@components/ui";
 import AssistantCourseStats from "./AssistantCourseStats";
 import AssistantPagination from "./AssistantPagination";
 
@@ -76,8 +77,11 @@ const AssistantStudentTable = ({
                     <tbody>
                         {students.length === 0 && !loading ? (
                             <tr>
-                                <td colSpan="4" className="p-4 text-center text-gray-500 dark:text-[#a6adba] italic">
-                                    Студент табылган жок
+                                <td colSpan="4" className="p-8">
+                                    <EmptyStudentsState
+                                        role="assistant"
+                                        actionLabel="Студенттерди башкаруу"
+                                    />
                                 </td>
                             </tr>
                         ) : (
@@ -194,23 +198,8 @@ const AssistantStudentTable = ({
             />
 
             {loading && (
-                <div className="absolute inset-0 bg-white/70 dark:bg-slate-900/50 flex items-center justify-center rounded-2xl">
-                    <svg
-                        className="animate-spin h-8 w-8 text-blue-600"
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                    >
-                        <circle
-                            className="opacity-25"
-                            cx="12"
-                            cy="12"
-                            r="10"
-                            stroke="currentColor"
-                            strokeWidth="4"
-                        />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-                    </svg>
+                <div className="absolute inset-0 bg-white/70 dark:bg-slate-900/50 flex items-center justify-center rounded-2xl p-4">
+                    <DashboardTableSkeleton rows={5} columns={4} />
                 </div>
             )}
         </div>

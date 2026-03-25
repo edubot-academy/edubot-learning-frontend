@@ -1,6 +1,6 @@
+import { useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import Loader from '@shared/ui/Loader';
-import InstructorEmptyState from './InstructorEmptyState.jsx';
+import { SmoothTabTransition, EmptyCoursesState, DashboardCardSkeleton } from '@components/ui';
 import CreateDeliveryCourseModal from './modals/CreateDeliveryCourseModal.jsx';
 
 const CoursesSection = ({
@@ -14,6 +14,7 @@ const CoursesSection = ({
     onCreateDeliveryCourse,
     creatingDeliveryCourse,
     deliveryCategories,
+    parentLoading = false, // New prop to detect parent loading
 }) => (
     <div className="rounded-3xl p-6 shadow-sm">
         <div className="flex items-center justify-between flex-wrap gap-3 mb-4">
@@ -53,7 +54,7 @@ const CoursesSection = ({
         </div>
 
         {loading && !courses.length ? (
-            <Loader fullScreen={false} />
+            <DashboardCardSkeleton cards={4} />
         ) : courses.length ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {courses.map((course) => (
@@ -141,11 +142,10 @@ const CoursesSection = ({
                 ))}
             </div>
         ) : (
-            <InstructorEmptyState
-                title="Азырынча курс жок"
-                description="Алгачкы курсту түзүп студенттерди чакырыңыз."
+            <EmptyCoursesState
+                role="instructor"
                 actionLabel="Курс түзүү"
-                actionLink="/instructor/course/create"
+                onAction={() => window.location.href = '/instructor/course/create'}
             />
         )}
 

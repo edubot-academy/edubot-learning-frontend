@@ -31,7 +31,7 @@ const DashboardSidebar = ({
         >
             <button
                 onClick={handleToggle}
-                className="w-full flex items-center justify-between text-sm font-semibold text-gray-500 dark:text-gray-400 hover:text-edubot-orange dark:hover:text-edubot-soft transition-all duration-200 group"
+                className="w-full flex items-center justify-between text-sm font-semibold text-gray-600 dark:text-gray-300 hover:text-edubot-orange dark:hover:text-edubot-soft transition-all duration-200 group"
                 type="button"
                 aria-label={resolvedOpen ? toggleLabels.collapse : toggleLabels.expand}
                 aria-expanded={resolvedOpen}
@@ -74,7 +74,7 @@ const DashboardSidebar = ({
                         return (
                             <div key={category} className="mb-4 animate-fade-in">
                                 {resolvedOpen && (
-                                    <div className="px-3 py-1 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 transition-all duration-300 hover:text-gray-700 dark:hover:text-gray-300" role="presentation">
+                                    <div className="px-3 py-1 text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider mb-2 transition-all duration-300 hover:text-gray-700 dark:hover:text-gray-200" role="presentation">
                                         <span className="inline-block transition-transform duration-300 hover:scale-105" aria-hidden="true">
                                             {categoryLabels[category] || category}
                                         </span>
@@ -120,19 +120,19 @@ const DashboardSidebar = ({
                                                                 : category === 'progress'
                                                                     ? 'text-edubot-teal dark:text-edubot-soft group-hover:scale-110 group-hover:rotate-12'
                                                                     : category === 'personal'
-                                                                        ? 'text-purple-600 dark:text-purple-400 group-hover:scale-110 group-hover:rotate-12'
+                                                                        ? 'text-purple-600 dark:text-purple-300 group-hover:scale-110 group-hover:rotate-12'
                                                                         : category === 'content'
-                                                                            ? 'text-indigo-600 dark:text-indigo-400 group-hover:scale-110 group-hover:rotate-12'
+                                                                            ? 'text-indigo-600 dark:text-indigo-300 group-hover:scale-110 group-hover:rotate-12'
                                                                             : category === 'users'
-                                                                                ? 'text-blue-600 dark:text-blue-400 group-hover:scale-110 group-hover:rotate-12'
+                                                                                ? 'text-blue-600 dark:text-blue-300 group-hover:scale-110 group-hover:rotate-12'
                                                                                 : category === 'analytics'
-                                                                                    ? 'text-edubot-teal dark:text-edubot-green group-hover:scale-110 group-hover:rotate-12'
-                                                                                    : 'text-gray-500 dark:text-gray-400 group-hover:scale-110 group-hover:rotate-12'
+                                                                                    ? 'text-edubot-teal dark:text-edubot-soft group-hover:scale-110 group-hover:rotate-12'
+                                                                                    : 'text-gray-600 dark:text-gray-300 group-hover:scale-110 group-hover:rotate-12'
                                                             }`}
                                                     />
                                                 )}
                                                 {resolvedOpen && (
-                                                    <span className={`font-medium text-sm transition-all duration-300 ${isActive ? 'text-white' : ''}`}>
+                                                    <span className={`font-medium text-sm transition-all duration-300 ${isActive ? 'text-white' : ''} dark:text-gray-200`}>
                                                         {item.label}
                                                     </span>
                                                 )}

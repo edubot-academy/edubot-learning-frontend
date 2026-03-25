@@ -1,3 +1,5 @@
+import React from 'react';
+import { EmptyCoursesState, DashboardCardSkeleton } from '@components/ui';
 import { Link } from 'react-router-dom';
 import Loader from '@shared/ui/Loader';
 
@@ -85,8 +87,11 @@ const AdminCoursesTab = ({
                     ))}
 
                     {courses.length === 0 && (
-                        <li className="text-center text-gray-500 dark:text-[#a6adba] p-4 border border-dashed rounded-2xl">
-                            Курстар табылган жок.
+                        <li className="p-8">
+                            <EmptyCoursesState
+                                role="admin"
+                                actionLabel="Башкаруу"
+                            />
                         </li>
                     )}
                 </ul>
@@ -98,7 +103,7 @@ const AdminCoursesTab = ({
                 </h2>
                 <div className="flex gap-2 mb-4">
                     <input
-                        value={newCategory}
+                        value={newCategory || ''}
                         onChange={(e) => setNewCategory(e.target.value)}
                         className="border border-gray-200 dark:border-gray-700 px-3 py-2 rounded-lg w-full bg-white dark:bg-[#0E0E0E] text-gray-900 dark:text-[#E8ECF3]"
                         placeholder="Жаңы категориянын аталышы"
@@ -179,7 +184,7 @@ const AdminCoursesTab = ({
                     <input
                         type="number"
                         placeholder="Course ID"
-                        value={transcodeCourseId}
+                        value={transcodeCourseId || ''}
                         onChange={(e) => setTranscodeCourseId(e.target.value)}
                         className="border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 bg-white dark:bg-[#0E0E0E] text-gray-900 dark:text-[#E8ECF3]"
                     />
@@ -193,7 +198,7 @@ const AdminCoursesTab = ({
                     <input
                         type="number"
                         placeholder="Lesson ID"
-                        value={transcodeLessonId}
+                        value={transcodeLessonId || ''}
                         onChange={(e) => setTranscodeLessonId(e.target.value)}
                         className="border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 bg-white dark:bg-[#0E0E0E] text-gray-900 dark:text-[#E8ECF3]"
                     />

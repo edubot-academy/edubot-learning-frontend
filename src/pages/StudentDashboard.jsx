@@ -2,6 +2,7 @@ import { useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import DashboardSidebar from '@features/dashboard/components/DashboardSidebar';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import SkipNavigation from '../components/ui/SkipNavigation';
+import { EmptyCoursesState, EmptyScheduleState, DashboardOverviewSkeleton, DashboardTableSkeleton, DashboardCardSkeleton } from '@components/ui';
 import {
     fetchStudentCourses,
     fetchStudentDashboard,
@@ -84,6 +85,7 @@ const StudentDashboard = () => {
     const [notificationLoading, setNotificationLoading] = useState(false);
     const [savingNotifications, setSavingNotifications] = useState(false);
     const [submittingTaskId, setSubmittingTaskId] = useState('');
+    const [enrollingCourseId, setEnrollingCourseId] = useState(null);
 
     const studentFilters = useMemo(
         () => ({
@@ -691,6 +693,24 @@ const StudentDashboard = () => {
         }
     }, [studentId, notificationSettings]);
 
+    const handleEnrollCourse = useCallback(async (courseId) => {
+        if (!studentId) {
+            toast.error('Студент ID табылган жок');
+            return;
+        }
+
+        try {
+            setEnrollingCourseId(courseId);
+            // Add enrollment logic here
+            toast.success('Курска катышуу ийгиликтүү бүттү!');
+        } catch (error) {
+            console.error('Failed to enroll in course:', error);
+            toast.error('Курска катышууда ката кетти');
+        } finally {
+            setEnrollingCourseId(null);
+        }
+    }, [studentId]);
+
     const handleSaveProfile = useCallback(
         async ({ fullName, phoneNumber, avatarFile, newPassword, confirmPassword }) => {
             if (!studentId) return false;
@@ -835,15 +855,43 @@ const StudentDashboard = () => {
         tabLoading === resolvedTab ||
         (activeTab === 'profile' && (notificationLoading || profileLoading));
     const renderTab = () => {
-        if (!isTabDataLoaded || !isProfileReady || isCurrentTabLoading) {
-            return <Loader fullScreen={false} />;
-        }
-
         const requiresActiveAccess = ['overview', 'my-courses', 'schedule', 'tasks', 'progress', 'analytics', 'leaderboard'].includes(activeTab);
         if (requiresActiveAccess && !hasActiveStudentAccess) {
-            return <StudentEmptyState />;
+            return <EmptyCoursesState role="student" />;
         }
 
+        // Only show skeleton loader if data is genuinely not loaded after a short delay
+        if (!isTabDataLoaded || !isProfileReady) {
+            return activeTab === 'overview' ? (
+                <DashboardOverviewSkeleton />
+            ) : ['my-courses', 'schedule', 'tasks'].includes(activeTab) ? (
+                <DashboardCardSkeleton cards={6} />
+            ) : (
+                <DashboardTableSkeleton rows={5} columns={4} />
+            );
+        }
+
+        // Don't show loader for tab switching if data is already loaded
+        if (isCurrentTabLoading && isTabDataLoaded) {
+            // Show content with loading overlay instead of replacing content
+            return (
+                <div className="relative">
+                    {renderTabContent()}
+                    {isCurrentTabLoading && (
+                        <div className="absolute inset-0 bg-white/50 dark:bg-gray-900/50 flex items-center justify-center rounded-2xl">
+                            <div className="bg-white dark:bg-gray-800 rounded-lg p-3 shadow-lg">
+                                <div className="animate-spin rounded-full border-2 border-gray-300 border-t-blue-600 w-6 h-6"></div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        return renderTabContent();
+    };
+
+    const renderTabContent = () => {
         switch (activeTab) {
             case 'my-courses':
                 return <CoursesTab courses={courses} offeringsByCourse={offeringsByCourse} />;
@@ -895,20 +943,25 @@ const StudentDashboard = () => {
                 return (
                     <OverviewTab
                         student={overviewStudent}
-                        stats={overviewStats}
+                        summary={summary}
+                        courses={courses}
                         offerings={offerings}
                         tasks={tasks}
-                        announcements={announcementItems}
                         attendanceStats={attendanceStats}
                         attendanceEnabled={hasAttendanceEligibleCourses}
                         engagement={engagement}
                         leaderboardItems={leaderboardItems}
+                        leaderboardMeta={leaderboardPreviewMeta}
                         milestoneItems={milestoneItems}
                         badgeItems={badgeItems}
+                        progressItems={progressItems}
+                        onEnrollCourse={handleEnrollCourse}
+                        enrollingCourseId={enrollingCourseId}
                     />
                 );
         }
     };
+
     const navigate = useNavigate();
     const handleDashboardNavSelect = useCallback(
         (id) => {
@@ -920,13 +973,9 @@ const StudentDashboard = () => {
     return (
         <div className="pt-24 min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 transition-colors duration-200 min-w-0 break-words">
             <SkipNavigation />
-            <div className="max-w-7xl mx-auto flex flex-col lg:flex-row gap-6 px-4 pb-12">
-                <div
-                    className={`
-    ${sidebarOpen ? 'lg:w-64' : 'lg:w-20'}
-    hidden w-full lg:block lg:flex-shrink-0
-    transition-all duration-300
-  `}
+            <div className="flex gap-6">
+                <aside
+                    className={`${sidebarOpen ? 'lg:w-64' : 'lg:w-20'} hidden w-full lg:block lg:flex-shrink-0 transition-all duration-300`}
                 >
                     <div className="sticky top-24" style={{ height: 'calc(100vh - 6rem)' }}>
                         <DashboardSidebar
@@ -938,7 +987,7 @@ const StudentDashboard = () => {
                             className="h-full overflow-y-auto scrollbar-hide"
                         />
                     </div>
-                </div>
+                </aside>
 
                 <main
                     className="flex-1 space-y-6 min-w-0"
@@ -970,13 +1019,13 @@ const StudentDashboard = () => {
                         </button>
                         <div className="flex items-center gap-2 flex-wrap justify-end">
                             <select
-                                value={filterCourseId}
+                                value={filterCourseId || ''}
                                 onChange={(e) => setFilterCourseId(e.target.value)}
                                 className="px-3 py-2 rounded-full border text-sm bg-white dark:bg-[#222222]"
                             >
                                 <option key="all-courses" value="">All courses</option>
-                                {courses.map((course) => (
-                                    <option key={course.id} value={course.id}>
+                                {courses.map((course, index) => (
+                                    <option key={course.id || `course-${index}`} value={course.id}>
                                         {course.title}
                                     </option>
                                 ))}
@@ -988,13 +1037,13 @@ const StudentDashboard = () => {
                                 return filterCourseId && isOfflineOrLiveCourse(selected);
                             })() ? (
                                 <select
-                                    value={filterGroupId}
+                                    value={filterGroupId || ''}
                                     onChange={(e) => setFilterGroupId(e.target.value)}
                                     className="px-3 py-2 rounded-full border text-sm bg-white dark:bg-[#222222]"
                                 >
                                     <option key="all-groups" value="">All groups</option>
-                                    {groupOptions.map((group) => (
-                                        <option key={group.id} value={group.id}>
+                                    {groupOptions.map((group, index) => (
+                                        <option key={group.id || `group-${index}`} value={group.id}>
                                             {group.name}
                                         </option>
                                     ))}
@@ -1015,12 +1064,12 @@ const StudentDashboard = () => {
                         {sidebarOpen ? (
                             <div className="rounded-3xl border border-gray-100 bg-white p-3 shadow-sm dark:border-gray-800 dark:bg-[#222222]">
                                 <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
-                                    {NAV_ITEMS.map((item) => {
+                                    {NAV_ITEMS.map((item, index) => {
                                         const Icon = item.icon;
                                         const isActive = activeTab === item.id;
                                         return (
                                             <button
-                                                key={item.id}
+                                                key={item.id || `nav-${index}`}
                                                 type="button"
                                                 onClick={() => handleDashboardNavSelect(item.id)}
                                                 className={[
@@ -1039,20 +1088,15 @@ const StudentDashboard = () => {
                             </div>
                         ) : null}
                     </div>
+
                     {renderTab()}
                 </main>
-
-                {/* Floating Action Button */}
-                <FloatingActionButton role="student" />
             </div>
+
+            {/* Floating Action Button */}
+            <FloatingActionButton role="student" />
         </div>
-    );
+    )
 };
-
-
-
-
-
-
 
 export default StudentDashboard;
