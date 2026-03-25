@@ -1,16 +1,19 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import PropTypes from 'prop-types';
 import {
-    fetchAdminAttendanceRateAnalytics,
-    fetchAdminCoursePopularityAnalytics,
-    fetchAdminDropoutRiskAnalytics,
-    fetchAdminGroupFillRateAnalytics,
-    fetchAdminInstructorPerformanceAnalytics,
     fetchAdminOverviewAnalytics,
-    fetchCourseGroups,
     fetchCourses,
 } from '@services/api';
 import { toast } from 'react-hot-toast';
+import {
+    AnalyticsSummaryCard,
+    AnalyticsSection,
+    AnalyticsChartCard,
+    AnalyticsDataTable,
+    DashboardPageHeader,
+    ProgressList,
+    EmptyAnalyticsState,
+} from '@components/analytics';
 
 const toList = (payload) => {
     if (Array.isArray(payload)) return payload;
@@ -28,18 +31,10 @@ const metricNumber = (value, fallback = 0) => {
 };
 
 const AdminAnalyticsPage = () => {
-    const [filters, setFilters] = useState({ from: '', to: '', courseId: '', groupId: '' });
+    const [filters, setFilters] = useState({ from: '', to: '' });
     const [loading, setLoading] = useState(false);
-
     const [courses, setCourses] = useState([]);
-    const [groups, setGroups] = useState([]);
-
     const [overview, setOverview] = useState(null);
-    const [coursePopularity, setCoursePopularity] = useState([]);
-    const [groupFillRate, setGroupFillRate] = useState([]);
-    const [attendanceRate, setAttendanceRate] = useState(null);
-    const [dropoutRisk, setDropoutRisk] = useState(null);
-    const [instructorPerformance, setInstructorPerformance] = useState([]);
 
     const loadFilterData = useCallback(async () => {
         try {
@@ -48,7 +43,7 @@ const AdminAnalyticsPage = () => {
             setCourses(coursesList);
         } catch (error) {
             console.error(error);
-            toast.error('Курстар фильтрин жүктөө мүмкүн болгон жок.');
+            toast.error('Failed to load courses filter.');
         }
     }, []);
 
@@ -56,72 +51,22 @@ const AdminAnalyticsPage = () => {
         loadFilterData();
     }, [loadFilterData]);
 
-    useEffect(() => {
-        if (!filters.courseId) {
-            setGroups([]);
-            setFilters((prev) => ({ ...prev, groupId: '' }));
-            return;
-        }
-
-        let cancelled = false;
-        const loadGroups = async () => {
-            try {
-                const res = await fetchCourseGroups({ courseId: Number(filters.courseId) });
-                if (cancelled) return;
-                const list = toList(res);
-                setGroups(list);
-            } catch (error) {
-                if (cancelled) return;
-                console.error(error);
-                setGroups([]);
-                toast.error('Группа фильтрин жүктөө мүмкүн болгон жок.');
-            }
-        };
-
-        loadGroups();
-        return () => {
-            cancelled = true;
-        };
-    }, [filters.courseId]);
-
     const requestFilters = useMemo(
         () => ({
             from: filters.from || undefined,
             to: filters.to || undefined,
-            courseId: filters.courseId ? Number(filters.courseId) : undefined,
-            groupId: filters.groupId ? Number(filters.groupId) : undefined,
         }),
-        [filters]
+        [filters.from, filters.to] // Only depend on the actual values, not the whole object
     );
 
     const loadAnalytics = useCallback(async () => {
         setLoading(true);
         try {
-            const [
-                overviewRes,
-                popularityRes,
-                fillRateRes,
-                attendanceRes,
-                dropoutRes,
-                instructorPerfRes,
-            ] = await Promise.all([
-                fetchAdminOverviewAnalytics(requestFilters),
-                fetchAdminCoursePopularityAnalytics(requestFilters),
-                fetchAdminGroupFillRateAnalytics(requestFilters),
-                fetchAdminAttendanceRateAnalytics(requestFilters),
-                fetchAdminDropoutRiskAnalytics(requestFilters),
-                fetchAdminInstructorPerformanceAnalytics(requestFilters),
-            ]);
-
+            const overviewRes = await fetchAdminOverviewAnalytics(requestFilters);
             setOverview(overviewRes || null);
-            setCoursePopularity(toList(popularityRes));
-            setGroupFillRate(toList(fillRateRes));
-            setAttendanceRate(attendanceRes || null);
-            setDropoutRisk(dropoutRes || null);
-            setInstructorPerformance(toList(instructorPerfRes));
         } catch (error) {
             console.error(error);
-            const message = error?.response?.data?.message || 'Analytics жүктөө катасы';
+            const message = error?.response?.data?.message || 'Analytics loading error';
             toast.error(Array.isArray(message) ? message.join(', ') : message);
         } finally {
             setLoading(false);
@@ -130,242 +75,178 @@ const AdminAnalyticsPage = () => {
 
     useEffect(() => {
         loadAnalytics();
-    }, [loadAnalytics]);
-
-    const attendanceKpi = useMemo(() => {
-        const total = metricNumber(
-            firstDefined(attendanceRate?.total, overview?.attendance?.total)
-        );
-        const good = metricNumber(firstDefined(attendanceRate?.good, overview?.attendance?.good));
-        const rate = metricNumber(
-            firstDefined(attendanceRate?.rate, overview?.attendance?.rate),
-            total ? Math.round((good / total) * 100) : 0
-        );
-        return { total, good, rate };
-    }, [attendanceRate, overview]);
-
-    const riskSummary = useMemo(() => {
-        const distribution = toList(dropoutRisk?.distribution || dropoutRisk?.riskDistribution);
-        const topRisk = toList(
-            dropoutRisk?.topRiskStudents || dropoutRisk?.students || dropoutRisk
-        );
-        return { distribution, topRisk };
-    }, [dropoutRisk]);
+    }, [requestFilters.from, requestFilters.to]); // Depend on filter values, not the function
 
     return (
         <div className="pt-24 min-h-screen bg-gray-50 dark:bg-[#1A1A1A] px-4 pb-12">
-            <div className="max-w-7xl mx-auto space-y-4">
-                <div className="flex flex-wrap items-end gap-3">
-                    <div>
-                        <h1 className="text-2xl font-semibold text-gray-900 dark:text-[#E8ECF3]">
-                            Admin Analytics
-                        </h1>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">
-                            Course popularity, fill rate, attendance, risk, instructor performance
-                        </p>
-                    </div>
-                    <button
-                        type="button"
-                        onClick={loadAnalytics}
-                        disabled={loading}
-                        className="ml-auto px-4 py-2 rounded-lg bg-blue-600 text-white disabled:opacity-60"
-                    >
-                        {loading ? 'Жүктөлүүдө...' : 'Refresh'}
-                    </button>
-                </div>
-
-                <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-3 bg-white dark:bg-[#111111] border border-gray-100 dark:border-gray-800 rounded-2xl p-3">
-                    <input
-                        type="date"
-                        value={filters.from}
-                        onChange={(e) => setFilters((prev) => ({ ...prev, from: e.target.value }))}
-                        className="border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 bg-white dark:bg-[#0E0E0E]"
-                    />
-                    <input
-                        type="date"
-                        value={filters.to}
-                        onChange={(e) => setFilters((prev) => ({ ...prev, to: e.target.value }))}
-                        className="border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 bg-white dark:bg-[#0E0E0E]"
-                    />
-                    <select
-                        value={filters.courseId}
-                        onChange={(e) =>
-                            setFilters((prev) => ({
-                                ...prev,
-                                courseId: e.target.value,
-                                groupId: '',
-                            }))
-                        }
-                        className="border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 bg-white dark:bg-[#0E0E0E]"
-                    >
-                        <option value="">All courses</option>
-                        {courses.map((course) => (
-                            <option key={course.id} value={course.id}>
-                                {course.title || course.name || `Course #${course.id}`}
-                            </option>
-                        ))}
-                    </select>
-                    <select
-                        value={filters.groupId}
-                        onChange={(e) =>
-                            setFilters((prev) => ({ ...prev, groupId: e.target.value }))
-                        }
-                        className="border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 bg-white dark:bg-[#0E0E0E]"
-                    >
-                        <option value="">All groups</option>
-                        {groups.map((group) => (
-                            <option key={group.id} value={group.id}>
-                                {group.name || group.code || `Group #${group.id}`}
-                            </option>
-                        ))}
-                    </select>
-                    <button
-                        type="button"
-                        onClick={() => setFilters({ from: '', to: '', courseId: '', groupId: '' })}
-                        className="border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-gray-600 dark:text-gray-300"
-                    >
-                        Тазалоо
-                    </button>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                    <KpiCard
-                        label="Катышуу көрсөткүчү"
-                        value={`${attendanceKpi.rate}%`}
-                        hint={`${attendanceKpi.good}/${attendanceKpi.total} жакшы`}
-                    />
-                    <KpiCard
-                        label="Популярдуу курстар"
-                        value={coursePopularity.length}
-                        hint="жазылуу рейтинги"
-                    />
-                    <KpiCard
-                        label="Көзөмөлдөгү топтор"
-                        value={groupFillRate.length}
-                        hint="орун колдонулушу"
-                    />
-                    <KpiCard
-                        label="Тобокелдеги студенттер"
-                        value={riskSummary.topRisk.length}
-                        hint="чыгып кетүү тобокелдиги"
-                    />
-                </div>
-
-                <div className="grid lg:grid-cols-2 gap-4">
-                    <TableCard
-                        title="Курстардын популярдуулугу"
-                        columns={['Курс', 'Жазылуулар']}
-                        rows={coursePopularity.map((item) => [
-                            item.courseTitle || item.title || `Курс #${item.courseId || '-'}`,
-                            metricNumber(item.enrollments || item.count),
-                        ])}
-                    />
-                    <TableCard
-                        title="Топтордун толуу деңгээли"
-                        columns={['Топ', 'Толуу', 'Орундар']}
-                        rows={groupFillRate.map((item) => [
-                            item.groupName || item.name || `Топ #${item.groupId || '-'}`,
-                            `${metricNumber(item.fillRate || item.rate)}%`,
-                            `${metricNumber(item.filledSeats || item.filled)}/${metricNumber(item.seatLimit || item.totalSeats)}`,
-                        ])}
-                    />
-                    <TableCard
-                        title="Тобокелдик бөлүштүрүүсү"
-                        columns={['Тобокелдик', 'Саны']}
-                        rows={riskSummary.distribution.map((item) => [
-                            item.risk || item.level || item.severity || '-',
-                            metricNumber(item.count || item.total),
-                        ])}
-                    />
-                    <TableCard
-                        title="Тобокелдеги студенттер"
-                        columns={['Студент', 'Тобокелдик', 'Курс/Топ']}
-                        rows={riskSummary.topRisk.map((item) => [
-                            item.studentName ||
-                                item.fullName ||
-                                `Студент #${item.studentId || '-'}`,
-                            item.risk || item.severity || '-',
-                            item.courseTitle || item.groupName || '-',
-                        ])}
-                    />
-                </div>
-
-                <TableCard
-                    title="Инструктордун көрсөткүчү"
-                    columns={['Инструктор', 'Катышуу', 'Аяктоо', 'Активдүүлүк']}
-                    rows={instructorPerformance.map((item) => [
-                        item.instructorName ||
-                            item.fullName ||
-                            `Инструктор #${item.instructorId || '-'}`,
-                        `${metricNumber(item.attendanceRate)}%`,
-                        `${metricNumber(item.homeworkCompletionRate || item.completionRate)}%`,
-                        metricNumber(item.engagementScore || item.score),
-                    ])}
+            <div className="max-w-7xl mx-auto space-y-6">
+                <DashboardPageHeader
+                    title="Admin Analytics"
+                    subtitle="Platform overview, user metrics, course performance, and insights"
+                    action={
+                        <button
+                            type="button"
+                            onClick={loadAnalytics}
+                            disabled={loading}
+                            className="px-4 py-2 rounded-lg bg-edubot-orange text-white font-medium hover:bg-edubot-orange/90 disabled:opacity-60 transition-colors"
+                        >
+                            {loading ? 'Жүктөлүүдө...' : 'Refresh'}
+                        </button>
+                    }
                 />
+
+                {/* Filters Section - Simplified for new API */}
+                <AnalyticsSection className="bg-white dark:bg-gray-800">
+                    <div className="grid sm:grid-cols-2 gap-3">
+                        <input
+                            type="date"
+                            value={filters.from}
+                            onChange={(e) => setFilters((prev) => ({ ...prev, from: e.target.value }))}
+                            className="border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-edubot-orange focus:border-edubot-orange"
+                            placeholder="From date"
+                        />
+                        <input
+                            type="date"
+                            value={filters.to}
+                            onChange={(e) => setFilters((prev) => ({ ...prev, to: e.target.value }))}
+                            className="border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-edubot-orange focus:border-edubot-orange"
+                            placeholder="To date"
+                        />
+                    </div>
+                </AnalyticsSection>
+
+                {/* Summary Cards - Using new backend structure */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <AnalyticsSummaryCard
+                        title="Total Users"
+                        value={metricNumber(overview?.summary?.totalUsers)}
+                        subtitle="Platform-wide user count"
+                        color="blue"
+                        icon={
+                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                            </svg>
+                        }
+                    />
+                    <AnalyticsSummaryCard
+                        title="Total Students"
+                        value={metricNumber(overview?.summary?.totalStudents)}
+                        subtitle="Active learners"
+                        color="green"
+                        icon={
+                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                            </svg>
+                        }
+                    />
+                    <AnalyticsSummaryCard
+                        title="Total Courses"
+                        value={metricNumber(overview?.summary?.totalCourses)}
+                        subtitle={`${metricNumber(overview?.summary?.publishedCourses)} published`}
+                        color="edubot"
+                        icon={
+                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                            </svg>
+                        }
+                    />
+                    <AnalyticsSummaryCard
+                        title="Total Enrollments"
+                        value={metricNumber(overview?.summary?.totalEnrollments)}
+                        subtitle="Course registrations"
+                        color="purple"
+                        icon={
+                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                            </svg>
+                        }
+                    />
+                </div>
+
+                {/* Charts and Tables - Using new backend structure */}
+                <div className="grid lg:grid-cols-2 gap-6">
+                    <AnalyticsDataTable
+                        title="Top Courses"
+                        subtitle="Best performing courses by enrollments"
+                        columns={['Course', 'Enrollments']}
+                        data={overview?.charts?.topCourses?.map((item) => [
+                            item.title || `Course #${item.courseId}`,
+                            metricNumber(item.enrollments),
+                        ]) || []}
+                        searchable
+                        pagination
+                        pageSize={5}
+                    />
+                    <AnalyticsDataTable
+                        title="Low Performing Courses"
+                        subtitle="Courses that may need attention"
+                        columns={['Course', 'Completion Rate', 'Avg Progress']}
+                        data={overview?.charts?.lowPerformingCourses?.map((item) => [
+                            item.title || `Course #${item.courseId}`,
+                            `${metricNumber(item.completionRate)}%`,
+                            `${metricNumber(item.avgProgress)}%`,
+                        ]) || []}
+                        searchable
+                        pagination
+                        pageSize={5}
+                    />
+                </div>
+
+                {/* Revenue and Enrollment Trends */}
+                <div className="grid lg:grid-cols-2 gap-6">
+                    <AnalyticsChartCard
+                        title="Enrollment Trends"
+                        subtitle="Student enrollment over time"
+                        height="h-80"
+                    >
+                        {overview?.charts?.enrollmentsTrend && overview.charts.enrollmentsTrend.length > 0 ? (
+                            <div className="h-full flex items-center justify-center text-gray-500 dark:text-gray-400">
+                                <div className="text-center">
+                                    <svg className="w-12 h-12 mx-auto mb-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                                    </svg>
+                                    <p>Chart visualization coming soon</p>
+                                    <p className="text-sm mt-2">TODO: Add enrollment trend chart</p>
+                                    <div className="mt-4 text-xs text-gray-400">
+                                        {overview.charts.enrollmentsTrend.slice(0, 3).map((item, idx) => (
+                                            <div key={idx}>{item.period}: {item.count} enrollments</div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        ) : (
+                            <EmptyAnalyticsState title="No enrollment data available" />
+                        )}
+                    </AnalyticsChartCard>
+
+                    <AnalyticsChartCard
+                        title="Revenue Trends"
+                        subtitle="Platform revenue over time"
+                        height="h-80"
+                    >
+                        {overview?.charts?.revenueTrend && overview.charts.revenueTrend.length > 0 ? (
+                            <div className="h-full flex items-center justify-center text-gray-500 dark:text-gray-400">
+                                <div className="text-center">
+                                    <svg className="w-12 h-12 mx-auto mb-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    <p>Revenue chart coming soon</p>
+                                    <p className="text-sm mt-2">TODO: Add revenue trend chart</p>
+                                    <div className="mt-4 text-xs text-gray-400">
+                                        {overview.charts.revenueTrend.slice(0, 3).map((item, idx) => (
+                                            <div key={idx}>{item.period}: ${item.amount}</div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        ) : (
+                            <EmptyAnalyticsState title="No revenue data available" />
+                        )}
+                    </AnalyticsChartCard>
+                </div>
             </div>
         </div>
     );
-};
-
-const KpiCard = ({ label, value, hint }) => (
-    <div className="rounded-xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-[#111111] p-4">
-        <div className="text-xs text-gray-500 dark:text-gray-400">{label}</div>
-        <div className="mt-2 text-2xl font-semibold text-gray-900 dark:text-[#E8ECF3]">{value}</div>
-        <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">{hint}</div>
-    </div>
-);
-
-const TableCard = ({ title, columns, rows }) => (
-    <section className="rounded-xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-[#111111] p-4 overflow-x-auto">
-        <h3 className="text-sm font-semibold text-gray-900 dark:text-[#E8ECF3] mb-3">{title}</h3>
-        <table className="w-full text-sm">
-            <thead>
-                <tr className="text-left text-gray-500 border-b border-gray-100 dark:border-gray-800">
-                    {columns.map((col) => (
-                        <th key={col} className="py-2 pr-3">
-                            {col}
-                        </th>
-                    ))}
-                </tr>
-            </thead>
-            <tbody>
-                {rows.map((row, idx) => (
-                    <tr
-                        key={`${title}-${idx}`}
-                        className="border-b border-gray-50 dark:border-gray-900"
-                    >
-                        {row.map((cell, cidx) => (
-                            <td
-                                key={`${title}-${idx}-${cidx}`}
-                                className="py-2 pr-3 text-gray-700 dark:text-gray-200"
-                            >
-                                {cell}
-                            </td>
-                        ))}
-                    </tr>
-                ))}
-                {rows.length === 0 && (
-                    <tr>
-                        <td colSpan={columns.length} className="py-6 text-center text-gray-500">
-                            Маалымат жок.
-                        </td>
-                    </tr>
-                )}
-            </tbody>
-        </table>
-    </section>
-);
-
-KpiCard.propTypes = {
-    label: PropTypes.string.isRequired,
-    value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
-    hint: PropTypes.string.isRequired,
-};
-
-TableCard.propTypes = {
-    title: PropTypes.string.isRequired,
-    columns: PropTypes.arrayOf(PropTypes.string).isRequired,
-    rows: PropTypes.arrayOf(PropTypes.arrayOf(PropTypes.any)).isRequired,
 };
 
 export default AdminAnalyticsPage;
