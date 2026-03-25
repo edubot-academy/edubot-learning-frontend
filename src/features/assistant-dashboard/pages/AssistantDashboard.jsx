@@ -1,6 +1,7 @@
 import React, { useContext, useState } from "react";
 import { AuthContext } from "../../../context/AuthContext";
 import DashboardSidebar from "@features/dashboard/components/DashboardSidebar";
+import FloatingActionButton from "../../../components/ui/FloatingActionButton";
 import AttendancePage from "../../../pages/Attendance";
 import AssistantDashboardHeader from "../components/AssistantDashboardHeader";
 import AssistantCompanyState from "../components/AssistantCompanyState";
@@ -150,6 +151,9 @@ const AssistantDashboard = () => {
                 />
 
                 {!assistantNoCompany && !assistantNeedsSelect && renderMainContent()}
+
+                {/* Floating Action Button */}
+                <FloatingActionButton role="assistant" />
             </div>
         </div>
     );

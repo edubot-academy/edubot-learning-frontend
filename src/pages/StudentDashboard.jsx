@@ -22,6 +22,7 @@ import toast from 'react-hot-toast';
 import Loader from '@shared/ui/Loader';
 import LeaderboardHub from '../features/leaderboard/components/LeaderboardHub';
 import StudentAnalyticsPage from './StudentAnalytics';
+import FloatingActionButton from '../components/ui/FloatingActionButton';
 import NotificationsTab from '@features/notifications/components/NotificationsTab';
 import { NAV_ITEMS, DEFAULT_NOTIFICATION_SETTINGS } from '@features/student-dashboard/utils/studentDashboard.constants.js';
 import {
@@ -978,6 +979,9 @@ const StudentDashboard = () => {
                     </div>
                     {renderTab()}
                 </main>
+
+                {/* Floating Action Button */}
+                <FloatingActionButton role="student" />
             </div>
         </div>
     );

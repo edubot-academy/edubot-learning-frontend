@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import FloatingActionButton from '../../../components/ui/FloatingActionButton';
 import {
     fetchCourses,
     fetchCategories,
@@ -1227,6 +1228,9 @@ const AdminPanel = () => {
                     {/* Extracted tab content */}
                     {renderTabContent()}
                 </div>
+
+                {/* Floating Action Button */}
+                <FloatingActionButton role="admin" />
             </div>
         </div>
     );

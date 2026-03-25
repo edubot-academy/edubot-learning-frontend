@@ -12,7 +12,8 @@ import {
     fetchInstructorCourses,
 } from '@services/api';
 import toast from 'react-hot-toast';
-import Loader from '@shared/ui/Loader';
+import Loader from '../shared/ui/Loader';
+import FloatingActionButton from '../components/ui/FloatingActionButton';
 import NotificationsTab from '@features/notifications/components/NotificationsTab';
 import AttendancePage from './Attendance';
 import SessionWorkspacePage from './SessionWorkspace';
@@ -553,6 +554,9 @@ const InstructorDashboard = () => {
 
                     {renderContent()}
                 </main>
+
+                {/* Floating Action Button */}
+                <FloatingActionButton role="instructor" />
             </div>
         </div>
     );
