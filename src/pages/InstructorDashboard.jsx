@@ -27,6 +27,7 @@ import {
     ProfileSection,
     AiSection,
     OfferingsSection,
+    ChatTab,
     NAV_ITEMS,
 } from '@features/instructor-dashboard';
 
@@ -432,6 +433,9 @@ const InstructorDashboard = () => {
 
             case 'homework':
                 return <InstructorHomework />;
+
+            case 'chat':
+                return <ChatTab />;
 
             case 'notifications':
                 return <NotificationsTab />;

@@ -9,6 +9,7 @@ import {
     FiCalendar,
     FiGlobe,
     FiBell,
+    FiMessageCircle,
 } from 'react-icons/fi';
 
 export const NAV_ITEMS = [
@@ -21,6 +22,7 @@ export const NAV_ITEMS = [
     { id: 'offerings', label: 'Агымдар', icon: FiLayers, category: 'secondary', priority: 1 },
     { id: 'sessions', label: 'Сессиялар', icon: FiCalendar, category: 'secondary', priority: 2 },
     { id: 'homework', label: 'Үй тапшырма', icon: FiBookOpen, category: 'secondary', priority: 3 },
+    { id: 'chat', label: 'Чат', icon: FiMessageCircle, category: 'secondary', priority: 4 },
 
     // Performance & Analytics
     { id: 'analytics', label: 'Аналитика', icon: FiGlobe, category: 'analytics', priority: 1 },

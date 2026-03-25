@@ -39,6 +39,7 @@ import ScheduleTab from '@features/student-dashboard/components/tabs/ScheduleTab
 import TasksTab from '@features/student-dashboard/components/tabs/TasksTab.jsx';
 import ProgressTab from '@features/student-dashboard/components/tabs/ProgressTab.jsx';
 import ProfileTab from '@features/student-dashboard/components/tabs/ProfileTab.jsx';
+import ChatTab from '@features/student-dashboard/components/ChatTab.jsx';
 
 
 const StudentDashboard = () => {
@@ -75,6 +76,7 @@ const StudentDashboard = () => {
         leaderboard: true,
         notifications: true,
         profile: true,
+        chat: true,
     });
     const [notificationsLoaded, setNotificationsLoaded] = useState(false);
     const [notificationLoading, setNotificationLoading] = useState(false);
@@ -831,8 +833,7 @@ const StudentDashboard = () => {
                     />
                 );
             case 'chat':
-                // Chat is handled by navigation to /chat page
-                return <div className="text-center p-8">Redirecting to chat...</div>;
+                return <ChatTab />;
             case 'overview':
             default:
                 return (
@@ -855,13 +856,9 @@ const StudentDashboard = () => {
     const navigate = useNavigate();
     const handleDashboardNavSelect = useCallback(
         (id) => {
-            if (id === 'chat') {
-                navigate('/chat');
-                return;
-            }
             setActiveTab(id);
         },
-        [navigate]
+        []
     );
 
     return (

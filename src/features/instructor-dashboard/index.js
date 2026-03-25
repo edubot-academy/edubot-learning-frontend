@@ -6,6 +6,7 @@ export { default as StudentsSection } from './components/StudentsSection.jsx';
 export { default as ProfileSection } from './components/ProfileSection.jsx';
 export { default as AiSection } from './components/AiSection.jsx';
 export { default as OfferingsSection } from './components/OfferingsSection.jsx';
+export { default as ChatTab } from './components/ChatTab.jsx';
 
 // UI Components
 export { default as InstructorStatCard } from './components/InstructorStatCard.jsx';
