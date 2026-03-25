@@ -26,11 +26,16 @@ const DashboardSidebar = ({
         <aside
             className={`rounded-2xl shadow-xl transition-all duration-500 ease-in-out bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:shadow-2xl transform hover:scale-[1.02] ${resolvedOpen ? 'w-64 p-6' : 'w-20 p-4'
                 } ${className}`}
+            role="navigation"
+            aria-label="Dashboard navigation menu"
         >
             <button
                 onClick={handleToggle}
                 className="w-full flex items-center justify-between text-sm font-semibold text-gray-500 dark:text-gray-400 hover:text-edubot-orange dark:hover:text-edubot-soft transition-all duration-200 group"
                 type="button"
+                aria-label={resolvedOpen ? toggleLabels.collapse : toggleLabels.expand}
+                aria-expanded={resolvedOpen}
+                aria-controls="dashboard-nav-menu"
             >
                 <span className={`transition-all duration-300 ${resolvedOpen ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-2'}`}>
                     {resolvedOpen ? toggleLabels.collapse : toggleLabels.expand}
@@ -39,7 +44,7 @@ const DashboardSidebar = ({
                     {resolvedOpen ? '‹' : '›'}
                 </span>
             </button>
-            <nav className="mt-6 space-y-1">
+            <nav className="mt-6 space-y-1" id="dashboard-nav-menu" role="menubar" aria-orientation="vertical">
                 {(() => {
                     const groupedItems = items.reduce((groups, item) => {
                         const category = item.category || 'other';
@@ -69,8 +74,8 @@ const DashboardSidebar = ({
                         return (
                             <div key={category} className="mb-4 animate-fade-in">
                                 {resolvedOpen && (
-                                    <div className="px-3 py-1 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 transition-all duration-300 hover:text-gray-700 dark:hover:text-gray-300">
-                                        <span className="inline-block transition-transform duration-300 hover:scale-105">
+                                    <div className="px-3 py-1 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 transition-all duration-300 hover:text-gray-700 dark:hover:text-gray-300" role="presentation">
+                                        <span className="inline-block transition-transform duration-300 hover:scale-105" aria-hidden="true">
                                             {categoryLabels[category] || category}
                                         </span>
                                     </div>
@@ -102,6 +107,9 @@ const DashboardSidebar = ({
                                                                                     ? 'text-edubot-teal dark:text-edubot-green hover:bg-edubot-teal/10 dark:hover:bg-edubot-teal/20 hover:shadow-md hover:ring-2 hover:ring-edubot-teal/20'
                                                                                     : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:shadow-md hover:ring-2 hover:ring-gray-200/50'
                                                     }`}
+                                                role="menuitem"
+                                                aria-label={item.label}
+                                                aria-current={isActive ? 'page' : undefined}
                                             >
                                                 {Icon && (
                                                     <Icon

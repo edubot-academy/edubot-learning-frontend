@@ -6,6 +6,9 @@
 @import '@fontsource/inter/cyrillic.css';
 @import '@fontsource/inter/cyrillic-ext.css';
 
+/* Modal dropdown styling */
+@import './styles/modal-select-styles.css';
+
 /* 2. Then your Tailwind layers */
 @tailwind base;
 @tailwind components;
@@ -70,12 +73,48 @@ body {
     animation: fade-in 0.3s ease-out;
 }
 
-.animate-slide-in {
-    animation: slide-in 0.3s ease-out;
+.animate-slide-up {
+    animation: slide-up 0.3s ease-out;
 }
 
-.animate-pulse-glow {
-    animation: pulse-glow 2s infinite;
+.animate-scale-in {
+    animation: scale-in 0.3s ease-out;
+}
+
+@keyframes fade-in {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes slide-up {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes scale-in {
+    from {
+        opacity: 0;
+        transform: scale(0.8);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
 }
 
 /* Links */

@@ -151,9 +151,8 @@ const CoursesSection = ({
 
         {showDeliveryModal && (
             <CreateDeliveryCourseModal
-                deliveryCourse={deliveryCourse}
-                onDeliveryCourseChange={onDeliveryCourseChange}
-                onCloseDeliveryModal={onCloseDeliveryModal}
+                isOpen={showDeliveryModal}
+                onClose={onCloseDeliveryModal}
                 onCreateDeliveryCourse={onCreateDeliveryCourse}
                 creatingDeliveryCourse={creatingDeliveryCourse}
                 deliveryCategories={deliveryCategories}

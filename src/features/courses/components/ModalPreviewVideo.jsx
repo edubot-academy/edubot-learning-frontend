@@ -1,8 +1,19 @@
 import React, { useEffect, useState } from 'react';
-import Modal from '@shared-ui/Modal';
+import PropTypes from 'prop-types';
+import BasicModal from '@shared/ui/BasicModal';
 import { fetchCoursePreview } from '../api';
 import { formatSecondsToTime } from '../../../utils/timeUtils';
 import VideoPlayer from '@shared/VideoPlayer';
+import toast from 'react-hot-toast';
+import {
+    FiShare2,
+    FiTwitter,
+    FiLinkedin,
+    FiGlobe,
+    FiCamera,
+    FiDownload,
+    FiCopy,
+} from 'react-icons/fi';
 
 
 function ModalPreviewVideo({ isOpen, onClose, courseId, previewData: previewDataProp = null, initialVideo = null,
@@ -78,7 +89,7 @@ function ModalPreviewVideo({ isOpen, onClose, courseId, previewData: previewData
     if (!isOpen) return null;
 
     return (
-        <Modal
+        <BasicModal
             isOpen={isOpen}
             onClose={onClose}
             title={previewData?.title}
@@ -142,7 +153,7 @@ function ModalPreviewVideo({ isOpen, onClose, courseId, previewData: previewData
                     </div>
                 </div>
             )}
-        </Modal>
+        </BasicModal>
     );
 }
 

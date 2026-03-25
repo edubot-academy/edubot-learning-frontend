@@ -66,6 +66,13 @@ const OfferingsSection = ({ courses, offerings, loading, refreshOfferings }) => 
     const [loadingUserOptions, setLoadingUserOptions] = useState(false);
     const [showUserDropdown, setShowUserDropdown] = useState(false);
 
+    const updateCreateForm = useCallback((field, value) => {
+        setCreateForm(prev => ({
+            ...prev,
+            [field]: value
+        }));
+    }, []);
+
     useEffect(() => {
         setCreateForm((prev) => ({
             ...prev,
@@ -412,19 +419,26 @@ const OfferingsSection = ({ courses, offerings, loading, refreshOfferings }) => 
                     courses={courses}
                     form={createForm}
                     onChange={(field, value) =>
-                        setCreateForm((prev) => ({
-                            ...prev,
-                            [field]: value,
-                        }))
+                        updateCreateForm(field, value)
                     }
-                    onClose={() => {
-                        setShowCreateModal(false);
-                        setCreateForm(getInitialForm());
-                        setEditingOffering(null);
+                    onClose={() => setShowCreateModal(false)}
+                    onSubmit={async (formData) => {
+                        try {
+                            setCreating(true);
+                            const response = await createOffering(formData);
+                            toast.success('Offering ийгиликтүү бүттү!');
+                            refreshOfferings();
+                            setShowCreateModal(false);
+                            setCreateForm(getInitialForm());
+                        } catch (error) {
+                            console.error('Offering түзүүдө ката кетти:', error);
+                            toast.error('Offering түзүүдө ката кетти');
+                        } finally {
+                            setCreating(false);
+                        }
                     }}
-                    onSubmit={handleCreateOffering}
                     creating={creating}
-                    mode={modalMode}
+                    mode="create"
                 />
             )}
 

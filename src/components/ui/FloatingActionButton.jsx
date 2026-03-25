@@ -114,10 +114,17 @@ const FloatingActionButton = ({
         <div
             ref={fabRef}
             className={`fixed ${positionClasses[position]} z-50 ${className}`}
+            role="region"
+            aria-label="Quick actions menu"
         >
             {/* Action Items */}
             <div className={`relative ${isOpen ? 'opacity-100 visible' : 'opacity-0 invisible'} transition-all duration-300`}>
-                <div className="absolute bottom-16 right-0 space-y-3">
+                <div
+                    className="absolute bottom-16 right-0 space-y-3"
+                    role="menu"
+                    aria-label="Quick actions"
+                    aria-orientation="vertical"
+                >
                     {roleActions.map((action, index) => (
                         <div
                             key={action.id}
@@ -130,8 +137,12 @@ const FloatingActionButton = ({
                             }}
                         >
                             {/* Action Label */}
-                            <div className={`bg-gray-800 dark:bg-gray-700 text-white px-3 py-2 rounded-lg text-sm whitespace-nowrap shadow-lg ${isOpen ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
-                                } transition-all duration-200`}>
+                            <div
+                                className={`bg-gray-800 dark:bg-gray-700 text-white px-3 py-2 rounded-lg text-sm whitespace-nowrap shadow-lg ${isOpen ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
+                                    } transition-all duration-200`}
+                                role="tooltip"
+                                aria-hidden="true"
+                            >
                                 {action.label}
                             </div>
 
@@ -140,6 +151,9 @@ const FloatingActionButton = ({
                                 onClick={() => handleActionClick(action)}
                                 className={`w-12 h-12 ${action.color} text-white rounded-full shadow-lg hover:shadow-xl transform hover:scale-110 transition-all duration-300 flex items-center justify-center text-lg`}
                                 title={action.label}
+                                aria-label={action.label}
+                                role="menuitem"
+                                tabIndex={isOpen ? 0 : -1}
                             >
                                 {action.icon}
                             </button>
@@ -154,6 +168,9 @@ const FloatingActionButton = ({
                 className={`w-14 h-14 bg-edubot-orange hover:bg-edubot-soft text-white rounded-full shadow-lg hover:shadow-xl transform transition-all duration-300 flex items-center justify-center ${isOpen ? 'rotate-45 scale-110' : 'rotate-0 scale-100 hover:scale-110'
                     }`}
                 title="Тез аракеттер"
+                aria-label="Тез аракеттер менюсун ач/жаб"
+                aria-expanded={isOpen}
+                aria-controls="fab-actions-menu"
             >
                 <FiPlus className="h-6 w-6" />
             </button>
@@ -163,6 +180,7 @@ const FloatingActionButton = ({
                 <div
                     className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 md:hidden"
                     onClick={() => setIsOpen(false)}
+                    aria-hidden="true"
                 />
             )}
         </div>

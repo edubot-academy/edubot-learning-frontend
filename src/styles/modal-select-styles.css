@@ -1,0 +1,40 @@
+/* Modal dropdown styling - Custom select elements for consistent design */
+
+/* Remove default browser dropdown arrows globally in modals */
+.modal-content select,
+.enhanced-modal select,
+[class*="modal"] select {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  -ms-appearance: none !important;
+  background-image: none !important;
+}
+
+/* Hide default arrows in WebKit browsers */
+.modal-content select::-webkit-calendar-picker-indicator,
+.modal-content select::-webkit-inner-spin-button,
+.modal-content select::-webkit-outer-spin-button,
+.enhanced-modal select::-webkit-calendar-picker-indicator,
+.enhanced-modal select::-webkit-inner-spin-button,
+.enhanced-modal select::-webkit-outer-spin-button,
+[class*="modal"] select::-webkit-calendar-picker-indicator,
+[class*="modal"] select::-webkit-inner-spin-button,
+[class*="modal"] select::-webkit-outer-spin-button {
+  display: none !important;
+}
+
+/* Hide default arrows in Firefox */
+.modal-content select::-ms-expand,
+.enhanced-modal select::-ms-expand,
+[class*="modal"] select::-ms-expand {
+  display: none !important;
+}
+
+/* Ensure custom dropdown arrows are visible */
+.modal-content .absolute.inset-y-0.right-0,
+.enhanced-modal .absolute.inset-y-0.right-0,
+[class*="modal"] .absolute.inset-y-0.right-0 {
+  pointer-events: none;
+  z-index: 10;
+}

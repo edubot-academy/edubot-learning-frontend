@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import toast from 'react-hot-toast';
-import Modal from '@shared/ui/Modal';
+import BasicModal from '@shared/ui/BasicModal';
 
 const ContactCourseModal = ({ isOpen, onClose, course, lessonCount }) => {
     const [formData, setFormData] = useState({
@@ -37,7 +37,7 @@ const ContactCourseModal = ({ isOpen, onClose, course, lessonCount }) => {
         } else {
             setFormData((prev) => ({ ...prev, [name]: value }));
         }
-        
+
         if (errors[name]) {
             setErrors((prev) => ({ ...prev, [name]: '' }));
         }
@@ -62,12 +62,12 @@ const ContactCourseModal = ({ isOpen, onClose, course, lessonCount }) => {
     };
 
     return (
-        <Modal 
-            isOpen={isOpen} 
-            onClose={onClose} 
-            title="Байланышуу" 
+        <BasicModal
+            isOpen={isOpen}
+            onClose={onClose}
+            title="Байланышуу"
             size="md"
-            darkMode 
+            darkMode
         >
             <div className="p-1">
                 <div className="mb-6 p-4 bg-gradient-to-r from-orange-50 to-red-50 
@@ -204,7 +204,7 @@ const ContactCourseModal = ({ isOpen, onClose, course, lessonCount }) => {
                     </div>
                 </form>
             </div>
-        </Modal>
+        </BasicModal>
     );
 };
 

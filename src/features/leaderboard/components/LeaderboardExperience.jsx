@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import ReactGA4 from 'react-ga4';
-import Modal from '@shared-ui/Modal';
+import BasicModal from '@shared-ui/BasicModal';
 import { createLeaderboardShare } from '../api';
 import {
     FiArrowRight,
@@ -429,7 +429,7 @@ const ShareDestinationModal = ({ isOpen, onClose, onAction, isBusy, canNativeSha
     ];
 
     return (
-        <Modal isOpen={isOpen} onClose={isBusy ? () => { } : onClose} title="Кайда бөлүшөсүз?" size="lg">
+        <BasicModal isOpen={isOpen} onClose={isBusy ? () => { } : onClose} title="Кайда бөлүшөсүз?" size="lg">
             <div className="space-y-6">
                 <div className="rounded-[28px] border border-slate-200 bg-[linear-gradient(135deg,_rgba(249,115,22,0.12),_rgba(255,255,255,0.96))] p-5 dark:border-slate-700 dark:bg-[linear-gradient(135deg,_rgba(249,115,22,0.18),_rgba(15,23,42,0.94))]">
                     <div className="flex flex-wrap items-start justify-between gap-3">
@@ -528,7 +528,7 @@ const ShareDestinationModal = ({ isOpen, onClose, onAction, isBusy, canNativeSha
                     )}
                 </div>
             </div>
-        </Modal>
+        </BasicModal>
     );
 };
 
