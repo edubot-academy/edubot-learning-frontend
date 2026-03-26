@@ -6,6 +6,8 @@ import {
 } from '@services/api';
 import { AuthContext } from '../context/AuthContext';
 import { toast } from 'react-hot-toast';
+import { useNavigate } from 'react-router-dom';
+import { useSwipeNavigation } from '../hooks/useSwipeGestures';
 import {
     AnalyticsSummaryCard,
     AnalyticsSection,
@@ -17,6 +19,7 @@ import {
     AnalyticsBarChart,
     AnalyticsDoughnutChart,
 } from '@components/analytics';
+import MobileQuickActions from '@components/analytics/MobileQuickActions';
 
 const toList = (payload) => {
     if (Array.isArray(payload)) return payload;
@@ -32,11 +35,23 @@ const metricNumber = (value, fallback = 0) => {
 };
 
 const InstructorAnalyticsPage = () => {
+    const navigate = useNavigate();
     const { user } = useContext(AuthContext);
-    const [filters, setFilters] = useState({ from: '', to: '' });
+    const [filters, setFilters] = useState({ from: '', to: '', course: '' });
     const [loading, setLoading] = useState(false);
     const [courses, setCourses] = useState([]);
     const [overview, setOverview] = useState(null);
+
+    // Swipe navigation for mobile
+    const analyticsPages = ['/instructor/analytics', '/admin/analytics', '/student/analytics'];
+    const currentPageIndex = analyticsPages.indexOf('/instructor/analytics');
+
+    const swipeRef = useSwipeNavigation({
+        goBack: () => navigate('/admin/analytics'),
+        goForward: () => navigate('/student/analytics'),
+        pages: analyticsPages,
+        currentIndex: currentPageIndex,
+    });
 
     useEffect(() => {
         let cancelled = false;
@@ -97,8 +112,27 @@ const InstructorAnalyticsPage = () => {
     );
 
     return (
-        <div className="pt-24 min-h-screen bg-gray-50 dark:bg-[#1A1A1A] px-4 pb-12">
-            <div className="max-w-6xl mx-auto space-y-6">
+        <div ref={swipeRef} className="pt-24 min-h-screen bg-gray-50 dark:bg-[#1A1A1A] px-4 pb-12">
+            {/* Mobile Quick Actions */}
+            <MobileQuickActions
+                onRefresh={loadAnalytics}
+                onExport={() => {
+                    // TODO: Implement export functionality
+                    toast.success('Экспорт функциясы келечеки!');
+                }}
+                onFilter={() => {
+                    // TODO: Open filter modal
+                    toast.success('Фильтр функциясы келечеки!');
+                }}
+                onShare={() => {
+                    // TODO: Implement share functionality
+                    toast.success('Бөлүшүү функциясы келечеки!');
+                }}
+                currentPage="instructor-analytics"
+                loading={loading}
+            />
+
+            <div className="max-w-5xl mx-auto px-4 lg:px-6 space-y-6">
                 <DashboardPageHeader
                     title="Отуучу Аналитикасы"
                     subtitle="Отуу жетишкендиги, окуучулардын катышуусу, курс маалыматтары жана корутулар"
@@ -107,7 +141,7 @@ const InstructorAnalyticsPage = () => {
                             type="button"
                             onClick={loadAnalytics}
                             disabled={loading}
-                            className="px-4 py-2 rounded-lg bg-edubot-orange text-white font-medium hover:bg-edubot-orange/90 disabled:opacity-60 transition-colors"
+                            className="px-4 py-2 sm:px-3 sm:py-2 rounded-lg bg-edubot-orange text-white font-medium hover:bg-edubot-orange/90 disabled:opacity-60 transition-all duration-200 active:scale-95 touch-manipulation min-h-[44px] min-w-[100px]"
                         >
                             {loading ? 'Жүктөлүүдө...' : 'Жаңылоо'}
                         </button>
@@ -208,8 +242,8 @@ const InstructorAnalyticsPage = () => {
                             item.studentName || `Окуучу #${item.studentId}`,
                             item.courseTitle || `Курс #${item.courseId}`,
                             <span className={`px-2 py-1 text-xs rounded-full ${item.riskReason?.includes('progress') ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300' :
-                                    item.riskReason?.includes('activity') ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300' :
-                                        'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300'
+                                item.riskReason?.includes('activity') ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300' :
+                                    'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300'
                                 }`}>
                                 {item.riskReason || 'Белгисиз'}
                             </span>,

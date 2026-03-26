@@ -4,7 +4,7 @@ import { useCart } from '../context/CartContext';
 import { BsTrash, BsCartX } from 'react-icons/bs';
 import { FaShoppingCart } from 'react-icons/fa';
 import Button from '@shared-ui/Button';
-import Modal from '@shared-ui/Modal';
+import Modal from '@shared-ui/BasicModal';
 import ContactCourseModal from '@features/courses/components/ContactCourseModal';
 import UnauthModal from '../shared/ui/UnauthModal';
 import Loader from '@shared/ui/Loader';

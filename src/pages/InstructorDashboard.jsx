@@ -1,9 +1,10 @@
 import { useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { Navigate, useSearchParams } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
-import { SmoothTabTransition } from '@components/ui';
 import DashboardSidebar from '@features/dashboard/components/DashboardSidebar';
 import SkipNavigation from '../components/ui/SkipNavigation';
+import InstructorDashboardTabs from '../components/ui/InstructorDashboardTabs';
+import useDashboardSwipeGestures from '../hooks/useDashboardSwipeGestures';
 import {
     fetchInstructorProfile,
     listOfferingsForCourse,
@@ -27,13 +28,11 @@ import {
     InstructorOverviewSection,
     CoursesSection,
     StudentsSection,
-    ProfileSection,
     AiSection,
     OfferingsSection,
     ChatTab,
     NAV_ITEMS,
 } from '@features/instructor-dashboard';
-
 
 const InstructorDashboard = () => {
     const { user } = useContext(AuthContext);
@@ -41,10 +40,10 @@ const InstructorDashboard = () => {
     const [searchParams, setSearchParams] = useSearchParams();
 
     const initialTab = searchParams.get('tab') || 'overview';
-
     const [activeTab, setActiveTab] = useState(
         NAV_ITEMS.some((item) => item.id === initialTab) ? initialTab : 'overview'
     );
+
     const [profile, setProfile] = useState(null);
     const [loadingProfile, setLoadingProfile] = useState(false);
     const [courseList, setCourseList] = useState([]);
@@ -80,9 +79,9 @@ const InstructorDashboard = () => {
     const analyticsLink = useMemo(() => {
         const to = new Date();
         const from = new Date(to.getTime() - 30 * 24 * 60 * 60 * 1000);
-        const toIso = to.toISOString().slice(0, 10);
-        const fromIso = from.toISOString().slice(0, 10);
-        return `/instructor/analytics?from=${fromIso}&to=${toIso}`;
+        return `/instructor/analytics?from=${from.toISOString().slice(0, 10)}&to=${to
+            .toISOString()
+            .slice(0, 10)}`;
     }, []);
 
     const courses = useMemo(
@@ -112,26 +111,19 @@ const InstructorDashboard = () => {
         [courses, offeringsByCourse]
     );
 
-    const expertiseTags = useMemo(() => {
-        if (Array.isArray(profile?.expertiseTags) && profile.expertiseTags.length) {
-            return profile.expertiseTags;
-        }
-        if (typeof profile?.expertiseTagsText === 'string' && profile.expertiseTagsText.trim()) {
-            return profile.expertiseTagsText
-                .split(',')
-                .map((tag) => tag.trim())
-                .filter(Boolean);
-        }
-        return [];
-    }, [profile]);
+    const handleSwipeLeft = useCallback(() => {
+        if (window.innerWidth < 768) setSidebarOpen(false);
+    }, []);
 
-    const socialLinks = useMemo(
-        () =>
-            Object.entries(profile?.socialLinks || {}).filter(
-                ([, value]) => typeof value === 'string' && value.trim().length
-            ),
-        [profile]
-    );
+    const handleSwipeRight = useCallback(() => {
+        if (window.innerWidth < 768) setSidebarOpen(true);
+    }, []);
+
+    useDashboardSwipeGestures({
+        onSwipeLeft: handleSwipeLeft,
+        onSwipeRight: handleSwipeRight,
+        enabled: typeof window !== 'undefined' && window.innerWidth < 768,
+    });
 
     useEffect(() => {
         if (!user?.id || user.role !== 'instructor') return;
@@ -153,11 +145,29 @@ const InstructorDashboard = () => {
     }, [user]);
 
     useEffect(() => {
+        if (!user?.id || user.role !== 'instructor') return;
+
+        const loadCourses = async () => {
+            setLoadingCourses(true);
+            try {
+                const data = await fetchInstructorCourses({ status: 'approved' });
+                setCourseList(Array.isArray(data?.courses) ? data.courses : []);
+            } catch (error) {
+                console.error('Failed to load instructor courses', error);
+                toast.error('Инструктор курстарын жүктөө мүмкүн болбоду');
+            } finally {
+                setLoadingCourses(false);
+            }
+        };
+
+        loadCourses();
+    }, [user]);
+
+    useEffect(() => {
         const handleGlobalKeyDown = (e) => {
-            // Alt + shortcuts for navigation
             if (e.altKey) {
                 switch (e.key.toLowerCase()) {
-                    case 'm':
+                    case 'm': {
                         e.preventDefault();
                         const mainContent = document.getElementById('main-content');
                         if (mainContent) {
@@ -165,7 +175,8 @@ const InstructorDashboard = () => {
                             mainContent.scrollIntoView({ behavior: 'smooth' });
                         }
                         break;
-                    case 'n':
+                    }
+                    case 'n': {
                         e.preventDefault();
                         const navigation = document.querySelector('nav[role="navigation"]');
                         if (navigation) {
@@ -173,31 +184,41 @@ const InstructorDashboard = () => {
                             navigation.scrollIntoView({ behavior: 'smooth' });
                         }
                         break;
-                    case 's':
+                    }
+                    case 's': {
                         e.preventDefault();
-                        const searchInput = document.querySelector('input[placeholder*="издөө" i], input[type="search"]');
+                        const searchInput = document.querySelector(
+                            'input[placeholder*="издөө" i], input[type="search"]'
+                        );
                         if (searchInput) {
                             searchInput.focus();
                             searchInput.scrollIntoView({ behavior: 'smooth' });
                         }
                         break;
+                    }
+                    default:
+                        break;
                 }
             }
 
-            // Arrow key navigation for sidebar
             if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
                 const sidebarItems = document.querySelectorAll('[role="menuitem"]');
-                const currentIndex = Array.from(sidebarItems).findIndex(item => item === document.activeElement);
+                const currentIndex = Array.from(sidebarItems).findIndex(
+                    (item) => item === document.activeElement
+                );
 
                 if (currentIndex !== -1) {
                     e.preventDefault();
-                    let newIndex;
-                    if (e.key === 'ArrowLeft') {
-                        newIndex = currentIndex > 0 ? currentIndex - 1 : sidebarItems.length - 1;
-                    } else {
-                        newIndex = currentIndex < sidebarItems.length - 1 ? currentIndex + 1 : 0;
-                    }
-                    sidebarItems[newIndex].focus();
+                    const newIndex =
+                        e.key === 'ArrowLeft'
+                            ? currentIndex > 0
+                                ? currentIndex - 1
+                                : sidebarItems.length - 1
+                            : currentIndex < sidebarItems.length - 1
+                                ? currentIndex + 1
+                                : 0;
+
+                    sidebarItems[newIndex]?.focus();
                 }
             }
         };
@@ -236,80 +257,6 @@ const InstructorDashboard = () => {
         }
     }, [searchParams, activeTab]);
 
-    useEffect(() => {
-        const handleGlobalKeyDown = (e) => {
-            // Alt + shortcuts for navigation
-            if (e.altKey) {
-                switch (e.key.toLowerCase()) {
-                    case 'm':
-                        e.preventDefault();
-                        const mainContent = document.getElementById('main-content');
-                        if (mainContent) {
-                            mainContent.focus();
-                            mainContent.scrollIntoView({ behavior: 'smooth' });
-                        }
-                        break;
-                    case 'n':
-                        e.preventDefault();
-                        const navigation = document.querySelector('nav[role="navigation"]');
-                        if (navigation) {
-                            navigation.focus();
-                            navigation.scrollIntoView({ behavior: 'smooth' });
-                        }
-                        break;
-                    case 's':
-                        e.preventDefault();
-                        const searchInput = document.querySelector('input[placeholder*="издөө" i], input[type="search"]');
-                        if (searchInput) {
-                            searchInput.focus();
-                            searchInput.scrollIntoView({ behavior: 'smooth' });
-                        }
-                        break;
-                }
-            }
-
-            // Arrow key navigation for sidebar
-            if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
-                const sidebarItems = document.querySelectorAll('[role="menuitem"]');
-                const currentIndex = Array.from(sidebarItems).findIndex(item => item === document.activeElement);
-
-                if (currentIndex !== -1) {
-                    e.preventDefault();
-                    let newIndex;
-                    if (e.key === 'ArrowLeft') {
-                        newIndex = currentIndex > 0 ? currentIndex - 1 : sidebarItems.length - 1;
-                    } else {
-                        newIndex = currentIndex < sidebarItems.length - 1 ? currentIndex + 1 : 0;
-                    }
-                    sidebarItems[newIndex].focus();
-                }
-            }
-        };
-
-        document.addEventListener('keydown', handleGlobalKeyDown);
-        return () => document.removeEventListener('keydown', handleGlobalKeyDown);
-    }, []);
-
-    useEffect(() => {
-        if (!user?.id || user.role !== 'instructor') return;
-
-        const loadCourses = async () => {
-            setLoadingCourses(true);
-            try {
-                const data = await fetchInstructorCourses({ status: 'approved' });
-                const allCourses = Array.isArray(data?.courses) ? data.courses : [];
-                setCourseList(allCourses);
-            } catch (error) {
-                console.error('Failed to load instructor courses', error);
-                toast.error('Инструктор курстарын жүктөө мүмкүн болбоду');
-            } finally {
-                setLoadingCourses(false);
-            }
-        };
-
-        loadCourses();
-    }, [user]);
-
     const loadStudentCourses = useCallback(async () => {
         if (!user?.id || user.role !== 'instructor') return;
 
@@ -329,8 +276,7 @@ const InstructorDashboard = () => {
 
             setSelectedStudentCourseId((prev) => {
                 if (!list.length) return null;
-                const exists = list.some((course) => course.id === prev);
-                return exists ? prev : null;
+                return list.some((course) => course.id === prev) ? prev : null;
             });
 
             if (!list.length) {
@@ -406,7 +352,6 @@ const InstructorDashboard = () => {
         }
 
         setLoadingOfferings(true);
-
         try {
             const summaries = {};
             await Promise.all(
@@ -426,7 +371,7 @@ const InstructorDashboard = () => {
         } finally {
             setLoadingOfferings(false);
         }
-    }, [listOfferingsForCourse]);
+    }, []);
 
     useEffect(() => {
         if (!courses.length) {
@@ -498,7 +443,6 @@ const InstructorDashboard = () => {
         }
 
         setCreatingDeliveryCourse(true);
-
         try {
             await createCourse({
                 title: deliveryCourse.title,
@@ -524,60 +468,25 @@ const InstructorDashboard = () => {
         }
     };
 
-    // Calculate tab loading state at component level for access in both render functions
-    const isTabLoading = loadingStudentCourses || loadingCourseStudents || loadingOfferings;
-
-    const renderContent = () => {
-        const isInitialLoading = (loadingProfile && !profile) || (loadingCourses && !courses.length);
-        const hasDataLoaded = profile && courses.length > 0;
-
-        // Only show loader for initial load, not tab switching
-        if (isInitialLoading && !hasDataLoaded) {
-            return <Loader fullScreen={false} />;
-        }
-
-        // For tab switching, show content with overlay if any tab is loading
-        if (isTabLoading && hasDataLoaded) {
-            return (
-                <div className="relative">
-                    {renderTabContent()}
-                    {isTabLoading && (
-                        <div className="absolute inset-0 bg-white/50 dark:bg-gray-900/50 flex items-center justify-center rounded-2xl">
-                            <div className="bg-white dark:bg-gray-800 rounded-lg p-3 shadow-lg">
-                                <div className="animate-spin rounded-full border-2 border-gray-300 border-t-blue-600 w-6 h-6"></div>
-                            </div>
-                        </div>
-                    )}
-                </div>
-            );
-        }
-
-        return renderTabContent();
-    };
+    const isTabLoading =
+        loadingStudentCourses || loadingCourseStudents || loadingOfferings;
 
     const renderTabContent = () => {
         switch (activeTab) {
             case 'sessions':
                 return <SessionWorkspacePage />;
-
             case 'attendance':
                 return <AttendancePage embedded />;
-
             case 'analytics':
                 return <InstructorAnalyticsPage />;
-
             case 'leaderboard':
                 return <InternalLeaderboard />;
-
             case 'homework':
                 return <InstructorHomework />;
-
             case 'chat':
                 return <ChatTab />;
-
             case 'notifications':
                 return <NotificationsTab />;
-
             case 'courses':
                 return (
                     <CoursesSection
@@ -593,7 +502,6 @@ const InstructorDashboard = () => {
                         deliveryCategories={deliveryCategories}
                     />
                 );
-
             case 'students':
                 return (
                     <StudentsSection
@@ -615,15 +523,8 @@ const InstructorDashboard = () => {
                         onStudentSearchChange={setStudentSearch}
                     />
                 );
-
             case 'ai':
-                return (
-                    <AiSection
-                        aiCourses={aiCourses}
-                        totalCourses={courses.length}
-                    />
-                );
-
+                return <AiSection aiCourses={aiCourses} totalCourses={courses.length} />;
             case 'offerings':
                 return (
                     <OfferingsSection
@@ -631,13 +532,10 @@ const InstructorDashboard = () => {
                         offerings={offerings}
                         loading={loadingOfferings}
                         refreshOfferings={() => {
-                            if (courses.length) {
-                                loadOfferingsForCourses(courses);
-                            }
+                            if (courses.length) loadOfferingsForCourses(courses);
                         }}
                     />
                 );
-
             case 'overview':
             default:
                 return (
@@ -654,25 +552,45 @@ const InstructorDashboard = () => {
         }
     };
 
-    if (!user || user.role !== 'instructor') {
-        return <Navigate to="/" replace />;
-    }
+    const renderContent = () => {
+        const isInitialLoading =
+            (loadingProfile && !profile) || (loadingCourses && !courses.length);
+        const hasDataLoaded = !!profile || courses.length > 0;
+
+        if (isInitialLoading && !hasDataLoaded) {
+            return <Loader fullScreen={false} />;
+        }
+
+        return (
+            <div className="relative">
+                {renderTabContent()}
+                {isTabLoading && hasDataLoaded && (
+                    <div className="absolute inset-0 flex items-center justify-center rounded-2xl bg-white/50 dark:bg-gray-900/50">
+                        <div className="rounded-lg bg-white p-3 shadow-lg dark:bg-gray-800">
+                            <div className="h-6 w-6 animate-spin rounded-full border-2 border-gray-300 border-t-blue-600" />
+                        </div>
+                    </div>
+                )}
+            </div>
+        );
+    };
+
+    if (!user) return <Navigate to="/login" replace />;
+    if (user.role !== 'instructor') return <Navigate to="/" replace />;
 
     return (
-        <div className="pt-24 min-h-screen">
+        <div className="min-h-screen pt-24">
             <SkipNavigation />
-            <div className="max-w-7xl mx-auto flex gap-6 px-4 pb-12">
-                <DashboardSidebar
-                    items={NAV_ITEMS}
-                    activeId={activeTab}
-                    onSelect={handleTabSelect}
-                    isOpen={sidebarOpen}
-                    onToggle={setSidebarOpen}
-                    className="flex-shrink-0"
-                />
 
+            <InstructorDashboardTabs
+                items={NAV_ITEMS}
+                activeId={activeTab}
+                onSelect={handleTabSelect}
+            />
+
+            <div className="mx-auto max-w-6xl px-2 pb-12 sm:px-4 md:hidden">
                 <main
-                    className="flex-1 min-w-0 space-y-6"
+                    className="w-full space-y-4"
                     id="main-content"
                     tabIndex={-1}
                     role="main"
@@ -684,16 +602,42 @@ const InstructorDashboard = () => {
                         setSidebarOpen={setSidebarOpen}
                         analyticsLink={analyticsLink}
                     />
-
                     {renderContent()}
                 </main>
-
-                {/* Floating Action Button */}
-                <FloatingActionButton role="instructor" />
             </div>
+
+            <div className="mx-auto hidden max-w-6xl px-2 pb-12 sm:px-4 md:block md:max-w-7xl md:px-6">
+                <div className="flex gap-0 md:gap-6">
+                    <DashboardSidebar
+                        items={NAV_ITEMS}
+                        activeId={activeTab}
+                        onSelect={handleTabSelect}
+                        isOpen={sidebarOpen}
+                        onToggle={setSidebarOpen}
+                        className="hidden md:flex md:flex-shrink-0"
+                    />
+
+                    <main
+                        className="w-full space-y-4 md:min-w-0 md:flex-1 md:space-y-6"
+                        id="main-content"
+                        tabIndex={-1}
+                        role="main"
+                        aria-label="Инструктор dashboard мазмуну"
+                    >
+                        <InstructorDashboardHeader
+                            user={user}
+                            sidebarOpen={sidebarOpen}
+                            setSidebarOpen={setSidebarOpen}
+                            analyticsLink={analyticsLink}
+                        />
+                        {renderContent()}
+                    </main>
+                </div>
+            </div>
+
+            <FloatingActionButton role="instructor" />
         </div>
     );
 };
-
 
 export default InstructorDashboard;

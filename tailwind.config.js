@@ -15,6 +15,17 @@ module.exports = {
             fontFamily: {
                 sans: ['Inter', 'system-ui', 'sans-serif'],
             },
+            // Mobile-specific responsive breakpoints
+            screens: {
+                'xs': '475px',
+                'sm': '640px',
+                'md': '768px',
+                'lg': '1024px',
+                'xl': '1280px',
+                '2xl': '1536px',
+                // Touch-friendly breakpoint for mobile
+                'touch': '640px',
+            },
         },
     },
     plugins: [
@@ -27,6 +38,16 @@ module.exports = {
                 },
                 '.input-field': {
                     '@apply w-full rounded-lg border p-2.5 text-sm bg-white dark:bg-gray-800 dark:text-white': {},
+                },
+                // Touch-friendly utilities
+                '.touch-manipulation': {
+                    '@apply select-none': {},
+                },
+                '.mobile-only': {
+                    '@apply sm:hidden': {},
+                },
+                '.desktop-only': {
+                    '@apply hidden sm:block': {},
                 },
                 '.text-primary': {
                     '@apply text-gray-900 dark:text-gray-100': {},

@@ -1,4 +1,3 @@
-import React from 'react';
 import PropTypes from 'prop-types';
 
 const EmptyAnalyticsState = ({
@@ -19,17 +18,17 @@ const EmptyAnalyticsState = ({
       <div className="flex justify-center mb-4">
         {icon || defaultIcon}
       </div>
-      
+
       <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
         {title}
       </h3>
-      
+
       {subtitle && (
         <p className="text-sm text-gray-600 dark:text-gray-400 mb-6 max-w-md mx-auto">
           {subtitle}
         </p>
       )}
-      
+
       {action && (
         <div className="flex justify-center">
           {action}

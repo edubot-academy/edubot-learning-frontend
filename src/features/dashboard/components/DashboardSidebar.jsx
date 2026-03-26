@@ -29,21 +29,6 @@ const DashboardSidebar = ({
             role="navigation"
             aria-label="Dashboard navigation menu"
         >
-            <button
-                onClick={handleToggle}
-                className="w-full flex items-center justify-between text-sm font-semibold text-gray-600 dark:text-gray-300 hover:text-edubot-orange dark:hover:text-edubot-soft transition-all duration-200 group"
-                type="button"
-                aria-label={resolvedOpen ? toggleLabels.collapse : toggleLabels.expand}
-                aria-expanded={resolvedOpen}
-                aria-controls="dashboard-nav-menu"
-            >
-                <span className={`transition-all duration-300 ${resolvedOpen ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-2'}`}>
-                    {resolvedOpen ? toggleLabels.collapse : toggleLabels.expand}
-                </span>
-                <span className="text-lg transition-transform duration-300 group-hover:scale-110 group-hover:rotate-180">
-                    {resolvedOpen ? '‹' : '›'}
-                </span>
-            </button>
             <nav className="mt-6 space-y-1" id="dashboard-nav-menu" role="menubar" aria-orientation="vertical">
                 {(() => {
                     const groupedItems = items.reduce((groups, item) => {

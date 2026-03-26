@@ -5,6 +5,8 @@ import {
     fetchCourses,
 } from '@services/api';
 import { toast } from 'react-hot-toast';
+import { useNavigate } from 'react-router-dom';
+import { useSwipeNavigation } from '../hooks/useSwipeGestures';
 import {
     AnalyticsSummaryCard,
     AnalyticsSection,
@@ -15,6 +17,7 @@ import {
     ProgressList,
     EmptyAnalyticsState,
 } from '@components/analytics';
+import MobileQuickActions from '@components/analytics/MobileQuickActions';
 
 const toList = (payload) => {
     if (Array.isArray(payload)) return payload;
@@ -32,10 +35,22 @@ const metricNumber = (value, fallback = 0) => {
 };
 
 const AdminAnalyticsPage = () => {
-    const [filters, setFilters] = useState({ from: '', to: '' });
+    const navigate = useNavigate();
+    const [filters, setFilters] = useState({ from: '', to: '', course: '', group: '' });
     const [loading, setLoading] = useState(false);
     const [courses, setCourses] = useState([]);
     const [overview, setOverview] = useState(null);
+
+    // Swipe navigation for mobile
+    const analyticsPages = ['/admin/analytics', '/instructor/analytics', '/student/analytics'];
+    const currentPageIndex = analyticsPages.indexOf('/admin/analytics');
+
+    const swipeRef = useSwipeNavigation({
+        goBack: () => navigate('/instructor/analytics'),
+        goForward: () => navigate('/student/analytics'),
+        pages: analyticsPages,
+        currentIndex: currentPageIndex,
+    });
 
     const loadFilterData = useCallback(async () => {
         try {
@@ -79,8 +94,27 @@ const AdminAnalyticsPage = () => {
     }, [requestFilters.from, requestFilters.to]); // Depend on filter values, not the function
 
     return (
-        <div className="pt-24 min-h-screen bg-gray-50 dark:bg-[#1A1A1A] px-4 pb-12">
-            <div className="max-w-7xl mx-auto space-y-6">
+        <div ref={swipeRef} className="pt-24 min-h-screen bg-gray-50 dark:bg-[#1A1A1A] px-4 pb-12">
+            {/* Mobile Quick Actions */}
+            <MobileQuickActions
+                onRefresh={loadAnalytics}
+                onExport={() => {
+                    // TODO: Implement export functionality
+                    toast.success('Экспорт функциясы келечеки!');
+                }}
+                onFilter={() => {
+                    // TODO: Open filter modal
+                    toast.success('Фильтр функциясы келечеки!');
+                }}
+                onShare={() => {
+                    // TODO: Implement share functionality
+                    toast.success('Бөлүшүү функциясы келечеки!');
+                }}
+                currentPage="admin-analytics"
+                loading={loading}
+            />
+
+            <div className="max-w-6xl mx-auto px-4 lg:px-6 space-y-6">
                 <DashboardPageHeader
                     title="Административдик Аналитика"
                     subtitle="Платформанын жалпы көрүнүчү, колдонуучулар метрикалары, курстардын жетишкендиги жана киреше боюнча маалымат"
@@ -89,7 +123,7 @@ const AdminAnalyticsPage = () => {
                             type="button"
                             onClick={loadAnalytics}
                             disabled={loading}
-                            className="px-4 py-2 rounded-lg bg-edubot-orange text-white font-medium hover:bg-edubot-orange/90 disabled:opacity-60 transition-colors"
+                            className="px-4 py-2 sm:px-3 sm:py-2 rounded-lg bg-edubot-orange text-white font-medium hover:bg-edubot-orange/90 disabled:opacity-60 transition-all duration-200 active:scale-95 touch-manipulation min-h-[44px] min-w-[100px]"
                         >
                             {loading ? 'Жүктөлүүдө...' : 'Жаңылоо'}
                         </button>

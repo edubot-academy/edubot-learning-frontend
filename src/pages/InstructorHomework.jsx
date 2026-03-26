@@ -97,14 +97,14 @@ const InstructorHomework = () => {
     );
 
     return (
-        <div className="pt-24 p-6 max-w-6xl mx-auto space-y-4">
-            <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">Үй тапшырмаларды башкаруу</h1>
+        <div className="pt-24 p-4 md:p-6 max-w-6xl mx-auto space-y-4">
+            <h1 className="text-xl md:text-2xl font-semibold text-gray-900 dark:text-white">Үй тапшырмаларды башкаруу</h1>
 
-            <div className="grid md:grid-cols-4 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
                 <select
                     value={courseId}
                     onChange={(e) => setCourseId(e.target.value)}
-                    className="border rounded px-3 py-2 bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                    className="border rounded px-3 py-2 bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm"
                 >
                     <option value="">Бардык курстар</option>
                     {courses.map((course) => (
@@ -117,7 +117,7 @@ const InstructorHomework = () => {
                 <select
                     value={groupId}
                     onChange={(e) => setGroupId(e.target.value)}
-                    className="border rounded px-3 py-2 bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                    className="border rounded px-3 py-2 bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm"
                     disabled={!courseId}
                 >
                     <option value="">Бардык группалар</option>
@@ -147,7 +147,8 @@ const InstructorHomework = () => {
 
             {loading ? <Loader fullScreen={false} /> : null}
 
-            <div className="rounded-xl border overflow-x-auto bg-white dark:bg-gray-800 dark:border-gray-700">
+            {/* Desktop Table */}
+            <div className="hidden md:block rounded-xl border overflow-x-auto bg-white dark:bg-gray-800 dark:border-gray-700">
                 <table className="w-full text-sm">
                     <thead className="bg-gray-50 dark:bg-gray-700">
                         <tr>
@@ -177,6 +178,50 @@ const InstructorHomework = () => {
                         ) : null}
                     </tbody>
                 </table>
+            </div>
+
+            {/* Mobile Card Layout */}
+            <div className="md:hidden space-y-3">
+                {items.map((item) => (
+                    <div key={item.id || `${item.title}-${item.deadline || ''}`} className="bg-white dark:bg-gray-800 rounded-lg border dark:border-gray-700 p-4">
+                        <div className="space-y-2">
+                            <div className="flex justify-between items-start">
+                                <h3 className="font-medium text-gray-900 dark:text-white text-sm">
+                                    {item.title || item.name || 'Үй тапшырма'}
+                                </h3>
+                                <span className={`px-2 py-1 rounded-full text-xs font-medium ${item.status === 'completed'
+                                        ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                                        : item.status === 'pending'
+                                            ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
+                                            : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
+                                    }`}>
+                                    {item.status || 'Белгисиз'}
+                                </span>
+                            </div>
+
+                            <div className="space-y-1 text-xs text-gray-600 dark:text-gray-400">
+                                <div className="flex items-center gap-2">
+                                    <span className="font-medium">Курс:</span>
+                                    <span>{item.courseTitle || item.course?.title || '-'}</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <span className="font-medium">Группа:</span>
+                                    <span>{item.groupName || item.group?.name || '-'}</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <span className="font-medium">Мөөнөт:</span>
+                                    <span>{item.deadline || '-'}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                ))}
+
+                {!items.length && !loading && (
+                    <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                        Үй тапшырмалар табылган жок.
+                    </div>
+                )}
             </div>
         </div>
     );

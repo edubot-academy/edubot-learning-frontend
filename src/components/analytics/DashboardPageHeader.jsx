@@ -1,4 +1,3 @@
-import React from 'react';
 import PropTypes from 'prop-types';
 
 const DashboardPageHeader = ({
@@ -29,7 +28,7 @@ const DashboardPageHeader = ({
           </>
         )}
       </div>
-      
+
       {action && (
         <div className="flex-shrink-0">
           {action}

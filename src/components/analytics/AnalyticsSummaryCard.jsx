@@ -1,4 +1,3 @@
-import React from 'react';
 import PropTypes from 'prop-types';
 
 const AnalyticsSummaryCard = ({
@@ -12,47 +11,53 @@ const AnalyticsSummaryCard = ({
   error = false,
   className = '',
 }) => {
+  // Touch-friendly color classes with enhanced mobile styling
   const colorClasses = {
     blue: {
       bg: 'bg-blue-50 dark:bg-blue-900/20',
       border: 'border-blue-200 dark:border-blue-800',
       text: 'text-blue-600 dark:text-blue-400',
       icon: 'text-blue-500',
+      hover: 'hover:bg-blue-100 dark:hover:bg-blue-900/30 active:scale-95',
     },
     green: {
       bg: 'bg-green-50 dark:bg-green-900/20',
       border: 'border-green-200 dark:border-green-800',
       text: 'text-green-600 dark:text-green-400',
       icon: 'text-green-500',
+      hover: 'hover:bg-green-100 dark:hover:bg-green-900/30 active:scale-95',
     },
     orange: {
       bg: 'bg-orange-50 dark:bg-orange-900/20',
       border: 'border-orange-200 dark:border-orange-800',
       text: 'text-orange-600 dark:text-orange-400',
       icon: 'text-orange-500',
+      hover: 'hover:bg-orange-100 dark:hover:bg-orange-900/30 active:scale-95',
     },
     edubot: {
       bg: 'bg-edubot-orange/10 dark:bg-edubot-orange/20',
       border: 'border-edubot-orange/30',
       text: 'text-edubot-orange dark:text-edubot-soft',
       icon: 'text-edubot-orange',
+      hover: 'hover:bg-edubot-orange/20 dark:hover:bg-edubot-orange/30 active:scale-95',
     },
     purple: {
       bg: 'bg-purple-50 dark:bg-purple-900/20',
       border: 'border-purple-200 dark:border-purple-800',
       text: 'text-purple-600 dark:text-purple-400',
       icon: 'text-purple-500',
+      hover: 'hover:bg-purple-100 dark:hover:bg-purple-900/30 active:scale-95',
     },
   };
 
-  const colors = colorClasses[color] || colorClasses.blue;
+  const currentColor = colorClasses[color] || colorClasses.blue;
 
   if (loading) {
     return (
       <div className={`rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-6 ${className}`}>
         <div className="animate-pulse">
           <div className="flex items-center justify-between mb-4">
-            <div className={`w-12 h-12 ${colors.bg} rounded-xl`}></div>
+            <div className={`w-12 h-12 ${currentColor.bg} rounded-xl`}></div>
             <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-16"></div>
           </div>
           <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-2"></div>
@@ -79,19 +84,30 @@ const AnalyticsSummaryCard = ({
   }
 
   return (
-    <div className={`rounded-2xl border ${colors.border} ${colors.bg} bg-white dark:bg-gray-800 p-6 transition-all duration-200 hover:shadow-lg ${className}`}>
+    <div className={`
+      p-4 sm:p-6
+      rounded-xl
+      border
+      ${currentColor.bg}
+      ${currentColor.border}
+      transition-all duration-200
+      ${currentColor.hover}
+      transform
+      min-h-[120px] sm:min-h-[140px]
+      touch-manipulation
+      ${className}
+    `}>
       <div className="flex items-center justify-between mb-4">
         {icon && (
-          <div className={`w-12 h-12 ${colors.bg} rounded-xl flex items-center justify-center`}>
-            <div className={colors.icon}>
+          <div className={`w-12 h-12 ${currentColor.bg} rounded-xl flex items-center justify-center`}>
+            <div className={currentColor.icon}>
               {icon}
             </div>
           </div>
         )}
         {trend && (
-          <div className={`flex items-center text-sm font-medium ${
-            trend.isPositive ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
-          }`}>
+          <div className={`flex items-center text-sm font-medium ${trend.isPositive ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
+            }`}>
             <svg
               className={`w-4 h-4 mr-1 ${trend.isPositive ? 'rotate-0' : 'rotate-180'}`}
               fill="none"
@@ -104,7 +120,7 @@ const AnalyticsSummaryCard = ({
           </div>
         )}
       </div>
-      
+
       <div className="space-y-1">
         <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">
           {value}
