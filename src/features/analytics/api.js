@@ -18,7 +18,29 @@ const ensureIsoDateTime = (value, fieldName) => {
     return date.toISOString();
 };
 
-const normalizeAnalyticsFilters = ({ from, to, courseId, groupId } = {}) =>
+// Updated filter normalization for simplified new API
+const normalizeAnalyticsFilters = ({ from, to } = {}) =>
+    clean({
+        from: ensureIsoDateTime(from, 'from'),
+        to: ensureIsoDateTime(to, 'to'),
+    });
+
+const normalizeInstructorQuery = ({ from, to, instructorId } = {}) =>
+    clean({
+        from: ensureIsoDateTime(from, 'from'),
+        to: ensureIsoDateTime(to, 'to'),
+        instructorId: ensurePositiveInt(instructorId, 'instructorId'),
+    });
+
+const normalizeStudentQuery = ({ from, to, studentId } = {}) =>
+    clean({
+        from: ensureIsoDateTime(from, 'from'),
+        to: ensureIsoDateTime(to, 'to'),
+        studentId: ensurePositiveInt(studentId, 'studentId'),
+    });
+
+// Legacy filter normalization (kept for backward compatibility)
+const normalizeLegacyAnalyticsFilters = ({ from, to, courseId, groupId } = {}) =>
     clean({
         from: ensureIsoDateTime(from, 'from'),
         to: ensureIsoDateTime(to, 'to'),
@@ -26,19 +48,19 @@ const normalizeAnalyticsFilters = ({ from, to, courseId, groupId } = {}) =>
         groupId: ensurePositiveInt(groupId, 'groupId'),
     });
 
-const normalizeInstructorQuery = ({ from, to, courseId, groupId, instructorId } = {}) =>
+const normalizeLegacyInstructorQuery = ({ from, to, courseId, groupId, instructorId } = {}) =>
     clean({
-        ...normalizeAnalyticsFilters({ from, to, courseId, groupId }),
+        ...normalizeLegacyAnalyticsFilters({ from, to, courseId, groupId }),
         instructorId: ensurePositiveInt(instructorId, 'instructorId'),
     });
 
-const normalizeStudentQuery = ({ from, to, courseId, groupId, studentId } = {}) =>
+const normalizeLegacyStudentQuery = ({ from, to, courseId, groupId, studentId } = {}) =>
     clean({
-        ...normalizeAnalyticsFilters({ from, to, courseId, groupId }),
+        ...normalizeLegacyAnalyticsFilters({ from, to, courseId, groupId }),
         studentId: ensurePositiveInt(studentId, 'studentId'),
     });
 
-// Admin analytics
+// New simplified analytics endpoints
 export const fetchAdminOverviewAnalytics = async (filters = {}) => {
     const { data } = await api.get('/analytics/admin/overview', {
         params: normalizeAnalyticsFilters(filters),
@@ -46,42 +68,6 @@ export const fetchAdminOverviewAnalytics = async (filters = {}) => {
     return data;
 };
 
-export const fetchAdminCoursePopularityAnalytics = async (filters = {}) => {
-    const { data } = await api.get('/analytics/admin/course-popularity', {
-        params: normalizeAnalyticsFilters(filters),
-    });
-    return data;
-};
-
-export const fetchAdminGroupFillRateAnalytics = async (filters = {}) => {
-    const { data } = await api.get('/analytics/admin/group-fill-rate', {
-        params: normalizeAnalyticsFilters(filters),
-    });
-    return data;
-};
-
-export const fetchAdminAttendanceRateAnalytics = async (filters = {}) => {
-    const { data } = await api.get('/analytics/admin/attendance-rate', {
-        params: normalizeAnalyticsFilters(filters),
-    });
-    return data;
-};
-
-export const fetchAdminDropoutRiskAnalytics = async (filters = {}) => {
-    const { data } = await api.get('/analytics/admin/dropout-risk', {
-        params: normalizeAnalyticsFilters(filters),
-    });
-    return data;
-};
-
-export const fetchAdminInstructorPerformanceAnalytics = async (filters = {}) => {
-    const { data } = await api.get('/analytics/admin/instructor-performance', {
-        params: normalizeAnalyticsFilters(filters),
-    });
-    return data;
-};
-
-// Instructor analytics
 export const fetchInstructorOverviewAnalytics = async (filters = {}) => {
     const { data } = await api.get('/analytics/instructor/overview', {
         params: normalizeInstructorQuery(filters),
@@ -89,17 +75,52 @@ export const fetchInstructorOverviewAnalytics = async (filters = {}) => {
     return data;
 };
 
-export const fetchInstructorStudentsAtRiskAnalytics = async (filters = {}) => {
-    const { data } = await api.get('/analytics/instructor/students-at-risk', {
-        params: normalizeInstructorQuery(filters),
+export const fetchStudentOverviewAnalytics = async (filters = {}) => {
+    const { data } = await api.get('/analytics/student/overview', {
+        params: normalizeStudentQuery(filters),
     });
     return data;
 };
 
-// Student analytics
-export const fetchStudentOverviewAnalytics = async (filters = {}) => {
-    const { data } = await api.get('/analytics/student/overview', {
-        params: normalizeStudentQuery(filters),
+// Legacy endpoints (kept for backward compatibility)
+export const fetchAdminCoursePopularityAnalytics = async (filters = {}) => {
+    const { data } = await api.get('/analytics/admin/course-popularity', {
+        params: normalizeLegacyAnalyticsFilters(filters),
+    });
+    return data;
+};
+
+export const fetchAdminGroupFillRateAnalytics = async (filters = {}) => {
+    const { data } = await api.get('/analytics/admin/group-fill-rate', {
+        params: normalizeLegacyAnalyticsFilters(filters),
+    });
+    return data;
+};
+
+export const fetchAdminAttendanceRateAnalytics = async (filters = {}) => {
+    const { data } = await api.get('/analytics/admin/attendance-rate', {
+        params: normalizeLegacyAnalyticsFilters(filters),
+    });
+    return data;
+};
+
+export const fetchAdminDropoutRiskAnalytics = async (filters = {}) => {
+    const { data } = await api.get('/analytics/admin/dropout-risk', {
+        params: normalizeLegacyAnalyticsFilters(filters),
+    });
+    return data;
+};
+
+export const fetchAdminInstructorPerformanceAnalytics = async (filters = {}) => {
+    const { data } = await api.get('/analytics/admin/instructor-performance', {
+        params: normalizeLegacyAnalyticsFilters(filters),
+    });
+    return data;
+};
+
+export const fetchInstructorStudentsAtRiskAnalytics = async (filters = {}) => {
+    const { data } = await api.get('/analytics/instructor/students-at-risk', {
+        params: normalizeLegacyInstructorQuery(filters),
     });
     return data;
 };

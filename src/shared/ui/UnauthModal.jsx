@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import Button from '@shared-ui/Button';
-import Modal from '@shared-ui/Modal';
+import BasicModal from '@shared-ui/BasicModal';
 import { getAuthAcquisitionPath } from '@shared/auth-config';
 
 const UnauthModal = ({
@@ -69,7 +69,7 @@ const UnauthModal = ({
     };
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title='Каттоо талап кылынат' size="md">
+        <BasicModal isOpen={isOpen} onClose={onClose} title='Каттоо талап кылынат' size="md">
             <div className="space-y-4">
                 <div className="flex items-center space-x-3">
                     <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
@@ -146,7 +146,7 @@ const UnauthModal = ({
                     </div>
                 </div>
             </div>
-        </Modal>
+        </BasicModal>
     );
 };
 

@@ -81,8 +81,6 @@ const LoginPage = () => {
 
             // Debug logging for cross-domain development
             const debugInfo = getAuthDebugInfo();
-            console.log('Login debug info:', debugInfo);
-            console.log('Login response:', { user: !!user, tokenLength: access_token?.length });
 
             login(user);
 

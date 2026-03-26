@@ -6,10 +6,23 @@
 @import '@fontsource/inter/cyrillic.css';
 @import '@fontsource/inter/cyrillic-ext.css';
 
+/* Modal dropdown styling */
+@import './styles/modal-select-styles.css';
+
 /* 2. Then your Tailwind layers */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+:root {
+    @apply font-sans text-gray-900 bg-white dark:bg-[#222222] dark:text-[#E8ECF3];
+    --edubot-dark: #122144;
+    --edubot-orange: #f17e22;
+    --edubot-green: #0ea78b;
+    --edubot-soft: #f39647;
+    --edubot-teal: #1e605e;
+    --edubot-darkgreen: #003a45;
+}
 
 :root {
     @apply font-sans text-gray-900 bg-white dark:bg-[#222222] dark:text-[#E8ECF3];
@@ -27,6 +40,91 @@
 
 body {
     @apply m-0 p-0 w-full min-h-screen bg-white text-gray-900 dark:bg-[#222222] dark:text-[#E8ECF3];
+}
+
+/* Animations */
+@keyframes fade-in {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slide-in {
+    from {
+        opacity: 0;
+        transform: translateX(-20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes pulse-glow {
+
+    0%,
+    100% {
+        box-shadow: 0 0 0 0 rgba(241, 126, 34, 0.4);
+    }
+
+    50% {
+        box-shadow: 0 0 0 10px rgba(241, 126, 34, 0);
+    }
+}
+
+.animate-fade-in {
+    animation: fade-in 0.3s ease-out;
+}
+
+.animate-slide-up {
+    animation: slide-up 0.3s ease-out;
+}
+
+.animate-scale-in {
+    animation: scale-in 0.3s ease-out;
+}
+
+@keyframes fade-in {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes slide-up {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes scale-in {
+    from {
+        opacity: 0;
+        transform: scale(0.8);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
 }
 
 /* Links */

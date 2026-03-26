@@ -1,12 +1,12 @@
 import { useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
-import Modal from '@shared/ui/Modal';
+import BasicModal from '@shared/ui/BasicModal';
 import CardType from '../../assets/icons/card_type.svg';
 import { checkoutManual } from '../cart/api';
 import { useCart } from '../../context/CartContext';
 
 const SuccessPaymentModal = ({ open, onClose, receipt }) => (
-    <Modal isOpen={open} onClose={onClose} showCloseButton title="Успешная оплата" size="sm">
+    <BasicModal isOpen={open} onClose={onClose} showCloseButton title="Успешная оплата" size="sm">
         <div className="text-center space-y-6">
             <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center text-white text-3xl mx-auto">
                 ✓
@@ -23,7 +23,7 @@ const SuccessPaymentModal = ({ open, onClose, receipt }) => (
                 Готово
             </button>
         </div>
-    </Modal>
+    </BasicModal>
 );
 
 const PaymentCourse = () => {

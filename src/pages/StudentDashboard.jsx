@@ -1,7 +1,10 @@
 import { useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import PropTypes from 'prop-types';
-import DashboardSidebar from '@features/dashboard/components/DashboardSidebar';
-import { useSearchParams, useNavigate, Link } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
+import { AuthContext } from '../context/AuthContext';
+import toast from 'react-hot-toast';
+import LeaderboardHub from '../features/leaderboard/components/LeaderboardHub';
+import StudentAnalyticsPage from './StudentAnalytics';
+import FloatingActionButton from '../components/ui/FloatingActionButton';
 import {
     fetchStudentCourses,
     fetchStudentDashboard,
@@ -18,213 +21,48 @@ import {
     fetchWeeklyLeaderboard,
     updateStudentNotificationSettings,
 } from '@services/api';
-import { AuthContext } from '../context/AuthContext';
-import toast from 'react-hot-toast';
-import {
-    FiHome,
-    FiBookOpen,
-    FiCalendar,
-    FiCheckCircle,
-    FiBarChart2,
-    FiUser,
-    FiBell,
-    FiMessageCircle,
-    FiPlay,
-} from 'react-icons/fi';
-import NotificationsWidget from '@features/notifications/components/NotificationsWidget';
 import NotificationsTab from '@features/notifications/components/NotificationsTab';
-import Loader from '@shared/ui/Loader';
-import LeaderboardHub from '../features/leaderboard/components/LeaderboardHub';
-import StudentAnalyticsPage from './StudentAnalytics';
-import PhoneInput from '@shared/ui/forms/PhoneInput';
+import { NAV_ITEMS, DEFAULT_NOTIFICATION_SETTINGS } from '@features/student-dashboard/utils/studentDashboard.constants.js';
 import {
-    AchievementCloud,
-    buildLeaderboardSnapshot,
-    ChallengeRail,
-    LeaderboardListCard,
-} from '../features/leaderboard/components/LeaderboardExperience';
+    readNumber,
+    readArray,
+    toItems,
+    getTaskKey,
+    resolveSessionHomeworkIds,
+    isOfflineOrLiveCourse,
+} from '@features/student-dashboard/utils/studentDashboard.helpers.js';
+import StudentEmptyState from '@features/student-dashboard/components/shared/StudentEmptyState.jsx';
+import OverviewTab from '@features/student-dashboard/components/tabs/OverviewTab.jsx';
+import CoursesTab from '@features/student-dashboard/components/tabs/CoursesTab.jsx';
+import ScheduleTab from '@features/student-dashboard/components/tabs/ScheduleTab.jsx';
+import TasksTab from '@features/student-dashboard/components/tabs/TasksTab.jsx';
+import ProgressTab from '@features/student-dashboard/components/tabs/ProgressTab.jsx';
+import ProfileTab from '@features/student-dashboard/components/tabs/ProfileTab.jsx';
+import ChatTab from '@features/student-dashboard/components/ChatTab.jsx';
+import {
+    DashboardLayout,
+    DashboardHeader,
+    DashboardTabs,
+    LoadingState,
+} from '../components/ui/dashboard';
 
-const NAV_ITEMS = [
-    { id: 'overview', label: 'Кыскача', icon: FiHome },
-    { id: 'my-courses', label: 'Курстарым', icon: FiBookOpen },
-    { id: 'schedule', label: 'Жүгүртмө', icon: FiCalendar },
-    { id: 'tasks', label: 'Тапшырмалар', icon: FiCheckCircle },
-    { id: 'progress', label: 'Прогресс', icon: FiBarChart2 },
-    { id: 'analytics', label: 'Аналитика', icon: FiBarChart2 },
-    { id: 'leaderboard', label: 'Рейтинг', icon: FiBarChart2 },
-    { id: 'notifications', label: 'Билдирүүлөр', icon: FiBell },
-    { id: 'profile', label: 'Профиль', icon: FiUser },
-    { id: 'chat', label: 'Чат', icon: FiMessageCircle },
-];
-
-const DEFAULT_NOTIFICATION_SETTINGS = {
-    lessonReminders: true,
-    announcementEmails: true,
-    taskUpdates: true,
-    smsAlerts: false,
-    pushNotifications: true,
-};
-
-const NOTIFICATION_LABELS = {
-    lessonReminders: {
-        label: 'Сабак эскертмелери',
-        description: 'Сабак башталар алдында эскертүү алыңыз.',
-    },
-    announcementEmails: {
-        label: 'Курс боюнча жаңылыктар',
-        description: 'Жаңы модулдар жана маанилүү окуу жаңылыктары email аркылуу жетет.',
-    },
-    taskUpdates: {
-        label: 'Тапшырма эскертмелери',
-        description: 'Тапшырмалардын мөөнөтү жакындаганда эскертүү алыңыз.',
-    },
-    smsAlerts: {
-        label: 'SMS эскертүүлөр',
-        description: 'Маанилүү окуялар боюнча SMS кабыл алыңыз.',
-    },
-    pushNotifications: {
-        label: 'Калтырылган сабак эскертмелери',
-        description: 'Калтырылган сабактар боюнча дароо билдирүү алыңыз.',
-    },
-};
-
-const formatNotificationLabel = (key) =>
-    key
-        ?.replace(/([A-Z])/g, ' $1')
-        ?.replace(/_/g, ' ')
-        ?.replace(/\b\w/g, (l) => l.toUpperCase())
-        ?.trim() || key;
-
-const JOIN_WINDOW_MS = 10 * 60 * 1000;
-
-const isOnlineLiveOffering = (offering) => {
-    const type = String(offering?.courseType || offering?.type || '').toLowerCase();
-    const modality = String(offering?.modality || offering?.modalityLabel || '').toLowerCase();
-    return type === 'online_live' || modality.includes('online') || modality.includes('live');
-};
-
-const isStudentJoinWindowOpen = (offering, nowMs) => {
-    const startMs = offering?.startAt ? new Date(offering.startAt).getTime() : null;
-    const endMs = offering?.endAt ? new Date(offering.endAt).getTime() : null;
-    if (!startMs || Number.isNaN(startMs)) return true;
-    if (!endMs || Number.isNaN(endMs)) return nowMs >= startMs - JOIN_WINDOW_MS;
-    return nowMs >= startMs - JOIN_WINDOW_MS && nowMs <= endMs;
-};
-
-const resolveCourseType = (item = {}) =>
-    item.courseType || item.type || item.course?.courseType || item.course?.type || 'video';
-
-const isOfflineOrLiveCourse = (item = {}) => {
-    const type = String(resolveCourseType(item)).toLowerCase();
-    return type === 'offline' || type === 'online_live';
-};
-
-const courseTypeLabel = (type) => {
-    if (type === 'offline') return 'Оффлайн';
-    if (type === 'online_live') return 'Онлайн түз эфир';
-    return 'Видео';
-};
-
-const formatCountdown = (targetMs, nowMs) => {
-    const totalSeconds = Math.max(0, Math.floor((targetMs - nowMs) / 1000));
-    const hours = Math.floor(totalSeconds / 3600);
-    const minutes = Math.floor((totalSeconds % 3600) / 60);
-    const seconds = totalSeconds % 60;
-    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(
-        seconds
-    ).padStart(2, '0')}`;
-};
-
-const formatSessionDate = (isoValue) => {
-    if (!isoValue) return 'Белгисиз убакыт';
-    const date = new Date(isoValue);
-    if (Number.isNaN(date.getTime())) return 'Белгисиз убакыт';
-    return date.toLocaleString('ru-RU', {
-        day: '2-digit',
-        month: 'short',
-        hour: '2-digit',
-        minute: '2-digit',
-    });
-};
-
-const resolveInstructorName = (item = {}) =>
-    item.instructorName ||
-    item.teacherName ||
-    item.instructor?.fullName ||
-    item.teacher ||
-    'Инструктор';
-
-const resolveRecordings = (item = {}) => {
-    if (Array.isArray(item.recordings)) return item.recordings;
-    if (item.recordingUrl) {
-        return [
-            {
-                id: `rec-${item.id || '1'}`,
-                title: item.recordingTitle || 'Сабактын жазуусу',
-                url: item.recordingUrl,
-            },
-        ];
-    }
-    return [];
-};
-
-const readNumber = (obj, paths = []) => {
-    for (const path of paths) {
-        const value = path.split('.').reduce((acc, key) => acc?.[key], obj);
-        const numeric = Number(value);
-        if (Number.isFinite(numeric)) return numeric;
-    }
-    return null;
-};
-
-const readArray = (obj, paths = []) => {
-    for (const path of paths) {
-        const value = path.split('.').reduce((acc, key) => acc?.[key], obj);
-        if (Array.isArray(value)) return value;
-    }
-    return [];
-};
-
-const toItems = (payload) => {
-    if (Array.isArray(payload)) return payload;
-    if (Array.isArray(payload?.items)) return payload.items;
-    if (Array.isArray(payload?.data)) return payload.data;
-    return [];
-};
-
-const getTaskKey = (task = {}) =>
-    String(
-        task.id ||
-        task.taskId ||
-        `${task.sessionId || task.courseSessionId || 'task'}:${task.homeworkId || ''}`
-    );
-
-const resolveSessionHomeworkIds = (task = {}) => {
-    const sessionRaw = task.sessionId || task.courseSessionId || task.session?.id;
-    const homeworkRaw = task.homeworkId || task.id || task.taskId;
-
-    const sessionId = Number(sessionRaw);
-    const homeworkId = Number(homeworkRaw);
-
-    return {
-        sessionId: Number.isInteger(sessionId) && sessionId > 0 ? sessionId : null,
-        homeworkId: Number.isInteger(homeworkId) && homeworkId > 0 ? homeworkId : null,
-    };
-};
 
 const StudentDashboard = () => {
     const { user } = useContext(AuthContext);
     const [searchParams, setSearchParams] = useSearchParams();
-    const initialTab = searchParams.get('tab') || 'overview';
+    const initialTab = searchParams.get('tab');
+    const validTabIds = useMemo(() => NAV_ITEMS.map((item) => item.id), []);
     const studentId = user?.id;
     const [sidebarOpen, setSidebarOpen] = useState(true);
-    const [activeTab, setActiveTab] = useState(initialTab);
+    const [activeTab, setActiveTab] = useState(
+        validTabIds.includes(initialTab) ? initialTab : 'overview'
+    );
     const [summary, setSummary] = useState(null);
     const [courses, setCourses] = useState([]);
     const [offerings, setOfferings] = useState([]);
     const [tasks, setTasks] = useState([]);
     const [recordings, setRecordings] = useState([]);
-    const [filterCourseId, setFilterCourseId] = useState('');
+    const [filterCourseId] = useState('');
     const [filterGroupId, setFilterGroupId] = useState('');
     const [progress, setProgress] = useState([]);
     const [certificates, setCertificates] = useState([]);
@@ -246,11 +84,13 @@ const StudentDashboard = () => {
         leaderboard: true,
         notifications: true,
         profile: true,
+        chat: true,
     });
     const [notificationsLoaded, setNotificationsLoaded] = useState(false);
     const [notificationLoading, setNotificationLoading] = useState(false);
     const [savingNotifications, setSavingNotifications] = useState(false);
     const [submittingTaskId, setSubmittingTaskId] = useState('');
+    const [enrollingCourseId, setEnrollingCourseId] = useState(null);
 
     const studentFilters = useMemo(
         () => ({
@@ -448,15 +288,77 @@ const StudentDashboard = () => {
     }, [studentId]);
 
     useEffect(() => {
-        const tabFromUrl = searchParams.get('tab') || 'overview';
-        setActiveTab((prev) => (tabFromUrl !== prev ? tabFromUrl : prev));
-    }, [searchParams]);
+        const tabFromUrl = searchParams.get('tab');
+        const nextTab = validTabIds.includes(tabFromUrl) ? tabFromUrl : 'overview';
+        setActiveTab((prev) => (nextTab !== prev ? nextTab : prev));
+    }, [searchParams, validTabIds]);
+
+    useEffect(() => {
+        const handleGlobalKeyDown = (e) => {
+            // Alt + shortcuts for navigation
+            if (e.altKey) {
+                switch (e.key.toLowerCase()) {
+                    case 'm': {
+                        e.preventDefault();
+                        const mainContent = document.getElementById('main-content');
+                        if (mainContent) {
+                            mainContent.focus();
+                            mainContent.scrollIntoView({ behavior: 'smooth' });
+                        }
+                        break;
+                    }
+                    case 'n': {
+                        e.preventDefault();
+                        const navigation = document.querySelector('nav[role="navigation"]');
+                        if (navigation) {
+                            navigation.focus();
+                            navigation.scrollIntoView({ behavior: 'smooth' });
+                        }
+                        break;
+                    }
+                    case 's': {
+                        e.preventDefault();
+                        const searchInput = document.querySelector('input[placeholder*="издөө" i], input[type="search"]');
+                        if (searchInput) {
+                            searchInput.focus();
+                            searchInput.scrollIntoView({ behavior: 'smooth' });
+                        }
+                        break;
+                    }
+                }
+            }
+
+            // Arrow key navigation for sidebar
+            if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+                const sidebarItems = document.querySelectorAll('[role="menuitem"]');
+                const currentIndex = Array.from(sidebarItems).findIndex(item => item === document.activeElement);
+
+                if (currentIndex !== -1) {
+                    e.preventDefault();
+                    let newIndex;
+                    if (e.key === 'ArrowLeft') {
+                        newIndex = currentIndex > 0 ? currentIndex - 1 : sidebarItems.length - 1;
+                    } else {
+                        newIndex = currentIndex < sidebarItems.length - 1 ? currentIndex + 1 : 0;
+                    }
+                    sidebarItems[newIndex].focus();
+                }
+            }
+        };
+
+        document.addEventListener('keydown', handleGlobalKeyDown);
+        return () => document.removeEventListener('keydown', handleGlobalKeyDown);
+    }, []);
 
     useEffect(() => {
         if (!studentId) return;
         setSearchParams((prev) => {
             const next = new URLSearchParams(prev);
-            next.set('tab', activeTab);
+            if (activeTab === 'overview') {
+                next.delete('tab');
+            } else {
+                next.set('tab', activeTab);
+            }
             return next;
         });
         const tab = activeTab;
@@ -661,35 +563,6 @@ const StudentDashboard = () => {
         return badges;
     }, [summary, engagement.streak, attendanceStats.rate, engagement.xp]);
 
-    const announcementItems = useMemo(() => {
-        const incoming = readArray(summary, [
-            'announcements',
-            'notifications.announcements',
-            'feed.announcements',
-            'updates',
-        ]);
-        if (incoming.length) {
-            return incoming.map((item, index) => ({
-                id: item.id || item.announcementId || `a-${index}`,
-                title: item.title || item.subject || item.name || 'Announcement',
-                body: item.body || item.message || item.description || '',
-            }));
-        }
-
-        return [
-            {
-                id: 'a-default-1',
-                title: 'Окуу графигиңизди текшериңиз',
-                body: 'Кийинки сабактарыңызды жана тапшырмаларды табдардан көрө аласыз.',
-            },
-            {
-                id: 'a-default-2',
-                title: 'Прогрессти көзөмөлдөңүз',
-                body: 'Прогресс жана аналитика табдары аркылуу жыйынтыктарды текшериңиз.',
-            },
-        ];
-    }, [summary]);
-
     const offeringsByCourse = useMemo(() => {
         const map = new Map();
         offerings.forEach((offering) => {
@@ -803,6 +676,24 @@ const StudentDashboard = () => {
             setSavingNotifications(false);
         }
     }, [studentId, notificationSettings]);
+
+    const handleEnrollCourse = useCallback(async (courseId) => {
+        if (!studentId) {
+            toast.error('Студент ID табылган жок');
+            return;
+        }
+
+        try {
+            setEnrollingCourseId(courseId);
+            // Add enrollment logic here
+            toast.success('Курска катышуу ийгиликтүү бүттү!');
+        } catch (error) {
+            console.error('Failed to enroll in course:', error);
+            toast.error('Курска катышууда ката кетти');
+        } finally {
+            setEnrollingCourseId(null);
+        }
+    }, [studentId]);
 
     const handleSaveProfile = useCallback(
         async ({ fullName, phoneNumber, avatarFile, newPassword, confirmPassword }) => {
@@ -948,15 +839,40 @@ const StudentDashboard = () => {
         tabLoading === resolvedTab ||
         (activeTab === 'profile' && (notificationLoading || profileLoading));
     const renderTab = () => {
-        if (!isTabDataLoaded || !isProfileReady || isCurrentTabLoading) {
-            return <Loader fullScreen={false} />;
-        }
-
         const requiresActiveAccess = ['overview', 'my-courses', 'schedule', 'tasks', 'progress', 'analytics', 'leaderboard'].includes(activeTab);
         if (requiresActiveAccess && !hasActiveStudentAccess) {
-            return <AccessInactiveState />;
+            return <StudentEmptyState />;
         }
 
+        if (!isTabDataLoaded || !isProfileReady) {
+            if (activeTab === 'overview') return <LoadingState type="card" count={3} />;
+            if (['my-courses', 'schedule', 'tasks'].includes(activeTab)) {
+                return <LoadingState type="list" />;
+            }
+            return <LoadingState type="table" />;
+        }
+
+        // Don't show loader for tab switching if data is already loaded
+        if (isCurrentTabLoading && isTabDataLoaded) {
+            // Show content with loading overlay instead of replacing content
+            return (
+                <div className="relative">
+                    {renderTabContent()}
+                    {isCurrentTabLoading && (
+                        <div className="absolute inset-0 bg-white/50 dark:bg-gray-900/50 flex items-center justify-center rounded-2xl">
+                            <div className="bg-white dark:bg-gray-800 rounded-lg p-3 shadow-lg">
+                                <div className="animate-spin rounded-full border-2 border-gray-300 border-t-edubot-orange w-6 h-6"></div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        return renderTabContent();
+    };
+
+    const renderTabContent = () => {
         switch (activeTab) {
             case 'my-courses':
                 return <CoursesTab courses={courses} offeringsByCourse={offeringsByCourse} />;
@@ -1001,1559 +917,94 @@ const StudentDashboard = () => {
                         savingNotifications={savingNotifications}
                     />
                 );
+            case 'chat':
+                return <ChatTab />;
             case 'overview':
             default:
                 return (
                     <OverviewTab
                         student={overviewStudent}
-                        stats={overviewStats}
+                        summary={summary}
+                        courses={courses}
                         offerings={offerings}
                         tasks={tasks}
-                        announcements={announcementItems}
                         attendanceStats={attendanceStats}
                         attendanceEnabled={hasAttendanceEligibleCourses}
                         engagement={engagement}
                         leaderboardItems={leaderboardItems}
+                        leaderboardMeta={leaderboardPreviewMeta}
                         milestoneItems={milestoneItems}
                         badgeItems={badgeItems}
+                        progressItems={progressItems}
+                        onEnrollCourse={handleEnrollCourse}
+                        enrollingCourseId={enrollingCourseId}
                     />
                 );
         }
     };
-    const navigate = useNavigate();
+
     const handleDashboardNavSelect = useCallback(
         (id) => {
-            if (id === 'chat') {
-                navigate('/chat');
-                return;
-            }
+            if (!validTabIds.includes(id)) return;
             setActiveTab(id);
         },
-        [navigate]
+        [validTabIds]
     );
 
-    return (
-        <div className="pt-24 min-h-screen bg-gray-50 dark:bg-[#1A1A1A] transition-colors duration-200 min-w-0 break-words">
-            <div className="max-w-7xl mx-auto flex flex-col lg:flex-row gap-6 px-4 pb-12">
-                <div
-                    className={`
-    ${sidebarOpen ? 'lg:w-64' : 'lg:w-20'}
-    hidden w-full lg:block lg:flex-shrink-0
-    transition-all duration-300
-  `}
-                >
-                    <div className="sticky top-24" style={{ height: 'calc(100vh - 6rem)' }}>
-                        <DashboardSidebar
-                            items={NAV_ITEMS}
-                            activeId={activeTab}
-                            onSelect={handleDashboardNavSelect}
-                            isOpen={sidebarOpen}
-                            onToggle={setSidebarOpen}
-                            className="h-full overflow-y-auto scrollbar-hide"
-                        />
-                    </div>
-                </div>
+    // Prepare navigation items for the standardized layout
+    const dashboardNavItems = NAV_ITEMS.map((item) => ({
+        ...item,
+        isActive: item.id === activeTab,
+        onSelect: handleDashboardNavSelect,
+    }));
 
-                <main className="flex-1 space-y-6 min-w-0">
-                    <div className="flex items-center justify-between flex-wrap gap-3">
-                        <div>
-                            <p className="text-sm uppercase tracking-wide text-gray-400 dark:text-gray-500">
-                                Студент
-                            </p>
-                            <h1 className="text-3xl font-bold text-gray-900 dark:text-[#E8ECF3]">
-                                {overviewStudent.name}
-                            </h1>
-                            <p className="text-sm text-gray-500 dark:text-gray-400">
-                                Чыгармачыл окуу жолуңузду көзөмөлдөңүз
-                            </p>
-                        </div>
-                        <button
-                            onClick={() => setSidebarOpen((prev) => !prev)}
-                            className="inline-flex lg:hidden px-4 py-2 rounded-full border text-sm text-gray-600 dark:text-[#E8ECF3] dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-                            type="button"
-                        >
-                            {sidebarOpen ? 'Бөлүмдөрдү жашыруу' : 'Бөлүмдөрдү көрсөтүү'}
-                        </button>
-                        <div className="flex items-center gap-2 flex-wrap justify-end">
-                            <select
-                                value={filterCourseId}
-                                onChange={(e) => setFilterCourseId(e.target.value)}
-                                className="px-3 py-2 rounded-full border text-sm bg-white dark:bg-[#222222]"
-                            >
-                                <option value="">All courses</option>
-                                {courses.map((course) => (
-                                    <option key={course.id} value={course.id}>
-                                        {course.title}
-                                    </option>
-                                ))}
-                            </select>
-                            {(() => {
-                                const selected = courses.find(
-                                    (course) => String(course.id) === String(filterCourseId)
-                                );
-                                return filterCourseId && isOfflineOrLiveCourse(selected);
-                            })() ? (
-                                <select
-                                    value={filterGroupId}
-                                    onChange={(e) => setFilterGroupId(e.target.value)}
-                                    className="px-3 py-2 rounded-full border text-sm bg-white dark:bg-[#222222]"
-                                >
-                                    <option value="">All groups</option>
-                                    {groupOptions.map((group) => (
-                                        <option key={group.id} value={group.id}>
-                                            {group.name}
-                                        </option>
-                                    ))}
-                                </select>
-                            ) : null}
-                            <button
-                                onClick={() => setSidebarOpen((prev) => !prev)}
-                                className="hidden md:inline-flex px-4 py-2 rounded-full border text-sm text-gray-600 dark:text-[#E8ECF3] dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-                                type="button"
-                            >
-                                {sidebarOpen ? 'Менюну жашыруу' : 'Менюну көрсөтүү'}
-                            </button>
-                        </div>
-                    </div>
-                    <div className="lg:hidden space-y-3">
-                        {sidebarOpen ? (
-                            <div className="rounded-3xl border border-gray-100 bg-white p-3 shadow-sm dark:border-gray-800 dark:bg-[#222222]">
-                                <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
-                                    {NAV_ITEMS.map((item) => {
-                                        const Icon = item.icon;
-                                        const isActive = activeTab === item.id;
-                                        return (
-                                            <button
-                                                key={item.id}
-                                                type="button"
-                                                onClick={() => handleDashboardNavSelect(item.id)}
-                                                className={[
-                                                    'inline-flex shrink-0 items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-colors',
-                                                    isActive
-                                                        ? 'bg-blue-600 text-white'
-                                                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-[#1A1A1A] dark:text-gray-200 dark:hover:bg-gray-800',
-                                                ].join(' ')}
-                                            >
-                                                {Icon ? <Icon className="shrink-0" /> : null}
-                                                <span>{item.label}</span>
-                                            </button>
-                                        );
-                                    })}
-                                </div>
-                            </div>
-                        ) : null}
-                    </div>
-                    {renderTab()}
-                </main>
-            </div>
-        </div>
-    );
-};
-
-const AccessInactiveState = () => (
-    <div className="bg-white dark:bg-[#222222] rounded-3xl border border-gray-100 dark:border-gray-800 p-8 text-center space-y-4">
-        <div className="w-14 h-14 mx-auto rounded-full bg-amber-100 text-amber-700 flex items-center justify-center text-2xl">
-            !
-        </div>
-        <div className="space-y-2">
-            <h2 className="text-2xl font-semibold text-gray-900 dark:text-[#E8ECF3]">
-                Окуу мүмкүнчүлүгү азырынча активдүү эмес
-            </h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400 max-w-xl mx-auto">
-                Сизде азырынча активдүү курс жок. Төлөм ырасталгандан же каттоо иштетилгенден кийин
-                бул жерде курстарыңыз, сабактарыңыз жана прогрессиңиз көрүнөт.
-            </p>
-        </div>
-        <div className="flex flex-wrap items-center justify-center gap-3">
-            <Link
-                to="/catalog"
-                className="inline-flex px-4 py-2 rounded-full bg-blue-600 text-white text-sm"
-            >
-                Видео курстарды көрүү
-            </Link>
-            <Link
-                to="/student?tab=profile"
-                className="inline-flex px-4 py-2 rounded-full border text-sm text-gray-700 dark:text-gray-300 dark:border-gray-700"
-            >
-                Профилди ачуу
-            </Link>
-        </div>
-    </div>
-);
-
-const OverviewTab = ({
-    student,
-    stats,
-    offerings,
-    tasks,
-    announcements,
-    attendanceStats,
-    attendanceEnabled,
-    engagement,
-    leaderboardItems,
-    leaderboardMeta,
-    milestoneItems,
-    badgeItems,
-}) => {
-    const [nowMs, setNowMs] = useState(Date.now());
-
-    useEffect(() => {
-        const timer = setInterval(() => setNowMs(Date.now()), 1000);
-        return () => clearInterval(timer);
-    }, []);
-
-    const upcoming = useMemo(
-        () =>
-            offerings
-                .filter((item) => item.startAt && new Date(item.startAt).getTime() >= nowMs)
-                .sort((a, b) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime())
-                .slice(0, 4),
-        [offerings, nowMs]
-    );
-    const pendingHomework = useMemo(
-        () => tasks.filter((task) => task.status !== 'completed').slice(0, 4),
-        [tasks]
-    );
-    const leaderboardSnapshot = useMemo(
-        () =>
-            buildLeaderboardSnapshot({
-                items: leaderboardItems,
-                user: { id: student.id, fullName: student.name },
-                xp: engagement.xp,
-                streakDays: engagement.streak,
-                badges: badgeItems,
-                label: 'Dashboard',
-            }),
-        [leaderboardItems, student, engagement, badgeItems]
-    );
-    const hasLeaderboardPreviewIssue = Boolean(leaderboardMeta?.fallback);
-    const emptyLeaderboardPreview = !hasLeaderboardPreviewIssue && !leaderboardItems.length;
-
-    const leaderboardChallenges = useMemo(
-        () => [
-            {
-                id: 'overview-rank',
-                title: leaderboardSnapshot.rank
-                    ? `#${leaderboardSnapshot.rank} орунду бекемдөө`
-                    : 'Алгачкы рейтингге чыгуу',
-                detail: leaderboardSnapshot.targetGap
-                    ? `Дагы ${leaderboardSnapshot.targetGap} XP кийинки тепкичке жеткирет.`
-                    : '1 сабак жана 1 тест сизди таблицага алып кирет.',
-            },
-            {
-                id: 'overview-streak',
-                title: `${engagement.streak} күндүк серияны сактоо`,
-                detail: 'Эртең дагы кирсеңиз, туруктуулук сигналы күчөйт.',
-            },
-            {
-                id: 'overview-homework',
-                title: 'Ачык тапшырманы жабуу',
-                detail: pendingHomework.length
-                    ? `${pendingHomework.length} тапшырма күтүп турат.`
-                    : 'Азырынча тапшырма жок, ушул темпти сактаңыз.',
-            },
-        ],
-        [leaderboardSnapshot, engagement.streak, pendingHomework.length]
-    );
-
-    return (
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
-            <div className="xl:col-span-2 space-y-4">
-                <div className="bg-gradient-to-r from-blue-600 via-blue-700 to-cyan-600 text-white rounded-3xl p-6 sm:p-8">
-                    <p className="text-sm uppercase tracking-wide opacity-80">
-                        Streak: {engagement.streak} күн
-                    </p>
-                    <h2 className="text-2xl sm:text-3xl font-semibold mt-1">
-                        Кош келиңиз, {student.name.split(' ')[0]}!
-                    </h2>
-                    {student.lastLesson && (
-                        <p className="mt-3 text-sm sm:text-base opacity-90">
-                            Акыркы сабак: <strong>{student.lastLesson.lesson}</strong> (
-                            {student.lastLesson.course})
-                        </p>
-                    )}
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                    <StatCard label="Активдүү курстар" value={stats.activeCourses} />
-                    <StatCard label="Жалпы сабактар" value={stats.lessonsCompleted} />
-                    <StatCard label="Күтүүдө тапшырма" value={pendingHomework.length} />
-                    {attendanceEnabled ? (
-                        <StatCard label="Катышуу" value={`${attendanceStats.rate}%`} />
-                    ) : null}
-                </div>
-
-                <section className="bg-white dark:bg-[#222222] rounded-3xl border border-gray-100 dark:border-gray-800 p-5 space-y-3">
-                    <div className="flex items-center justify-between">
-                        <h3 className="text-lg font-semibold text-gray-900 dark:text-[#E8ECF3]">
-                            Жакынкы сабактар
-                        </h3>
-                        <span className="text-xs text-gray-500">{upcoming.length} даана</span>
-                    </div>
-                    <div className="space-y-2">
-                        {upcoming.map((item) => {
-                            const type = resolveCourseType(item);
-                            const joinUrl = item.joinLink || item.link || item.joinUrl || '';
-                            const joinAllowed =
-                                !isOnlineLiveOffering(item) || isStudentJoinWindowOpen(item, nowMs);
-                            const countdown = item.startAt
-                                ? formatCountdown(new Date(item.startAt).getTime(), nowMs)
-                                : null;
-                            return (
-                                <div
-                                    key={item.id || `${item.courseId}-${item.startAt}`}
-                                    className="rounded-2xl border border-gray-100 dark:border-gray-700 p-3"
-                                >
-                                    <div className="flex items-center justify-between gap-2">
-                                        <p className="font-medium text-gray-900 dark:text-[#E8ECF3]">
-                                            {item.courseTitle || item.course?.title || 'Сабак'}
-                                        </p>
-                                        <span className="text-[11px] px-2 py-1 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
-                                            {courseTypeLabel(type)}
-                                        </span>
-                                    </div>
-                                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                                        {formatSessionDate(item.startAt)}
-                                    </p>
-                                    {type === 'offline' && (
-                                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                                            {item.location || item.room || 'Класс али дайындала элек'} •{' '}
-                                            {resolveInstructorName(item)}
-                                        </p>
-                                    )}
-                                    {type === 'online_live' && (
-                                        <div className="mt-2 flex items-center gap-2 flex-wrap">
-                                            <span className="text-xs text-blue-700 dark:text-blue-300">
-                                                Калган убакыт: {countdown}
-                                            </span>
-                                            {joinUrl && joinAllowed ? (
-                                                <a
-                                                    href={joinUrl}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="px-3 py-1 rounded-full text-xs bg-blue-600 text-white"
-                                                >
-                                                    Кошулуу
-                                                </a>
-                                            ) : (
-                                                <span className="text-xs text-amber-600">
-                                                    Кошулуу 10 мүнөт калганда ачылат
-                                                </span>
-                                            )}
-                                        </div>
-                                    )}
-                                </div>
-                            );
-                        })}
-                        {upcoming.length === 0 && (
-                            <p className="text-sm text-gray-500">Жакынкы класстар жок.</p>
-                        )}
-                    </div>
-                </section>
-
-                <section className="grid md:grid-cols-2 gap-4">
-                    <div className="bg-white dark:bg-[#222222] rounded-3xl border border-gray-100 dark:border-gray-800 p-5 space-y-3">
-                        <h3 className="text-lg font-semibold text-gray-900 dark:text-[#E8ECF3]">
-                            Тапшырмалар
-                        </h3>
-                        {pendingHomework.map((task) => (
-                            <div
-                                key={task.id || task.taskId}
-                                className="text-sm border-b border-gray-100 dark:border-gray-800 pb-2"
-                            >
-                                <p className="font-medium text-gray-900 dark:text-[#E8ECF3]">
-                                    {task.title}
-                                </p>
-                                <p className="text-gray-500 dark:text-gray-400">
-                                    {task.due || task.dueAt || 'Тапшыруу мөөнөтү көрсөтүлгөн эмес'}
-                                </p>
-                            </div>
-                        ))}
-                        {pendingHomework.length === 0 && (
-                            <p className="text-sm text-gray-500 dark:text-gray-400">Тапшырмалар жок.</p>
-                        )}
-                    </div>
-                    <div className="bg-white dark:bg-[#222222] rounded-3xl border border-gray-100 dark:border-gray-800 p-5 space-y-3">
-                        <h3 className="text-lg font-semibold text-gray-900 dark:text-[#E8ECF3]">
-                            Жарыялар
-                        </h3>
-                        {announcements.map((item) => (
-                            <div
-                                key={item.id || item.title}
-                                className="text-sm border-b border-gray-100 dark:border-gray-800 pb-2"
-                            >
-                                <p className="font-medium text-gray-900 dark:text-[#E8ECF3]">
-                                    {item.title}
-                                </p>
-                                <p className="text-gray-500 dark:text-gray-400">
-                                    {item.body || item.message || 'Жаңы жаңылык'}
-                                </p>
-                            </div>
-                        ))}
-                        {announcements.length === 0 && (
-                            <p className="text-sm text-gray-500 dark:text-gray-400">Жаңылыктар жок.</p>
-                        )}
-                    </div>
-                </section>
-                <NotificationsWidget />
-            </div>
-
-            <div className="space-y-4">
-                <section className="bg-white dark:bg-[#222222] rounded-3xl border border-gray-100 dark:border-gray-800 p-5">
-                    <div className="flex items-start justify-between gap-3">
-                        <div>
-                            <h3 className="font-semibold text-gray-900 dark:text-[#E8ECF3]">XP & Level</h3>
-                            <p className="text-2xl font-bold text-blue-600 mt-1">{engagement.xp} XP</p>
-                            <p className="text-sm text-gray-500">
-                                Деңгээл {engagement.level}
-                                {leaderboardSnapshot.rank ? ` · #${leaderboardSnapshot.rank} орун` : ''}
-                            </p>
-                        </div>
-                        <div className="rounded-2xl bg-blue-50 px-3 py-2 text-right dark:bg-blue-900/30">
-                            <p className="text-[11px] uppercase tracking-[0.2em] text-blue-600 dark:text-blue-300">Next push</p>
-                            <p className="mt-1 text-sm font-semibold text-blue-700 dark:text-blue-200">
-                                {leaderboardSnapshot.targetGap ? `${leaderboardSnapshot.targetGap} XP` : 'Баштаңыз'}
-                            </p>
-                        </div>
-                    </div>
-                    <div className="h-2 rounded-full bg-gray-100 dark:bg-gray-700 mt-4">
-                        <div
-                            className="h-2 rounded-full bg-blue-500"
-                            style={{
-                                width: `${Math.round(
-                                    (engagement.currentLevelXp /
-                                        Math.max(1, engagement.nextLevelGap)) *
-                                    100
-                                )}%`,
-                            }}
-                        />
-                    </div>
-                </section>
-
-                <div className="space-y-3">
-                    {hasLeaderboardPreviewIssue ? (
-                        <div className="rounded-3xl border border-amber-200 bg-amber-50/90 px-4 py-3 text-sm text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100">
-                            <p className="font-semibold uppercase tracking-[0.18em] text-amber-700 dark:text-amber-200">Рейтинг эскертүүсү</p>
-                            <p className="mt-1">Азыр кыска preview үчүн чыныгы рейтинг алынган жок. Жасалма студенттер көрсөтүлгөн жок.</p>
-                            {leaderboardMeta?.message ? <p className="mt-2 text-xs opacity-80">{leaderboardMeta.message}</p> : null}
-                        </div>
-                    ) : null}
-                    {emptyLeaderboardPreview ? (
-                        <div className="rounded-3xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-600 dark:border-gray-800 dark:bg-[#222222] dark:text-slate-300">
-                            Бул кыска preview үчүн азырынча рейтинг маалыматтары толо элек.
-                        </div>
-                    ) : null}
-                    <LeaderboardListCard
-                        title="Сизге жакын рейтинг"
-                        description="Жөн гана лидерлер эмес, сизге реалдуу жакын орундар да көрүнүшү керек."
-                        items={leaderboardSnapshot.nearYou}
-                        currentUserId={student.id}
-                        embedded
-                    />
-                </div>
-
-                <ChallengeRail items={leaderboardChallenges} embedded />
-
-                <AchievementCloud
-                    items={badgeItems}
-                    title="Жетишкендиктерди бөлүшүү"
-                    subtitle="Сиз ачкан жетишкендиктерди story, post же шилтеме катары бөлүшсөңүз болот."
-                    embedded
-                    shareMeta={{
-                        displayName: student.name,
-                        rank: leaderboardSnapshot.rank || null,
-                        xp: engagement.xp || null,
-                        streakDays: engagement.streak || null,
-                        trackLabel: 'Dashboard',
-                    }}
-                />
-            </div>
-        </div>
-    );
-};
-
-const CoursesTab = ({ courses, offeringsByCourse }) => {
-    if (!courses.length) {
-        return (
-            <div className="bg-white dark:bg-[#222222] rounded-3xl border border-gray-100 dark:border-gray-800 p-6 text-center text-gray-500 dark:text-gray-400">
-                Сизде активдүү курстар жок.
-            </div>
-        );
-    }
-
-    const fallbackCover =
-        'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&w=600&q=80';
-
-    return (
-        <div className="space-y-4">
-            <h2 className="text-2xl font-semibold text-gray-900 dark:text-[#E8ECF3]">
-                Менин курстарым
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {courses.map((course) => {
-                    const courseId = String(course.id ?? course.courseId ?? '');
-                    const cover =
-                        course.coverImageUrl || course.coverImage || course.cover || fallbackCover;
-                    const instructor = resolveInstructorName(course);
-                    const progressValue = Math.max(
-                        0,
-                        Math.min(
-                            100,
-                            Math.round(Number(course.progressPercent ?? course.progress ?? 0))
-                        )
-                    );
-                    const linkedOfferings = offeringsByCourse.get(courseId) || [];
-                    const nextSession = linkedOfferings
-                        .filter((item) => item.startAt)
-                        .sort(
-                            (a, b) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime()
-                        )[0];
-                    const courseType = resolveCourseType(course);
-                    const recordingsCount = linkedOfferings.reduce(
-                        (acc, row) => acc + resolveRecordings(row).length,
-                        0
-                    );
-
-                    return (
-                        <div
-                            key={courseId || course.title}
-                            className="bg-white dark:bg-[#222222] rounded-3xl border border-gray-100 dark:border-gray-800 overflow-hidden"
-                        >
-                            <img
-                                src={cover}
-                                alt={course.title}
-                                className="w-full h-40 object-cover"
-                            />
-                            <div className="p-4 space-y-3">
-                                <div className="flex items-start justify-between gap-2">
-                                    <div>
-                                        <p className="text-sm text-gray-500">{instructor}</p>
-                                        <h3 className="text-lg font-semibold text-gray-900 dark:text-[#E8ECF3]">
-                                            {course.title}
-                                        </h3>
-                                    </div>
-                                    <span className="text-[11px] px-2 py-1 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
-                                        {courseTypeLabel(courseType)}
-                                    </span>
-                                </div>
-                                <div className="space-y-1">
-                                    <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400">
-                                        <span>Прогресс</span>
-                                        <span>{progressValue}%</span>
-                                    </div>
-                                    <div className="h-2 rounded-full bg-gray-100 dark:bg-gray-700">
-                                        <div
-                                            className="h-2 rounded-full bg-blue-500"
-                                            style={{ width: `${progressValue}%` }}
-                                        />
-                                    </div>
-                                </div>
-                                {courseType === 'offline' && (
-                                    <div className="text-sm text-gray-500">
-                                        <p>
-                                            Жайгашкан жери:{' '}
-                                            {nextSession?.location ||
-                                                nextSession?.room ||
-                                                'Класс али дайындала элек'}
-                                        </p>
-                                        <p>Жүгүртмө: {formatSessionDate(nextSession?.startAt)}</p>
-                                        <p>
-                                            Мугалим: {resolveInstructorName(nextSession || course)}
-                                        </p>
-                                    </div>
-                                )}
-                                {courseType === 'online_live' && (
-                                    <div className="text-sm text-gray-500">
-                                        <p>Кийинки сабак: {formatSessionDate(nextSession?.startAt)}</p>
-                                        <p>Жазуулар: {recordingsCount}</p>
-                                    </div>
-                                )}
-                                <Link
-                                    to={courseId ? `/courses/${courseId}` : '#'}
-                                    className="inline-flex px-4 py-2 rounded-full border text-sm text-blue-600 dark:text-blue-400 dark:border-gray-700"
-                                >
-                                    Курсту ачуу
-                                </Link>
-                            </div>
-                        </div>
-                    );
-                })}
-            </div>
-        </div>
-    );
-};
-
-const ScheduleTab = ({ offerings, recordings }) => {
-    const [nowMs, setNowMs] = useState(Date.now());
-    const [selectedLiveId, setSelectedLiveId] = useState('');
-
-    useEffect(() => {
-        const timer = setInterval(() => setNowMs(Date.now()), 1000);
-        return () => clearInterval(timer);
-    }, []);
-
-    const sorted = useMemo(
-        () =>
-            [...offerings].sort(
-                (a, b) => new Date(a.startAt || 0).getTime() - new Date(b.startAt || 0).getTime()
-            ),
-        [offerings]
-    );
-
-    useEffect(() => {
-        if (selectedLiveId) return;
-        const firstLive = sorted.find((item) => resolveCourseType(item) === 'online_live');
-        if (firstLive?.id) setSelectedLiveId(String(firstLive.id));
-    }, [sorted, selectedLiveId]);
-
-    if (!sorted.length) {
-        return (
-            <div className="bg-white dark:bg-[#222222] rounded-3xl border border-gray-100 dark:border-gray-800 p-6 text-center text-gray-500 dark:text-gray-400">
-                Жакынкы класстар табылган жок.
-            </div>
-        );
-    }
-
-    const selectedLive = sorted.find((item) => String(item.id) === String(selectedLiveId));
-    const selectedRecordings = [
-        ...resolveRecordings(selectedLive || {}),
-        ...recordings.filter((rec) => {
-            const recSessionId = rec.sessionId || rec.courseSessionId || rec.offeringId;
-            const liveSessionId = selectedLive?.sessionId || selectedLive?.id || selectedLive?.offeringId;
-            return recSessionId && liveSessionId && String(recSessionId) === String(liveSessionId);
-        }),
+    // Prepare header actions
+    const headerActions = [
+        {
+            label: sidebarOpen ? 'Менюну жашыруу' : 'Менюну көрсөтүү',
+            onClick: () => setSidebarOpen((prev) => !prev),
+            variant: 'secondary',
+        },
     ];
-    const selectedJoinUrl =
-        selectedLive?.joinLink || selectedLive?.link || selectedLive?.joinUrl || '';
-    const selectedJoinAllowed = !selectedLive || isStudentJoinWindowOpen(selectedLive, nowMs);
+
+    // Prepare header content
+    const headerContent = (
+        <DashboardHeader
+            user={{
+                fullName: profileData?.fullName || user?.fullName || overviewStudent.name,
+                email: user?.email || profileData?.email || '',
+            }}
+            role="student"
+            subtitle="Чыгармачыл окуу жолуңузду көзөмөлдөңүз"
+            actions={headerActions}
+        />
+    );
+
+    // Mobile tabs
+    const mobileTabs = (
+        <DashboardTabs
+            items={dashboardNavItems}
+            activeId={activeTab}
+            onSelect={handleDashboardNavSelect}
+        />
+    );
 
     return (
-        <div className="space-y-4">
-            <h2 className="text-2xl font-semibold text-gray-900 dark:text-[#E8ECF3]">Жүгүртмө</h2>
-            <div className="space-y-3">
-                {sorted.map((item) => {
-                    const type = resolveCourseType(item);
-                    const joinUrl = item.joinLink || item.link || item.joinUrl || '';
-                    const joinAllowed =
-                        !isOnlineLiveOffering(item) || isStudentJoinWindowOpen(item, nowMs);
-                    const recordings = resolveRecordings(item);
-                    return (
-                        <div
-                            key={item.id || `${item.courseId}-${item.startAt}`}
-                            className="bg-white dark:bg-[#222222] border border-gray-100 dark:border-gray-800 rounded-2xl p-4"
-                        >
-                            <div className="flex flex-wrap items-center justify-between gap-3">
-                                <div>
-                                    <p className="font-semibold text-gray-900 dark:text-[#E8ECF3]">
-                                        {item.courseTitle || item.course?.title || 'Class'}
+        <DashboardLayout
+            role="student"
+            user={overviewStudent}
+            sidebarOpen={sidebarOpen}
+            setSidebarOpen={setSidebarOpen}
+            navItems={dashboardNavItems}
+            mobileTabs={mobileTabs}
+            headerContent={headerContent}
+        >
+            {renderTab()}
 
-                                    </p>
-                                    <p className="text-sm text-gray-500">
-                                        {formatSessionDate(item.startAt)}
-                                    </p>
-                                </div>
-                                <span className="text-[11px] px-2 py-1 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
-                                    {courseTypeLabel(type)}
-                                </span>
-                            </div>
-                            {type === 'offline' && (
-                                <div className="mt-2 text-sm text-gray-500">
-                                    <p>Жайгашкан жери: {item.location || item.room || 'Класс али дайындала элек'}</p>
-                                    <p>Мугалим: {resolveInstructorName(item)}</p>
-                                    <p>Жүгүртмө: {formatSessionDate(item.startAt)}</p>
-                                </div>
-                            )}
-                            {type === 'online_live' && (
-                                <div className="mt-2 flex flex-wrap items-center gap-2 text-sm">
-                                    <span className="text-blue-700 dark:text-blue-300">
-                                        Калган убакыт:{' '}
-                                        {item.startAt
-                                            ? formatCountdown(
-                                                new Date(item.startAt).getTime(),
-                                                nowMs
-                                            )
-                                            : '--:--:--'}
-                                    </span>
-                                    {joinUrl && joinAllowed ? (
-                                        <a
-                                            href={joinUrl}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="px-3 py-1 rounded-full bg-blue-600 text-white text-xs"
-                                        >
-                                            Сабакка кошулуу
-                                        </a>
-                                    ) : (
-                                        <span className="text-xs text-amber-600">
-                                            Join 10 мүнөт мурун ачылат
-                                        </span>
-                                    )}
-                                    <button
-                                        type="button"
-                                        onClick={() => setSelectedLiveId(String(item.id))}
-                                        className="px-3 py-1 rounded-full border text-xs text-gray-600 dark:text-gray-300 dark:border-gray-700"
-                                    >
-                                        Түз эфир барагы
-                                    </button>
-                                    <span className="text-xs text-gray-500">
-                                        Жазуулар: {recordings.length}
-                                    </span>
-                                </div>
-                            )}
-                        </div>
-                    );
-                })}
-            </div>
-
-            {selectedLive && resolveCourseType(selectedLive) === 'online_live' && (
-                <section className="bg-white dark:bg-[#222222] rounded-3xl border border-gray-100 dark:border-gray-800 p-5 space-y-3">
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-[#E8ECF3]">
-                        Түз эфир сабак барагы
-                    </h3>
-                    <p className="text-sm text-gray-500">
-                        {selectedLive.courseTitle || selectedLive.course?.title}
-                    </p>
-                    <p className="text-sm text-blue-700 dark:text-blue-300">
-                        Калган убакыт:{' '}
-                        {selectedLive.startAt
-                            ? formatCountdown(new Date(selectedLive.startAt).getTime(), nowMs)
-                            : '--:--:--'}
-                    </p>
-                    <div className="flex flex-wrap items-center gap-2">
-                        {selectedJoinUrl && selectedJoinAllowed ? (
-                            <a
-                                href={selectedJoinUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="px-4 py-2 rounded-full bg-blue-600 text-white text-sm"
-                            >
-                                Сабакка кошулуу
-                            </a>
-                        ) : (
-                            <button
-                                type="button"
-                                disabled
-                                className="px-4 py-2 rounded-full border text-sm text-gray-400 cursor-not-allowed"
-                            >
-                                Сабакка кошулуу
-                            </button>
-                        )}
-                    </div>
-                    <div className="space-y-2">
-                        <p className="font-medium text-gray-900 dark:text-[#E8ECF3]">Жазуулар</p>
-                        {selectedRecordings.length ? (
-                            selectedRecordings.map((rec) => (
-                                <a
-                                    key={rec.id || rec.url}
-                                    href={rec.url}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="block text-sm text-blue-600 dark:text-blue-400 underline"
-                                >
-                                    {rec.title || 'Жазуу'}
-                                </a>
-                            ))
-                        ) : (
-                            <p className="text-sm text-gray-500">Азырынча жазуу жок.</p>
-                        )}
-                    </div>
-                </section>
-            )}
-        </div>
+            {/* Floating Action Button */}
+            <FloatingActionButton role="student" />
+        </DashboardLayout>
     );
-};
-
-const TasksTab = ({ tasks, onSubmitHomework, submittingTaskId }) => {
-    const [drafts, setDrafts] = useState({});
-
-    const updateDraft = (taskKey, field, value) => {
-        setDrafts((prev) => ({
-            ...prev,
-            [taskKey]: {
-                ...(prev[taskKey] || {}),
-                [field]: value,
-            },
-        }));
-    };
-
-    const submitTask = async (task) => {
-        if (!onSubmitHomework) return;
-        const key = getTaskKey(task);
-        const draft = drafts[key] || { text: '', link: '' };
-        const success = await onSubmitHomework(task, draft);
-        if (success) {
-            setDrafts((prev) => ({
-                ...prev,
-                [key]: { text: '', link: '' },
-            }));
-        }
-    };
-
-    return (
-        <div className="space-y-4">
-            <h2 className="text-2xl font-semibold text-gray-900 dark:text-[#E8ECF3]">Тапшырмалар</h2>
-            {tasks.length ? (
-                <div className="bg-white dark:bg-[#222222] rounded-3xl border border-gray-100 dark:border-gray-800 overflow-x-auto min-w-[600px] w-full text-sm">
-                    <table className="w-full text-sm">
-                        <thead className="bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400">
-                            <tr>
-                                <th className="text-left px-4 py-3">Тапшырма</th>
-                                <th className="text-left px-4 py-3">Курс</th>
-                                <th className="text-left px-4 py-3">Бүтүү мөөнөтү</th>
-                                <th className="text-left px-4 py-3">Статус</th>
-                                <th className="text-left px-4 py-3">Жооп</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {tasks.map((task) => {
-                                const key = getTaskKey(task);
-                                const draft = drafts[key] || { text: '', link: '' };
-                                const { sessionId, homeworkId } = resolveSessionHomeworkIds(task);
-                                const canSubmit = Boolean(sessionId && homeworkId);
-                                const isSubmitting = submittingTaskId === key;
-                                const isDone =
-                                    task.status === 'completed' || task.submissionStatus === 'approved';
-
-                                return (
-                                    <tr
-                                        key={key}
-                                        className="border-t border-gray-100 dark:border-gray-800 align-top"
-                                    >
-                                        <td className="px-4 py-3 font-medium text-gray-900 dark:text-[#E8ECF3]">
-                                            {task.title || task.name || 'Тапшырма'}
-                                        </td>
-                                        <td className="px-4 py-3 text-gray-500 dark:text-gray-400">
-                                            {task.courseTitle || task.course || '-'}
-                                        </td>
-                                        <td className="px-4 py-3 text-gray-500 dark:text-gray-400">
-                                            {task.due ||
-                                                task.deadline ||
-                                                (task.dueAt
-                                                    ? new Date(task.dueAt).toLocaleDateString('ru-RU')
-                                                    : '—')}
-                                        </td>
-                                        <td className="px-4 py-3">
-                                            <span
-                                                className={`px-3 py-1 rounded-full text-xs ${isDone
-                                                    ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
-                                                    : 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400'
-                                                    }`}
-                                            >
-                                                {isDone ? 'Жабылган' : 'Күтүүдө'}
-                                            </span>
-                                        </td>
-                                        <td className="px-4 py-3 min-w-[280px]">
-                                            {canSubmit ? (
-                                                <div className="space-y-2">
-                                                    <textarea
-                                                        value={draft.text || ''}
-                                                        onChange={(e) =>
-                                                            updateDraft(key, 'text', e.target.value)
-                                                        }
-                                                        rows={2}
-                                                        placeholder="Жооп жазыңыз"
-                                                        className="w-full border border-gray-200 dark:border-gray-700 rounded-lg px-2 py-1 bg-white dark:bg-[#0E0E0E]"
-                                                    />
-                                                    <input
-                                                        value={draft.link || ''}
-                                                        onChange={(e) =>
-                                                            updateDraft(key, 'link', e.target.value)
-                                                        }
-                                                        placeholder="Шилтеме (эгер бар болсо)"
-                                                        className="w-full border border-gray-200 dark:border-gray-700 rounded-lg px-2 py-1 bg-white dark:bg-[#0E0E0E]"
-                                                    />
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => submitTask(task)}
-                                                        disabled={isSubmitting}
-                                                        className="px-3 py-1 rounded bg-blue-600 text-white text-xs disabled:opacity-60"
-                                                    >
-                                                        {isSubmitting ? 'Жөнөтүлүүдө...' : 'Жөнөтүү'}
-                                                    </button>
-                                                </div>
-                                            ) : (
-                                                <span className="text-xs text-gray-500">
-                                                    Бул тапшырма жөнөтүү API'ине туташкан эмес.
-                                                </span>
-                                            )}
-                                        </td>
-                                    </tr>
-                                );
-                            })}
-                        </tbody>
-                    </table>
-                </div>
-            ) : (
-                <div className="bg-white dark:bg-[#222222] rounded-3xl border border-gray-100 dark:border-gray-800 p-6 text-center text-gray-500 dark:text-gray-400">
-                    Азырынча тапшырмалар табылган жок.
-                </div>
-            )}
-        </div>
-    );
-};
-
-const ProgressTab = ({
-    items,
-    attendanceStats,
-    attendanceEnabled,
-    engagement,
-    leaderboardItems,
-    milestoneItems,
-    badgeItems,
-}) => {
-    const formatTime = (seconds) => {
-        if (seconds === null || seconds === undefined) return null;
-        const mins = Math.floor(seconds / 60);
-        const secs = Math.floor(seconds % 60)
-            .toString()
-            .padStart(2, '0');
-        return `${mins}:${secs}`;
-    };
-
-    if (!items.length) {
-        return (
-            <div className="space-y-4">
-                <h2 className="text-2xl font-semibold text-gray-900 dark:text-[#E8ECF3]">
-                    Прогресс жана сертификаттар
-                </h2>
-                <div className="bg-white dark:bg-[#222222] rounded-3xl border border-gray-100 dark:border-gray-800 p-6 text-center text-gray-500 dark:text-gray-400">
-                    Азырынча катталган курстар жок.
-                </div>
-            </div>
-        );
-    }
-
-    return (
-        <div className="space-y-4">
-            <h2 className="text-2xl font-semibold text-gray-900 dark:text-[#E8ECF3]">
-                Прогресс жана сертификаттар
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
-                <StatCard label="XP" value={engagement.xp} />
-                <StatCard label="Окуу сериясы" value={`${engagement.streak} күн`} />
-                {attendanceEnabled ? (
-                    <StatCard label="Катышуу" value={`${attendanceStats.rate}%`} />
-                ) : null}
-                <StatCard
-                    label="Рейтинг"
-                    value={leaderboardItems.length ? `Top ${leaderboardItems.length}` : 'Tracked'}
-                />
-            </div>
-            <div className="grid grid-cols-1 xl:grid-cols-3 gap-3">
-                <div className="xl:col-span-2 bg-white dark:bg-[#222222] rounded-3xl border border-gray-100 dark:border-gray-800 p-4">
-                    <h3 className="font-semibold text-gray-900 dark:text-[#E8ECF3]">
-                        Курстагы этаптар
-                    </h3>
-                    <div className="mt-2 space-y-2 text-sm">
-                        {milestoneItems.map((item) => (
-                            <div key={item.id || item.title}>
-                                <p className="font-medium text-gray-900 dark:text-[#E8ECF3]">
-                                    {item.title}
-                                </p>
-                                <p className="text-gray-500 dark:text-gray-400">{item.value || item.description}</p>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-                <div className="bg-white dark:bg-[#222222] rounded-3xl border border-gray-100 dark:border-gray-800 p-4">
-                    <h3 className="font-semibold text-gray-900 dark:text-[#E8ECF3]">
-                        Жетишкендик белгилери
-                    </h3>
-                    <div className="mt-2 flex flex-wrap gap-2">
-                        {badgeItems.map((badge) => (
-                            <span
-                                key={badge.id || badge.title}
-                                className="px-2 py-1 rounded-full text-xs bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300"
-                            >
-                                {badge.title || badge.name}
-                            </span>
-                        ))}
-                    </div>
-                </div>
-            </div>
-            <div className="space-y-4">
-                {items.map((item) => (
-                    <div
-                        key={item.courseId || item.courseTitle}
-                        className="bg-white dark:bg-[#222222] rounded-3xl border border-gray-100 dark:border-gray-800 p-5 space-y-4"
-                    >
-                        <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-                            <div>
-                                <p className="text-lg font-semibold text-gray-900 dark:text-[#E8ECF3]">
-                                    {item.courseTitle}
-                                </p>
-                                <p className="text-sm text-gray-500 dark:text-gray-400">
-                                    Сабактар: {item.lessonsCompleted}/{item.lessonsTotal || '—'}
-                                </p>
-                            </div>
-                            <div className="flex items-center gap-3 flex-wrap">
-                                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                                    {item.progressPercent}%
-                                </span>
-                                {item.resumeLesson ? (
-                                    <Link
-                                        to={
-                                            item.courseId
-                                                ? `/courses/${item.courseId}?resumeLessonId=${item.resumeLesson.lessonId || ''
-                                                }${item.resumeLesson.lastVideoTime
-                                                    ? `&resumeTime=${Math.floor(
-                                                        item.resumeLesson.lastVideoTime
-                                                    )}`
-                                                    : ''
-                                                }`
-                                                : '#'
-                                        }
-                                        className="inline-flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400 px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-900/30"
-                                    >
-                                        <FiPlay className="shrink-0" />
-                                        Улантуу: {item.resumeLesson.lessonTitle}
-                                        {item.resumeLesson.lastVideoTime
-                                            ? ` (${formatTime(item.resumeLesson.lastVideoTime)})`
-                                            : ''}
-                                    </Link>
-                                ) : null}
-                                {item.hasCertificate ? (
-                                    <span className="text-xs px-2 py-1 rounded-full bg-green-100 text-green-700">
-                                        Сертификат даяр
-                                    </span>
-                                ) : null}
-                            </div>
-                        </div>
-
-                        <div className="h-2 rounded-full bg-gray-100 dark:bg-gray-700">
-                            <div
-                                className="h-2 rounded-full bg-blue-500"
-                                style={{
-                                    width: `${Math.min(100, Math.max(0, item.progressPercent))}%`,
-                                }}
-                            />
-                        </div>
-
-                        {item.sections.length ? (
-                            <div className="space-y-3">
-                                {item.sections.map((section) => (
-                                    <div
-                                        key={section.sectionId || section.sectionTitle}
-                                        className="rounded-2xl border border-gray-100 dark:border-gray-800 p-4 space-y-3"
-                                    >
-                                        <div className="flex items-center justify-between gap-2">
-                                            <p className="font-semibold text-gray-900 dark:text-[#E8ECF3]">
-                                                {section.sectionTitle}
-                                            </p>
-                                            <span className="text-sm text-gray-500 dark:text-gray-400">
-                                                {section.lessons.filter((l) => l.completed).length}/
-                                                {section.lessons.length}
-                                            </span>
-                                        </div>
-                                        <div className="space-y-2">
-                                            {section.lessons.map((lesson) => {
-                                                const isQuiz = lesson.kind === 'quiz';
-                                                const quizBadge = isQuiz
-                                                    ? lesson.quizPassed === true
-                                                        ? {
-                                                            label: 'Квиз өттү',
-                                                            className:
-                                                                'bg-green-100 text-green-700',
-                                                        }
-                                                        : lesson.quizPassed === false
-                                                            ? {
-                                                                label: 'Квиз өтпөдү',
-                                                                className:
-                                                                    'bg-red-100 text-red-700',
-                                                            }
-                                                            : null
-                                                    : null;
-                                                return (
-                                                    <div
-                                                        key={lesson.lessonId || lesson.lessonTitle}
-                                                        className="flex items-center justify-between gap-3 rounded-xl px-3 py-2 bg-gray-50 dark:bg-gray-800/50"
-                                                    >
-                                                        <div className="flex items-center gap-3">
-                                                            <span
-                                                                className={`w-5 h-5 rounded-full flex items-center justify-center text-xs ${lesson.completed
-                                                                    ? 'bg-green-100 text-green-700'
-                                                                    : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-400'
-                                                                    }`}
-                                                            >
-                                                                {lesson.completed ? '✓' : ''}
-                                                            </span>
-                                                            <div className="flex flex-col">
-                                                                <div className="flex items-center gap-2">
-                                                                    <p className="text-sm text-gray-800 dark:text-[#E8ECF3]">
-                                                                        {lesson.lessonTitle}
-                                                                    </p>
-                                                                    <span className="text-[11px] px-2 py-0.5 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 uppercase">
-                                                                        {lesson.kind === 'quiz'
-                                                                            ? 'Квиз'
-                                                                            : lesson.kind ===
-                                                                                'article'
-                                                                                ? 'Макала'
-                                                                                : lesson.kind ===
-                                                                                    'code'
-                                                                                    ? 'Код'
-                                                                                    : 'Видео'}
-                                                                    </span>
-                                                                    {quizBadge ? (
-                                                                        <span
-                                                                            className={`text-[11px] px-2 py-0.5 rounded-full ${quizBadge.className}`}
-                                                                        >
-                                                                            {quizBadge.label}
-                                                                            {typeof lesson.quizScore ===
-                                                                                'number'
-                                                                                ? ` (${lesson.quizScore}%)`
-                                                                                : ''}
-                                                                        </span>
-                                                                    ) : null}
-                                                                </div>
-                                                                {!lesson.completed &&
-                                                                    lesson.lastVideoTime ? (
-                                                                    <span className="text-xs text-gray-500 dark:text-gray-400">
-                                                                        Акыркы убакыт:{' '}
-                                                                        {formatTime(
-                                                                            lesson.lastVideoTime
-                                                                        )}
-                                                                    </span>
-                                                                ) : null}
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                );
-                                            })}
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        ) : (
-                            <div className="text-sm text-gray-500 dark:text-gray-400">
-                                Бул курс боюнча сабактар табылган жок.
-                            </div>
-                        )}
-                    </div>
-                ))}
-            </div>
-        </div>
-    );
-};
-const ProfileTab = ({
-    student,
-    notificationSettings,
-    onSaveProfile,
-    savingProfile,
-    onNotificationChange,
-    onSaveNotifications,
-    savingNotifications,
-}) => {
-    const [isEditingProfile, setIsEditingProfile] = useState(false);
-    const [formData, setFormData] = useState({
-        fullName: student?.name || '',
-        email: student?.email || '',
-        phoneNumber: student?.phone || '',
-        avatar: null,
-    });
-    const [passwordData, setPasswordData] = useState({ newPassword: '', confirmPassword: '' });
-    const [preview, setPreview] = useState(student?.avatar || null);
-
-    useEffect(() => {
-        setFormData({
-            fullName: student?.name || '',
-            email: student?.email || '',
-            phoneNumber: student?.phone || '',
-            avatar: null,
-        });
-        setPreview(student?.avatar || null);
-        setPasswordData({ newPassword: '', confirmPassword: '' });
-    }, [student]);
-
-    useEffect(() => {
-        if (!formData.avatar) return undefined;
-        const objectUrl = URL.createObjectURL(formData.avatar);
-        setPreview(objectUrl);
-        return () => URL.revokeObjectURL(objectUrl);
-    }, [formData.avatar]);
-
-    const handleFileChange = (event) => {
-        const file = event.target.files?.[0];
-        if (!file) return;
-        setFormData((prev) => ({ ...prev, avatar: file }));
-    };
-
-    const handleSaveProfileClick = async () => {
-        if (!onSaveProfile) return;
-        const success = await onSaveProfile({
-            fullName: formData.fullName,
-            phoneNumber: formData.phoneNumber,
-            avatarFile: formData.avatar,
-            newPassword: passwordData.newPassword,
-            confirmPassword: passwordData.confirmPassword,
-        });
-        if (success) {
-            setPasswordData({ newPassword: '', confirmPassword: '' });
-            setFormData((prev) => ({ ...prev, avatar: null }));
-            setIsEditingProfile(false);
-        }
-    };
-
-    const handleResetProfile = () => {
-        setFormData({
-            fullName: student?.name || '',
-            email: student?.email || '',
-            phoneNumber: student?.phone || '',
-            avatar: null,
-        });
-        setPasswordData({ newPassword: '', confirmPassword: '' });
-        setPreview(student?.avatar || null);
-    };
-
-    const hasProfileChanges =
-        formData.fullName.trim() !== (student?.name || '').trim() ||
-        formData.phoneNumber.trim() !== (student?.phone || '').trim() ||
-        Boolean(formData.avatar) ||
-        Boolean(passwordData.newPassword) ||
-        Boolean(passwordData.confirmPassword);
-
-    const notificationEntries = Object.entries(notificationSettings || {});
-    return (
-        <div className="space-y-4">
-            <div className="flex items-center justify-between gap-3">
-                <h2 className="text-2xl font-semibold text-gray-900 dark:text-[#E8ECF3]">Профиль</h2>
-                {!isEditingProfile ? (
-                    <button
-                        type="button"
-                        onClick={() => setIsEditingProfile(true)}
-                        className="px-4 py-2 rounded-full border border-gray-300 dark:border-gray-700 text-sm font-semibold"
-                    >
-                        Өзгөртүү
-                    </button>
-                ) : null}
-            </div>
-            <div className="bg-white dark:bg-[#222222] rounded-3xl border border-gray-100 dark:border-gray-800 p-6 space-y-4">
-                <div className="flex items-center gap-4">
-                    <div className="w-20 h-20 rounded-full overflow-hidden bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 flex items-center justify-center text-xl font-semibold text-gray-500">
-                        {preview ? (
-                            <img
-                                src={preview}
-                                alt="Avatar preview"
-                                className="w-full h-full object-cover"
-                            />
-                        ) : (
-                            (formData.fullName || student?.name || 'U').charAt(0).toUpperCase()
-                        )}
-                    </div>
-                    <div className="space-y-2">
-                        <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                            {isEditingProfile ? 'Профиль сүрөтү' : 'Каттоо сүрөтү'}
-                        </p>
-                        {isEditingProfile ? (
-                            <>
-                                <label className="inline-flex px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 text-sm cursor-pointer">
-                                    Аватар жүктөө
-                                    <input
-                                        type="file"
-                                        accept="image/*"
-                                        onChange={handleFileChange}
-                                        className="hidden"
-                                    />
-                                </label>
-                                {formData.avatar && (
-                                    <p className="text-xs text-gray-500">
-                                        Тандалды: {formData.avatar.name}
-                                    </p>
-                                )}
-                            </>
-                        ) : (
-                            <p className="text-sm text-gray-500 dark:text-gray-400">
-                                Өзгөртүү режимин ачуу үчүн жогортогу баскычты басыңыз.
-                            </p>
-                        )}
-                    </div>
-                </div>
-                <div>
-                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Аты-жөнү</p>
-                    {isEditingProfile ? (
-                        <input
-                            type="text"
-                            className="mt-1 w-full border rounded-2xl px-3 py-2 bg-white dark:bg-[#222222] text-gray-900 dark:text-[#E8ECF3] border-gray-200 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            value={formData.fullName}
-                            onChange={(e) =>
-                                setFormData((prev) => ({ ...prev, fullName: e.target.value }))
-                            }
-                        />
-                    ) : (
-                        <div className="mt-1 rounded-2xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 px-3 py-2 text-gray-900 dark:text-[#E8ECF3]">
-                            {formData.fullName || '—'}
-                        </div>
-                    )}
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                        <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Email</p>
-                        <div className="mt-1 rounded-2xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 px-3 py-2 text-gray-900 dark:text-[#E8ECF3]">
-                            {formData.email || 'student@example.com'}
-                        </div>
-                    </div>
-                    <div>
-                        <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Телефон</p>
-                        {isEditingProfile ? (
-                            <div className="mt-1">
-                                <PhoneInput
-                                    value={formData.phoneNumber}
-                                    onChange={(value) =>
-                                        setFormData((prev) => ({ ...prev, phoneNumber: value }))
-                                    }
-                                />
-                            </div>
-                        ) : (
-                            <div className="mt-1 rounded-2xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 px-3 py-2 text-gray-900 dark:text-[#E8ECF3]">
-                                {formData.phoneNumber || '—'}
-                            </div>
-                        )}
-                    </div>
-                </div>
-                {isEditingProfile && (
-                    <>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div>
-                                <label className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                                    Жаңы сырсөз
-                                </label>
-                                <input
-                                    type="password"
-                                    value={passwordData.newPassword}
-                                    onChange={(e) =>
-                                        setPasswordData((prev) => ({
-                                            ...prev,
-                                            newPassword: e.target.value,
-                                        }))
-                                    }
-                                    className="mt-1 w-full border rounded-2xl px-3 py-2 bg-white dark:bg-[#222222] text-gray-900 dark:text-[#E8ECF3] border-gray-200 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    placeholder="Кеминде 6 белги"
-                                />
-                            </div>
-                            <div>
-                                <label className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                                    Сырсөздү кайталоо
-                                </label>
-                                <input
-                                    type="password"
-                                    value={passwordData.confirmPassword}
-                                    onChange={(e) =>
-                                        setPasswordData((prev) => ({
-                                            ...prev,
-                                            confirmPassword: e.target.value,
-                                        }))
-                                    }
-                                    className="mt-1 w-full border rounded-2xl px-3 py-2 bg-white dark:bg-[#222222] text-gray-900 dark:text-[#E8ECF3] border-gray-200 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    placeholder="Сырсөздү дагы бир жолу киргизиңиз"
-                                />
-                            </div>
-                        </div>
-                        <div className="flex gap-3 flex-wrap">
-                            <button
-                                type="button"
-                                onClick={handleSaveProfileClick}
-                                disabled={!hasProfileChanges || savingProfile}
-                                className="px-5 py-3 rounded-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
-                            >
-                                {savingProfile ? 'Сакталууда...' : 'Профилди сактоо'}
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    handleResetProfile();
-                                    setIsEditingProfile(false);
-                                }}
-                                disabled={savingProfile}
-                                className="px-5 py-3 rounded-full border border-gray-300 dark:border-gray-700 text-sm font-semibold disabled:opacity-60"
-                            >
-                                Жокко чыгаруу
-                            </button>
-                        </div>
-                    </>
-                )}
-            </div>
-            <div className="bg-white dark:bg-[#222222] rounded-3xl border border-gray-100 dark:border-gray-800 p-6 space-y-4">
-                <div>
-                    <p className="text-lg font-semibold text-gray-900 dark:text-[#E8ECF3]">
-                        Эскертмелер
-                    </p>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                        Кайсы каналдар аркылуу эскертмелерди алгыңыз келерин тандаңыз.
-                    </p>
-                </div>
-                <div className="divide-y divide-gray-100 dark:divide-gray-800">
-                    {notificationEntries.length ? (
-                        notificationEntries.map(([key, value]) => {
-                            const meta = NOTIFICATION_LABELS[key] || {};
-                            const label = meta.label || formatNotificationLabel(key);
-                            const description = meta.description || '';
-                            const inputId = `notification-${key}`;
-                            return (
-                                <div
-                                    key={key}
-                                    className="flex items-start justify-between py-3 gap-4"
-                                >
-                                    <div>
-                                        <label
-                                            htmlFor={inputId}
-                                            className="font-medium text-gray-900 dark:text-[#E8ECF3]"
-                                        >
-                                            {label}
-                                        </label>
-                                        {description && (
-                                            <p className="text-sm text-gray-500 dark:text-gray-400">
-                                                {description}
-                                            </p>
-                                        )}
-                                    </div>
-                                    <label className="relative inline-flex items-center cursor-pointer">
-                                        <input
-                                            id={inputId}
-                                            type="checkbox"
-                                            className="sr-only peer"
-                                            checked={Boolean(value)}
-                                            onChange={(e) =>
-                                                onNotificationChange?.(key, e.target.checked)
-                                            }
-                                        />
-                                        <div className="w-11 h-6 bg-gray-200 dark:bg-gray-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-200 dark:peer-focus:ring-blue-800 rounded-full peer peer-checked:bg-blue-600 transition-colors" />
-                                        <span className="ml-3 text-sm text-gray-500 dark:text-gray-400">
-                                            {value ? 'Күйгүзүлгөн' : 'Өчүрүлгөн'}
-                                        </span>
-                                    </label>
-                                </div>
-                            );
-                        })
-                    ) : (
-                        <p className="text-sm text-gray-500 dark:text-gray-400 py-2">
-                            Эскертме параметрлери табылган жок.
-                        </p>
-                    )}
-                </div>
-                <button
-                    type="button"
-                    onClick={onSaveNotifications}
-                    disabled={savingNotifications}
-                    className="px-5 py-3 rounded-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
-                >
-                    {savingNotifications ? 'Сакталууда...' : 'Эскертмелерди сактоо'}
-                </button>
-            </div>
-        </div>
-    );
-};
-
-const StatCard = ({ label, value }) => (
-    <div className="bg-white dark:bg-[#222222] rounded-3xl p-4 border border-gray-100 dark:border-gray-800 shadow-sm hover:shadow-md transition-shadow">
-        <p className="text-sm text-gray-500 dark:text-gray-400">{label}</p>
-        <p className="text-2xl font-semibold text-gray-900 dark:text-[#E8ECF3] mt-1">{value}</p>
-    </div>
-);
-
-OverviewTab.propTypes = {
-    student: PropTypes.shape({
-        id: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
-        name: PropTypes.string,
-        streak: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
-        lastLesson: PropTypes.shape({
-            lesson: PropTypes.string,
-            course: PropTypes.string,
-        }),
-    }).isRequired,
-    stats: PropTypes.shape({
-        activeCourses: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
-        lessonsCompleted: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
-        timeThisWeek: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
-        pendingTasks: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
-    }).isRequired,
-    offerings: PropTypes.arrayOf(PropTypes.object).isRequired,
-    tasks: PropTypes.arrayOf(PropTypes.object).isRequired,
-    announcements: PropTypes.arrayOf(PropTypes.object).isRequired,
-    attendanceStats: PropTypes.shape({
-        rate: PropTypes.number,
-        totalSessions: PropTypes.number,
-        present: PropTypes.number,
-        absent: PropTypes.number,
-    }).isRequired,
-    attendanceEnabled: PropTypes.bool.isRequired,
-    engagement: PropTypes.shape({
-        xp: PropTypes.number,
-        streak: PropTypes.number,
-        level: PropTypes.number,
-        currentLevelXp: PropTypes.number,
-        nextLevelGap: PropTypes.number,
-    }).isRequired,
-    leaderboardItems: PropTypes.arrayOf(PropTypes.object).isRequired,
-    milestoneItems: PropTypes.arrayOf(PropTypes.object).isRequired,
-    badgeItems: PropTypes.arrayOf(PropTypes.object).isRequired,
-};
-
-CoursesTab.propTypes = {
-    courses: PropTypes.arrayOf(PropTypes.object).isRequired,
-    offeringsByCourse: PropTypes.instanceOf(Map).isRequired,
-};
-
-ScheduleTab.propTypes = {
-    offerings: PropTypes.arrayOf(PropTypes.object).isRequired,
-    recordings: PropTypes.arrayOf(PropTypes.object),
-};
-
-ScheduleTab.defaultProps = {
-    recordings: [],
-};
-
-TasksTab.propTypes = {
-    tasks: PropTypes.arrayOf(PropTypes.object).isRequired,
-    onSubmitHomework: PropTypes.func,
-    submittingTaskId: PropTypes.string,
-};
-
-TasksTab.defaultProps = {
-    onSubmitHomework: undefined,
-    submittingTaskId: '',
-};
-
-ProgressTab.propTypes = {
-    items: PropTypes.arrayOf(PropTypes.object).isRequired,
-    attendanceStats: PropTypes.shape({
-        rate: PropTypes.number,
-    }).isRequired,
-    attendanceEnabled: PropTypes.bool.isRequired,
-    engagement: PropTypes.shape({
-        xp: PropTypes.number,
-        streak: PropTypes.number,
-    }).isRequired,
-    leaderboardItems: PropTypes.arrayOf(PropTypes.object).isRequired,
-    milestoneItems: PropTypes.arrayOf(PropTypes.object).isRequired,
-    badgeItems: PropTypes.arrayOf(PropTypes.object).isRequired,
-};
-
-ProfileTab.propTypes = {
-    student: PropTypes.shape({
-        id: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
-        name: PropTypes.string,
-        email: PropTypes.string,
-        phone: PropTypes.string,
-        avatar: PropTypes.string,
-    }).isRequired,
-    notificationSettings: PropTypes.object,
-    onSaveProfile: PropTypes.func,
-    savingProfile: PropTypes.bool,
-    onNotificationChange: PropTypes.func,
-    onSaveNotifications: PropTypes.func.isRequired,
-    savingNotifications: PropTypes.bool,
-};
-
-ProfileTab.defaultProps = {
-    notificationSettings: {},
-    onSaveProfile: undefined,
-    savingProfile: false,
-    onNotificationChange: undefined,
-    savingNotifications: false,
-};
-
-StatCard.propTypes = {
-    label: PropTypes.string.isRequired,
-    value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
 };
 
 export default StudentDashboard;

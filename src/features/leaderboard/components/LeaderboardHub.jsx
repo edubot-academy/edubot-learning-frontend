@@ -1,7 +1,8 @@
 import { useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import React from 'react';
 import PropTypes from 'prop-types';
+import { SmoothTabTransition } from '@components/ui';
 import { Link, useSearchParams } from 'react-router-dom';
-import Loader from '@shared/ui/Loader';
 import {
     fetchFastProgressLeaderboard,
     fetchLeaderboardAchievements,
@@ -390,14 +391,16 @@ const LeaderboardHub = ({ embedded = false, initialTrack = 'all', lockTrack = fa
     };
 
     const renderTab = () => {
-        if (loading) {
-            return (
+        return (
+            <SmoothTabTransition isLoading={loading} isDataLoaded={true}>
                 <div className="py-16 flex justify-center">
-                    <Loader fullScreen={false} />
+                    {/* Content will be rendered here */}
                 </div>
-            );
-        }
+            </SmoothTabTransition>
+        );
+    };
 
+    const renderContent = () => {
         switch (activeTab) {
             case 'weekly':
                 return (
@@ -634,7 +637,9 @@ const LeaderboardHub = ({ embedded = false, initialTrack = 'all', lockTrack = fa
                     </div>
                 </div>
 
-                {renderTab()}
+                <SmoothTabTransition isLoading={loading} isDataLoaded={true}>
+                    {renderContent()}
+                </SmoothTabTransition>
             </div>
         </div>
     );
