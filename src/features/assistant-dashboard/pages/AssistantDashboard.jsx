@@ -1,31 +1,19 @@
-import React, { useContext, useState, useEffect } from "react";
+import { useContext, useState, useEffect, useCallback } from "react";
 import { AuthContext } from "../../../context/AuthContext";
-import DashboardSidebar from "@features/dashboard/components/DashboardSidebar";
 import FloatingActionButton from "../../../components/ui/FloatingActionButton";
-import SkipNavigation from "../../../components/ui/SkipNavigation";
 import AttendancePage from "../../../pages/Attendance";
-import AssistantDashboardHeader from "../components/AssistantDashboardHeader";
 import AssistantCompanyState from "../components/AssistantCompanyState";
 import AssistantStudentTable from "../components/AssistantStudentTable";
 import AssistantCourseStats from "../components/AssistantCourseStats";
 import { useAssistantDashboardData } from "../hooks/useAssistantDashboardData.jsx";
 import {
-    FiHome,
-    FiUsers,
-    FiBookOpen,
-    FiCalendar,
-    FiMail,
-    FiBarChart2,
-} from "react-icons/fi";
-
-const NAV_ITEMS = [
-    { id: "overview", label: "Кыскача", icon: FiHome, category: "primary", priority: 1 },
-    { id: "enrollments", label: "Студенттер", icon: FiUsers, category: "primary", priority: 2 },
-    { id: "courses", label: "Курстар", icon: FiBookOpen, category: "learning", priority: 1 },
-    { id: "attendance", label: "Катышуу", icon: FiCalendar, category: "learning", priority: 2 },
-    { id: "communication", label: "Байланыштар", icon: FiMail, category: "support", priority: 1 },
-    { id: "analytics", label: "Аналитика", icon: FiBarChart2, category: "support", priority: 2 },
-];
+    DashboardLayout,
+    DashboardHeader,
+    DashboardTabs,
+    StatCard,
+    EmptyState,
+} from "../../../components/ui/dashboard";
+import { NAV_ITEMS } from "../utils/assistantDashboard.constants";
 
 const AssistantDashboard = () => {
     const { user } = useContext(AuthContext);
@@ -37,7 +25,7 @@ const AssistantDashboard = () => {
             // Alt + shortcuts for navigation
             if (e.altKey) {
                 switch (e.key.toLowerCase()) {
-                    case 'm':
+                    case 'm': {
                         e.preventDefault();
                         const mainContent = document.getElementById('main-content');
                         if (mainContent) {
@@ -45,7 +33,8 @@ const AssistantDashboard = () => {
                             mainContent.scrollIntoView({ behavior: 'smooth' });
                         }
                         break;
-                    case 'n':
+                    }
+                    case 'n': {
                         e.preventDefault();
                         const navigation = document.querySelector('nav[role="navigation"]');
                         if (navigation) {
@@ -53,7 +42,8 @@ const AssistantDashboard = () => {
                             navigation.scrollIntoView({ behavior: 'smooth' });
                         }
                         break;
-                    case 's':
+                    }
+                    case 's': {
                         e.preventDefault();
                         const searchInput = document.querySelector('input[placeholder*="издөө" i], input[type="search"]');
                         if (searchInput) {
@@ -61,6 +51,7 @@ const AssistantDashboard = () => {
                             searchInput.scrollIntoView({ behavior: 'smooth' });
                         }
                         break;
+                    }
                 }
             }
 
@@ -84,6 +75,10 @@ const AssistantDashboard = () => {
 
         document.addEventListener('keydown', handleGlobalKeyDown);
         return () => document.removeEventListener('keydown', handleGlobalKeyDown);
+    }, []);
+
+    const handleTabSelect = useCallback((tabId) => {
+        setActiveTab(tabId);
     }, []);
 
     const {
@@ -125,7 +120,7 @@ const AssistantDashboard = () => {
                     <div className="absolute inset-0 bg-white/50 dark:bg-gray-900/50 flex items-center justify-center rounded-2xl backdrop-blur-sm">
                         <div className="bg-white dark:bg-gray-800 rounded-lg p-3 shadow-lg border border-gray-200 dark:border-gray-700">
                             <div className="flex items-center gap-3">
-                                <div className="animate-spin rounded-full border-2 border-gray-300 border-t-blue-600 w-5 h-5"></div>
+                                <div className="animate-spin rounded-full border-2 border-gray-300 border-t-edubot-orange w-5 h-5"></div>
                                 <span className="text-sm text-gray-600 dark:text-gray-400">Жүктөлүүдө...</span>
                             </div>
                         </div>
@@ -140,7 +135,7 @@ const AssistantDashboard = () => {
     const renderTabContent = () => {
         if (activeTab === "attendance") {
             return (
-                <div className="bg-white dark:bg-gray-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-lg p-6">
+                <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-lg p-6">
                     <AttendancePage embedded />
                 </div>
             );
@@ -148,32 +143,44 @@ const AssistantDashboard = () => {
 
         if (activeTab === "courses") {
             return (
-                <div className="space-y-4">
-                    <div className="flex gap-6 mb-2 text-sm font-medium flex-wrap">
-                        <div>🎓 Курстар: {courses.length}</div>
+                <div className="space-y-6">
+                    <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-lg p-6">
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className="w-8 h-8 bg-edubot-orange rounded-lg flex items-center justify-center">
+                                <span className="text-white text-lg">🎓</span>
+                            </div>
+                            <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
+                                Курстар жөнүндө маалымат
+                            </h3>
+                        </div>
+                        <div className="flex items-center gap-6 text-sm font-medium flex-wrap">
+                            <div className="flex items-center gap-2">
+                                <span className="w-3 h-3 bg-edubot-orange rounded-full"></span>
+                                <span>Курстар: {courses.length}</span>
+                            </div>
+                        </div>
                     </div>
 
-                    <div className="mb-4">
-                        <AssistantCourseStats
-                            courses={courses}
-                            courseCounts={courseCounts}
-                            loading={loading}
-                        />
-                    </div>
+                    <AssistantCourseStats
+                        courses={courses}
+                        courseCounts={courseCounts}
+                        loading={loading}
+                    />
                 </div>
             );
         }
 
         if (activeTab === "communication" || activeTab === "analytics") {
             return (
-                <div className="bg-white dark:bg-gray-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-lg p-8 text-center">
-                    <h2 className="text-xl font-semibold text-slate-900 dark:text-white mb-2">
-                        Бул бөлүм даярдала элек
-                    </h2>
-                    <p className="text-slate-600 dark:text-slate-400">
-                        Бул таб үчүн өзүнчө модуль керек. Азырынча негизги каттоо агымы гана калды.
-                    </p>
-                </div>
+                <EmptyState
+                    title="Бул бөлүм даярдала элек"
+                    subtitle="Бул таб үчүн өзүнчө модуль керек. Азырынча негизги каттоо агымы гана калды."
+                    icon={
+                        <svg className="w-16 h-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                    }
+                />
             );
         }
 
@@ -200,49 +207,76 @@ const AssistantDashboard = () => {
         );
     };
 
-    return (
-        <div className="pt-24 min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 p-6 flex gap-6">
-            <SkipNavigation />
-            <DashboardSidebar
-                items={NAV_ITEMS}
-                activeId={activeTab}
-                onSelect={setActiveTab}
-                isOpen={sidebarOpen}
-                onToggle={setSidebarOpen}
-                defaultOpen
-                toggleLabels={{ collapse: "Менюну жыйуу", expand: "Меню" }}
+    // Prepare navigation items for the standardized layout
+    const dashboardNavItems = NAV_ITEMS.map((item) => ({
+        ...item,
+        isActive: item.id === activeTab,
+        onSelect: handleTabSelect,
+    }));
+
+    // Prepare header actions
+    const headerActions = [
+        {
+            label: sidebarOpen ? 'Менюну жашыруу' : 'Менюну көрсөтүү',
+            onClick: () => setSidebarOpen((prev) => !prev),
+            variant: 'secondary',
+        },
+    ];
+
+    // Prepare header content with stats
+    const headerContent = (
+        <div>
+            <DashboardHeader
+                user={{ fullName: user?.fullName || 'Ассистент', email: user?.email || '' }}
+                role="assistant"
+                subtitle={isAssistant && activeCompany
+                    ? `Ассистент катары сиз ${activeCompany.name} компаниясынын курстарын көрүп жатасыз`
+                    : 'Инструкторлорго жардам берүү жана колдоо'
+                }
+                actions={headerActions}
             />
 
-            <div className="flex-1">
-                <div
-                    id="main-content"
-                    tabIndex={-1}
-                    role="main"
-                    aria-label="Ассистент dashboard мазмуну"
-                >
-                    <AssistantDashboardHeader
-                        isAssistant={isAssistant}
-                        activeCompany={activeCompany}
-                        totalStudents={totalStudents}
-                        enrolledStudents={enrolledStudents}
-                        courses={courses}
-                    />
-
-                    <AssistantCompanyState
-                        assistantNoCompany={assistantNoCompany}
-                        assistantNeedsSelect={assistantNeedsSelect}
-                        companies={companies}
-                        activeCompanyId={activeCompanyId}
-                        setActiveCompanyId={setActiveCompanyId}
-                    />
-
-                    {!assistantNoCompany && !assistantNeedsSelect && renderMainContent()}
-
-                    {/* Floating Action Button */}
-                    <FloatingActionButton role="assistant" />
-                </div>
+            {/* Stats Display */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6">
+                <StatCard label="Жалпы студенттер" value={totalStudents} color="orange" />
+                <StatCard label="Катталган студенттер" value={enrolledStudents.length} color="blue" />
+                <StatCard label="Жарыяланган курстар" value={courses.length} color="green" />
             </div>
         </div>
+    );
+
+    // Mobile tabs
+    const mobileTabs = (
+        <DashboardTabs
+            items={dashboardNavItems}
+            activeId={activeTab}
+            onSelect={handleTabSelect}
+        />
+    );
+
+    return (
+        <DashboardLayout
+            role="assistant"
+            user={{ fullName: user?.fullName || 'Ассистент', email: user?.email || '' }}
+            sidebarOpen={sidebarOpen}
+            setSidebarOpen={setSidebarOpen}
+            navItems={dashboardNavItems}
+            mobileTabs={mobileTabs}
+            headerContent={headerContent}
+        >
+            <AssistantCompanyState
+                assistantNoCompany={assistantNoCompany}
+                assistantNeedsSelect={assistantNeedsSelect}
+                companies={companies}
+                activeCompanyId={activeCompanyId}
+                setActiveCompanyId={setActiveCompanyId}
+            />
+
+            {!assistantNoCompany && !assistantNeedsSelect && renderMainContent()}
+
+            {/* Floating Action Button */}
+            <FloatingActionButton role="assistant" />
+        </DashboardLayout>
     );
 };
 

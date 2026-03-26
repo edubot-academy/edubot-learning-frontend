@@ -18,15 +18,17 @@ export const NAV_ITEMS = [
     { id: 'schedule', label: 'Жүгүртмө', icon: FiCalendar, category: 'primary', priority: 3 },
     { id: 'tasks', label: 'Тапшырмалар', icon: FiPlay, category: 'primary', priority: 4 },
 
-    // Learning Progress - Performance & Achievement
-    { id: 'progress', label: 'Прогресс', icon: FiBarChart2, category: 'progress', priority: 1 },
-    { id: 'analytics', label: 'Аналитика', icon: FiFilter, category: 'progress', priority: 2 },
-    { id: 'leaderboard', label: 'Рейтинг', icon: FiCheckCircle, category: 'progress', priority: 3 },
+    // Secondary Navigation - Learning Management
+    { id: 'progress', label: 'Прогресс', icon: FiBarChart2, category: 'secondary', priority: 1 },
+    { id: 'chat', label: 'Чат', icon: FiMessageCircle, category: 'secondary', priority: 2 },
 
-    // Personal Management - Settings & Communication
-    { id: 'profile', label: 'Профиль', icon: FiUser, category: 'personal', priority: 1 },
-    { id: 'notifications', label: 'Билдирүүлөр', icon: FiBell, category: 'personal', priority: 2 },
-    { id: 'chat', label: 'Чат', icon: FiMessageCircle, category: 'personal', priority: 3 },
+    // Analytics & Performance
+    { id: 'analytics', label: 'Аналитика', icon: FiFilter, category: 'analytics', priority: 1 },
+    { id: 'leaderboard', label: 'Рейтинг', icon: FiCheckCircle, category: 'analytics', priority: 2 },
+
+    // Administrative - Settings & Communication
+    { id: 'profile', label: 'Профиль', icon: FiUser, category: 'admin', priority: 1 },
+    { id: 'notifications', label: 'Билдирүүлөр', icon: FiBell, category: 'admin', priority: 2 },
 ];
 
 export const DEFAULT_NOTIFICATION_SETTINGS = {

@@ -1,14 +1,13 @@
-import React, { useState, useContext, useEffect, useRef } from 'react';
+/* eslint-disable react/prop-types */
+import { useState, useContext, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { FaBars } from 'react-icons/fa';
 import { IoSearch } from 'react-icons/io5';
-import { GrLanguage } from 'react-icons/gr';
 import { useDarkMode } from '../contexts/DarkModeContext';
-import { BsChevronDown } from 'react-icons/bs';
 import EduBotLogo from '@assets/images/edubot-signup.png';
 import ThemeToggle from '@shared-ui/ThemeToggle';
 
-import { IoHeartOutline, IoHeart, IoChatbubblesOutline } from 'react-icons/io5';
+import { IoHeartOutline, IoHeart } from 'react-icons/io5';
 import { BsCart2 } from 'react-icons/bs';
 import { FaRegUser } from 'react-icons/fa';
 
@@ -95,7 +94,6 @@ const Header = () => {
     const [menuOpen, setMenuOpen] = useState(false);
     const [positionBar, setPositionBar] = useState(false);
     const [search, setSearch] = useState('');
-    const [lang, setLang] = useState('Кыргызча');
     const [langOpen, setLangOpen] = useState(false);
     const [searchOpen, setSearchOpen] = useState(false);
     const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -156,15 +154,6 @@ const Header = () => {
         loadUnreadNotifications();
     }, [user]);
 
-    const handleSearchSubmit = (e) => {
-        e.preventDefault();
-        const q = search.trim();
-        if (!q) return;
-        navigate(`/search?q=${encodeURIComponent(q)}`);
-        setMenuOpen(false);
-        setSearchOpen(false);
-    };
-
     const handleSearch = async (value) => {
         setSearch(value);
 
@@ -178,7 +167,7 @@ const Header = () => {
             const data = await searchCourses(value);
             setResults(data);
             setShowDropdown(true);
-        } catch (error) {
+        } catch {
             setResults([]);
             setShowDropdown(false);
         }
@@ -197,7 +186,7 @@ const Header = () => {
     const isFavouritesPage = location.pathname === '/favourites';
 
     return (
-        <header className="sticky top-0 w-full bg-white dark:bg-[#1A1A1A] text-black dark:text-[#E8ECF3] shadow dark:shadow-gray-900 z-50">
+        <header className="sticky top-0 w-full bg-white dark:bg-[#1A1A1A] text-black dark:text-[#E8ECF3] shadow dark:shadow-gray-900 z-[80]">
             <div className="px-4 md:px-10 py-3">
                 {/* Desktop Layout */}
                 <div className="hidden lg:flex items-center justify-between">
@@ -296,7 +285,6 @@ const Header = () => {
                                         <button
                                             key={l}
                                             onClick={() => {
-                                                setLang(l);
                                                 setLangOpen(false);
                                             }}
                                             className="block px-4 py-2 w-full text-left hover:bg-gray-100 dark:hover:bg-gray-700 text-sm text-gray-800 dark:text-gray-300"

@@ -1,13 +1,3 @@
-// Empty States Components
-export {
-    EmptyCoursesState,
-    EmptyStudentsState,
-    EmptyStatsState,
-    EmptyScheduleState,
-    EmptyMessagesState,
-    EmptyAchievementsState
-} from './EmptyStates';
-
 // Dashboard Skeleton Loaders
 export {
     DashboardOverviewSkeleton,
@@ -16,7 +6,7 @@ export {
     DashboardListSkeleton,
     DashboardCardSkeleton,
     DashboardFormSkeleton
-} from './DashboardSkeletons';
+} from './dashboard/DashboardSkeletons';
 
 // Error States Components
 export {
@@ -27,7 +17,7 @@ export {
     ServerErrorState,
     LoadingErrorState,
     ErrorBoundaryFallback
-} from './ErrorStates';
+} from './dashboard/ErrorStates';
 
 // Progressive Loading Components
 export {
@@ -38,7 +28,7 @@ export {
     ProgressiveTableLoader,
     ProgressiveImageLoader,
     DashboardProgressIndicator
-} from './ProgressiveLoaders';
+} from './dashboard/ProgressiveLoaders';
 
 // Smooth Tab Transitions
 export {

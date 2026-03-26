@@ -36,22 +36,24 @@ export const USERS_QUERY_KEYS = Object.freeze({
 });
 
 export const NAV_ITEMS = [
-    // Content Management - Primary Admin Tasks
-    { id: 'stats', label: 'Статистика', icon: FiBarChart2, category: 'content', priority: 1 },
-    { id: 'courses', label: 'Курстар & Категориялар', icon: FiBookOpen, category: 'content', priority: 2 },
+    // Primary Navigation - Core Admin Tasks
+    { id: 'stats', label: 'Статистика', icon: FiBarChart2, category: 'primary', priority: 1 },
+    { id: 'courses', label: 'Курстар & Категориялар', icon: FiBookOpen, category: 'primary', priority: 2 },
 
-    // User Management - People & Access
-    { id: 'users', label: 'Колдонуучулар', icon: FiUsers, category: 'users', priority: 1 },
-    { id: 'companies', label: 'Компаниялар', icon: FiBriefcase, category: 'users', priority: 2 },
+    // Secondary Navigation - People & Access
+    { id: 'users', label: 'Колдонуучулар', icon: FiUsers, category: 'secondary', priority: 1 },
+    { id: 'companies', label: 'Компаниялар', icon: FiBriefcase, category: 'secondary', priority: 2 },
+    { id: 'contacts', label: 'Байланыштар', icon: FiMail, category: 'secondary', priority: 3 },
 
-    // System Administration - Settings & Configuration
-    { id: 'contacts', label: 'Байланыштар', icon: FiMail, category: 'admin', priority: 1 },
-    { id: 'ai-prompts', label: 'AI промпттар', icon: FiCpu, category: 'admin', priority: 2 },
-    { id: 'skills', label: 'Скиллдер', icon: FiTag, category: 'admin', priority: 3 },
-    { id: 'notifications', label: 'Билдирүүлөр', icon: FiBell, category: 'admin', priority: 4 },
-    { id: 'integration', label: 'Интеграциялар', icon: FiActivity, category: 'admin', priority: 5 },
-    { id: 'attendance', label: 'Катышуу', icon: FiCalendar, category: 'admin', priority: 6 },
-    { id: 'analytics', label: 'Аналитика', icon: FiTrendingUp, category: 'admin', priority: 7 },
+    // Analytics & Insights
+    { id: 'analytics', label: 'Аналитика', icon: FiTrendingUp, category: 'analytics', priority: 1 },
+
+    // Administrative - Settings & Configuration
+    { id: 'ai-prompts', label: 'AI промпттар', icon: FiCpu, category: 'admin', priority: 1 },
+    { id: 'skills', label: 'Скиллдер', icon: FiTag, category: 'admin', priority: 2 },
+    { id: 'notifications', label: 'Билдирүүлөр', icon: FiBell, category: 'admin', priority: 3 },
+    { id: 'integration', label: 'Интеграциялар', icon: FiActivity, category: 'admin', priority: 4 },
+    { id: 'attendance', label: 'Катышуу', icon: FiCalendar, category: 'admin', priority: 5 },
 ];
 
 // Pagination helper constants

@@ -1,8 +1,10 @@
 import { useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import DashboardSidebar from '@features/dashboard/components/DashboardSidebar';
-import { useSearchParams, useNavigate } from 'react-router-dom';
-import SkipNavigation from '../components/ui/SkipNavigation';
-import { EmptyCoursesState, EmptyScheduleState, DashboardOverviewSkeleton, DashboardTableSkeleton, DashboardCardSkeleton } from '@components/ui';
+import { useSearchParams } from 'react-router-dom';
+import { AuthContext } from '../context/AuthContext';
+import toast from 'react-hot-toast';
+import LeaderboardHub from '../features/leaderboard/components/LeaderboardHub';
+import StudentAnalyticsPage from './StudentAnalytics';
+import FloatingActionButton from '../components/ui/FloatingActionButton';
 import {
     fetchStudentCourses,
     fetchStudentDashboard,
@@ -19,12 +21,6 @@ import {
     fetchWeeklyLeaderboard,
     updateStudentNotificationSettings,
 } from '@services/api';
-import { AuthContext } from '../context/AuthContext';
-import toast from 'react-hot-toast';
-import Loader from '@shared/ui/Loader';
-import LeaderboardHub from '../features/leaderboard/components/LeaderboardHub';
-import StudentAnalyticsPage from './StudentAnalytics';
-import FloatingActionButton from '../components/ui/FloatingActionButton';
 import NotificationsTab from '@features/notifications/components/NotificationsTab';
 import { NAV_ITEMS, DEFAULT_NOTIFICATION_SETTINGS } from '@features/student-dashboard/utils/studentDashboard.constants.js';
 import {
@@ -43,21 +39,30 @@ import TasksTab from '@features/student-dashboard/components/tabs/TasksTab.jsx';
 import ProgressTab from '@features/student-dashboard/components/tabs/ProgressTab.jsx';
 import ProfileTab from '@features/student-dashboard/components/tabs/ProfileTab.jsx';
 import ChatTab from '@features/student-dashboard/components/ChatTab.jsx';
+import {
+    DashboardLayout,
+    DashboardHeader,
+    DashboardTabs,
+    LoadingState,
+} from '../components/ui/dashboard';
 
 
 const StudentDashboard = () => {
     const { user } = useContext(AuthContext);
     const [searchParams, setSearchParams] = useSearchParams();
-    const initialTab = searchParams.get('tab') || 'overview';
+    const initialTab = searchParams.get('tab');
+    const validTabIds = useMemo(() => NAV_ITEMS.map((item) => item.id), []);
     const studentId = user?.id;
     const [sidebarOpen, setSidebarOpen] = useState(true);
-    const [activeTab, setActiveTab] = useState(initialTab);
+    const [activeTab, setActiveTab] = useState(
+        validTabIds.includes(initialTab) ? initialTab : 'overview'
+    );
     const [summary, setSummary] = useState(null);
     const [courses, setCourses] = useState([]);
     const [offerings, setOfferings] = useState([]);
     const [tasks, setTasks] = useState([]);
     const [recordings, setRecordings] = useState([]);
-    const [filterCourseId, setFilterCourseId] = useState('');
+    const [filterCourseId] = useState('');
     const [filterGroupId, setFilterGroupId] = useState('');
     const [progress, setProgress] = useState([]);
     const [certificates, setCertificates] = useState([]);
@@ -283,16 +288,17 @@ const StudentDashboard = () => {
     }, [studentId]);
 
     useEffect(() => {
-        const tabFromUrl = searchParams.get('tab') || 'overview';
-        setActiveTab((prev) => (tabFromUrl !== prev ? tabFromUrl : prev));
-    }, [searchParams]);
+        const tabFromUrl = searchParams.get('tab');
+        const nextTab = validTabIds.includes(tabFromUrl) ? tabFromUrl : 'overview';
+        setActiveTab((prev) => (nextTab !== prev ? nextTab : prev));
+    }, [searchParams, validTabIds]);
 
     useEffect(() => {
         const handleGlobalKeyDown = (e) => {
             // Alt + shortcuts for navigation
             if (e.altKey) {
                 switch (e.key.toLowerCase()) {
-                    case 'm':
+                    case 'm': {
                         e.preventDefault();
                         const mainContent = document.getElementById('main-content');
                         if (mainContent) {
@@ -300,7 +306,8 @@ const StudentDashboard = () => {
                             mainContent.scrollIntoView({ behavior: 'smooth' });
                         }
                         break;
-                    case 'n':
+                    }
+                    case 'n': {
                         e.preventDefault();
                         const navigation = document.querySelector('nav[role="navigation"]');
                         if (navigation) {
@@ -308,7 +315,8 @@ const StudentDashboard = () => {
                             navigation.scrollIntoView({ behavior: 'smooth' });
                         }
                         break;
-                    case 's':
+                    }
+                    case 's': {
                         e.preventDefault();
                         const searchInput = document.querySelector('input[placeholder*="издөө" i], input[type="search"]');
                         if (searchInput) {
@@ -316,6 +324,7 @@ const StudentDashboard = () => {
                             searchInput.scrollIntoView({ behavior: 'smooth' });
                         }
                         break;
+                    }
                 }
             }
 
@@ -345,7 +354,11 @@ const StudentDashboard = () => {
         if (!studentId) return;
         setSearchParams((prev) => {
             const next = new URLSearchParams(prev);
-            next.set('tab', activeTab);
+            if (activeTab === 'overview') {
+                next.delete('tab');
+            } else {
+                next.set('tab', activeTab);
+            }
             return next;
         });
         const tab = activeTab;
@@ -549,35 +562,6 @@ const StudentDashboard = () => {
         if (!badges.length) badges.push({ id: 'b0', title: 'First Step' });
         return badges;
     }, [summary, engagement.streak, attendanceStats.rate, engagement.xp]);
-
-    const announcementItems = useMemo(() => {
-        const incoming = readArray(summary, [
-            'announcements',
-            'notifications.announcements',
-            'feed.announcements',
-            'updates',
-        ]);
-        if (incoming.length) {
-            return incoming.map((item, index) => ({
-                id: item.id || item.announcementId || `a-${index}`,
-                title: item.title || item.subject || item.name || 'Announcement',
-                body: item.body || item.message || item.description || '',
-            }));
-        }
-
-        return [
-            {
-                id: 'a-default-1',
-                title: 'Окуу графигиңизди текшериңиз',
-                body: 'Кийинки сабактарыңызды жана тапшырмаларды табдардан көрө аласыз.',
-            },
-            {
-                id: 'a-default-2',
-                title: 'Прогрессти көзөмөлдөңүз',
-                body: 'Прогресс жана аналитика табдары аркылуу жыйынтыктарды текшериңиз.',
-            },
-        ];
-    }, [summary]);
 
     const offeringsByCourse = useMemo(() => {
         const map = new Map();
@@ -857,18 +841,15 @@ const StudentDashboard = () => {
     const renderTab = () => {
         const requiresActiveAccess = ['overview', 'my-courses', 'schedule', 'tasks', 'progress', 'analytics', 'leaderboard'].includes(activeTab);
         if (requiresActiveAccess && !hasActiveStudentAccess) {
-            return <EmptyCoursesState role="student" />;
+            return <StudentEmptyState />;
         }
 
-        // Only show skeleton loader if data is genuinely not loaded after a short delay
         if (!isTabDataLoaded || !isProfileReady) {
-            return activeTab === 'overview' ? (
-                <DashboardOverviewSkeleton />
-            ) : ['my-courses', 'schedule', 'tasks'].includes(activeTab) ? (
-                <DashboardCardSkeleton cards={6} />
-            ) : (
-                <DashboardTableSkeleton rows={5} columns={4} />
-            );
+            if (activeTab === 'overview') return <LoadingState type="card" count={3} />;
+            if (['my-courses', 'schedule', 'tasks'].includes(activeTab)) {
+                return <LoadingState type="list" />;
+            }
+            return <LoadingState type="table" />;
         }
 
         // Don't show loader for tab switching if data is already loaded
@@ -880,7 +861,7 @@ const StudentDashboard = () => {
                     {isCurrentTabLoading && (
                         <div className="absolute inset-0 bg-white/50 dark:bg-gray-900/50 flex items-center justify-center rounded-2xl">
                             <div className="bg-white dark:bg-gray-800 rounded-lg p-3 shadow-lg">
-                                <div className="animate-spin rounded-full border-2 border-gray-300 border-t-blue-600 w-6 h-6"></div>
+                                <div className="animate-spin rounded-full border-2 border-gray-300 border-t-edubot-orange w-6 h-6"></div>
                             </div>
                         </div>
                     )}
@@ -962,141 +943,68 @@ const StudentDashboard = () => {
         }
     };
 
-    const navigate = useNavigate();
     const handleDashboardNavSelect = useCallback(
         (id) => {
+            if (!validTabIds.includes(id)) return;
             setActiveTab(id);
         },
-        []
+        [validTabIds]
+    );
+
+    // Prepare navigation items for the standardized layout
+    const dashboardNavItems = NAV_ITEMS.map((item) => ({
+        ...item,
+        isActive: item.id === activeTab,
+        onSelect: handleDashboardNavSelect,
+    }));
+
+    // Prepare header actions
+    const headerActions = [
+        {
+            label: sidebarOpen ? 'Менюну жашыруу' : 'Менюну көрсөтүү',
+            onClick: () => setSidebarOpen((prev) => !prev),
+            variant: 'secondary',
+        },
+    ];
+
+    // Prepare header content
+    const headerContent = (
+        <DashboardHeader
+            user={{
+                fullName: profileData?.fullName || user?.fullName || overviewStudent.name,
+                email: user?.email || profileData?.email || '',
+            }}
+            role="student"
+            subtitle="Чыгармачыл окуу жолуңузду көзөмөлдөңүз"
+            actions={headerActions}
+        />
+    );
+
+    // Mobile tabs
+    const mobileTabs = (
+        <DashboardTabs
+            items={dashboardNavItems}
+            activeId={activeTab}
+            onSelect={handleDashboardNavSelect}
+        />
     );
 
     return (
-        <div className="pt-24 min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 transition-colors duration-200 min-w-0 break-words">
-            <SkipNavigation />
-            <div className="flex gap-6">
-                <aside
-                    className={`${sidebarOpen ? 'lg:w-64' : 'lg:w-20'} hidden w-full lg:block lg:flex-shrink-0 transition-all duration-300`}
-                >
-                    <div className="sticky top-24" style={{ height: 'calc(100vh - 6rem)' }}>
-                        <DashboardSidebar
-                            items={NAV_ITEMS}
-                            activeId={activeTab}
-                            onSelect={handleDashboardNavSelect}
-                            isOpen={sidebarOpen}
-                            onToggle={setSidebarOpen}
-                            className="h-full overflow-y-auto scrollbar-hide"
-                        />
-                    </div>
-                </aside>
-
-                <main
-                    className="flex-1 space-y-6 min-w-0"
-                    id="main-content"
-                    tabIndex={-1}
-                    role="main"
-                    aria-label="Студент dashboard мазмуну"
-                >
-                    <div className="flex items-center justify-between flex-wrap gap-3">
-                        <div>
-                            <p className="text-sm uppercase tracking-wide text-gray-400 dark:text-gray-500">
-                                Студент
-                            </p>
-                            <h1 className="text-3xl font-bold text-gray-900 dark:text-[#E8ECF3]">
-                                {overviewStudent.name}
-                            </h1>
-                            <p className="text-sm text-gray-500 dark:text-gray-400">
-                                Чыгармачыл окуу жолуңузду көзөмөлдөңүз
-                            </p>
-                        </div>
-                        <button
-                            onClick={() => setSidebarOpen((prev) => !prev)}
-                            className="inline-flex lg:hidden px-4 py-2 rounded-full border text-sm text-gray-600 dark:text-[#E8ECF3] dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 hover:border-edubot-orange hover:text-edubot-orange transition-all duration-300 transform hover:scale-105 hover:shadow-lg hover:shadow-edubot-orange/20 group"
-                            type="button"
-                        >
-                            <span className="transition-transform duration-300 group-hover:scale-110">
-                                {sidebarOpen ? 'Бөлүмдөрдү жашыруу' : 'Бөлүмдөрдү көрсөтүү'}
-                            </span>
-                        </button>
-                        <div className="flex items-center gap-2 flex-wrap justify-end">
-                            <select
-                                value={filterCourseId || ''}
-                                onChange={(e) => setFilterCourseId(e.target.value)}
-                                className="px-3 py-2 rounded-full border text-sm bg-white dark:bg-[#222222]"
-                            >
-                                <option key="all-courses" value="">All courses</option>
-                                {courses.map((course, index) => (
-                                    <option key={course.id || `course-${index}`} value={course.id}>
-                                        {course.title}
-                                    </option>
-                                ))}
-                            </select>
-                            {(() => {
-                                const selected = courses.find(
-                                    (course) => String(course.id) === String(filterCourseId)
-                                );
-                                return filterCourseId && isOfflineOrLiveCourse(selected);
-                            })() ? (
-                                <select
-                                    value={filterGroupId || ''}
-                                    onChange={(e) => setFilterGroupId(e.target.value)}
-                                    className="px-3 py-2 rounded-full border text-sm bg-white dark:bg-[#222222]"
-                                >
-                                    <option key="all-groups" value="">All groups</option>
-                                    {groupOptions.map((group, index) => (
-                                        <option key={group.id || `group-${index}`} value={group.id}>
-                                            {group.name}
-                                        </option>
-                                    ))}
-                                </select>
-                            ) : null}
-                            <button
-                                onClick={() => setSidebarOpen((prev) => !prev)}
-                                className="hidden md:inline-flex px-4 py-2 rounded-full border text-sm text-gray-600 dark:text-[#E8ECF3] dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 hover:border-edubot-orange hover:text-edubot-orange transition-all duration-300 transform hover:scale-105 hover:shadow-lg hover:shadow-edubot-orange/20 group"
-                                type="button"
-                            >
-                                <span className="transition-transform duration-300 group-hover:scale-110">
-                                    {sidebarOpen ? 'Менюну жашыруу' : 'Менюну көрсөтүү'}
-                                </span>
-                            </button>
-                        </div>
-                    </div>
-                    <div className="lg:hidden space-y-3">
-                        {sidebarOpen ? (
-                            <div className="rounded-3xl border border-gray-100 bg-white p-3 shadow-sm dark:border-gray-800 dark:bg-[#222222]">
-                                <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
-                                    {NAV_ITEMS.map((item, index) => {
-                                        const Icon = item.icon;
-                                        const isActive = activeTab === item.id;
-                                        return (
-                                            <button
-                                                key={item.id || `nav-${index}`}
-                                                type="button"
-                                                onClick={() => handleDashboardNavSelect(item.id)}
-                                                className={[
-                                                    'inline-flex shrink-0 items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-all duration-300 transform hover:scale-105 hover:shadow-md group',
-                                                    isActive
-                                                        ? 'bg-blue-600 text-white'
-                                                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-[#1A1A1A] dark:text-gray-200 dark:hover:bg-gray-800',
-                                                ].join(' ')}
-                                            >
-                                                {Icon ? <Icon className="shrink-0 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-12" /> : null}
-                                                <span className="transition-transform duration-300 group-hover:scale-105">{item.label}</span>
-                                            </button>
-                                        );
-                                    })}
-                                </div>
-                            </div>
-                        ) : null}
-                    </div>
-
-                    {renderTab()}
-                </main>
-            </div>
+        <DashboardLayout
+            role="student"
+            user={overviewStudent}
+            sidebarOpen={sidebarOpen}
+            setSidebarOpen={setSidebarOpen}
+            navItems={dashboardNavItems}
+            mobileTabs={mobileTabs}
+            headerContent={headerContent}
+        >
+            {renderTab()}
 
             {/* Floating Action Button */}
             <FloatingActionButton role="student" />
-        </div>
-    )
+        </DashboardLayout>
+    );
 };
 
 export default StudentDashboard;

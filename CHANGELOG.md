@@ -1,5 +1,49 @@
 # Changelog
 
+## [1.3.8] - 2026-03-26
+
+### 🧩 **DASHBOARD GENERIC ARCHITECTURE + CLEANUP**
+**Objective**: Consolidate dashboard UI architecture around shared generic components, remove legacy duplicates, and fix high-impact runtime/layout issues discovered during audit.
+
+### ✅ **GENERIC DASHBOARD ADOPTION**
+- Standardized dashboard shell usage (`DashboardLayout`, `DashboardHeader`, `DashboardTabs`) across role dashboards.
+- Moved dashboard-domain UI modules into `src/components/ui/dashboard/`:
+  - `DashboardSkeletons`
+  - `ErrorStates`
+  - `ProgressiveLoaders`
+- Kept compatibility through `@components/ui` exports while enabling direct `@components/ui/dashboard` imports.
+
+### ✅ **EMPTY STATE CONSOLIDATION**
+- Removed duplicate variant system and standardized on a single generic `EmptyState` component.
+- Replaced role-specific `EmptyCoursesState` / `EmptyStudentsState` usages with generic `EmptyState` props.
+- Deleted obsolete `EmptyStates` implementation and stale exports.
+
+### ✅ **LEGACY COMPONENT CLEANUP**
+- Removed obsolete dashboard-specific header/tab components no longer used after generic migration:
+  - `InstructorDashboardTabs`
+  - `InstructorDashboardHeader`
+  - `AssistantDashboardHeader`
+  - `AdminPageHeader`
+- Removed orphaned instructor shared UI leftovers:
+  - `InstructorButton`
+  - `InstructorLink`
+- Cleaned stale barrel exports and docs references.
+
+### ✅ **RUNTIME + UX FIXES**
+- Fixed assistant table loading underlay issue by switching to mutually exclusive skeleton/table rendering.
+- Fixed instructor chat send action runtime bug (`handleSendMessage` -> `sendMessage`).
+- Removed dead instructor chat creation state/handlers left from prior iteration.
+- Updated environment check in dashboard error UI to Vite-safe `import.meta.env.DEV`.
+- Fixed keyboard shortcut switch-case block scoping (`no-case-declarations`) in admin/assistant/student dashboards.
+- Fixed instructor students tab prop wiring for search/progress handlers.
+
+### ✅ **QUALITY + STABILITY**
+- Completed lint cleanup on all changed/new JS/JSX files.
+- Removed unused imports/variables and normalized catch handlers where required.
+- Production build verification passed after refactor.
+
+---
+
 ## [1.3.7] - 2026-03-26
 
 ### 📱 **MOBILE FLOATING ACTION BUTTON - COMPLETE OVERHAUL**

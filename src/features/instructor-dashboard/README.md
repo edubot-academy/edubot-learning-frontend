@@ -6,7 +6,6 @@
 src/features/instructor-dashboard/
 ├── components/
 │   ├── main/           # Primary section components
-│   ├── shared/         # Reusable UI components
 │   └── modals/         # Modal components
 ├── hooks/              # Custom hooks for business logic
 ├── utils/              # Constants and helper functions
@@ -16,7 +15,6 @@ src/features/instructor-dashboard/
 ## 🧩 Components Architecture
 
 ### Main Components
-- **InstructorDashboardHeader** - Dashboard header with navigation and user info
 - **InstructorOverviewSection** - Overview tab with stats and quick actions
 - **CoursesSection** - Course management with delivery course modal
 - **StudentsSection** - Student management with filtering and pagination
@@ -29,10 +27,6 @@ src/features/instructor-dashboard/
 - **InstructorQuickActionCard** - Quick action buttons with gradients
 - **InstructorEmptyState** - Empty state placeholder component
 - **OfferingCard** - Individual offering display component
-
-### Shared Components
-- **InstructorLink** - Styled link component with variants
-- **InstructorButton** - Styled button component with loading states
 
 ### Modal Components
 - **CreateDeliveryCourseModal** - Offline/Live course creation modal

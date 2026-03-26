@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+/* eslint-disable react/prop-types */
+import { useState, useEffect, useRef } from 'react';
 
 /**
  * SmoothTabTransition - Eliminates tab flickering by managing content transitions
@@ -16,12 +17,13 @@ const SmoothTabTransition = ({
 }) => {
     const [showContent, setShowContent] = useState(true);
     const [showLoader, setShowLoader] = useState(false);
-    const [loadingTimer, setLoadingTimer] = useState(null);
+    const loadingTimerRef = useRef(null);
 
     useEffect(() => {
         // Clear any existing timer
-        if (loadingTimer) {
-            clearTimeout(loadingTimer);
+        if (loadingTimerRef.current) {
+            clearTimeout(loadingTimerRef.current);
+            loadingTimerRef.current = null;
         }
 
         if (isLoading && isDataLoaded) {
@@ -30,11 +32,10 @@ const SmoothTabTransition = ({
             setShowLoader(true);
         } else if (isLoading && !isDataLoaded) {
             // First time loading - show loader after delay to prevent flicker
-            const timer = setTimeout(() => {
+            loadingTimerRef.current = setTimeout(() => {
                 setShowContent(false);
                 setShowLoader(true);
             }, loadingDelay);
-            setLoadingTimer(timer);
         } else {
             // Not loading - show content immediately
             setShowContent(true);
@@ -42,11 +43,12 @@ const SmoothTabTransition = ({
         }
 
         return () => {
-            if (loadingTimer) {
-                clearTimeout(loadingTimer);
+            if (loadingTimerRef.current) {
+                clearTimeout(loadingTimerRef.current);
+                loadingTimerRef.current = null;
             }
         };
-    }, [isLoading, isDataLoaded, loadingDelay, loadingTimer]);
+    }, [isLoading, isDataLoaded, loadingDelay]);
 
     return (
         <div className="relative">
@@ -125,23 +127,11 @@ const AntiFlickerWrapper = ({
     loadingStates = {}, 
     activeTab = null 
 }) => {
-    const [currentContent, setCurrentContent] = useState(children);
-    const [isTransitioning, setIsTransitioning] = useState(false);
-
-    useEffect(() => {
-        if (activeTab && loadingStates[activeTab]) {
-            // Tab is loading - keep current content visible with overlay
-            setIsTransitioning(true);
-        } else {
-            // Tab is ready - transition to new content
-            setIsTransitioning(false);
-            setCurrentContent(children);
-        }
-    }, [children, loadingStates, activeTab]);
+    const isTransitioning = Boolean(activeTab && loadingStates[activeTab]);
 
     return (
         <div className="relative">
-            {currentContent}
+            {children}
             {isTransitioning && (
                 <div className="absolute inset-0 bg-white/40 dark:bg-gray-900/40 flex items-center justify-center rounded-2xl backdrop-blur-sm">
                     <div className="bg-white dark:bg-gray-800 rounded-lg p-3 shadow-lg">
@@ -170,7 +160,7 @@ const TabSwitchGuard = ({
         if (now - lastSwitchTime < debounceMs) {
             // Debounce rapid switches
             setPendingTab(tabId);
-            const timer = setTimeout(() => {
+            setTimeout(() => {
                 onTabChange(tabId);
                 setLastSwitchTime(Date.now());
                 setPendingTab(null);

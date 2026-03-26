@@ -7,7 +7,6 @@ export { default as AdminPanel } from "./pages/AdminPanel";
 export { default as AdminStatsTab } from "./components/AdminStatsTab";
 export { default as AdminUsersTab } from "./components/AdminUsersTab";
 export { default as AdminCoursesTab } from "./components/AdminCoursesTab";
-export { default as AdminPageHeader } from "./components/AdminPageHeader";
 
 // Stats Components
 export { default as MetricCard } from "./stats/MetricCard";

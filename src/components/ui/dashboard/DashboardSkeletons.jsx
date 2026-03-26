@@ -1,4 +1,4 @@
-import React from 'react';
+/* eslint-disable react/prop-types */
 
 /**
  * DashboardOverviewSkeleton - Skeleton loader for dashboard overview sections

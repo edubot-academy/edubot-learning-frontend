@@ -1,5 +1,4 @@
 // Main Components
-export { default as InstructorDashboardHeader } from './components/InstructorDashboardHeader.jsx';
 export { default as InstructorOverviewSection } from './components/InstructorOverviewSection.jsx';
 export { default as CoursesSection } from './components/CoursesSection.jsx';
 export { default as StudentsSection } from './components/StudentsSection.jsx';
@@ -15,9 +14,6 @@ export { default as InstructorEmptyState } from './components/InstructorEmptySta
 export { default as OfferingCard } from './components/OfferingCard.jsx';
 
 // Shared Components
-export { default as InstructorLink } from './components/shared/InstructorLink.jsx';
-export { default as InstructorButton } from './components/shared/InstructorButton.jsx';
-
 // Modal Components
 export { default as CreateDeliveryCourseModal } from './components/modals/CreateDeliveryCourseModal.jsx';
 export { default as CreateOfferingModal } from './components/modals/CreateOfferingModal.jsx';

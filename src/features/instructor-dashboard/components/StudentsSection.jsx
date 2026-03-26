@@ -1,4 +1,5 @@
-import { EmptyStudentsState, EmptyCoursesState, DashboardTableSkeleton, DashboardCardSkeleton } from '@components/ui';
+/* eslint-disable react/prop-types */
+import { EmptyState, DashboardTableSkeleton, DashboardCardSkeleton } from '@components/ui/dashboard';
 import InstructorStatCard from './InstructorStatCard.jsx';
 
 const StudentsSection = ({
@@ -131,11 +132,14 @@ const StudentsSection = ({
                             ))}
                         </div>
                     ) : (
-                        <EmptyCoursesState
-                            role="instructor"
-                            actionLabel="Курс түзүү"
-                            onAction={() => {
-                                window.location.href = '/instructor/course/create';
+                        <EmptyState
+                            title="Курстар азырынча жок"
+                            subtitle="Биринчи курсуңузду түзүп баштаңыз"
+                            action={{
+                                label: 'Курс түзүү',
+                                onClick: () => {
+                                    window.location.href = '/instructor/course/create';
+                                },
                             }}
                         />
                     )}
@@ -234,10 +238,9 @@ const StudentsSection = ({
             {loadingStudents ? (
                 <DashboardTableSkeleton rows={5} columns={5} />
             ) : !selectedCourseId ? (
-                <EmptyStudentsState
-                    role="instructor"
-                    actionLabel="Курс тандаңыз"
-                    onAction={() => { }}
+                <EmptyState
+                    title="Студенттер азырынча жок"
+                    subtitle="Курстарыңыздагы студенттер бул жерде көрсөтүлөт"
                 />
             ) : sortedStudents.length ? (
                 <div className="overflow-x-auto rounded-2xl border border-gray-100 dark:border-gray-800 w-full max-w-full bg-white dark:bg-[#0B0B0D] px-4">

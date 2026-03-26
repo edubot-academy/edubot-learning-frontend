@@ -1,5 +1,5 @@
-import React from 'react';
-import { EmptyCoursesState, DashboardCardSkeleton } from '@components/ui';
+/* eslint-disable react/prop-types */
+import { EmptyState } from '@components/ui/dashboard';
 import { Link } from 'react-router-dom';
 import Loader from '@shared/ui/Loader';
 
@@ -88,9 +88,9 @@ const AdminCoursesTab = ({
 
                     {courses.length === 0 && (
                         <li className="p-8">
-                            <EmptyCoursesState
-                                role="admin"
-                                actionLabel="Башкаруу"
+                            <EmptyState
+                                title="Системада курстар жок"
+                                subtitle="Платформада курстар жазылган эмес"
                             />
                         </li>
                     )}

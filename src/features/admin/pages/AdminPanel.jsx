@@ -1,7 +1,7 @@
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback, useRef, useContext } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import FloatingActionButton from '../../../components/ui/FloatingActionButton';
-import SkipNavigation from '../../../components/ui/SkipNavigation';
+import { AuthContext } from '../../../context/AuthContext';
 import {
     fetchCourses,
     fetchCategories,
@@ -37,7 +37,6 @@ import {
     deleteSkill,
     markNotificationRead as markNotificationReadApi,
 } from '@services/api';
-import DashboardSidebar from '@features/dashboard/components/DashboardSidebar';
 import toast from 'react-hot-toast';
 import NotificationsWidget from '@features/notifications/components/NotificationsWidget';
 import NotificationsTab from '@features/notifications/components/NotificationsTab';
@@ -45,7 +44,14 @@ import Loader from '@shared/ui/Loader';
 import IntegrationTab from '@features/integration/components/IntegrationTab';
 import AttendancePage from '../../../pages/Attendance';
 import AdminAnalyticsPage from '../../../pages/AdminAnalytics';
-import { isForbiddenError, parseApiError } from '@shared/api/error';
+import { isForbiddenError } from '@shared/api/error';
+
+// Import standardized dashboard components
+import {
+    DashboardLayout,
+    DashboardHeader,
+    DashboardTabs,
+} from '../../../components/ui/dashboard';
 
 // Import extracted components
 import AdminStatsTab from '../components/AdminStatsTab';
@@ -54,9 +60,10 @@ import AdminCoursesTab from '../components/AdminCoursesTab';
 
 // Import constants and helpers
 import { ADMIN_TABS, NAV_ITEMS, USERS_QUERY_KEYS } from '../utils/adminPanel.constants';
-import { calculateVisiblePages, debounce } from '../utils/adminPanel.helpers';
+import { calculateVisiblePages } from '../utils/adminPanel.helpers';
 
 const AdminPanel = () => {
+    const { user } = useContext(AuthContext);
     const [searchParams, setSearchParams] = useSearchParams();
 
     // State
@@ -70,9 +77,9 @@ const AdminPanel = () => {
     const [pendingCourses, setPendingCourses] = useState([]);
 
     const [companies, setCompanies] = useState([]);
-    const [companiesTotalPages, setCompaniesTotalPages] = useState(1);
+    const [, setCompaniesTotalPages] = useState(1);
     const [companySearch, setCompanySearch] = useState('');
-    const [companyPage, setCompanyPage] = useState(1);
+    const [companyPage] = useState(1);
     const [newCompanyName, setNewCompanyName] = useState('');
 
     const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -112,8 +119,6 @@ const AdminPanel = () => {
     // Tab state
     const [activeTab, setActiveTab] = useState('stats');
 
-    const usersFiltersInitialized = useRef(false);
-    const usersSearchInitialized = useRef(false);
     const debounceRef = useRef(null);
 
     useEffect(() => {
@@ -121,7 +126,7 @@ const AdminPanel = () => {
             // Alt + shortcuts for navigation
             if (e.altKey) {
                 switch (e.key.toLowerCase()) {
-                    case 'm':
+                    case 'm': {
                         e.preventDefault();
                         const mainContent = document.getElementById('main-content');
                         if (mainContent) {
@@ -129,7 +134,8 @@ const AdminPanel = () => {
                             mainContent.scrollIntoView({ behavior: 'smooth' });
                         }
                         break;
-                    case 'n':
+                    }
+                    case 'n': {
                         e.preventDefault();
                         const navigation = document.querySelector('nav[role="navigation"]');
                         if (navigation) {
@@ -137,7 +143,8 @@ const AdminPanel = () => {
                             navigation.scrollIntoView({ behavior: 'smooth' });
                         }
                         break;
-                    case 's':
+                    }
+                    case 's': {
                         e.preventDefault();
                         const searchInput = document.querySelector('input[placeholder*="издөө" i], input[type="search"]');
                         if (searchInput) {
@@ -145,6 +152,7 @@ const AdminPanel = () => {
                             searchInput.scrollIntoView({ behavior: 'smooth' });
                         }
                         break;
+                    }
                 }
             }
 
@@ -248,7 +256,7 @@ const AdminPanel = () => {
                 type="button"
                 onClick={() => handleUsersPageChange(p)}
                 className={`w-9 h-9 rounded border text-sm font-medium transition-all duration-300 transform hover:scale-110 ${p === usersPage
-                    ? 'bg-blue-600 text-white border-blue-600 scale-110 ring-2 ring-blue-600/50'
+                    ? 'bg-edubot-orange text-white border-edubot-orange scale-110 ring-2 ring-edubot-orange/50'
                     : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 hover:border-edubot-orange hover:text-edubot-orange hover:shadow-md'
                     }`}
             >
@@ -389,7 +397,7 @@ const AdminPanel = () => {
                 await deleteUser(id);
                 setUsers((prev) => prev.filter((u) => u.id !== id));
                 toast.success('Колдонуучу ийгиликтүү өчүрүлдү');
-            } catch (error) {
+            } catch {
                 toast.error('Колдонуучуну өчүрүүдө ката кетти');
             }
         }
@@ -400,7 +408,7 @@ const AdminPanel = () => {
             await updateUserRole(userId, newRole);
             setUsers((prev) => prev.map((u) => (u.id === userId ? { ...u, role: newRole } : u)));
             toast.success('Роль ийгиликтүү өзгөртүлдү');
-        } catch (error) {
+        } catch {
             toast.error('Ролду өзгөртүүдө ката кетти');
         }
     };
@@ -411,7 +419,7 @@ const AdminPanel = () => {
                 await deleteCourse(id);
                 setCourses((prev) => prev.filter((c) => c.id !== id));
                 toast.success('Курс ийгиликтүү өчүрүлдү');
-            } catch (error) {
+            } catch {
                 toast.error('Курсту өчүрүүдө ката кетти');
             }
         }
@@ -422,7 +430,7 @@ const AdminPanel = () => {
         try {
             await enrollUserInCourse(userId, courseId);
             toast.success('Студент курска ийгиликтүү катталды');
-        } catch (error) {
+        } catch {
             toast.error('Каттоодо ката кетти');
         }
     };
@@ -434,7 +442,7 @@ const AdminPanel = () => {
             setCategories((prev) => [...prev, created]);
             setNewCategory('');
             toast.success('Категория ийгиликтүү кошулду');
-        } catch (error) {
+        } catch {
             toast.error('Категория кошууда ката кетти');
         }
     };
@@ -449,7 +457,7 @@ const AdminPanel = () => {
             setEditingCategoryId(null);
             setEditingCategoryName('');
             toast.success('Категория ийгиликтүү жаңыртылды');
-        } catch (error) {
+        } catch {
             toast.error('Категорияны жаңыртууда ката кетти');
         }
     };
@@ -460,7 +468,7 @@ const AdminPanel = () => {
                 await deleteCategory(id);
                 setCategories((prev) => prev.filter((c) => c.id !== id));
                 toast.success('Категория ийгиликтүү өчүрүлдү');
-            } catch (error) {
+            } catch {
                 toast.error('Категорияны өчүрүүдө ката кетти');
             }
         }
@@ -482,7 +490,7 @@ const AdminPanel = () => {
             setTranscodeCourseId('');
             setTranscodeSectionId('');
             setTranscodeLessonId('');
-        } catch (error) {
+        } catch {
             toast.error('Транскоддоодо ката кетти');
         } finally {
             setTranscodeLoading(false);
@@ -497,7 +505,7 @@ const AdminPanel = () => {
             setCompanies((prev) => [...prev, created]);
             setNewCompanyName('');
             toast.success('Компания ийгиликтүү кошулду');
-        } catch (error) {
+        } catch {
             toast.error('Компания кошууда ката кетти');
         }
     };
@@ -510,7 +518,7 @@ const AdminPanel = () => {
                 company.id === companyId ? { ...company, name: newName.trim() } : company
             ));
             toast.success('Компания ийгиликтүү жаңыртылды');
-        } catch (error) {
+        } catch {
             toast.error('Компанияны жаңыртууда ката кетти');
         }
     };
@@ -521,7 +529,7 @@ const AdminPanel = () => {
                 await deleteCompany(companyId);
                 setCompanies((prev) => prev.filter((company) => company.id !== companyId));
                 toast.success('Компания ийгиликтүү өчүрүлдү');
-            } catch (error) {
+            } catch {
                 toast.error('Компанияны өчүрүүдө ката кетти');
             }
         }
@@ -534,7 +542,7 @@ const AdminPanel = () => {
             toast.success('Курс компанияга ийгиликтүү таанды');
             // Reload courses to update company assignments
             loadCoursesAndCategories();
-        } catch (error) {
+        } catch {
             toast.error('Курс таандоодо ката кетти');
         }
     };
@@ -545,7 +553,7 @@ const AdminPanel = () => {
             toast.success('Курс компаниядан ийгиликтүү алынды');
             // Reload courses to update company assignments
             loadCoursesAndCategories();
-        } catch (error) {
+        } catch {
             toast.error('Курс алындоодо ката кетти');
         }
     };
@@ -557,7 +565,7 @@ const AdminPanel = () => {
                 toast.success('Курстун компания таандоолору тазаланды');
                 // Reload courses to update company assignments
                 loadCoursesAndCategories();
-            } catch (error) {
+            } catch {
                 toast.error('Компания таандоолорду тазалоодо ката кетти');
             }
         }
@@ -573,7 +581,7 @@ const AdminPanel = () => {
             toast.success('Компания логотипи ийгиликтүү жүктөлдү');
             // Reload companies to show updated logo
             loadCompanies();
-        } catch (error) {
+        } catch {
             toast.error('Логотип жүктөөдө ката кетти');
         }
     };
@@ -586,7 +594,7 @@ const AdminPanel = () => {
             setSkills((prev) => [...prev, created]);
             setNewSkillName('');
             toast.success('Скилл ийгиликтүү кошулду');
-        } catch (error) {
+        } catch {
             toast.error('Скилл кошууда ката кетти');
         }
     };
@@ -599,7 +607,7 @@ const AdminPanel = () => {
                 skill.id === skillId ? { ...skill, name: newName.trim() } : skill
             ));
             toast.success('Скилл ийгиликтүү жаңыртылды');
-        } catch (error) {
+        } catch {
             toast.error('Скиллди жаңыртууда ката кетти');
         }
     };
@@ -610,7 +618,7 @@ const AdminPanel = () => {
                 await deleteSkill(skillId);
                 setSkills((prev) => prev.filter((skill) => skill.id !== skillId));
                 toast.success('Скилл ийгиликтүү өчүрүлдү');
-            } catch (error) {
+            } catch {
                 toast.error('Скилди өчүрүүдө ката кетти');
             }
         }
@@ -633,7 +641,7 @@ const AdminPanel = () => {
             toast.success('AI промпт ийгиликтүү кошулду');
             // Reload prompts to show new one
             loadPromptsForCourse(aiPromptCourseId);
-        } catch (error) {
+        } catch {
             toast.error('AI промпт кошууда ката кетти');
         }
     };
@@ -645,7 +653,7 @@ const AdminPanel = () => {
                 prompt.id === promptId ? { ...prompt, ...updates } : prompt
             ));
             toast.success('AI промпт ийгиликтүү жаңыртылды');
-        } catch (error) {
+        } catch {
             toast.error('AI промптти жаңыртууда ката кетти');
         }
     };
@@ -656,7 +664,7 @@ const AdminPanel = () => {
                 await deleteCourseAiPrompt(promptId);
                 setAiPrompts((prev) => prev.filter((prompt) => prompt.id !== promptId));
                 toast.success('AI промпт ийгиликтүү өчүрүлдү');
-            } catch (error) {
+            } catch {
                 toast.error('AI промптти өчүрүүдө ката кетти');
             }
         }
@@ -667,7 +675,7 @@ const AdminPanel = () => {
         try {
             await markNotificationReadApi(notificationId);
             toast.success('Билдирүү окулган деп белгиленди');
-        } catch (error) {
+        } catch {
             toast.error('Билдирүүнү окулган деп белгилөөдө ката кетти');
         }
     };
@@ -679,7 +687,7 @@ const AdminPanel = () => {
                 // In a real implementation, this would call a delete API
                 setContacts((prev) => prev.filter((contact) => contact.id !== notificationId));
                 toast.success('Билдирүү ийгиликтүү өчүрүлдү');
-            } catch (error) {
+            } catch {
                 toast.error('Билдирүүнү өчүрүүдө ката кетти');
             }
         }
@@ -750,7 +758,7 @@ const AdminPanel = () => {
                     <div className="absolute inset-0 bg-white/50 dark:bg-gray-900/50 flex items-center justify-center rounded-2xl backdrop-blur-sm">
                         <div className="bg-white dark:bg-gray-800 rounded-lg p-3 shadow-lg border border-gray-200 dark:border-gray-700">
                             <div className="flex items-center gap-3">
-                                <div className="animate-spin rounded-full border-2 border-gray-300 border-t-blue-600 w-5 h-5"></div>
+                                <div className="animate-spin rounded-full border-2 border-gray-300 border-t-edubot-orange w-5 h-5"></div>
                                 <span className="text-sm text-gray-600 dark:text-gray-400">Жүктөлүүдө...</span>
                             </div>
                         </div>
@@ -834,12 +842,12 @@ const AdminPanel = () => {
                             <input
                                 value={newCompanyName}
                                 onChange={(e) => setNewCompanyName(e.target.value)}
-                                className="border border-gray-200 dark:border-gray-700 px-3 py-2 rounded-lg w-full bg-white dark:bg-[#0E0E0E] text-gray-900 dark:text-[#E8ECF3]"
+                                className="border border-gray-200 dark:border-gray-700 px-3 py-2 rounded-xl w-full bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
                                 placeholder="Жаңы компаниянын аталышы"
                             />
                             <button
                                 onClick={handleCreateCompany}
-                                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg whitespace-nowrap transition-all duration-300 transform hover:scale-105 hover:shadow-lg hover:shadow-blue-500/30 group"
+                                className="bg-gradient-to-r from-edubot-orange to-edubot-soft hover:from-edubot-soft hover:to-edubot-orange text-white px-4 py-2 rounded-xl whitespace-nowrap transition-all duration-300 transform hover:scale-105 hover:shadow-lg hover:shadow-edubot-orange/30 group"
                             >
                                 <span className="transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3">
                                     ➕ Компания кошуу
@@ -852,7 +860,7 @@ const AdminPanel = () => {
                             <input
                                 value={companySearch}
                                 onChange={(e) => setCompanySearch(e.target.value)}
-                                className="border border-gray-200 dark:border-gray-700 px-3 py-2 rounded-lg w-full bg-white dark:bg-[#0E0E0E] text-gray-900 dark:text-[#E8ECF3]"
+                                className="border border-gray-200 dark:border-gray-700 px-3 py-2 rounded-xl w-full bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
                                 placeholder="Компаниянын аталышы боюнча издөө"
                             />
                         </div>
@@ -882,7 +890,7 @@ const AdminPanel = () => {
                                                                 handleUpdateCompany(company.id, newName);
                                                             }
                                                         }}
-                                                        className="text-blue-500 hover:underline text-xs"
+                                                        className="text-edubot-orange hover:underline text-xs"
                                                     >
                                                         Өзгөртүү
                                                     </button>
@@ -921,7 +929,7 @@ const AdminPanel = () => {
                         </div>
 
                         {/* Course Assignment Section */}
-                        <div className="mt-6 p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
+                        <div className="mt-6 p-4 border border-gray-200 dark:border-gray-700 rounded-2xl">
                             <h3 className="text-lg font-semibold mb-4">Курс таандоолор</h3>
                             <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">
                                 Курстарды компанияларга таандоңуз үчүн бөлүмү
@@ -980,12 +988,12 @@ const AdminPanel = () => {
                             <input
                                 value={newSkillName}
                                 onChange={(e) => setNewSkillName(e.target.value)}
-                                className="border border-gray-200 dark:border-gray-700 px-3 py-2 rounded-lg w-full bg-white dark:bg-[#0E0E0E] text-gray-900 dark:text-[#E8ECF3]"
+                                className="border border-gray-200 dark:border-gray-700 px-3 py-2 rounded-xl w-full bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
                                 placeholder="Жаңы скиллдин аталышы"
                             />
                             <button
                                 onClick={handleCreateSkill}
-                                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg whitespace-nowrap transition-all duration-300 transform hover:scale-105 hover:shadow-lg hover:shadow-blue-500/30 group"
+                                className="bg-gradient-to-r from-edubot-orange to-edubot-soft hover:from-edubot-soft hover:to-edubot-orange text-white px-4 py-2 rounded-xl whitespace-nowrap transition-all duration-300 transform hover:scale-105 hover:shadow-lg hover:shadow-edubot-orange/30 group"
                             >
                                 <span className="transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3">
                                     ➕ Кошуу
@@ -1013,7 +1021,7 @@ const AdminPanel = () => {
                                                                 handleUpdateSkill(skill.id, newName);
                                                             }
                                                         }}
-                                                        className="text-blue-500 hover:underline mr-2"
+                                                        className="text-edubot-orange hover:underline mr-2"
                                                     >
                                                         Өзгөртүү
                                                     </button>
@@ -1042,7 +1050,7 @@ const AdminPanel = () => {
                             <select
                                 value={aiPromptCourseId || ''}
                                 onChange={(e) => setAiPromptCourseId(e.target.value)}
-                                className="border border-gray-200 dark:border-gray-700 px-3 py-2 rounded-lg w-full bg-white dark:bg-[#0E0E0E] text-gray-900 dark:text-[#E8ECF3]"
+                                className="border border-gray-200 dark:border-gray-700 px-3 py-2 rounded-xl w-full bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
                             >
                                 <option value="">Курс тандаңыз</option>
                                 {courses.map((course) => (
@@ -1059,13 +1067,13 @@ const AdminPanel = () => {
                                     type="text"
                                     value={newPromptText}
                                     onChange={(e) => setNewPromptText(e.target.value)}
-                                    className="border border-gray-200 dark:border-gray-700 px-3 py-2 rounded-lg flex-1 bg-white dark:bg-[#0E0E0E] text-gray-900 dark:text-[#E8ECF3]"
+                                    className="border border-gray-200 dark:border-gray-700 px-3 py-2 rounded-xl flex-1 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
                                     placeholder="Промпт текстин киргизиңиз"
                                 />
                                 <select
                                     value={newPromptLanguage}
                                     onChange={(e) => setNewPromptLanguage(e.target.value)}
-                                    className="border border-gray-200 dark:border-gray-700 px-3 py-2 rounded-lg bg-white dark:bg-[#0E0E0E] text-gray-900 dark:text-[#E8ECF3]"
+                                    className="border border-gray-200 dark:border-gray-700 px-3 py-2 rounded-xl bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
                                 >
                                     <option value="ky">Кыргызча</option>
                                     <option value="ru">Русский</option>
@@ -1074,7 +1082,7 @@ const AdminPanel = () => {
                                 <select
                                     value={newPromptOrder}
                                     onChange={(e) => setNewPromptOrder(e.target.value)}
-                                    className="border border-gray-200 dark:border-gray-700 px-3 py-2 rounded-lg bg-white dark:bg-[#0E0E0E] text-gray-900 dark:text-[#E8ECF3]"
+                                    className="border border-gray-200 dark:border-gray-700 px-3 py-2 rounded-xl bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
                                 >
                                     <option value="0">Жогорку</option>
                                     <option value="1">Ортосу</option>
@@ -1090,7 +1098,7 @@ const AdminPanel = () => {
                             </div>
                             <button
                                 onClick={handleCreatePrompt}
-                                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg whitespace-nowrap transition-all duration-300 transform hover:scale-105 hover:shadow-lg hover:shadow-blue-500/30 group"
+                                className="bg-gradient-to-r from-edubot-orange to-edubot-soft hover:from-edubot-soft hover:to-edubot-orange text-white px-4 py-2 rounded-xl whitespace-nowrap transition-all duration-300 transform hover:scale-105 hover:shadow-lg hover:shadow-edubot-orange/30 group"
                             >
                                 <span className="transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3">
                                     ➕ Промпт кошуу
@@ -1136,7 +1144,7 @@ const AdminPanel = () => {
                                                                     });
                                                                 }
                                                             }}
-                                                            className="text-blue-500 hover:underline mr-2"
+                                                            className="text-edubot-orange hover:underline mr-2"
                                                         >
                                                             Өзгөртүү
                                                         </button>
@@ -1180,20 +1188,20 @@ const AdminPanel = () => {
                         {contacts.length ? (
                             <ul className="space-y-3">
                                 {contacts.map((contact) => (
-                                    <li key={contact.id} className="border border-gray-200 dark:border-gray-800 rounded-2xl p-4 bg-gray-50 dark:bg-[#1B1B1B]">
+                                    <li key={contact.id} className="border border-gray-200 dark:border-gray-800 rounded-2xl p-4 bg-gray-50 dark:bg-gray-900">
                                         <div className="flex justify-between items-start gap-3">
                                             <div className="min-w-0">
-                                                <p className="font-semibold text-gray-900 dark:text-[#E8ECF3] truncate">
+                                                <p className="font-semibold text-gray-900 dark:text-gray-100 truncate">
                                                     {contact.subject || contact.name}
                                                 </p>
-                                                <p className="text-sm text-gray-500 dark:text-[#a6adba]">
+                                                <p className="text-sm text-gray-500 dark:text-gray-400">
                                                     {contact.email}
                                                 </p>
                                             </div>
                                             <div className="flex gap-2">
                                                 <button
                                                     onClick={() => markNotificationRead(contact.id)}
-                                                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg whitespace-nowrap transition-all duration-300 transform hover:scale-105 hover:shadow-lg hover:shadow-blue-500/30 group"
+                                                    className="bg-gradient-to-r from-edubot-orange to-edubot-soft hover:from-edubot-soft hover:to-edubot-orange text-white px-4 py-2 rounded-xl whitespace-nowrap transition-all duration-300 transform hover:scale-105 hover:shadow-lg hover:shadow-edubot-orange/30 group"
                                                 >
                                                     <span className="transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3">
                                                         ✅ Окулган деп белгилөө
@@ -1213,7 +1221,7 @@ const AdminPanel = () => {
                                 ))}
                             </ul>
                         ) : (
-                            <p className="text-center text-gray-500 dark:text-[#a6adba] p-4 border border-dashed rounded-2xl">
+                            <p className="text-center text-gray-500 dark:text-gray-400 p-4 border border-dashed rounded-2xl">
                                 Байланыштар табылган жок.
                             </p>
                         )}
@@ -1227,20 +1235,20 @@ const AdminPanel = () => {
                         {pendingCourses.length ? (
                             <ul className="space-y-3">
                                 {pendingCourses.map((course) => (
-                                    <li key={course.id} className="border border-gray-200 dark:border-gray-800 rounded-2xl p-4 bg-gray-50 dark:bg-[#1B1B1B]">
+                                    <li key={course.id} className="border border-gray-200 dark:border-gray-800 rounded-2xl p-4 bg-gray-50 dark:bg-gray-900">
                                         <div className="flex justify-between items-start gap-3">
                                             <div className="min-w-0">
-                                                <p className="font-semibold text-gray-900 dark:text-[#E8ECF3] truncate">
+                                                <p className="font-semibold text-gray-900 dark:text-gray-100 truncate">
                                                     {course.title}
                                                 </p>
-                                                <p className="text-sm text-gray-500 dark:text-[#a6adba]">
+                                                <p className="text-sm text-gray-500 dark:text-gray-400">
                                                     Окутуучу: {course.instructor?.fullName || '—'}
                                                 </p>
                                             </div>
                                             <div className="flex gap-2">
                                                 <button
                                                     onClick={() => markCourseApproved(course.id)}
-                                                    className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg whitespace-nowrap transition-all duration-300 transform hover:scale-105 hover:shadow-lg hover:shadow-green-500/30 group"
+                                                    className="bg-edubot-green hover:bg-emerald-600 text-white px-4 py-2 rounded-xl whitespace-nowrap transition-all duration-300 transform hover:scale-105 hover:shadow-lg hover:shadow-emerald-500/30 group"
                                                 >
                                                     <span className="transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3">
                                                         ✅ Бекитүү
@@ -1260,7 +1268,7 @@ const AdminPanel = () => {
                                 ))}
                             </ul>
                         ) : (
-                            <p className="text-center text-gray-500 dark:text-[#a6adba] p-4 border border-dashed rounded-2xl">
+                            <p className="text-center text-gray-500 dark:text-gray-400 p-4 border border-dashed rounded-2xl">
                                 Каралуудагы курстар табылган жок.
                             </p>
                         )}
@@ -1291,35 +1299,61 @@ const AdminPanel = () => {
         }
     };
 
+    // Prepare navigation items for the standardized layout
+    const dashboardNavItems = NAV_ITEMS.map((item) => ({
+        ...item,
+        isActive: item.id === activeTab,
+        onSelect: handleTabSelect,
+    }));
+
+    // Prepare header actions
+    const headerActions = [
+        {
+            label: sidebarOpen ? 'Менюну жашыруу' : 'Менюну көрсөтүү',
+            onClick: () => setSidebarOpen((prev) => !prev),
+            variant: 'secondary',
+        },
+    ];
+
+    // Prepare header content
+    const adminUser = {
+        fullName: user?.fullName || 'Админ',
+        email: user?.email || 'admin@edubot.kg',
+    };
+
+    const headerContent = (
+        <DashboardHeader
+            user={adminUser}
+            role="admin"
+            subtitle="Платформаны башкаруу жана көзөмөлдөө"
+            actions={headerActions}
+        />
+    );
+
+    // Mobile tabs
+    const mobileTabs = (
+        <DashboardTabs
+            items={dashboardNavItems}
+            activeId={activeTab}
+            onSelect={handleTabSelect}
+        />
+    );
+
     return (
-        <div className="pt-24 min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
-            <SkipNavigation />
-            <div className="max-w-7xl mx-auto flex gap-6 px-4 pb-12">
-                <DashboardSidebar
-                    items={NAV_ITEMS}
-                    activeId={activeTab}
-                    onSelect={handleTabSelect}
-                    isOpen={sidebarOpen}
-                    onToggle={setSidebarOpen}
-                    defaultOpen
-                    toggleLabels={{ collapse: 'Менюну жыйуу', expand: 'Меню' }}
-                />
+        <DashboardLayout
+            role="admin"
+            user={adminUser}
+            sidebarOpen={sidebarOpen}
+            setSidebarOpen={setSidebarOpen}
+            navItems={dashboardNavItems}
+            mobileTabs={mobileTabs}
+            headerContent={headerContent}
+        >
+            {renderTab()}
 
-                <div
-                    className="flex-1 space-y-6"
-                    id="main-content"
-                    tabIndex={-1}
-                    role="main"
-                    aria-label="Админ панель мазмуну"
-                >
-                    {/* Extracted tab content */}
-                    {renderTab()}
-                </div>
-
-                {/* Floating Action Button */}
-                <FloatingActionButton role="admin" />
-            </div>
-        </div>
+            {/* Floating Action Button */}
+            <FloatingActionButton role="admin" />
+        </DashboardLayout>
     );
 };
 

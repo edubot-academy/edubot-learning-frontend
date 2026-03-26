@@ -1,5 +1,6 @@
+/* eslint-disable react/prop-types */
 import React, { useState, useEffect } from 'react';
-import { DashboardOverviewSkeleton, DashboardTableSkeleton, DashboardStatsSkeleton } from './DashboardSkeletons';
+import { DashboardOverviewSkeleton, DashboardTableSkeleton } from './DashboardSkeletons';
 
 /**
  * ProgressiveDashboard - Implements progressive loading for dashboard sections

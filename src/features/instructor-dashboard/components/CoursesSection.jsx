@@ -1,6 +1,6 @@
-import { useState, useCallback } from 'react';
+/* eslint-disable react/prop-types */
 import { Link } from 'react-router-dom';
-import { SmoothTabTransition, EmptyCoursesState, DashboardCardSkeleton } from '@components/ui';
+import { EmptyState, DashboardCardSkeleton } from '@components/ui/dashboard';
 import CreateDeliveryCourseModal from './modals/CreateDeliveryCourseModal.jsx';
 
 const CoursesSection = ({
@@ -9,12 +9,9 @@ const CoursesSection = ({
     onOpenDeliveryModal,
     showDeliveryModal,
     onCloseDeliveryModal,
-    deliveryCourse,
-    onDeliveryCourseChange,
     onCreateDeliveryCourse,
     creatingDeliveryCourse,
     deliveryCategories,
-    parentLoading = false, // New prop to detect parent loading
 }) => (
     <div className="rounded-3xl p-6 shadow-sm">
         <div className="flex items-center justify-between flex-wrap gap-3 mb-4">
@@ -142,10 +139,15 @@ const CoursesSection = ({
                 ))}
             </div>
         ) : (
-            <EmptyCoursesState
-                role="instructor"
-                actionLabel="Курс түзүү"
-                onAction={() => window.location.href = '/instructor/course/create'}
+            <EmptyState
+                title="Курстар азырынча жок"
+                subtitle="Биринчи курсуңузду түзүп баштаңыз"
+                action={{
+                    label: 'Курс түзүү',
+                    onClick: () => {
+                        window.location.href = '/instructor/course/create';
+                    },
+                }}
             />
         )}
 

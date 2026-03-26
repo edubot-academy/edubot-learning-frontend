@@ -1,7 +1,8 @@
+/* eslint-disable react/prop-types */
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import { FiFilter } from 'react-icons/fi';
 import toast from 'react-hot-toast';
-import { EmptyCoursesState, DashboardCardSkeleton } from '@components/ui';
+import { EmptyState, DashboardCardSkeleton } from '@components/ui/dashboard';
 import {
     createOffering,
     updateOffering,
@@ -404,10 +405,13 @@ const OfferingsSection = ({ courses = [], offerings = [], loading, refreshOfferi
                     ))}
                 </div>
             ) : (
-                <EmptyCoursesState
-                    role="instructor"
-                    actionLabel="Offering түзүү"
-                    onAction={() => setShowCreateModal(true)}
+                <EmptyState
+                    title="Курстар азырынча жок"
+                    subtitle="Биринчи курсуңузду түзүп баштаңыз"
+                    action={{
+                        label: 'Offering түзүү',
+                        onClick: () => setShowCreateModal(true),
+                    }}
                 />
             )}
 

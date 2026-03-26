@@ -1,4 +1,4 @@
-import React from 'react';
+/* eslint-disable react/prop-types */
 import { FiAlertCircle, FiWifiOff, FiLock, FiRefreshCw, FiHome, FiSettings } from 'react-icons/fi';
 
 /**
@@ -257,7 +257,7 @@ const ErrorBoundaryFallback = ({ error, resetError }) => (
                 Колдонмодо күтүлбөгөн ката кетти. Баракты жаңыртып көрүңүз.
             </p>
 
-            {process.env.NODE_ENV === 'development' && error && (
+            {import.meta.env.DEV && error && (
                 <details className="mb-6 text-left">
                     <summary className="cursor-pointer text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                         Катанын чоңдурбасы (текшерүү режиминде гана)

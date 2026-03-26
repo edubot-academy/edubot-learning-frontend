@@ -1,9 +1,6 @@
 import { useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { Navigate, useSearchParams } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
-import DashboardSidebar from '@features/dashboard/components/DashboardSidebar';
-import SkipNavigation from '../components/ui/SkipNavigation';
-import InstructorDashboardTabs from '../components/ui/InstructorDashboardTabs';
 import useDashboardSwipeGestures from '../hooks/useDashboardSwipeGestures';
 import {
     fetchInstructorProfile,
@@ -24,7 +21,6 @@ import InstructorAnalyticsPage from './InstructorAnalytics';
 import InternalLeaderboard from './InternalLeaderboard';
 import InstructorHomework from './InstructorHomework';
 import {
-    InstructorDashboardHeader,
     InstructorOverviewSection,
     CoursesSection,
     StudentsSection,
@@ -33,6 +29,11 @@ import {
     ChatTab,
     NAV_ITEMS,
 } from '@features/instructor-dashboard';
+import {
+    DashboardLayout,
+    DashboardHeader,
+    DashboardTabs,
+} from '../components/ui/dashboard';
 
 const InstructorDashboard = () => {
     const { user } = useContext(AuthContext);
@@ -517,10 +518,12 @@ const InstructorDashboard = () => {
                         refreshCourses={loadStudentCourses}
                         studentsPage={studentsPage}
                         onChangePage={setStudentsPage}
+                        search={studentSearch}
+                        onSearchChange={setStudentSearch}
                         progressMin={progressMin}
+                        onProgressMinChange={setProgressMin}
                         progressMax={progressMax}
-                        onProgressFilterChange={setProgressMin}
-                        onStudentSearchChange={setStudentSearch}
+                        onProgressMaxChange={setProgressMax}
                     />
                 );
             case 'ai':
@@ -575,68 +578,64 @@ const InstructorDashboard = () => {
         );
     };
 
+    // Prepare navigation items for the standardized layout
+    const dashboardNavItems = NAV_ITEMS.map((item) => ({
+        ...item,
+        isActive: item.id === activeTab,
+        onSelect: handleTabSelect,
+    }));
+
+    // Prepare header actions
+    const headerActions = [
+        {
+            label: '📊 Аналитика',
+            to: analyticsLink,
+            variant: 'primary',
+        },
+        {
+            label: sidebarOpen ? 'Менюну жашыруу' : 'Менюну көрсөтүү',
+            onClick: () => setSidebarOpen((prev) => !prev),
+            variant: 'secondary',
+        },
+    ];
+
+    // Prepare header content
+    const headerContent = (
+        <DashboardHeader
+            user={user}
+            role="instructor"
+            subtitle="Курстарыңызды жана студенттерди толук көзөмөлдөңүз"
+            actions={headerActions}
+        />
+    );
+
+    // Mobile tabs
+    const mobileTabs = (
+        <DashboardTabs
+            items={dashboardNavItems}
+            activeId={activeTab}
+            onSelect={handleTabSelect}
+        />
+    );
+
     if (!user) return <Navigate to="/login" replace />;
     if (user.role !== 'instructor') return <Navigate to="/" replace />;
 
     return (
-        <div className="min-h-screen pt-24">
-            <SkipNavigation />
+        <DashboardLayout
+            role="instructor"
+            user={user}
+            sidebarOpen={sidebarOpen}
+            setSidebarOpen={setSidebarOpen}
+            navItems={dashboardNavItems}
+            mobileTabs={mobileTabs}
+            headerContent={headerContent}
+        >
+            {renderContent()}
 
-            <InstructorDashboardTabs
-                items={NAV_ITEMS}
-                activeId={activeTab}
-                onSelect={handleTabSelect}
-            />
-
-            <div className="mx-auto max-w-6xl px-2 pb-12 sm:px-4 md:hidden">
-                <main
-                    className="w-full space-y-4"
-                    id="main-content"
-                    tabIndex={-1}
-                    role="main"
-                    aria-label="Инструктор dashboard мазмуну"
-                >
-                    <InstructorDashboardHeader
-                        user={user}
-                        sidebarOpen={sidebarOpen}
-                        setSidebarOpen={setSidebarOpen}
-                        analyticsLink={analyticsLink}
-                    />
-                    {renderContent()}
-                </main>
-            </div>
-
-            <div className="mx-auto hidden max-w-6xl px-2 pb-12 sm:px-4 md:block md:max-w-7xl md:px-6">
-                <div className="flex gap-0 md:gap-6">
-                    <DashboardSidebar
-                        items={NAV_ITEMS}
-                        activeId={activeTab}
-                        onSelect={handleTabSelect}
-                        isOpen={sidebarOpen}
-                        onToggle={setSidebarOpen}
-                        className="hidden md:flex md:flex-shrink-0"
-                    />
-
-                    <main
-                        className="w-full space-y-4 md:min-w-0 md:flex-1 md:space-y-6"
-                        id="main-content"
-                        tabIndex={-1}
-                        role="main"
-                        aria-label="Инструктор dashboard мазмуну"
-                    >
-                        <InstructorDashboardHeader
-                            user={user}
-                            sidebarOpen={sidebarOpen}
-                            setSidebarOpen={setSidebarOpen}
-                            analyticsLink={analyticsLink}
-                        />
-                        {renderContent()}
-                    </main>
-                </div>
-            </div>
-
+            {/* Floating Action Button */}
             <FloatingActionButton role="instructor" />
-        </div>
+        </DashboardLayout>
     );
 };
 
