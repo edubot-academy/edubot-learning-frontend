@@ -9,29 +9,48 @@
 /* Modal dropdown styling */
 @import './styles/modal-select-styles.css';
 
-/* 2. Then your Tailwind layers */
+/* 2. Brand Configuration */
+/* Brand variables are defined directly in :root below */
+
+/* 3. Then your Tailwind layers */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
     @apply font-sans text-gray-900 bg-white dark:bg-[#222222] dark:text-[#E8ECF3];
-    --edubot-dark: #122144;
-    --edubot-orange: #f17e22;
-    --edubot-green: #0ea78b;
-    --edubot-soft: #f39647;
-    --edubot-teal: #1e605e;
-    --edubot-darkgreen: #003a45;
-}
 
-:root {
-    @apply font-sans text-gray-900 bg-white dark:bg-[#222222] dark:text-[#E8ECF3];
+    /* Legacy EduBot Colors (for backward compatibility) */
     --edubot-dark: #122144;
     --edubot-orange: #f17e22;
     --edubot-green: #0ea78b;
     --edubot-soft: #f39647;
     --edubot-teal: #1e605e;
     --edubot-darkgreen: #003a45;
+
+    /* New Brand System Variables */
+    --brand-primary-orange: #f17e22;
+    --brand-primary-soft: #f39647;
+    --brand-primary-dark: #122144;
+    --brand-success: #0ea78b;
+    --brand-warning: #f59e0b;
+    --brand-error: #ef4444;
+    --brand-info: #3b82f6;
+
+    /* Brand Gradients */
+    --brand-gradient-primary: linear-gradient(135deg, #f17e22 0%, #f39647 100%);
+    --brand-gradient-success: linear-gradient(135deg, #0ea78b 0%, #1e605e 100%);
+    --brand-gradient-dark: linear-gradient(135deg, #122144 0%, #003a45 100%);
+
+    /* Brand Shadows */
+    --brand-shadow-orange: 0 0 20px rgba(241, 126, 34, 0.3);
+    --brand-shadow-medium: 0 4px 6px -1px rgba(241, 126, 34, 0.15);
+    --brand-shadow-large: 0 10px 15px -3px rgba(241, 126, 34, 0.2);
+
+    /* Animation Duration */
+    --brand-duration-fast: 100ms;
+    --brand-duration-normal: 200ms;
+    --brand-duration-slow: 400ms;
 }
 
 .dark :root {
