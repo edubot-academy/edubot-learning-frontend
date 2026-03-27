@@ -2,96 +2,75 @@
 
 ## [1.3.9] - 2026-03-27
 
-### 🎨 **EDUBOT BRAND SYSTEM - COMPLETE IMPLEMENTATION**
-**Objective**: Create comprehensive brand configuration system with modern component library for consistent design across all dashboards.
+### 🎛️ **DASHBOARD OVERHAUL + CHAT CONSOLIDATION**
+**Objective**: stabilize the dashboard refactor, remove abandoned design-system work, consolidate shared UI primitives, and bring student/instructor flows onto one coherent dashboard architecture.
 
-### ✅ **BRAND FOUNDATION SYSTEM**
-#### **✅ Centralized Brand Configuration**:
-- **Brand Tokens**: Complete design token system (`brand.js`) with colors, gradients, shadows, typography, spacing, animations
-- **CSS Variables**: Brand colors exported as CSS custom properties for global access
-- **Backward Compatibility**: Legacy `--edubot-*` variables preserved for existing components
-- **Design System**: Professional documentation with comprehensive usage guidelines
+### ✅ **SHARED DASHBOARD SYSTEM**
+- Extended the existing `edubot` token layer instead of introducing a parallel brand system.
+- Added reusable dashboard primitives:
+  - `DashboardMetricCard`
+  - `DashboardInsetPanel`
+  - `DashboardSectionHeader`
+  - shared form/button utility classes
+- Refreshed shared dashboard chrome:
+  - `DashboardLayout`
+  - `DashboardHeader`
+  - `DashboardTabs`
+  - `LoadingState`
+- Improved sidebar behavior:
+  - mobile no longer shows the desktop hide-menu action
+  - desktop collapse now preserves an icon rail instead of hiding the whole sidebar
 
-#### **✅ Enhanced Component Library**:
-- **BrandButton**: Multi-variant button with gradients, hover effects, loading states
-- **BrandCard**: Glass morphism and solid variants with brand styling
-- **BrandStatCard**: Animated statistics with trend indicators and progress rings
-- **BrandInput**: Modern form controls with validation states and icons
-- **BrandSelect**: Searchable, multi-select dropdown with brand colors
-- **BrandCheckbox**: Enhanced checkboxes with multiple variants and animations
+### ✅ **STUDENT DASHBOARD**
+- Redesigned and aligned major student tabs:
+  - `Overview`
+  - `Courses`
+  - `Schedule`
+  - `Tasks`
+  - `Progress`
+  - `Profile`
+- Added shared student tab primitives for mini stats, hero pills, and empty states.
+- Reworked student profile editing and read mode to match the newer dashboard language.
+- Moved the internal leaderboard into the student dashboard and scoped it to enrolled courses only.
 
-#### **✅ Data Visualization Components**:
-- **BrandProgressRing**: Animated circular progress with gradient fills
-- **BrandSparklineChart**: Mini charts with smooth curves and brand colors
-- **BrandHeatmap**: Calendar-style heatmap with brand intensity scales
-- **Responsive Design**: Mobile-optimized visualizations with touch interactions
+### ✅ **INSTRUCTOR DASHBOARD**
+- Redesigned and aligned instructor surfaces:
+  - `Overview`
+  - `Courses`
+  - `Offerings`
+  - `Students`
+  - `Attendance`
+  - `Homework`
+  - `Profile`
+  - `AI`
+  - `Chat`
+- Reworked `SessionWorkspace` outer shell and improved the deep `attendance` and `homework` tabs.
+- Rebuilt instructor profile to support inline editing in-dashboard instead of redirecting to the standalone profile page.
+- Fixed instructor overview/student/profile paths and mobile profile tab routing.
 
-#### **✅ Modern Form Controls**:
-- **Input Fields**: Floating labels, validation states, icon support
-- **Select Dropdowns**: Search functionality, multi-select, keyboard navigation
-- **Checkboxes**: Multiple variants (default, success, danger, glass) with animations
-- **Accessibility**: WCAG 2.1 AA compliance with proper ARIA attributes
+### ✅ **CHAT ARCHITECTURE**
+- Extracted shared chat UI into `src/components/ui/ChatWorkspace.jsx`.
+- Kept instructor and student `ChatTab` files as thin role-specific adapters.
+- Removed the obsolete standalone `/chat` page implementation and replaced it with a role-aware redirect.
+- Fixed chat viewport sizing, message scrolling, and optimistic image preview blob URL cleanup.
 
-### 🎯 **INSTRUCTOR DASHBOARD ENHANCEMENTS**
-#### **✅ Session Timeline Component**:
-- **Timeline View**: Chronological session display with date grouping
-- **Live Indicators**: Pulsing animations for active sessions
-- **Interactive Filters**: Course, group, and date filtering
-- **Session Cards**: Rich information display with engagement metrics
-- **Quick Actions**: Start, edit, delete functionality
-- **Statistics Overview**: Real-time session metrics and attendance rates
+### ✅ **DATA CONTRACT + RUNTIME FIXES**
+- Fixed student and instructor profile action rendering after `DashboardSectionHeader` dropped `action`.
+- Fixed `InternalLeaderboard` course loading for student/instructor roles and stale selected-course state.
+- Fixed notifications pagination to avoid stale closure duplication/drop issues.
+- Fixed instructor delivery-course modal flow to use modal payload state correctly and avoid broken duplicate modal behavior.
+- Removed interruptive “session workspace unavailable” toast behavior in favor of inline empty states.
 
-### 🛠️ **TECHNICAL IMPROVEMENTS**
-#### **✅ Build System Fixes**:
-- **Syntax Errors**: Fixed malformed import statements and template literals
-- **Dependency Management**: Added `clsx` and `tailwind-merge` for className utilities
-- **Build Optimization**: Successful production builds without errors
-- **Code Quality**: Clean, maintainable brand system architecture
+### ✅ **CLEANUP**
+- Removed abandoned `ui/brand` files and other dead redesign artifacts.
+- Removed obsolete backup files and stale refactor/design-system notes.
+- Cleaned stale references after file removal.
 
-#### **✅ Developer Experience**:
-- **Brand Hook**: `useBrand()` hook for easy access to brand tokens
-- **Utility Functions**: Helper functions for colors, gradients, shadows
-- **Component Exports**: Centralized exports from `@components/ui/brand`
-- **Type Safety**: Comprehensive PropTypes for all brand components
-
-### 🎨 **DESIGN SYSTEM FEATURES**
-#### **✅ Brand Color Palette**:
-- **Primary Colors**: Orange (`#f17e22`), Soft (`#f39647`), Dark (`#122144`)
-- **Semantic Colors**: Success, warning, error, info with proper contrast
-- **Extended Palette**: Teal, dark green, light variants for depth
-- **Dark Mode**: Complete dark theme compatibility for all brand colors
-
-#### **✅ Animation System**:
-- **Duration Tokens**: Fast (150ms), Normal (300ms), Slow (500ms)
-- **Easing Functions**: Professional cubic-bezier curves for smooth motion
-- **Keyframe Library**: Reusable animations (fade-in, slide-in, scale-in, pulse-glow)
-- **Performance**: Hardware-accelerated CSS transforms
-
-#### **✅ Typography & Spacing**:
-- **Font System**: Inter font with Cyrillic support and multiple weights
-- **Type Scale**: Consistent font sizes from xs (12px) to 5xl (48px)
-- **Spacing Scale**: Systematic spacing from 4px to 96px with rem units
-- **Border Radius**: Consistent rounded corners from sm (4px) to full
-
-### 📊 **QUALITY METRICS**
-| Aspect | Before | After | Improvement |
-|---------|--------|-------|------------|
-| **Brand Consistency** | ⭐ | ⭐⭐⭐⭐⭐ | Centralized design system |
-| **Component Quality** | ⭐⭐ | ⭐⭐⭐⭐⭐ | Modern, accessible components |
-| **Developer Experience** | ⭐ | ⭐⭐⭐⭐⭐ | Easy brand token access |
-| **Build Stability** | ❌ | ✅ | Zero build errors |
-| **Design Documentation** | ⭐ | ⭐⭐⭐⭐ | Comprehensive guidelines |
-
-### 🎯 **DEFINITION OF DONE ✅**
-- ✅ **Brand Configuration**: Complete design token system with CSS variables
-- ✅ **Component Library**: 7 brand components with modern features
-- ✅ **Data Visualization**: Progress rings, charts, heatmaps with brand colors
-- ✅ **Form Controls**: Enhanced inputs, selects, checkboxes with validation
-- ✅ **Session Timeline**: Modern instructor session management interface
-- ✅ **Build System**: Fixed all syntax errors, successful production builds
-- ✅ **Documentation**: Comprehensive brand system guidelines and usage examples
-- ✅ **Accessibility**: WCAG 2.1 AA compliance across all components
-- ✅ **Performance**: Optimized animations and efficient rendering
+### ✅ **BUILD STATUS**
+- Production build passes after the dashboard overhaul.
+- Remaining warnings are unchanged:
+  - mixed dynamic/static import in course-builder validation
+  - large chunk-size warnings
 
 ---
 
@@ -1017,7 +996,6 @@ const ANIMATION_VARIANTS = {
 
 ### 📋 **DOCUMENTATION & EXAMPLES**
 #### **✅ Comprehensive Documentation Created**:
-- **ModalDesignSystem.md**: Complete API reference, usage examples, design guidelines
 - **ModalExamples.jsx**: 4 practical examples with different modal types and use cases
 - **Component Contracts**: Full PropTypes documentation with validation rules
 
@@ -1798,7 +1776,6 @@ src/features/assistant-dashboard/
 
 ### 📋 **DOCUMENTATION & EXAMPLES**
 #### **✅ Comprehensive Documentation Created**:
-- **ModalDesignSystem.md**: Complete API reference, usage examples, design guidelines
 - **ModalExamples.jsx**: 4 practical examples with different modal types and use cases
 - **Component Contracts**: Full PropTypes documentation with validation rules
 
@@ -3067,9 +3044,7 @@ src/features/assistant-dashboard/
   - `EditInstructorCourse.jsx`: 89,854 bytes → 10,845 bytes (88% reduction)
   - **Total Code Reduction**: ~70% across course builder components
 - **Backup Strategy**:
-  - `CreateCourse.jsx.backup` - Original preserved
-  - `EditInstructorCourse.jsx.backup` - Original preserved
-  - 30-day monitoring period before backup removal
+  - Temporary backups were used during migration and removed after stabilization
 
 ### 🎉 **RESULTS**
 - **Unified Architecture**: All course builder steps use shared components
@@ -3549,8 +3524,6 @@ Complete refactoring of course builder components to use shared architecture, en
 
 **Migration Summary:**
 - `CreateCourse.jsx` (8,594 bytes) - Refactored version in production
-- `CreateCourse.jsx.backup` (69,757 bytes) - Original backup preserved
-- `EditInstructorCourse.jsx` (10,845 bytes) - Refactored version in production  
-- `EditInstructorCourse.jsx.backup` (89,854 bytes) - Original backup preserved
+- `EditInstructorCourse.jsx` (10,845 bytes) - Refactored version in production
 
 **Project Status: ✅ COMPLETE AND DEPLOYED TO PRODUCTION**

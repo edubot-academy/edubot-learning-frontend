@@ -221,29 +221,6 @@ const LeaderboardHub = ({ embedded = false, initialTrack = 'all', lockTrack = fa
     const currentXp = mySummary?.windowXp ?? mySummary?.xp ?? currentUserWeeklyEntry?.xp ?? 0;
     const currentStreak = mySummary?.streakDays ?? currentUserWeeklyEntry?.streakDays ?? 0;
 
-    const fallbackChallengeItems = useMemo(
-        () => [
-            {
-                id: 'c1',
-                title: 'Кийинки орунду алуу',
-                detail: snapshot.targetGap
-                    ? `Дагы ${snapshot.targetGap} XP алсаңыз, алдыдагы оюнчуга жакындайсыз.`
-                    : 'Алдыңкы тактага чыгуу үчүн 2 кичине кадам жасаңыз.',
-            },
-            {
-                id: 'c2',
-                title: 'Күндүк импульс',
-                detail: '1 сабак + 1 тест комбинациясы рейтингди бат түртөт.',
-            },
-            {
-                id: 'c3',
-                title: 'Көндүм багыты',
-                detail: 'Тандалган көндүм боюнча мыктыларды карап, ошол багытты күчөтүңүз.',
-            },
-        ],
-        [snapshot]
-    );
-
     const fallbackAchievementItems = useMemo(() => {
         const winners = Array.isArray(weekly?.items) ? weekly.items.slice(0, 3) : [];
         const items = [];
@@ -282,13 +259,11 @@ const LeaderboardHub = ({ embedded = false, initialTrack = 'all', lockTrack = fa
 
     const challengeItems = useMemo(() => {
         const items = Array.isArray(backendChallenges?.items) ? backendChallenges.items : [];
-        if (!items.length) return fallbackChallengeItems;
-
         return items.map((item) => ({
             ...item,
             detail: item.detail || item.value || '',
         }));
-    }, [backendChallenges, fallbackChallengeItems]);
+    }, [backendChallenges]);
 
     const achievementShareMeta = useMemo(() => ({
         displayName: user?.fullName || user?.name || 'EduBot студенти',

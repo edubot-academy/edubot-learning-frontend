@@ -1,6 +1,52 @@
 /* eslint-disable react/prop-types */
-import { EmptyState, DashboardTableSkeleton, DashboardCardSkeleton } from '@components/ui/dashboard';
-import InstructorStatCard from './InstructorStatCard.jsx';
+import {
+    FiActivity,
+    FiBookOpen,
+    FiCalendar,
+    FiChevronLeft,
+    FiChevronRight,
+    FiClock,
+    FiLayers,
+    FiMail,
+    FiPhone,
+    FiSearch,
+    FiUsers,
+} from 'react-icons/fi';
+import {
+    DashboardCardSkeleton,
+    DashboardInsetPanel,
+    DashboardMetricCard,
+    DashboardSectionHeader,
+    DashboardTableSkeleton,
+    EmptyState,
+} from '@components/ui/dashboard';
+
+const fallbackCover =
+    'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&w=600&q=80';
+
+const formatDate = (value) => {
+    if (!value) return '—';
+    const date = new Date(value);
+    return Number.isNaN(date.getTime())
+        ? '—'
+        : date.toLocaleDateString('ky-KG', {
+              day: '2-digit',
+              month: 'short',
+              year: 'numeric',
+          });
+};
+
+const formatLastViewed = (student) => {
+    if (!student.lastViewedLessonId) return '—';
+
+    const rawTime = Number(student.lastVideoTime) || 0;
+    const totalSeconds = rawTime > 1000 ? Math.round(rawTime / 1000) : Math.round(rawTime);
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = String(totalSeconds % 60).padStart(2, '0');
+    const timeText = totalSeconds ? ` (${minutes}:${seconds})` : '';
+
+    return `Сабак #${student.lastViewedLessonId}${timeText}`;
+};
 
 const StudentsSection = ({
     total,
@@ -22,10 +68,7 @@ const StudentsSection = ({
     onProgressMinChange,
     onProgressMaxChange,
 }) => {
-    const fallbackCover =
-        'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&w=600&q=80';
-
-    const selectedCourse = courses.find((course) => course.id === selectedCourseId);
+    const selectedCourse = courses.find((course) => course.id === selectedCourseId) || null;
 
     const sortedStudents = (courseStudents || []).slice().sort((a, b) => {
         const aDate = a.enrolledAt ? new Date(a.enrolledAt).getTime() : 0;
@@ -33,99 +76,122 @@ const StudentsSection = ({
         return bDate - aDate;
     });
 
-    const formatDate = (value) => {
-        if (!value) return '—';
-        const date = new Date(value);
-        return Number.isNaN(date.getTime()) ? '—' : date.toLocaleDateString();
-    };
+    const averageProgress = sortedStudents.length
+        ? Math.round(
+              sortedStudents.reduce(
+                  (sum, student) => sum + Math.max(0, Math.min(100, Number(student.progressPercent || 0))),
+                  0
+              ) / sortedStudents.length
+          )
+        : 0;
 
-    const formatLastViewed = (student) => {
-        if (!student.lastViewedLessonId) return '—';
-
-        const rawTime = Number(student.lastVideoTime) || 0;
-        const totalSeconds = rawTime > 1000 ? Math.round(rawTime / 1000) : Math.round(rawTime);
-        const minutes = Math.floor(totalSeconds / 60);
-        const seconds = String(totalSeconds % 60).padStart(2, '0');
-        const timeText = totalSeconds ? ` (${minutes}:${seconds})` : '';
-
-        return `Сабак #${student.lastViewedLessonId}${timeText}`;
-    };
+    const completedCount = sortedStudents.filter((student) => student.completed).length;
 
     return (
-        <div className="space-y-6">
-            <div className="rounded-3xl p-6 shadow-sm flex items-center justify-between gap-3 flex-wrap">
-                <div>
-                    <h2 className="text-2xl font-semibold">Студенттер</h2>
-                    <p className="text-gray-500 dark:text-[#a6adba] text-sm">
-                        Курстарыңыздагы студенттерди курстар боюнча карап чыгыңыз.
-                    </p>
-                </div>
+        <div className="space-y-5">
+            <div className="dashboard-panel overflow-hidden">
+                <DashboardSectionHeader
+                    eyebrow="Student Workspace"
+                    title="Студенттер"
+                    description="Курстарыңыздагы студенттерди курс боюнча бөлүп, прогрессти жана акыркы активдүүлүктү бир жерден көзөмөлдөңүз."
+                    action={
+                        <button
+                            type="button"
+                            onClick={refreshCourses}
+                            disabled={loadingCourses}
+                            className="dashboard-button-secondary"
+                        >
+                            Жаңыртуу
+                        </button>
+                    }
+                />
 
-                <div className="flex items-center gap-3">
-                    <InstructorStatCard label="Жалпы студенттер" value={total ?? '—'} />
-                    <button
-                        type="button"
-                        onClick={refreshCourses}
-                        disabled={loadingCourses}
-                        className="px-4 py-2 rounded-full border text-sm text-gray-700 dark:text-[#a6adba] disabled:opacity-60"
-                    >
-                        Жаңыртуу
-                    </button>
+                <div className="grid gap-3 px-6 pb-6 md:grid-cols-2 xl:grid-cols-4">
+                    <DashboardMetricCard label="Жалпы студенттер" value={total ?? '—'} icon={FiUsers} />
+                    <DashboardMetricCard
+                        label="Курстар"
+                        value={courses.length}
+                        icon={FiBookOpen}
+                        tone="blue"
+                    />
+                    <DashboardMetricCard
+                        label="Тандалган курстагы студент"
+                        value={selectedCourseId ? sortedStudents.length : '—'}
+                        icon={FiLayers}
+                        tone="green"
+                    />
+                    <DashboardMetricCard
+                        label="Орточо прогресс"
+                        value={selectedCourseId ? `${averageProgress}%` : '—'}
+                        icon={FiActivity}
+                        tone="amber"
+                    />
                 </div>
             </div>
 
+            {error ? (
+                <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300">
+                    {error}
+                </div>
+            ) : null}
+
             {!selectedCourseId ? (
-                <div className="rounded-3xl p-6 shadow-sm space-y-4">
-                    <div className="flex items-center justify-between gap-3">
-                        <div>
-                            <h3 className="text-lg font-semibold">Курстар</h3>
-                            <p className="text-sm text-gray-500 dark:text-[#a6adba]">
-                                Курсту тандап студенттердин тизмесин көрүңүз.
-                            </p>
-                        </div>
-                    </div>
-
-                    {error ? (
-                        <div className="p-3 rounded-lg bg-red-50 text-red-700 border border-red-100">
-                            {error}
-                        </div>
-                    ) : null}
-
+                <DashboardInsetPanel
+                    title="Курсту тандаңыз"
+                    description="Курсту тандасаңыз, ошол агымдагы студенттердин толук тизмеси жана прогресс деталдары ачылат."
+                >
                     {loadingCourses && !courses.length ? (
-                        <DashboardCardSkeleton cards={6} />
+                        <div className="mt-4">
+                            <DashboardCardSkeleton cards={6} />
+                        </div>
                     ) : courses.length ? (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                             {courses.map((course) => (
                                 <button
                                     type="button"
                                     key={course.id || course.title}
                                     onClick={() => onSelectCourse(course.id)}
-                                    className="text-left rounded-2xl border transition-all duration-300 overflow-hidden border-gray-200 hover:shadow-lg hover:border-edubot-orange hover:shadow-edubot-orange/20 transform hover:scale-102 group"
+                                    className="group overflow-hidden rounded-panel border border-edubot-line/80 bg-white/90 text-left shadow-edubot-card transition-all duration-300 hover:-translate-y-1 hover:border-edubot-orange/60 hover:shadow-edubot-hover dark:border-slate-700 dark:bg-slate-900/80"
                                 >
-                                    <div className="h-32 w-full overflow-hidden">
+                                    <div className="h-36 w-full overflow-hidden">
                                         <img
                                             src={course.coverImageUrl || fallbackCover}
                                             alt={course.title}
-                                            className="w-full h-full object-cover"
+                                            className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
                                         />
                                     </div>
 
-                                    <div className="p-4 space-y-2">
-                                        <div className="flex items-start justify-between gap-2">
-                                            <p className="font-semibold line-clamp-2">{course.title}</p>
+                                    <div className="space-y-3 p-5">
+                                        <div className="flex items-start justify-between gap-3">
+                                            <div className="min-w-0">
+                                                <p className="line-clamp-2 text-base font-semibold text-edubot-ink dark:text-white">
+                                                    {course.title}
+                                                </p>
+                                            </div>
                                             <span
-                                                className={`text-xs px-2 py-1 rounded-full ${course.isPublished
-                                                    ? 'bg-green-100 text-green-700'
-                                                    : 'bg-yellow-100 text-yellow-700'
-                                                    }`}
+                                                className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold ${
+                                                    course.isPublished
+                                                        ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300'
+                                                        : 'bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300'
+                                                }`}
                                             >
                                                 {course.isPublished ? 'Жарыяланды' : course.status || 'Каралууда'}
                                             </span>
                                         </div>
 
-                                        <div className="flex items-center justify-between text-sm text-gray-600 dark:text-[#a6adba]">
-                                            <span>{course.studentCount ?? 0} студент</span>
-                                            <span>{course.createdAt ? formatDate(course.createdAt) : ''}</span>
+                                        <div className="grid gap-2 text-sm text-edubot-muted dark:text-slate-400">
+                                            <div className="flex items-center justify-between gap-2">
+                                                <span>Студенттер</span>
+                                                <span className="font-semibold text-edubot-ink dark:text-white">
+                                                    {course.studentCount ?? 0}
+                                                </span>
+                                            </div>
+                                            <div className="flex items-center justify-between gap-2">
+                                                <span>Түзүлгөн</span>
+                                                <span className="font-semibold text-edubot-ink dark:text-white">
+                                                    {formatDate(course.createdAt)}
+                                                </span>
+                                            </div>
                                         </div>
                                     </div>
                                 </button>
@@ -134,261 +200,293 @@ const StudentsSection = ({
                     ) : (
                         <EmptyState
                             title="Курстар азырынча жок"
-                            subtitle="Биринчи курсуңузду түзүп баштаңыз"
+                            subtitle="Алгач курс түзүп баштаңыз, андан кийин студент агымдары ушул жерде көрүнөт."
                             action={{
                                 label: 'Курс түзүү',
                                 onClick: () => {
                                     window.location.href = '/instructor/course/create';
                                 },
                             }}
+                            className="py-8"
                         />
                     )}
-                </div>
-            ) : null}
-
-            <div className="rounded-3xl p-6 shadow-sm space-y-4">
-                <div className="flex items-center justify-between gap-3 flex-wrap">
-                    <div>
-                        <h3 className="text-lg font-semibold">
-                            {courseMeta?.title || selectedCourse?.title || 'Студенттер тизмеси'}
-                        </h3>
-                        <p className="text-sm text-gray-500 dark:text-[#a6adba]">
-                            {courseMeta
-                                ? `Сабактар: ${courseMeta.lessonCount ?? '—'} • Студенттер: ${courseMeta.studentCount ?? 0}`
-                                : 'Курс тандаңыз.'}
-                        </p>
-                    </div>
-
-                    <p className="text-sm text-gray-500 dark:text-[#a6adba]">
-                        {courseMeta
-                            ? `Сабактар: ${courseMeta.lessonCount ?? '—'} • Студенттер: ${courseMeta.studentCount ?? 0}`
-                            : 'Курс тандаңыз.'}
-                    </p>
-                </div>
-
-                {selectedCourseId ? (
-                    <button
-                        type="button"
-                        onClick={() => onSelectCourse(null)}
-                        className="px-4 py-2 rounded-full border text-sm text-gray-700 dark:text-[#a6adba]"
+                </DashboardInsetPanel>
+            ) : (
+                <>
+                    <DashboardInsetPanel
+                        title={courseMeta?.title || selectedCourse?.title || 'Студенттер тизмеси'}
+                        description="Курс тандалгандан кийин издөө, прогресс фильтри жана студент активдүүлүк деталдары ушул блокто иштейт."
+                        action={
+                            <button
+                                type="button"
+                                onClick={() => onSelectCourse(null)}
+                                className="dashboard-button-secondary"
+                            >
+                                Курстарга кайтуу
+                            </button>
+                        }
                     >
-                        Курстарга кайтуу
-                    </button>
-                ) : null}
-            </div>
+                        <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                            <DashboardMetricCard
+                                label="Бул курстагы студент"
+                                value={courseMeta?.studentCount ?? sortedStudents.length}
+                                icon={FiUsers}
+                            />
+                            <DashboardMetricCard
+                                label="Сабактар"
+                                value={courseMeta?.lessonCount ?? '—'}
+                                icon={FiBookOpen}
+                                tone="blue"
+                            />
+                            <DashboardMetricCard
+                                label="Бүтүргөн"
+                                value={completedCount}
+                                icon={FiCalendar}
+                                tone="green"
+                            />
+                            <DashboardMetricCard
+                                label="Орточо прогресс"
+                                value={`${averageProgress}%`}
+                                icon={FiActivity}
+                                tone="amber"
+                            />
+                        </div>
+                    </DashboardInsetPanel>
 
-            {selectedCourseId ? (
-                <div className="flex flex-wrap gap-3 items-end">
-                    <div className="flex flex-col">
-                        <label className="text-xs text-gray-500 dark:text-[#a6adba]">Издөө</label>
-                        <input
-                            type="text"
-                            value={search}
-                            onChange={(e) => {
-                                onChangePage(1);
-                                onSearchChange(e.target.value);
-                            }}
-                            placeholder="Ат, email же телефон"
-                            className="px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#111] text-sm"
-                        />
-                    </div>
+                    <DashboardInsetPanel
+                        title="Фильтрлер"
+                        description="Студенттерди аталышы, байланыш маалыматы жана прогресс диапазону боюнча чыпкалаңыз."
+                    >
+                        <div className="mt-4 flex flex-wrap gap-3 items-end">
+                            <div className="min-w-[220px] flex-1">
+                                <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.12em] text-edubot-muted dark:text-slate-400">
+                                    Издөө
+                                </label>
+                                <div className="relative">
+                                    <FiSearch className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-edubot-muted dark:text-slate-500" />
+                                    <input
+                                        type="text"
+                                        value={search}
+                                        onChange={(e) => {
+                                            onChangePage(1);
+                                            onSearchChange(e.target.value);
+                                        }}
+                                        placeholder="Ат, email же телефон"
+                                        className="dashboard-field dashboard-field-icon pl-10"
+                                    />
+                                </div>
+                            </div>
 
-                    <div className="flex flex-col">
-                        <label className="text-xs text-gray-500 dark:text-[#a6adba]">
-                            Прогресс кеминде (%)
-                        </label>
-                        <input
-                            type="number"
-                            min="0"
-                            max="100"
-                            value={progressMin}
-                            onChange={(e) => {
-                                onChangePage(1);
-                                onProgressMinChange(e.target.value);
-                            }}
-                            className="w-24 px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#111] text-sm"
-                        />
-                    </div>
+                            <div>
+                                <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.12em] text-edubot-muted dark:text-slate-400">
+                                    Прогресс кеминде
+                                </label>
+                                <input
+                                    type="number"
+                                    min="0"
+                                    max="100"
+                                    value={progressMin}
+                                    onChange={(e) => {
+                                        onChangePage(1);
+                                        onProgressMinChange(e.target.value);
+                                    }}
+                                    className="dashboard-field w-28"
+                                />
+                            </div>
 
-                    <div className="flex flex-col">
-                        <label className="text-xs text-gray-500 dark:text-[#a6adba]">
-                            Прогресс жогору (%)
-                        </label>
-                        <input
-                            type="number"
-                            min="0"
-                            max="100"
-                            value={progressMax}
-                            onChange={(e) => {
-                                onChangePage(1);
-                                onProgressMaxChange(e.target.value);
-                            }}
-                            className="w-24 px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#111] text-sm"
-                        />
-                    </div>
-                </div>
-            ) : null}
+                            <div>
+                                <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.12em] text-edubot-muted dark:text-slate-400">
+                                    Прогресс жогору
+                                </label>
+                                <input
+                                    type="number"
+                                    min="0"
+                                    max="100"
+                                    value={progressMax}
+                                    onChange={(e) => {
+                                        onChangePage(1);
+                                        onProgressMaxChange(e.target.value);
+                                    }}
+                                    className="dashboard-field w-28"
+                                />
+                            </div>
+                        </div>
+                    </DashboardInsetPanel>
 
-            {error ? (
-                <div className="p-3 rounded-lg bg-red-50 text-red-700 border border-red-100">
-                    {error}
-                </div>
-            ) : null}
+                    {loadingStudents ? (
+                        <DashboardInsetPanel title="Студенттер" description="Тизме жүктөлүүдө.">
+                            <div className="mt-4">
+                                <DashboardTableSkeleton rows={5} columns={5} />
+                            </div>
+                        </DashboardInsetPanel>
+                    ) : sortedStudents.length ? (
+                        <DashboardInsetPanel
+                            title="Студенттер тизмеси"
+                            description="Ар бир студенттин байланыш маалыматы, прогресси жана акыркы көргөн сабагы көрсөтүлөт."
+                        >
+                            <div className="mt-4 grid gap-4 xl:grid-cols-2">
+                                {sortedStudents.map((student) => {
+                                    const progress = Math.max(
+                                        0,
+                                        Math.min(100, Number(student.progressPercent || 0))
+                                    );
+                                    const tests = Array.isArray(student.tests) ? student.tests : [];
 
-            {loadingStudents ? (
-                <DashboardTableSkeleton rows={5} columns={5} />
-            ) : !selectedCourseId ? (
-                <EmptyState
-                    title="Студенттер азырынча жок"
-                    subtitle="Курстарыңыздагы студенттер бул жерде көрсөтүлөт"
-                />
-            ) : sortedStudents.length ? (
-                <div className="overflow-x-auto rounded-2xl border border-gray-100 dark:border-gray-800 w-full max-w-full bg-white dark:bg-[#0B0B0D] px-4">
-                    <table className="table-auto w-full min-w-max divide-y divide-gray-200">
-                        <thead>
-                            <tr className="text-left text-sm text-gray-500 dark:text-[#a6adba]">
-                                <th className="py-2 pr-4 pl-1">Студент</th>
-                                <th className="py-2 pr-4">Email</th>
-                                <th className="py-2 pr-4">Телефон</th>
-                                <th className="py-2 pr-4">Катталды</th>
-                                <th className="py-2 pr-4">Процесс</th>
-                                <th className="py-2 pr-4">Статус</th>
-                                <th className="py-2 pr-4">Тесттер</th>
-                                <th className="py-2">Акыркы көргөн</th>
-                            </tr>
-                        </thead>
+                                    return (
+                                        <article
+                                            key={student.id}
+                                            className="dashboard-panel-muted rounded-panel p-5 transition duration-300 hover:-translate-y-1 hover:shadow-edubot-card"
+                                        >
+                                            <div className="flex items-start justify-between gap-3">
+                                                <div className="min-w-0">
+                                                    <h3 className="text-base font-semibold text-edubot-ink dark:text-white">
+                                                        {student.fullName}
+                                                    </h3>
+                                                    <div className="mt-2 flex flex-wrap gap-3 text-sm text-edubot-muted dark:text-slate-400">
+                                                        <span className="inline-flex items-center gap-2">
+                                                            <FiMail className="h-4 w-4 text-edubot-orange" />
+                                                            {student.email || '—'}
+                                                        </span>
+                                                        <span className="inline-flex items-center gap-2">
+                                                            <FiPhone className="h-4 w-4 text-edubot-orange" />
+                                                            {student.phoneNumber || '—'}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                                <span
+                                                    className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${
+                                                        student.completed
+                                                            ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300'
+                                                            : 'bg-sky-100 text-sky-700 dark:bg-sky-500/15 dark:text-sky-300'
+                                                    }`}
+                                                >
+                                                    {student.completed ? 'Бүттү' : 'Уланууда'}
+                                                </span>
+                                            </div>
 
-                        <tbody className="divide-y divide-gray-100">
-                            {sortedStudents.map((student) => {
-                                const progress = Math.max(
-                                    0,
-                                    Math.min(100, Number(student.progressPercent || 0))
-                                );
-                                const tests = Array.isArray(student.tests) ? student.tests : [];
+                                            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                                                <div className="dashboard-panel rounded-2xl border border-edubot-line/70 px-4 py-3 dark:border-slate-700">
+                                                    <div className="text-xs font-semibold uppercase tracking-[0.12em] text-edubot-muted dark:text-slate-400">
+                                                        Катталды
+                                                    </div>
+                                                    <div className="mt-2 text-sm font-semibold text-edubot-ink dark:text-white">
+                                                        {formatDate(student.enrolledAt)}
+                                                    </div>
+                                                </div>
+                                                <div className="dashboard-panel rounded-2xl border border-edubot-line/70 px-4 py-3 dark:border-slate-700">
+                                                    <div className="text-xs font-semibold uppercase tracking-[0.12em] text-edubot-muted dark:text-slate-400">
+                                                        Акыркы көргөн
+                                                    </div>
+                                                    <div className="mt-2 text-sm font-semibold text-edubot-ink dark:text-white">
+                                                        {formatLastViewed(student)}
+                                                    </div>
+                                                </div>
+                                            </div>
 
-                                return (
-                                    <tr key={student.id} className="bg-white dark:bg-[#0B0B0D]">
-                                        <td className="py-3 pr-4">
-                                            <p className="font-medium">{student.fullName}</p>
-                                        </td>
-
-                                        <td className="py-3 pr-4 text-sm text-gray-600 dark:text-[#a6adba] break-words">
-                                            {student.email || '—'}
-                                        </td>
-
-                                        <td className="py-3 pr-4 text-sm text-gray-600 dark:text-[#a6adba] whitespace-nowrap">
-                                            {student.phoneNumber || '—'}
-                                        </td>
-
-                                        <td className="py-3 pr-4 text-sm text-gray-600 dark:text-[#a6adba] whitespace-nowrap">
-                                            {formatDate(student.enrolledAt)}
-                                        </td>
-
-                                        <td className="py-3 pr-4">
-                                            <div className="flex items-center gap-2">
-                                                <div className="w-28 bg-gray-100 rounded-full h-2 overflow-hidden">
+                                            <div className="mt-4">
+                                                <div className="flex items-center justify-between gap-2 text-sm">
+                                                    <span className="font-medium text-edubot-ink dark:text-white">
+                                                        Прогресс
+                                                    </span>
+                                                    <span className="text-edubot-muted dark:text-slate-400">
+                                                        {progress}%
+                                                    </span>
+                                                </div>
+                                                <div className="mt-2 h-2.5 overflow-hidden rounded-full bg-edubot-line/50 dark:bg-slate-800">
                                                     <div
-                                                        className="h-2 bg-blue-600 rounded-full"
+                                                        className="h-full rounded-full bg-gradient-to-r from-edubot-orange to-edubot-teal"
                                                         style={{ width: `${progress}%` }}
                                                     />
                                                 </div>
-                                                <span className="text-sm text-gray-600 dark:text-[#a6adba]">
-                                                    {progress}%
-                                                </span>
                                             </div>
-                                        </td>
 
-                                        <td className="py-3 pr-4">
-                                            <span
-                                                className={`text-xs px-2 py-1 rounded-full ${student.completed
-                                                    ? 'bg-green-100 text-green-700'
-                                                    : 'bg-blue-100 text-blue-700'
-                                                    }`}
-                                            >
-                                                {student.completed ? 'Бүттү' : 'Уланууда'}
-                                            </span>
-                                        </td>
-
-                                        <td className="py-3 pr-4 align-top">
-                                            {tests.length ? (
-                                                <div className="flex flex-col gap-1">
-                                                    {tests.map((test) => (
-                                                        <div
-                                                            key={`${test.sectionId}-${test.lessonId}-${test.attemptedAt || ''}`}
-                                                            className="text-xs flex items-center gap-2"
-                                                        >
-                                                            <span className="font-medium text-gray-800 dark:text-[#E8ECF3]">
-                                                                {test.lessonTitle}
-                                                            </span>
-                                                            <span
-                                                                className={`px-2 py-0.5 rounded-full ${test.passed
-                                                                    ? 'bg-green-100 text-green-700'
-                                                                    : 'bg-red-100 text-red-700'
-                                                                    }`}
-                                                            >
-                                                                {test.passed ? 'Өттү' : 'Өтпөдү'}
-                                                            </span>
-                                                            {typeof test.score === 'number' ? (
-                                                                <span className="text-gray-500 dark:text-[#a6adba]">
-                                                                    {test.score}%
-                                                                </span>
-                                                            ) : null}
-                                                        </div>
-                                                    ))}
+                                            <div className="mt-4">
+                                                <div className="text-xs font-semibold uppercase tracking-[0.12em] text-edubot-muted dark:text-slate-400">
+                                                    Тесттер
                                                 </div>
-                                            ) : (
-                                                <span className="text-xs text-gray-400 dark:text-[#a6adba]">
-                                                    Тест тапшыруулар жок
-                                                </span>
-                                            )}
-                                        </td>
+                                                {tests.length ? (
+                                                    <div className="mt-3 flex flex-col gap-2">
+                                                        {tests.map((test) => (
+                                                            <div
+                                                                key={`${test.sectionId}-${test.lessonId}-${test.attemptedAt || ''}`}
+                                                                className="flex flex-wrap items-center gap-2 rounded-2xl border border-edubot-line/70 bg-white/80 px-3 py-2 text-xs dark:border-slate-700 dark:bg-slate-950"
+                                                            >
+                                                                <span className="font-medium text-edubot-ink dark:text-white">
+                                                                    {test.lessonTitle}
+                                                                </span>
+                                                                <span
+                                                                    className={`rounded-full px-2 py-0.5 font-semibold ${
+                                                                        test.passed
+                                                                            ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300'
+                                                                            : 'bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-300'
+                                                                    }`}
+                                                                >
+                                                                    {test.passed ? 'Өттү' : 'Өтпөдү'}
+                                                                </span>
+                                                                {typeof test.score === 'number' ? (
+                                                                    <span className="text-edubot-muted dark:text-slate-400">
+                                                                        {test.score}%
+                                                                    </span>
+                                                                ) : null}
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                ) : (
+                                                    <p className="mt-3 text-sm text-edubot-muted dark:text-slate-400">
+                                                        Тест тапшыруулар жок.
+                                                    </p>
+                                                )}
+                                            </div>
+                                        </article>
+                                    );
+                                })}
+                            </div>
+                        </DashboardInsetPanel>
+                    ) : (
+                        <DashboardInsetPanel
+                            title="Студенттер"
+                            description="Бул курс боюнча тизмек азырынча бош."
+                        >
+                            <EmptyState
+                                title="Бул курста азырынча студент жок"
+                                subtitle="Башка курсту тандап көрүңүз же катталууларды күтүңүз."
+                                icon={<FiUsers className="h-8 w-8 text-edubot-orange" />}
+                                className="py-8"
+                            />
+                        </DashboardInsetPanel>
+                    )}
 
-                                        <td className="py-3 text-sm text-gray-600 dark:text-[#a6adba] whitespace-normal break-words leading-5">
-                                            {formatLastViewed(student)}
-                                        </td>
-                                    </tr>
-                                );
-                            })}
-                        </tbody>
-                    </table>
-                </div>
-            ) : (
-                <p className="text-sm text-gray-500 dark:text-[#a6adba]">
-                    Бул курста азырынча студент жок.
-                </p>
+                    {courseMeta?.totalPages > 1 ? (
+                        <div className="flex items-center justify-between gap-3 pt-1 text-sm text-edubot-muted dark:text-slate-400">
+                            <button
+                                type="button"
+                                onClick={() => onChangePage(Math.max(1, studentsPage - 1))}
+                                disabled={studentsPage <= 1}
+                                className="dashboard-button-secondary disabled:opacity-50"
+                            >
+                                <FiChevronLeft className="h-4 w-4" />
+                                Алдыңкы
+                            </button>
+
+                            <span>
+                                Барак {studentsPage} / {courseMeta.totalPages}
+                            </span>
+
+                            <button
+                                type="button"
+                                onClick={() =>
+                                    onChangePage(Math.min(courseMeta.totalPages || 1, studentsPage + 1))
+                                }
+                                disabled={studentsPage >= (courseMeta.totalPages || 1)}
+                                className="dashboard-button-secondary disabled:opacity-50"
+                            >
+                                Кийинки
+                                <FiChevronRight className="h-4 w-4" />
+                            </button>
+                        </div>
+                    ) : null}
+                </>
             )}
-
-            {selectedCourseId && courseMeta?.totalPages > 1 ? (
-                <div className="flex items-center justify-between gap-3 pt-4 text-sm text-gray-600 dark:text-[#a6adba]">
-                    <button
-                        type="button"
-                        onClick={() => onChangePage(Math.max(1, studentsPage - 1))}
-                        disabled={studentsPage <= 1}
-                        className="px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 disabled:opacity-50 hover:border-edubot-orange hover:bg-edubot-orange/10 hover:text-edubot-orange transition-all duration-300 transform hover:scale-105 disabled:hover:scale-100 disabled:hover:translate-y-0 group"
-                    >
-                        <span className="transition-transform duration-300 group-hover:scale-110 group-hover:-translate-x-1">
-                            ← Алдыңкы
-                        </span>
-                    </button>
-
-                    <span>
-                        Барак {studentsPage} / {courseMeta.totalPages}
-                    </span>
-
-                    <button
-                        type="button"
-                        onClick={() =>
-                            onChangePage(Math.min(courseMeta.totalPages || 1, studentsPage + 1))
-                        }
-                        disabled={studentsPage >= (courseMeta.totalPages || 1)}
-                        className="px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 disabled:opacity-50 hover:border-edubot-orange hover:bg-edubot-orange/10 hover:text-edubot-orange transition-all duration-300 transform hover:scale-105 disabled:hover:scale-100 disabled:hover:translate-y-0 group"
-                    >
-                        <span className="transition-transform duration-300 group-hover:scale-110 group-hover:translate-x-1">
-                            Кийинки →
-                        </span>
-                    </button>
-                </div>
-            ) : null}
         </div>
     );
 };

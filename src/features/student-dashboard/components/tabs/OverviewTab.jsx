@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import PropTypes from 'prop-types';
 import NotificationsWidget from '@features/notifications/components/NotificationsWidget';
 import {
@@ -7,7 +7,13 @@ import {
     ChallengeRail,
     AchievementCloud,
 } from '../../../../features/leaderboard/components/LeaderboardExperience';
-import StudentStatCard from '../shared/StudentStatCard.jsx';
+import {
+    DashboardInsetPanel,
+    DashboardMetricCard,
+    DashboardSectionHeader,
+} from '../../../../components/ui/dashboard';
+import StudentHeroPill from '../shared/StudentHeroPill.jsx';
+import StudentMiniStat from '../shared/StudentMiniStat.jsx';
 import {
     resolveCourseType,
     isOnlineLiveOffering,
@@ -17,19 +23,38 @@ import {
     formatSessionDate,
     resolveInstructorName,
 } from '../../utils/studentDashboard.helpers.js';
+import {
+    FiActivity,
+    FiAlertCircle,
+    FiArrowRight,
+    FiAward,
+    FiBookOpen,
+    FiCalendar,
+    FiCheckCircle,
+    FiClock,
+    FiFlag,
+    FiPlay,
+    FiTrendingUp,
+    FiUsers,
+    FiZap,
+} from 'react-icons/fi';
 
 const OverviewTab = ({
     student,
-    stats,
+    summary,
+    courses,
     offerings,
     tasks,
-    announcements,
     attendanceStats,
     attendanceEnabled,
     engagement,
     leaderboardItems,
     leaderboardMeta,
+    milestoneItems,
     badgeItems,
+    progressItems,
+    onEnrollCourse,
+    enrollingCourseId,
 }) => {
     const [nowMs, setNowMs] = useState(Date.now());
 
@@ -46,10 +71,45 @@ const OverviewTab = ({
                 .slice(0, 4),
         [offerings, nowMs]
     );
+
     const pendingHomework = useMemo(
-        () => tasks.filter((task) => task.status !== 'completed').slice(0, 4),
+        () =>
+            tasks
+                .filter((task) => {
+                    const status = String(task.submissionStatus || task.status || '').toLowerCase();
+                    return status !== 'completed' && status !== 'approved' && status !== 'submitted';
+                })
+                .slice(0, 4),
         [tasks]
     );
+
+    const recommendedCourse = useMemo(() => {
+        const progressMap = new Map(
+            (progressItems || []).map((item) => [String(item.courseId || item.courseTitle), item])
+        );
+
+        return (
+            courses
+                .map((course) => {
+                    const key = String(course.id ?? course.courseId ?? course.title ?? '');
+                    const progressItem = progressMap.get(key);
+                    const progressPercent =
+                        progressItem?.progressPercent ??
+                        Math.max(
+                            0,
+                            Math.min(100, Math.round(Number(course.progressPercent ?? course.progress ?? 0)))
+                        );
+
+                    return {
+                        ...course,
+                        progressPercent,
+                        progressItem,
+                    };
+                })
+                .sort((a, b) => (a.progressPercent || 0) - (b.progressPercent || 0))[0] || null
+        );
+    }, [courses, progressItems]);
+
     const leaderboardSnapshot = useMemo(
         () =>
             buildLeaderboardSnapshot({
@@ -62,6 +122,7 @@ const OverviewTab = ({
             }),
         [leaderboardItems, student, engagement, badgeItems]
     );
+
     const hasLeaderboardPreviewIssue = Boolean(leaderboardMeta?.fallback);
     const emptyLeaderboardPreview = !hasLeaderboardPreviewIssue && !(leaderboardItems || []).length;
 
@@ -74,7 +135,7 @@ const OverviewTab = ({
                     : 'Алгачкы рейтингге чыгуу',
                 detail: leaderboardSnapshot.targetGap
                     ? `Дагы ${leaderboardSnapshot.targetGap} XP кийинки тепкичке жеткирет.`
-                    : '1 сабак жана 1 тест сизди таблицага алып кирет.',
+                    : '1 сабак жана 1 тапшырма сизди таблицага алып кирет.',
             },
             {
                 id: 'overview-streak',
@@ -84,225 +145,457 @@ const OverviewTab = ({
             {
                 id: 'overview-homework',
                 title: 'Ачык тапшырманы жабуу',
-                detail: pendingHomework?.length
+                detail: pendingHomework.length
                     ? `${pendingHomework.length} тапшырма күтүп турат.`
-                    : 'Азырынча тапшырма жок, ушул темпти сактаңыз.',
+                    : 'Азырынча тапшырма жок, темп жакшы.',
             },
         ],
-        [leaderboardSnapshot, engagement?.streak, pendingHomework?.length]
+        [leaderboardSnapshot, engagement?.streak, pendingHomework.length]
     );
 
+    const activeCourses =
+        Number(summary?.stats?.activeCourses || 0) || Number(courses.length || 0) || 0;
+    const lessonsCompleted =
+        Number(summary?.stats?.lessonsCompleted || 0) ||
+        progressItems.reduce((acc, item) => acc + Number(item.lessonsCompleted || 0), 0);
+    const weeklyTime = summary?.stats?.timeThisWeek || '—';
+    const welcomeName = student.name?.split(' ')[0] || 'Студент';
+
     return (
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
-            <div className="xl:col-span-2 space-y-4">
-                <div className="bg-gradient-to-r from-edubot-orange to-edubot-soft text-white rounded-2xl p-6 sm:p-8 shadow-xl border border-edubot-orange/20">
-                    <p className="text-sm uppercase tracking-wide opacity-80">
-                        Streak: {engagement?.streak || 0} күн
-                    </p>
-                    <h2 className="text-2xl sm:text-3xl font-semibold mt-1">
-                        Кош келиңиз, {student.name.split(' ')[0]}!
-                    </h2>
-                    {student.lastLesson && (
-                        <p className="mt-3 text-sm sm:text-base opacity-90">
-                            Акыркы сабак: <strong>{student.lastLesson.lesson}</strong> (
-                            {student.lastLesson.course})
-                        </p>
-                    )}
-                </div>
+        <div className="space-y-6">
+            <section className="dashboard-panel overflow-hidden">
+                <DashboardSectionHeader
+                    eyebrow="Student Overview"
+                    title={`Кош келиңиз, ${welcomeName}!`}
+                    description="Негизги окуу абалы, жакынкы сабактар жана тез аракеттер ушул бетке топтолду."
+                    metrics={
+                        <>
+                            <DashboardMetricCard
+                                label="Активдүү курстар"
+                                value={activeCourses}
+                                icon={FiBookOpen}
+                            />
+                            <DashboardMetricCard
+                                label="Бүткөн сабак"
+                                value={lessonsCompleted}
+                                icon={FiCheckCircle}
+                                tone="green"
+                            />
+                            <DashboardMetricCard
+                                label="Күтүп турган"
+                                value={pendingHomework.length}
+                                icon={FiClock}
+                                tone="amber"
+                            />
+                            <DashboardMetricCard
+                                label="XP"
+                                value={engagement?.xp || 0}
+                                icon={FiZap}
+                            />
+                        </>
+                    }
+                />
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                    <StudentStatCard label="Активдүү курстар" value={stats?.activeCourses || 0} />
-                    <StudentStatCard label="Жалпы сабактар" value={stats?.lessonsCompleted || 0} />
-                    <StudentStatCard label="Күтүүдө тапшырма" value={pendingHomework?.length || 0} />
-                    {attendanceEnabled ? (
-                        <StudentStatCard label="Катышуу" value={`${attendanceStats?.rate || 0}%`} />
-                    ) : null}
-                </div>
-
-                <section className="bg-white dark:bg-[#222222] rounded-3xl border border-gray-100 dark:border-gray-800 p-5 space-y-3">
-                    <div className="flex items-center justify-between">
-                        <h3 className="text-lg font-semibold text-gray-900 dark:text-[#E8ECF3]">
-                            Жакынкы сабактар
-                        </h3>
-                        <span className="text-xs text-gray-500">{(upcoming || []).length} даана</span>
-                    </div>
-                    <div className="space-y-2">
-                        {(upcoming || []).map((item) => {
-                            const type = resolveCourseType(item);
-                            const joinUrl = item.joinLink || item.link || item.joinUrl || '';
-                            const joinAllowed =
-                                !isOnlineLiveOffering(item) || isStudentJoinWindowOpen(item, nowMs);
-                            const countdown = item.startAt
-                                ? formatCountdown(new Date(item.startAt).getTime(), nowMs)
-                                : null;
-                            return (
-                                <div
-                                    key={item.id || `${item.courseId}-${item.startAt}`}
-                                    className="rounded-2xl border border-gray-100 dark:border-gray-700 p-3"
-                                >
-                                    <div className="flex items-center justify-between gap-2">
-                                        <p className="font-medium text-gray-900 dark:text-[#E8ECF3]">
-                                            {item.courseTitle || item.course?.title || 'Сабак'}
-                                        </p>
-                                        <span className="text-[11px] px-2 py-1 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
-                                            {courseTypeLabel(type)}
-                                        </span>
-                                    </div>
-                                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                                        {formatSessionDate(item.startAt)}
+                <div className="grid gap-4 p-6 xl:grid-cols-[minmax(0,1.4fr),minmax(0,0.6fr)]">
+                    <div className="rounded-panel bg-edubot-hero p-6 text-white shadow-edubot-glow">
+                        <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+                            <div className="max-w-2xl">
+                                <p className="dashboard-pill">Daily Snapshot</p>
+                                <h3 className="mt-4 text-2xl font-semibold">
+                                    Окуу ритмиңиз жакшы жүрүп жатат
+                                </h3>
+                                <p className="mt-2 text-sm leading-6 text-white/80">
+                                    Бул жумада{' '}
+                                    <span className="font-semibold text-white">{weeklyTime}</span>{' '}
+                                    окуу убактысы топтолду. Азыркы серияңыз{' '}
+                                    <span className="font-semibold text-white">
+                                        {engagement?.streak || 0} күн
+                                    </span>
+                                    , ал эми деңгээлиңиз{' '}
+                                    <span className="font-semibold text-white">
+                                        {engagement?.level || 1}
+                                    </span>
+                                    .
+                                </p>
+                                {student.lastLesson ? (
+                                    <p className="mt-4 text-sm text-white/75">
+                                        Акыркы сабак:{' '}
+                                        <span className="font-semibold text-white">
+                                            {student.lastLesson.lesson}
+                                        </span>{' '}
+                                        · {student.lastLesson.course}
                                     </p>
-                                    {type === 'offline' && (
-                                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                                            {item.location || item.room || 'Класс али дайындала элек'} •{' '}
-                                            {resolveInstructorName(item)}
-                                        </p>
-                                    )}
-                                    {type === 'online_live' && (
-                                        <div className="mt-2 flex items-center gap-2 flex-wrap">
-                                            <span className="text-xs text-blue-700 dark:text-blue-300">
-                                                Калган убакыт: {countdown}
-                                            </span>
-                                            {joinUrl && joinAllowed ? (
-                                                <a
-                                                    href={joinUrl}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="px-3 py-1 rounded-full text-xs bg-blue-600 text-white"
-                                                >
-                                                    Кошулуу
-                                                </a>
-                                            ) : (
-                                                <span className="text-xs text-amber-600">
-                                                    Кошулуу 10 мүнөт калганда ачылат
-                                                </span>
-                                            )}
-                                        </div>
-                                    )}
+                                ) : null}
+                            </div>
+
+                            <div className="grid gap-3 sm:grid-cols-3 lg:w-[22rem] lg:grid-cols-1">
+                                <StudentHeroPill label="Катышуу" value={attendanceEnabled ? `${attendanceStats?.rate || 0}%` : 'Off'} />
+                                <StudentHeroPill label="Badge" value={badgeItems.length} />
+                                <StudentHeroPill
+                                    label="Рейтинг"
+                                    value={
+                                        leaderboardSnapshot.rank
+                                            ? `#${leaderboardSnapshot.rank}`
+                                            : 'Tracked'
+                                    }
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    <DashboardInsetPanel
+                        title="Азыркы фокус"
+                        description="Кайсы курска азыр кайрылуу керек."
+                    >
+                        {recommendedCourse ? (
+                            <div className="space-y-4">
+                                <div>
+                                    <p className="text-lg font-semibold text-edubot-ink dark:text-white">
+                                        {recommendedCourse.title || recommendedCourse.courseTitle}
+                                    </p>
+                                    <p className="mt-1 text-sm text-edubot-muted dark:text-slate-400">
+                                        Прогресс: {recommendedCourse.progressPercent || 0}%
+                                    </p>
                                 </div>
-                            );
-                        })}
-                        {!(upcoming || []).length && (
-                            <p className="text-sm text-gray-500">Жакынкы класстар жок.</p>
-                        )}
-                    </div>
-                </section>
 
-                <section className="grid md:grid-cols-2 gap-4">
-                    <div className="bg-white dark:bg-[#222222] rounded-3xl border border-gray-100 dark:border-gray-800 p-5 space-y-3">
-                        <h3 className="text-lg font-semibold text-gray-900 dark:text-[#E8ECF3]">
-                            Тапшырмалар
-                        </h3>
-                        {(pendingHomework || []).map((task) => (
-                            <div
-                                key={task.id || task.taskId}
-                                className="text-sm border-b border-gray-100 dark:border-gray-800 pb-2"
-                            >
-                                <p className="font-medium text-gray-900 dark:text-[#E8ECF3]">
-                                    {task.title}
-                                </p>
-                                <p className="text-gray-500 dark:text-gray-400 mt-1">
-                                    {task.courseTitle}
-                                </p>
-                            </div>
-                        ))}
-                        {(!pendingHomework || pendingHomework.length === 0) && (
-                            <p className="text-sm text-gray-500 dark:text-gray-400">Тапшырмалар жок.</p>
-                        )}
-                    </div>
-                    <div className="bg-white dark:bg-[#222222] rounded-3xl border border-gray-100 dark:border-gray-800 p-5 space-y-3">
-                        <h3 className="text-lg font-semibold text-gray-900 dark:text-[#E8ECF3]">
-                            Жарыялар
-                        </h3>
-                        {(announcements || []).map((item) => (
-                            <div
-                                key={item.id || item.title}
-                                className="text-sm border-b border-gray-100 dark:border-gray-800 pb-2"
-                            >
-                                <p className="font-medium text-gray-900 dark:text-[#E8ECF3]">
-                                    {item.title}
-                                </p>
-                                <p className="text-gray-500 dark:text-gray-400">
-                                    {item.body || item.message || 'Жаңы жаңылык'}
-                                </p>
-                            </div>
-                        ))}
-                        {!(announcements || []).length && (
-                            <p className="text-sm text-gray-500 dark:text-gray-400">Жаңылыктар жок.</p>
-                        )}
-                    </div>
-                </section>
-                <NotificationsWidget />
-            </div>
+                                <div className="h-3 rounded-full bg-edubot-surfaceAlt dark:bg-slate-800">
+                                    <div
+                                        className="h-3 rounded-full bg-gradient-to-r from-edubot-orange to-edubot-soft"
+                                        style={{
+                                            width: `${Math.min(
+                                                100,
+                                                Math.max(0, recommendedCourse.progressPercent || 0)
+                                            )}%`,
+                                        }}
+                                    />
+                                </div>
 
-            <div className="space-y-4">
-                <section className="bg-white dark:bg-[#222222] rounded-3xl border border-gray-100 dark:border-gray-800 p-5">
-                    <div className="flex items-start justify-between gap-3">
-                        <div>
-                            <h3 className="font-semibold text-gray-900 dark:text-[#E8ECF3]">XP & Level</h3>
-                            <p className="text-2xl font-bold text-blue-600 mt-1">{engagement?.xp || 0} XP</p>
-                            <p className="text-sm text-gray-500">
-                                Деңгэел {engagement?.level || 1}
-                                {leaderboardSnapshot.rank ? ` · #${leaderboardSnapshot.rank} орун` : ''}
-                            </p>
+                                {recommendedCourse.id || recommendedCourse.courseId ? (
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            onEnrollCourse?.(
+                                                recommendedCourse.id || recommendedCourse.courseId
+                                            )
+                                        }
+                                        disabled={Boolean(enrollingCourseId)}
+                                        className="dashboard-button-primary w-full"
+                                    >
+                                        <FiArrowRight className="h-4 w-4" />
+                                        {enrollingCourseId ===
+                                        (recommendedCourse.id || recommendedCourse.courseId)
+                                            ? 'Иштелүүдө...'
+                                            : 'Курска өтүү'}
+                                    </button>
+                                ) : null}
+                            </div>
+                        ) : (
+                            <div className="text-sm text-edubot-muted dark:text-slate-400">
+                                Азырынча курс маалыматтары жетиштүү эмес.
+                            </div>
+                        )}
+                    </DashboardInsetPanel>
+                </div>
+            </section>
+
+            <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.35fr),minmax(0,0.65fr)]">
+                <div className="space-y-4">
+                    <section className="dashboard-panel overflow-hidden">
+                        <DashboardSectionHeader
+                            eyebrow="Upcoming Sessions"
+                            title="Жакынкы сабактар"
+                            description="Кийинки сессиялар, join терезеси жана окуу контексти."
+                            metricsClassName="grid grid-cols-2 gap-3 sm:grid-cols-2"
+                            metrics={
+                                <>
+                                    <DashboardMetricCard
+                                        label="Жакынкы сессия"
+                                        value={upcoming.length}
+                                        icon={FiCalendar}
+                                        tone="blue"
+                                    />
+                                    <DashboardMetricCard
+                                        label="Live курстар"
+                                        value={
+                                            upcoming.filter((item) =>
+                                                isOnlineLiveOffering(item)
+                                            ).length
+                                        }
+                                        icon={FiUsers}
+                                    />
+                                </>
+                            }
+                        />
+
+                        <div className="space-y-3 p-6">
+                            {upcoming.length ? (
+                                upcoming.map((item) => {
+                                    const type = resolveCourseType(item);
+                                    const joinUrl =
+                                        item.joinLink || item.link || item.joinUrl || '';
+                                    const joinAllowed =
+                                        !isOnlineLiveOffering(item) ||
+                                        isStudentJoinWindowOpen(item, nowMs);
+                                    const countdown = item.startAt
+                                        ? formatCountdown(new Date(item.startAt).getTime(), nowMs)
+                                        : null;
+
+                                    return (
+                                        <div
+                                            key={item.id || `${item.courseId}-${item.startAt}`}
+                                            className="dashboard-panel-muted p-4"
+                                        >
+                                            <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                                                <div className="min-w-0">
+                                                    <div className="flex flex-wrap items-center gap-2">
+                                                        <p className="text-base font-semibold text-edubot-ink dark:text-white">
+                                                            {item.courseTitle ||
+                                                                item.course?.title ||
+                                                                'Сабак'}
+                                                        </p>
+                                                        <span className="rounded-full border border-edubot-line bg-white px-3 py-1 text-xs font-semibold text-edubot-ink dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200">
+                                                            {courseTypeLabel(type)}
+                                                        </span>
+                                                    </div>
+                                                    <p className="mt-2 text-sm text-edubot-muted dark:text-slate-400">
+                                                        {formatSessionDate(item.startAt)}
+                                                    </p>
+                                                    <p className="mt-1 text-sm text-edubot-muted dark:text-slate-400">
+                                                        {resolveInstructorName(item)}
+                                                        {type === 'offline'
+                                                            ? ` · ${
+                                                                  item.location ||
+                                                                  item.room ||
+                                                                  'Класс али дайындала элек'
+                                                              }`
+                                                            : ''}
+                                                    </p>
+                                                </div>
+
+                                                <div className="lg:w-[18rem]">
+                                                    {type === 'online_live' ? (
+                                                        <div className="space-y-2">
+                                                            <div className="text-xs font-medium uppercase tracking-[0.14em] text-edubot-muted dark:text-slate-400">
+                                                                Башталышына
+                                                            </div>
+                                                            <div className="text-lg font-semibold text-edubot-ink dark:text-white">
+                                                                {countdown}
+                                                            </div>
+                                                            {joinUrl && joinAllowed ? (
+                                                                <a
+                                                                    href={joinUrl}
+                                                                    target="_blank"
+                                                                    rel="noopener noreferrer"
+                                                                    className="dashboard-button-primary w-full"
+                                                                >
+                                                                    Кошулуу
+                                                                </a>
+                                                            ) : (
+                                                                <div className="inline-flex items-center gap-2 rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300">
+                                                                    <FiAlertCircle className="h-4 w-4" />
+                                                                    Кошулуу 10 мүнөт калганда ачылат
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    ) : (
+                                                        <div className="rounded-2xl border border-edubot-line bg-white px-4 py-3 text-sm text-edubot-muted dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
+                                                            Offline сессия. Жайгашкан жерди алдын ала текшериңиз.
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                })
+                            ) : (
+                                <div className="dashboard-panel-muted p-8 text-center text-sm text-edubot-muted dark:text-slate-400">
+                                    Жакынкы сабактар азырынча жок.
+                                </div>
+                            )}
                         </div>
-                        <div className="rounded-2xl bg-blue-50 px-3 py-2 text-right dark:bg-blue-900/30">
-                            <p className="text-[11px] uppercase tracking-[0.2em] text-blue-600 dark:text-blue-300">Next push</p>
-                            <p className="mt-1 text-sm font-semibold text-blue-700 dark:text-blue-200">
-                                {leaderboardSnapshot.targetGap ? `${leaderboardSnapshot.targetGap} XP` : 'Баштаңыз'}
-                            </p>
-                        </div>
+                    </section>
+
+                    <div className="grid gap-4 lg:grid-cols-2">
+                        <DashboardInsetPanel
+                            title="Ачык тапшырмалар"
+                            description="Жакын арада жабуу керек болгон иштер."
+                        >
+                            <div className="space-y-3">
+                                {pendingHomework.length ? (
+                                    pendingHomework.map((task, index) => (
+                                        <div
+                                            key={task.id || task.taskId || index}
+                                            className="rounded-2xl border border-edubot-line/70 bg-white/80 px-4 py-3 dark:border-slate-700 dark:bg-slate-900"
+                                        >
+                                            <p className="font-medium text-edubot-ink dark:text-white">
+                                                {task.title || 'Тапшырма'}
+                                            </p>
+                                            <p className="mt-1 text-sm text-edubot-muted dark:text-slate-400">
+                                                {task.courseTitle || task.course || 'Курс көрсөтүлгөн эмес'}
+                                            </p>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <div className="text-sm text-edubot-muted dark:text-slate-400">
+                                        Азырынча ачык тапшырма жок.
+                                    </div>
+                                )}
+                            </div>
+                        </DashboardInsetPanel>
+
+                        <DashboardInsetPanel
+                            title="Milestone"
+                            description="Кыска мөөнөттөгү окуу чекиттери."
+                        >
+                            <div className="space-y-3">
+                                {milestoneItems.length ? (
+                                    milestoneItems.slice(0, 3).map((item) => (
+                                        <div
+                                            key={item.id || item.title}
+                                            className="rounded-2xl border border-edubot-line/70 bg-white/80 px-4 py-3 dark:border-slate-700 dark:bg-slate-900"
+                                        >
+                                            <div className="flex items-start gap-3">
+                                                <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-edubot-surfaceAlt text-edubot-orange dark:bg-slate-800 dark:text-edubot-soft">
+                                                    <FiFlag className="h-4 w-4" />
+                                                </div>
+                                                <div>
+                                                    <p className="font-semibold text-edubot-ink dark:text-white">
+                                                        {item.title}
+                                                    </p>
+                                                    <p className="mt-1 text-sm text-edubot-muted dark:text-slate-400">
+                                                        {item.value}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <div className="text-sm text-edubot-muted dark:text-slate-400">
+                                        Milestone табылган жок.
+                                    </div>
+                                )}
+                            </div>
+                        </DashboardInsetPanel>
                     </div>
-                    <div className="h-2 rounded-full bg-gray-100 dark:bg-gray-700 mt-4">
-                        <div
-                            className="h-2 rounded-full bg-blue-500"
-                            style={{
-                                width: `${Math.round(
-                                    ((engagement?.currentLevelXp || 0) /
-                                        Math.max(1, engagement?.nextLevelGap || 1)) *
-                                    100
-                                )}%`,
-                            }}
+
+                    <NotificationsWidget />
+                </div>
+
+                <div className="space-y-4">
+                    <DashboardInsetPanel
+                        title="XP & Level"
+                        description="Азыркы энергия жана кийинки тепкич."
+                    >
+                        <div className="space-y-4">
+                            <div className="flex items-start justify-between gap-3">
+                                <div>
+                                    <p className="text-2xl font-bold text-edubot-orange">
+                                        {engagement?.xp || 0} XP
+                                    </p>
+                                    <p className="mt-1 text-sm text-edubot-muted dark:text-slate-400">
+                                        Деңгээл {engagement?.level || 1}
+                                        {leaderboardSnapshot.rank
+                                            ? ` · #${leaderboardSnapshot.rank} орун`
+                                            : ''}
+                                    </p>
+                                </div>
+                                <div className="rounded-2xl bg-edubot-surface px-3 py-2 text-right dark:bg-slate-900">
+                                    <p className="text-[11px] uppercase tracking-[0.2em] text-edubot-muted dark:text-slate-400">
+                                        Next push
+                                    </p>
+                                    <p className="mt-1 text-sm font-semibold text-edubot-ink dark:text-white">
+                                        {leaderboardSnapshot.targetGap
+                                            ? `${leaderboardSnapshot.targetGap} XP`
+                                            : 'Баштаңыз'}
+                                    </p>
+                                </div>
+                            </div>
+                            <div className="h-2 rounded-full bg-edubot-surfaceAlt dark:bg-slate-800">
+                                <div
+                                    className="h-2 rounded-full bg-gradient-to-r from-edubot-orange to-edubot-soft"
+                                    style={{
+                                        width: `${Math.round(
+                                            ((engagement?.currentLevelXp || 0) /
+                                                Math.max(1, engagement?.nextLevelGap || 1)) *
+                                                100
+                                        )}%`,
+                                    }}
+                                />
+                            </div>
+                            <div className="grid gap-3 sm:grid-cols-2">
+                                <StudentMiniStat
+                                    label="Серия"
+                                    value={`${engagement?.streak || 0} күн`}
+                                    tone="amber"
+                                />
+                                <StudentMiniStat
+                                    label="Катышуу"
+                                    value={attendanceEnabled ? `${attendanceStats?.rate || 0}%` : 'Off'}
+                                    tone={attendanceEnabled && attendanceStats?.rate >= 85 ? 'green' : 'default'}
+                                />
+                            </div>
+                        </div>
+                    </DashboardInsetPanel>
+
+                    <div className="space-y-3">
+                        {hasLeaderboardPreviewIssue ? (
+                            <div className="rounded-3xl border border-amber-200 bg-amber-50/90 px-4 py-3 text-sm text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100">
+                                <p className="font-semibold uppercase tracking-[0.18em] text-amber-700 dark:text-amber-200">
+                                    Рейтинг эскертүүсү
+                                </p>
+                                <p className="mt-1">
+                                    Азыр кыска preview үчүн чыныгы рейтинг алынган жок. Жасалма
+                                    студенттер көрсөтүлгөн жок.
+                                </p>
+                                {leaderboardMeta?.message ? (
+                                    <p className="mt-2 text-xs opacity-80">{leaderboardMeta.message}</p>
+                                ) : null}
+                            </div>
+                        ) : null}
+
+                        {emptyLeaderboardPreview ? (
+                            <div className="rounded-3xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-600 dark:border-gray-800 dark:bg-[#222222] dark:text-slate-300">
+                                Бул кыска preview үчүн азырынча рейтинг маалыматтары толо элек.
+                            </div>
+                        ) : null}
+
+                        <LeaderboardListCard
+                            title="Сизге жакын рейтинг"
+                            description="Сизге реалдуу жакын орундар."
+                            items={leaderboardSnapshot.nearYou}
+                            currentUserId={student.id}
+                            embedded
                         />
                     </div>
-                </section>
 
-                <div className="space-y-3">
-                    {hasLeaderboardPreviewIssue ? (
-                        <div className="rounded-3xl border border-amber-200 bg-amber-50/90 px-4 py-3 text-sm text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100">
-                            <p className="font-semibold uppercase tracking-[0.18em] text-amber-700 dark:text-amber-200">Рейтинг эскертүүсү</p>
-                            <p className="mt-1">Азыр кыска preview үчүн чыныгы рейтинг алынган жок. Жасалма студенттер көрсөтүлгөн жок.</p>
-                            {leaderboardMeta?.message ? <p className="mt-2 text-xs opacity-80">{leaderboardMeta.message}</p> : null}
-                        </div>
-                    ) : null}
-                    {emptyLeaderboardPreview ? (
-                        <div className="rounded-3xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-600 dark:border-gray-800 dark:bg-[#222222] dark:text-slate-300">
-                            Бул кыска preview үчүн азырынча рейтинг маалыматтары толо элек.
-                        </div>
-                    ) : null}
-                    <LeaderboardListCard
-                        title="Сизге жакын рейтинг"
-                        description="Жөн гана лидерлер эмес, сизге реалдуу жакын орундар да көрүнүшү керек."
-                        items={leaderboardSnapshot.nearYou}
-                        currentUserId={student.id}
+                    <ChallengeRail items={leaderboardChallenges} embedded />
+
+                    <AchievementCloud
+                        items={badgeItems}
+                        title="Жетишкендиктер"
+                        subtitle="Ачылган badge’дерди бөлүшүү же сактап калуу."
                         embedded
+                        shareMeta={{
+                            displayName: student.name,
+                            rank: leaderboardSnapshot.rank || null,
+                            xp: engagement?.xp || null,
+                            streakDays: engagement?.streak || null,
+                            trackLabel: 'Dashboard',
+                        }}
                     />
+
+                    <DashboardInsetPanel
+                        title="Тез абал"
+                        description="Кыскача окуу ден соолугу."
+                    >
+                        <div className="grid gap-3 sm:grid-cols-2">
+                            <StudentMiniStat label="Курстар" value={courses.length} tone="blue" />
+                            <StudentMiniStat label="Сабактар" value={lessonsCompleted} tone="green" />
+                            <StudentMiniStat label="Upcoming" value={upcoming.length} tone="default" />
+                            <StudentMiniStat label="Badge" value={badgeItems.length} tone="amber" />
+                        </div>
+                    </DashboardInsetPanel>
                 </div>
-
-                <ChallengeRail items={leaderboardChallenges} embedded />
-
-                <AchievementCloud
-                    items={badgeItems}
-                    title="Жетишкендиктерди бөлүшүү"
-                    subtitle="Сиз ачкан жетишкендиктерди story, post же шилтеме катары бөлүшсөңүз болот."
-                    embedded
-                    shareMeta={{
-                        displayName: student.name,
-                        rank: leaderboardSnapshot.rank || null,
-                        xp: engagement?.xp || null,
-                        streakDays: engagement?.streak || null,
-                        trackLabel: 'Dashboard',
-                    }}
-                />
             </div>
         </div>
     );
@@ -318,15 +611,10 @@ OverviewTab.propTypes = {
             course: PropTypes.string,
         }),
     }).isRequired,
-    stats: PropTypes.shape({
-        activeCourses: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
-        lessonsCompleted: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
-        timeThisWeek: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
-        pendingTasks: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
-    }).isRequired,
+    summary: PropTypes.object,
+    courses: PropTypes.arrayOf(PropTypes.object).isRequired,
     offerings: PropTypes.arrayOf(PropTypes.object).isRequired,
     tasks: PropTypes.arrayOf(PropTypes.object).isRequired,
-    announcements: PropTypes.arrayOf(PropTypes.object).isRequired,
     attendanceStats: PropTypes.shape({
         rate: PropTypes.number,
         totalSessions: PropTypes.number,
@@ -346,7 +634,18 @@ OverviewTab.propTypes = {
         fallback: PropTypes.bool,
         message: PropTypes.string,
     }),
+    milestoneItems: PropTypes.arrayOf(PropTypes.object).isRequired,
     badgeItems: PropTypes.arrayOf(PropTypes.object).isRequired,
+    progressItems: PropTypes.arrayOf(PropTypes.object).isRequired,
+    onEnrollCourse: PropTypes.func,
+    enrollingCourseId: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
+};
+
+OverviewTab.defaultProps = {
+    summary: null,
+    leaderboardMeta: undefined,
+    onEnrollCourse: undefined,
+    enrollingCourseId: null,
 };
 
 export default OverviewTab;

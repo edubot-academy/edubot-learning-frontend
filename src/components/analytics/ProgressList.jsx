@@ -1,4 +1,3 @@
-import React from 'react';
 import PropTypes from 'prop-types';
 
 const ProgressList = ({
@@ -51,7 +50,7 @@ const ProgressList = ({
       {items.map((item, index) => {
         const percentage = item.percentage || item.progress || 0;
         const color = item.color || getColorByPercentage(percentage);
-        
+
         return (
           <div key={item.id || index} className="space-y-2">
             <div className="flex items-center justify-between">
@@ -76,14 +75,14 @@ const ProgressList = ({
                 )}
               </div>
             </div>
-            
+
             <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
               <div
                 className={`h-2 rounded-full transition-all duration-500 ${color.bar}`}
                 style={{ width: `${Math.min(percentage, 100)}%` }}
               ></div>
             </div>
-            
+
             {item.description && (
               <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
                 {item.description}

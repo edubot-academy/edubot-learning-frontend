@@ -1,6 +1,18 @@
 import { useContext, useEffect, useMemo, useState } from 'react';
 import PropTypes from 'prop-types';
 import { toast } from 'react-hot-toast';
+import {
+    FiAlertCircle,
+    FiBookOpen,
+    FiCalendar,
+    FiCheckCircle,
+    FiClock,
+    FiDownload,
+    FiEdit3,
+    FiFileText,
+    FiUsers,
+    FiXCircle,
+} from 'react-icons/fi';
 import { ATTENDANCE_STATUS } from '@shared/contracts';
 import {
     fetchCourseAttendance,
@@ -8,15 +20,46 @@ import {
     fetchInstructorProfile,
     markAttendanceSession,
 } from '@services/api';
+import { DashboardMetricCard, DashboardSectionHeader } from '../components/ui/dashboard';
 import { AuthContext } from '../context/AuthContext';
 
 const todayLocal = () => new Date().toISOString().slice(0, 10);
 
 const statusOptions = [
-    { value: ATTENDANCE_STATUS.PRESENT, label: 'Катышты' },
-    { value: ATTENDANCE_STATUS.LATE, label: 'Кечикти' },
-    { value: ATTENDANCE_STATUS.ABSENT, label: 'Келген жок' },
+    { value: ATTENDANCE_STATUS.PRESENT, label: 'Катышты', icon: FiCheckCircle },
+    { value: ATTENDANCE_STATUS.LATE, label: 'Кечикти', icon: FiClock },
+    { value: ATTENDANCE_STATUS.ABSENT, label: 'Келген жок', icon: FiXCircle },
 ];
+
+const statusMeta = {
+    [ATTENDANCE_STATUS.PRESENT]: {
+        label: 'Катышты',
+        cardClass:
+            'border-emerald-200 bg-emerald-50/80 dark:border-emerald-500/30 dark:bg-emerald-500/10',
+        badgeClass:
+            'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300',
+        textClass: 'text-emerald-700 dark:text-emerald-300',
+        tone: 'green',
+    },
+    [ATTENDANCE_STATUS.LATE]: {
+        label: 'Кечикти',
+        cardClass:
+            'border-amber-200 bg-amber-50/80 dark:border-amber-500/30 dark:bg-amber-500/10',
+        badgeClass:
+            'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300',
+        textClass: 'text-amber-700 dark:text-amber-300',
+        tone: 'amber',
+    },
+    [ATTENDANCE_STATUS.ABSENT]: {
+        label: 'Келген жок',
+        cardClass:
+            'border-red-200 bg-red-50/80 dark:border-red-500/30 dark:bg-red-500/10',
+        badgeClass:
+            'border-red-200 bg-red-50 text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300',
+        textClass: 'text-red-700 dark:text-red-300',
+        tone: 'red',
+    },
+};
 
 const toCourseList = (payload) => {
     if (Array.isArray(payload)) return payload;
@@ -52,6 +95,25 @@ const getAttendanceErrorMessage = (error) => {
     return Array.isArray(fallback) ? fallback.join(', ') : fallback;
 };
 
+const getStudentInitials = (fullName = '') =>
+    fullName
+        .split(' ')
+        .filter(Boolean)
+        .slice(0, 2)
+        .map((part) => part[0]?.toUpperCase())
+        .join('') || 'S';
+
+const formatReportDate = (value) => {
+    if (!value) return '-';
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) return String(value);
+    return parsed.toLocaleDateString('ru-RU', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+    });
+};
+
 const AttendancePage = ({ embedded = false }) => {
     const { user } = useContext(AuthContext);
     const [courses, setCourses] = useState([]);
@@ -66,10 +128,12 @@ const AttendancePage = ({ embedded = false }) => {
     const [reportTo, setReportTo] = useState('');
     const [reportItems, setReportItems] = useState([]);
     const [loadingReport, setLoadingReport] = useState(false);
+    const [reportFilter, setReportFilter] = useState('all');
 
     useEffect(() => {
         if (!user?.id || user.role !== 'instructor') return;
         let cancelled = false;
+
         const loadCourses = async () => {
             setLoadingCourses(true);
             try {
@@ -135,7 +199,36 @@ const AttendancePage = ({ embedded = false }) => {
         };
     }, [selectedCourseId]);
 
+    const selectedCourse = useMemo(
+        () => courses.find((course) => String(course.id) === String(selectedCourseId)) || null,
+        [courses, selectedCourseId]
+    );
+
     const students = useMemo(() => Object.values(rowsMap), [rowsMap]);
+
+    const attendanceStats = useMemo(() => {
+        const present = students.filter((student) => student.status === ATTENDANCE_STATUS.PRESENT).length;
+        const late = students.filter((student) => student.status === ATTENDANCE_STATUS.LATE).length;
+        const absent = students.filter((student) => student.status === ATTENDANCE_STATUS.ABSENT).length;
+        const total = students.length;
+        const rate = total ? Math.round(((present + late) / total) * 100) : 0;
+
+        return { present, late, absent, total, rate };
+    }, [students]);
+
+    const filteredReportItems = useMemo(() => {
+        if (reportFilter === 'all') return reportItems;
+        return reportItems.filter((item) => String(item.status) === reportFilter);
+    }, [reportFilter, reportItems]);
+
+    const reportStats = useMemo(() => {
+        const present = reportItems.filter((item) => item.status === ATTENDANCE_STATUS.PRESENT).length;
+        const late = reportItems.filter((item) => item.status === ATTENDANCE_STATUS.LATE).length;
+        const absent = reportItems.filter((item) => item.status === ATTENDANCE_STATUS.ABSENT).length;
+        const total = reportItems.length;
+
+        return { present, late, absent, total };
+    }, [reportItems]);
 
     const handleStatusChange = (userId, status) => {
         setRowsMap((prev) => ({
@@ -208,28 +301,59 @@ const AttendancePage = ({ embedded = false }) => {
     };
 
     return (
-        <div className={embedded ? 'space-y-6' : 'pt-24 max-w-7xl mx-auto px-4 pb-12 space-y-6'}>
+        <div className={embedded ? 'space-y-6' : 'pt-24 mx-auto max-w-7xl space-y-6 px-4 pb-12'}>
             {!embedded && (
-                <div>
+                <div className="max-w-2xl">
                     <h1 className="text-3xl font-bold text-gray-900 dark:text-[#E8ECF3]">Катышуу</h1>
-                    <p className="text-sm text-gray-500 dark:text-[#a6adba]">
-                        Сабактагы катышууну белгилөө жана отчетту көрүү.
+                    <p className="mt-2 text-sm text-gray-500 dark:text-[#a6adba]">
+                        Сабактагы катышууну белгилөө жана отчетту заманбап башкаруу интерфейсинде көрүү.
                     </p>
                 </div>
             )}
 
-            <section className="bg-white dark:bg-[#111111] rounded-2xl border border-gray-100 dark:border-gray-800 p-4 space-y-4">
-                <h2 className="text-xl font-semibold text-gray-900 dark:text-[#E8ECF3]">
-                    Катышууну белгилөө
-                </h2>
+            <section className="dashboard-panel overflow-hidden">
+                <DashboardSectionHeader
+                    eyebrow="Attendance Workspace"
+                    title="Катышууну белгилөө"
+                    description="Курсту тандап, сабактагы катышууну тез белгилеп сактаңыз."
+                    metrics={
+                        <>
+                            <DashboardMetricCard
+                                label="Студент"
+                                value={attendanceStats.total}
+                                icon={FiUsers}
+                            />
+                            <DashboardMetricCard
+                                label="Катышты"
+                                value={attendanceStats.present}
+                                tone="green"
+                                icon={FiCheckCircle}
+                            />
+                            <DashboardMetricCard
+                                label="Кечикти"
+                                value={attendanceStats.late}
+                                tone="amber"
+                                icon={FiClock}
+                            />
+                            <DashboardMetricCard
+                                label="Катышуу %"
+                                value={`${attendanceStats.rate}%`}
+                                icon={FiCalendar}
+                            />
+                        </>
+                    }
+                />
 
-                <div className="grid md:grid-cols-3 gap-3">
-                    <label className="text-sm text-gray-700 dark:text-[#E8ECF3]">
-                        <span className="block mb-1">Курс</span>
+                <div className="grid gap-3 border-b border-edubot-line/70 px-6 py-5 lg:grid-cols-[minmax(0,1.2fr),minmax(0,0.8fr),auto] dark:border-slate-700">
+                    <label className="text-sm text-edubot-ink dark:text-white">
+                        <span className="mb-1.5 inline-flex items-center gap-2 font-medium">
+                            <FiBookOpen className="h-4 w-4 text-edubot-orange" />
+                            Курс
+                        </span>
                         <select
                             value={selectedCourseId}
                             onChange={(e) => setSelectedCourseId(e.target.value)}
-                            className="w-full border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 bg-white dark:bg-[#0E0E0E]"
+                            className="dashboard-field"
                             disabled={loadingCourses}
                         >
                             <option value="">Курс тандаңыз</option>
@@ -241,13 +365,16 @@ const AttendancePage = ({ embedded = false }) => {
                         </select>
                     </label>
 
-                    <label className="text-sm text-gray-700 dark:text-[#E8ECF3]">
-                        <span className="block mb-1">Сессия датасы</span>
+                    <label className="text-sm text-edubot-ink dark:text-white">
+                        <span className="mb-1.5 inline-flex items-center gap-2 font-medium">
+                            <FiCalendar className="h-4 w-4 text-edubot-orange" />
+                            Сессия датасы
+                        </span>
                         <input
                             type="date"
                             value={sessionDate}
                             onChange={(e) => setSessionDate(e.target.value)}
-                            className="w-full border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 bg-white dark:bg-[#0E0E0E]"
+                            className="dashboard-field"
                         />
                     </label>
 
@@ -255,145 +382,266 @@ const AttendancePage = ({ embedded = false }) => {
                         <button
                             onClick={handleSubmitAttendance}
                             disabled={savingAttendance || loadingStudents || !selectedCourseId}
-                            className="w-full px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-60"
+                            className="dashboard-button-primary-lg w-full"
                         >
+                            <FiCheckCircle className="h-4 w-4" />
                             {savingAttendance ? 'Сакталууда...' : 'Катышууну сактоо'}
                         </button>
                     </div>
                 </div>
 
-                <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                        <thead>
-                            <tr className="text-left text-gray-500 dark:text-[#a6adba] border-b border-gray-100 dark:border-gray-800">
-                                <th className="py-2 pr-3">Студент</th>
-                                <th className="py-2 pr-3">Статус</th>
-                                <th className="py-2 pr-3">Эскертүү</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {students.map((student) => (
-                                <tr
-                                    key={student.userId}
-                                    className="border-b border-gray-50 dark:border-gray-900"
-                                >
-                                    <td className="py-2 pr-3 text-gray-800 dark:text-gray-200">
-                                        {student.fullName}
-                                    </td>
-                                    <td className="py-2 pr-3">
-                                        <select
-                                            value={student.status}
-                                            onChange={(e) =>
-                                                handleStatusChange(student.userId, e.target.value)
-                                            }
-                                            className="border border-gray-200 dark:border-gray-700 rounded px-2 py-1 bg-white dark:bg-[#0E0E0E]"
-                                        >
-                                            {statusOptions.map((status) => (
-                                                <option key={status.value} value={status.value}>
-                                                    {status.label}
-                                                </option>
-                                            ))}
-                                        </select>
-                                    </td>
-                                    <td className="py-2 pr-3">
-                                        <input
-                                            value={student.notes}
-                                            onChange={(e) =>
-                                                handleNotesChange(student.userId, e.target.value)
-                                            }
-                                            placeholder="Эскертүү"
-                                            className="w-full border border-gray-200 dark:border-gray-700 rounded px-2 py-1 bg-white dark:bg-[#0E0E0E]"
-                                        />
-                                    </td>
-                                </tr>
-                            ))}
-                            {students.length === 0 && !loadingStudents && (
-                                <tr>
-                                    <td colSpan={3} className="py-6 text-center text-gray-500">
-                                        Студент табылган жок.
-                                    </td>
-                                </tr>
-                            )}
-                            {loadingStudents && (
-                                <tr>
-                                    <td colSpan={3} className="py-6 text-center text-gray-500">
-                                        Студенттер жүктөлүүдө...
-                                    </td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </table>
+                <div className="grid gap-4 p-6">
+                    {selectedCourse ? (
+                        <div className="dashboard-panel-muted flex flex-wrap items-center gap-3 p-4">
+                            <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold uppercase tracking-wide text-edubot-orange dark:bg-slate-900">
+                                Активдүү курс
+                            </span>
+                            <div className="text-sm text-edubot-ink dark:text-white">
+                                <span className="font-semibold">{selectedCourse.title || selectedCourse.name}</span>
+                                <span className="ml-2 text-edubot-muted dark:text-slate-400">
+                                    {sessionDate}
+                                </span>
+                            </div>
+                        </div>
+                    ) : null}
+
+                    {loadingStudents ? (
+                        <div className="dashboard-panel-muted p-10 text-center text-sm text-edubot-muted dark:text-slate-400">
+                            Студенттер жүктөлүүдө...
+                        </div>
+                    ) : students.length === 0 ? (
+                        <div className="dashboard-panel-muted p-10 text-center">
+                            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-white text-edubot-orange shadow-sm dark:bg-slate-900">
+                                <FiUsers className="h-6 w-6" />
+                            </div>
+                            <h3 className="mt-4 text-lg font-semibold text-edubot-ink dark:text-white">
+                                Студент табылган жок
+                            </h3>
+                            <p className="mt-2 text-sm text-edubot-muted dark:text-slate-400">
+                                Тандалган курс үчүн катышуу тизмеси азырынча бош.
+                            </p>
+                        </div>
+                    ) : (
+                        <div className="grid gap-4 xl:grid-cols-2">
+                            {students.map((student) => {
+                                const meta = statusMeta[student.status] || statusMeta[ATTENDANCE_STATUS.PRESENT];
+
+                                return (
+                                    <article
+                                        key={student.userId}
+                                        className={`rounded-[1.5rem] border p-5 transition duration-300 ${meta.cardClass}`}
+                                    >
+                                        <div className="flex items-start gap-4">
+                                            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white text-sm font-bold text-edubot-dark shadow-sm dark:bg-slate-900 dark:text-edubot-soft">
+                                                {getStudentInitials(student.fullName)}
+                                            </div>
+
+                                            <div className="min-w-0 flex-1">
+                                                <div className="flex flex-wrap items-center gap-2">
+                                                    <h3 className="text-base font-semibold text-edubot-ink dark:text-white">
+                                                        {student.fullName}
+                                                    </h3>
+                                                    <span
+                                                        className={`inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-semibold ${meta.badgeClass}`}
+                                                    >
+                                                        {meta.label}
+                                                    </span>
+                                                </div>
+
+                                                <div className="mt-4 grid gap-3 lg:grid-cols-[1fr,1.1fr]">
+                                                    <div>
+                                                        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-edubot-muted dark:text-slate-400">
+                                                            Статус
+                                                        </p>
+                                                        <div className="grid grid-cols-1 gap-2 sm:grid-cols-3 lg:grid-cols-1 xl:grid-cols-3">
+                                                            {statusOptions.map((option) => {
+                                                                const Icon = option.icon;
+                                                                const active = student.status === option.value;
+                                                                return (
+                                                                    <button
+                                                                        key={option.value}
+                                                                        type="button"
+                                                                        onClick={() =>
+                                                                            handleStatusChange(student.userId, option.value)
+                                                                        }
+                                                                        className={`inline-flex min-h-[42px] items-center justify-center gap-2 rounded-2xl border px-3 py-2 text-xs font-semibold transition ${
+                                                                            active
+                                                                                ? 'border-edubot-orange bg-white text-edubot-orange shadow-sm dark:bg-slate-900'
+                                                                                : 'border-transparent bg-white/70 text-edubot-ink hover:border-edubot-line dark:bg-slate-900/60 dark:text-slate-200'
+                                                                        }`}
+                                                                    >
+                                                                        <Icon className="h-4 w-4" />
+                                                                        {option.label}
+                                                                    </button>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                    </div>
+
+                                                    <label className="block">
+                                                        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-edubot-muted dark:text-slate-400">
+                                                            Эскертүү
+                                                        </p>
+                                                        <div className="relative">
+                                                            <FiEdit3 className="pointer-events-none absolute left-4 top-4 h-4 w-4 text-edubot-muted" />
+                                                            <textarea
+                                                                value={student.notes}
+                                                                onChange={(e) =>
+                                                                    handleNotesChange(student.userId, e.target.value)
+                                                                }
+                                                                placeholder="Кыскача эскертүү калтырыңыз"
+                                                                rows={3}
+                                                                className="dashboard-field dashboard-field-icon"
+                                                            />
+                                                        </div>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </article>
+                                );
+                            })}
+                        </div>
+                    )}
                 </div>
             </section>
 
-            <section className="bg-white dark:bg-[#111111] rounded-2xl border border-gray-100 dark:border-gray-800 p-4 space-y-4">
-                <h2 className="text-xl font-semibold text-gray-900 dark:text-[#E8ECF3]">
-                    Катышуу отчету
-                </h2>
+            <section className="dashboard-panel overflow-hidden">
+                <DashboardSectionHeader
+                    eyebrow="Attendance Report"
+                    title="Катышуу отчету"
+                    description="Белгиленген катышууларды күн аралыгы боюнча чыгарып, тез талдаңыз."
+                    metrics={
+                        <>
+                            <DashboardMetricCard label="Жазуу" value={reportStats.total} icon={FiFileText} />
+                            <DashboardMetricCard
+                                label="Катышты"
+                                value={reportStats.present}
+                                tone="green"
+                                icon={FiCheckCircle}
+                            />
+                            <DashboardMetricCard
+                                label="Кечикти"
+                                value={reportStats.late}
+                                tone="amber"
+                                icon={FiClock}
+                            />
+                            <DashboardMetricCard
+                                label="Келген жок"
+                                value={reportStats.absent}
+                                tone="red"
+                                icon={FiAlertCircle}
+                            />
+                        </>
+                    }
+                />
 
-                <div className="grid md:grid-cols-4 gap-3">
-                    <label className="text-sm text-gray-700 dark:text-[#E8ECF3]">
-                        <span className="block mb-1">Күндөн</span>
+                <div className="grid gap-3 border-b border-edubot-line/70 px-6 py-5 lg:grid-cols-[minmax(0,0.8fr),minmax(0,0.8fr),minmax(0,0.9fr),auto] dark:border-slate-700">
+                    <label className="text-sm text-edubot-ink dark:text-white">
+                        <span className="mb-1.5 block font-medium">Күндөн</span>
                         <input
                             type="date"
                             value={reportFrom}
                             onChange={(e) => setReportFrom(e.target.value)}
-                            className="w-full border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 bg-white dark:bg-[#0E0E0E]"
+                            className="dashboard-field"
                         />
                     </label>
-                    <label className="text-sm text-gray-700 dark:text-[#E8ECF3]">
-                        <span className="block mb-1">Күнгө чейин</span>
+                    <label className="text-sm text-edubot-ink dark:text-white">
+                        <span className="mb-1.5 block font-medium">Күнгө чейин</span>
                         <input
                             type="date"
                             value={reportTo}
                             onChange={(e) => setReportTo(e.target.value)}
-                            className="w-full border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 bg-white dark:bg-[#0E0E0E]"
+                            className="dashboard-field"
                         />
+                    </label>
+                    <label className="text-sm text-edubot-ink dark:text-white">
+                        <span className="mb-1.5 block font-medium">Статус</span>
+                        <select
+                            value={reportFilter}
+                            onChange={(e) => setReportFilter(e.target.value)}
+                            className="dashboard-field dashboard-select"
+                        >
+                            <option value="all">Баары</option>
+                            {statusOptions.map((option) => (
+                                <option key={option.value} value={option.value}>
+                                    {option.label}
+                                </option>
+                            ))}
+                        </select>
                     </label>
                     <div className="flex items-end">
                         <button
                             onClick={handleLoadReport}
                             disabled={loadingReport || !selectedCourseId}
-                            className="w-full px-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700 text-gray-800 dark:text-[#E8ECF3] disabled:opacity-60"
+                            className="dashboard-button-secondary min-h-[48px] w-full dark:bg-slate-900"
                         >
+                            <FiDownload className="h-4 w-4" />
                             {loadingReport ? 'Жүктөлүүдө...' : 'Отчетту жүктөө'}
                         </button>
                     </div>
                 </div>
 
-                <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                        <thead>
-                            <tr className="text-left text-gray-500 dark:text-[#a6adba] border-b border-gray-100 dark:border-gray-800">
-                                <th className="py-2 pr-3">Дата</th>
-                                <th className="py-2 pr-3">Студент</th>
-                                <th className="py-2 pr-3">Статус</th>
-                                <th className="py-2 pr-3">Эскертүү</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {reportItems.map((item) => (
-                                <tr
-                                    key={item.id || `${item.userId}-${item.sessionDate}`}
-                                    className="border-b border-gray-50 dark:border-gray-900"
-                                >
-                                    <td className="py-2 pr-3">{item.sessionDate || '-'}</td>
-                                    <td className="py-2 pr-3">
-                                        {item.user?.fullName || item.fullName || `#${item.userId}`}
-                                    </td>
-                                    <td className="py-2 pr-3">{item.status || '-'}</td>
-                                    <td className="py-2 pr-3">{item.notes || '-'}</td>
-                                </tr>
-                            ))}
-                            {reportItems.length === 0 && !loadingReport && (
-                                <tr>
-                                    <td colSpan={4} className="py-6 text-center text-gray-500">
-                                        Отчет табылган жок.
-                                    </td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </table>
+                <div className="space-y-4 p-6">
+                    {loadingReport ? (
+                        <div className="dashboard-panel-muted p-10 text-center text-sm text-edubot-muted dark:text-slate-400">
+                            Отчет жүктөлүүдө...
+                        </div>
+                    ) : filteredReportItems.length === 0 ? (
+                        <div className="dashboard-panel-muted p-10 text-center">
+                            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-white text-edubot-orange shadow-sm dark:bg-slate-900">
+                                <FiFileText className="h-6 w-6" />
+                            </div>
+                            <h3 className="mt-4 text-lg font-semibold text-edubot-ink dark:text-white">
+                                Отчет табылган жок
+                            </h3>
+                            <p className="mt-2 text-sm text-edubot-muted dark:text-slate-400">
+                                Күн аралыгын же фильтрди өзгөртүп кайра аракет кылыңыз.
+                            </p>
+                        </div>
+                    ) : (
+                        <div className="grid gap-3">
+                            {filteredReportItems.map((item) => {
+                                const meta = statusMeta[item.status] || {
+                                    badgeClass:
+                                        'border-slate-200 bg-slate-50 text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300',
+                                    label: item.status || '-',
+                                };
+
+                                return (
+                                    <article
+                                        key={item.id || `${item.userId}-${item.sessionDate}`}
+                                        className="dashboard-panel-muted flex flex-col gap-3 p-4 lg:flex-row lg:items-center lg:justify-between"
+                                    >
+                                        <div className="min-w-0 flex-1">
+                                            <div className="flex flex-wrap items-center gap-2">
+                                                <h3 className="font-semibold text-edubot-ink dark:text-white">
+                                                    {item.user?.fullName || item.fullName || `#${item.userId}`}
+                                                </h3>
+                                                <span
+                                                    className={`inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-semibold ${meta.badgeClass}`}
+                                                >
+                                                    {meta.label}
+                                                </span>
+                                            </div>
+                                            <div className="mt-2 flex flex-wrap gap-x-4 gap-y-2 text-sm text-edubot-muted dark:text-slate-400">
+                                                <span className="inline-flex items-center gap-2">
+                                                    <FiCalendar className="h-4 w-4" />
+                                                    {formatReportDate(item.sessionDate)}
+                                                </span>
+                                                {item.notes ? (
+                                                    <span className="inline-flex items-center gap-2">
+                                                        <FiAlertCircle className="h-4 w-4" />
+                                                        {item.notes}
+                                                    </span>
+                                                ) : null}
+                                            </div>
+                                        </div>
+                                    </article>
+                                );
+                            })}
+                        </div>
+                    )}
                 </div>
             </section>
         </div>

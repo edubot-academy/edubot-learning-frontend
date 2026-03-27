@@ -1,6 +1,9 @@
 export { default as DashboardLayout } from './DashboardLayout';
 export { default as DashboardHeader } from './DashboardHeader';
 export { default as DashboardTabs } from './DashboardTabs';
+export { default as DashboardInsetPanel } from './DashboardInsetPanel';
+export { default as DashboardMetricCard } from './DashboardMetricCard';
+export { default as DashboardSectionHeader } from './DashboardSectionHeader';
 export { default as StatCard } from './StatCard';
 export { default as LoadingState } from './LoadingState';
 export { default as EmptyState } from './EmptyState';

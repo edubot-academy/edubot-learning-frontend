@@ -1,25 +1,25 @@
 import PropTypes from 'prop-types';
 
 const LoadingState = ({ type = 'card', count = 1, className = '' }) => {
-  const renderSkeleton = (type) => {
-    switch (type) {
+  const renderSkeleton = (kind) => {
+    switch (kind) {
       case 'card':
         return (
-          <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-6">
+          <div className="dashboard-panel p-6">
             <div className="animate-pulse space-y-4">
               <div className="flex items-center space-x-4">
-                <div className="w-10 h-10 bg-gray-200 dark:bg-gray-700 rounded-xl"></div>
+                <div className="h-10 w-10 rounded-2xl bg-edubot-surfaceAlt dark:bg-slate-800" />
                 <div className="flex-1 space-y-2">
-                  <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
-                  <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
+                  <div className="h-4 w-3/4 rounded bg-edubot-surfaceAlt dark:bg-slate-800" />
+                  <div className="h-3 w-1/2 rounded bg-edubot-surfaceAlt dark:bg-slate-800" />
                 </div>
               </div>
               <div className="space-y-2">
-                <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded"></div>
-                <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-5/6"></div>
+                <div className="h-3 rounded bg-edubot-surfaceAlt dark:bg-slate-800" />
+                <div className="h-3 w-5/6 rounded bg-edubot-surfaceAlt dark:bg-slate-800" />
               </div>
               <div className="flex justify-end">
-                <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded w-24"></div>
+                <div className="h-10 w-24 rounded-2xl bg-edubot-surfaceAlt dark:bg-slate-800" />
               </div>
             </div>
           </div>
@@ -27,13 +27,13 @@ const LoadingState = ({ type = 'card', count = 1, className = '' }) => {
 
       case 'stat':
         return (
-          <div className="relative">
-            <div className="absolute inset-0 bg-gradient-to-br from-white/80 to-white/40 dark:from-gray-800/80 dark:to-gray-800/40 backdrop-blur-xl rounded-2xl border border-white/20 dark:border-gray-700/20 shadow-lg" />
-            <div className="relative p-6 z-10">
+          <div className="dashboard-panel relative overflow-hidden">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(241,126,34,0.12),transparent_32%)]" />
+            <div className="relative z-10 p-6">
               <div className="animate-pulse space-y-4">
-                <div className="w-10 h-10 bg-gray-200 dark:bg-gray-700 rounded-xl"></div>
-                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-2/3"></div>
-                <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
+                <div className="h-10 w-10 rounded-2xl bg-edubot-surfaceAlt dark:bg-slate-800" />
+                <div className="h-4 w-2/3 rounded bg-edubot-surfaceAlt dark:bg-slate-800" />
+                <div className="h-8 w-1/2 rounded bg-edubot-surfaceAlt dark:bg-slate-800" />
               </div>
             </div>
           </div>
@@ -43,14 +43,14 @@ const LoadingState = ({ type = 'card', count = 1, className = '' }) => {
         return (
           <div className="space-y-4">
             {[...Array(3)].map((_, index) => (
-              <div key={index} className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
+              <div key={index} className="dashboard-panel p-4">
                 <div className="animate-pulse flex items-center space-x-4">
-                  <div className="w-12 h-12 bg-gray-200 dark:bg-gray-700 rounded-lg"></div>
+                  <div className="h-12 w-12 rounded-2xl bg-edubot-surfaceAlt dark:bg-slate-800" />
                   <div className="flex-1 space-y-2">
-                    <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
-                    <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
+                    <div className="h-4 w-3/4 rounded bg-edubot-surfaceAlt dark:bg-slate-800" />
+                    <div className="h-3 w-1/2 rounded bg-edubot-surfaceAlt dark:bg-slate-800" />
                   </div>
-                  <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-20"></div>
+                  <div className="h-8 w-20 rounded-xl bg-edubot-surfaceAlt dark:bg-slate-800" />
                 </div>
               </div>
             ))}
@@ -59,17 +59,17 @@ const LoadingState = ({ type = 'card', count = 1, className = '' }) => {
 
       case 'table':
         return (
-          <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-            <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-              <div className="animate-pulse h-6 bg-gray-200 dark:bg-gray-700 rounded w-1/3"></div>
+          <div className="dashboard-panel overflow-hidden">
+            <div className="border-b border-edubot-line/80 p-4 dark:border-slate-700">
+              <div className="animate-pulse h-6 w-1/3 rounded bg-edubot-surfaceAlt dark:bg-slate-800" />
             </div>
-            <div className="divide-y divide-gray-200 dark:divide-gray-700">
+            <div className="divide-y divide-edubot-line/80 dark:divide-slate-700">
               {[...Array(5)].map((_, index) => (
                 <div key={index} className="p-4">
                   <div className="animate-pulse flex space-x-4">
-                    <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded flex-1"></div>
-                    <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-24"></div>
-                    <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-20"></div>
+                    <div className="h-4 flex-1 rounded bg-edubot-surfaceAlt dark:bg-slate-800" />
+                    <div className="h-4 w-24 rounded bg-edubot-surfaceAlt dark:bg-slate-800" />
+                    <div className="h-4 w-20 rounded bg-edubot-surfaceAlt dark:bg-slate-800" />
                   </div>
                 </div>
               ))}
@@ -79,11 +79,11 @@ const LoadingState = ({ type = 'card', count = 1, className = '' }) => {
 
       case 'header':
         return (
-          <div className="bg-gradient-to-r from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-800 rounded-2xl p-6 shadow-xl border border-gray-300 dark:border-gray-600">
+          <div className="rounded-panel border border-slate-300/70 bg-gradient-to-r from-slate-200 via-orange-100 to-teal-100 p-6 shadow-edubot-soft dark:border-slate-700 dark:from-slate-800 dark:via-slate-800 dark:to-slate-900">
             <div className="animate-pulse">
-              <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-1/4 mb-3"></div>
-              <div className="h-8 bg-gray-300 dark:bg-gray-600 rounded w-1/2 mb-2"></div>
-              <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-3/4"></div>
+              <div className="mb-3 h-4 w-1/4 rounded bg-white/60 dark:bg-slate-700" />
+              <div className="mb-2 h-8 w-1/2 rounded bg-white/70 dark:bg-slate-700" />
+              <div className="h-4 w-3/4 rounded bg-white/60 dark:bg-slate-700" />
             </div>
           </div>
         );
@@ -91,9 +91,9 @@ const LoadingState = ({ type = 'card', count = 1, className = '' }) => {
       default:
         return (
           <div className="animate-pulse space-y-4">
-            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded"></div>
-            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-5/6"></div>
-            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-4/6"></div>
+            <div className="h-4 rounded bg-edubot-surfaceAlt dark:bg-slate-800" />
+            <div className="h-4 w-5/6 rounded bg-edubot-surfaceAlt dark:bg-slate-800" />
+            <div className="h-4 w-4/6 rounded bg-edubot-surfaceAlt dark:bg-slate-800" />
           </div>
         );
     }

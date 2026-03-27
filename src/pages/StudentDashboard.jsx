@@ -4,6 +4,7 @@ import { AuthContext } from '../context/AuthContext';
 import toast from 'react-hot-toast';
 import LeaderboardHub from '../features/leaderboard/components/LeaderboardHub';
 import StudentAnalyticsPage from './StudentAnalytics';
+import InternalLeaderboard from './InternalLeaderboard';
 import FloatingActionButton from '../components/ui/FloatingActionButton';
 import {
     fetchStudentCourses,
@@ -22,7 +23,10 @@ import {
     updateStudentNotificationSettings,
 } from '@services/api';
 import NotificationsTab from '@features/notifications/components/NotificationsTab';
-import { NAV_ITEMS, DEFAULT_NOTIFICATION_SETTINGS } from '@features/student-dashboard/utils/studentDashboard.constants.js';
+import {
+    NAV_ITEMS,
+    DEFAULT_NOTIFICATION_SETTINGS,
+} from '@features/student-dashboard/utils/studentDashboard.constants.js';
 import {
     readNumber,
     readArray,
@@ -902,7 +906,7 @@ const StudentDashboard = () => {
             case 'analytics':
                 return <StudentAnalyticsPage embedded />;
             case 'leaderboard':
-                return <LeaderboardHub embedded />;
+                return <InternalLeaderboard />;
             case 'notifications':
                 return <NotificationsTab />;
             case 'profile':

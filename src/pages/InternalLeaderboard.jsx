@@ -1,13 +1,23 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useContext, useEffect, useMemo, useState } from 'react';
 import PropTypes from 'prop-types';
 import {
     fetchCourses,
     fetchInternalCourseLeaderboard,
     fetchInternalHomepageLeaderboard,
+    fetchInstructorCourses,
     fetchInternalStudentOfWeek,
     fetchInternalWeeklyLeaderboard,
+    fetchStudentCourses,
 } from '@services/api';
 import Loader from '@shared/ui/Loader';
+import { AuthContext } from '../context/AuthContext';
+import {
+    DashboardInsetPanel,
+    DashboardMetricCard,
+    DashboardSectionHeader,
+    EmptyState as DashboardEmptyState,
+} from '@components/ui/dashboard';
+import { FiAward, FiBookOpen, FiStar, FiTrendingUp } from 'react-icons/fi';
 
 const TRACKS = [
     { value: 'all', label: 'All' },
@@ -67,11 +77,14 @@ const EmptyState = ({ message }) => (
 
 const normalizeItems = (payload) => {
     if (Array.isArray(payload?.items)) return payload.items;
+    if (Array.isArray(payload?.courses)) return payload.courses;
+    if (Array.isArray(payload?.data)) return payload.data;
     if (Array.isArray(payload)) return payload;
     return [];
 };
 
 const InternalLeaderboard = () => {
+    const { user } = useContext(AuthContext);
     const [track, setTrack] = useState('all');
 
     const [courses, setCourses] = useState([]);
@@ -89,15 +102,24 @@ const InternalLeaderboard = () => {
         let cancelled = false;
         const loadCourses = async () => {
             try {
-                const response = await fetchCourses();
+                const response = user?.role === 'instructor'
+                    ? await fetchInstructorCourses({ status: 'approved' })
+                    : user?.role === 'student'
+                        ? await fetchStudentCourses(user.id)
+                        : await fetchCourses();
                 if (cancelled) return;
-                const list = Array.isArray(response?.courses) ? response.courses : [];
+                const list = normalizeItems(response);
                 setCourses(list);
                 if (list.length) {
                     setSelectedCourseId(String(list[0].id));
+                } else {
+                    setSelectedCourseId('');
                 }
             } catch {
-                if (!cancelled) setCourses([]);
+                if (!cancelled) {
+                    setCourses([]);
+                    setSelectedCourseId('');
+                }
             }
         };
 
@@ -105,7 +127,7 @@ const InternalLeaderboard = () => {
         return () => {
             cancelled = true;
         };
-    }, []);
+    }, [user?.id, user?.role]);
 
     useEffect(() => {
         let cancelled = false;
@@ -166,73 +188,110 @@ const InternalLeaderboard = () => {
     const courseItems = useMemo(() => normalizeItems(courseLeaders), [courseLeaders]);
 
     return (
-        <div className="min-h-screen bg-white dark:bg-[#111418] text-gray-900 dark:text-white px-4 md:px-10 py-10 space-y-6">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-                <div>
-                    <p className="text-sm uppercase tracking-wide text-orange-500 font-semibold">LMS ички рейтинги</p>
-                    <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Рейтинг</h1>
-                </div>
-                <div className="inline-flex rounded-xl border border-gray-200 dark:border-gray-700 p-1 bg-white dark:bg-[#1a1f27]">
-                    {TRACKS.map((option) => (
-                        <button
-                            key={option.value}
-                            type="button"
-                            onClick={() => setTrack(option.value)}
-                            className={`px-3 py-1.5 text-sm rounded-lg ${track === option.value
-                                ? 'bg-orange-500 text-white'
-                                : 'text-gray-600 dark:text-gray-300'
+        <div className="space-y-6">
+            <DashboardSectionHeader
+                eyebrow="Leaderboard workspace"
+                title="Ички рейтинг"
+                description="Апталык лидерлерди, аптанын студентин жана курс ичиндеги орундарды ушул жерден көрүңүз."
+                action={(
+                    <div className="inline-flex rounded-2xl border border-edubot-line bg-white/90 p-1 dark:border-slate-700 dark:bg-slate-950">
+                        {TRACKS.map((option) => (
+                            <button
+                                key={option.value}
+                                type="button"
+                                onClick={() => setTrack(option.value)}
+                                className={`rounded-xl px-3 py-2 text-sm font-medium transition-all ${
+                                    track === option.value
+                                        ? 'bg-edubot-orange text-white'
+                                        : 'text-edubot-muted hover:text-edubot-ink dark:text-slate-300 dark:hover:text-white'
                                 }`}
-                        >
-                            {option.label}
-                        </button>
-                    ))}
-                </div>
+                            >
+                                {option.label}
+                            </button>
+                        ))}
+                    </div>
+                )}
+            />
+
+            <div className="grid gap-4 md:grid-cols-4">
+                <DashboardMetricCard
+                    label="Апталык лидерлер"
+                    value={weeklyItems.length}
+                    icon={FiTrendingUp}
+                />
+                <DashboardMetricCard
+                    label="Башкы бет мыктылары"
+                    value={homepageItems.length}
+                    icon={FiStar}
+                    tone="blue"
+                />
+                <DashboardMetricCard
+                    label="Аптанын студенти"
+                    value={studentOfWeek?.fullName ? '1' : '0'}
+                    icon={FiAward}
+                    tone="green"
+                />
+                <DashboardMetricCard
+                    label="Курс такталары"
+                    value={courses.length}
+                    icon={FiBookOpen}
+                    tone="amber"
+                />
             </div>
 
             {loading ? <Loader fullScreen={false} /> : null}
 
-            <div className="grid lg:grid-cols-2 gap-6">
-                <section className="rounded-2xl border border-gray-100 dark:border-gray-800 p-4 bg-white dark:bg-[#1a1f27]">
-                    <h2 className="text-lg font-semibold mb-3 text-gray-900 dark:text-white">Апталык рейтинг</h2>
+            <div className="grid gap-6 lg:grid-cols-2">
+                <DashboardInsetPanel title="Апталык рейтинг" description="Учурда эң активдүү окуучулар.">
                     <div className="space-y-2">
                         {weeklyItems.length ? (
                             weeklyItems.map((item, idx) => (
                                 <LeaderRow key={item?.studentId || idx} item={item} rank={idx + 1} />
                             ))
                         ) : (
-                            <EmptyState message="Бул багыт боюнча лидерлер табылган жок." />
+                            <DashboardEmptyState
+                                title="Лидерлер табылган жок"
+                                subtitle="Тандалган багыт боюнча азырынча рейтинг маалыматтары жок."
+                                className="py-8"
+                            />
                         )}
                     </div>
-                </section>
+                </DashboardInsetPanel>
 
-                <section className="rounded-2xl border border-gray-100 dark:border-gray-800 p-4 bg-white dark:bg-[#1a1f27]">
-                    <h2 className="text-lg font-semibold mb-3 text-gray-900 dark:text-white">Аптанын студенти</h2>
+                <DashboardInsetPanel title="Аптанын студенти" description="Аптанын өзгөчөлөнгөн катышуучусу жана башкы беттеги мыктылар.">
                     {studentOfWeek ? (
                         <LeaderRow item={studentOfWeek} rank={1} />
                     ) : (
-                        <EmptyState message="Бул багыт боюнча студент жок." />
+                        <DashboardEmptyState
+                            title="Аптанын студенти жок"
+                            subtitle="Бул багыт боюнча айырмаланган студент азырынча аныкталган жок."
+                            className="py-8"
+                        />
                     )}
 
-                    <h3 className="text-base font-semibold mt-5 mb-3 text-gray-900 dark:text-white">Башкы беттеги мыктылар</h3>
+                    <h3 className="mb-3 mt-5 text-base font-semibold text-edubot-ink dark:text-white">Башкы беттеги мыктылар</h3>
                     <div className="space-y-2">
                         {homepageItems.length ? (
                             homepageItems.map((item, idx) => (
                                 <LeaderRow key={item?.studentId || idx} item={item} rank={idx + 1} />
                             ))
                         ) : (
-                            <EmptyState message="Тандалган багыт үчүн башкы бет маалыматы жок." />
+                            <DashboardEmptyState
+                                title="Башкы бет маалыматы жок"
+                                subtitle="Тандалган багыт боюнча башкы бет лидерлери жок."
+                                className="py-8"
+                            />
                         )}
                     </div>
-                </section>
+                </DashboardInsetPanel>
             </div>
 
-            <section className="rounded-2xl border border-gray-100 dark:border-gray-800 p-4 bg-white dark:bg-[#1a1f27] space-y-3">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                    <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Курс рейтинги</h2>
+            <DashboardInsetPanel title="Курс рейтинги" description="Тандалган курс ичиндеги мыктыларды салыштырыңыз.">
+                <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
                     <select
                         value={selectedCourseId}
                         onChange={(event) => setSelectedCourseId(event.target.value)}
-                        className="border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 bg-white dark:bg-[#0E0E0E]"
+                        className="min-w-[260px] appearance-none rounded-2xl border border-edubot-line/80 bg-white/95 px-4 py-3 text-sm font-medium text-edubot-ink shadow-sm outline-none transition-all focus:border-edubot-orange focus:ring-2 focus:ring-edubot-orange/20 dark:border-slate-700 dark:bg-slate-950 dark:text-white"
                     >
                         <option value="">Курс тандаңыз</option>
                         {courses.map((course) => (
@@ -245,18 +304,26 @@ const InternalLeaderboard = () => {
 
                 {loadingCourseBoard ? <Loader fullScreen={false} /> : null}
 
-                <div className="space-y-2">
+                <div className="mt-4 space-y-2">
                     {!selectedCourseId ? (
-                        <EmptyState message="Алгач курс тандаңыз." />
+                        <DashboardEmptyState
+                            title="Курс тандалган жок"
+                            subtitle="Ички курс рейтингин көрүү үчүн жогортон курс тандаңыз."
+                            className="py-8"
+                        />
                     ) : courseItems.length ? (
                         courseItems.map((item, idx) => (
                             <LeaderRow key={item?.studentId || idx} item={item} rank={idx + 1} />
                         ))
                     ) : (
-                        <EmptyState message="Бул курс жана багыт айкалышы үчүн маалымат жок." />
+                        <DashboardEmptyState
+                            title="Маалымат жок"
+                            subtitle="Бул курс жана багыт айкалышы боюнча рейтинг азырынча жеткиликсиз."
+                            className="py-8"
+                        />
                     )}
                 </div>
-            </section>
+            </DashboardInsetPanel>
         </div>
     );
 };

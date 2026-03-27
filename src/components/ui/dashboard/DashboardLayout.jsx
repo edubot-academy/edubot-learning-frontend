@@ -20,48 +20,51 @@ const DashboardLayout = ({
   };
 
   return (
-    <div className={`min-h-screen pt-24 bg-gray-50 dark:bg-gray-900 ${className}`}>
+    <div className={`relative min-h-screen overflow-x-hidden bg-edubot-surface dark:bg-slate-950 ${className}`}>
       <SkipNavigation />
 
-      {/* Mobile Navigation */}
-      <div className="md:hidden">
-        {mobileTabs}
-      </div>
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-[26rem] bg-edubot-surface opacity-80 dark:opacity-30" />
+      <div className="pointer-events-none absolute left-[-8rem] top-20 h-72 w-72 rounded-full bg-edubot-orange/12 blur-3xl dark:bg-edubot-orange/10" />
+      <div className="pointer-events-none absolute right-[-6rem] top-40 h-80 w-80 rounded-full bg-edubot-teal/12 blur-3xl dark:bg-edubot-teal/10" />
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-[34rem] bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.65),transparent_55%)] dark:bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.03),transparent_55%)]" />
 
-      {/* Desktop Layout */}
-      <div className="hidden md:block mx-auto max-w-7xl px-6 pb-12">
-        <div className="flex gap-6">
-          {/* Sidebar */}
-          {sidebarOpen && (
+      <div className="relative pt-24">
+        <div className="pointer-events-none absolute inset-x-0 top-0 mx-auto hidden h-56 max-w-7xl rounded-b-[3rem] bg-edubot-hero opacity-[0.08] blur-3xl md:block dark:opacity-[0.12]" />
+        <div className="pointer-events-none absolute inset-x-0 top-10 mx-auto hidden h-40 max-w-5xl rounded-full bg-gradient-to-r from-edubot-orange/10 via-edubot-soft/10 to-edubot-teal/10 blur-3xl md:block" />
+
+        <div className="md:hidden">
+          {mobileTabs}
+        </div>
+
+        <div className="hidden md:block mx-auto max-w-7xl px-6 pb-14">
+          <div className="flex items-start gap-6 lg:gap-8">
             <DashboardSidebar
               items={navItems}
               activeId={activeId}
               onSelect={handleSidebarSelect}
               isOpen={sidebarOpen}
               onToggle={setSidebarOpen}
-              className="hidden md:flex md:flex-shrink-0"
+              className="sticky top-28 hidden md:flex md:flex-shrink-0"
             />
-          )}
 
-          {/* Main Content */}
-          <main
-            className="flex-1 space-y-6"
-            id="main-content"
-            tabIndex={-1}
-            role="main"
-            aria-label={`${role} dashboard content`}
-          >
+            <main
+              className="flex-1 space-y-6 lg:space-y-7"
+              id="main-content"
+              tabIndex={-1}
+              role="main"
+              aria-label={`${role} dashboard content`}
+            >
+              {headerContent}
+              {children}
+            </main>
+          </div>
+        </div>
+
+        <div className="mx-auto max-w-6xl px-4 pb-28 md:hidden">
+          <div className="space-y-4">
             {headerContent}
             {children}
-          </main>
-        </div>
-      </div>
-
-      {/* Mobile Content */}
-      <div className="mx-auto max-w-6xl px-4 pb-12 md:hidden">
-        <div className="space-y-4">
-          {headerContent}
-          {children}
+          </div>
         </div>
       </div>
     </div>

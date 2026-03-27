@@ -9,6 +9,7 @@ import {
     FiMessageCircle,
     FiPlay,
     FiFilter,
+    FiTarget
 } from 'react-icons/fi';
 
 export const NAV_ITEMS = [
@@ -17,9 +18,9 @@ export const NAV_ITEMS = [
     { id: 'my-courses', label: 'Курстарым', icon: FiBookOpen, category: 'primary', priority: 2 },
     { id: 'schedule', label: 'Жүгүртмө', icon: FiCalendar, category: 'primary', priority: 3 },
     { id: 'tasks', label: 'Тапшырмалар', icon: FiPlay, category: 'primary', priority: 4 },
+    { id: 'progress', label: 'Прогресс', icon: FiBarChart2, category: 'primary', priority: 5 },
 
     // Secondary Navigation - Learning Management
-    { id: 'progress', label: 'Прогресс', icon: FiBarChart2, category: 'secondary', priority: 1 },
     { id: 'chat', label: 'Чат', icon: FiMessageCircle, category: 'secondary', priority: 2 },
 
     // Analytics & Performance

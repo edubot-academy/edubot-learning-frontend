@@ -1,23 +1,24 @@
 import { useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import PropTypes from 'prop-types';
 import { useNavigate } from 'react-router-dom';
-import { fetchCourses, fetchStudentOverviewAnalytics } from '@services/api';
+import { fetchStudentOverviewAnalytics } from '@services/api';
 import { AuthContext } from '../context/AuthContext';
 import { toast } from 'react-hot-toast';
 import { useSwipeNavigation } from '../hooks/useSwipeGestures';
 import {
-    AnalyticsSummaryCard,
     AnalyticsSection,
-    AnalyticsChartCard,
-    DashboardPageHeader,
     ProgressList,
     EmptyAnalyticsState,
     AnalyticsLineChart,
     AnalyticsBarChart,
     AnalyticsDoughnutChart,
-    AnalyticsMultiChart,
 } from '@components/analytics';
-import MobileQuickActions from '@components/analytics/MobileQuickActions';
+import {
+    DashboardInsetPanel,
+    DashboardMetricCard,
+    DashboardSectionHeader,
+} from '@components/ui/dashboard';
+import { FiAward, FiBookOpen, FiTrendingUp, FiZap } from 'react-icons/fi';
 
 const toList = (payload) => {
     if (Array.isArray(payload)) return payload;
@@ -36,7 +37,6 @@ const StudentAnalyticsPage = ({ embedded = false }) => {
     const { user } = useContext(AuthContext);
     const [filters, setFilters] = useState({ from: '', to: '' });
     const [loading, setLoading] = useState(false);
-    const [courses, setCourses] = useState([]);
     const [overview, setOverview] = useState(null);
 
     // Swipe navigation for mobile
@@ -49,26 +49,6 @@ const StudentAnalyticsPage = ({ embedded = false }) => {
         pages: analyticsPages,
         currentIndex: currentPageIndex,
     });
-
-    useEffect(() => {
-        let cancelled = false;
-        const loadCourses = async () => {
-            try {
-                const res = await fetchCourses({ limit: 300 });
-                if (cancelled) return;
-                setCourses(toList(res));
-            } catch (error) {
-                if (cancelled) return;
-                console.error(error);
-                toast.error('Failed to load courses.');
-            }
-        };
-
-        loadCourses();
-        return () => {
-            cancelled = true;
-        };
-    }, []);
 
     const requestFilters = useMemo(
         () => ({
@@ -120,106 +100,68 @@ const StudentAnalyticsPage = ({ embedded = false }) => {
                     : 'pt-24 min-h-screen bg-gray-50 dark:bg-[#1A1A1A] px-4 pb-12'
             }
         >
-            {/* Mobile Quick Actions */}
-            <MobileQuickActions
-                onRefresh={loadOverview}
-                onExport={() => {
-                    // TODO: Implement export functionality
-                    toast.success('Экспорт функциясы келечеки!');
-                }}
-                onFilter={() => {
-                    // TODO: Open filter modal
-                    toast.success('Фильтр функциясы келечеки!');
-                }}
-                onShare={() => {
-                    // TODO: Implement share functionality
-                    toast.success('Бөлүшүү функциясы келечеки!');
-                }}
-                currentPage="student-analytics"
-                loading={loading}
-            />
-
             <div className={embedded ? 'space-y-6' : 'max-w-4xl mx-auto px-4 lg:px-6 space-y-6'}>
-                <DashboardPageHeader
-                    title="Окуучу Аналитикасы"
-                    subtitle="Окуу прогрессиңизди, курс аяктоосуңузду, активдүүлүгүңүздү жана жеке корутуларыңызды көрүңүз"
-                    action={
+                <DashboardSectionHeader
+                    eyebrow="Analytics workspace"
+                    title="Окуучу аналитикасы"
+                    description="Прогрессиңизди, акыркы активдүүлүгүңүздү жана кайсы курста эмнеге көңүл буруу керектигин ушул жерден көрүңүз."
+                    action={(
                         <button
                             type="button"
                             onClick={loadOverview}
                             disabled={loading}
-                            className="px-4 py-2 sm:px-3 sm:py-2 rounded-lg bg-edubot-orange text-white font-medium hover:bg-edubot-orange/90 disabled:opacity-60 transition-all duration-200 active:scale-95 touch-manipulation min-h-[44px] min-w-[100px]"
+                            className="dashboard-button-primary"
                         >
                             {loading ? 'Жүктөлүүдө...' : 'Жаңылоо'}
                         </button>
-                    }
+                    )}
                 />
 
-                {/* Фильтрлер Бөлүгү */}
-                <AnalyticsSection className="bg-white dark:bg-gray-800">
-                    <div className="grid sm:grid-cols-2 gap-3">
+                <DashboardInsetPanel
+                    title="Мезгил фильтри"
+                    description="Көрсөткүчтөрдү белгилүү күн аралыгы боюнча чыпкалоо."
+                >
+                    <div className="mt-4 grid gap-3 sm:grid-cols-2">
                         <input
                             type="date"
                             value={filters.from || ''}
                             onChange={(e) => setFilters((prev) => ({ ...prev, from: e.target.value }))}
-                            className="border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-edubot-orange focus:border-edubot-orange"
+                            className="dashboard-field"
                             placeholder="Башталган күнү"
                         />
                         <input
                             type="date"
                             value={filters.to || ''}
                             onChange={(e) => setFilters((prev) => ({ ...prev, to: e.target.value }))}
-                            className="border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-edubot-orange focus:border-edubot-orange"
+                            className="dashboard-field"
                             placeholder="Аягындашкан күнү"
                         />
                     </div>
-                </AnalyticsSection>
+                </DashboardInsetPanel>
 
-                {/* Жалпы Көрсөткүч Карталар */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <AnalyticsSummaryCard
-                        title="Катышкан Курстар"
+                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                    <DashboardMetricCard
+                        label="Катышкан курстар"
                         value={kpis.enrolledCourses}
-                        subtitle="Активдүү катышуу"
-                        color="edubot"
-                        icon={
-                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                            </svg>
-                        }
+                        icon={FiBookOpen}
                     />
-                    <AnalyticsSummaryCard
-                        title="Аякталган Курстар"
+                    <DashboardMetricCard
+                        label="Аякталган курстар"
                         value={kpis.completedCourses}
-                        subtitle="Ийгиликтер"
-                        color="green"
-                        icon={
-                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                        }
+                        icon={FiAward}
+                        tone="green"
                     />
-                    <AnalyticsSummaryCard
-                        title="Аякталган Сабактар"
+                    <DashboardMetricCard
+                        label="Аякталган сабактар"
                         value={kpis.totalLessonsCompleted}
-                        subtitle="Окуу жетишкендиги"
-                        color="blue"
-                        icon={
-                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                            </svg>
-                        }
+                        icon={FiZap}
+                        tone="blue"
                     />
-                    <AnalyticsSummaryCard
-                        title="Орточо Прогресс"
+                    <DashboardMetricCard
+                        label="Орточо прогресс"
                         value={`${kpis.averageProgress}%`}
-                        subtitle="Жалпы окуу деңгэли"
-                        color="purple"
-                        icon={
-                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                            </svg>
-                        }
+                        icon={FiTrendingUp}
+                        tone="amber"
                     />
                 </div>
 
@@ -279,14 +221,14 @@ const StudentAnalyticsPage = ({ embedded = false }) => {
                                 status: course.progress === 100 ? 'completed' : 'active',
                                 action: {
                                     label: 'Улантуруу',
-                                    onClick: () => console.log('Continue course:', course.courseId),
+                                    onClick: () => navigate(`/courses/${course.courseId}`),
                                 },
                             }))}
                             emptyState={{
                                 title: 'Азырынча курстар жок',
                                 subtitle: 'Биринчи курсуңузду баштоо үчүн каталогду караңыз',
                                 action: 'Курстарды Көрүү',
-                                onAction: () => console.log('Browse courses'),
+                                onAction: () => navigate('/courses'),
                             }}
                         />
                     </AnalyticsSection>

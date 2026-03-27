@@ -1,7 +1,6 @@
 import { useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import PropTypes from 'prop-types';
 import {
-    fetchCourses,
     fetchInstructorOverviewAnalytics,
 } from '@services/api';
 import { AuthContext } from '../context/AuthContext';
@@ -19,7 +18,12 @@ import {
     AnalyticsBarChart,
     AnalyticsDoughnutChart,
 } from '@components/analytics';
-import MobileQuickActions from '@components/analytics/MobileQuickActions';
+import {
+    DashboardInsetPanel,
+    DashboardMetricCard,
+    DashboardSectionHeader,
+} from '@components/ui/dashboard';
+import { FiActivity, FiBookOpen, FiTarget, FiUsers } from 'react-icons/fi';
 
 const toList = (payload) => {
     if (Array.isArray(payload)) return payload;
@@ -34,12 +38,11 @@ const metricNumber = (value, fallback = 0) => {
     return Number.isFinite(num) ? num : fallback;
 };
 
-const InstructorAnalyticsPage = () => {
+const InstructorAnalyticsPage = ({ embedded = false }) => {
     const navigate = useNavigate();
     const { user } = useContext(AuthContext);
     const [filters, setFilters] = useState({ from: '', to: '', course: '' });
     const [loading, setLoading] = useState(false);
-    const [courses, setCourses] = useState([]);
     const [overview, setOverview] = useState(null);
 
     // Swipe navigation for mobile
@@ -52,25 +55,6 @@ const InstructorAnalyticsPage = () => {
         pages: analyticsPages,
         currentIndex: currentPageIndex,
     });
-
-    useEffect(() => {
-        let cancelled = false;
-        const loadCourses = async () => {
-            try {
-                const res = await fetchCourses({ limit: 300 });
-                if (cancelled) return;
-                setCourses(toList(res));
-            } catch (error) {
-                if (cancelled) return;
-                console.error(error);
-                toast.error('Failed to load courses.');
-            }
-        };
-        loadCourses();
-        return () => {
-            cancelled = true;
-        };
-    }, []);
 
     const requestFilters = useMemo(
         () => ({
@@ -112,107 +96,76 @@ const InstructorAnalyticsPage = () => {
     );
 
     return (
-        <div ref={swipeRef} className="pt-24 min-h-screen bg-gray-50 dark:bg-[#1A1A1A] px-4 pb-12">
-            {/* Mobile Quick Actions */}
-            <MobileQuickActions
-                onRefresh={loadAnalytics}
-                onExport={() => {
-                    // TODO: Implement export functionality
-                    toast.success('Экспорт функциясы келечеки!');
-                }}
-                onFilter={() => {
-                    // TODO: Open filter modal
-                    toast.success('Фильтр функциясы келечеки!');
-                }}
-                onShare={() => {
-                    // TODO: Implement share functionality
-                    toast.success('Бөлүшүү функциясы келечеки!');
-                }}
-                currentPage="instructor-analytics"
-                loading={loading}
-            />
-
-            <div className="max-w-5xl mx-auto px-4 lg:px-6 space-y-6">
-                <DashboardPageHeader
-                    title="Отуучу Аналитикасы"
-                    subtitle="Отуу жетишкендиги, окуучулардын катышуусу, курс маалыматтары жана корутулар"
-                    action={
+        <div
+            ref={swipeRef}
+            className={
+                embedded
+                    ? 'space-y-6'
+                    : 'min-h-screen bg-gray-50 px-4 pb-12 pt-24 dark:bg-[#1A1A1A]'
+            }
+        >
+            <div className={embedded ? 'space-y-6' : 'mx-auto max-w-5xl space-y-6 px-4 lg:px-6'}>
+                <DashboardSectionHeader
+                    eyebrow="Analytics workspace"
+                    title="Окутуучу аналитикасы"
+                    description="Курстарыңыздын аткарылышын, коркунучтуу окуучуларды жана жетишкендик тренддерин ушул жерде караңыз."
+                    action={(
                         <button
                             type="button"
                             onClick={loadAnalytics}
                             disabled={loading}
-                            className="px-4 py-2 sm:px-3 sm:py-2 rounded-lg bg-edubot-orange text-white font-medium hover:bg-edubot-orange/90 disabled:opacity-60 transition-all duration-200 active:scale-95 touch-manipulation min-h-[44px] min-w-[100px]"
+                            className="dashboard-button-primary"
                         >
                             {loading ? 'Жүктөлүүдө...' : 'Жаңылоо'}
                         </button>
-                    }
+                    )}
                 />
 
-                {/* Фильтрлер Бөлүгү */}
-                <AnalyticsSection className="bg-white dark:bg-gray-800">
-                    <div className="grid sm:grid-cols-2 gap-3">
+                <DashboardInsetPanel
+                    title="Мезгил фильтри"
+                    description="Белгилүү убакыт аралыгын тандасаңыз, аналитика ошол терезе боюнча кайра эсептелет."
+                >
+                    <div className="mt-4 grid gap-3 sm:grid-cols-2">
                         <input
                             type="date"
                             value={filters.from || ''}
                             onChange={(e) => setFilters((prev) => ({ ...prev, from: e.target.value }))}
-                            className="border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-edubot-orange focus:border-edubot-orange"
+                            className="dashboard-field"
                             placeholder="Башталган күнү"
                         />
                         <input
                             type="date"
                             value={filters.to || ''}
                             onChange={(e) => setFilters((prev) => ({ ...prev, to: e.target.value }))}
-                            className="border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-edubot-orange focus:border-edubot-orange"
+                            className="dashboard-field"
                             placeholder="Аягындашкан күнү"
                         />
                     </div>
-                </AnalyticsSection>
+                </DashboardInsetPanel>
 
-                {/* Жалпы Көрсөткүч Карталар */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <AnalyticsSummaryCard
-                        title="Бардык Курстар"
+                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                    <DashboardMetricCard
+                        label="Бардык курстар"
                         value={kpis.totalCourses}
-                        subtitle={`${kpis.publishedCourses} жарыяланган`}
-                        color="edubot"
-                        icon={
-                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                            </svg>
-                        }
+                        icon={FiBookOpen}
                     />
-                    <AnalyticsSummaryCard
-                        title="Окуучулар"
+                    <DashboardMetricCard
+                        label="Окуучулар"
                         value={kpis.totalStudents}
-                        subtitle="Бардык курстардагы окуучулар"
-                        color="green"
-                        icon={
-                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                            </svg>
-                        }
+                        icon={FiUsers}
+                        tone="green"
                     />
-                    <AnalyticsSummaryCard
-                        title="Орточо Аяктоо"
+                    <DashboardMetricCard
+                        label="Орточо аяктоо"
                         value={`${kpis.averageCompletionRate}%`}
-                        subtitle="Курс аяктоо деңгэли"
-                        color="blue"
-                        icon={
-                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                        }
+                        icon={FiActivity}
+                        tone="blue"
                     />
-                    <AnalyticsSummaryCard
-                        title="Коркунучтуу Окуучулар"
+                    <DashboardMetricCard
+                        label="Коркунучтуу окуучулар"
                         value={kpis.atRiskStudents}
-                        subtitle="Жардам керек окуучулар"
-                        color="orange"
-                        icon={
-                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                            </svg>
-                        }
+                        icon={FiTarget}
+                        tone="amber"
                     />
                 </div>
 
@@ -368,3 +321,7 @@ const InstructorAnalyticsPage = () => {
 
 
 export default InstructorAnalyticsPage;
+
+InstructorAnalyticsPage.propTypes = {
+    embedded: PropTypes.bool,
+};

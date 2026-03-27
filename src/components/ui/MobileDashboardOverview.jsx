@@ -51,7 +51,7 @@ const MobileDashboardOverview = ({ user, profile, courses, publishedCount, pendi
                 {/* Quick Actions */}
                 <div className="grid grid-cols-2 gap-3">
                     <button
-                        onClick={() => window.location.href = '/instructor/courses/create'}
+                        onClick={() => navigate('/instructor/course/create')}
                         className="flex items-center justify-center p-4 bg-edubot-orange text-white rounded-lg touch-manipulation active:scale-95 min-h-[48px]"
                     >
                         <span className="mr-2">➕</span>
@@ -120,14 +120,14 @@ const MobileDashboardOverview = ({ user, profile, courses, publishedCount, pendi
             {/* Quick Links */}
             <div className="grid grid-cols-2 gap-3">
                 <button
-                    onClick={() => navigate('/instructor/students')}
+                    onClick={() => navigate('/instructor?tab=students')}
                     className="flex items-center justify-center p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 touch-manipulation active:scale-95 min-h-[48px]"
                 >
                     <span className="mr-2">👥</span>
                     <span className="font-medium text-gray-900 dark:text-gray-100">Окуучулар</span>
                 </button>
                 <button
-                    onClick={() => navigate('/instructor/profile')}
+                    onClick={() => navigate('/instructor?tab=profile')}
                     className="flex items-center justify-center p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 touch-manipulation active:scale-95 min-h-[48px]"
                 >
                     <span className="mr-2">👤</span>

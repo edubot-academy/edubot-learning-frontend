@@ -1,6 +1,13 @@
 import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import PhoneInput from '@shared/ui/forms/PhoneInput';
+import {
+    DashboardInsetPanel,
+    DashboardMetricCard,
+    DashboardSectionHeader,
+    EmptyState,
+} from '@components/ui/dashboard';
+import { FiBell, FiLock, FiMail, FiPhone, FiSave, FiUser } from 'react-icons/fi';
 import { formatNotificationLabel } from '../../utils/studentDashboard.helpers.js';
 import { NOTIFICATION_LABELS } from '../../utils/studentDashboard.constants.js';
 
@@ -83,236 +90,305 @@ const ProfileTab = ({
 
     const notificationEntries = Object.entries(notificationSettings || {});
     return (
-        <div className="space-y-4">
-            <div className="flex items-center justify-between gap-3">
-                <h2 className="text-2xl font-semibold text-gray-900 dark:text-[#E8ECF3]">Профиль</h2>
-                {!isEditingProfile ? (
-                    <button
-                        type="button"
-                        onClick={() => setIsEditingProfile(true)}
-                        className="px-4 py-2 rounded-full border border-gray-300 dark:border-gray-700 text-sm font-semibold hover:border-edubot-orange hover:text-edubot-orange hover:bg-edubot-orange/10 transition-all duration-300 transform hover:scale-105 hover:shadow-md group"
-                    >
-                        <span className="transition-transform duration-300 group-hover:scale-110">
-                            ✏️ Өзгөртүү
-                        </span>
-                    </button>
-                ) : null}
+        <div className="space-y-6">
+            <DashboardSectionHeader
+                eyebrow="Profile workspace"
+                title="Профиль"
+                description="Аккаунт маалыматыңызды жаңыртып, кайсы каналдар боюнча эскертме алууну көзөмөлдөңүз."
+            />
+
+            <div className="grid gap-4 md:grid-cols-3">
+                <DashboardMetricCard
+                    label="Аты-жөнү"
+                    value={formData.fullName || '—'}
+                    icon={FiUser}
+                />
+                <DashboardMetricCard
+                    label="Email"
+                    value={formData.email || '—'}
+                    icon={FiMail}
+                    tone="blue"
+                />
+                <DashboardMetricCard
+                    label="Телефон"
+                    value={formData.phoneNumber || '—'}
+                    icon={FiPhone}
+                    tone="green"
+                />
             </div>
-            <div className="bg-white dark:bg-[#222222] rounded-3xl border border-gray-100 dark:border-gray-800 p-6 space-y-4">
-                <div className="flex items-center gap-4">
-                    <div className="w-20 h-20 rounded-full overflow-hidden bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 flex items-center justify-center text-xl font-semibold text-gray-500">
-                        {preview ? (
-                            <img
-                                src={preview}
-                                alt="Avatar preview"
-                                className="w-full h-full object-cover"
-                            />
-                        ) : (
-                            (formData.fullName || student?.name || 'U').charAt(0).toUpperCase()
-                        )}
-                    </div>
-                    <div className="space-y-2">
-                        <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                            {isEditingProfile ? 'Профиль сүрөтү' : 'Каттоо сүрөтү'}
-                        </p>
+
+            <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
+                <DashboardInsetPanel
+                    title="Аккаунт маалыматы"
+                    description="Жеке маалымат жана коопсуздук параметрлери."
+                    action={
+                        !isEditingProfile ? (
+                            <button
+                                type="button"
+                                onClick={() => setIsEditingProfile(true)}
+                                className="dashboard-button-secondary"
+                            >
+                                <FiUser className="h-4 w-4" />
+                                Өзгөртүү
+                            </button>
+                        ) : null
+                    }
+                >
+                    <div className="mt-4 space-y-5">
                         {isEditingProfile ? (
                             <>
-                                <label className="inline-flex px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 text-sm cursor-pointer">
-                                    Аватар жүктөө
-                                    <input
-                                        type="file"
-                                        accept="image/*"
-                                        onChange={handleFileChange}
-                                        className="hidden"
-                                    />
-                                </label>
-                                {formData.avatar && (
-                                    <p className="text-xs text-gray-500">
-                                        Тандалды: {formData.avatar.name}
-                                    </p>
-                                )}
-                            </>
-                        ) : (
-                            <p className="text-sm text-gray-500 dark:text-gray-400">
-                                Өзгөртүү режимин ачуу үчүн жогортогу баскычты басыңыз.
-                            </p>
-                        )}
-                    </div>
-                </div>
-                <div>
-                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Аты-жөнү</p>
-                    {isEditingProfile ? (
-                        <input
-                            type="text"
-                            className="mt-1 w-full border rounded-2xl px-3 py-2 bg-white dark:bg-[#222222] text-gray-900 dark:text-[#E8ECF3] border-gray-200 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            value={formData.fullName}
-                            onChange={(e) =>
-                                setFormData((prev) => ({ ...prev, fullName: e.target.value }))
-                            }
-                        />
-                    ) : (
-                        <div className="mt-1 rounded-2xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 px-3 py-2 text-gray-900 dark:text-[#E8ECF3]">
-                            {formData.fullName || '—'}
-                        </div>
-                    )}
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                        <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Email</p>
-                        <div className="mt-1 rounded-2xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 px-3 py-2 text-gray-900 dark:text-[#E8ECF3]">
-                            {formData.email || 'student@example.com'}
-                        </div>
-                    </div>
-                    <div>
-                        <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Телефон</p>
-                        {isEditingProfile ? (
-                            <div className="mt-1">
-                                <PhoneInput
-                                    value={formData.phoneNumber}
-                                    onChange={(value) =>
-                                        setFormData((prev) => ({ ...prev, phoneNumber: value }))
-                                    }
-                                />
-                            </div>
-                        ) : (
-                            <div className="mt-1 rounded-2xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 px-3 py-2 text-gray-900 dark:text-[#E8ECF3]">
-                                {formData.phoneNumber || '—'}
-                            </div>
-                        )}
-                    </div>
-                </div>
-                {isEditingProfile && (
-                    <>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div>
-                                <label className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                                    Жаңы сырсөз
-                                </label>
-                                <input
-                                    type="password"
-                                    value={passwordData.newPassword}
-                                    onChange={(e) =>
-                                        setPasswordData((prev) => ({
-                                            ...prev,
-                                            newPassword: e.target.value,
-                                        }))
-                                    }
-                                    className="mt-1 w-full border rounded-2xl px-3 py-2 bg-white dark:bg-[#222222] text-gray-900 dark:text-[#E8ECF3] border-gray-200 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    placeholder="Кеминде 6 белги"
-                                />
-                            </div>
-                            <div>
-                                <label className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                                    Сырсөздү кайталоо
-                                </label>
-                                <input
-                                    type="password"
-                                    value={passwordData.confirmPassword}
-                                    onChange={(e) =>
-                                        setPasswordData((prev) => ({
-                                            ...prev,
-                                            confirmPassword: e.target.value,
-                                        }))
-                                    }
-                                    className="mt-1 w-full border rounded-2xl px-3 py-2 bg-white dark:bg-[#222222] text-gray-900 dark:text-[#E8ECF3] border-gray-200 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    placeholder="Сырсөздү дагы бир жолу киргизиңиз"
-                                />
-                            </div>
-                        </div>
-                        <div className="flex gap-3 flex-wrap">
-                            <button
-                                type="button"
-                                onClick={handleSaveProfileClick}
-                                disabled={!hasProfileChanges || savingProfile}
-                                className="px-5 py-3 rounded-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold disabled:opacity-60 disabled:cursor-not-allowed transition-all duration-300 transform hover:scale-105 hover:shadow-lg hover:shadow-blue-500/30 group disabled:hover:scale-100"
-                            >
-                                <span className="transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3">
-                                    {savingProfile ? 'Сакталууда...' : '💾 Профилди сактоо'}
-                                </span>
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    handleResetProfile();
-                                    setIsEditingProfile(false);
-                                }}
-                                disabled={savingProfile}
-                                className="px-5 py-3 rounded-full border border-gray-300 dark:border-gray-700 text-sm font-semibold disabled:opacity-60 hover:border-red-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all duration-300 transform hover:scale-105 hover:shadow-md group disabled:hover:scale-100"
-                            >
-                                <span className="transition-transform duration-300 group-hover:scale-110">
-                                    ❌ Жокко чыгаруу
-                                </span>
-                            </button>
-                        </div>
-                    </>
-                )}
-            </div>
-            <div className="bg-white dark:bg-[#222222] rounded-3xl border border-gray-100 dark:border-gray-800 p-6 space-y-4">
-                <div>
-                    <p className="text-lg font-semibold text-gray-900 dark:text-[#E8ECF3]">
-                        Эскертмелер
-                    </p>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                        Кайсы каналдар аркылуу эскертмелерди алгыңыз келерин тандаңыз.
-                    </p>
-                </div>
-                <div className="divide-y divide-gray-100 dark:divide-gray-800">
-                    {notificationEntries.length ? (
-                        notificationEntries.map(([key, value]) => {
-                            const meta = NOTIFICATION_LABELS[key] || {};
-                            const label = meta.label || formatNotificationLabel(key);
-                            const description = meta.description || '';
-                            const inputId = `notification-${key}`;
-                            return (
-                                <div
-                                    key={key}
-                                    className="flex items-start justify-between py-3 gap-4"
-                                >
-                                    <div>
-                                        <label
-                                            htmlFor={inputId}
-                                            className="font-medium text-gray-900 dark:text-[#E8ECF3]"
-                                        >
-                                            {label}
-                                        </label>
-                                        {description && (
-                                            <p className="text-sm text-gray-500 dark:text-gray-400">
-                                                {description}
-                                            </p>
+                                <div className="flex flex-wrap items-center gap-4">
+                                    <div className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-full border border-edubot-line bg-edubot-surfaceAlt text-xl font-semibold text-edubot-muted dark:border-slate-700 dark:bg-slate-900">
+                                        {preview ? (
+                                            <img
+                                                src={preview}
+                                                alt="Avatar preview"
+                                                className="h-full w-full object-cover"
+                                            />
+                                        ) : (
+                                            (formData.fullName || student?.name || 'U').charAt(0).toUpperCase()
                                         )}
                                     </div>
-                                    <label className="relative inline-flex items-center cursor-pointer">
-                                        <input
-                                            id={inputId}
-                                            type="checkbox"
-                                            className="sr-only peer"
-                                            checked={Boolean(value)}
-                                            onChange={(e) =>
-                                                onNotificationChange?.(key, e.target.checked)
-                                            }
-                                        />
-                                        <div className="w-11 h-6 bg-gray-200 dark:bg-gray-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-200 dark:peer-focus:ring-blue-800 rounded-full peer peer-checked:bg-blue-600 transition-colors" />
-                                        <span className="ml-3 text-sm text-gray-500 dark:text-gray-400">
-                                            {value ? 'Күйгүзүлгөн' : 'Өчүрүлгөн'}
-                                        </span>
-                                    </label>
+                                    <div className="space-y-2">
+                                        <p className="text-sm font-medium text-edubot-ink dark:text-slate-200">
+                                            Профиль сүрөтү
+                                        </p>
+                                        <label className="dashboard-button-secondary inline-flex cursor-pointer items-center justify-center self-start whitespace-nowrap">
+                                            Аватар жүктөө
+                                            <input
+                                                type="file"
+                                                accept="image/*"
+                                                onChange={handleFileChange}
+                                                className="hidden"
+                                            />
+                                        </label>
+                                        {formData.avatar ? (
+                                            <p className="text-xs text-edubot-muted dark:text-slate-400">
+                                                Тандалды: {formData.avatar.name}
+                                            </p>
+                                        ) : null}
+                                    </div>
                                 </div>
-                            );
-                        })
-                    ) : (
-                        <p className="text-sm text-gray-500 dark:text-gray-400 py-2">
-                            Эскертме параметрлери табылган жок.
-                        </p>
-                    )}
-                </div>
-                <button
-                    type="button"
-                    onClick={onSaveNotifications}
-                    disabled={savingNotifications}
-                    className="px-5 py-3 rounded-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+
+                                <div>
+                                    <label className="text-sm font-medium text-edubot-muted dark:text-slate-400">
+                                        Аты-жөнү
+                                    </label>
+                                    <input
+                                        type="text"
+                                        className="dashboard-field mt-1"
+                                        value={formData.fullName}
+                                        onChange={(e) =>
+                                            setFormData((prev) => ({ ...prev, fullName: e.target.value }))
+                                        }
+                                    />
+                                </div>
+
+                                <div className="grid gap-4 sm:grid-cols-2">
+                                    <div>
+                                        <label className="text-sm font-medium text-edubot-muted dark:text-slate-400">
+                                            Email
+                                        </label>
+                                        <div className="mt-1 rounded-2xl border border-edubot-line/80 bg-edubot-surfaceAlt/50 px-3 py-2 text-edubot-ink dark:border-slate-700 dark:bg-slate-900/70 dark:text-white">
+                                            {formData.email || '—'}
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label className="text-sm font-medium text-edubot-muted dark:text-slate-400">
+                                            Телефон
+                                        </label>
+                                        <div className="mt-1">
+                                            <PhoneInput
+                                                value={formData.phoneNumber}
+                                                onChange={(value) =>
+                                                    setFormData((prev) => ({ ...prev, phoneNumber: value }))
+                                                }
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="grid gap-4 sm:grid-cols-2">
+                                    <div>
+                                        <label className="text-sm font-medium text-edubot-muted dark:text-slate-400">
+                                            Жаңы сырсөз
+                                        </label>
+                                        <input
+                                            type="password"
+                                            value={passwordData.newPassword}
+                                            onChange={(e) =>
+                                                setPasswordData((prev) => ({
+                                                    ...prev,
+                                                    newPassword: e.target.value,
+                                                }))
+                                            }
+                                            className="dashboard-field mt-1"
+                                            placeholder="Кеминде 6 белги"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="text-sm font-medium text-edubot-muted dark:text-slate-400">
+                                            Сырсөздү кайталоо
+                                        </label>
+                                        <input
+                                            type="password"
+                                            value={passwordData.confirmPassword}
+                                            onChange={(e) =>
+                                                setPasswordData((prev) => ({
+                                                    ...prev,
+                                                    confirmPassword: e.target.value,
+                                                }))
+                                            }
+                                            className="dashboard-field mt-1"
+                                            placeholder="Сырсөздү дагы бир жолу киргизиңиз"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="flex flex-wrap gap-3">
+                                    <button
+                                        type="button"
+                                        onClick={handleSaveProfileClick}
+                                        disabled={!hasProfileChanges || savingProfile}
+                                        className="dashboard-button-primary"
+                                    >
+                                        <FiSave className="h-4 w-4" />
+                                        {savingProfile ? 'Сакталууда...' : 'Профилди сактоо'}
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            handleResetProfile();
+                                            setIsEditingProfile(false);
+                                        }}
+                                        disabled={savingProfile}
+                                        className="dashboard-button-secondary"
+                                    >
+                                        Жокко чыгаруу
+                                    </button>
+                                </div>
+                            </>
+                        ) : (
+                            <div className="mt-4 space-y-5">
+                                <div className="flex items-center gap-4">
+                                    <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-full border border-edubot-line bg-white text-xl font-semibold text-edubot-muted dark:border-slate-700 dark:bg-slate-950">
+                                        {preview ? (
+                                            <img
+                                                src={preview}
+                                                alt="Avatar preview"
+                                                className="h-full w-full object-cover"
+                                            />
+                                        ) : (
+                                            (formData.fullName || student?.name || 'U').charAt(0).toUpperCase()
+                                        )}
+                                    </div>
+                                    <div>
+                                        <p className="mt-1 text-sm text-edubot-muted dark:text-slate-400">
+                                            Аккаунтта көрүнгөн негизги маалымат жана байланыш каналдары.
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <p className="text-sm font-medium text-edubot-muted dark:text-slate-400">
+                                        Аты-жөнү
+                                    </p>
+                                    <p className="mt-2 text-base font-semibold text-edubot-ink dark:text-white">
+                                        {formData.fullName || '—'}
+                                    </p>
+                                </div>
+
+                                <div>
+                                    <p className="text-sm font-medium text-edubot-muted dark:text-slate-400">
+                                        Email
+                                    </p>
+                                    <p className="mt-2 text-base font-semibold text-edubot-ink dark:text-white">
+                                        {formData.email || '—'}
+                                    </p>
+                                </div>
+
+                                <div>
+                                    <p className="text-sm font-medium text-edubot-muted dark:text-slate-400">
+                                        Телефон
+                                    </p>
+                                    <p className="mt-2 text-base font-semibold text-edubot-ink dark:text-white">
+                                        {formData.phoneNumber || '—'}
+                                    </p>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </DashboardInsetPanel>
+
+                <DashboardInsetPanel
+                    title="Эскертме жөндөөлөрү"
+                    description="Кайсы каналдар аркылуу жаңыртууларды алууну тандаңыз."
                 >
-                    {savingNotifications ? 'Сакталууда...' : 'Эскертмелерди сактоо'}
-                </button>
+                    <div className="mt-4 space-y-3">
+                        {notificationEntries.length ? (
+                            notificationEntries.map(([key, value]) => {
+                                const meta = NOTIFICATION_LABELS[key] || {};
+                                const label = meta.label || formatNotificationLabel(key);
+                                const description = meta.description || '';
+                                const inputId = `notification-${key}`;
+                                return (
+                                    <div
+                                        key={key}
+                                        className="flex items-start justify-between gap-4 rounded-2xl border border-edubot-line/80 bg-white/90 px-4 py-4 dark:border-slate-700 dark:bg-slate-950"
+                                    >
+                                        <div className="min-w-0">
+                                            <label
+                                                htmlFor={inputId}
+                                                className="text-sm font-semibold text-edubot-ink dark:text-white"
+                                            >
+                                                {label}
+                                            </label>
+                                            {description ? (
+                                                <p className="mt-1 text-sm text-edubot-muted dark:text-slate-400">
+                                                    {description}
+                                                </p>
+                                            ) : null}
+                                        </div>
+                                        <label className="relative inline-flex cursor-pointer items-center">
+                                            <input
+                                                id={inputId}
+                                                type="checkbox"
+                                                className="peer sr-only"
+                                                checked={Boolean(value)}
+                                                onChange={(e) =>
+                                                    onNotificationChange?.(key, e.target.checked)
+                                                }
+                                            />
+                                            <div className="h-6 w-11 rounded-full bg-slate-200 transition-colors peer-checked:bg-edubot-orange dark:bg-slate-700" />
+                                            <span className="ml-3 text-sm text-edubot-muted dark:text-slate-400">
+                                                {value ? 'Күйгүзүлгөн' : 'Өчүрүлгөн'}
+                                            </span>
+                                        </label>
+                                    </div>
+                                );
+                            })
+                        ) : (
+                            <EmptyState
+                                title="Эскертме параметрлери табылган жок"
+                                subtitle="Бул аккаунт үчүн эскертме жөндөөлөрү жүктөлгөн жок."
+                                icon={<FiBell className="h-8 w-8 text-edubot-orange" />}
+                                className="py-8"
+                            />
+                        )}
+                    </div>
+
+                    <div className="mt-4">
+                        <button
+                            type="button"
+                            onClick={onSaveNotifications}
+                            disabled={savingNotifications}
+                            className="dashboard-button-primary"
+                        >
+                            <FiLock className="h-4 w-4" />
+                            {savingNotifications ? 'Сакталууда...' : 'Эскертмелерди сактоо'}
+                        </button>
+                    </div>
+                </DashboardInsetPanel>
             </div>
         </div>
     );

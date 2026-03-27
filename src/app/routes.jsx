@@ -27,7 +27,7 @@ const CompanyDetail = lazy(() => import('../pages/company/CompanyDetail'));
 const CompanyList = lazy(() => import('../pages/company/CompanyList'));
 const Favourite = lazy(() => import('../pages/Favourite'));
 const CartPage = lazy(() => import('../pages/Cart'));
-const Chat = lazy(() => import('../pages/Chat'));
+const Chat = lazy(() => import('../pages/ChatRedirect'));
 const LeaderboardPage = lazy(() => import('../pages/Leaderboard'));
 const InternalLeaderboardPage = lazy(() => import('../pages/InternalLeaderboard'));
 const LeaderboardSharePage = lazy(() => import('../pages/LeaderboardShare'));

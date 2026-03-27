@@ -7,6 +7,13 @@ import {
 } from '../api';
 import { Link } from 'react-router-dom';
 import Loader from '@shared/ui/Loader';
+import {
+    DashboardInsetPanel,
+    DashboardMetricCard,
+    DashboardSectionHeader,
+    EmptyState,
+} from '@components/ui/dashboard';
+import { FiBell, FiCheckCircle, FiInbox, FiLink2 } from 'react-icons/fi';
 
 const NotificationsTab = () => {
     const [items, setItems] = useState([]);
@@ -33,8 +40,8 @@ const NotificationsTab = () => {
                 fetchNotifications({ page: nextPage, limit: 10 }),
                 fetchUnreadNotificationsCount(),
             ]);
-            const newItems = nextPage === 1 ? listRes.items : [...items, ...listRes.items];
-            setItems(newItems);
+            const nextItems = Array.isArray(listRes?.items) ? listRes.items : [];
+            setItems((prev) => (nextPage === 1 ? nextItems : [...prev, ...nextItems]));
             setPage(nextPage);
             setHasMore(nextPage < (listRes.totalPages || 1));
             setUnreadCount(unreadRes?.count || 0);
@@ -71,100 +78,147 @@ const NotificationsTab = () => {
     };
 
     return (
-        <div className="rounded-3xl border border-gray-100 dark:border-gray-800 shadow-sm p-4 sm:p-6 bg-white dark:bg-[#111111]">
-            <div className="flex items-center justify-between gap-3 mb-4">
-                <div className="flex items-center gap-2">
-                    <span className="text-xl">🔔</span>
-                    <h2 className="text-xl font-semibold text-gray-900 dark:text-[#E8ECF3]">Билдирүүлөр</h2>
-                    {unreadCount > 0 && (
-                        <span className="bg-orange-500 text-white text-xs font-semibold px-2 py-1 rounded-full">
-                            {unreadCount} жаңы
-                        </span>
-                    )}
-                </div>
-                <button
-                    type="button"
-                    onClick={handleMarkAll}
-                    className="text-sm text-gray-600 dark:text-[#a6adba] hover:text-gray-900 dark:hover:text-[#E8ECF3]"
-                >
-                    Баарын окулган деп белгилөө
-                </button>
+        <div className="space-y-6">
+            <DashboardSectionHeader
+                eyebrow="Notifications center"
+                title="Билдирүүлөр"
+                description="Акыркы активдүүлүк, эскертмелер жана окула элек жаңыртуулар ушул жерде топтолот."
+                action={(
+                    <button
+                        type="button"
+                        onClick={handleMarkAll}
+                        className="dashboard-button-secondary"
+                    >
+                        <FiCheckCircle className="h-4 w-4" />
+                        Баарын окулган деп белгилөө
+                    </button>
+                )}
+            />
+
+            <div className="grid gap-4 md:grid-cols-3">
+                <DashboardMetricCard
+                    label="Бардык билдирүүлөр"
+                    value={items.length}
+                    icon={FiInbox}
+                />
+                <DashboardMetricCard
+                    label="Окула элек"
+                    value={unreadCount}
+                    icon={FiBell}
+                    tone={unreadCount > 0 ? 'amber' : 'green'}
+                />
+                <DashboardMetricCard
+                    label="Жүктөлгөн барак"
+                    value={page}
+                    icon={FiCheckCircle}
+                    tone="blue"
+                />
             </div>
 
-            {loading && items.length === 0 ? (
-                <Loader fullScreen={false} />
-            ) : items.length === 0 ? (
-                <p className="text-sm text-gray-500 dark:text-[#a6adba]">Билдирүүлөр жок.</p>
-            ) : (
-                <div className="space-y-4">
-                    {Object.entries(grouped).map(([day, list]) => (
-                        <div key={day} className="space-y-2">
-                            <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-[#a6adba]">
-                                <span className="w-2 h-2 bg-orange-400 rounded-full" />
-                                <span>{day}</span>
-                            </div>
-                            <div className="divide-y divide-gray-100 dark:divide-gray-800 rounded-lg border border-gray-100 dark:border-gray-800 overflow-hidden">
-                                {list.map((notif) => {
-                                    const isUnread = !notif.read;
-                                    return (
-                                        <div
-                                            key={notif.id}
-                                            className={`p-3 sm:p-4 flex items-start gap-3 ${isUnread ? 'bg-orange-50 dark:bg-orange-900/20' : 'bg-white dark:bg-[#0E0E0E]'}`}
-                                        >
-                                            <div className="text-lg">{notif.icon || '💬'}</div>
-                                            <div className="flex-1 min-w-0">
-                                                <div className="flex items-start justify-between gap-2">
-                                                    <p className="font-semibold text-gray-800 dark:text-[#E8ECF3] line-clamp-2">
-                                                        {notif.title || notif.subject || 'Билдирүү'}
-                                                    </p>
-                                                    {isUnread && (
-                                                        <button
-                                                            type="button"
-                                                            className="text-xs text-blue-600 dark:text-blue-400"
-                                                            onClick={() =>
-                                                                handleMarkAsRead(notif.id)
-                                                            }
-                                                        >
-                                                            Окулду
-                                                        </button>
-                                                    )}
-                                                </div>
-                                                {notif.message && (
-                                                    <p className="text-sm text-gray-600 dark:text-[#cdd3de] mt-1 line-clamp-3">
-                                                        {notif.message}
-                                                    </p>
-                                                )}
-                                                <div className="text-xs text-gray-500 dark:text-[#a6adba] mt-1 flex items-center gap-2">
-                                                    {notif.createdAt &&
-                                                        new Date(notif.createdAt).toLocaleString()}
-                                                    {notif.link && (
-                                                        <Link
-                                                            to={notif.link}
-                                                            className="text-blue-600 dark:text-blue-400 hover:underline"
-                                                        >
-                                                            Карап чыгуу
-                                                        </Link>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                            </div>
+            <DashboardInsetPanel
+                title="Билдирүү тасмасы"
+                description="Жаңы эскертмелер жогору жагында, эскилери күн боюнча топтолуп көрсөтүлөт."
+            >
+                <div className="mt-4">
+                    {loading && items.length === 0 ? (
+                        <div className="flex justify-center py-10">
+                            <Loader fullScreen={false} />
                         </div>
-                    ))}
-                    {hasMore && (
-                        <button
-                            type="button"
-                            onClick={() => load(page + 1)}
-                            disabled={loading}
-                            className="w-full py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-[#1B1B1B] text-gray-700 dark:text-[#E8ECF3] flex justify-center"
-                        >
-                            {loading ? <Loader size={20} /> : 'Дагы билдирүүлөрдү жүктөө'}
-                        </button>
+                    ) : items.length === 0 ? (
+                        <EmptyState
+                            title="Билдирүүлөр жок"
+                            subtitle="Жаңы окуя же жаңыртуу болгондо билдирүүлөр ушул жерде көрүнөт."
+                            icon={<FiBell className="h-8 w-8 text-edubot-orange" />}
+                            className="py-10"
+                        />
+                    ) : (
+                        <div className="space-y-5">
+                            {Object.entries(grouped).map(([day, list]) => (
+                                <div key={day} className="space-y-3">
+                                    <div className="flex items-center gap-2 text-sm font-medium text-edubot-muted dark:text-slate-400">
+                                        <span className="h-2 w-2 rounded-full bg-edubot-orange" />
+                                        <span>{day}</span>
+                                    </div>
+
+                                    <div className="space-y-3">
+                                        {list.map((notif) => {
+                                            const isUnread = !notif.read;
+                                            return (
+                                                <div
+                                                    key={notif.id}
+                                                    className={`rounded-3xl border px-4 py-4 transition-all duration-300 ${
+                                                        isUnread
+                                                            ? 'border-edubot-orange/30 bg-edubot-orange/5 shadow-edubot-card dark:border-edubot-soft/30 dark:bg-edubot-soft/10'
+                                                            : 'border-edubot-line/80 bg-white/90 hover:-translate-y-0.5 hover:border-edubot-orange/30 hover:shadow-edubot-card dark:border-slate-700 dark:bg-slate-950'
+                                                    }`}
+                                                >
+                                                    <div className="flex items-start gap-3">
+                                                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-edubot-surfaceAlt text-edubot-orange dark:bg-slate-800 dark:text-edubot-soft">
+                                                            <span className="text-lg">{notif.icon || '💬'}</span>
+                                                        </div>
+                                                        <div className="min-w-0 flex-1">
+                                                            <div className="flex items-start justify-between gap-3">
+                                                                <div className="min-w-0">
+                                                                    <p className="text-sm font-semibold text-edubot-ink dark:text-white">
+                                                                        {notif.title || notif.subject || 'Билдирүү'}
+                                                                    </p>
+                                                                    {notif.message ? (
+                                                                        <p className="mt-1 text-sm text-edubot-muted dark:text-slate-300">
+                                                                            {notif.message}
+                                                                        </p>
+                                                                    ) : null}
+                                                                </div>
+
+                                                                {isUnread ? (
+                                                                    <button
+                                                                        type="button"
+                                                                        className="shrink-0 text-xs font-semibold text-edubot-orange hover:underline"
+                                                                        onClick={() => handleMarkAsRead(notif.id)}
+                                                                    >
+                                                                        Окулду
+                                                                    </button>
+                                                                ) : null}
+                                                            </div>
+
+                                                            <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-edubot-muted dark:text-slate-400">
+                                                                <span>
+                                                                    {notif.createdAt
+                                                                        ? new Date(notif.createdAt).toLocaleString()
+                                                                        : ''}
+                                                                </span>
+                                                                {notif.link ? (
+                                                                    <Link
+                                                                        to={notif.link}
+                                                                        className="inline-flex items-center gap-1 font-semibold text-edubot-orange hover:underline"
+                                                                    >
+                                                                        <FiLink2 className="h-3.5 w-3.5" />
+                                                                        Карап чыгуу
+                                                                    </Link>
+                                                                ) : null}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            ))}
+
+                            {hasMore ? (
+                                <button
+                                    type="button"
+                                    onClick={() => load(page + 1)}
+                                    disabled={loading}
+                                    className="dashboard-button-secondary w-full justify-center"
+                                >
+                                    {loading ? <Loader size={20} /> : 'Дагы билдирүүлөрдү жүктөө'}
+                                </button>
+                            ) : null}
+                        </div>
                     )}
                 </div>
-            )}
+            </DashboardInsetPanel>
         </div>
     );
 };

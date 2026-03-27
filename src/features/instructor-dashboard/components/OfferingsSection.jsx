@@ -1,8 +1,23 @@
 /* eslint-disable react/prop-types */
 import { useState, useCallback, useEffect, useMemo } from 'react';
-import { FiFilter } from 'react-icons/fi';
+import {
+    FiActivity,
+    FiArchive,
+    FiBriefcase,
+    FiCalendar,
+    FiFilter,
+    FiGlobe,
+    FiPlusCircle,
+    FiSearch,
+} from 'react-icons/fi';
 import toast from 'react-hot-toast';
-import { EmptyState, DashboardCardSkeleton } from '@components/ui/dashboard';
+import {
+    DashboardCardSkeleton,
+    DashboardInsetPanel,
+    DashboardMetricCard,
+    DashboardSectionHeader,
+    EmptyState,
+} from '@components/ui/dashboard';
 import {
     createOffering,
     updateOffering,
@@ -10,7 +25,6 @@ import {
     fetchUsers,
     fetchCourseStudents,
 } from '@services/api';
-import InstructorStatCard from './InstructorStatCard.jsx';
 import OfferingCard from './OfferingCard.jsx';
 import CreateOfferingModal from './modals/CreateOfferingModal.jsx';
 import EnrollStudentModal from './modals/EnrollStudentModal.jsx';
@@ -105,6 +119,51 @@ const OfferingsSection = ({ courses = [], offerings = [], loading, refreshOfferi
             completed: (statusCounts.COMPLETED || 0) + (statusCounts.ARCHIVED || 0),
         };
     }, [offerings]);
+
+    const overviewMetrics = [
+        {
+            label: 'Бардык offeringдер',
+            value: summary.total,
+            icon: FiCalendar,
+            tone: 'default',
+        },
+        {
+            label: 'Жакынкы offeringдер',
+            value: summary.upcoming,
+            icon: FiActivity,
+            tone: summary.upcoming > 0 ? 'blue' : 'default',
+        },
+        {
+            label: 'Компаниялар үчүн',
+            value: summary.company,
+            icon: FiBriefcase,
+            tone: summary.company > 0 ? 'green' : 'default',
+        },
+        {
+            label: 'Публичный offeringдер',
+            value: summary.public,
+            icon: FiGlobe,
+            tone: summary.public > 0 ? 'amber' : 'default',
+        },
+        {
+            label: 'Активдүү',
+            value: summary.active,
+            icon: FiActivity,
+            tone: summary.active > 0 ? 'green' : 'default',
+        },
+        {
+            label: 'Долбоор',
+            value: summary.draft,
+            icon: FiFilter,
+            tone: summary.draft > 0 ? 'amber' : 'default',
+        },
+        {
+            label: 'Жабылган',
+            value: summary.completed,
+            icon: FiArchive,
+            tone: summary.completed > 0 ? 'blue' : 'default',
+        },
+    ];
 
     const filteredOfferings = useMemo(() => {
         return offerings.filter((offering) => {
@@ -318,102 +377,116 @@ const OfferingsSection = ({ courses = [], offerings = [], loading, refreshOfferi
 
     return (
         <div className="space-y-6">
-            <div className="flex items-center justify-between flex-wrap gap-3">
-                <div>
-                    <p className="text-sm uppercase tracking-wide text-gray-400">
-                        Offering башкаруу
-                    </p>
-                    <h2 className="text-2xl font-bold">Курс сунуштары</h2>
-                    <p className="text-sm text-gray-500 dark:text-[#a6adba]">
-                        Курстарыңызга арналган корпоративдик же атайын сунуштарды көзөмөлдөңүз.
-                    </p>
-                </div>
+            <div className="dashboard-panel overflow-hidden">
+                <DashboardSectionHeader
+                    eyebrow="Offering башкаруу"
+                    title="Курс сунуштары"
+                    description="Курстарыңызга арналган корпоративдик, публичный жана атайын offering агымдарын бир жерден көзөмөлдөңүз."
+                />
 
-                <button
-                    type="button"
-                    className="px-4 py-2 rounded-full bg-blue-600 text-white text-sm"
-                    onClick={() => handleOpenModal('create')}
-                >
-                    Offering түзүү
-                </button>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <InstructorStatCard label="Бардык offeringдер" value={summary.total} />
-                <InstructorStatCard label="Жакынкы offeringдер" value={summary.upcoming} />
-                <InstructorStatCard label="Компаниялар үчүн" value={summary.company} />
-                <InstructorStatCard label="Публичный offeringдер" value={summary.public} />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <InstructorStatCard label="Активдүү" value={summary.active} />
-                <InstructorStatCard label="Долбоор (Draft)" value={summary.draft} />
-                <InstructorStatCard label="Жабылган/аякталган" value={summary.completed} />
-            </div>
-
-            <div className="rounded-3xl p-4 shadow-sm flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                <div className="flex items-center gap-3 flex-wrap">
-                    <div className="flex items-center gap-2 border rounded-full px-3 py-1 text-sm text-gray-600 dark:text-[#a6adba]">
-                        <FiFilter />
-                        Фильтр
+                <div className="space-y-6 px-6 py-6">
+                    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+                        {overviewMetrics.map((metric) => (
+                            <DashboardMetricCard
+                                key={metric.label}
+                                label={metric.label}
+                                value={metric.value}
+                                icon={metric.icon}
+                                tone={metric.tone}
+                            />
+                        ))}
                     </div>
 
-                    <select
-                        value={filterCourseId}
-                        onChange={(e) => setFilterCourseId(e.target.value)}
-                        className="border rounded-full px-3 py-1 text-sm bg-white dark:bg-[#222222]"
+                    <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                        <div className="max-w-2xl">
+                            <p className="text-sm leading-6 text-edubot-muted dark:text-slate-400">
+                                Offering түзүү, schedule жана enrollment агымдары ушул бөлүмдөн башкарылат.
+                            </p>
+                        </div>
+
+                        <button
+                            type="button"
+                            className="dashboard-button-primary inline-flex items-center gap-2 self-start"
+                            onClick={() => handleOpenModal('create')}
+                        >
+                            <FiPlusCircle className="h-4 w-4" />
+                            Offering түзүү
+                        </button>
+                    </div>
+
+                    <DashboardInsetPanel
+                        title="Фильтр жана издөө"
+                        description="Курс, убакыт жана offering аталышы боюнча натыйжаларды тарытыңыз."
                     >
-                        <option value="all">Бардык курстар</option>
-                        {courses.map((course) => (
-                            <option key={course.id} value={course.id}>
-                                {course.title}
-                            </option>
-                        ))}
-                    </select>
+                        <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_280px]">
+                            <div className="grid gap-3 md:grid-cols-2">
+                                <select
+                                    value={filterCourseId}
+                                    onChange={(e) => setFilterCourseId(e.target.value)}
+                                    className="dashboard-field dashboard-select"
+                                >
+                                    <option value="all">Бардык курстар</option>
+                                    {courses.map((course) => (
+                                        <option key={course.id} value={course.id}>
+                                            {course.title}
+                                        </option>
+                                    ))}
+                                </select>
 
-                    <select
-                        value={statusFilter}
-                        onChange={(e) => setStatusFilter(e.target.value)}
-                        className="border rounded-full px-3 py-1 text-sm bg-white dark:bg-[#222222]"
-                    >
-                        <option value="upcoming">Жакынкы</option>
-                        <option value="past">Өткөн</option>
-                        <option value="all">Баары</option>
-                    </select>
-                </div>
+                                <select
+                                    value={statusFilter}
+                                    onChange={(e) => setStatusFilter(e.target.value)}
+                                    className="dashboard-field dashboard-select"
+                                >
+                                    <option value="upcoming">Жакынкы</option>
+                                    <option value="past">Өткөн</option>
+                                    <option value="all">Баары</option>
+                                </select>
+                            </div>
 
-                <input
-                    type="text"
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    className="border rounded-2xl px-4 py-2 text-sm w-full md:w-64 text-gray-500 dark:text-[#a6adba] bg-white dark:bg-[#222222]"
-                    placeholder="Offering боюнча издөө..."
-                />
-            </div>
+                            <label className="dashboard-field dashboard-field-icon">
+                                <FiSearch className="h-4 w-4 text-edubot-muted dark:text-slate-400" />
+                                <input
+                                    type="text"
+                                    value={search}
+                                    onChange={(e) => setSearch(e.target.value)}
+                                    className="w-full bg-transparent text-sm text-edubot-ink outline-none placeholder:text-edubot-muted dark:text-white dark:placeholder:text-slate-500"
+                                    placeholder="Offering боюнча издөө..."
+                                />
+                            </label>
+                        </div>
+                    </DashboardInsetPanel>
 
-            {loading ? (
-                <DashboardCardSkeleton cards={4} />
-            ) : filteredOfferings.length ? (
-                <div className="space-y-4">
-                    {filteredOfferings.map((offering) => (
-                        <OfferingCard
-                            key={offering.id}
-                            offering={offering}
-                            onEdit={(item) => handleOpenModal('edit', item)}
-                            onEnroll={handleOpenEnrollModal}
+                    {loading ? (
+                        <DashboardCardSkeleton cards={4} />
+                    ) : filteredOfferings.length ? (
+                        <DashboardInsetPanel
+                            title="Offering тизмеси"
+                            description={`${filteredOfferings.length} offering табылды`}
+                        >
+                            <div className="space-y-4">
+                                {filteredOfferings.map((offering) => (
+                                    <OfferingCard
+                                        key={offering.id}
+                                        offering={offering}
+                                        onEdit={(item) => handleOpenModal('edit', item)}
+                                        onEnroll={handleOpenEnrollModal}
+                                    />
+                                ))}
+                            </div>
+                        </DashboardInsetPanel>
+                    ) : (
+                        <EmptyState
+                            title="Offeringдер азырынча жок"
+                            subtitle="Биринчи offeringди түзүп, enrollment агымын баштаңыз."
+                            action={{
+                                label: 'Offering түзүү',
+                                onClick: () => setShowCreateModal(true),
+                            }}
                         />
-                    ))}
+                    )}
                 </div>
-            ) : (
-                <EmptyState
-                    title="Курстар азырынча жок"
-                    subtitle="Биринчи курсуңузду түзүп баштаңыз"
-                    action={{
-                        label: 'Offering түзүү',
-                        onClick: () => setShowCreateModal(true),
-                    }}
-                />
-            )}
+            </div>
 
             {showCreateModal ? (
                 <CreateOfferingModal

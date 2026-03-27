@@ -1,5 +1,22 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import PropTypes from 'prop-types';
+import {
+    FiCalendar,
+    FiClock,
+    FiFilter,
+    FiMapPin,
+    FiPlayCircle,
+    FiRadio,
+    FiSearch,
+    FiUsers,
+    FiVideo,
+} from 'react-icons/fi';
+import {
+    DashboardInsetPanel,
+    DashboardMetricCard,
+    DashboardSectionHeader,
+} from '../../../../components/ui/dashboard';
+import StudentPanelEmpty from '../shared/StudentPanelEmpty.jsx';
 import {
     resolveCourseType,
     isOnlineLiveOffering,
@@ -14,181 +31,341 @@ import {
 const ScheduleTab = ({ offerings, recordings }) => {
     const [nowMs, setNowMs] = useState(Date.now());
     const [selectedLiveId, setSelectedLiveId] = useState('');
+    const [query, setQuery] = useState('');
+    const [typeFilter, setTypeFilter] = useState('all');
 
     useEffect(() => {
         const timer = setInterval(() => setNowMs(Date.now()), 1000);
         return () => clearInterval(timer);
     }, []);
 
-    const sorted = useMemo(
+    const scheduleItems = useMemo(
         () =>
-            [...offerings].sort(
-                (a, b) => new Date(a.startAt || 0).getTime() - new Date(b.startAt || 0).getTime()
-            ),
-        [offerings]
-    );
-
-    useEffect(() => {
-        if (selectedLiveId) return;
-        const firstLive = sorted.find((item) => resolveCourseType(item) === 'online_live');
-        if (firstLive?.id) setSelectedLiveId(String(firstLive.id));
-    }, [sorted, selectedLiveId]);
-
-    if (!sorted.length) {
-        return (
-            <div className="bg-white dark:bg-[#222222] rounded-3xl border border-gray-100 dark:border-gray-800 p-6 text-center text-gray-500 dark:text-gray-400">
-                Жакынкы класстар табылган жок.
-            </div>
-        );
-    }
-
-    const selectedLive = sorted.find((item) => String(item.id) === String(selectedLiveId));
-    const selectedRecordings = [
-        ...resolveRecordings(selectedLive || {}),
-        ...recordings.filter((rec) => {
-            const recSessionId = rec.sessionId || rec.courseSessionId || rec.offeringId;
-            const liveSessionId = selectedLive?.sessionId || selectedLive?.id || selectedLive?.offeringId;
-            return recSessionId && liveSessionId && String(recSessionId) === String(liveSessionId);
-        }),
-    ];
-    const selectedJoinUrl =
-        selectedLive?.joinLink || selectedLive?.link || selectedLive?.joinUrl || '';
-    const selectedJoinAllowed = !selectedLive || isStudentJoinWindowOpen(selectedLive, nowMs);
-
-    return (
-        <div className="space-y-4">
-            <h2 className="text-2xl font-semibold text-slate-900 dark:text-white">Жүгүртмө</h2>
-            <div className="space-y-3">
-                {sorted.map((item) => {
+            [...offerings]
+                .sort((a, b) => new Date(a.startAt || 0).getTime() - new Date(b.startAt || 0).getTime())
+                .map((item) => {
                     const type = resolveCourseType(item);
                     const joinUrl = item.joinLink || item.link || item.joinUrl || '';
                     const joinAllowed =
                         !isOnlineLiveOffering(item) || isStudentJoinWindowOpen(item, nowMs);
-                    const recordings = resolveRecordings(item);
-                    return (
-                        <div
-                            key={item.id || `${item.courseId}-${item.startAt}`}
-                            className="bg-white dark:bg-gray-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-4 shadow-lg hover:shadow-xl transition-all duration-300"
-                        >
-                            <div className="flex flex-wrap items-center justify-between gap-3">
-                                <div>
-                                    <p className="font-semibold text-gray-900 dark:text-[#E8ECF3]">
-                                        {item.courseTitle || item.course?.title || 'Class'}
+                    const itemRecordings = resolveRecordings(item);
+                    const isPast =
+                        item.startAt && new Date(item.startAt).getTime() < nowMs;
 
-                                    </p>
-                                    <p className="text-sm text-gray-500">
-                                        {formatSessionDate(item.startAt)}
-                                    </p>
+                    return {
+                        item,
+                        type,
+                        joinUrl,
+                        joinAllowed,
+                        itemRecordings,
+                        isPast,
+                    };
+                }),
+        [offerings, nowMs]
+    );
+
+    useEffect(() => {
+        if (selectedLiveId) return;
+        const firstLive = scheduleItems.find((entry) => entry.type === 'online_live');
+        if (firstLive?.item?.id) setSelectedLiveId(String(firstLive.item.id));
+    }, [scheduleItems, selectedLiveId]);
+
+    const filteredItems = useMemo(() => {
+        const normalizedQuery = query.trim().toLowerCase();
+
+        return scheduleItems.filter(({ item, type }) => {
+            if (typeFilter !== 'all' && type !== typeFilter) return false;
+            if (!normalizedQuery) return true;
+
+            return [item.courseTitle, item.course?.title, resolveInstructorName(item), item.location, item.room]
+                .filter(Boolean)
+                .some((value) => String(value).toLowerCase().includes(normalizedQuery));
+        });
+    }, [query, scheduleItems, typeFilter]);
+
+    const selectedLive = scheduleItems.find(
+        ({ item }) => String(item.id) === String(selectedLiveId)
+    )?.item;
+
+    const selectedRecordings = [
+        ...resolveRecordings(selectedLive || {}),
+        ...recordings.filter((rec) => {
+            const recSessionId = rec.sessionId || rec.courseSessionId || rec.offeringId;
+            const liveSessionId =
+                selectedLive?.sessionId || selectedLive?.id || selectedLive?.offeringId;
+            return recSessionId && liveSessionId && String(recSessionId) === String(liveSessionId);
+        }),
+    ];
+
+    const selectedJoinUrl = selectedLive?.joinLink || selectedLive?.link || selectedLive?.joinUrl || '';
+    const selectedJoinAllowed = !selectedLive || isStudentJoinWindowOpen(selectedLive, nowMs);
+
+    const stats = useMemo(() => {
+        const total = scheduleItems.length;
+        const live = scheduleItems.filter((entry) => entry.type === 'online_live').length;
+        const offline = scheduleItems.filter((entry) => entry.type === 'offline').length;
+        const upcoming = scheduleItems.filter((entry) => !entry.isPast).length;
+        return { total, live, offline, upcoming };
+    }, [scheduleItems]);
+
+    if (!scheduleItems.length) {
+        return (
+            <section className="dashboard-panel overflow-hidden">
+                <DashboardSectionHeader
+                    eyebrow="Schedule"
+                    title="Жүгүртмө"
+                    description="Жакынкы сабактар, live терезелер жана жазуулар ушул жерде көрсөтүлөт."
+                />
+                <div className="p-6">
+                    <StudentPanelEmpty
+                        icon={FiCalendar}
+                        title="Жакынкы класстар табылган жок"
+                        description="Сессиялар пайда болгондо, алар бул жерде топтолуп көрүнөт."
+                    />
+                </div>
+            </section>
+        );
+    }
+
+    return (
+        <div className="space-y-6">
+            <section className="dashboard-panel overflow-hidden">
+                <DashboardSectionHeader
+                    eyebrow="Schedule"
+                    title="Жүгүртмө жана live сессиялар"
+                    description="Кийинки сабактарды, кошулуу мүмкүнчүлүгүн жана жазууларды бир экрандан көрүңүз."
+                    metrics={
+                        <>
+                            <DashboardMetricCard label="Жалпы" value={stats.total} icon={FiCalendar} />
+                            <DashboardMetricCard label="Upcoming" value={stats.upcoming} icon={FiClock} tone="blue" />
+                            <DashboardMetricCard label="Live" value={stats.live} icon={FiRadio} tone="green" />
+                            <DashboardMetricCard label="Offline" value={stats.offline} icon={FiMapPin} tone="amber" />
+                        </>
+                    }
+                />
+
+                <div className="grid gap-3 border-b border-edubot-line/70 px-6 py-5 dark:border-slate-700 lg:grid-cols-[minmax(0,1.4fr),minmax(0,0.8fr)]">
+                    <label className="relative block">
+                        <FiSearch className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-edubot-muted" />
+                        <input
+                            value={query}
+                            onChange={(e) => setQuery(e.target.value)}
+                            placeholder="Курс, мугалим же жайгашкан жер боюнча издөө"
+                            className="dashboard-field dashboard-field-icon"
+                        />
+                    </label>
+
+                    <label className="relative block">
+                        <FiFilter className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-edubot-muted" />
+                        <select
+                            value={typeFilter}
+                            onChange={(e) => setTypeFilter(e.target.value)}
+                            className="dashboard-field dashboard-field-icon dashboard-select"
+                        >
+                            <option value="all">Бардык типтер</option>
+                            <option value="video">Видео</option>
+                            <option value="offline">Оффлайн</option>
+                            <option value="online_live">Онлайн түз эфир</option>
+                        </select>
+                    </label>
+                </div>
+
+                <div className="grid gap-4 p-6 xl:grid-cols-[minmax(0,1.35fr),minmax(0,0.65fr)]">
+                    <div className="space-y-3">
+                        {filteredItems.length ? (
+                            filteredItems.map(({ item, type, joinUrl, joinAllowed, itemRecordings, isPast }) => (
+                                <div
+                                    key={item.id || `${item.courseId}-${item.startAt}`}
+                                    className="dashboard-panel-muted p-4"
+                                >
+                                    <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                                        <div className="min-w-0 flex-1">
+                                            <div className="flex flex-wrap items-center gap-2">
+                                                <p className="text-base font-semibold text-edubot-ink dark:text-white">
+                                                    {item.courseTitle || item.course?.title || 'Class'}
+                                                </p>
+                                                <span className="rounded-full border border-edubot-line bg-white px-3 py-1 text-xs font-semibold text-edubot-ink dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200">
+                                                    {courseTypeLabel(type)}
+                                                </span>
+                                                {isPast ? (
+                                                    <span className="rounded-full border border-slate-200 bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
+                                                        Өтүп кетти
+                                                    </span>
+                                                ) : null}
+                                            </div>
+
+                                            <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-sm text-edubot-muted dark:text-slate-400">
+                                                <span className="inline-flex items-center gap-2">
+                                                    <FiCalendar className="h-4 w-4" />
+                                                    {formatSessionDate(item.startAt)}
+                                                </span>
+                                                <span className="inline-flex items-center gap-2">
+                                                    <FiUsers className="h-4 w-4" />
+                                                    {resolveInstructorName(item)}
+                                                </span>
+                                                {type === 'offline' ? (
+                                                    <span className="inline-flex items-center gap-2">
+                                                        <FiMapPin className="h-4 w-4" />
+                                                        {item.location || item.room || 'Класс али дайындала элек'}
+                                                    </span>
+                                                ) : (
+                                                    <span className="inline-flex items-center gap-2">
+                                                        <FiVideo className="h-4 w-4" />
+                                                        Жазуулар: {itemRecordings.length}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        <div className="w-full lg:w-[18rem]">
+                                            {type === 'online_live' ? (
+                                                <div className="space-y-3">
+                                                    <div className="rounded-2xl border border-edubot-line bg-white px-4 py-3 dark:border-slate-700 dark:bg-slate-900">
+                                                        <div className="text-xs font-medium uppercase tracking-[0.14em] text-edubot-muted dark:text-slate-400">
+                                                            Башталышына
+                                                        </div>
+                                                        <div className="mt-2 text-xl font-semibold text-edubot-ink dark:text-white">
+                                                            {item.startAt
+                                                                ? formatCountdown(
+                                                                      new Date(item.startAt).getTime(),
+                                                                      nowMs
+                                                                  )
+                                                                : '--:--:--'}
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="flex flex-col gap-2">
+                                                        {joinUrl && joinAllowed ? (
+                                                            <a
+                                                                href={joinUrl}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                className="dashboard-button-primary w-full"
+                                                            >
+                                                                <FiPlayCircle className="h-4 w-4" />
+                                                                Сабакка кошулуу
+                                                            </a>
+                                                        ) : (
+                                                            <div className="rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300">
+                                                                Join 10 мүнөт мурун ачылат
+                                                            </div>
+                                                        )}
+
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setSelectedLiveId(String(item.id))}
+                                                            className="dashboard-button-secondary"
+                                                        >
+                                                            Түз эфир панели
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <div className="rounded-2xl border border-edubot-line bg-white px-4 py-3 text-sm text-edubot-muted dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
+                                                    Offline сессия. Келүү убактысын жана жайгашкан жерди алдын ала текшериңиз.
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
                                 </div>
-                                <span className="text-[11px] px-2 py-1 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
-                                    {courseTypeLabel(type)}
-                                </span>
-                            </div>
-                            {type === 'offline' && (
-                                <div className="mt-2 text-sm text-gray-500">
-                                    <p>Жайгашкан жери: {item.location || item.room || 'Класс али дайындала элек'}</p>
-                                    <p>Мугалим: {resolveInstructorName(item)}</p>
-                                    <p>Жүгүртмө: {formatSessionDate(item.startAt)}</p>
-                                </div>
-                            )}
-                            {type === 'online_live' && (
-                                <div className="mt-2 flex flex-wrap items-center gap-2 text-sm">
-                                    <span className="text-blue-700 dark:text-blue-300">
-                                        Калган убакыт:{' '}
-                                        {item.startAt
-                                            ? formatCountdown(
-                                                new Date(item.startAt).getTime(),
-                                                nowMs
-                                            )
-                                            : '--:--:--'}
-                                    </span>
-                                    {joinUrl && joinAllowed ? (
+                            ))
+                        ) : (
+                            <StudentPanelEmpty
+                                icon={FiSearch}
+                                title="Сессия табылган жок"
+                                description="Издөө же фильтрди өзгөртүп көрүңүз."
+                            />
+                        )}
+                    </div>
+
+                    <div className="space-y-4">
+                        {selectedLive && resolveCourseType(selectedLive) === 'online_live' ? (
+                            <DashboardInsetPanel
+                                title="Түз эфир сабак барагы"
+                                description={selectedLive.courseTitle || selectedLive.course?.title}
+                            >
+                                <div className="space-y-4">
+                                    <div className="rounded-panel bg-edubot-hero p-5 text-white shadow-edubot-glow">
+                                        <div className="flex items-center justify-between gap-3">
+                                            <div>
+                                                <p className="dashboard-pill">Live Session</p>
+                                                <p className="mt-4 text-lg font-semibold">
+                                                    {selectedLive.courseTitle ||
+                                                        selectedLive.course?.title}
+                                                </p>
+                                            </div>
+                                            <FiRadio className="h-6 w-6 text-edubot-soft" />
+                                        </div>
+                                        <div className="mt-4 text-sm text-white/80">
+                                            Калган убакыт:{' '}
+                                            <span className="font-semibold text-white">
+                                                {selectedLive.startAt
+                                                    ? formatCountdown(
+                                                          new Date(selectedLive.startAt).getTime(),
+                                                          nowMs
+                                                      )
+                                                    : '--:--:--'}
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    {selectedJoinUrl && selectedJoinAllowed ? (
                                         <a
-                                            href={joinUrl}
+                                            href={selectedJoinUrl}
                                             target="_blank"
                                             rel="noopener noreferrer"
-                                            className="px-3 py-1 rounded-full bg-blue-600 text-white text-xs"
+                                            className="dashboard-button-primary w-full"
                                         >
+                                            <FiPlayCircle className="h-4 w-4" />
                                             Сабакка кошулуу
                                         </a>
                                     ) : (
-                                        <span className="text-xs text-amber-600">
-                                            Join 10 мүнөт мурун ачылат
-                                        </span>
+                                        <button
+                                            type="button"
+                                            disabled
+                                            className="dashboard-button-secondary w-full cursor-not-allowed opacity-60"
+                                        >
+                                            Сабакка кошулуу
+                                        </button>
                                     )}
-                                    <button
-                                        type="button"
-                                        onClick={() => setSelectedLiveId(String(item.id))}
-                                        className="px-3 py-1 rounded-full border text-xs text-gray-600 dark:text-gray-300 dark:border-gray-700 hover:border-edubot-orange hover:text-edubot-orange hover:bg-edubot-orange/10 transition-all duration-300 transform hover:scale-105 hover:shadow-md group"
-                                    >
-                                        <span className="transition-transform duration-300 group-hover:scale-110">
-                                            🔴 Түз эфир барагы
-                                        </span>
-                                    </button>
-                                    <span className="text-xs text-gray-500">
-                                        Жазуулар: {recordings.length}
-                                    </span>
-                                </div>
-                            )}
-                        </div>
-                    );
-                })}
-            </div>
 
-            {selectedLive && resolveCourseType(selectedLive) === 'online_live' && (
-                <section className="bg-white dark:bg-[#222222] rounded-3xl border border-gray-100 dark:border-gray-800 p-5 space-y-3">
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-[#E8ECF3]">
-                        Түз эфир сабак барагы
-                    </h3>
-                    <p className="text-sm text-gray-500">
-                        {selectedLive.courseTitle || selectedLive.course?.title}
-                    </p>
-                    <p className="text-sm text-blue-700 dark:text-blue-300">
-                        Калган убакыт:{' '}
-                        {selectedLive.startAt
-                            ? formatCountdown(new Date(selectedLive.startAt).getTime(), nowMs)
-                            : '--:--:--'}
-                    </p>
-                    <div className="flex flex-wrap items-center gap-2">
-                        {selectedJoinUrl && selectedJoinAllowed ? (
-                            <a
-                                href={selectedJoinUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="px-4 py-2 rounded-full bg-blue-600 text-white text-sm"
-                            >
-                                Сабакка кошулуу
-                            </a>
+                                    <div className="space-y-2">
+                                        <p className="font-medium text-edubot-ink dark:text-white">
+                                            Жазуулар
+                                        </p>
+                                        {selectedRecordings.length ? (
+                                            selectedRecordings.map((rec) => (
+                                                <a
+                                                    key={rec.id || rec.url}
+                                                    href={rec.url}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="block rounded-2xl border border-edubot-line/70 bg-white/80 px-4 py-3 text-sm font-medium text-edubot-ink transition hover:border-edubot-orange hover:text-edubot-orange dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+                                                >
+                                                    {rec.title || 'Жазуу'}
+                                                </a>
+                                            ))
+                                        ) : (
+                                            <div className="rounded-2xl border border-edubot-line/70 bg-white/80 px-4 py-3 text-sm text-edubot-muted dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400">
+                                                Азырынча жазуу жок.
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </DashboardInsetPanel>
                         ) : (
-                            <button
-                                type="button"
-                                disabled
-                                className="px-4 py-2 rounded-full border text-sm text-gray-400 cursor-not-allowed"
+                            <DashboardInsetPanel
+                                title="Түз эфир фокусу"
+                                description="Онлайн түз эфир сессияны тандасаңыз, бул жерден join жана recording башкарылат."
                             >
-                                Сабакка кошулуу
-                            </button>
+                                <div className="text-sm text-edubot-muted dark:text-slate-400">
+                                    Азырынча тандалган live сессия жок.
+                                </div>
+                            </DashboardInsetPanel>
                         )}
                     </div>
-                    <div className="space-y-2">
-                        <p className="font-medium text-gray-900 dark:text-[#E8ECF3]">Жазуулар</p>
-                        {selectedRecordings.length ? (
-                            selectedRecordings.map((rec) => (
-                                <a
-                                    key={rec.id || rec.url}
-                                    href={rec.url}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="block text-sm text-blue-600 dark:text-blue-400 underline"
-                                >
-                                    {rec.title || 'Жазуу'}
-                                </a>
-                            ))
-                        ) : (
-                            <p className="text-sm text-gray-500">Азырынча жазуу жок.</p>
-                        )}
-                    </div>
-                </section>
-            )}
+                </div>
+            </section>
         </div>
     );
 };

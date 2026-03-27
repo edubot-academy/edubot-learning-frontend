@@ -1,9 +1,170 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import PropTypes from 'prop-types';
+import {
+    FiAlertCircle,
+    FiBookOpen,
+    FiCalendar,
+    FiCheckCircle,
+    FiClock,
+    FiExternalLink,
+    FiFileText,
+    FiFilter,
+    FiLink,
+    FiSearch,
+    FiSend,
+} from 'react-icons/fi';
+import { DashboardMetricCard } from '../../../../components/ui/dashboard';
 import { getTaskKey, resolveSessionHomeworkIds } from '../../utils/studentDashboard.helpers.js';
+
+const STATUS_META = {
+    overdue: {
+        label: 'Мөөнөт өттү',
+        badgeClass:
+            'border-red-200 bg-red-50 text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300',
+        accentClass: 'border-red-300/90 dark:border-red-500/40',
+        icon: FiAlertCircle,
+    },
+    pending: {
+        label: 'Күтүүдө',
+        badgeClass:
+            'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300',
+        accentClass: 'border-amber-200/90 dark:border-amber-500/30',
+        icon: FiClock,
+    },
+    submitted: {
+        label: 'Жөнөтүлдү',
+        badgeClass:
+            'border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-500/30 dark:bg-sky-500/10 dark:text-sky-300',
+        accentClass: 'border-sky-200/90 dark:border-sky-500/30',
+        icon: FiSend,
+    },
+    completed: {
+        label: 'Жабылды',
+        badgeClass:
+            'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300',
+        accentClass: 'border-emerald-200/90 dark:border-emerald-500/30',
+        icon: FiCheckCircle,
+    },
+    unavailable: {
+        label: 'Туташкан эмес',
+        badgeClass:
+            'border-slate-200 bg-slate-50 text-slate-600 dark:border-slate-700 dark:bg-slate-800/70 dark:text-slate-300',
+        accentClass: 'border-slate-200/90 dark:border-slate-700',
+        icon: FiFileText,
+    },
+};
+
+const formatTaskDate = (task = {}) => {
+    const raw = task.dueAt || task.deadline || task.due || task.submittedAt;
+    if (!raw) return 'Мөөнөт көрсөтүлгөн эмес';
+
+    const parsed = new Date(raw);
+    if (Number.isNaN(parsed.getTime())) return String(raw);
+
+    return parsed.toLocaleString('ru-RU', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+    });
+};
+
+const getTaskCourse = (task = {}) => task.courseTitle || task.course || 'Белгисиз курс';
+
+const getTaskTitle = (task = {}) => task.title || task.name || 'Тапшырма';
+
+const getTaskDescription = (task = {}) =>
+    task.description ||
+    task.instructions ||
+    task.prompt ||
+    task.text ||
+    'Тапшырма сүрөттөмөсү азырынча берилген эмес.';
+
+const getNormalizedStatus = (task = {}) => {
+    const baseStatus = String(task.submissionStatus || task.status || '').toLowerCase();
+    const { sessionId, homeworkId } = resolveSessionHomeworkIds(task);
+    const canSubmit = Boolean(sessionId && homeworkId);
+    const dueRaw = task.dueAt || task.deadline || task.due;
+    const dueDate = dueRaw ? new Date(dueRaw) : null;
+    const isDone = baseStatus === 'completed' || baseStatus === 'approved';
+    const isSubmitted = baseStatus === 'submitted';
+    const isOverdue =
+        !isDone &&
+        !isSubmitted &&
+        dueDate &&
+        !Number.isNaN(dueDate.getTime()) &&
+        dueDate.getTime() < Date.now();
+
+    if (!canSubmit && !isDone) return 'unavailable';
+    if (isDone) return 'completed';
+    if (isSubmitted) return 'submitted';
+    if (isOverdue) return 'overdue';
+    return 'pending';
+};
 
 const TasksTab = ({ tasks, onSubmitHomework, submittingTaskId }) => {
     const [drafts, setDrafts] = useState({});
+    const [statusFilter, setStatusFilter] = useState('all');
+    const [courseFilter, setCourseFilter] = useState('all');
+    const [query, setQuery] = useState('');
+    const [expandedTaskId, setExpandedTaskId] = useState('');
+
+    const taskView = useMemo(
+        () =>
+            tasks.map((task) => {
+                const key = getTaskKey(task);
+                const status = getNormalizedStatus(task);
+                const meta = STATUS_META[status];
+                const course = getTaskCourse(task);
+                const title = getTaskTitle(task);
+                const description = getTaskDescription(task);
+                const ids = resolveSessionHomeworkIds(task);
+
+                return {
+                    task,
+                    key,
+                    status,
+                    meta,
+                    course,
+                    title,
+                    description,
+                    dateLabel: formatTaskDate(task),
+                    canSubmit: Boolean(ids.sessionId && ids.homeworkId),
+                    isDone: status === 'completed' || status === 'submitted',
+                };
+            }),
+        [tasks]
+    );
+
+    const courseOptions = useMemo(
+        () => [...new Set(taskView.map((item) => item.course))].sort((a, b) => a.localeCompare(b)),
+        [taskView]
+    );
+
+    const stats = useMemo(() => {
+        const total = taskView.length;
+        const pending = taskView.filter((item) => item.status === 'pending').length;
+        const overdue = taskView.filter((item) => item.status === 'overdue').length;
+        const completed = taskView.filter((item) => item.status === 'completed').length;
+        const submitted = taskView.filter((item) => item.status === 'submitted').length;
+
+        return { total, pending, overdue, completed, submitted };
+    }, [taskView]);
+
+    const filteredTasks = useMemo(() => {
+        const normalizedQuery = query.trim().toLowerCase();
+
+        return taskView.filter((item) => {
+            if (statusFilter !== 'all' && item.status !== statusFilter) return false;
+            if (courseFilter !== 'all' && item.course !== courseFilter) return false;
+            if (!normalizedQuery) return true;
+
+            return [item.title, item.description, item.course].some((value) =>
+                String(value).toLowerCase().includes(normalizedQuery)
+            );
+        });
+    }, [courseFilter, query, statusFilter, taskView]);
 
     const updateDraft = (taskKey, field, value) => {
         setDrafts((prev) => ({
@@ -15,118 +176,253 @@ const TasksTab = ({ tasks, onSubmitHomework, submittingTaskId }) => {
         }));
     };
 
-    const submitTask = async (task) => {
+    const submitTask = async (item) => {
         if (!onSubmitHomework) return;
-        const key = getTaskKey(task);
-        const draft = drafts[key] || { text: '', link: '' };
-        const success = await onSubmitHomework(task, draft);
+        const draft = drafts[item.key] || { text: '', link: '' };
+        const success = await onSubmitHomework(item.task, draft);
         if (success) {
             setDrafts((prev) => ({
                 ...prev,
-                [key]: { text: '', link: '' },
+                [item.key]: { text: '', link: '' },
             }));
+            setExpandedTaskId('');
         }
     };
 
     return (
-        <div className="space-y-4">
-            <h2 className="text-2xl font-semibold text-slate-900 dark:text-white">Тапшырмалар</h2>
-            {tasks.length ? (
-                <div className="bg-white dark:bg-gray-800 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-x-auto min-w-[600px] w-full text-sm shadow-lg">
-                    <table className="w-full text-sm">
-                        <thead className="bg-slate-50 dark:bg-slate-900 text-slate-500 dark:text-slate-400">
-                            <tr>
-                                <th className="text-left px-4 py-3">Тапшырма</th>
-                                <th className="text-left px-4 py-3">Курс</th>
-                                <th className="text-left px-4 py-3">Бүтүү мөөнөтү</th>
-                                <th className="text-left px-4 py-3">Статус</th>
-                                <th className="text-left px-4 py-3">Жооп</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {tasks.map((task) => {
-                                const key = getTaskKey(task);
-                                const draft = drafts[key] || { text: '', link: '' };
-                                const { sessionId, homeworkId } = resolveSessionHomeworkIds(task);
-                                const canSubmit = Boolean(sessionId && homeworkId);
-                                const isSubmitting = submittingTaskId === key;
-                                const isDone =
-                                    task.status === 'completed' || task.submissionStatus === 'approved';
+        <div className="space-y-6">
+            <section className="dashboard-panel overflow-hidden">
+                <div className="border-b border-edubot-line/70 px-6 py-5 dark:border-slate-700">
+                    <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+                        <div className="max-w-2xl">
+                            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-edubot-orange">
+                                Student Tasks
+                            </p>
+                            <h2 className="mt-2 text-2xl font-semibold text-edubot-ink dark:text-white">
+                                Тапшырмалар иш мейкиндиги
+                            </h2>
+                            <p className="mt-2 text-sm leading-6 text-edubot-muted dark:text-slate-300">
+                                Тапшырмалардын абалын көрүңүз, мөөнөттөрдү байкаңыз жана жоопторду
+                                ушул эле жерден жөнөтүңүз.
+                            </p>
+                        </div>
 
-                                return (
-                                    <tr
-                                        key={key}
-                                        className="border-t border-gray-100 dark:border-gray-800 align-top"
-                                    >
-                                        <td className="px-4 py-3 font-medium text-gray-900 dark:text-[#E8ECF3]">
-                                            {task.title || task.name || 'Тапшырма'}
-                                        </td>
-                                        <td className="px-4 py-3 text-gray-500 dark:text-gray-400">
-                                            {task.courseTitle || task.course || '-'}
-                                        </td>
-                                        <td className="px-4 py-3 text-gray-500 dark:text-gray-400">
-                                            {task.due ||
-                                                task.deadline ||
-                                                (task.dueAt
-                                                    ? new Date(task.dueAt).toLocaleDateString('ru-RU')
-                                                    : '—')}
-                                        </td>
-                                        <td className="px-4 py-3">
-                                            <span
-                                                className={`px-3 py-1 rounded-full text-xs ${isDone
-                                                    ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
-                                                    : 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400'
-                                                    }`}
-                                            >
-                                                {isDone ? 'Жабылган' : 'Күтүүдө'}
-                                            </span>
-                                        </td>
-                                        <td className="px-4 py-3 min-w-[280px]">
-                                            {canSubmit ? (
-                                                <div className="space-y-2">
-                                                    <textarea
-                                                        value={draft.text || ''}
-                                                        onChange={(e) =>
-                                                            updateDraft(key, 'text', e.target.value)
-                                                        }
-                                                        rows={2}
-                                                        placeholder="Жооп жазыңыз"
-                                                        className="w-full border border-gray-200 dark:border-gray-700 rounded-lg px-2 py-1 bg-white dark:bg-[#0E0E0E]"
-                                                    />
-                                                    <input
-                                                        value={draft.link || ''}
-                                                        onChange={(e) =>
-                                                            updateDraft(key, 'link', e.target.value)
-                                                        }
-                                                        placeholder="Шилтеме (эгер бар болсо)"
-                                                        className="w-full border border-gray-200 dark:border-gray-700 rounded-lg px-2 py-1 bg-white dark:bg-[#0E0E0E]"
-                                                    />
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => submitTask(task)}
-                                                        disabled={isSubmitting}
-                                                        className="px-3 py-1 rounded bg-blue-600 text-white text-xs disabled:opacity-60"
-                                                    >
-                                                        {isSubmitting ? 'Жөнөтүлүүдө...' : 'Жөнөтүү'}
-                                                    </button>
+                        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                            <DashboardMetricCard label="Жалпы" value={stats.total} icon={FiBookOpen} />
+                            <DashboardMetricCard
+                                label="Күтүүдө"
+                                value={stats.pending}
+                                tone="amber"
+                                icon={FiClock}
+                            />
+                            <DashboardMetricCard
+                                label="Мөөнөт өттү"
+                                value={stats.overdue}
+                                tone="red"
+                                icon={FiAlertCircle}
+                            />
+                            <DashboardMetricCard
+                                label="Жабылды"
+                                value={stats.completed + stats.submitted}
+                                tone="green"
+                                icon={FiCheckCircle}
+                            />
+                        </div>
+                    </div>
+                </div>
+
+                <div className="grid gap-3 border-b border-edubot-line/70 px-6 py-5 dark:border-slate-700 lg:grid-cols-[minmax(0,1.5fr),minmax(0,0.7fr),minmax(0,0.7fr)]">
+                    <label className="relative block">
+                        <FiSearch className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-edubot-muted" />
+                        <input
+                            value={query}
+                            onChange={(e) => setQuery(e.target.value)}
+                            placeholder="Тапшырма же курс боюнча издөө"
+                            className="dashboard-field dashboard-field-icon"
+                        />
+                    </label>
+
+                    <label className="relative block">
+                        <FiFilter className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-edubot-muted" />
+                        <select
+                            value={statusFilter}
+                            onChange={(e) => setStatusFilter(e.target.value)}
+                            className="dashboard-field dashboard-field-icon dashboard-select"
+                        >
+                            <option value="all">Бардык статустар</option>
+                            <option value="pending">Күтүүдө</option>
+                            <option value="submitted">Жөнөтүлгөн</option>
+                            <option value="completed">Жабылган</option>
+                            <option value="overdue">Мөөнөт өттү</option>
+                            <option value="unavailable">Туташкан эмес</option>
+                        </select>
+                    </label>
+
+                    <select
+                        value={courseFilter}
+                        onChange={(e) => setCourseFilter(e.target.value)}
+                        className="dashboard-field dashboard-select"
+                    >
+                        <option value="all">Бардык курстар</option>
+                        {courseOptions.map((course) => (
+                            <option key={course} value={course}>
+                                {course}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+
+                <div className="space-y-4 p-6">
+                    {filteredTasks.length ? (
+                        filteredTasks.map((item) => {
+                            const draft = drafts[item.key] || { text: '', link: '' };
+                            const isSubmitting = submittingTaskId === item.key;
+                            const isExpanded = expandedTaskId === item.key;
+                            const StatusIcon = item.meta.icon;
+
+                            return (
+                                <article
+                                    key={item.key}
+                                    className={`rounded-[1.5rem] border bg-white p-5 shadow-sm transition duration-300 dark:bg-slate-900 ${item.meta.accentClass}`}
+                                >
+                                    <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
+                                        <div className="min-w-0 flex-1 space-y-4">
+                                            <div className="flex flex-wrap items-start gap-3">
+                                                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-edubot-surfaceAlt text-edubot-dark dark:bg-slate-800 dark:text-edubot-soft">
+                                                    <FiBookOpen className="h-5 w-5" />
+                                                </div>
+
+                                                <div className="min-w-0 flex-1">
+                                                    <div className="flex flex-wrap items-center gap-2">
+                                                        <h3 className="text-lg font-semibold text-edubot-ink dark:text-white">
+                                                            {item.title}
+                                                        </h3>
+                                                        <span
+                                                            className={`inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-semibold ${item.meta.badgeClass}`}
+                                                        >
+                                                            <StatusIcon className="h-3.5 w-3.5" />
+                                                            {item.meta.label}
+                                                        </span>
+                                                    </div>
+
+                                                    <div className="mt-2 flex flex-wrap gap-x-4 gap-y-2 text-sm text-edubot-muted dark:text-slate-300">
+                                                        <span className="inline-flex items-center gap-2">
+                                                            <FiBookOpen className="h-4 w-4" />
+                                                            {item.course}
+                                                        </span>
+                                                        <span className="inline-flex items-center gap-2">
+                                                            <FiCalendar className="h-4 w-4" />
+                                                            {item.dateLabel}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <p className="text-sm leading-6 text-edubot-muted dark:text-slate-300">
+                                                {item.description}
+                                            </p>
+                                        </div>
+
+                                        <div className="w-full xl:w-[22rem]">
+                                            {item.canSubmit ? (
+                                                <div className="dashboard-panel-muted p-4">
+                                                    <div className="flex items-start justify-between gap-3">
+                                                        <div>
+                                                            <p className="text-sm font-semibold text-edubot-ink dark:text-white">
+                                                                Жооп жөнөтүү
+                                                            </p>
+                                                            <p className="mt-1 text-xs leading-5 text-edubot-muted dark:text-slate-400">
+                                                                Текст же шилтеме кошуп тапшырыңыз.
+                                                            </p>
+                                                        </div>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() =>
+                                                                setExpandedTaskId((prev) =>
+                                                                    prev === item.key ? '' : item.key
+                                                                )
+                                                            }
+                                                            className="rounded-xl border border-edubot-line px-3 py-2 text-xs font-semibold text-edubot-ink transition hover:border-edubot-orange hover:text-edubot-orange dark:border-slate-700 dark:text-slate-200"
+                                                        >
+                                                            {isExpanded ? 'Жыйуу' : 'Жооп берүү'}
+                                                        </button>
+                                                    </div>
+
+                                                    {isExpanded ? (
+                                                        <div className="mt-4 space-y-3">
+                                                            <textarea
+                                                                value={draft.text || ''}
+                                                                onChange={(e) =>
+                                                                    updateDraft(item.key, 'text', e.target.value)
+                                                                }
+                                                                rows={4}
+                                                                placeholder="Жооп жазыңыз"
+                                                                className="dashboard-field"
+                                                            />
+                                                            <label className="relative block">
+                                                                <FiLink className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-edubot-muted" />
+                                                                <input
+                                                                    value={draft.link || ''}
+                                                                    onChange={(e) =>
+                                                                        updateDraft(item.key, 'link', e.target.value)
+                                                                    }
+                                                                    placeholder="Шилтеме кошуу"
+                                                                    className="dashboard-field dashboard-field-icon"
+                                                                />
+                                                            </label>
+                                                            <div className="flex items-center justify-between gap-3">
+                                                                <p className="text-xs text-edubot-muted dark:text-slate-400">
+                                                                    Жооп же шилтеме кеминде бирөө талап кылынат.
+                                                                </p>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => submitTask(item)}
+                                                                    disabled={isSubmitting}
+                                                                    className="dashboard-button-primary min-h-[44px]"
+                                                                >
+                                                                    <FiSend className="h-4 w-4" />
+                                                                    {isSubmitting ? 'Жөнөтүлүүдө...' : 'Жөнөтүү'}
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="mt-4 flex items-center gap-2 text-xs text-edubot-muted dark:text-slate-400">
+                                                            <FiExternalLink className="h-4 w-4" />
+                                                            Басып, тапшырманы тез тапшырыңыз
+                                                        </div>
+                                                    )}
                                                 </div>
                                             ) : (
-                                                <span className="text-xs text-gray-500">
-                                                    Бул тапшырма жөнөтүү API&apos;ине туташкан эмес.
-                                                </span>
+                                                <div className="dashboard-panel-muted p-4">
+                                                    <p className="text-sm font-semibold text-edubot-ink dark:text-white">
+                                                        Submit туташкан эмес
+                                                    </p>
+                                                    <p className="mt-2 text-sm leading-6 text-edubot-muted dark:text-slate-400">
+                                                        Бул тапшырма үчүн API аркылуу түз жөнөтүү азырынча
+                                                        жеткиликтүү эмес.
+                                                    </p>
+                                                </div>
                                             )}
-                                        </td>
-                                    </tr>
-                                );
-                            })}
-                        </tbody>
-                    </table>
+                                        </div>
+                                    </div>
+                                </article>
+                            );
+                        })
+                    ) : (
+                        <div className="dashboard-panel-muted p-10 text-center">
+                            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-white text-edubot-orange shadow-sm dark:bg-slate-900">
+                                <FiSearch className="h-6 w-6" />
+                            </div>
+                            <h3 className="mt-4 text-lg font-semibold text-edubot-ink dark:text-white">
+                                Натыйжа табылган жок
+                            </h3>
+                            <p className="mt-2 text-sm text-edubot-muted dark:text-slate-400">
+                                Фильтрлерди өзгөртүп көрүңүз же издөө талаасын тазалаңыз.
+                            </p>
+                        </div>
+                    )}
                 </div>
-            ) : (
-                <div className="bg-white dark:bg-[#222222] rounded-3xl border border-gray-100 dark:border-gray-800 p-6 text-center text-gray-500 dark:text-gray-400">
-                    Азырынча тапшырмалар табылган жок.
-                </div>
-            )}
+            </section>
         </div>
     );
 };

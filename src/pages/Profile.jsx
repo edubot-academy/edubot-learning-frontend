@@ -537,7 +537,7 @@ const ProfilePage = () => {
                             </div>
 
                             <div>
-                                <p className="text-gray-600 dark:text-[#a6adba] font-medium mb-1">Экспертиза</p>
+                                <p className="text-gray-600 dark:text-[#a6adba] font-medium mb-1">Эксперттик билимдер</p>
                                 {expertiseTagsList.length ? (
                                     <div className="flex flex-wrap gap-2">
                                         {expertiseTagsList.map((tag) => (
@@ -550,7 +550,7 @@ const ProfilePage = () => {
                                         ))}
                                     </div>
                                 ) : (
-                                    <p className="text-gray-500 dark:text-[#a6adba] text-sm">Экспертиза кошула элек</p>
+                                    <p className="text-gray-500 dark:text-[#a6adba] text-sm">Эксперттик билимдер кошула элек</p>
                                 )}
                             </div>
 
@@ -664,7 +664,7 @@ const ProfilePage = () => {
 
                             <div>
                                 <label className="text-gray-600 dark:text-[#a6adba] block mb-1">
-                                    Экспертиза (тегдер)
+                                    Эксперттик билимдер (тегдер)
                                 </label>
                                 <input
                                     type="text"

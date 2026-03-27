@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import AdvancedModal from '@shared/ui/AdvancedModal';
-import toast from 'react-hot-toast';
 
 const CreateDeliveryCourseModal = ({
     isOpen,
@@ -65,24 +64,20 @@ const CreateDeliveryCourseModal = ({
     };
 
     const handleSubmit = async (e) => {
-        e.preventDefault();
+        e?.preventDefault?.();
 
         if (!validate()) {
             return;
         }
 
-        try {
-            await onCreateDeliveryCourse({
-                ...formData,
-                price: Number(formData.price || 0),
-                isPaid: Number(formData.price || 0) > 0,
-            });
+        const success = await onCreateDeliveryCourse({
+            ...formData,
+            price: Number(formData.price || 0),
+            isPaid: Number(formData.price || 0) > 0,
+        });
 
-            toast.success('Курс ийгиликтүү түзүлдү!');
+        if (success) {
             onClose();
-        } catch (error) {
-            console.error('Failed to create delivery course:', error);
-            toast.error('Курсту түзүүдө ката кетти');
         }
     };
 

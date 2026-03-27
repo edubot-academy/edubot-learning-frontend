@@ -4,6 +4,7 @@ import { AuthContext } from '../context/AuthContext';
 import useDashboardSwipeGestures from '../hooks/useDashboardSwipeGestures';
 import {
     fetchInstructorProfile,
+    updateInstructorProfile,
     listOfferingsForCourse,
     fetchInstructorStudentCourses,
     fetchCourseStudents,
@@ -24,6 +25,7 @@ import {
     InstructorOverviewSection,
     CoursesSection,
     StudentsSection,
+    ProfileSection,
     AiSection,
     OfferingsSection,
     ChatTab,
@@ -47,6 +49,7 @@ const InstructorDashboard = () => {
 
     const [profile, setProfile] = useState(null);
     const [loadingProfile, setLoadingProfile] = useState(false);
+    const [savingProfile, setSavingProfile] = useState(false);
     const [courseList, setCourseList] = useState([]);
     const [offeringsByCourse, setOfferingsByCourse] = useState({});
     const [loadingOfferings, setLoadingOfferings] = useState(false);
@@ -68,14 +71,6 @@ const InstructorDashboard = () => {
     const [showDeliveryModal, setShowDeliveryModal] = useState(false);
     const [creatingDeliveryCourse, setCreatingDeliveryCourse] = useState(false);
     const [deliveryCategories, setDeliveryCategories] = useState([]);
-    const [deliveryCourse, setDeliveryCourse] = useState({
-        courseType: 'offline',
-        title: '',
-        description: '',
-        categoryId: '',
-        price: '',
-        languageCode: 'ky',
-    });
 
     const analyticsLink = useMemo(() => {
         const to = new Date();
@@ -106,6 +101,17 @@ const InstructorDashboard = () => {
     );
 
     const aiEnabledCount = aiCourses.length;
+
+    const expertiseTags = useMemo(
+        () => (Array.isArray(profile?.expertiseTags) ? profile.expertiseTags.filter(Boolean) : []),
+        [profile]
+    );
+
+    const socialLinks = useMemo(
+        () =>
+            Object.entries(profile?.socialLinks || {}).filter(([, value]) => Boolean(value?.trim?.() || value)),
+        [profile]
+    );
 
     const offerings = useMemo(
         () => courses.flatMap((course) => offeringsByCourse[course.id] || []),
@@ -406,21 +412,33 @@ const InstructorDashboard = () => {
         setSelectedStudentCourseId(courseId);
     }, []);
 
-    const handleDeliveryCourseChange = (event) => {
-        const { name, value } = event.target;
-        setDeliveryCourse((prev) => ({ ...prev, [name]: value }));
-    };
+    const handleSaveInstructorProfile = useCallback(
+        async (payload) => {
+            if (!user?.id) return false;
+
+            setSavingProfile(true);
+            try {
+                const updated = await updateInstructorProfile(user.id, payload);
+                setProfile(updated);
+                toast.success('Инструктор профили сакталды');
+                return true;
+            } catch (error) {
+                console.error('Failed to save instructor profile', error);
+                const message =
+                    error?.response?.data?.message ||
+                    error?.message ||
+                    'Инструктор профилин сактоо мүмкүн болбоду';
+                toast.error(Array.isArray(message) ? message.join(', ') : message);
+                return false;
+            } finally {
+                setSavingProfile(false);
+            }
+        },
+        [user?.id]
+    );
 
     const closeDeliveryModal = () => {
         setShowDeliveryModal(false);
-        setDeliveryCourse({
-            courseType: 'offline',
-            title: '',
-            description: '',
-            categoryId: '',
-            price: '',
-            languageCode: 'ky',
-        });
     };
 
     const openDeliveryModal = async () => {
@@ -437,22 +455,22 @@ const InstructorDashboard = () => {
         setShowDeliveryModal(true);
     };
 
-    const handleCreateDeliveryCourse = async () => {
-        if (!deliveryCourse.title || !deliveryCourse.description || !deliveryCourse.categoryId) {
+    const handleCreateDeliveryCourse = async (payload) => {
+        if (!payload?.title || !payload?.description || !payload?.categoryId) {
             toast.error('Сураныч, аталыш, сүрөттөмө жана категорияны толтуруңуз.');
-            return;
+            return false;
         }
 
         setCreatingDeliveryCourse(true);
         try {
             await createCourse({
-                title: deliveryCourse.title,
-                description: deliveryCourse.description,
-                categoryId: parseInt(deliveryCourse.categoryId, 10),
-                price: Number(deliveryCourse.price || 0),
-                languageCode: deliveryCourse.languageCode || 'ky',
-                courseType: deliveryCourse.courseType,
-                isPaid: Number(deliveryCourse.price || 0) > 0,
+                title: payload.title,
+                description: payload.description,
+                categoryId: parseInt(payload.categoryId, 10),
+                price: Number(payload.price || 0),
+                languageCode: payload.languageCode || 'ky',
+                courseType: payload.courseType,
+                isPaid: Number(payload.price || 0) > 0,
             });
 
             toast.success('Курс түзүлдү. Эми группа жана сессия түзө аласыз.');
@@ -461,9 +479,11 @@ const InstructorDashboard = () => {
 
             const data = await fetchInstructorCourses({ status: 'approved' });
             setCourseList(Array.isArray(data?.courses) ? data.courses : []);
+            return true;
         } catch (error) {
             console.error('Failed to create delivery course', error);
             toast.error('Курсту түзүүдө ката кетти.');
+            return false;
         } finally {
             setCreatingDeliveryCourse(false);
         }
@@ -479,7 +499,7 @@ const InstructorDashboard = () => {
             case 'attendance':
                 return <AttendancePage embedded />;
             case 'analytics':
-                return <InstructorAnalyticsPage />;
+                return <InstructorAnalyticsPage embedded />;
             case 'leaderboard':
                 return <InternalLeaderboard />;
             case 'homework':
@@ -496,8 +516,6 @@ const InstructorDashboard = () => {
                         onOpenDeliveryModal={openDeliveryModal}
                         showDeliveryModal={showDeliveryModal}
                         onCloseDeliveryModal={closeDeliveryModal}
-                        deliveryCourse={deliveryCourse}
-                        onDeliveryCourseChange={handleDeliveryCourseChange}
                         onCreateDeliveryCourse={handleCreateDeliveryCourse}
                         creatingDeliveryCourse={creatingDeliveryCourse}
                         deliveryCategories={deliveryCategories}
@@ -524,6 +542,16 @@ const InstructorDashboard = () => {
                         onProgressMinChange={setProgressMin}
                         progressMax={progressMax}
                         onProgressMaxChange={setProgressMax}
+                    />
+                );
+            case 'profile':
+                return (
+                    <ProfileSection
+                        profile={profile}
+                        expertiseTags={expertiseTags}
+                        socialLinks={socialLinks}
+                        onSaveProfile={handleSaveInstructorProfile}
+                        savingProfile={savingProfile}
                     />
                 );
             case 'ai':
@@ -596,6 +624,7 @@ const InstructorDashboard = () => {
             label: sidebarOpen ? 'Менюну жашыруу' : 'Менюну көрсөтүү',
             onClick: () => setSidebarOpen((prev) => !prev),
             variant: 'secondary',
+            className: 'hidden md:inline-flex',
         },
     ];
 

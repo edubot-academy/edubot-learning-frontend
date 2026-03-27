@@ -32,6 +32,5 @@ Prettier config is checked in (`.prettierrc.json`) to keep formatting consistent
 
 - Current frontend version: `1.3.8`
 - Changelog: `CHANGELOG.md`
-- Dashboard design system: `src/components/ui/DashboardDesignSystem.md`
 - Leaderboard release notes: `docs/shared/releases/LEADERBOARD_V2_RELEASE_NOTES.md`
 - Shared contracts: `docs/shared/contracts/`
