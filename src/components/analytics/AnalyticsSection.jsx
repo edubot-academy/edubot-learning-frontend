@@ -13,18 +13,18 @@ const AnalyticsSection = ({
 }) => {
   if (loading) {
     return (
-      <div className={`rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 overflow-hidden ${className}`}>
-        <div className="p-4 sm:p-6 border-b border-gray-200 dark:border-gray-700">
+      <div className={`overflow-hidden rounded-3xl border border-edubot-line/80 bg-white/90 shadow-edubot-card dark:border-slate-700 dark:bg-slate-950 ${className}`}>
+        <div className="border-b border-edubot-line/70 p-4 sm:p-6 dark:border-slate-700">
           <div className="animate-pulse">
-            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/3 mb-2"></div>
-            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
+            <div className="mb-2 h-4 w-1/3 rounded bg-edubot-surfaceAlt dark:bg-slate-800"></div>
+            <div className="h-4 w-1/2 rounded bg-edubot-surfaceAlt dark:bg-slate-800"></div>
           </div>
         </div>
         <div className="p-4 sm:p-6">
           <div className="animate-pulse space-y-3 sm:space-y-4">
-            <div className="h-3 sm:h-4 bg-gray-200 dark:bg-gray-700 rounded"></div>
-            <div className="h-3 sm:h-4 bg-gray-200 dark:bg-gray-700 rounded w-5/6"></div>
-            <div className="h-3 sm:h-4 bg-gray-200 dark:bg-gray-700 rounded w-4/6"></div>
+            <div className="h-3 rounded bg-edubot-surfaceAlt sm:h-4 dark:bg-slate-800"></div>
+            <div className="h-3 w-5/6 rounded bg-edubot-surfaceAlt sm:h-4 dark:bg-slate-800"></div>
+            <div className="h-3 w-4/6 rounded bg-edubot-surfaceAlt sm:h-4 dark:bg-slate-800"></div>
           </div>
         </div>
       </div>
@@ -33,7 +33,7 @@ const AnalyticsSection = ({
 
   if (error) {
     return (
-      <div className={`rounded-2xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 overflow-hidden ${className}`}>
+      <div className={`overflow-hidden rounded-3xl border border-red-200 bg-red-50/90 dark:border-red-500/30 dark:bg-red-500/10 ${className}`}>
         <div className="p-6">
           <div className="flex items-center justify-between">
             <div>
@@ -57,18 +57,18 @@ const AnalyticsSection = ({
   }
 
   return (
-    <section className={`rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 overflow-hidden ${className}`}>
+    <section className={`overflow-hidden rounded-3xl border border-edubot-line/80 bg-white/90 shadow-edubot-card dark:border-slate-700 dark:bg-slate-950 ${className}`}>
       {(title || subtitle || action) && (
-        <div className={`p-6 border-b border-gray-200 dark:border-gray-700 ${headerClassName}`}>
-          <div className="flex items-center justify-between">
+        <div className={`border-b border-edubot-line/70 p-6 dark:border-slate-700 ${headerClassName}`}>
+          <div className="flex items-center justify-between gap-4">
             <div>
               {title && (
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                <h3 className="text-lg font-semibold text-edubot-ink dark:text-gray-100">
                   {title}
                 </h3>
               )}
               {subtitle && (
-                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                <p className="mt-1 text-sm text-edubot-muted dark:text-slate-400">
                   {subtitle}
                 </p>
               )}

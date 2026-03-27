@@ -7,25 +7,55 @@ import {
     DashboardMetricCard,
     DashboardSectionHeader,
 } from '@components/ui/dashboard';
-import { FiBookOpen, FiClock, FiEdit3, FiEye, FiLayers, FiPlus, FiUsers } from 'react-icons/fi';
+import { FiBookOpen, FiClock, FiEdit3, FiEye, FiLayers, FiPlus, FiSend, FiUsers } from 'react-icons/fi';
 import CreateDeliveryCourseModal from './modals/CreateDeliveryCourseModal.jsx';
 
 const CoursesSection = ({
     courses,
     loading,
+    submittingCourseId,
     onOpenDeliveryModal,
     showDeliveryModal,
     onCloseDeliveryModal,
     onCreateDeliveryCourse,
+    onSubmitCourseForApproval,
     creatingDeliveryCourse,
     deliveryCategories,
 }) => {
     const publishedCount = courses.filter((course) => course.isPublished).length;
-    const pendingCount = courses.filter((course) => !course.isPublished).length;
+    const pendingCount = courses.filter((course) => course.status === 'pending').length;
     const totalStudents = courses.reduce(
         (sum, course) => sum + Number(course.studentsCount || 0),
         0
     );
+
+    const getStatusMeta = (course) => {
+        if (course.status === 'approved' || course.isPublished) {
+            return {
+                label: 'Бекитилди',
+                badgeClass: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300',
+            };
+        }
+
+        if (course.status === 'pending') {
+            return {
+                label: 'Каралууда',
+                badgeClass: 'bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300',
+            };
+        }
+
+        if (course.status === 'rejected') {
+            return {
+                label: 'Баш тартылган',
+                badgeClass: 'bg-rose-100 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300',
+            };
+        }
+
+        return {
+            label: 'Черновик',
+            badgeClass: 'bg-slate-100 text-slate-700 dark:bg-slate-500/15 dark:text-slate-300',
+        };
+    };
 
     return (
         <div className="space-y-6">
@@ -95,79 +125,103 @@ const CoursesSection = ({
                                     key={course.id || course.title}
                                     className="group rounded-3xl border border-edubot-line/80 bg-white/90 p-5 shadow-edubot-card transition-all duration-300 hover:-translate-y-1 hover:border-edubot-orange/40 hover:shadow-edubot-hover dark:border-slate-700 dark:bg-slate-950"
                                 >
-                                    <div className="flex items-start justify-between gap-3">
-                                        <div className="min-w-0">
-                                            <h3 className="text-lg font-semibold text-edubot-ink transition-colors duration-300 group-hover:text-edubot-orange dark:text-white">
-                                                {course.title}
-                                            </h3>
-                                            {course.category?.name ? (
-                                                <p className="mt-1 text-sm text-edubot-muted dark:text-slate-400">
-                                                    {course.category.name}
+                                    {(() => {
+                                        const statusMeta = getStatusMeta(course);
+                                        const isDraft = course.status === 'draft' || !course.status;
+                                        const isSubmitting = submittingCourseId === course.id;
+
+                                        return (
+                                            <>
+                                                <div className="flex items-start justify-between gap-3">
+                                                    <div className="min-w-0">
+                                                        <h3 className="text-lg font-semibold text-edubot-ink transition-colors duration-300 group-hover:text-edubot-orange dark:text-white">
+                                                            {course.title}
+                                                        </h3>
+                                                        {course.category?.name ? (
+                                                            <p className="mt-1 text-sm text-edubot-muted dark:text-slate-400">
+                                                                {course.category.name}
+                                                            </p>
+                                                        ) : null}
+                                                    </div>
+
+                                                    <span
+                                                        className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold ${statusMeta.badgeClass}`}
+                                                    >
+                                                        {statusMeta.label}
+                                                    </span>
+                                                </div>
+
+                                                <p className="mt-4 line-clamp-2 text-sm text-edubot-muted dark:text-slate-400">
+                                                    {course.description || 'Сүрөттөмө жок'}
                                                 </p>
-                                            ) : null}
-                                        </div>
 
-                                        <span
-                                            className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold ${
-                                                course.isPublished
-                                                    ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300'
-                                                    : 'bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300'
-                                            }`}
-                                        >
-                                            {course.isPublished ? 'Жарыяланды' : 'Каралууда'}
-                                        </span>
-                                    </div>
+                                                <div className="mt-4 flex flex-wrap items-center gap-2">
+                                                    <span className="rounded-full bg-edubot-orange/10 px-2.5 py-1 text-xs font-medium text-edubot-orange dark:bg-edubot-orange/20">
+                                                        {course.category?.name || course.category || 'Категориясыз'}
+                                                    </span>
+                                                    <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700 dark:bg-slate-800 dark:text-slate-200">
+                                                        {course.courseType === 'offline'
+                                                            ? 'Оффлайн'
+                                                            : course.courseType === 'online_live'
+                                                                ? 'Онлайн түз эфир'
+                                                                : 'Видео'}
+                                                    </span>
+                                                    <span className="text-xs text-edubot-muted dark:text-slate-400">
+                                                        {course.price ? `${course.price} сом` : 'Акысыз'}
+                                                    </span>
+                                                </div>
 
-                                    <p className="mt-4 line-clamp-2 text-sm text-edubot-muted dark:text-slate-400">
-                                        {course.description || 'Сүрөттөмө жок'}
-                                    </p>
+                                                <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                                                    <div className="rounded-2xl border border-edubot-line/70 bg-edubot-surfaceAlt/60 px-4 py-3 dark:border-slate-700 dark:bg-slate-900/70">
+                                                        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-edubot-muted dark:text-slate-400">
+                                                            Студенттер
+                                                        </p>
+                                                        <p className="mt-2 text-lg font-semibold text-edubot-ink dark:text-white">
+                                                            {course.studentsCount ? `${course.studentsCount}` : '—'}
+                                                        </p>
+                                                    </div>
+                                                    <div className="rounded-2xl border border-edubot-line/70 bg-edubot-surfaceAlt/60 px-4 py-3 dark:border-slate-700 dark:bg-slate-900/70">
+                                                        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-edubot-muted dark:text-slate-400">
+                                                            Жаңыртылды
+                                                        </p>
+                                                        <p className="mt-2 text-sm font-semibold text-edubot-ink dark:text-white">
+                                                            {course.updatedAt
+                                                                ? new Date(course.updatedAt).toLocaleDateString()
+                                                                : 'Маалымат жок'}
+                                                        </p>
+                                                    </div>
+                                                </div>
 
-                                    <div className="mt-4 flex flex-wrap items-center gap-2">
-                                        <span className="rounded-full bg-edubot-orange/10 px-2.5 py-1 text-xs font-medium text-edubot-orange dark:bg-edubot-orange/20">
-                                            {course.category?.name || course.category || 'Категориясыз'}
-                                        </span>
-                                        <span className="text-xs text-edubot-muted dark:text-slate-400">
-                                            {course.price ? `${course.price} сом` : 'Акысыз'}
-                                        </span>
-                                    </div>
-
-                                    <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                                        <div className="rounded-2xl border border-edubot-line/70 bg-edubot-surfaceAlt/60 px-4 py-3 dark:border-slate-700 dark:bg-slate-900/70">
-                                            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-edubot-muted dark:text-slate-400">
-                                                Студенттер
-                                            </p>
-                                            <p className="mt-2 text-lg font-semibold text-edubot-ink dark:text-white">
-                                                {course.studentsCount ? `${course.studentsCount}` : '—'}
-                                            </p>
-                                        </div>
-                                        <div className="rounded-2xl border border-edubot-line/70 bg-edubot-surfaceAlt/60 px-4 py-3 dark:border-slate-700 dark:bg-slate-900/70">
-                                            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-edubot-muted dark:text-slate-400">
-                                                Жаңыртылды
-                                            </p>
-                                            <p className="mt-2 text-sm font-semibold text-edubot-ink dark:text-white">
-                                                {course.updatedAt
-                                                    ? new Date(course.updatedAt).toLocaleDateString()
-                                                    : 'Маалымат жок'}
-                                            </p>
-                                        </div>
-                                    </div>
-
-                                    <div className="mt-5 flex flex-wrap gap-2">
-                                        <Link
-                                            to={`/courses/${course.id}`}
-                                            className="dashboard-button-secondary"
-                                        >
-                                            <FiEye className="h-4 w-4" />
-                                            Көрүү
-                                        </Link>
-                                        <Link
-                                            to={`/instructor/courses/edit/${course.id}`}
-                                            className="dashboard-button-primary"
-                                        >
-                                            <FiEdit3 className="h-4 w-4" />
-                                            Өзгөртүү
-                                        </Link>
-                                    </div>
+                                                <div className="mt-5 flex flex-wrap gap-2">
+                                                    <Link
+                                                        to={`/courses/${course.id}`}
+                                                        className="dashboard-button-secondary"
+                                                    >
+                                                        <FiEye className="h-4 w-4" />
+                                                        Көрүү
+                                                    </Link>
+                                                    <Link
+                                                        to={`/instructor/courses/edit/${course.id}`}
+                                                        className="dashboard-button-primary"
+                                                    >
+                                                        <FiEdit3 className="h-4 w-4" />
+                                                        Өзгөртүү
+                                                    </Link>
+                                                    {isDraft ? (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => onSubmitCourseForApproval?.(course.id)}
+                                                            disabled={isSubmitting}
+                                                            className="dashboard-button-secondary"
+                                                        >
+                                                            <FiSend className="h-4 w-4" />
+                                                            {isSubmitting ? 'Жөнөтүлүүдө...' : 'Тастыктоого жөнөтүү'}
+                                                        </button>
+                                                    ) : null}
+                                                </div>
+                                            </>
+                                        );
+                                    })()}
                                 </div>
                             ))}
                         </div>

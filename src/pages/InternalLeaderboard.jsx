@@ -83,6 +83,28 @@ const normalizeItems = (payload) => {
     return [];
 };
 
+const normalizeCourseOptions = (payload) =>
+    normalizeItems(payload)
+        .map((item) => {
+            const resolvedId =
+                item?.id ??
+                item?.courseId ??
+                item?.course?.id ??
+                item?.course?.courseId;
+
+            return {
+                ...item,
+                id: resolvedId,
+                title:
+                    item?.title ||
+                    item?.courseTitle ||
+                    item?.course?.title ||
+                    item?.name ||
+                    'Курс',
+            };
+        })
+        .filter((item) => Number.isFinite(Number(item?.id)));
+
 const InternalLeaderboard = () => {
     const { user } = useContext(AuthContext);
     const [track, setTrack] = useState('all');
@@ -108,7 +130,7 @@ const InternalLeaderboard = () => {
                         ? await fetchStudentCourses(user.id)
                         : await fetchCourses();
                 if (cancelled) return;
-                const list = normalizeItems(response);
+                const list = normalizeCourseOptions(response);
                 setCourses(list);
                 if (list.length) {
                     setSelectedCourseId(String(list[0].id));
@@ -156,7 +178,9 @@ const InternalLeaderboard = () => {
     }, [track]);
 
     useEffect(() => {
-        if (!selectedCourseId) {
+        const numericCourseId = Number(selectedCourseId);
+
+        if (!selectedCourseId || !Number.isFinite(numericCourseId)) {
             setCourseLeaders({ items: [], total: 0 });
             return;
         }
@@ -165,7 +189,7 @@ const InternalLeaderboard = () => {
         const loadCourseBoard = async () => {
             setLoadingCourseBoard(true);
             try {
-                const data = await fetchInternalCourseLeaderboard(Number(selectedCourseId), {
+                const data = await fetchInternalCourseLeaderboard(numericCourseId, {
                     track,
                     limit: 10,
                 });

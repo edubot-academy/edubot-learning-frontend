@@ -12,6 +12,7 @@ import {
     fetchCategories,
     fetchInstructorCourses,
 } from '@services/api';
+import { markCoursePending } from '@features/courses/api';
 import toast from 'react-hot-toast';
 import Loader from '../shared/ui/Loader';
 import FloatingActionButton from '../components/ui/FloatingActionButton';
@@ -70,6 +71,7 @@ const InstructorDashboard = () => {
 
     const [showDeliveryModal, setShowDeliveryModal] = useState(false);
     const [creatingDeliveryCourse, setCreatingDeliveryCourse] = useState(false);
+    const [submittingCourseId, setSubmittingCourseId] = useState(null);
     const [deliveryCategories, setDeliveryCategories] = useState([]);
 
     const analyticsLink = useMemo(() => {
@@ -87,6 +89,11 @@ const InstructorDashboard = () => {
 
     const aiCourses = useMemo(
         () => courses.filter((course) => course.aiAssistantEnabled),
+        [courses]
+    );
+
+    const approvedCourses = useMemo(
+        () => courses.filter((course) => course?.status === 'approved' && course?.isPublished),
         [courses]
     );
 
@@ -116,6 +123,11 @@ const InstructorDashboard = () => {
     const offerings = useMemo(
         () => courses.flatMap((course) => offeringsByCourse[course.id] || []),
         [courses, offeringsByCourse]
+    );
+
+    const approvedOfferings = useMemo(
+        () => approvedCourses.flatMap((course) => offeringsByCourse[course.id] || []),
+        [approvedCourses, offeringsByCourse]
     );
 
     const handleSwipeLeft = useCallback(() => {
@@ -157,7 +169,7 @@ const InstructorDashboard = () => {
         const loadCourses = async () => {
             setLoadingCourses(true);
             try {
-                const data = await fetchInstructorCourses({ status: 'approved' });
+                const data = await fetchInstructorCourses({ status: 'all' });
                 setCourseList(Array.isArray(data?.courses) ? data.courses : []);
             } catch (error) {
                 console.error('Failed to load instructor courses', error);
@@ -272,13 +284,13 @@ const InstructorDashboard = () => {
 
         try {
             const data = await fetchInstructorStudentCourses();
-            const list = data?.courses || [];
+            const list = (data?.courses || []).filter(
+                (course) => course?.status === 'approved' && course?.isPublished
+            );
 
             setStudentCourses(list);
             setStudentCoursesTotal(
-                typeof data?.total === 'number'
-                    ? data.total
-                    : list.reduce((acc, course) => acc + (course.studentCount || 0), 0)
+                list.reduce((acc, course) => acc + (course.studentCount || 0), 0)
             );
 
             setSelectedStudentCourseId((prev) => {
@@ -477,7 +489,7 @@ const InstructorDashboard = () => {
             closeDeliveryModal();
             setActiveTab('courses');
 
-            const data = await fetchInstructorCourses({ status: 'approved' });
+            const data = await fetchInstructorCourses({ status: 'all' });
             setCourseList(Array.isArray(data?.courses) ? data.courses : []);
             return true;
         } catch (error) {
@@ -488,6 +500,29 @@ const InstructorDashboard = () => {
             setCreatingDeliveryCourse(false);
         }
     };
+
+    const handleSubmitCourseForApproval = useCallback(async (courseId) => {
+        if (!courseId) return false;
+
+        setSubmittingCourseId(courseId);
+        try {
+            await markCoursePending(courseId);
+            const data = await fetchInstructorCourses({ status: 'all' });
+            setCourseList(Array.isArray(data?.courses) ? data.courses : []);
+            toast.success('Курс тастыктоого жөнөтүлдү');
+            return true;
+        } catch (error) {
+            console.error('Failed to submit course for approval', error);
+            const message =
+                error?.response?.data?.message ||
+                error?.message ||
+                'Курсту тастыктоого жөнөтүү мүмкүн болбоду';
+            toast.error(Array.isArray(message) ? message.join(', ') : message);
+            return false;
+        } finally {
+            setSubmittingCourseId(null);
+        }
+    }, []);
 
     const isTabLoading =
         loadingStudentCourses || loadingCourseStudents || loadingOfferings;
@@ -513,10 +548,12 @@ const InstructorDashboard = () => {
                     <CoursesSection
                         courses={courses}
                         loading={loadingCourses}
+                        submittingCourseId={submittingCourseId}
                         onOpenDeliveryModal={openDeliveryModal}
                         showDeliveryModal={showDeliveryModal}
                         onCloseDeliveryModal={closeDeliveryModal}
                         onCreateDeliveryCourse={handleCreateDeliveryCourse}
+                        onSubmitCourseForApproval={handleSubmitCourseForApproval}
                         creatingDeliveryCourse={creatingDeliveryCourse}
                         deliveryCategories={deliveryCategories}
                     />
@@ -559,11 +596,11 @@ const InstructorDashboard = () => {
             case 'offerings':
                 return (
                     <OfferingsSection
-                        courses={courses}
-                        offerings={offerings}
+                        courses={approvedCourses}
+                        offerings={approvedOfferings}
                         loading={loadingOfferings}
                         refreshOfferings={() => {
-                            if (courses.length) loadOfferingsForCourses(courses);
+                            if (approvedCourses.length) loadOfferingsForCourses(approvedCourses);
                         }}
                     />
                 );

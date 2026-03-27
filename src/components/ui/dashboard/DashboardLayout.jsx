@@ -1,4 +1,5 @@
 /* eslint-disable react/prop-types */
+import { useEffect, useState } from 'react';
 import SkipNavigation from '../SkipNavigation';
 import DashboardSidebar from '@features/dashboard/components/DashboardSidebar';
 
@@ -12,6 +13,25 @@ const DashboardLayout = ({
   headerContent,
   className = '',
 }) => {
+  const [isMobile, setIsMobile] = useState(() =>
+    typeof window !== 'undefined' ? window.innerWidth < 768 : false
+  );
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    handleResize();
+    window.addEventListener('resize', handleResize);
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, []);
+
   const activeId = navItems.find((item) => item.isActive)?.id || navItems[0]?.id;
 
   const handleSidebarSelect = (id) => {
@@ -36,36 +56,38 @@ const DashboardLayout = ({
           {mobileTabs}
         </div>
 
-        <div className="hidden md:block mx-auto max-w-7xl px-6 pb-14">
-          <div className="flex items-start gap-6 lg:gap-8">
-            <DashboardSidebar
-              items={navItems}
-              activeId={activeId}
-              onSelect={handleSidebarSelect}
-              isOpen={sidebarOpen}
-              onToggle={setSidebarOpen}
-              className="sticky top-28 hidden md:flex md:flex-shrink-0"
-            />
+        {!isMobile ? (
+          <div className="hidden md:block mx-auto max-w-7xl px-6 pb-14">
+            <div className="flex items-start gap-6 lg:gap-8">
+              <DashboardSidebar
+                items={navItems}
+                activeId={activeId}
+                onSelect={handleSidebarSelect}
+                isOpen={sidebarOpen}
+                onToggle={setSidebarOpen}
+                className="sticky top-28 hidden md:flex md:flex-shrink-0"
+              />
 
-            <main
-              className="flex-1 space-y-6 lg:space-y-7"
-              id="main-content"
-              tabIndex={-1}
-              role="main"
-              aria-label={`${role} dashboard content`}
-            >
+              <main
+                className="flex-1 space-y-6 lg:space-y-7"
+                id="main-content"
+                tabIndex={-1}
+                role="main"
+                aria-label={`${role} dashboard content`}
+              >
+                {headerContent}
+                {children}
+              </main>
+            </div>
+          </div>
+        ) : (
+          <div className="mx-auto max-w-6xl px-4 pb-28 md:hidden">
+            <div className="space-y-4">
               {headerContent}
               {children}
-            </main>
+            </div>
           </div>
-        </div>
-
-        <div className="mx-auto max-w-6xl px-4 pb-28 md:hidden">
-          <div className="space-y-4">
-            {headerContent}
-            {children}
-          </div>
-        </div>
+        )}
       </div>
     </div>
   );

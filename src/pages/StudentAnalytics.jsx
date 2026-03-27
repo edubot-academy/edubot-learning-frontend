@@ -168,11 +168,11 @@ const StudentAnalyticsPage = ({ embedded = false }) => {
                 {/* Окууну Улантыруу */}
                 {continueLearning && (
                     <AnalyticsSection title="Окууну Улантыруу" subtitle="Акыркы сабакка кайтуу">
-                        <div className="bg-gradient-to-br from-edubot-orange to-edubot-orange/90 rounded-xl p-6 text-white shadow-lg">
+                        <div className="rounded-3xl border border-edubot-line/80 bg-gradient-to-br from-edubot-orange via-edubot-soft to-edubot-orange p-6 text-white shadow-edubot-hover dark:border-edubot-soft/20">
                             <div className="flex items-start justify-between">
                                 <div className="flex-1">
                                     <h4 className="text-xl font-bold mb-2">{continueLearning.courseTitle}</h4>
-                                    <p className="text-edubot-orange/90 mb-4">{continueLearning.lessonTitle}</p>
+                                    <p className="mb-4 text-white/80">{continueLearning.lessonTitle}</p>
                                     <div className="mb-4">
                                         <div className="flex justify-between text-sm mb-1">
                                             <span>Прогресс</span>
@@ -186,9 +186,8 @@ const StudentAnalyticsPage = ({ embedded = false }) => {
                                         </div>
                                     </div>
                                     <button
-                                        className="bg-white text-edubot-orange px-6 py-3 sm:px-4 sm:py-2 rounded-lg font-medium hover:bg-edubot-orange hover:text-white transition-all duration-200 active:scale-95 touch-manipulation min-h-[44px] min-w-[120px] sm:min-w-[100px]"
+                                        className="inline-flex min-h-[44px] min-w-[120px] touch-manipulation items-center justify-center rounded-2xl bg-white px-6 py-3 font-medium text-edubot-orange transition-all duration-200 hover:-translate-y-0.5 hover:bg-edubot-surface active:scale-95 sm:min-w-[100px] sm:px-4 sm:py-2"
                                         onClick={() => {
-                                            // Navigate to the course or lesson
                                             if (continueLearning?.courseId) {
                                                 navigate(`/courses/${continueLearning.courseId}`);
                                             }
@@ -198,7 +197,7 @@ const StudentAnalyticsPage = ({ embedded = false }) => {
                                     </button>
                                 </div>
                                 <div className="ml-6">
-                                    <div className="w-16 h-16 bg-white/20 rounded-lg flex items-center justify-center">
+                                    <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white/20">
                                         <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -237,8 +236,8 @@ const StudentAnalyticsPage = ({ embedded = false }) => {
                         {recentActivity && recentActivity.length > 0 ? (
                             <div className="space-y-3">
                                 {recentActivity.slice(0, 10).map((activity, index) => (
-                                    <div key={index} className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${activity.type === 'lesson' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400' :
+                                    <div key={index} className="flex items-center gap-3 rounded-2xl border border-edubot-line/70 bg-edubot-surfaceAlt/40 p-3 dark:border-slate-700 dark:bg-slate-900/60">
+                                        <div className={`flex h-10 w-10 items-center justify-center rounded-2xl ${activity.type === 'lesson' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400' :
                                             activity.type === 'quiz' ? 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400' :
                                                 activity.type === 'course' ? 'bg-edubot-orange/20 text-edubot-orange' :
                                                     'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400'
@@ -265,10 +264,10 @@ const StudentAnalyticsPage = ({ embedded = false }) => {
                                             )}
                                         </div>
                                         <div className="flex-1">
-                                            <p className="font-medium text-gray-900 dark:text-gray-100">
+                                            <p className="font-medium text-edubot-ink dark:text-gray-100">
                                                 {activity.title || 'Активдүүлүк'}
                                             </p>
-                                            <p className="text-sm text-gray-600 dark:text-gray-400">
+                                            <p className="text-sm text-edubot-muted dark:text-slate-400">
                                                 {activity.timestamp ? new Date(activity.timestamp).toLocaleString() : 'Белгисиз убакыт'}
                                             </p>
                                         </div>
@@ -330,9 +329,9 @@ const StudentAnalyticsPage = ({ embedded = false }) => {
                 {/* Окуу Корутулары */}
                 <AnalyticsSection title="Окуу Корутулары" subtitle="Ийгиликке жетүү үчүн жеке сунуштар">
                     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        <div className="p-4 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-xl">
+                        <div className="rounded-3xl border border-blue-200 bg-blue-50/90 p-4 dark:border-blue-500/30 dark:bg-blue-500/10">
                             <div className="flex items-center gap-3 mb-3">
-                                <div className="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center">
+                                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-blue-500">
                                     <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                                     </svg>
@@ -346,9 +345,9 @@ const StudentAnalyticsPage = ({ embedded = false }) => {
                             </p>
                         </div>
 
-                        <div className="p-4 bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-900/30 border border-green-200 dark:border-green-800 rounded-xl">
+                        <div className="rounded-3xl border border-green-200 bg-green-50/90 p-4 dark:border-green-500/30 dark:bg-green-500/10">
                             <div className="flex items-center gap-3 mb-3">
-                                <div className="w-10 h-10 bg-green-500 rounded-lg flex items-center justify-center">
+                                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-green-500">
                                     <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                                     </svg>
@@ -360,9 +359,9 @@ const StudentAnalyticsPage = ({ embedded = false }) => {
                             </p>
                         </div>
 
-                        <div className="p-4 bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-900/30 border border-purple-200 dark:border-purple-800 rounded-xl">
+                        <div className="rounded-3xl border border-purple-200 bg-purple-50/90 p-4 dark:border-purple-500/30 dark:bg-purple-500/10">
                             <div className="flex items-center gap-3 mb-3">
-                                <div className="w-10 h-10 bg-purple-500 rounded-lg flex items-center justify-center">
+                                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-purple-500">
                                     <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
                                     </svg>

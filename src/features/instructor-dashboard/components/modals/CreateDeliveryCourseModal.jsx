@@ -115,7 +115,12 @@ const CreateDeliveryCourseModal = ({
                 }
             ]}
         >
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form
+                className="space-y-6"
+                onSubmit={(e) => {
+                    handleSubmit(e);
+                }}
+            >
                 {/* Course Type Selection */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
@@ -124,6 +129,7 @@ const CreateDeliveryCourseModal = ({
                         </label>
                         <div className="relative">
                             <select
+                                name="courseType"
                                 value={formData.courseType}
                                 onChange={handleChange}
                                 disabled={creatingDeliveryCourse}
@@ -159,6 +165,7 @@ const CreateDeliveryCourseModal = ({
                         </label>
                         <div className="relative">
                             <select
+                                name="languageCode"
                                 value={formData.languageCode}
                                 onChange={handleChange}
                                 disabled={creatingDeliveryCourse}
@@ -338,6 +345,7 @@ const CreateDeliveryCourseModal = ({
                         </div>
                     </div>
                 </div>
+                <button type="submit" className="hidden" aria-hidden="true" tabIndex={-1} />
             </form>
         </AdvancedModal>
     );

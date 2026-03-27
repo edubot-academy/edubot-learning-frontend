@@ -1,5 +1,45 @@
 # Changelog
 
+## [1.3.10] - 2026-03-27
+
+### 🛠️ **ADMIN + INSTRUCTOR WORKFLOW FIXES**
+**Objective**: restore missing admin approval navigation, fix instructor draft/approval flow visibility, stabilize dashboard modal mounting, and clean up remaining dashboard regressions.
+
+### ✅ **ADMIN PANEL**
+- Restored the missing `Жаңы курстарды бекитүү` tab in the admin dashboard navigation.
+- Confirmed the existing pending-course approval screen remains wired to the current backend pending-course API.
+
+### ✅ **INSTRUCTOR COURSE FLOW**
+- Instructor `Courses` tab now loads all instructor course statuses instead of only approved courses.
+- Course cards now show real status badges:
+  - `Черновик`
+  - `Каралууда`
+  - `Бекитилди`
+  - `Баш тартылган`
+- Added `Тастыктоого жөнөтүү` action for draft courses directly from the instructor dashboard.
+- Added visible course-type badges for `Видео`, `Оффлайн`, and `Онлайн түз эфир`.
+
+### ✅ **INSTRUCTOR STUDENTS + OFFERINGS**
+- Restricted the instructor `Students` tab course selector to approved, published courses only.
+- Scoped the instructor `Offerings` workflow back to approved, published courses only, while keeping the `Courses` workspace visible across all statuses.
+
+### ✅ **MODAL + DASHBOARD STABILITY**
+- Fixed duplicate dashboard modal mounting by ensuring the dashboard layout no longer mounts desktop and mobile content trees at the same time.
+- Fixed the delivery-course modal form so `courseType` and `languageCode` selects update correctly again.
+- Restored keyboard Enter submission in the delivery-course modal while keeping a single submit path.
+
+### ✅ **ANALYTICS + LEADERBOARD**
+- Continued modernizing student analytics surfaces onto the shared dashboard styling.
+- Hardened internal leaderboard course normalization to avoid invalid `NaN` course-board requests.
+
+### ✅ **BUILD STATUS**
+- Production build passes after these workflow and dashboard fixes.
+- Remaining warnings are unchanged:
+  - mixed dynamic/static import in course-builder validation
+  - large chunk-size warnings
+
+---
+
 ## [1.3.9] - 2026-03-27
 
 ### 🎛️ **DASHBOARD OVERHAUL + CHAT CONSOLIDATION**
