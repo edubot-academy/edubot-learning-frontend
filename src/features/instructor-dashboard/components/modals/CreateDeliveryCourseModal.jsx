@@ -1,6 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import AdvancedModal from '@shared/ui/AdvancedModal';
+
+const DEFAULT_FORM_DATA = {
+    courseType: 'offline',
+    title: '',
+    description: '',
+    categoryId: '',
+    price: '',
+    languageCode: 'ky',
+};
 
 const CreateDeliveryCourseModal = ({
     isOpen,
@@ -8,31 +17,36 @@ const CreateDeliveryCourseModal = ({
     onCreateDeliveryCourse,
     creatingDeliveryCourse,
     deliveryCategories,
+    initialValues = null,
+    title = 'Жаңы курс түзүү',
+    subtitle = 'Оффлайн же онлайн курс түзүү үчүн формасы',
+    submitLabel = 'Курс түзүү',
 }) => {
-    const [formData, setFormData] = useState({
-        courseType: 'offline',
-        title: '',
-        description: '',
-        categoryId: '',
-        price: '',
-        languageCode: 'ky',
-    });
+    const [formData, setFormData] = useState(DEFAULT_FORM_DATA);
     const [errors, setErrors] = useState({});
 
     // Reset form when modal opens
     useEffect(() => {
         if (isOpen) {
+            const normalizedValues = initialValues
+                ? {
+                    courseType: initialValues.courseType || 'offline',
+                    title: initialValues.title || '',
+                    description: initialValues.description || '',
+                    categoryId: initialValues.categoryId ? String(initialValues.categoryId) : '',
+                    price:
+                        initialValues.price === 0 || initialValues.price
+                            ? String(initialValues.price)
+                            : '',
+                    languageCode: initialValues.languageCode || 'ky',
+                }
+                : DEFAULT_FORM_DATA;
             setFormData({
-                courseType: 'offline',
-                title: '',
-                description: '',
-                categoryId: '',
-                price: '',
-                languageCode: 'ky',
+                ...normalizedValues,
             });
             setErrors({});
         }
-    }, [isOpen]);
+    }, [initialValues, isOpen]);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -92,8 +106,8 @@ const CreateDeliveryCourseModal = ({
         <AdvancedModal
             isOpen={isOpen}
             onClose={onClose}
-            title="Жаңы курс түзүү"
-            subtitle="Оффлайн же онлайн курс түзүү үчүн формасы"
+            title={title}
+            subtitle={subtitle}
             size="lg"
             loading={creatingDeliveryCourse}
             preventClose={creatingDeliveryCourse}
@@ -108,7 +122,7 @@ const CreateDeliveryCourseModal = ({
                 },
                 {
                     id: 'submit',
-                    label: 'Курс түзүү',
+                    label: submitLabel,
                     onClick: handleSubmit,
                     variant: 'primary',
                     loading: creatingDeliveryCourse
@@ -360,6 +374,17 @@ CreateDeliveryCourseModal.propTypes = {
         id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
         name: PropTypes.string,
     })),
+    initialValues: PropTypes.shape({
+        courseType: PropTypes.string,
+        title: PropTypes.string,
+        description: PropTypes.string,
+        categoryId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+        price: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+        languageCode: PropTypes.string,
+    }),
+    title: PropTypes.string,
+    subtitle: PropTypes.string,
+    submitLabel: PropTypes.string,
 };
 
 export default CreateDeliveryCourseModal;

@@ -1,4 +1,5 @@
 /* eslint-disable react/prop-types */
+import { useState } from 'react';
 import {
     DashboardInsetPanel,
     DashboardMetricCard,
@@ -7,7 +8,8 @@ import {
 } from '@components/ui/dashboard';
 import { Link } from 'react-router-dom';
 import Loader from '@shared/ui/Loader';
-import { FiBookOpen, FiFolder, FiLayers, FiTrash2, FiUploadCloud, FiUsers } from 'react-icons/fi';
+import { FiBookOpen, FiEye, FiFolder, FiLayers, FiTrash2, FiUploadCloud, FiUsers } from 'react-icons/fi';
+import DeliveryCourseDetailsModal from './DeliveryCourseDetailsModal';
 
 const getCourseTypeLabel = (courseType) => {
     switch (courseType) {
@@ -47,6 +49,7 @@ const AdminCoursesTab = ({
     handleDeleteCategory,
     handleTranscode,
 }) => {
+    const [detailCourse, setDetailCourse] = useState(null);
     const publishedCourses = courses.filter((course) => course.isPublished).length;
     const deliveryCourses = courses.filter((course) => course.courseType !== 'video').length;
 
@@ -122,9 +125,21 @@ const AdminCoursesTab = ({
                                         </div>
 
                                         <div className="flex flex-wrap gap-2">
-                                            <Link to={`/courses/${course.id}`} className="dashboard-button-secondary">
-                                                Көрүү
-                                            </Link>
+                                            {isDeliveryCourse ? (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setDetailCourse(course)}
+                                                    className="dashboard-button-secondary"
+                                                >
+                                                    <FiEye className="h-4 w-4" />
+                                                    Ички маалымат
+                                                </button>
+                                            ) : (
+                                                <Link to={`/courses/${course.id}`} className="dashboard-button-secondary">
+                                                    <FiEye className="h-4 w-4" />
+                                                    Көрүү
+                                                </Link>
+                                            )}
                                             <button
                                                 type="button"
                                                 onClick={() => handleDeleteCourse(course.id)}
@@ -330,6 +345,11 @@ const AdminCoursesTab = ({
                     </DashboardInsetPanel>
                 </div>
             </div>
+            <DeliveryCourseDetailsModal
+                course={detailCourse}
+                isOpen={Boolean(detailCourse)}
+                onClose={() => setDetailCourse(null)}
+            />
         </div>
     );
 };

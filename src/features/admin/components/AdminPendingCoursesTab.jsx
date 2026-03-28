@@ -1,4 +1,5 @@
 /* eslint-disable react/prop-types */
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
     DashboardInsetPanel,
@@ -7,6 +8,7 @@ import {
     EmptyState,
 } from '@components/ui/dashboard';
 import { FiBookOpen, FiCheckCircle, FiClock, FiEye, FiUser, FiXCircle } from 'react-icons/fi';
+import DeliveryCourseDetailsModal from './DeliveryCourseDetailsModal';
 
 const getCourseTypeLabel = (courseType) => {
     if (courseType === 'offline') return 'Оффлайн';
@@ -15,6 +17,7 @@ const getCourseTypeLabel = (courseType) => {
 };
 
 const AdminPendingCoursesTab = ({ pendingCourses, onApprove, onReject }) => {
+    const [detailCourse, setDetailCourse] = useState(null);
     const deliveryCount = pendingCourses.filter(
         (course) => course.courseType === 'offline' || course.courseType === 'online_live'
     ).length;
@@ -104,13 +107,24 @@ const AdminPendingCoursesTab = ({ pendingCourses, onApprove, onReject }) => {
                                         </div>
 
                                         <div className="flex flex-wrap gap-2">
-                                            <Link
-                                                to={`/courses/${course.id}`}
-                                                className="dashboard-button-secondary"
-                                            >
-                                                <FiEye className="h-4 w-4" />
-                                                Алдын ала көрүү
-                                            </Link>
+                                            {course.courseType === 'offline' || course.courseType === 'online_live' ? (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setDetailCourse(course)}
+                                                    className="dashboard-button-secondary"
+                                                >
+                                                    <FiEye className="h-4 w-4" />
+                                                    Ички маалымат
+                                                </button>
+                                            ) : (
+                                                <Link
+                                                    to={`/courses/${course.id}`}
+                                                    className="dashboard-button-secondary"
+                                                >
+                                                    <FiEye className="h-4 w-4" />
+                                                    Алдын ала көрүү
+                                                </Link>
+                                            )}
                                             <button
                                                 type="button"
                                                 onClick={() => onApprove(course.id)}
@@ -169,6 +183,11 @@ const AdminPendingCoursesTab = ({ pendingCourses, onApprove, onReject }) => {
                     </div>
                 )}
             </DashboardInsetPanel>
+            <DeliveryCourseDetailsModal
+                course={detailCourse}
+                isOpen={Boolean(detailCourse)}
+                onClose={() => setDetailCourse(null)}
+            />
         </div>
     );
 };

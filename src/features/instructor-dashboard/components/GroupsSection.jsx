@@ -1,6 +1,6 @@
 /* eslint-disable react/prop-types */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import {
     DashboardCardSkeleton,
@@ -109,10 +109,12 @@ const normalizeGroupForm = (group = {}) => ({
 });
 
 const GroupsSection = ({ courses = [] }) => {
+    const [searchParams] = useSearchParams();
     const deliveryCourses = useMemo(
         () => courses.filter((course) => DELIVERY_TYPES.has(normalizeCourseType(course))),
         [courses]
     );
+    const requestedCourseId = searchParams.get('courseId');
     const [selectedCourseId, setSelectedCourseId] = useState('');
     const [groups, setGroups] = useState([]);
     const [loadingGroups, setLoadingGroups] = useState(false);
@@ -136,10 +138,18 @@ const GroupsSection = ({ courses = [] }) => {
     const previousCourseIdRef = useRef('');
 
     useEffect(() => {
-        if (!selectedCourseId && deliveryCourses.length) {
-            setSelectedCourseId(String(deliveryCourses[0].id));
+        const hasRequestedCourse = requestedCourseId
+            && deliveryCourses.some((course) => String(course.id) === String(requestedCourseId));
+
+        if (hasRequestedCourse && String(selectedCourseId) !== String(requestedCourseId)) {
+            setSelectedCourseId(String(requestedCourseId));
+            return;
         }
-    }, [deliveryCourses, selectedCourseId]);
+
+        if (!selectedCourseId && deliveryCourses.length) {
+            setSelectedCourseId(hasRequestedCourse ? String(requestedCourseId) : String(deliveryCourses[0].id));
+        }
+    }, [deliveryCourses, requestedCourseId, selectedCourseId]);
 
     const selectedCourse = useMemo(
         () =>

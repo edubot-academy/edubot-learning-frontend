@@ -11,6 +11,7 @@ import {
     createCourse,
     fetchCategories,
     fetchInstructorCourses,
+    updateCourse,
 } from '@services/api';
 import { markCoursePending } from '@features/courses/api';
 import toast from 'react-hot-toast';
@@ -72,6 +73,9 @@ const InstructorDashboard = () => {
 
     const [showDeliveryModal, setShowDeliveryModal] = useState(false);
     const [creatingDeliveryCourse, setCreatingDeliveryCourse] = useState(false);
+    const [showEditDeliveryModal, setShowEditDeliveryModal] = useState(false);
+    const [editingDeliveryCourse, setEditingDeliveryCourse] = useState(null);
+    const [updatingDeliveryCourse, setUpdatingDeliveryCourse] = useState(false);
     const [submittingCourseId, setSubmittingCourseId] = useState(null);
     const [deliveryCategories, setDeliveryCategories] = useState([]);
 
@@ -449,6 +453,11 @@ const InstructorDashboard = () => {
         setShowDeliveryModal(false);
     };
 
+    const closeEditDeliveryModal = () => {
+        setShowEditDeliveryModal(false);
+        setEditingDeliveryCourse(null);
+    };
+
     const openDeliveryModal = async () => {
         if (!deliveryCategories.length) {
             try {
@@ -461,6 +470,34 @@ const InstructorDashboard = () => {
         }
 
         setShowDeliveryModal(true);
+    };
+
+    const openDeliveryEditModal = async (course) => {
+        if (!course) return;
+
+        if (!deliveryCategories.length) {
+            try {
+                const categories = await fetchCategories();
+                setDeliveryCategories(Array.isArray(categories) ? categories : []);
+            } catch (error) {
+                console.error('Failed to load categories', error);
+                toast.error('Категориялар жүктөлгөн жок');
+                return;
+            }
+        }
+
+        setEditingDeliveryCourse({
+            id: course.id,
+            courseType: course.courseType || 'offline',
+            title: course.title || '',
+            description: course.description || '',
+            categoryId: course.category?.id || course.categoryId || '',
+            price: course.price || 0,
+            languageCode: course.languageCode || 'ky',
+            status: course.status || '',
+            isPublished: Boolean(course.isPublished),
+        });
+        setShowEditDeliveryModal(true);
     };
 
     const handleCreateDeliveryCourse = async (payload) => {
@@ -494,6 +531,51 @@ const InstructorDashboard = () => {
             return false;
         } finally {
             setCreatingDeliveryCourse(false);
+        }
+    };
+
+    const handleUpdateDeliveryCourse = async (payload) => {
+        if (!editingDeliveryCourse?.id) return false;
+
+        if (!payload?.title || !payload?.description || !payload?.categoryId) {
+            toast.error('Сураныч, аталыш, сүрөттөмө жана категорияны толтуруңуз.');
+            return false;
+        }
+
+        setUpdatingDeliveryCourse(true);
+        try {
+            await updateCourse(editingDeliveryCourse.id, {
+                title: payload.title,
+                description: payload.description,
+                categoryId: parseInt(payload.categoryId, 10),
+                price: Number(payload.price || 0),
+                languageCode: payload.languageCode || 'ky',
+                courseType: payload.courseType,
+                isPaid: Number(payload.price || 0) > 0,
+            });
+
+            const requiresReview =
+                editingDeliveryCourse.status === 'approved' || editingDeliveryCourse.isPublished;
+
+            if (requiresReview) {
+                await markCoursePending(editingDeliveryCourse.id);
+            }
+
+            const data = await fetchInstructorCourses({ status: 'all' });
+            setCourseList(Array.isArray(data?.courses) ? data.courses : []);
+            toast.success(
+                requiresReview
+                    ? 'Delivery курс жаңыртылды жана кайра карап чыгууга жөнөтүлдү'
+                    : 'Delivery курс жаңыртылды'
+            );
+            closeEditDeliveryModal();
+            return true;
+        } catch (error) {
+            console.error('Failed to update delivery course', error);
+            toast.error('Delivery курсту жаңыртууда ката кетти.');
+            return false;
+        } finally {
+            setUpdatingDeliveryCourse(false);
         }
     };
 
@@ -546,9 +628,15 @@ const InstructorDashboard = () => {
                         loading={loadingCourses}
                         submittingCourseId={submittingCourseId}
                         onOpenDeliveryModal={openDeliveryModal}
+                        onOpenDeliveryEditModal={openDeliveryEditModal}
                         showDeliveryModal={showDeliveryModal}
                         onCloseDeliveryModal={closeDeliveryModal}
                         onCreateDeliveryCourse={handleCreateDeliveryCourse}
+                        showEditDeliveryModal={showEditDeliveryModal}
+                        onCloseEditDeliveryModal={closeEditDeliveryModal}
+                        editingDeliveryCourse={editingDeliveryCourse}
+                        onUpdateDeliveryCourse={handleUpdateDeliveryCourse}
+                        updatingDeliveryCourse={updatingDeliveryCourse}
                         onSubmitCourseForApproval={handleSubmitCourseForApproval}
                         creatingDeliveryCourse={creatingDeliveryCourse}
                         deliveryCategories={deliveryCategories}

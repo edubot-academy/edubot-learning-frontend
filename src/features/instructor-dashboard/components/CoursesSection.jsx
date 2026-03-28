@@ -10,17 +10,16 @@ import {
 import { FiBookOpen, FiClock, FiEdit3, FiEye, FiLayers, FiPlus, FiSend, FiUsers } from 'react-icons/fi';
 import CreateDeliveryCourseModal from './modals/CreateDeliveryCourseModal.jsx';
 
+const isDeliveryCourse = (course) =>
+    course?.courseType === 'offline' || course?.courseType === 'online_live';
+
 const CoursesSection = ({
     courses,
     loading,
     submittingCourseId,
     onOpenDeliveryModal,
-    showDeliveryModal,
-    onCloseDeliveryModal,
-    onCreateDeliveryCourse,
+    onOpenDeliveryEditModal,
     onSubmitCourseForApproval,
-    creatingDeliveryCourse,
-    deliveryCategories,
 }) => {
     const publishedCount = courses.filter((course) => course.isPublished).length;
     const pendingCount = courses.filter((course) => course.status === 'pending').length;
@@ -129,6 +128,11 @@ const CoursesSection = ({
                                         const statusMeta = getStatusMeta(course);
                                         const isDraft = course.status === 'draft' || !course.status;
                                         const isSubmitting = submittingCourseId === course.id;
+                                        const deliveryCourse = isDeliveryCourse(course);
+                                        const viewTarget = deliveryCourse
+                                            ? `/instructor?tab=groups&courseId=${course.id}`
+                                            : `/courses/${course.id}`;
+                                        const editTarget = `/instructor/courses/edit/${course.id}`;
 
                                         return (
                                             <>
@@ -194,19 +198,30 @@ const CoursesSection = ({
 
                                                 <div className="mt-5 flex flex-wrap gap-2">
                                                     <Link
-                                                        to={`/courses/${course.id}`}
+                                                        to={viewTarget}
                                                         className="dashboard-button-secondary"
                                                     >
                                                         <FiEye className="h-4 w-4" />
-                                                        Көрүү
+                                                        {deliveryCourse ? 'Башкаруу' : 'Көрүү'}
                                                     </Link>
-                                                    <Link
-                                                        to={`/instructor/courses/edit/${course.id}`}
-                                                        className="dashboard-button-primary"
-                                                    >
-                                                        <FiEdit3 className="h-4 w-4" />
-                                                        Өзгөртүү
-                                                    </Link>
+                                                    {deliveryCourse ? (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => onOpenDeliveryEditModal?.(course)}
+                                                            className="dashboard-button-primary"
+                                                        >
+                                                            <FiEdit3 className="h-4 w-4" />
+                                                            Өзгөртүү
+                                                        </button>
+                                                    ) : (
+                                                        <Link
+                                                            to={editTarget}
+                                                            className="dashboard-button-primary"
+                                                        >
+                                                            <FiEdit3 className="h-4 w-4" />
+                                                            Өзгөртүү
+                                                        </Link>
+                                                    )}
                                                     {isDraft ? (
                                                         <button
                                                             type="button"
@@ -257,6 +272,19 @@ const CoursesSectionWithModal = (props) => (
                 onCreateDeliveryCourse={props.onCreateDeliveryCourse}
                 creatingDeliveryCourse={props.creatingDeliveryCourse}
                 deliveryCategories={props.deliveryCategories}
+            />
+        )}
+        {props.showEditDeliveryModal && (
+            <CreateDeliveryCourseModal
+                isOpen={props.showEditDeliveryModal}
+                onClose={props.onCloseEditDeliveryModal}
+                onCreateDeliveryCourse={props.onUpdateDeliveryCourse}
+                creatingDeliveryCourse={props.updatingDeliveryCourse}
+                deliveryCategories={props.deliveryCategories}
+                initialValues={props.editingDeliveryCourse}
+                title="Delivery курсту өзгөртүү"
+                subtitle="Оффлайн же онлайн түз эфир курсунун негизги маалыматын жаңыртыңыз."
+                submitLabel="Сактоо"
             />
         )}
     </>
