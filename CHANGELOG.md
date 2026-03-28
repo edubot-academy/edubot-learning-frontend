@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.3.14] - 2026-03-28
+
+### 🧭 DELIVERY COURSE DASHBOARD ROUTING
+- Stopped routing `offline` and `online_live` dashboard course actions into the public video course page.
+- Routed instructor delivery-course “manage” actions into the internal `Groups` flow with course preselection.
+- Added a dedicated instructor delivery-course edit modal for metadata updates inside the dashboard.
+- Added admin internal details modal for delivery courses instead of using the public course-details view.
+- When instructors update an approved or published delivery course, the dashboard now sends it back to admin review.
+
 ## [1.3.13] - 2026-03-28
 
 ### 🧭 DASHBOARD ENROLLMENT + GROUP WORKFLOW
