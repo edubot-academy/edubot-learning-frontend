@@ -22,6 +22,10 @@ Idempotency contract:
 - same key + same payload => safe replay (same result)
 - same key + different payload => `409 conflict`
 - missing key on enrollment mutation => `400`
+- enrollment mutation scope includes:
+  - `POST /api/integration/enrollments`
+  - `PATCH /api/integration/enrollments/:enrollmentId/activate`
+  - `PATCH /api/integration/enrollments/:enrollmentId/pause`
 
 ### LMS calling CRM webhooks
 Use:
@@ -149,7 +153,6 @@ type CreateIntegrationEnrollmentRequestDto = {
   courseType: 'video' | 'offline' | 'online_live';
   groupId?: string | null; // video: nullable; offline/online_live: required
   paymentStatus: 'submitted' | 'confirmed' | 'failed' | 'refunded' | 'overdue';
-  enrollmentStatus?: 'pending' | 'active' | 'completed' | 'cancelled';
   sourceSystem: 'crm';
   meta?: {
     submittedByUserId?: string | null;
@@ -163,11 +166,12 @@ type CreateIntegrationEnrollmentRequestDto = {
 - find or create student
 - map stable CRM person identity, preferably `crmContactId`
 - keep `crmLeadId` only for lineage/audit
-- create enrollment as `pending` by default
+- create enrollment as `pending`
 - keep academic access locked until activated
 - validate course/group rules:
   - `video` can be created with `groupId = null`
   - `offline` and `online_live` require `groupId`
+- if the same learner already has an active matching LMS enrollment, a create-request retry must not downgrade it back to `pending` or locked
 
 ### Response shape
 

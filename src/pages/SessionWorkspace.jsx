@@ -3,14 +3,12 @@ import PropTypes from 'prop-types';
 import { toast } from 'react-hot-toast';
 import {
     ATTENDANCE_STATUS,
-    COURSE_GROUP_STATUS,
     COURSE_SESSION_STATUS,
     COURSE_TYPE,
     MEETING_PROVIDER,
     SESSION_ATTENDANCE_STATUS,
 } from '@shared/contracts';
 import {
-    createCourseGroup,
     createCourseSession,
     createSessionHomework,
     createSessionMeeting,
@@ -21,15 +19,11 @@ import {
     fetchSessionHomeworkSubmissions,
     fetchSessionMeeting,
     fetchCourseSessions,
-    fetchCourseStudents,
-    fetchInstructorProfile,
     fetchInstructorCourses,
     fetchSessionAttendance,
     importSessionAttendance,
-    markAttendanceSession,
     markSessionAttendanceBulk,
     syncSessionRecordings,
-    updateCourseGroup,
     updateSessionHomework,
     updateSessionMeeting,
     updateCourseSession,
@@ -44,37 +38,29 @@ import {
     FiCheckCircle,
     FiClock,
     FiEdit3,
+    FiExternalLink,
     FiFileText,
     FiLayers,
+    FiPaperclip,
     FiPlayCircle,
     FiRadio,
     FiSearch,
     FiUsers,
     FiXCircle,
 } from 'react-icons/fi';
+import { fetchGroupRoster } from '@features/courseGroups/roster';
 import {
+    DashboardFilterBar,
     DashboardInsetPanel,
     DashboardMetricCard,
+    DashboardWorkspaceHero,
     EmptyState,
+    StatusBadge,
 } from '../components/ui/dashboard';
 import { AuthContext } from '../context/AuthContext';
 
 const todayIso = new Date().toISOString().slice(0, 10);
 const JOIN_WINDOW_MS = 10 * 60 * 1000;
-
-const QUICK_GROUP_DEFAULT = {
-    name: '',
-    code: '',
-    status: COURSE_GROUP_STATUS.PLANNED,
-    startDate: '',
-    endDate: '',
-    seatLimit: '',
-    timezone: '',
-    location: '',
-    meetingProvider: '',
-    meetingUrl: '',
-    instructorId: '',
-};
 
 const QUICK_SESSION_DEFAULT = {
     sessionIndex: '',
@@ -85,20 +71,6 @@ const QUICK_SESSION_DEFAULT = {
     recordingUrl: '',
     materialTitle: '',
     materialUrl: '',
-};
-
-const EDIT_GROUP_DEFAULT = {
-    name: '',
-    code: '',
-    status: COURSE_GROUP_STATUS.PLANNED,
-    startDate: '',
-    endDate: '',
-    seatLimit: '',
-    timezone: '',
-    location: '',
-    meetingProvider: '',
-    meetingUrl: '',
-    instructorId: '',
 };
 
 const EDIT_SESSION_DEFAULT = {
@@ -222,8 +194,10 @@ const formatDisplayDate = (value, fallback = 'Мөөнөт коюлган эме
     });
 };
 
+const resolveHomeworkDeadline = (item = {}) => item?.deadline || item?.dueAt || item?.dueDate || '';
+
 const getHomeworkDeadlineMeta = (item, nowMs) => {
-    const raw = item?.deadline || item?.dueAt || item?.dueDate;
+    const raw = resolveHomeworkDeadline(item);
     if (!raw) {
         return {
             label: 'Мөөнөт жок',
@@ -302,6 +276,7 @@ const getSubmissionPreview = (submission) =>
     submission?.content ||
     submission?.submissionText ||
     submission?.text ||
+    submission?.answerText ||
     submission?.description ||
     submission?.answer ||
     submission?.note ||
@@ -310,6 +285,20 @@ const getSubmissionPreview = (submission) =>
     submission?.attachmentUrl ||
     submission?.submissionUrl ||
     'Жооп текшерүү үчүн жүктөлгөн.';
+
+const getSubmissionAttachmentUrl = (submission) =>
+    submission?.attachmentUrl || submission?.fileUrl || submission?.submissionUrl || '';
+
+const getAttachmentName = (value) => {
+    if (!value) return 'Тиркеме';
+    try {
+        const withoutQuery = String(value).split('?')[0];
+        const lastSegment = withoutQuery.split('/').pop() || withoutQuery;
+        return decodeURIComponent(lastSegment) || 'Тиркеме';
+    } catch {
+        return 'Тиркеме';
+    }
+};
 
 const isJoinWindowOpen = (session, nowMs) => {
     const start = session?.startsAt ? new Date(session.startsAt).getTime() : null;
@@ -336,7 +325,6 @@ const getWorkspaceErrorMessage = (error, fallback) => {
 const SessionWorkspace = () => {
     const { user } = useContext(AuthContext);
     const [activeTab, setActiveTab] = useState('attendance');
-    const [workspaceEntity, setWorkspaceEntity] = useState('group');
     const [workspaceMode, setWorkspaceMode] = useState('create');
 
     const [courses, setCourses] = useState([]);
@@ -350,6 +338,7 @@ const SessionWorkspace = () => {
 
     const [students, setStudents] = useState([]);
     const [attendanceRows, setAttendanceRows] = useState({});
+    const [initialAttendanceRows, setInitialAttendanceRows] = useState({});
     const [attendanceHistory, setAttendanceHistory] = useState([]);
 
     const [loadingCourses, setLoadingCourses] = useState(false);
@@ -373,13 +362,9 @@ const SessionWorkspace = () => {
     const [importingAttendance, setImportingAttendance] = useState(false);
     const [syncingRecordings, setSyncingRecordings] = useState(false);
 
-    const [quickGroup, setQuickGroup] = useState(QUICK_GROUP_DEFAULT);
     const [quickSession, setQuickSession] = useState(QUICK_SESSION_DEFAULT);
-    const [editGroup, setEditGroup] = useState(EDIT_GROUP_DEFAULT);
     const [editSession, setEditSession] = useState(EDIT_SESSION_DEFAULT);
-    const [savingGroup, setSavingGroup] = useState(false);
     const [savingSession, setSavingSession] = useState(false);
-    const [savingGroupUpdate, setSavingGroupUpdate] = useState(false);
     const [savingSessionUpdate, setSavingSessionUpdate] = useState(false);
 
     const [sessionNotes, setSessionNotes] = useState('');
@@ -515,20 +500,28 @@ const SessionWorkspace = () => {
     }, [sessions]);
 
     useEffect(() => {
-        if (!selectedCourseId) return;
+        if (!selectedCourseId || !selectedGroupId) {
+            setStudents([]);
+            setAttendanceRows({});
+            setInitialAttendanceRows({});
+            return;
+        }
 
         let cancelled = false;
         const loadStudentsAndHistory = async () => {
-            setLoadingStudents(true);
+                setLoadingStudents(true);
             try {
                 const [studentsRes, attendanceRes] = await Promise.all([
-                    fetchCourseStudents(Number(selectedCourseId), { page: 1, limit: 200 }),
+                    fetchGroupRoster({
+                        groupId: Number(selectedGroupId),
+                        page: 1,
+                        limit: 200,
+                    }),
                     fetchCourseAttendance({ courseId: Number(selectedCourseId) }),
                 ]);
                 if (cancelled) return;
 
-                const rawStudents = toArray(studentsRes);
-                const normalized = rawStudents.map((item) => ({
+                const normalized = studentsRes.map((item) => ({
                     id: Number(item.userId || item.id),
                     fullName: item.fullName || item.user?.fullName || `#${item.userId || item.id}`,
                 }));
@@ -545,12 +538,14 @@ const SessionWorkspace = () => {
                     };
                 });
                 setAttendanceRows(rowState);
+                setInitialAttendanceRows(rowState);
                 setAttendanceHistory(attendanceRes?.items || []);
             } catch (error) {
                 console.error(error);
                 toast.error(getWorkspaceErrorMessage(error, 'Сессия маалыматтарын жүктөө катасы.'));
                 setStudents([]);
                 setAttendanceRows({});
+                setInitialAttendanceRows({});
                 setAttendanceHistory([]);
             } finally {
                 if (!cancelled) setLoadingStudents(false);
@@ -561,7 +556,7 @@ const SessionWorkspace = () => {
         return () => {
             cancelled = true;
         };
-    }, [selectedCourseId]);
+    }, [selectedCourseId, selectedGroupId]);
 
     useEffect(() => {
         if (!selectedSessionId) return;
@@ -574,6 +569,7 @@ const SessionWorkspace = () => {
                 const items = toArray(res);
                 if (!items.length) return;
 
+                let hydratedRows = null;
                 setAttendanceRows((prev) => {
                     const next = { ...prev };
                     items.forEach((item) => {
@@ -587,8 +583,10 @@ const SessionWorkspace = () => {
                             leftAt: item.leftAt || undefined,
                         };
                     });
+                    hydratedRows = next;
                     return next;
                 });
+                if (hydratedRows) setInitialAttendanceRows(hydratedRows);
             } catch (error) {
                 console.error(error);
             }
@@ -613,7 +611,7 @@ const SessionWorkspace = () => {
         const loadSessionHomework = async () => {
             setLoadingHomework(true);
             try {
-                const response = await fetchSessionHomework(Number(selectedSessionId));
+                const response = await fetchSessionHomework(Number(selectedSessionId), { includeUnpublished: true });
                 if (cancelled) return;
                 const items = toArray(response);
                 setPublishedHomework(items);
@@ -723,27 +721,6 @@ const SessionWorkspace = () => {
     );
 
     useEffect(() => {
-        if (!selectedGroup) {
-            setEditGroup(EDIT_GROUP_DEFAULT);
-            return;
-        }
-
-        setEditGroup({
-            name: selectedGroup.name || '',
-            code: selectedGroup.code || '',
-            status: selectedGroup.status || COURSE_GROUP_STATUS.PLANNED,
-            startDate: selectedGroup.startDate || '',
-            endDate: selectedGroup.endDate || '',
-            seatLimit: selectedGroup.seatLimit ? String(selectedGroup.seatLimit) : '',
-            timezone: selectedGroup.timezone || '',
-            location: selectedGroup.location || '',
-            meetingProvider: selectedGroup.meetingProvider || '',
-            meetingUrl: selectedGroup.meetingUrl || '',
-            instructorId: selectedGroup.instructorId ? String(selectedGroup.instructorId) : '',
-        });
-    }, [selectedGroup]);
-
-    useEffect(() => {
         if (!selectedSession) {
             setEditSession(EDIT_SESSION_DEFAULT);
             return;
@@ -818,6 +795,25 @@ const SessionWorkspace = () => {
             presentRate: values.length ? Math.round((present / values.length) * 100) : 0,
         };
     }, [attendanceRows]);
+
+    const hasAttendanceChanges = useMemo(() => {
+        const currentIds = Object.keys(attendanceRows);
+        const initialIds = Object.keys(initialAttendanceRows);
+        if (currentIds.length !== initialIds.length) return currentIds.length > 0;
+
+        return currentIds.some((studentId) => {
+            const current = attendanceRows[studentId];
+            const initial = initialAttendanceRows[studentId];
+            if (!current || !initial) return true;
+
+            return (
+                current.status !== initial.status ||
+                (current.notes || '').trim() !== (initial.notes || '').trim() ||
+                (current.joinedAt || '') !== (initial.joinedAt || '') ||
+                (current.leftAt || '') !== (initial.leftAt || '')
+            );
+        });
+    }, [attendanceRows, initialAttendanceRows]);
 
     const studentStreaks = useMemo(() => {
         const map = new Map();
@@ -955,6 +951,16 @@ const SessionWorkspace = () => {
     };
 
     const saveAttendance = async () => {
+        if (!selectedSessionId) {
+            toast.error('Катышууну сактоо үчүн сессияны тандаңыз.');
+            return;
+        }
+
+        if (!hasAttendanceChanges) {
+            toast('Өзгөртүү жок.');
+            return;
+        }
+
         const rows = Object.values(attendanceRows).map((row) => ({
             studentId: row.studentId,
             status: row.status,
@@ -965,78 +971,19 @@ const SessionWorkspace = () => {
 
         setSavingAttendance(true);
         try {
-            if (selectedSessionId) {
-                await markSessionAttendanceBulk(Number(selectedSessionId), {
-                    courseId: Number(selectedCourseId),
-                    rows,
-                });
-                toast.success('Session-based катышуу сакталды');
-            } else {
-                await markAttendanceSession({
-                    courseId: Number(selectedCourseId),
-                    sessionDate,
-                    rows: rows.map((row) => ({
-                        userId: row.studentId,
-                        status: sessionStatusMap[row.status] || ATTENDANCE_STATUS.ABSENT,
-                        notes: row.notes,
-                    })),
-                });
-                toast.success('Date-based катышуу сакталды');
-            }
+            await markSessionAttendanceBulk(Number(selectedSessionId), {
+                courseId: Number(selectedCourseId),
+                rows,
+            });
+            toast.success('Session-based катышуу сакталды');
 
             const refreshed = await fetchCourseAttendance({ courseId: Number(selectedCourseId) });
             setAttendanceHistory(refreshed?.items || []);
+            setInitialAttendanceRows(attendanceRows);
         } catch (error) {
             toast.error(getWorkspaceErrorMessage(error, 'Катышууну сактоо катасы'));
         } finally {
             setSavingAttendance(false);
-        }
-    };
-
-    const createQuickGroup = async () => {
-        if (!selectedCourseId) {
-            toast.error('Адегенде курсту тандаңыз.');
-            return;
-        }
-        if (!quickGroup.name.trim() || !quickGroup.code.trim()) {
-            toast.error('Группа үчүн аталыш жана код милдеттүү.');
-            return;
-        }
-
-        setSavingGroup(true);
-        try {
-            const payload = {
-                courseId: Number(selectedCourseId),
-                name: quickGroup.name.trim(),
-                code: quickGroup.code.trim(),
-                status: quickGroup.status || undefined,
-                startDate: quickGroup.startDate || undefined,
-                endDate: quickGroup.endDate || undefined,
-                seatLimit: quickGroup.seatLimit ? Number(quickGroup.seatLimit) : undefined,
-                timezone: quickGroup.timezone || undefined,
-                location: quickGroup.location || undefined,
-                meetingProvider: quickGroup.meetingProvider || undefined,
-                meetingUrl: quickGroup.meetingUrl || undefined,
-                instructorId: quickGroup.instructorId ? Number(quickGroup.instructorId) : undefined,
-            };
-
-            const created = await createCourseGroup(payload);
-            toast.success('Group түзүлдү.');
-
-            const res = await fetchCourseGroups({ courseId: Number(selectedCourseId) });
-            const list = toArray(res);
-            setGroups(list);
-            if (created?.id) setSelectedGroupId(String(created.id));
-
-            setQuickGroup((prev) => ({
-                ...QUICK_GROUP_DEFAULT,
-                timezone: prev.timezone,
-                meetingProvider: prev.meetingProvider,
-            }));
-        } catch (error) {
-            toast.error(getWorkspaceErrorMessage(error, 'Группа түзүү катасы'));
-        } finally {
-            setSavingGroup(false);
         }
     };
 
@@ -1095,43 +1042,6 @@ const SessionWorkspace = () => {
             toast.error(getWorkspaceErrorMessage(error, 'Сессия түзүү катасы'));
         } finally {
             setSavingSession(false);
-        }
-    };
-
-    const updateSelectedGroup = async () => {
-        if (!selectedGroupId) {
-            toast.error('Группаны тандаңыз.');
-            return;
-        }
-        if (!editGroup.name.trim() || !editGroup.code.trim()) {
-            toast.error('Группа үчүн аталыш жана код милдеттүү.');
-            return;
-        }
-
-        setSavingGroupUpdate(true);
-        try {
-            await updateCourseGroup(Number(selectedGroupId), {
-                name: editGroup.name.trim(),
-                code: editGroup.code.trim(),
-                status: editGroup.status || undefined,
-                startDate: editGroup.startDate || undefined,
-                endDate: editGroup.endDate || undefined,
-                seatLimit: editGroup.seatLimit ? Number(editGroup.seatLimit) : undefined,
-                timezone: editGroup.timezone || undefined,
-                location: editGroup.location || undefined,
-                meetingProvider: editGroup.meetingProvider || undefined,
-                meetingUrl: editGroup.meetingUrl || undefined,
-                instructorId: editGroup.instructorId ? Number(editGroup.instructorId) : undefined,
-            });
-
-            const res = await fetchCourseGroups({ courseId: Number(selectedCourseId) });
-            const list = toArray(res);
-            setGroups(list);
-            toast.success('Group жаңыртылды.');
-        } catch (error) {
-            toast.error(getWorkspaceErrorMessage(error, 'Группаны жаңыртуу катасы'));
-        } finally {
-            setSavingGroupUpdate(false);
         }
     };
 
@@ -1353,10 +1263,11 @@ const SessionWorkspace = () => {
                 title: homeworkTitle.trim(),
                 description: homeworkDescription.trim() || undefined,
                 deadline: homeworkDeadline || undefined,
+                isPublished: true,
                 assignedStudentIds,
             });
 
-            const refreshed = await fetchSessionHomework(Number(selectedSessionId));
+            const refreshed = await fetchSessionHomework(Number(selectedSessionId), { includeUnpublished: true });
             const items = toArray(refreshed);
             setPublishedHomework(items);
             setSelectedHomeworkId((prev) => {
@@ -1380,7 +1291,9 @@ const SessionWorkspace = () => {
         setEditingHomeworkId(String(item.id));
         setEditHomeworkTitle(item.title || item.name || '');
         setEditHomeworkDescription(item.description || '');
-        setEditHomeworkDeadline(item.deadline ? String(item.deadline).slice(0, 10) : '');
+        setEditHomeworkDeadline(
+            resolveHomeworkDeadline(item) ? String(resolveHomeworkDeadline(item)).slice(0, 10) : ''
+        );
     };
 
     const cancelHomeworkEdit = () => {
@@ -1403,9 +1316,10 @@ const SessionWorkspace = () => {
                 title: editHomeworkTitle.trim(),
                 description: editHomeworkDescription.trim() || undefined,
                 deadline: editHomeworkDeadline || undefined,
+                isPublished: Boolean(selectedHomework?.isPublished),
             });
 
-            const refreshed = await fetchSessionHomework(Number(selectedSessionId));
+            const refreshed = await fetchSessionHomework(Number(selectedSessionId), { includeUnpublished: true });
             const items = toArray(refreshed);
             setPublishedHomework(items);
             cancelHomeworkEdit();
@@ -1442,94 +1356,48 @@ const SessionWorkspace = () => {
         }
     };
 
+    const toggleHomeworkPublish = async (homeworkId, currentStatus) => {
+        if (!selectedSessionId || !homeworkId) return;
+
+        try {
+            await updateSessionHomework(Number(selectedSessionId), Number(homeworkId), {
+                isPublished: !currentStatus,
+            });
+
+            const refreshed = await fetchSessionHomework(Number(selectedSessionId), { includeUnpublished: true });
+            const items = toArray(refreshed);
+            setPublishedHomework(items);
+
+            toast.success(!currentStatus ? 'Үй тапшырма жарыяланды.' : 'Үй тапшырма жарыялоодон алынды.');
+        } catch (error) {
+            console.error(error);
+            toast.error(getWorkspaceErrorMessage(error, 'Үй тапшырма статусун өзгөртүү катасы'));
+        }
+    };
+
     const selectedModeMeta = SESSION_MODE_META[selectedSessionMode] || SESSION_MODE_META.scheduled;
     const SelectedModeIcon = selectedModeMeta.icon;
-    const isGroupWorkspace = workspaceEntity === 'group';
     const isCreateWorkspace = workspaceMode === 'create';
-    const workspaceTitle = isGroupWorkspace
-        ? isCreateWorkspace
-            ? 'Create Group'
-            : 'Edit Group'
-        : isCreateWorkspace
-            ? 'Create Session'
-            : 'Edit Session';
-    const workspaceDescription = isGroupWorkspace
-        ? isCreateWorkspace
-            ? 'Курс үчүн жаңы группаны негизги маалымат, график жана жеткирүү параметрлери менен түзүңүз.'
-            : 'Тандалган группанын маалыматтарын жаңыртыңыз.'
-        : isCreateWorkspace
-            ? 'Тандалган группа үчүн жаңы сессия түзүп, убактысын жана материалдарын бекитиңиз.'
-            : 'Тандалган сессиянын убактысын жана статусун жаңыртыңыз.';
-    const workspaceDisabled = isGroupWorkspace
-        ? isCreateWorkspace
-            ? !selectedCourseId
-            : !selectedGroupId
-        : isCreateWorkspace
-            ? !selectedGroupId
-            : !selectedSessionId;
-    const workspaceDisabledReason = isGroupWorkspace
-        ? isCreateWorkspace
-            ? 'Жаңы группа түзүү үчүн курс тандаңыз.'
-            : 'Edit mode үчүн группа тандаңыз.'
-        : isCreateWorkspace
-            ? 'Жаңы сессия түзүү үчүн группа тандаңыз.'
-            : 'Edit mode үчүн сессия тандаңыз.';
-    const workspaceActionLabel = isGroupWorkspace
-        ? isCreateWorkspace
-            ? savingGroup
-                ? 'Түзүлүүдө...'
-                : 'Create Group'
-            : savingGroupUpdate
-                ? 'Жаңыртылууда...'
-                : 'Update Group'
-        : isCreateWorkspace
-            ? savingSession
-                ? 'Түзүлүүдө...'
-                : 'Create Session'
-            : savingSessionUpdate
-                ? 'Жаңыртылууда...'
-                : 'Update Session';
-    const workspaceAction = isGroupWorkspace
-        ? isCreateWorkspace
-            ? createQuickGroup
-            : updateSelectedGroup
-        : isCreateWorkspace
-            ? createQuickSession
-            : updateSelectedSession;
-    const workspaceSaving = isGroupWorkspace
-        ? isCreateWorkspace
-            ? savingGroup
-            : savingGroupUpdate
-        : isCreateWorkspace
-            ? savingSession
-            : savingSessionUpdate;
+    const workspaceTitle = isCreateWorkspace ? 'Create Session' : 'Edit Session';
+    const workspaceDescription = isCreateWorkspace
+        ? 'Тандалган группа үчүн жаңы сессия түзүп, убактысын жана материалдарын бекитиңиз.'
+        : 'Тандалган сессиянын убактысын жана статусун жаңыртыңыз.';
+    const workspaceDisabled = isCreateWorkspace ? !selectedGroupId : !selectedSessionId;
+    const workspaceDisabledReason = isCreateWorkspace
+        ? 'Жаңы сессия түзүү үчүн группа тандаңыз.'
+        : 'Edit mode үчүн сессия тандаңыз.';
+    const workspaceActionLabel = isCreateWorkspace
+        ? savingSession
+            ? 'Түзүлүүдө...'
+            : 'Create Session'
+        : savingSessionUpdate
+            ? 'Жаңыртылууда...'
+            : 'Update Session';
+    const workspaceAction = isCreateWorkspace ? createQuickSession : updateSelectedSession;
+    const workspaceSaving = isCreateWorkspace ? savingSession : savingSessionUpdate;
 
     return (
         <div className="pt-24 pb-12 px-4 max-w-7xl mx-auto space-y-6">
-            <div className="grid gap-4 xl:grid-cols-4">
-                <DashboardMetricCard
-                    label="Бүгүнкү сессиялар"
-                    value={sessionsToday.length}
-                    icon={FiCalendar}
-                />
-                <DashboardMetricCard
-                    label="Катышуу %"
-                    value={`${attendanceStats.presentRate}%`}
-                    icon={FiActivity}
-                />
-                <DashboardMetricCard
-                    label="Тапшырма жарыяланды"
-                    value={publishedHomework.length}
-                    icon={FiBookOpen}
-                />
-                <DashboardMetricCard
-                    label="Кооптуу студенттер"
-                    value={students.length - attendanceStats.present}
-                    icon={FiUsers}
-                    tone="amber"
-                />
-            </div>
-
             {!loadingCourses && courses.length === 0 ? (
                 <div className="dashboard-panel p-6">
                     <EmptyState
@@ -1540,1481 +1408,1395 @@ const SessionWorkspace = () => {
             ) : null}
 
             {courses.length > 0 ? (
-            <div className="space-y-6">
-                <section className="dashboard-panel p-5 space-y-5">
-                    <div className="rounded-panel bg-edubot-hero p-6 text-white shadow-edubot-glow">
-                        <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
-                            <div className="max-w-2xl">
-                                <p className="dashboard-pill">Session Workspace</p>
-                                <h1 className="mt-4 text-2xl font-semibold tracking-tight md:text-3xl">
-                                    Instructor Session Workspace
-                                </h1>
-                                <p className="mt-2 text-sm leading-6 text-white/80">
-                                    Сессияларды, группаларды жана жандуу сабак агымдарын бир жерден
-                                    көзөмөлдөңүз.
+                <div className="space-y-6">
+                    <DashboardWorkspaceHero
+                        className="dashboard-panel"
+                        eyebrow="Session Workspace"
+                        title="Instructor Session Workspace"
+                        description="Сессияларды, катышууну, үй тапшырманы жана жандуу сабак агымдарын бир жерден көзөмөлдөңүз. Группа lifecycle эми өзүнчө Groups tab аркылуу башкарылат."
+                        metrics={(
+                            <>
+                                <DashboardMetricCard
+                                    label="Бүгүнкү сессиялар"
+                                    value={sessionsToday.length}
+                                    icon={FiCalendar}
+                                    className="min-h-[11rem] min-w-0"
+                                />
+                                <DashboardMetricCard
+                                    label="Катышуу %"
+                                    value={`${attendanceStats.presentRate}%`}
+                                    icon={FiActivity}
+                                    className="min-h-[11rem] min-w-0"
+                                />
+                                <DashboardMetricCard
+                                    label="Тапшырма жарыяланды"
+                                    value={publishedHomework.length}
+                                    icon={FiBookOpen}
+                                    className="min-h-[11rem] min-w-0"
+                                />
+                                <DashboardMetricCard
+                                    label="Кооптуу студенттер"
+                                    value={students.length - attendanceStats.present}
+                                    icon={FiUsers}
+                                    tone="amber"
+                                    className="min-h-[11rem] min-w-0"
+                                />
+                            </>
+                        )}
+                        metricsClassName="grid w-full grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-2 2xl:grid-cols-4 xl:min-w-[26rem] 2xl:min-w-[48rem]"
+                    >
+                        <DashboardFilterBar gridClassName="xl:grid-cols-[minmax(0,1fr),minmax(0,1fr),minmax(0,1fr),minmax(0,1fr)]">
+                            <div className="max-w-2xl xl:col-span-4">
+                                <p className="text-sm leading-6 text-edubot-muted dark:text-slate-300">
+                                    Сессияларды, группаларды жана жандуу сабак агымдарын бир жерден көзөмөлдөңүз.
                                 </p>
                             </div>
-
-                            <div className="grid gap-3 sm:grid-cols-2 xl:w-[30rem]">
-                                <label className="text-sm">
-                                    <span className="mb-1.5 inline-flex items-center gap-2 font-medium text-white/85">
-                                        <FiBookOpen className="h-4 w-4 text-edubot-soft" />
-                                        Курс
-                                    </span>
-                                    <select
-                                        value={selectedCourseId}
-                                        onChange={(e) => setSelectedCourseId(e.target.value)}
-                                        disabled={loadingCourses}
-                                        className="w-full rounded-2xl border border-white/15 bg-white/10 px-4 py-3 text-white outline-none transition focus:border-white/30 focus:ring-4 focus:ring-white/10"
-                                    >
-                                        <option value="" className="text-slate-900">Курс тандаңыз</option>
-                                        {courses.map((course) => (
-                                            <option key={course.id} value={course.id} className="text-slate-900">
-                                                {course.title || course.name}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </label>
-
-                                <label className="text-sm">
-                                    <span className="mb-1.5 inline-flex items-center gap-2 font-medium text-white/85">
-                                        <FiLayers className="h-4 w-4 text-edubot-soft" />
-                                        Группа
-                                    </span>
-                                    <select
-                                        value={selectedGroupId}
-                                        onChange={(e) => setSelectedGroupId(e.target.value)}
-                                        disabled={!selectedCourseId || loadingGroups}
-                                        className="w-full rounded-2xl border border-white/15 bg-white/10 px-4 py-3 text-white outline-none transition focus:border-white/30 focus:ring-4 focus:ring-white/10 disabled:opacity-60"
-                                    >
-                                        <option value="" className="text-slate-900">Группа</option>
-                                        {groups.map((group) => (
-                                            <option key={group.id} value={group.id} className="text-slate-900">
-                                                {group.name || group.code || `Group #${group.id}`}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </label>
-
-                                <label className="text-sm">
-                                    <span className="mb-1.5 inline-flex items-center gap-2 font-medium text-white/85">
-                                        <FiPlayCircle className="h-4 w-4 text-edubot-soft" />
-                                        Сессия
-                                    </span>
-                                    <select
-                                        value={selectedSessionId}
-                                        onChange={(e) => setSelectedSessionId(e.target.value)}
-                                        disabled={!selectedGroupId || loadingSessions}
-                                        className="w-full rounded-2xl border border-white/15 bg-white/10 px-4 py-3 text-white outline-none transition focus:border-white/30 focus:ring-4 focus:ring-white/10 disabled:opacity-60"
-                                    >
-                                        <option value="" className="text-slate-900">Сессия</option>
-                                        {sessions.map((session) => (
-                                            <option key={session.id} value={session.id} className="text-slate-900">
-                                                {session.title || `Session #${session.sessionIndex || session.id}`}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </label>
-
-                                <label className="text-sm">
-                                    <span className="mb-1.5 inline-flex items-center gap-2 font-medium text-white/85">
-                                        <FiCalendar className="h-4 w-4 text-edubot-soft" />
-                                        Дата
-                                    </span>
-                                    <input
-                                        type="date"
-                                        value={sessionDate}
-                                        onChange={(e) => setSessionDate(e.target.value)}
-                                        className="w-full rounded-2xl border border-white/15 bg-white/10 px-4 py-3 text-white outline-none transition focus:border-white/30 focus:ring-4 focus:ring-white/10"
-                                    />
-                                </label>
+                            <div className="text-sm">
+                                <span className="mb-1.5 inline-flex items-center gap-2 font-medium text-edubot-ink dark:text-white">
+                                    <FiBookOpen className="h-4 w-4 text-edubot-orange" />
+                                    Курс
+                                </span>
+                                <select
+                                    value={selectedCourseId}
+                                    onChange={(e) => setSelectedCourseId(e.target.value)}
+                                    disabled={loadingCourses}
+                                    className="dashboard-select w-full"
+                                >
+                                    <option value="">Курс тандаңыз</option>
+                                    {courses.map((course) => (
+                                        <option key={course.id} value={course.id}>
+                                            {course.title || course.name}
+                                        </option>
+                                    ))}
+                                </select>
                             </div>
-                        </div>
+                            <div className="text-sm">
+                                <span className="mb-1.5 inline-flex items-center gap-2 font-medium text-edubot-ink dark:text-white">
+                                    <FiLayers className="h-4 w-4 text-edubot-orange" />
+                                    Группа
+                                </span>
+                                <select
+                                    value={selectedGroupId}
+                                    onChange={(e) => setSelectedGroupId(e.target.value)}
+                                    disabled={!selectedCourseId || loadingGroups}
+                                    className="dashboard-select w-full disabled:opacity-60"
+                                >
+                                    <option value="">Группа</option>
+                                    {groups.map((group) => (
+                                        <option key={group.id} value={group.id}>
+                                            {group.name || group.code || `Group #${group.id}`}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div className="text-sm">
+                                <span className="mb-1.5 inline-flex items-center gap-2 font-medium text-edubot-ink dark:text-white">
+                                    <FiPlayCircle className="h-4 w-4 text-edubot-orange" />
+                                    Сессия
+                                </span>
+                                <select
+                                    value={selectedSessionId}
+                                    onChange={(e) => setSelectedSessionId(e.target.value)}
+                                    disabled={!selectedGroupId || loadingSessions}
+                                    className="dashboard-select w-full disabled:opacity-60"
+                                >
+                                    <option value="">Сессия</option>
+                                    {sessions.map((session) => (
+                                        <option key={session.id} value={session.id}>
+                                            {session.title || `Session #${session.sessionIndex || session.id}`}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div className="text-sm">
+                                <span className="mb-1.5 inline-flex items-center gap-2 font-medium text-edubot-ink dark:text-white">
+                                    <FiCalendar className="h-4 w-4 text-edubot-orange" />
+                                    Дата
+                                </span>
+                                <input
+                                    type="date"
+                                    value={sessionDate}
+                                    onChange={(e) => setSessionDate(e.target.value)}
+                                    className="dashboard-field w-full"
+                                />
+                            </div>
+                        </DashboardFilterBar>
 
                         <div className="mt-5 grid gap-3 md:grid-cols-3">
                             <ContextPill label="Курс" value={selectedCourse?.title || selectedCourse?.name || 'Тандала элек'} />
                             <ContextPill label="Группа" value={selectedGroup?.name || selectedGroup?.code || 'Тандала элек'} />
                             <ContextPill label="Сессия" value={selectedSession?.title || (selectedSession ? `Session #${selectedSession.sessionIndex || selectedSession.id}` : 'Тандала элек')} />
                         </div>
-                    </div>
+                    </DashboardWorkspaceHero>
 
-                    <div className="grid gap-4 xl:grid-cols-[280px,minmax(0,1fr)]">
-                        <DashboardInsetPanel
-                            title="Workspace control"
-                            description="Бир учурда бир объект жана бир режим менен иштеңиз."
-                        >
-                            <div className="space-y-4">
-                                <div>
-                                    <p className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-edubot-muted dark:text-slate-400">
-                                        Объект
-                                    </p>
-                                    <div className="grid grid-cols-2 gap-2">
+                    <section className="dashboard-panel p-5 space-y-5">
+                        <div className="grid gap-4 xl:grid-cols-[280px,minmax(0,1fr)]">
+                            <DashboardInsetPanel
+                                title="Workspace control"
+                                description="Session management ушул жерде жүрөт. Group lifecycle өзүнчө Groups tab аркылуу башкарылат."
+                            >
+                                <div className="space-y-4">
+                                    <div>
                                         <button
-                                            onClick={() => setWorkspaceEntity('group')}
-                                            className={`rounded-2xl px-4 py-3 text-sm font-semibold transition ${
-                                                isGroupWorkspace
-                                                    ? 'bg-gradient-to-r from-edubot-orange to-edubot-soft text-white shadow-edubot-soft'
-                                                    : 'bg-white text-edubot-ink shadow-sm dark:bg-slate-950 dark:text-slate-200'
-                                            }`}
+                                            type="button"
+                                            onClick={() => {
+                                                window.location.href = '/instructor?tab=groups';
+                                            }}
+                                            className="w-full rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-edubot-ink shadow-sm transition dark:bg-slate-950 dark:text-slate-200"
                                         >
-                                            Group
-                                        </button>
-                                        <button
-                                            onClick={() => setWorkspaceEntity('session')}
-                                            className={`rounded-2xl px-4 py-3 text-sm font-semibold transition ${
-                                                !isGroupWorkspace
-                                                    ? 'bg-gradient-to-r from-edubot-orange to-edubot-soft text-white shadow-edubot-soft'
-                                                    : 'bg-white text-edubot-ink shadow-sm dark:bg-slate-950 dark:text-slate-200'
-                                            }`}
-                                        >
-                                            Session
+                                            Groups tab ачуу
                                         </button>
                                     </div>
-                                </div>
 
-                                <div>
-                                    <p className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-edubot-muted dark:text-slate-400">
-                                        Режим
-                                    </p>
-                                    <div className="grid grid-cols-2 gap-2">
-                                        <button
-                                            onClick={() => setWorkspaceMode('create')}
-                                            className={`rounded-2xl px-4 py-3 text-sm font-semibold transition ${
-                                                isCreateWorkspace
+                                    <div>
+                                        <p className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-edubot-muted dark:text-slate-400">
+                                            Режим
+                                        </p>
+                                        <div className="grid grid-cols-2 gap-2">
+                                            <button
+                                                onClick={() => setWorkspaceMode('create')}
+                                                className={`rounded-2xl px-4 py-3 text-sm font-semibold transition ${isCreateWorkspace
                                                     ? 'bg-edubot-dark text-white shadow-edubot-card'
                                                     : 'bg-white text-edubot-ink shadow-sm dark:bg-slate-950 dark:text-slate-200'
-                                            }`}
-                                        >
-                                            Create
-                                        </button>
-                                        <button
-                                            onClick={() => setWorkspaceMode('edit')}
-                                            className={`rounded-2xl px-4 py-3 text-sm font-semibold transition ${
-                                                !isCreateWorkspace
+                                                    }`}
+                                            >
+                                                Create
+                                            </button>
+                                            <button
+                                                onClick={() => setWorkspaceMode('edit')}
+                                                className={`rounded-2xl px-4 py-3 text-sm font-semibold transition ${!isCreateWorkspace
                                                     ? 'bg-edubot-dark text-white shadow-edubot-card'
                                                     : 'bg-white text-edubot-ink shadow-sm dark:bg-slate-950 dark:text-slate-200'
-                                            }`}
+                                                    }`}
+                                            >
+                                                Edit
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-2 rounded-[1.25rem] border border-edubot-line/80 bg-white/80 p-4 dark:border-slate-700 dark:bg-slate-950/80">
+                                        <div className="text-xs font-semibold uppercase tracking-[0.16em] text-edubot-muted dark:text-slate-400">
+                                            Контекст
+                                        </div>
+                                        <div className="text-sm text-edubot-ink dark:text-white">
+                                            <span className="font-semibold">Курс:</span>{' '}
+                                            {selectedCourse?.title || selectedCourse?.name || 'Тандала элек'}
+                                        </div>
+                                        <div className="text-sm text-edubot-ink dark:text-white">
+                                            <span className="font-semibold">Группа:</span>{' '}
+                                            {selectedGroup?.name || selectedGroup?.code || 'Тандала элек'}
+                                        </div>
+                                        <div className="text-sm text-edubot-ink dark:text-white">
+                                            <span className="font-semibold">Сессия:</span>{' '}
+                                            {selectedSession?.title ||
+                                                (selectedSession
+                                                    ? `Session #${selectedSession.sessionIndex || selectedSession.id}`
+                                                    : 'Тандала элек')}
+                                        </div>
+                                    </div>
+
+                                    {workspaceDisabled ? (
+                                        <div className="rounded-[1.25rem] border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200">
+                                            {workspaceDisabledReason}
+                                        </div>
+                                    ) : null}
+                                </div>
+                            </DashboardInsetPanel>
+
+                            <DashboardInsetPanel
+                                title={workspaceTitle}
+                                description={workspaceDescription}
+                            >
+                                <div className="space-y-5">
+                                    <>
+                                            <div className="space-y-3">
+                                                <div className="text-xs font-semibold uppercase tracking-[0.18em] text-edubot-muted dark:text-slate-400">
+                                                    Basics
+                                                </div>
+                                                <div className="grid gap-3 md:grid-cols-2">
+                                                    <input
+                                                        type="number"
+                                                        min="1"
+                                                        value={isCreateWorkspace ? quickSession.sessionIndex : editSession.sessionIndex}
+                                                        onChange={(e) =>
+                                                            isCreateWorkspace
+                                                                ? setQuickSession((prev) => ({ ...prev, sessionIndex: e.target.value }))
+                                                                : setEditSession((prev) => ({ ...prev, sessionIndex: e.target.value }))
+                                                        }
+                                                        placeholder="Session index *"
+                                                        className="dashboard-field"
+                                                    />
+                                                    <select
+                                                        value={isCreateWorkspace ? quickSession.status : editSession.status}
+                                                        onChange={(e) =>
+                                                            isCreateWorkspace
+                                                                ? setQuickSession((prev) => ({ ...prev, status: e.target.value }))
+                                                                : setEditSession((prev) => ({ ...prev, status: e.target.value }))
+                                                        }
+                                                        className="dashboard-field dashboard-select"
+                                                    >
+                                                        {[
+                                                            COURSE_SESSION_STATUS.SCHEDULED,
+                                                            COURSE_SESSION_STATUS.COMPLETED,
+                                                            COURSE_SESSION_STATUS.CANCELLED,
+                                                        ]
+                                                            .filter(Boolean)
+                                                            .map((status) => (
+                                                                <option key={status} value={status}>
+                                                                    {status}
+                                                                </option>
+                                                            ))}
+                                                    </select>
+                                                    <input
+                                                        value={isCreateWorkspace ? quickSession.title : editSession.title}
+                                                        onChange={(e) =>
+                                                            isCreateWorkspace
+                                                                ? setQuickSession((prev) => ({ ...prev, title: e.target.value }))
+                                                                : setEditSession((prev) => ({ ...prev, title: e.target.value }))
+                                                        }
+                                                        placeholder="Session title *"
+                                                        className="dashboard-field md:col-span-2"
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            <div className="space-y-3">
+                                                <div className="text-xs font-semibold uppercase tracking-[0.18em] text-edubot-muted dark:text-slate-400">
+                                                    Schedule
+                                                </div>
+                                                <div className="grid gap-3 md:grid-cols-2">
+                                                    <input
+                                                        type="datetime-local"
+                                                        value={isCreateWorkspace ? quickSession.startsAt : editSession.startsAt}
+                                                        onChange={(e) =>
+                                                            isCreateWorkspace
+                                                                ? setQuickSession((prev) => ({ ...prev, startsAt: e.target.value }))
+                                                                : setEditSession((prev) => ({ ...prev, startsAt: e.target.value }))
+                                                        }
+                                                        className="dashboard-field"
+                                                    />
+                                                    <input
+                                                        type="datetime-local"
+                                                        value={isCreateWorkspace ? quickSession.endsAt : editSession.endsAt}
+                                                        onChange={(e) =>
+                                                            isCreateWorkspace
+                                                                ? setQuickSession((prev) => ({ ...prev, endsAt: e.target.value }))
+                                                                : setEditSession((prev) => ({ ...prev, endsAt: e.target.value }))
+                                                        }
+                                                        className="dashboard-field"
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            <div className="space-y-3">
+                                                <div className="text-xs font-semibold uppercase tracking-[0.18em] text-edubot-muted dark:text-slate-400">
+                                                    Materials & recording
+                                                </div>
+                                                <div className="grid gap-3 md:grid-cols-2">
+                                                    <input
+                                                        value={isCreateWorkspace ? quickSession.recordingUrl : editSession.recordingUrl}
+                                                        onChange={(e) =>
+                                                            isCreateWorkspace
+                                                                ? setQuickSession((prev) => ({ ...prev, recordingUrl: e.target.value }))
+                                                                : setEditSession((prev) => ({ ...prev, recordingUrl: e.target.value }))
+                                                        }
+                                                        placeholder="Recording URL"
+                                                        className="dashboard-field md:col-span-2"
+                                                    />
+                                                    {isCreateWorkspace ? (
+                                                        <>
+                                                            <input
+                                                                value={quickSession.materialTitle}
+                                                                onChange={(e) =>
+                                                                    setQuickSession((prev) => ({ ...prev, materialTitle: e.target.value }))
+                                                                }
+                                                                placeholder="Material title"
+                                                                className="dashboard-field"
+                                                            />
+                                                            <input
+                                                                value={quickSession.materialUrl}
+                                                                onChange={(e) =>
+                                                                    setQuickSession((prev) => ({ ...prev, materialUrl: e.target.value }))
+                                                                }
+                                                                placeholder="Material URL"
+                                                                className="dashboard-field"
+                                                            />
+                                                        </>
+                                                    ) : null}
+                                                </div>
+                                            </div>
+                                    </>
+
+                                    <div className="flex items-center justify-between gap-3 border-t border-edubot-line/70 pt-4 dark:border-slate-700">
+                                        <p className="text-sm text-edubot-muted dark:text-slate-400">
+                                            {workspaceDisabled ? workspaceDisabledReason : 'Бардык өзгөртүүлөрдү ушул жерде сактаңыз.'}
+                                        </p>
+                                        <button
+                                            onClick={workspaceAction}
+                                            disabled={workspaceDisabled || workspaceSaving}
+                                            className="dashboard-button-primary"
                                         >
-                                            Edit
+                                            {workspaceActionLabel}
                                         </button>
                                     </div>
                                 </div>
+                            </DashboardInsetPanel>
+                        </div>
 
-                                <div className="space-y-2 rounded-[1.25rem] border border-edubot-line/80 bg-white/80 p-4 dark:border-slate-700 dark:bg-slate-950/80">
-                                    <div className="text-xs font-semibold uppercase tracking-[0.16em] text-edubot-muted dark:text-slate-400">
-                                        Контекст
-                                    </div>
-                                    <div className="text-sm text-edubot-ink dark:text-white">
-                                        <span className="font-semibold">Курс:</span>{' '}
-                                        {selectedCourse?.title || selectedCourse?.name || 'Тандала элек'}
-                                    </div>
-                                    <div className="text-sm text-edubot-ink dark:text-white">
-                                        <span className="font-semibold">Группа:</span>{' '}
-                                        {selectedGroup?.name || selectedGroup?.code || 'Тандала элек'}
-                                    </div>
-                                    <div className="text-sm text-edubot-ink dark:text-white">
-                                        <span className="font-semibold">Сессия:</span>{' '}
-                                        {selectedSession?.title ||
-                                            (selectedSession
-                                                ? `Session #${selectedSession.sessionIndex || selectedSession.id}`
-                                                : 'Тандала элек')}
-                                    </div>
-                                </div>
-
-                                {workspaceDisabled ? (
-                                    <div className="rounded-[1.25rem] border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200">
-                                        {workspaceDisabledReason}
-                                    </div>
-                                ) : null}
-                            </div>
-                        </DashboardInsetPanel>
-
-                        <DashboardInsetPanel
-                            title={workspaceTitle}
-                            description={workspaceDescription}
-                        >
-                            <div className="space-y-5">
-                                {isGroupWorkspace ? (
-                                    <>
-                                        <div className="space-y-3">
-                                            <div className="text-xs font-semibold uppercase tracking-[0.18em] text-edubot-muted dark:text-slate-400">
-                                                Basics
-                                            </div>
-                                            <div className="grid gap-3 md:grid-cols-2">
-                                                <input
-                                                    value={isCreateWorkspace ? quickGroup.name : editGroup.name}
-                                                    onChange={(e) =>
-                                                        isCreateWorkspace
-                                                            ? setQuickGroup((prev) => ({ ...prev, name: e.target.value }))
-                                                            : setEditGroup((prev) => ({ ...prev, name: e.target.value }))
-                                                    }
-                                                    placeholder="Group name *"
-                                                    className="dashboard-field md:col-span-2"
-                                                />
-                                                <input
-                                                    value={isCreateWorkspace ? quickGroup.code : editGroup.code}
-                                                    onChange={(e) =>
-                                                        isCreateWorkspace
-                                                            ? setQuickGroup((prev) => ({ ...prev, code: e.target.value }))
-                                                            : setEditGroup((prev) => ({ ...prev, code: e.target.value }))
-                                                    }
-                                                    placeholder="Group code *"
-                                                    className="dashboard-field"
-                                                />
-                                                <select
-                                                    value={isCreateWorkspace ? quickGroup.status : editGroup.status}
-                                                    onChange={(e) =>
-                                                        isCreateWorkspace
-                                                            ? setQuickGroup((prev) => ({ ...prev, status: e.target.value }))
-                                                            : setEditGroup((prev) => ({ ...prev, status: e.target.value }))
-                                                    }
-                                                    className="dashboard-field dashboard-select"
-                                                >
-                                                    {Object.values(COURSE_GROUP_STATUS).map((status) => (
-                                                        <option key={status} value={status}>
-                                                            {status}
-                                                        </option>
-                                                    ))}
-                                                </select>
-                                            </div>
-                                        </div>
-
-                                        <div className="space-y-3">
-                                            <div className="text-xs font-semibold uppercase tracking-[0.18em] text-edubot-muted dark:text-slate-400">
-                                                Schedule
-                                            </div>
-                                            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-                                                <input
-                                                    type="date"
-                                                    value={isCreateWorkspace ? quickGroup.startDate : editGroup.startDate}
-                                                    onChange={(e) =>
-                                                        isCreateWorkspace
-                                                            ? setQuickGroup((prev) => ({ ...prev, startDate: e.target.value }))
-                                                            : setEditGroup((prev) => ({ ...prev, startDate: e.target.value }))
-                                                    }
-                                                    className="dashboard-field"
-                                                />
-                                                <input
-                                                    type="date"
-                                                    value={isCreateWorkspace ? quickGroup.endDate : editGroup.endDate}
-                                                    onChange={(e) =>
-                                                        isCreateWorkspace
-                                                            ? setQuickGroup((prev) => ({ ...prev, endDate: e.target.value }))
-                                                            : setEditGroup((prev) => ({ ...prev, endDate: e.target.value }))
-                                                    }
-                                                    className="dashboard-field"
-                                                />
-                                                <input
-                                                    type="number"
-                                                    min="1"
-                                                    value={isCreateWorkspace ? quickGroup.seatLimit : editGroup.seatLimit}
-                                                    onChange={(e) =>
-                                                        isCreateWorkspace
-                                                            ? setQuickGroup((prev) => ({ ...prev, seatLimit: e.target.value }))
-                                                            : setEditGroup((prev) => ({ ...prev, seatLimit: e.target.value }))
-                                                    }
-                                                    placeholder="Seat limit"
-                                                    className="dashboard-field"
-                                                />
-                                                <input
-                                                    value={isCreateWorkspace ? quickGroup.timezone : editGroup.timezone}
-                                                    onChange={(e) =>
-                                                        isCreateWorkspace
-                                                            ? setQuickGroup((prev) => ({ ...prev, timezone: e.target.value }))
-                                                            : setEditGroup((prev) => ({ ...prev, timezone: e.target.value }))
-                                                    }
-                                                    placeholder="Timezone"
-                                                    className="dashboard-field"
-                                                />
-                                            </div>
-                                        </div>
-
-                                        <div className="space-y-3">
-                                            <div className="text-xs font-semibold uppercase tracking-[0.18em] text-edubot-muted dark:text-slate-400">
-                                                Delivery
-                                            </div>
-                                            <div className="grid gap-3 md:grid-cols-2">
-                                                <input
-                                                    value={isCreateWorkspace ? quickGroup.location : editGroup.location}
-                                                    onChange={(e) =>
-                                                        isCreateWorkspace
-                                                            ? setQuickGroup((prev) => ({ ...prev, location: e.target.value }))
-                                                            : setEditGroup((prev) => ({ ...prev, location: e.target.value }))
-                                                    }
-                                                    placeholder="Location"
-                                                    className="dashboard-field md:col-span-2"
-                                                />
-                                                <select
-                                                    value={isCreateWorkspace ? quickGroup.meetingProvider : editGroup.meetingProvider}
-                                                    onChange={(e) =>
-                                                        isCreateWorkspace
-                                                            ? setQuickGroup((prev) => ({ ...prev, meetingProvider: e.target.value }))
-                                                            : setEditGroup((prev) => ({ ...prev, meetingProvider: e.target.value }))
-                                                    }
-                                                    className="dashboard-field dashboard-select"
-                                                >
-                                                    <option value="">Meeting provider</option>
-                                                    {Object.values(MEETING_PROVIDER).map((provider) => (
-                                                        <option key={provider} value={provider}>
-                                                            {provider}
-                                                        </option>
-                                                    ))}
-                                                </select>
-                                                <input
-                                                    value={isCreateWorkspace ? quickGroup.instructorId : editGroup.instructorId}
-                                                    onChange={(e) =>
-                                                        isCreateWorkspace
-                                                            ? setQuickGroup((prev) => ({ ...prev, instructorId: e.target.value }))
-                                                            : setEditGroup((prev) => ({ ...prev, instructorId: e.target.value }))
-                                                    }
-                                                    placeholder="Instructor ID"
-                                                    className="dashboard-field"
-                                                />
-                                                <input
-                                                    value={isCreateWorkspace ? quickGroup.meetingUrl : editGroup.meetingUrl}
-                                                    onChange={(e) =>
-                                                        isCreateWorkspace
-                                                            ? setQuickGroup((prev) => ({ ...prev, meetingUrl: e.target.value }))
-                                                            : setEditGroup((prev) => ({ ...prev, meetingUrl: e.target.value }))
-                                                    }
-                                                    placeholder="Meeting URL"
-                                                    className="dashboard-field md:col-span-2"
-                                                />
-                                            </div>
-                                        </div>
-                                    </>
-                                ) : (
-                                    <>
-                                        <div className="space-y-3">
-                                            <div className="text-xs font-semibold uppercase tracking-[0.18em] text-edubot-muted dark:text-slate-400">
-                                                Basics
-                                            </div>
-                                            <div className="grid gap-3 md:grid-cols-2">
-                                                <input
-                                                    type="number"
-                                                    min="1"
-                                                    value={isCreateWorkspace ? quickSession.sessionIndex : editSession.sessionIndex}
-                                                    onChange={(e) =>
-                                                        isCreateWorkspace
-                                                            ? setQuickSession((prev) => ({ ...prev, sessionIndex: e.target.value }))
-                                                            : setEditSession((prev) => ({ ...prev, sessionIndex: e.target.value }))
-                                                    }
-                                                    placeholder="Session index *"
-                                                    className="dashboard-field"
-                                                />
-                                                <select
-                                                    value={isCreateWorkspace ? quickSession.status : editSession.status}
-                                                    onChange={(e) =>
-                                                        isCreateWorkspace
-                                                            ? setQuickSession((prev) => ({ ...prev, status: e.target.value }))
-                                                            : setEditSession((prev) => ({ ...prev, status: e.target.value }))
-                                                    }
-                                                    className="dashboard-field dashboard-select"
-                                                >
-                                                    {[
-                                                        COURSE_SESSION_STATUS.SCHEDULED,
-                                                        COURSE_SESSION_STATUS.COMPLETED,
-                                                        COURSE_SESSION_STATUS.CANCELLED,
-                                                    ]
-                                                        .filter(Boolean)
-                                                        .map((status) => (
-                                                            <option key={status} value={status}>
-                                                                {status}
-                                                            </option>
-                                                        ))}
-                                                </select>
-                                                <input
-                                                    value={isCreateWorkspace ? quickSession.title : editSession.title}
-                                                    onChange={(e) =>
-                                                        isCreateWorkspace
-                                                            ? setQuickSession((prev) => ({ ...prev, title: e.target.value }))
-                                                            : setEditSession((prev) => ({ ...prev, title: e.target.value }))
-                                                    }
-                                                    placeholder="Session title *"
-                                                    className="dashboard-field md:col-span-2"
-                                                />
-                                            </div>
-                                        </div>
-
-                                        <div className="space-y-3">
-                                            <div className="text-xs font-semibold uppercase tracking-[0.18em] text-edubot-muted dark:text-slate-400">
-                                                Schedule
-                                            </div>
-                                            <div className="grid gap-3 md:grid-cols-2">
-                                                <input
-                                                    type="datetime-local"
-                                                    value={isCreateWorkspace ? quickSession.startsAt : editSession.startsAt}
-                                                    onChange={(e) =>
-                                                        isCreateWorkspace
-                                                            ? setQuickSession((prev) => ({ ...prev, startsAt: e.target.value }))
-                                                            : setEditSession((prev) => ({ ...prev, startsAt: e.target.value }))
-                                                    }
-                                                    className="dashboard-field"
-                                                />
-                                                <input
-                                                    type="datetime-local"
-                                                    value={isCreateWorkspace ? quickSession.endsAt : editSession.endsAt}
-                                                    onChange={(e) =>
-                                                        isCreateWorkspace
-                                                            ? setQuickSession((prev) => ({ ...prev, endsAt: e.target.value }))
-                                                            : setEditSession((prev) => ({ ...prev, endsAt: e.target.value }))
-                                                    }
-                                                    className="dashboard-field"
-                                                />
-                                            </div>
-                                        </div>
-
-                                        <div className="space-y-3">
-                                            <div className="text-xs font-semibold uppercase tracking-[0.18em] text-edubot-muted dark:text-slate-400">
-                                                Materials & recording
-                                            </div>
-                                            <div className="grid gap-3 md:grid-cols-2">
-                                                <input
-                                                    value={isCreateWorkspace ? quickSession.recordingUrl : editSession.recordingUrl}
-                                                    onChange={(e) =>
-                                                        isCreateWorkspace
-                                                            ? setQuickSession((prev) => ({ ...prev, recordingUrl: e.target.value }))
-                                                            : setEditSession((prev) => ({ ...prev, recordingUrl: e.target.value }))
-                                                    }
-                                                    placeholder="Recording URL"
-                                                    className="dashboard-field md:col-span-2"
-                                                />
-                                                {isCreateWorkspace ? (
-                                                    <>
-                                                        <input
-                                                            value={quickSession.materialTitle}
-                                                            onChange={(e) =>
-                                                                setQuickSession((prev) => ({ ...prev, materialTitle: e.target.value }))
-                                                            }
-                                                            placeholder="Material title"
-                                                            className="dashboard-field"
-                                                        />
-                                                        <input
-                                                            value={quickSession.materialUrl}
-                                                            onChange={(e) =>
-                                                                setQuickSession((prev) => ({ ...prev, materialUrl: e.target.value }))
-                                                            }
-                                                            placeholder="Material URL"
-                                                            className="dashboard-field"
-                                                        />
-                                                    </>
-                                                ) : null}
-                                            </div>
-                                        </div>
-                                    </>
-                                )}
-
-                                <div className="flex items-center justify-between gap-3 border-t border-edubot-line/70 pt-4 dark:border-slate-700">
-                                    <p className="text-sm text-edubot-muted dark:text-slate-400">
-                                        {workspaceDisabled ? workspaceDisabledReason : 'Бардык өзгөртүүлөрдү ушул жерде сактаңыз.'}
-                                    </p>
-                                    <button
-                                        onClick={workspaceAction}
-                                        disabled={workspaceDisabled || workspaceSaving}
-                                        className="dashboard-button-primary"
-                                    >
-                                        {workspaceActionLabel}
-                                    </button>
-                                </div>
-                            </div>
-                        </DashboardInsetPanel>
-                    </div>
-
-                    <div className="flex flex-wrap gap-2 rounded-[1.5rem] border border-edubot-line/70 bg-edubot-surfaceAlt/70 p-2 dark:border-slate-700 dark:bg-slate-900/70">
-                        {tabList.map((tab) => (
-                            <button
-                                key={tab.id}
-                                onClick={() => setActiveTab(tab.id)}
-                                className={`rounded-full border px-4 py-2 text-sm font-medium transition ${
-                                    activeTab === tab.id
+                        <div className="flex flex-wrap gap-2 rounded-[1.5rem] border border-edubot-line/70 bg-edubot-surfaceAlt/70 p-2 dark:border-slate-700 dark:bg-slate-900/70">
+                            {tabList.map((tab) => (
+                                <button
+                                    key={tab.id}
+                                    onClick={() => setActiveTab(tab.id)}
+                                    className={`rounded-full border px-4 py-2 text-sm font-medium transition ${activeTab === tab.id
                                         ? 'border-edubot-orange bg-gradient-to-r from-edubot-orange to-edubot-soft text-white shadow-edubot-soft'
                                         : 'border-transparent bg-white text-edubot-ink hover:border-edubot-line dark:bg-slate-950 dark:text-[#E8ECF3]'
-                                }`}
-                            >
-                                {tab.label}
-                            </button>
-                        ))}
-                    </div>
-
-                    {selectedSession &&
-                        normalizeCourseType(selectedCourse, selectedSession, selectedGroup) ===
-                        COURSE_TYPE.ONLINE_LIVE && (
-                            <div className="dashboard-panel-muted flex flex-wrap items-center justify-between gap-3 p-4">
-                                <div className="text-sm">
-                                    <div className="flex items-center gap-2 font-medium text-edubot-ink dark:text-white">
-                                        <span className={`inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-semibold ${selectedModeMeta.badgeClass}`}>
-                                            <SelectedModeIcon className="h-3.5 w-3.5" />
-                                            {selectedModeMeta.label}
-                                        </span>
-                                        Онлайн Live сессия
-                                    </div>
-                                    <div className="mt-1 text-edubot-muted dark:text-slate-300">
-                                        {selectedSessionMode === 'upcoming' &&
-                                            `Башталышына: ${formatCountdown(
-                                                new Date(selectedSession.startsAt).getTime(),
-                                                nowMs
-                                            )}`}
-                                        {selectedSessionMode === 'live' &&
-                                            `Аяктаганга чейин: ${formatCountdown(
-                                                new Date(selectedSession.endsAt).getTime(),
-                                                nowMs
-                                            )}`}
-                                        {selectedSessionMode === 'completed' && 'Сессия аяктады'}
-                                    </div>
-                                </div>
-                                <button
-                                    onClick={() => joinLiveSession(selectedSessionJoinUrl)}
-                                    disabled={
-                                        selectedSessionMode === 'completed' ||
-                                        !selectedSessionJoinAllowed ||
-                                        !selectedSessionJoinUrl
-                                    }
-                                    className="dashboard-button-primary"
+                                        }`}
                                 >
-                                    Join Class
+                                    {tab.label}
                                 </button>
-                                {!selectedSessionJoinAllowed &&
-                                    selectedSessionMode !== 'completed' && (
-                                        <div className="text-xs text-edubot-muted dark:text-slate-400">
-                                            Join 10 мүнөт калганда ачылат.
+                            ))}
+                        </div>
+
+                        {selectedSession &&
+                            normalizeCourseType(selectedCourse, selectedSession, selectedGroup) ===
+                            COURSE_TYPE.ONLINE_LIVE && (
+                                <div className="dashboard-panel-muted flex flex-wrap items-center justify-between gap-3 p-4">
+                                    <div className="text-sm">
+                                        <div className="flex items-center gap-2 font-medium text-edubot-ink dark:text-white">
+                                            <StatusBadge tone={selectedModeMeta.tone || 'default'} className="gap-1">
+                                                <SelectedModeIcon className="h-3.5 w-3.5" />
+                                                {selectedModeMeta.label}
+                                            </StatusBadge>
+                                            Онлайн Live сессия
                                         </div>
-                                    )}
+                                        <div className="mt-1 text-edubot-muted dark:text-slate-300">
+                                            {selectedSessionMode === 'upcoming' &&
+                                                `Башталышына: ${formatCountdown(
+                                                    new Date(selectedSession.startsAt).getTime(),
+                                                    nowMs
+                                                )}`}
+                                            {selectedSessionMode === 'live' &&
+                                                `Аяктаганга чейин: ${formatCountdown(
+                                                    new Date(selectedSession.endsAt).getTime(),
+                                                    nowMs
+                                                )}`}
+                                            {selectedSessionMode === 'completed' && 'Сессия аяктады'}
+                                        </div>
+                                    </div>
+                                    <button
+                                        onClick={() => joinLiveSession(selectedSessionJoinUrl)}
+                                        disabled={
+                                            selectedSessionMode === 'completed' ||
+                                            !selectedSessionJoinAllowed ||
+                                            !selectedSessionJoinUrl
+                                        }
+                                        className="dashboard-button-primary"
+                                    >
+                                        Join Class
+                                    </button>
+                                    {!selectedSessionJoinAllowed &&
+                                        selectedSessionMode !== 'completed' && (
+                                            <div className="text-xs text-edubot-muted dark:text-slate-400">
+                                                Join 10 мүнөт калганда ачылат.
+                                            </div>
+                                        )}
+                                </div>
+                            )}
+
+                        {activeTab === 'attendance' && (
+                            <div className="space-y-4">
+                                <div className="grid gap-3 md:grid-cols-4">
+                                    <DashboardMetricCard
+                                        label="Жалпы студент"
+                                        value={attendanceStats.total}
+                                        icon={FiUsers}
+                                    />
+                                    <DashboardMetricCard
+                                        label="Катышты"
+                                        value={attendanceStats.present}
+                                        tone="green"
+                                        icon={FiCheckCircle}
+                                    />
+                                    <DashboardMetricCard
+                                        label="Кечикти"
+                                        value={attendanceStats.late}
+                                        tone="amber"
+                                        icon={FiClock}
+                                    />
+                                    <DashboardMetricCard
+                                        label="Келген жок"
+                                        value={attendanceStats.absent}
+                                        tone="red"
+                                        icon={FiActivity}
+                                    />
+                                </div>
+
+                                <div className="flex items-center justify-between gap-3">
+                                    <div className="text-sm text-edubot-muted dark:text-slate-400">
+                                        Студенттик катышууну бул сессия үчүн белгилеп, бир жолу сактаңыз.
+                                    </div>
+                                    <button
+                                        onClick={saveAttendance}
+                                        disabled={
+                                            savingAttendance ||
+                                            loadingStudents ||
+                                            !selectedCourseId ||
+                                            !selectedSessionId ||
+                                            !hasAttendanceChanges
+                                        }
+                                        className="dashboard-button-primary"
+                                    >
+                                        {savingAttendance
+                                            ? 'Сакталууда...'
+                                            : hasAttendanceChanges
+                                              ? 'Катышууну сактоо'
+                                              : 'Өзгөртүү жок'}
+                                    </button>
+                                </div>
+
+                                {loadingStudents ? (
+                                    <div className="dashboard-panel-muted p-10 text-center text-sm text-edubot-muted dark:text-slate-400">
+                                        Студенттер жүктөлүүдө...
+                                    </div>
+                                ) : students.length === 0 ? (
+                                    <div className="dashboard-panel-muted p-10 text-center text-sm text-edubot-muted dark:text-slate-400">
+                                        Студент табылган жок.
+                                    </div>
+                                ) : (
+                                    <div className="grid gap-4 xl:grid-cols-2">
+                                        {students.map((student) => {
+                                            const currentStatus = attendanceRows[student.id]?.status;
+                                            const streak = studentStreaks[student.id] || 0;
+
+                                            return (
+                                                <article
+                                                    key={student.id}
+                                                    className="rounded-[1.5rem] border border-edubot-line/80 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-950"
+                                                >
+                                                    <div className="flex items-start gap-4">
+                                                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-edubot-surfaceAlt text-sm font-bold text-edubot-dark dark:bg-slate-800 dark:text-edubot-soft">
+                                                            {student.fullName
+                                                                .split(' ')
+                                                                .filter(Boolean)
+                                                                .slice(0, 2)
+                                                                .map((part) => part[0]?.toUpperCase())
+                                                                .join('') || 'S'}
+                                                        </div>
+
+                                                        <div className="min-w-0 flex-1">
+                                                            <div className="flex flex-wrap items-center gap-2">
+                                                                <h3 className="text-base font-semibold text-edubot-ink dark:text-white">
+                                                                    {student.fullName}
+                                                                </h3>
+                                                                <StatusBadge tone="default" className="gap-1">
+                                                                    <FiActivity className="h-3.5 w-3.5" />
+                                                                    {streak} күн streak
+                                                                </StatusBadge>
+                                                            </div>
+
+                                                            <div className="mt-4 grid gap-3">
+                                                                <div>
+                                                                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-edubot-muted dark:text-slate-400">
+                                                                        Катышуу
+                                                                    </p>
+                                                                    <div className="relative">
+                                                                        <FiEdit3 className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-edubot-muted" />
+                                                                        <select
+                                                                            value={currentStatus}
+                                                                            onChange={(e) =>
+                                                                                updateStatus(student.id, e.target.value)
+                                                                            }
+                                                                            className="dashboard-field pl-11"
+                                                                        >
+                                                                            {statusOptions.map((status) => (
+                                                                                <option key={status.value} value={status.value}>
+                                                                                    {status.label}
+                                                                                </option>
+                                                                            ))}
+                                                                        </select>
+                                                                    </div>
+                                                                    <p className="mt-2 text-xs text-edubot-muted dark:text-slate-400">
+                                                                        Статус тизмеден тандалат, ошондуктан кокус басуу азаят.
+                                                                    </p>
+                                                                </div>
+
+                                                                <div>
+                                                                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-edubot-muted dark:text-slate-400">
+                                                                        Эскертүү
+                                                                    </p>
+                                                                    <input
+                                                                        value={attendanceRows[student.id]?.notes || ''}
+                                                                        onChange={(e) =>
+                                                                            updateNotes(student.id, e.target.value)
+                                                                        }
+                                                                        className="dashboard-field"
+                                                                        placeholder="Эскертүү"
+                                                                    />
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </article>
+                                            );
+                                        })}
+                                    </div>
+                                )}
                             </div>
                         )}
 
-                    {activeTab === 'attendance' && (
-                        <div className="space-y-4">
-                            <div className="grid gap-3 md:grid-cols-4">
-                                <DashboardMetricCard
-                                    label="Жалпы студент"
-                                    value={attendanceStats.total}
-                                    icon={FiUsers}
-                                />
-                                <DashboardMetricCard
-                                    label="Катышты"
-                                    value={attendanceStats.present}
-                                    tone="green"
-                                    icon={FiCheckCircle}
-                                />
-                                <DashboardMetricCard
-                                    label="Кечикти"
-                                    value={attendanceStats.late}
-                                    tone="amber"
-                                    icon={FiClock}
-                                />
-                                <DashboardMetricCard
-                                    label="Келген жок"
-                                    value={attendanceStats.absent}
-                                    tone="red"
-                                    icon={FiActivity}
-                                />
-                            </div>
-
-                            <div className="flex items-center justify-between gap-3">
-                                <div className="text-sm text-edubot-muted dark:text-slate-400">
-                                    Студенттик катышууну бул сессия үчүн белгилеп, бир жолу сактаңыз.
-                                </div>
-                                <button
-                                    onClick={saveAttendance}
-                                    disabled={
-                                        savingAttendance || loadingStudents || !selectedCourseId
-                                    }
-                                    className="dashboard-button-primary"
-                                >
-                                    {savingAttendance ? 'Сакталууда...' : 'Катышууну сактоо'}
-                                </button>
-                            </div>
-
-                            {loadingStudents ? (
-                                <div className="dashboard-panel-muted p-10 text-center text-sm text-edubot-muted dark:text-slate-400">
-                                    Студенттер жүктөлүүдө...
-                                </div>
-                            ) : students.length === 0 ? (
-                                <div className="dashboard-panel-muted p-10 text-center text-sm text-edubot-muted dark:text-slate-400">
-                                    Студент табылган жок.
-                                </div>
-                            ) : (
-                                <div className="grid gap-4 xl:grid-cols-2">
-                                    {students.map((student) => {
-                                        const currentStatus = attendanceRows[student.id]?.status;
-                                        const streak = studentStreaks[student.id] || 0;
-
-                                        return (
-                                            <article
-                                                key={student.id}
-                                                className="rounded-[1.5rem] border border-edubot-line/80 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-950"
-                                            >
-                                                <div className="flex items-start gap-4">
-                                                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-edubot-surfaceAlt text-sm font-bold text-edubot-dark dark:bg-slate-800 dark:text-edubot-soft">
-                                                        {student.fullName
-                                                            .split(' ')
-                                                            .filter(Boolean)
-                                                            .slice(0, 2)
-                                                            .map((part) => part[0]?.toUpperCase())
-                                                            .join('') || 'S'}
-                                                    </div>
-
-                                                    <div className="min-w-0 flex-1">
-                                                        <div className="flex flex-wrap items-center gap-2">
-                                                            <h3 className="text-base font-semibold text-edubot-ink dark:text-white">
-                                                                {student.fullName}
-                                                            </h3>
-                                                            <span className="inline-flex items-center gap-1 rounded-full border border-edubot-line bg-edubot-surfaceAlt px-3 py-1 text-xs font-semibold text-edubot-ink dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200">
-                                                                <FiActivity className="h-3.5 w-3.5" />
-                                                                {streak} күн streak
-                                                            </span>
-                                                        </div>
-
-                                                        <div className="mt-4 grid gap-3">
-                                                            <div>
-                                                                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-edubot-muted dark:text-slate-400">
-                                                                    Катышуу
-                                                                </p>
-                                                                <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-                                                                    {statusOptions.map((status) => (
-                                                                        <button
-                                                                            key={status.value}
-                                                                            onClick={() =>
-                                                                                updateStatus(
-                                                                                    student.id,
-                                                                                    status.value
-                                                                                )
-                                                                            }
-                                                                            className={`rounded-2xl px-3 py-2 text-xs font-semibold transition ${
-                                                                                currentStatus === status.value
-                                                                                    ? status.className
-                                                                                    : 'bg-gray-100 text-gray-600 dark:bg-slate-800 dark:text-slate-300'
-                                                                            }`}
-                                                                        >
-                                                                            {status.label}
-                                                                        </button>
-                                                                    ))}
-                                                                </div>
-                                                            </div>
-
-                                                            <div>
-                                                                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-edubot-muted dark:text-slate-400">
-                                                                    Эскертүү
-                                                                </p>
-                                                                <input
-                                                                    value={attendanceRows[student.id]?.notes || ''}
-                                                                    onChange={(e) =>
-                                                                        updateNotes(student.id, e.target.value)
-                                                                    }
-                                                                    className="dashboard-field"
-                                                                    placeholder="Эскертүү"
-                                                                />
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </article>
-                                        );
-                                    })}
-                                </div>
-                            )}
-                        </div>
-                    )}
-
-                    {activeTab === 'chat' && (
-                        <div className="space-y-3">
-                            <div className="max-h-72 overflow-auto border border-gray-100 dark:border-gray-800 rounded-xl p-3 space-y-2">
-                                {chatMessages.map((message) => (
-                                    <div
-                                        key={message.id}
-                                        className="text-sm bg-gray-50 dark:bg-[#1A1A1A] rounded p-2"
-                                    >
-                                        <div className="font-medium">{message.sender}</div>
-                                        <div>{message.text}</div>
-                                    </div>
-                                ))}
-                                {chatMessages.length === 0 && (
-                                    <div className="text-sm text-gray-500">
-                                        Чат билдирүүлөрү жок.
-                                    </div>
-                                )}
-                            </div>
-                            <div className="flex gap-2">
-                                <input
-                                    value={chatInput}
-                                    onChange={(e) => setChatInput(e.target.value)}
-                                    placeholder="Кыска билдирүү..."
-                                    className="flex-1 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 bg-white dark:bg-[#0E0E0E]"
-                                />
-                                <button
-                                    onClick={sendChatMessage}
-                                    className="px-4 py-2 rounded-lg bg-blue-600 text-white"
-                                >
-                                    Жөнөтүү
-                                </button>
-                            </div>
-                        </div>
-                    )}
-
-                    {activeTab === 'materials' && (
-                        <div className="space-y-3">
-                            <label className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 cursor-pointer">
-                                <span>Материал жүктөө</span>
-                                <input
-                                    type="file"
-                                    multiple
-                                    className="hidden"
-                                    onChange={addMaterialFiles}
-                                />
-                            </label>
-                            <div className="space-y-2">
-                                {materials.map((file) => (
-                                    <div
-                                        key={file.id}
-                                        className="text-sm border border-gray-100 dark:border-gray-800 rounded px-3 py-2"
-                                    >
-                                        {file.name} ({file.sizeKb} KB)
-                                    </div>
-                                ))}
-                                {materials.length === 0 && (
-                                    <div className="text-sm text-gray-500">
-                                        Материал кошула элек.
-                                    </div>
-                                )}
-                            </div>
-
-                            <div className="grid md:grid-cols-3 gap-2">
-                                <select
-                                    value={meetingProvider}
-                                    onChange={(e) => setMeetingProvider(e.target.value)}
-                                    className="border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 bg-white dark:bg-[#0E0E0E]"
-                                >
-                                    {Object.values(MEETING_PROVIDER).map((provider) => (
-                                        <option key={provider} value={provider}>
-                                            {provider}
-                                        </option>
+                        {activeTab === 'chat' && (
+                            <div className="space-y-3">
+                                <div className="max-h-72 overflow-auto border border-gray-100 dark:border-gray-800 rounded-xl p-3 space-y-2">
+                                    {chatMessages.map((message) => (
+                                        <div
+                                            key={message.id}
+                                            className="text-sm bg-gray-50 dark:bg-[#1A1A1A] rounded p-2"
+                                        >
+                                            <div className="font-medium">{message.sender}</div>
+                                            <div>{message.text}</div>
+                                        </div>
                                     ))}
-                                </select>
-                                <input
-                                    value={meetingJoinUrl}
-                                    onChange={(e) => setMeetingJoinUrl(e.target.value)}
-                                    placeholder="Meeting URL"
-                                    className="md:col-span-2 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 bg-white dark:bg-[#0E0E0E]"
-                                />
-                            </div>
-                            <div className="flex flex-wrap gap-2 items-center">
-                                <button
-                                    onClick={saveMeetingLink}
-                                    disabled={!selectedSessionId || savingMeeting}
-                                    className="px-4 py-2 rounded-lg bg-blue-600 text-white disabled:opacity-60"
-                                >
-                                    {savingMeeting
-                                        ? 'Сакталууда...'
-                                        : meetingId
-                                            ? 'Meeting жаңыртуу'
-                                            : 'Meeting түзүү'}
-                                </button>
-                                <button
-                                    onClick={restoreMeetingState}
-                                    disabled={!selectedSessionId || loadingMeetingState}
-                                    className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 dark:text-[#E8ECF3] disabled:opacity-60"
-                                >
-                                    {loadingMeetingState
-                                        ? 'Жүктөлүүдө...'
-                                        : 'Meeting абалын жүктөө'}
-                                </button>
-                                <button
-                                    onClick={removeMeeting}
-                                    disabled={!selectedSessionId || deletingMeeting}
-                                    className="px-4 py-2 rounded-lg border border-red-400 text-red-600 disabled:opacity-60"
-                                >
-                                    {deletingMeeting ? 'Өчүрүлүүдө...' : 'Meeting өчүрүү'}
-                                </button>
-                                {meetingId && (
-                                    <span className="text-xs text-gray-500">ID: {meetingId}</span>
-                                )}
-                            </div>
-
-                            <button
-                                onClick={() =>
-                                    joinLiveSession(meetingJoinUrl || selectedSessionJoinUrl)
-                                }
-                                disabled={
-                                    !(meetingJoinUrl || selectedSessionJoinUrl) ||
-                                    !selectedSessionJoinAllowed
-                                }
-                                className="px-4 py-2 rounded-lg border border-blue-500 text-blue-700 disabled:opacity-60"
-                            >
-                                Join Class
-                            </button>
-                            {!selectedSessionJoinAllowed && selectedSessionMode !== 'completed' && (
-                                <div className="text-xs text-gray-500">
-                                    Join 10 мүнөт калганда гана жеткиликтүү.
+                                    {chatMessages.length === 0 && (
+                                        <div className="text-sm text-gray-500">
+                                            Чат билдирүүлөрү жок.
+                                        </div>
+                                    )}
                                 </div>
-                            )}
+                                <div className="flex gap-2">
+                                    <input
+                                        value={chatInput}
+                                        onChange={(e) => setChatInput(e.target.value)}
+                                        placeholder="Кыска билдирүү..."
+                                        className="flex-1 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 bg-white dark:bg-[#0E0E0E]"
+                                    />
+                                    <button
+                                        onClick={sendChatMessage}
+                                        className="px-4 py-2 rounded-lg bg-blue-600 text-white"
+                                    >
+                                        Жөнөтүү
+                                    </button>
+                                </div>
+                            </div>
+                        )}
 
-                            <input
-                                value={recordingLink}
-                                onChange={(e) => setRecordingLink(e.target.value)}
-                                placeholder="Recording URL"
+                        {activeTab === 'materials' && (
+                            <div className="space-y-3">
+                                <label className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 cursor-pointer">
+                                    <span>Материал жүктөө</span>
+                                    <input
+                                        type="file"
+                                        multiple
+                                        className="hidden"
+                                        onChange={addMaterialFiles}
+                                    />
+                                </label>
+                                <div className="space-y-2">
+                                    {materials.map((file) => (
+                                        <div
+                                            key={file.id}
+                                            className="text-sm border border-gray-100 dark:border-gray-800 rounded px-3 py-2"
+                                        >
+                                            {file.name} ({file.sizeKb} KB)
+                                        </div>
+                                    ))}
+                                    {materials.length === 0 && (
+                                        <div className="text-sm text-gray-500">
+                                            Материал кошула элек.
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className="grid md:grid-cols-3 gap-2">
+                                    <select
+                                        value={meetingProvider}
+                                        onChange={(e) => setMeetingProvider(e.target.value)}
+                                        className="border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 bg-white dark:bg-[#0E0E0E]"
+                                    >
+                                        {Object.values(MEETING_PROVIDER).map((provider) => (
+                                            <option key={provider} value={provider}>
+                                                {provider}
+                                            </option>
+                                        ))}
+                                    </select>
+                                    <input
+                                        value={meetingJoinUrl}
+                                        onChange={(e) => setMeetingJoinUrl(e.target.value)}
+                                        placeholder="Meeting URL"
+                                        className="md:col-span-2 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 bg-white dark:bg-[#0E0E0E]"
+                                    />
+                                </div>
+                                <div className="flex flex-wrap gap-2 items-center">
+                                    <button
+                                        onClick={saveMeetingLink}
+                                        disabled={!selectedSessionId || savingMeeting}
+                                        className="px-4 py-2 rounded-lg bg-blue-600 text-white disabled:opacity-60"
+                                    >
+                                        {savingMeeting
+                                            ? 'Сакталууда...'
+                                            : meetingId
+                                                ? 'Meeting жаңыртуу'
+                                                : 'Meeting түзүү'}
+                                    </button>
+                                    <button
+                                        onClick={restoreMeetingState}
+                                        disabled={!selectedSessionId || loadingMeetingState}
+                                        className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 dark:text-[#E8ECF3] disabled:opacity-60"
+                                    >
+                                        {loadingMeetingState
+                                            ? 'Жүктөлүүдө...'
+                                            : 'Meeting абалын жүктөө'}
+                                    </button>
+                                    <button
+                                        onClick={removeMeeting}
+                                        disabled={!selectedSessionId || deletingMeeting}
+                                        className="px-4 py-2 rounded-lg border border-red-400 text-red-600 disabled:opacity-60"
+                                    >
+                                        {deletingMeeting ? 'Өчүрүлүүдө...' : 'Meeting өчүрүү'}
+                                    </button>
+                                    {meetingId && (
+                                        <span className="text-xs text-gray-500">ID: {meetingId}</span>
+                                    )}
+                                </div>
+
+                                <button
+                                    onClick={() =>
+                                        joinLiveSession(meetingJoinUrl || selectedSessionJoinUrl)
+                                    }
+                                    disabled={
+                                        !(meetingJoinUrl || selectedSessionJoinUrl) ||
+                                        !selectedSessionJoinAllowed
+                                    }
+                                    className="px-4 py-2 rounded-lg border border-blue-500 text-blue-700 disabled:opacity-60"
+                                >
+                                    Join Class
+                                </button>
+                                {!selectedSessionJoinAllowed && selectedSessionMode !== 'completed' && (
+                                    <div className="text-xs text-gray-500">
+                                        Join 10 мүнөт калганда гана жеткиликтүү.
+                                    </div>
+                                )}
+
+                                <input
+                                    value={recordingLink}
+                                    onChange={(e) => setRecordingLink(e.target.value)}
+                                    placeholder="Recording URL"
+                                    className="w-full border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 bg-white dark:bg-[#0E0E0E]"
+                                />
+
+                                <div className="flex flex-wrap gap-2">
+                                    <button
+                                        onClick={importZoomAttendanceToSession}
+                                        disabled={!selectedSessionId || importingAttendance}
+                                        className="px-4 py-2 rounded-lg border border-indigo-400 text-indigo-700 disabled:opacity-60"
+                                    >
+                                        {importingAttendance
+                                            ? 'Импорттолууда...'
+                                            : 'Zoom attendance импорт'}
+                                    </button>
+                                    <button
+                                        onClick={syncZoomRecordingsToSession}
+                                        disabled={!selectedSessionId || syncingRecordings}
+                                        className="px-4 py-2 rounded-lg border border-indigo-400 text-indigo-700 disabled:opacity-60"
+                                    >
+                                        {syncingRecordings
+                                            ? 'Синхрондолууда...'
+                                            : 'Zoom recordings sync'}
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
+                        {activeTab === 'notes' && (
+                            <textarea
+                                value={sessionNotes}
+                                onChange={(e) => setSessionNotes(e.target.value)}
+                                rows={10}
+                                placeholder="Сессия боюнча жазуу: эмне өттүк, кимге колдоо керек, кийинки кадам..."
                                 className="w-full border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 bg-white dark:bg-[#0E0E0E]"
                             />
+                        )}
 
-                            <div className="flex flex-wrap gap-2">
-                                <button
-                                    onClick={importZoomAttendanceToSession}
-                                    disabled={!selectedSessionId || importingAttendance}
-                                    className="px-4 py-2 rounded-lg border border-indigo-400 text-indigo-700 disabled:opacity-60"
-                                >
-                                    {importingAttendance
-                                        ? 'Импорттолууда...'
-                                        : 'Zoom attendance импорт'}
-                                </button>
-                                <button
-                                    onClick={syncZoomRecordingsToSession}
-                                    disabled={!selectedSessionId || syncingRecordings}
-                                    className="px-4 py-2 rounded-lg border border-indigo-400 text-indigo-700 disabled:opacity-60"
-                                >
-                                    {syncingRecordings
-                                        ? 'Синхрондолууда...'
-                                        : 'Zoom recordings sync'}
-                                </button>
-                            </div>
-                        </div>
-                    )}
+                        {activeTab === 'homework' && (
+                            !selectedSessionId ? (
+                                <EmptyState
+                                    title="Үй тапшырма үчүн сессия тандаңыз"
+                                    subtitle="Тапшырма жарыялоо, өзгөртүү жана студент жоопторун текшерүү үчүн алгач активдүү группадан бир сессияны тандаңыз."
+                                    icon={<FiBookOpen className="h-8 w-8 text-edubot-orange" />}
+                                    className="dashboard-panel"
+                                />
+                            ) : (
+                                <div className="space-y-5">
+                                    <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                                        <DashboardMetricCard
+                                            label="Жалпы тапшырма"
+                                            value={homeworkStats.total}
+                                            icon={FiBookOpen}
+                                        />
+                                        <DashboardMetricCard
+                                            label="Активдүү"
+                                            value={homeworkStats.open}
+                                            icon={FiActivity}
+                                            tone="green"
+                                        />
+                                        <DashboardMetricCard
+                                            label="Жакында бүтөт"
+                                            value={homeworkStats.dueSoon}
+                                            icon={FiClock}
+                                            tone="amber"
+                                        />
+                                        <DashboardMetricCard
+                                            label="Өтүп кеткен"
+                                            value={homeworkStats.overdue}
+                                            icon={FiAlertCircle}
+                                            tone="red"
+                                        />
+                                    </div>
 
-                    {activeTab === 'notes' && (
-                        <textarea
-                            value={sessionNotes}
-                            onChange={(e) => setSessionNotes(e.target.value)}
-                            rows={10}
-                            placeholder="Сессия боюнча жазуу: эмне өттүк, кимге колдоо керек, кийинки кадам..."
-                            className="w-full border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 bg-white dark:bg-[#0E0E0E]"
-                        />
-                    )}
-
-                    {activeTab === 'homework' && (
-                        !selectedSessionId ? (
-                            <EmptyState
-                                title="Үй тапшырма үчүн сессия тандаңыз"
-                                subtitle="Тапшырма жарыялоо, өзгөртүү жана студент жоопторун текшерүү үчүн алгач активдүү группадан бир сессияны тандаңыз."
-                                icon={<FiBookOpen className="h-8 w-8 text-edubot-orange" />}
-                                className="dashboard-panel"
-                            />
-                        ) : (
-                            <div className="space-y-5">
-                                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-                                    <DashboardMetricCard
-                                        label="Жалпы тапшырма"
-                                        value={homeworkStats.total}
-                                        icon={FiBookOpen}
-                                    />
-                                    <DashboardMetricCard
-                                        label="Активдүү"
-                                        value={homeworkStats.open}
-                                        icon={FiActivity}
-                                        tone="green"
-                                    />
-                                    <DashboardMetricCard
-                                        label="Жакында бүтөт"
-                                        value={homeworkStats.dueSoon}
-                                        icon={FiClock}
-                                        tone="amber"
-                                    />
-                                    <DashboardMetricCard
-                                        label="Өтүп кеткен"
-                                        value={homeworkStats.overdue}
-                                        icon={FiAlertCircle}
-                                        tone="red"
-                                    />
-                                </div>
-
-                                <div className="grid gap-4 xl:grid-cols-[minmax(0,0.95fr),minmax(0,1.05fr)]">
-                                    <DashboardInsetPanel
-                                        title="Тапшырма жарыялоо"
-                                        description="Сессияга байланышкан тапшырманы түзүп, ушул группанын бардык студенттерине бир эле агымда дайындаңыз."
-                                        action={
-                                            <span className="rounded-full border border-edubot-line bg-white px-3 py-1 text-xs font-semibold text-edubot-ink dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200">
-                                                {students.length} студент
-                                            </span>
-                                        }
-                                    >
-                                        <div className="mt-4 space-y-4">
-                                            <div className="grid gap-3 md:grid-cols-2">
-                                                <div className="space-y-2 md:col-span-2">
-                                                    <label className="text-xs font-semibold uppercase tracking-[0.12em] text-edubot-muted dark:text-slate-400">
-                                                        Аталышы
-                                                    </label>
-                                                    <input
-                                                        value={homeworkTitle}
-                                                        onChange={(e) => setHomeworkTitle(e.target.value)}
-                                                        placeholder="Мисалы: Lesson 5 reflection"
-                                                        className="dashboard-field"
-                                                    />
-                                                </div>
-                                                <div className="space-y-2 md:col-span-2">
-                                                    <label className="text-xs font-semibold uppercase tracking-[0.12em] text-edubot-muted dark:text-slate-400">
-                                                        Түшүндүрмө
-                                                    </label>
-                                                    <textarea
-                                                        value={homeworkDescription}
-                                                        onChange={(e) => setHomeworkDescription(e.target.value)}
-                                                        rows={5}
-                                                        placeholder="Эмне тапшырыш керек, кайсы форматта жана кандай бааланат..."
-                                                        className="dashboard-field"
-                                                    />
-                                                </div>
-                                                <div className="space-y-2">
-                                                    <label className="text-xs font-semibold uppercase tracking-[0.12em] text-edubot-muted dark:text-slate-400">
-                                                        Deadline
-                                                    </label>
-                                                    <input
-                                                        type="date"
-                                                        value={homeworkDeadline}
-                                                        onChange={(e) => setHomeworkDeadline(e.target.value)}
-                                                        className="dashboard-field"
-                                                    />
-                                                </div>
-                                                <div className="dashboard-panel-muted flex items-center justify-between rounded-2xl px-4 py-3">
-                                                    <div>
-                                                        <div className="text-xs font-semibold uppercase tracking-[0.12em] text-edubot-muted dark:text-slate-400">
-                                                            Дайындалат
-                                                        </div>
-                                                        <div className="mt-1 text-sm font-semibold text-edubot-ink dark:text-white">
-                                                            {selectedGroup?.name || selectedGroup?.code || 'Группа тандалган жок'}
-                                                        </div>
-                                                    </div>
-                                                    <div className="text-right">
-                                                        <div className="text-xs text-edubot-muted dark:text-slate-400">
-                                                            Сессия
-                                                        </div>
-                                                        <div className="mt-1 text-sm font-semibold text-edubot-ink dark:text-white">
-                                                            {selectedSession?.title || `#${selectedSessionId}`}
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div className="flex flex-wrap items-center justify-between gap-3">
-                                                <p className="text-sm text-edubot-muted dark:text-slate-400">
-                                                    Жарыялангандан кийин тапшырма ушул сессиянын бардык студенттерине дароо байланат.
-                                                </p>
-                                                <button
-                                                    onClick={publishHomework}
-                                                    disabled={!selectedSessionId || savingHomework}
-                                                    className="dashboard-button-primary"
-                                                >
-                                                    {savingHomework ? 'Жарыяланып жатат...' : 'Үй тапшырмасын жарыялоо'}
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </DashboardInsetPanel>
-
-                                    <DashboardInsetPanel
-                                        title="Тапшырмалар тизмеси"
-                                        description="Издеп табыңыз, deadline абалы боюнча чыпкалап, керектүүсүн тандап текшерүүгө өтүңүз."
-                                        action={
-                                            <span className="rounded-full border border-edubot-line bg-white px-3 py-1 text-xs font-semibold text-edubot-ink dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200">
-                                                {publishedHomework.length}
-                                            </span>
-                                        }
-                                    >
-                                        <div className="mt-4 flex flex-col gap-3 lg:flex-row">
-                                            <div className="relative flex-1">
-                                                <FiSearch className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-edubot-muted dark:text-slate-500" />
-                                                <input
-                                                    value={homeworkQuery}
-                                                    onChange={(e) => setHomeworkQuery(e.target.value)}
-                                                    placeholder="Тапшырма издөө"
-                                                    className="dashboard-field-icon pl-10"
-                                                />
-                                            </div>
-                                            <select
-                                                value={homeworkFilter}
-                                                onChange={(e) => setHomeworkFilter(e.target.value)}
-                                                className="dashboard-select min-w-[180px]"
-                                            >
-                                                <option value="all">Баары</option>
-                                                <option value="active">Активдүү</option>
-                                                <option value="dueSoon">Жакында бүтөт</option>
-                                                <option value="overdue">Өтүп кеткен</option>
-                                                <option value="noDeadline">Мөөнөт жок</option>
-                                            </select>
-                                        </div>
-
-                                        {loadingHomework && (
-                                            <div className="mt-4 text-sm text-edubot-muted dark:text-slate-400">
-                                                Үй тапшырмалар жүктөлүүдө...
-                                            </div>
-                                        )}
-
-                                        <div className="mt-4 space-y-3 max-h-[28rem] overflow-auto pr-1">
-                                            {filteredHomework.map((item) => (
-                                                <button
-                                                    key={item.id}
-                                                    type="button"
-                                                    onClick={() => setSelectedHomeworkId(String(item.id))}
-                                                    className={`w-full rounded-3xl border p-4 text-left transition ${
-                                                        String(item.id) === String(selectedHomeworkId)
-                                                            ? 'border-edubot-orange bg-white shadow-edubot-card dark:bg-slate-900'
-                                                            : 'border-edubot-line/80 bg-white/80 hover:-translate-y-0.5 hover:border-edubot-orange/40 hover:shadow-edubot-card dark:border-slate-700 dark:bg-slate-950'
-                                                    }`}
-                                                >
-                                                    <div className="flex items-start justify-between gap-3">
-                                                        <div className="min-w-0">
-                                                            <div className="font-medium text-edubot-ink dark:text-white">
-                                                                {item.title || item.name || 'Homework'}
-                                                            </div>
-                                                            <div className="mt-1 line-clamp-2 text-sm text-edubot-muted dark:text-slate-400">
-                                                                {item.description || 'Түшүндүрмө кошула элек.'}
-                                                            </div>
-                                                        </div>
-                                                        <span
-                                                            className={`shrink-0 rounded-full border px-2.5 py-1 text-[11px] font-semibold ${item.deadlineMeta.badgeClass}`}
-                                                        >
-                                                            {item.deadlineMeta.label}
-                                                        </span>
-                                                    </div>
-                                                    <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-edubot-muted dark:text-slate-400">
-                                                        <span>Deadline: {formatDisplayDate(item.deadline)}</span>
-                                                        <span>Session: {selectedSession?.title || `#${selectedSessionId}`}</span>
-                                                    </div>
-                                                </button>
-                                            ))}
-                                            {!loadingHomework && filteredHomework.length === 0 && (
-                                                <div className="dashboard-panel-muted rounded-3xl p-6 text-sm text-edubot-muted dark:text-slate-400">
-                                                    {publishedHomework.length === 0
-                                                        ? 'Бул сессия боюнча үй тапшырма азырынча жок.'
-                                                        : 'Издөө же фильтр боюнча тапшырма табылган жок.'}
-                                                </div>
-                                            )}
-                                        </div>
-                                    </DashboardInsetPanel>
-                                </div>
-
-                                {selectedHomework ? (
                                     <div className="grid gap-4 xl:grid-cols-[minmax(0,0.95fr),minmax(0,1.05fr)]">
                                         <DashboardInsetPanel
-                                            title="Тандалган тапшырма"
-                                            description="Тапшырманын мазмуну, deadline жана түзөтүү агымы ушул жерде."
+                                            title="Тапшырма жарыялоо"
+                                            description="Сессияга байланышкан тапшырманы түзүп, ушул группанын бардык студенттерине бир эле агымда дайындаңыз."
                                             action={
-                                                <button
-                                                    type="button"
-                                                    onClick={() => beginHomeworkEdit(selectedHomework)}
-                                                    className="dashboard-button-secondary"
-                                                >
-                                                    <FiEdit3 className="h-4 w-4" />
-                                                    Өзгөртүү
-                                                </button>
+                                                <span className="rounded-full border border-edubot-line bg-white px-3 py-1 text-xs font-semibold text-edubot-ink dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200">
+                                                    {students.length} студент
+                                                </span>
                                             }
                                         >
                                             <div className="mt-4 space-y-4">
-                                                <div className="flex flex-wrap items-start justify-between gap-3">
-                                                    <div className="min-w-0">
-                                                        <div className="text-lg font-semibold text-edubot-ink dark:text-white">
-                                                            {selectedHomework.title || selectedHomework.name || 'Homework'}
-                                                        </div>
-                                                        <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-edubot-muted dark:text-slate-400">
-                                                            {selectedHomework.description || 'Түшүндүрмө кошула элек.'}
-                                                        </p>
+                                                <div className="grid gap-3 md:grid-cols-2">
+                                                    <div className="space-y-2 md:col-span-2">
+                                                        <label className="text-xs font-semibold uppercase tracking-[0.12em] text-edubot-muted dark:text-slate-400">
+                                                            Аталышы
+                                                        </label>
+                                                        <input
+                                                            value={homeworkTitle}
+                                                            onChange={(e) => setHomeworkTitle(e.target.value)}
+                                                            placeholder="Мисалы: Lesson 5 reflection"
+                                                            className="dashboard-field"
+                                                        />
                                                     </div>
-                                                    {selectedHomeworkMeta ? (
-                                                        <span
-                                                            className={`shrink-0 rounded-full border px-3 py-1 text-xs font-semibold ${selectedHomeworkMeta.badgeClass}`}
-                                                        >
-                                                            {selectedHomeworkMeta.label}
-                                                        </span>
-                                                    ) : null}
-                                                </div>
-
-                                                <div className="grid gap-3 md:grid-cols-3">
-                                                    <div className="dashboard-panel-muted rounded-2xl p-4">
-                                                        <div className="text-xs font-semibold uppercase tracking-[0.12em] text-edubot-muted dark:text-slate-400">
+                                                    <div className="space-y-2 md:col-span-2">
+                                                        <label className="text-xs font-semibold uppercase tracking-[0.12em] text-edubot-muted dark:text-slate-400">
+                                                            Түшүндүрмө
+                                                        </label>
+                                                        <textarea
+                                                            value={homeworkDescription}
+                                                            onChange={(e) => setHomeworkDescription(e.target.value)}
+                                                            rows={5}
+                                                            placeholder="Эмне тапшырыш керек, кайсы форматта жана кандай бааланат..."
+                                                            className="dashboard-field"
+                                                        />
+                                                    </div>
+                                                    <div className="space-y-2">
+                                                        <label className="text-xs font-semibold uppercase tracking-[0.12em] text-edubot-muted dark:text-slate-400">
                                                             Deadline
-                                                        </div>
-                                                        <div className="mt-2 text-sm font-semibold text-edubot-ink dark:text-white">
-                                                            {formatDisplayDate(selectedHomework.deadline)}
-                                                        </div>
+                                                        </label>
+                                                        <input
+                                                            type="date"
+                                                            value={homeworkDeadline}
+                                                            onChange={(e) => setHomeworkDeadline(e.target.value)}
+                                                            className="dashboard-field"
+                                                        />
                                                     </div>
-                                                    <div className="dashboard-panel-muted rounded-2xl p-4">
-                                                        <div className="text-xs font-semibold uppercase tracking-[0.12em] text-edubot-muted dark:text-slate-400">
-                                                            Студенттер
-                                                        </div>
-                                                        <div className="mt-2 text-sm font-semibold text-edubot-ink dark:text-white">
-                                                            {students.length} адамга дайындады
-                                                        </div>
-                                                    </div>
-                                                    <div className="dashboard-panel-muted rounded-2xl p-4">
-                                                        <div className="text-xs font-semibold uppercase tracking-[0.12em] text-edubot-muted dark:text-slate-400">
-                                                            Текшерүү
-                                                        </div>
-                                                        <div className="mt-2 text-sm font-semibold text-edubot-ink dark:text-white">
-                                                            {submissionStats.pending} жооп күтүп турат
-                                                        </div>
-                                                    </div>
-                                                </div>
-
-                                                {editingHomeworkId === String(selectedHomework.id) && (
-                                                    <DashboardInsetPanel
-                                                        title="Тапшырманы өзгөртүү"
-                                                        description="Аталышын, мазмунун же мөөнөтүн жаңыртып сактаңыз."
-                                                    >
-                                                        <div className="mt-4 space-y-3">
-                                                            <input
-                                                                value={editHomeworkTitle}
-                                                                onChange={(e) => setEditHomeworkTitle(e.target.value)}
-                                                                className="dashboard-field"
-                                                            />
-                                                            <textarea
-                                                                value={editHomeworkDescription}
-                                                                onChange={(e) => setEditHomeworkDescription(e.target.value)}
-                                                                rows={4}
-                                                                className="dashboard-field"
-                                                            />
-                                                            <input
-                                                                type="date"
-                                                                value={editHomeworkDeadline}
-                                                                onChange={(e) => setEditHomeworkDeadline(e.target.value)}
-                                                                className="dashboard-field"
-                                                            />
-                                                            <div className="flex flex-wrap gap-2">
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={saveHomeworkEdit}
-                                                                    disabled={updatingHomework}
-                                                                    className="dashboard-button-primary"
-                                                                >
-                                                                    {updatingHomework ? 'Сакталып жатат...' : 'Сактоо'}
-                                                                </button>
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={cancelHomeworkEdit}
-                                                                    className="dashboard-button-secondary"
-                                                                >
-                                                                    Жокко чыгаруу
-                                                                </button>
+                                                    <div className="dashboard-panel-muted flex items-center justify-between rounded-2xl px-4 py-3">
+                                                        <div>
+                                                            <div className="text-xs font-semibold uppercase tracking-[0.12em] text-edubot-muted dark:text-slate-400">
+                                                                Дайындалат
+                                                            </div>
+                                                            <div className="mt-1 text-sm font-semibold text-edubot-ink dark:text-white">
+                                                                {selectedGroup?.name || selectedGroup?.code || 'Группа тандалган жок'}
                                                             </div>
                                                         </div>
-                                                    </DashboardInsetPanel>
-                                                )}
+                                                        <div className="text-right">
+                                                            <div className="text-xs text-edubot-muted dark:text-slate-400">
+                                                                Сессия
+                                                            </div>
+                                                            <div className="mt-1 text-sm font-semibold text-edubot-ink dark:text-white">
+                                                                {selectedSession?.title || `#${selectedSessionId}`}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div className="flex flex-wrap items-center justify-between gap-3">
+                                                    <p className="text-sm text-edubot-muted dark:text-slate-400">
+                                                        Жарыялангандан кийин тапшырма ушул сессиянын бардык студенттерине дароо байланат.
+                                                    </p>
+                                                    <button
+                                                        onClick={publishHomework}
+                                                        disabled={!selectedSessionId || savingHomework}
+                                                        className="dashboard-button-primary"
+                                                    >
+                                                        {savingHomework ? 'Жарыяланып жатат...' : 'Үй тапшырмасын жарыялоо'}
+                                                    </button>
+                                                </div>
                                             </div>
                                         </DashboardInsetPanel>
 
                                         <DashboardInsetPanel
-                                            title="Жоопторду текшерүү"
-                                            description="Студент жоопторун карап чыгып, дароо кабыл алыңыз же кайра жөнөтүңүз."
+                                            title="Тапшырмалар тизмеси"
+                                            description="Издеп табыңыз, deadline абалы боюнча чыпкалап, керектүүсүн тандап текшерүүгө өтүңүз."
                                             action={
-                                                <span className="rounded-full border border-edubot-line bg-edubot-surfaceAlt px-3 py-1 text-xs font-semibold text-edubot-ink dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200">
-                                                    {submissionStats.total} жооп
-                                                </span>
+                                                <StatusBadge tone="default">
+                                                    {publishedHomework.length}
+                                                </StatusBadge>
                                             }
                                         >
-                                            <div className="mt-4 grid gap-3 sm:grid-cols-3">
-                                                <div className="dashboard-panel-muted rounded-2xl p-4">
-                                                    <div className="text-xs font-semibold uppercase tracking-[0.12em] text-edubot-muted dark:text-slate-400">
-                                                        Күтүүдө
-                                                    </div>
-                                                    <div className="mt-2 text-2xl font-semibold text-edubot-ink dark:text-white">
-                                                        {submissionStats.pending}
-                                                    </div>
+                                            <DashboardFilterBar className="mt-4" gridClassName="lg:grid-cols-[minmax(0,1fr),180px]">
+                                                <div className="relative flex-1">
+                                                    <FiSearch className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-edubot-muted dark:text-slate-500" />
+                                                    <input
+                                                        value={homeworkQuery}
+                                                        onChange={(e) => setHomeworkQuery(e.target.value)}
+                                                        placeholder="Тапшырма издөө"
+                                                        className="dashboard-field-icon pl-10"
+                                                    />
                                                 </div>
-                                                <div className="dashboard-panel-muted rounded-2xl p-4">
-                                                    <div className="text-xs font-semibold uppercase tracking-[0.12em] text-edubot-muted dark:text-slate-400">
-                                                        Бекитилди
-                                                    </div>
-                                                    <div className="mt-2 text-2xl font-semibold text-emerald-700 dark:text-emerald-300">
-                                                        {submissionStats.approved}
-                                                    </div>
-                                                </div>
-                                                <div className="dashboard-panel-muted rounded-2xl p-4">
-                                                    <div className="text-xs font-semibold uppercase tracking-[0.12em] text-edubot-muted dark:text-slate-400">
-                                                        Кайтарылды
-                                                    </div>
-                                                    <div className="mt-2 text-2xl font-semibold text-red-700 dark:text-red-300">
-                                                        {submissionStats.rejected}
-                                                    </div>
-                                                </div>
-                                            </div>
+                                                <select
+                                                    value={homeworkFilter}
+                                                    onChange={(e) => setHomeworkFilter(e.target.value)}
+                                                    className="dashboard-select w-full"
+                                                >
+                                                    <option value="all">Баары</option>
+                                                    <option value="active">Активдүү</option>
+                                                    <option value="dueSoon">Жакында бүтөт</option>
+                                                    <option value="overdue">Өтүп кеткен</option>
+                                                    <option value="noDeadline">Мөөнөт жок</option>
+                                                </select>
+                                            </DashboardFilterBar>
 
-                                            {loadingHomeworkSubmissions && (
+                                            {loadingHomework && (
                                                 <div className="mt-4 text-sm text-edubot-muted dark:text-slate-400">
-                                                    Submissionдер жүктөлүүдө...
+                                                    Үй тапшырмалар жүктөлүүдө...
                                                 </div>
                                             )}
-                                            {!loadingHomeworkSubmissions && homeworkSubmissions.length === 0 && (
-                                                <div className="mt-4 dashboard-panel-muted p-6 text-sm text-edubot-muted dark:text-slate-400">
-                                                    Жооп азырынча жок.
-                                                </div>
-                                            )}
-                                            <div className="mt-4 grid gap-3">
-                                                {homeworkSubmissions.map((submission) => {
-                                                    const submissionMeta = getSubmissionStatusMeta(submission.status);
-                                                    return (
-                                                        <div
-                                                            key={submission.id}
-                                                            className="dashboard-panel-muted rounded-3xl p-4"
-                                                        >
-                                                            <div className="flex flex-wrap items-start justify-between gap-3">
-                                                                <div className="min-w-0 flex-1">
-                                                                    <div className="flex flex-wrap items-center gap-2">
-                                                                        <div className="font-medium text-sm text-edubot-ink dark:text-white">
-                                                                            {submission.student?.fullName ||
-                                                                                submission.fullName ||
-                                                                                `#${submission.studentId || submission.userId}`}
-                                                                        </div>
-                                                                        <span
-                                                                            className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold ${submissionMeta.badgeClass}`}
-                                                                        >
-                                                                            {submissionMeta.label}
-                                                                        </span>
-                                                                    </div>
-                                                                    <div className="mt-1 text-xs text-edubot-muted dark:text-slate-400">
-                                                                        Жөнөтүлгөн: {formatDisplayDate(submission.submittedAt, '-')}
-                                                                    </div>
-                                                                    <div className="mt-3 rounded-2xl border border-edubot-line/80 bg-white/80 px-3 py-3 text-sm text-edubot-muted dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300">
-                                                                        <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-edubot-muted dark:text-slate-500">
-                                                                            <FiFileText className="h-4 w-4" />
-                                                                            Жооп мазмуну
-                                                                        </div>
-                                                                        <p className="whitespace-pre-wrap break-words leading-6">
-                                                                            {getSubmissionPreview(submission)}
-                                                                        </p>
-                                                                    </div>
+
+                                            <div className="mt-4 space-y-3 max-h-[28rem] overflow-auto pr-1">
+                                                {filteredHomework.map((item) => (
+                                                    <div
+                                                        key={item.id}
+                                                        onClick={() => setSelectedHomeworkId(String(item.id))}
+                                                        className={`w-full rounded-3xl border p-4 text-left transition cursor-pointer ${String(item.id) === String(selectedHomeworkId)
+                                                            ? 'border-edubot-orange bg-white shadow-edubot-card dark:bg-slate-900'
+                                                            : 'border-edubot-line/80 bg-white/80 hover:-translate-y-0.5 hover:border-edubot-orange/40 hover:shadow-edubot-card dark:border-slate-700 dark:bg-slate-950'
+                                                            }`}
+                                                    >
+                                                        <div className="flex items-start justify-between gap-3">
+                                                            <div className="min-w-0">
+                                                                <div className="font-medium text-edubot-ink dark:text-white">
+                                                                    {item.title || item.name || 'Homework'}
                                                                 </div>
-                                                                <div className="flex flex-wrap gap-2">
-                                                                    <button
-                                                                        type="button"
-                                                                        onClick={() =>
-                                                                            reviewHomeworkSubmission(
-                                                                                submission.id,
-                                                                                'approved'
-                                                                            )
-                                                                        }
-                                                                        disabled={
-                                                                            reviewingSubmissionId ===
-                                                                            String(submission.id)
-                                                                        }
-                                                                        className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-3 py-2 text-xs font-semibold text-white disabled:opacity-60"
-                                                                    >
-                                                                        <FiCheck className="h-4 w-4" />
-                                                                        Бекитүү
-                                                                    </button>
-                                                                    <button
-                                                                        type="button"
-                                                                        onClick={() =>
-                                                                            reviewHomeworkSubmission(
-                                                                                submission.id,
-                                                                                'rejected'
-                                                                            )
-                                                                        }
-                                                                        disabled={
-                                                                            reviewingSubmissionId ===
-                                                                            String(submission.id)
-                                                                        }
-                                                                        className="inline-flex items-center gap-2 rounded-xl bg-red-600 px-3 py-2 text-xs font-semibold text-white disabled:opacity-60"
-                                                                    >
-                                                                        <FiXCircle className="h-4 w-4" />
-                                                                        Кайтаруу
-                                                                    </button>
+                                                                <div className="mt-1 line-clamp-2 text-sm text-edubot-muted dark:text-slate-400">
+                                                                    {item.description || 'Түшүндүрмө кошула элек.'}
                                                                 </div>
                                                             </div>
+                                                            <div className="flex items-center gap-2">
+                                                                <StatusBadge
+                                                                    tone={item.deadlineMeta.tone || 'default'}
+                                                                    className="shrink-0 text-[11px]"
+                                                                >
+                                                                    {item.deadlineMeta.label}
+                                                                </StatusBadge>
+                                                                <button
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        toggleHomeworkPublish(item.id, item.isPublished);
+                                                                    }}
+                                                                    className={`shrink-0 transition ${item.isPublished
+                                                                        ? 'text-emerald-700 dark:text-emerald-300'
+                                                                        : 'text-amber-700 dark:text-amber-300'
+                                                                        }`}
+                                                                >
+                                                                    <StatusBadge
+                                                                        tone={item.isPublished ? 'green' : 'amber'}
+                                                                        className="text-[11px]"
+                                                                    >
+                                                                        {item.isPublished ? 'Жарыяланган' : 'Жарыяланбаган'}
+                                                                    </StatusBadge>
+                                                                </button>
+                                                            </div>
                                                         </div>
-                                                    );
-                                                })}
-                                            </div>
-                                        </DashboardInsetPanel>
-                                    </div>
-                                ) : (
-                                    <DashboardInsetPanel
-                                        title="Тапшырма тандаңыз"
-                                        description="Тизменин ичинен бир тапшырманы тандасаңыз, мазмуну жана студент жооптору ушул жерде ачылат."
-                                    >
-                                        <EmptyState
-                                            title="Тандалган тапшырма жок"
-                                            subtitle="Сол жактагы тизме аркылуу бир тапшырманы тандап, дароо текшерүү агымына өтүңүз."
-                                            icon={<FiBookOpen className="h-8 w-8 text-edubot-orange" />}
-                                            className="py-6"
-                                        />
-                                    </DashboardInsetPanel>
-                                )}
-                            </div>
-                        )
-                    )}
-
-                    {activeTab === 'engagement' && (
-                        <div className="grid md:grid-cols-2 gap-4">
-                            <Card title="Attendance Streaks">
-                                {students.slice(0, 8).map((student) => (
-                                    <div
-                                        key={student.id}
-                                        className="flex justify-between text-sm py-1"
-                                    >
-                                        <span>{student.fullName}</span>
-                                        <span>{studentStreaks[student.id] || 0} күн</span>
-                                    </div>
-                                ))}
-                            </Card>
-                            <Card title="Top Students">
-                                {topStudents.map((student, idx) => (
-                                    <div
-                                        key={student.id}
-                                        className="flex justify-between text-sm py-1"
-                                    >
-                                        <span>
-                                            #{idx + 1} {student.fullName}
-                                        </span>
-                                        <span>{student.xp} XP</span>
-                                    </div>
-                                ))}
-                            </Card>
-                            <Card title="Quick Praise Badges">
-                                <div className="flex flex-wrap gap-2">
-                                    {[
-                                        'Жигердүү',
-                                        'Көп жардам берди',
-                                        'Тартиптүү',
-                                        'Үй тапшырма мыкты',
-                                    ].map((badge) => (
-                                        <button
-                                            key={badge}
-                                            onClick={() =>
-                                                toast.success(`${badge} badge жиберилди`)
-                                            }
-                                            className="px-2 py-1 rounded-full text-xs bg-indigo-100 text-indigo-700"
-                                        >
-                                            {badge}
-                                        </button>
-                                    ))}
-                                </div>
-                            </Card>
-                            <Card title="Homework Leaderboard">
-                                {leaderboard.map((student, idx) => (
-                                    <div
-                                        key={student.id}
-                                        className="flex justify-between text-sm py-1"
-                                    >
-                                        <span>
-                                            #{idx + 1} {student.fullName}
-                                        </span>
-                                        <span>{student.xp}</span>
-                                    </div>
-                                ))}
-                            </Card>
-                        </div>
-                    )}
-                </section>
-
-                <div className="grid gap-4 lg:grid-cols-2">
-                    <section className="dashboard-panel p-4">
-                        <h3 className="mb-3 font-semibold text-gray-900 dark:text-[#E8ECF3]">
-                            Бүгүнкү сессиялар
-                        </h3>
-                        <div className="space-y-2 text-sm">
-                            {sessionsToday.map((session) => (
-                                <button
-                                    key={session.id}
-                                    onClick={() => setSelectedSessionId(String(session.sessionId))}
-                                    className={`w-full rounded-2xl border p-3 text-left transition ${
-                                        String(selectedSessionId) === String(session.sessionId)
-                                            ? 'border-edubot-orange bg-edubot-surface shadow-edubot-soft dark:bg-slate-900'
-                                            : 'border-edubot-line/80 bg-white hover:border-edubot-orange/40 dark:border-slate-800 dark:bg-slate-950'
-                                    }`}
-                                >
-                                    <div className="flex items-center justify-between gap-3">
-                                        <div className="font-medium text-edubot-ink dark:text-white">
-                                            {session.courseTitle}
-                                        </div>
-                                        <span className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] font-semibold ${(SESSION_MODE_META[session.mode] || SESSION_MODE_META.scheduled).badgeClass}`}>
-                                            {(() => {
-                                                const SessionModeIcon = (SESSION_MODE_META[session.mode] || SESSION_MODE_META.scheduled).icon;
-                                                return <SessionModeIcon className="h-3.5 w-3.5" />;
-                                            })()}
-                                            {(SESSION_MODE_META[session.mode] || SESSION_MODE_META.scheduled).label}
-                                        </span>
-                                    </div>
-                                    <div className="mt-1 text-gray-500 dark:text-slate-400">
-                                        {session.startTime}{' '}
-                                        {session.room ? `• ${session.room}` : ''}
-                                    </div>
-                                    {session.type === COURSE_TYPE.ONLINE_LIVE && (
-                                        <div className="mt-1 text-xs text-edubot-muted dark:text-slate-400">
-                                            {session.mode === 'upcoming' &&
-                                                `Башталышына: ${formatCountdown(
-                                                    new Date(session.startsAt).getTime(),
-                                                    nowMs
-                                                )}`}
-                                            {session.mode === 'live' &&
-                                                `Live: ${formatCountdown(
-                                                    new Date(session.endsAt).getTime(),
-                                                    nowMs
-                                                )}`}
-                                            {session.mode === 'completed' && 'Аяктаган'}
-                                        </div>
-                                    )}
-                                    {session.type === COURSE_TYPE.ONLINE_LIVE &&
-                                        session.joinUrl && (
-                                            <div className="mt-2">
-                                                <span
-                                                    role="button"
-                                                    tabIndex={0}
-                                                    onClick={(e) => {
-                                                        if (!session.joinAllowed) return;
-                                                        e.preventDefault();
-                                                        joinLiveSession(session.joinUrl);
-                                                    }}
-                                                    onKeyDown={(e) => {
-                                                        if (
-                                                            e.key === 'Enter' &&
-                                                            session.joinAllowed
-                                                        ) {
-                                                            e.preventDefault();
-                                                            joinLiveSession(session.joinUrl);
-                                                        }
-                                                    }}
-                                                    className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold text-white ${
-                                                        session.joinAllowed
-                                                            ? 'bg-edubot-orange'
-                                                            : 'bg-gray-400 cursor-not-allowed dark:bg-slate-700'
-                                                    }`}
-                                                >
-                                                    Join
-                                                </span>
-                                                {!session.joinAllowed && (
-                                                    <div className="mt-1 text-[11px] text-gray-500 dark:text-slate-500">
-                                                        Join 10 мүнөт мурун ачылат
+                                                        <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-edubot-muted dark:text-slate-400">
+                                                            <span>
+                                                                Deadline: {formatDisplayDate(resolveHomeworkDeadline(item))}
+                                                            </span>
+                                                            <span>Session: {selectedSession?.title || `#${selectedSessionId}`}</span>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                                {!loadingHomework && filteredHomework.length === 0 && (
+                                                    <div className="dashboard-panel-muted rounded-3xl p-6 text-sm text-edubot-muted dark:text-slate-400">
+                                                        {publishedHomework.length === 0
+                                                            ? 'Бул сессия боюнча үй тапшырма азырынча жок.'
+                                                            : 'Издөө же фильтр боюнча тапшырма табылган жок.'}
                                                     </div>
                                                 )}
                                             </div>
-                                        )}
-                                </button>
-                            ))}
-                            {sessionsToday.length === 0 && (
-                                <div className="text-gray-500">Бүгүн сессия жок.</div>
-                            )}
-                        </div>
+                                        </DashboardInsetPanel>
+                                    </div>
+
+                                    {selectedHomework ? (
+                                        <div className="grid gap-4 xl:grid-cols-[minmax(0,0.95fr),minmax(0,1.05fr)]">
+                                            <DashboardInsetPanel
+                                                title="Тандалган тапшырма"
+                                                description="Тапшырманын мазмуну, deadline жана түзөтүү агымы ушул жерде."
+                                                action={
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => beginHomeworkEdit(selectedHomework)}
+                                                        className="dashboard-button-secondary"
+                                                    >
+                                                        <FiEdit3 className="h-4 w-4" />
+                                                        Өзгөртүү
+                                                    </button>
+                                                }
+                                            >
+                                                <div className="mt-4 space-y-4">
+                                                    <div className="flex flex-wrap items-start justify-between gap-3">
+                                                        <div className="min-w-0">
+                                                            <div className="text-lg font-semibold text-edubot-ink dark:text-white">
+                                                                {selectedHomework.title || selectedHomework.name || 'Homework'}
+                                                            </div>
+                                                            <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-edubot-muted dark:text-slate-400">
+                                                                {selectedHomework.description || 'Түшүндүрмө кошула элек.'}
+                                                            </p>
+                                                        </div>
+                                                        {selectedHomeworkMeta ? (
+                                                            <StatusBadge tone={selectedHomeworkMeta.tone || 'default'}>
+                                                                {selectedHomeworkMeta.label}
+                                                            </StatusBadge>
+                                                        ) : null}
+                                                    </div>
+
+                                                    <div className="grid gap-3 md:grid-cols-3">
+                                                        <div className="dashboard-panel-muted rounded-2xl p-4">
+                                                            <div className="text-xs font-semibold uppercase tracking-[0.12em] text-edubot-muted dark:text-slate-400">
+                                                                Deadline
+                                                            </div>
+                                                            <div className="mt-2 text-sm font-semibold text-edubot-ink dark:text-white">
+                                                                {formatDisplayDate(resolveHomeworkDeadline(selectedHomework))}
+                                                            </div>
+                                                        </div>
+                                                        <div className="dashboard-panel-muted rounded-2xl p-4">
+                                                            <div className="text-xs font-semibold uppercase tracking-[0.12em] text-edubot-muted dark:text-slate-400">
+                                                                Студенттер
+                                                            </div>
+                                                            <div className="mt-2 text-sm font-semibold text-edubot-ink dark:text-white">
+                                                                {students.length} адамга дайындады
+                                                            </div>
+                                                        </div>
+                                                        <div className="dashboard-panel-muted rounded-2xl p-4">
+                                                            <div className="text-xs font-semibold uppercase tracking-[0.12em] text-edubot-muted dark:text-slate-400">
+                                                                Текшерүү
+                                                            </div>
+                                                            <div className="mt-2 text-sm font-semibold text-edubot-ink dark:text-white">
+                                                                {submissionStats.pending} жооп күтүп турат
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    {editingHomeworkId === String(selectedHomework.id) && (
+                                                        <DashboardInsetPanel
+                                                            title="Тапшырманы өзгөртүү"
+                                                            description="Аталышын, мазмунун же мөөнөтүн жаңыртып сактаңыз."
+                                                        >
+                                                            <div className="mt-4 space-y-3">
+                                                                <input
+                                                                    value={editHomeworkTitle}
+                                                                    onChange={(e) => setEditHomeworkTitle(e.target.value)}
+                                                                    className="dashboard-field"
+                                                                />
+                                                                <textarea
+                                                                    value={editHomeworkDescription}
+                                                                    onChange={(e) => setEditHomeworkDescription(e.target.value)}
+                                                                    rows={4}
+                                                                    className="dashboard-field"
+                                                                />
+                                                                <input
+                                                                    type="date"
+                                                                    value={editHomeworkDeadline}
+                                                                    onChange={(e) => setEditHomeworkDeadline(e.target.value)}
+                                                                    className="dashboard-field"
+                                                                />
+                                                                <div className="flex flex-wrap gap-2">
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={saveHomeworkEdit}
+                                                                        disabled={updatingHomework}
+                                                                        className="dashboard-button-primary"
+                                                                    >
+                                                                        {updatingHomework ? 'Сакталып жатат...' : 'Сактоо'}
+                                                                    </button>
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={cancelHomeworkEdit}
+                                                                        className="dashboard-button-secondary"
+                                                                    >
+                                                                        Жокко чыгаруу
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        </DashboardInsetPanel>
+                                                    )}
+                                                </div>
+                                            </DashboardInsetPanel>
+
+                                            <DashboardInsetPanel
+                                                title="Жоопторду текшерүү"
+                                                description="Студент жоопторун карап чыгып, дароо кабыл алыңыз же кайра жөнөтүңүз."
+                                                action={
+                                                    <StatusBadge tone="default">
+                                                        {submissionStats.total} жооп
+                                                    </StatusBadge>
+                                                }
+                                            >
+                                                <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                                                    <div className="dashboard-panel-muted rounded-2xl p-4">
+                                                        <div className="text-xs font-semibold uppercase tracking-[0.12em] text-edubot-muted dark:text-slate-400">
+                                                            Күтүүдө
+                                                        </div>
+                                                        <div className="mt-2 text-2xl font-semibold text-edubot-ink dark:text-white">
+                                                            {submissionStats.pending}
+                                                        </div>
+                                                    </div>
+                                                    <div className="dashboard-panel-muted rounded-2xl p-4">
+                                                        <div className="text-xs font-semibold uppercase tracking-[0.12em] text-edubot-muted dark:text-slate-400">
+                                                            Бекитилди
+                                                        </div>
+                                                        <div className="mt-2 text-2xl font-semibold text-emerald-700 dark:text-emerald-300">
+                                                            {submissionStats.approved}
+                                                        </div>
+                                                    </div>
+                                                    <div className="dashboard-panel-muted rounded-2xl p-4">
+                                                        <div className="text-xs font-semibold uppercase tracking-[0.12em] text-edubot-muted dark:text-slate-400">
+                                                            Кайтарылды
+                                                        </div>
+                                                        <div className="mt-2 text-2xl font-semibold text-red-700 dark:text-red-300">
+                                                            {submissionStats.rejected}
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                {loadingHomeworkSubmissions && (
+                                                    <div className="mt-4 text-sm text-edubot-muted dark:text-slate-400">
+                                                        Submissionдер жүктөлүүдө...
+                                                    </div>
+                                                )}
+                                                {!loadingHomeworkSubmissions && homeworkSubmissions.length === 0 && (
+                                                    <div className="mt-4 dashboard-panel-muted p-6 text-sm text-edubot-muted dark:text-slate-400">
+                                                        Жооп азырынча жок.
+                                                    </div>
+                                                )}
+                                                <div className="mt-4 grid gap-3">
+                                                    {homeworkSubmissions.map((submission) => {
+                                                        const submissionMeta = getSubmissionStatusMeta(submission.status);
+                                                        const previewText = getSubmissionPreview(submission);
+                                                        const attachmentUrl = getSubmissionAttachmentUrl(submission);
+                                                        const hasAttachment =
+                                                            Boolean(attachmentUrl) &&
+                                                            previewText !== attachmentUrl;
+                                                        return (
+                                                            <div
+                                                                key={submission.id}
+                                                                className="dashboard-panel-muted rounded-3xl p-4"
+                                                            >
+                                                                <div className="flex flex-wrap items-start justify-between gap-3">
+                                                                    <div className="min-w-0 flex-1">
+                                                                        <div className="flex flex-wrap items-center gap-2">
+                                                                            <div className="font-medium text-sm text-edubot-ink dark:text-white">
+                                                                                {submission.student?.fullName ||
+                                                                                    submission.fullName ||
+                                                                                    `#${submission.studentId || submission.userId}`}
+                                                                            </div>
+                                                                            <StatusBadge tone={submissionMeta.tone || 'default'} className="text-[11px]">
+                                                                                {submissionMeta.label}
+                                                                            </StatusBadge>
+                                                                        </div>
+                                                                        <div className="mt-1 text-xs text-edubot-muted dark:text-slate-400">
+                                                                            Жөнөтүлгөн:{' '}
+                                                                            {formatDisplayDate(
+                                                                                submission.submittedAt ||
+                                                                                    submission.createdAt,
+                                                                                '-'
+                                                                            )}
+                                                                        </div>
+                                                                        <div className="mt-3 rounded-2xl border border-edubot-line/80 bg-white/80 px-3 py-3 text-sm text-edubot-muted dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300">
+                                                                            <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-edubot-muted dark:text-slate-500">
+                                                                                <FiFileText className="h-4 w-4" />
+                                                                                Жооп мазмуну
+                                                                            </div>
+                                                                            <p className="whitespace-pre-wrap break-words leading-6">
+                                                                                {previewText}
+                                                                            </p>
+                                                                        </div>
+                                                                        {hasAttachment && (
+                                                                            <div className="mt-3 rounded-2xl border border-edubot-line/80 bg-white/80 px-3 py-3 text-sm text-edubot-muted dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300">
+                                                                                <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-edubot-muted dark:text-slate-500">
+                                                                                    <FiPaperclip className="h-4 w-4" />
+                                                                                    Тиркелген файл
+                                                                                </div>
+                                                                                <div className="flex flex-wrap items-center justify-between gap-3">
+                                                                                    <div className="min-w-0 flex-1">
+                                                                                        <p className="truncate font-medium text-edubot-ink dark:text-white">
+                                                                                            {getAttachmentName(
+                                                                                                attachmentUrl
+                                                                                            )}
+                                                                                        </p>
+                                                                                        <p className="mt-1 text-xs text-edubot-muted dark:text-slate-400">
+                                                                                            LMSке жүктөлгөн файл же тышкы шилтеме
+                                                                                        </p>
+                                                                                    </div>
+                                                                                    <a
+                                                                                        href={attachmentUrl}
+                                                                                        target="_blank"
+                                                                                        rel="noreferrer"
+                                                                                        className="inline-flex items-center gap-2 rounded-xl border border-edubot-line px-3 py-2 text-xs font-semibold text-edubot-ink transition hover:border-edubot-orange hover:text-edubot-orange dark:border-slate-700 dark:text-slate-200"
+                                                                                    >
+                                                                                        <FiExternalLink className="h-4 w-4" />
+                                                                                        Ачуу
+                                                                                    </a>
+                                                                                </div>
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+                                                                    <div className="flex flex-wrap gap-2">
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() =>
+                                                                                reviewHomeworkSubmission(
+                                                                                    submission.id,
+                                                                                    'approved'
+                                                                                )
+                                                                            }
+                                                                            disabled={
+                                                                                reviewingSubmissionId ===
+                                                                                String(submission.id)
+                                                                            }
+                                                                            className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-3 py-2 text-xs font-semibold text-white disabled:opacity-60"
+                                                                        >
+                                                                            <FiCheck className="h-4 w-4" />
+                                                                            Бекитүү
+                                                                        </button>
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() =>
+                                                                                reviewHomeworkSubmission(
+                                                                                    submission.id,
+                                                                                    'rejected'
+                                                                                )
+                                                                            }
+                                                                            disabled={
+                                                                                reviewingSubmissionId ===
+                                                                                String(submission.id)
+                                                                            }
+                                                                            className="inline-flex items-center gap-2 rounded-xl bg-red-600 px-3 py-2 text-xs font-semibold text-white disabled:opacity-60"
+                                                                        >
+                                                                            <FiXCircle className="h-4 w-4" />
+                                                                            Кайтаруу
+                                                                        </button>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </DashboardInsetPanel>
+                                        </div>
+                                    ) : (
+                                        <DashboardInsetPanel
+                                            title="Тапшырма тандаңыз"
+                                            description="Тизменин ичинен бир тапшырманы тандасаңыз, мазмуну жана студент жооптору ушул жерде ачылат."
+                                        >
+                                            <EmptyState
+                                                title="Тандалган тапшырма жок"
+                                                subtitle="Сол жактагы тизме аркылуу бир тапшырманы тандап, дароо текшерүү агымына өтүңүз."
+                                                icon={<FiBookOpen className="h-8 w-8 text-edubot-orange" />}
+                                                className="py-6"
+                                            />
+                                        </DashboardInsetPanel>
+                                    )}
+                                </div>
+                            )
+                        )}
+
+                        {activeTab === 'engagement' && (
+                            <div className="grid md:grid-cols-2 gap-4">
+                                <Card title="Attendance Streaks">
+                                    {students.slice(0, 8).map((student) => (
+                                        <div
+                                            key={student.id}
+                                            className="flex justify-between text-sm py-1"
+                                        >
+                                            <span>{student.fullName}</span>
+                                            <span>{studentStreaks[student.id] || 0} күн</span>
+                                        </div>
+                                    ))}
+                                </Card>
+                                <Card title="Top Students">
+                                    {topStudents.map((student, idx) => (
+                                        <div
+                                            key={student.id}
+                                            className="flex justify-between text-sm py-1"
+                                        >
+                                            <span>
+                                                #{idx + 1} {student.fullName}
+                                            </span>
+                                            <span>{student.xp} XP</span>
+                                        </div>
+                                    ))}
+                                </Card>
+                                <Card title="Quick Praise Badges">
+                                    <div className="flex flex-wrap gap-2">
+                                        {[
+                                            'Жигердүү',
+                                            'Көп жардам берди',
+                                            'Тартиптүү',
+                                            'Үй тапшырма мыкты',
+                                        ].map((badge) => (
+                                            <button
+                                                key={badge}
+                                                onClick={() =>
+                                                    toast.success(`${badge} badge жиберилди`)
+                                                }
+                                                className="px-2 py-1 rounded-full text-xs bg-indigo-100 text-indigo-700"
+                                            >
+                                                {badge}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </Card>
+                                <Card title="Homework Leaderboard">
+                                    {leaderboard.map((student, idx) => (
+                                        <div
+                                            key={student.id}
+                                            className="flex justify-between text-sm py-1"
+                                        >
+                                            <span>
+                                                #{idx + 1} {student.fullName}
+                                            </span>
+                                            <span>{student.xp}</span>
+                                        </div>
+                                    ))}
+                                </Card>
+                            </div>
+                        )}
                     </section>
 
-                    <section className="dashboard-panel p-4">
-                        <h3 className="mb-3 font-semibold text-gray-900 dark:text-[#E8ECF3]">
-                            Engagement Stats
-                        </h3>
-                        <div className="space-y-2 text-sm">
-                            <div className="flex justify-between">
-                                <span>Катышкан</span>
-                                <span>{attendanceStats.present}</span>
+                    <div className="grid gap-4 lg:grid-cols-2">
+                        <section className="dashboard-panel p-4">
+                            <h3 className="mb-3 font-semibold text-gray-900 dark:text-[#E8ECF3]">
+                                Бүгүнкү сессиялар
+                            </h3>
+                            <div className="space-y-2 text-sm">
+                                {sessionsToday.map((session) => (
+                                    <button
+                                        key={session.id}
+                                        onClick={() => setSelectedSessionId(String(session.sessionId))}
+                                        className={`w-full rounded-2xl border p-3 text-left transition ${String(selectedSessionId) === String(session.sessionId)
+                                            ? 'border-edubot-orange bg-edubot-surface shadow-edubot-soft dark:bg-slate-900'
+                                            : 'border-edubot-line/80 bg-white hover:border-edubot-orange/40 dark:border-slate-800 dark:bg-slate-950'
+                                            }`}
+                                    >
+                                        <div className="flex items-center justify-between gap-3">
+                                            <div className="font-medium text-edubot-ink dark:text-white">
+                                                {session.courseTitle}
+                                            </div>
+                                            <StatusBadge tone={(SESSION_MODE_META[session.mode] || SESSION_MODE_META.scheduled).tone || 'default'} className="gap-1 text-[11px]">
+                                                {(() => {
+                                                    const SessionModeIcon = (SESSION_MODE_META[session.mode] || SESSION_MODE_META.scheduled).icon;
+                                                    return <SessionModeIcon className="h-3.5 w-3.5" />;
+                                                })()}
+                                                {(SESSION_MODE_META[session.mode] || SESSION_MODE_META.scheduled).label}
+                                            </StatusBadge>
+                                        </div>
+                                        <div className="mt-1 text-gray-500 dark:text-slate-400">
+                                            {session.startTime}{' '}
+                                            {session.room ? `• ${session.room}` : ''}
+                                        </div>
+                                        {session.type === COURSE_TYPE.ONLINE_LIVE && (
+                                            <div className="mt-1 text-xs text-edubot-muted dark:text-slate-400">
+                                                {session.mode === 'upcoming' &&
+                                                    `Башталышына: ${formatCountdown(
+                                                        new Date(session.startsAt).getTime(),
+                                                        nowMs
+                                                    )}`}
+                                                {session.mode === 'live' &&
+                                                    `Live: ${formatCountdown(
+                                                        new Date(session.endsAt).getTime(),
+                                                        nowMs
+                                                    )}`}
+                                                {session.mode === 'completed' && 'Аяктаган'}
+                                            </div>
+                                        )}
+                                        {session.type === COURSE_TYPE.ONLINE_LIVE &&
+                                            session.joinUrl && (
+                                                <div className="mt-2">
+                                                    <span
+                                                        role="button"
+                                                        tabIndex={0}
+                                                        onClick={(e) => {
+                                                            if (!session.joinAllowed) return;
+                                                            e.preventDefault();
+                                                            joinLiveSession(session.joinUrl);
+                                                        }}
+                                                        onKeyDown={(e) => {
+                                                            if (
+                                                                e.key === 'Enter' &&
+                                                                session.joinAllowed
+                                                            ) {
+                                                                e.preventDefault();
+                                                                joinLiveSession(session.joinUrl);
+                                                            }
+                                                        }}
+                                                        className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold text-white ${session.joinAllowed
+                                                            ? 'bg-edubot-orange'
+                                                            : 'bg-gray-400 cursor-not-allowed dark:bg-slate-700'
+                                                            }`}
+                                                    >
+                                                        Join
+                                                    </span>
+                                                    {!session.joinAllowed && (
+                                                        <div className="mt-1 text-[11px] text-gray-500 dark:text-slate-500">
+                                                            Join 10 мүнөт мурун ачылат
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
+                                    </button>
+                                ))}
+                                {sessionsToday.length === 0 && (
+                                    <div className="text-gray-500">Бүгүн сессия жок.</div>
+                                )}
                             </div>
-                            <div className="flex justify-between">
-                                <span>Кечиккен</span>
-                                <span>{attendanceStats.late}</span>
+                        </section>
+
+                        <section className="dashboard-panel p-4">
+                            <h3 className="mb-3 font-semibold text-gray-900 dark:text-[#E8ECF3]">
+                                Engagement Stats
+                            </h3>
+                            <div className="space-y-2 text-sm">
+                                <div className="flex justify-between">
+                                    <span>Катышкан</span>
+                                    <span>{attendanceStats.present}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span>Кечиккен</span>
+                                    <span>{attendanceStats.late}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span>Келбеген</span>
+                                    <span>{attendanceStats.absent}</span>
+                                </div>
+                                <div className="w-full bg-gray-100 rounded-full h-2 mt-2">
+                                    <div
+                                        className="h-2 rounded-full bg-blue-500"
+                                        style={{ width: `${attendanceStats.presentRate}%` }}
+                                    />
+                                </div>
                             </div>
-                            <div className="flex justify-between">
-                                <span>Келбеген</span>
-                                <span>{attendanceStats.absent}</span>
-                            </div>
-                            <div className="w-full bg-gray-100 rounded-full h-2 mt-2">
-                                <div
-                                    className="h-2 rounded-full bg-blue-500"
-                                    style={{ width: `${attendanceStats.presentRate}%` }}
-                                />
-                            </div>
-                        </div>
-                    </section>
+                        </section>
+                    </div>
                 </div>
-            </div>
             ) : null}
         </div>
     );

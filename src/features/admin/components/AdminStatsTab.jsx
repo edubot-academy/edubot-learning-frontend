@@ -1,7 +1,10 @@
 import React from 'react';
 import { SmoothTabTransition } from '@components/ui';
-import MetricCard from '../stats/MetricCard';
-import GrowthBadge from '../stats/GrowthBadge';
+import {
+    DashboardFilterBar,
+    DashboardMetricCard,
+    DashboardWorkspaceHero,
+} from '@components/ui/dashboard';
 import TrendCard from '../stats/TrendCard';
 import TopCoursesTable from '../stats/TopCoursesTable';
 
@@ -28,80 +31,93 @@ const AdminStatsTab = ({ stats, loading, onRefresh }) => {
     return (
         <SmoothTabTransition isLoading={loading && !stats} isDataLoaded={!!stats}>
             <div className="space-y-6">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div>
-                        <p className="text-sm uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                            Акыркы 7 күн
-                        </p>
-                        <h2 className="text-3xl font-semibold text-gray-900 dark:text-[#E8ECF3]">
-                            Платформанын статистикасы
-                        </h2>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">
-                            Жалпы көрсөткүчтөр, активдүүлүк жана тренддер
-                        </p>
+                <DashboardWorkspaceHero
+                    eyebrow="Акыркы 7 күн"
+                    title="Платформанын статистикасы"
+                    description="Жалпы көрсөткүчтөр, активдүүлүк, киреше жана өсүү тенденциялары."
+                    action={(
+                        <button
+                            type="button"
+                            onClick={onRefresh}
+                            disabled={loading}
+                            className="dashboard-button-secondary disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                            {loading ? 'Жүктөлүүдө...' : 'Жаңыртуу'}
+                        </button>
+                    )}
+                    metrics={(
+                        <>
+                            <DashboardMetricCard label="Студенттер" value={formatNumber(totals.students)} tone="blue" />
+                            <DashboardMetricCard label="Курстар" value={formatNumber(totals.courses)} />
+                            <DashboardMetricCard label="Жарыяланган курстар" value={formatNumber(totals.publishedCourses)} tone="green" />
+                            <DashboardMetricCard label="Жалпы каттоолор" value={formatNumber(totals.enrollments)} tone="amber" />
+                            <DashboardMetricCard label="Активдүү каттоолор" value={formatNumber(totals.activeEnrollments)} tone="red" />
+                        </>
+                    )}
+                    metricsClassName="grid grid-cols-2 gap-3 lg:grid-cols-5"
+                >
+                    <DashboardFilterBar gridClassName="md:grid-cols-3">
+                        <DashboardMetricCard
+                            label="Жалпы киреше"
+                            value={formatCurrency(revenue.total)}
+                            tone="amber"
+                        />
+                        <DashboardMetricCard
+                            label="Акыркы 30 күн"
+                            value={formatCurrency(revenue.last30d)}
+                            tone="blue"
+                        />
+                        <DashboardMetricCard
+                            label="Курс аяктоо"
+                            value={formatPercent(activity.courseCompletionRate)}
+                            tone="green"
+                        />
+                    </DashboardFilterBar>
+                    <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
+                        <div className="rounded-2xl border border-edubot-line/70 bg-edubot-surfaceAlt/40 px-4 py-4 dark:border-slate-700 dark:bg-slate-900/60">
+                            <p className="text-sm font-medium text-edubot-muted dark:text-slate-400">Активдүү студенттер</p>
+                            <p className="mt-2 text-2xl font-semibold text-edubot-ink dark:text-white">
+                                {formatNumber(activity.activeStudents7d || 0)}
+                            </p>
+                            <p className="mt-1 text-xs text-edubot-muted dark:text-slate-400">Акыркы 7 күн</p>
+                        </div>
+                        <div className="rounded-2xl border border-edubot-line/70 bg-edubot-surfaceAlt/40 px-4 py-4 dark:border-slate-700 dark:bg-slate-900/60">
+                            <p className="text-sm font-medium text-edubot-muted dark:text-slate-400">Активдүү студенттер</p>
+                            <p className="mt-2 text-2xl font-semibold text-edubot-ink dark:text-white">
+                                {formatNumber(activity.activeStudents30d || 0)}
+                            </p>
+                            <p className="mt-1 text-xs text-edubot-muted dark:text-slate-400">Акыркы 30 күн</p>
+                        </div>
                     </div>
-                    <button
-                        type="button"
-                        onClick={onRefresh}
-                        disabled={loading}
-                        className="px-4 py-2 rounded-full border text-sm text-gray-700 dark:text-[#E8ECF3] dark:border-gray-700 bg-white dark:bg-[#111111] hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-60 disabled:cursor-not-allowed"
-                    >
-                        {loading ? 'Жүктөлүүдө...' : 'Жаңыртуу'}
-                    </button>
-                </div>
-            </div>
+                </DashboardWorkspaceHero>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4">
-                <MetricCard label="Студенттер" value={formatNumber(totals.students)} />
-                <MetricCard label="Курстар" value={formatNumber(totals.courses)} />
-                <MetricCard label="Жарияланган курстар" value={formatNumber(totals.publishedCourses)} />
-                <MetricCard label="Жалпы каттоолор" value={formatNumber(totals.enrollments)} />
-                <MetricCard label="Активдүү каттоолор" value={formatNumber(totals.activeEnrollments)} />
-            </div>
+                <DashboardWorkspaceHero
+                    eyebrow="TREND SNAPSHOT"
+                    title="Тренддер"
+                    description="Кыска мөөнөттүү өсүү жана катышуу өзгөрүүсү."
+                >
+                    <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                        <TrendCard
+                            title="Күнүмдүк каттоо (студент)"
+                            series={trends.dailySignups7d}
+                            color="#2563EB"
+                        />
+                        <TrendCard
+                            title="Күнүмдүк enrollments"
+                            series={trends.dailyEnrollments7d}
+                            color="#10B981"
+                        />
+                    </div>
+                </DashboardWorkspaceHero>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <MetricCard
-                    label="Даяр киреше (жалпы)"
-                    value={formatCurrency(revenue.total)}
-                    accent="bg-gradient-to-r from-amber-500 to-orange-500 text-white"
-                    sub="Бардык убакыт"
-                />
-                <MetricCard
-                    label="Акыркы 30 күн"
-                    value={formatCurrency(revenue.last30d)}
-                    accent="bg-gradient-to-r from-blue-600 to-indigo-600 text-white"
-                    sub="Ревеню"
-                />
-                <MetricCard
-                    label="Курс аяктоо көрсөткүчү"
-                    value={formatPercent(activity.courseCompletionRate)}
-                    accent="bg-gradient-to-r from-emerald-500 to-teal-500 text-white"
-                    sub={`Активдүү: ${formatNumber(activity.activeStudents7d || 0)} (7к) | ${formatNumber(
-                        activity.activeStudents30d || 0
-                    )} (30к)`}
+                <TopCoursesTable
+                    courses={topCourses}
+                    formatNumber={formatNumber}
+                    formatPercent={formatPercent}
+                    formatCurrency={formatCurrency}
+                    loading={loading}
                 />
             </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                <TrendCard
-                    title="Күнүмдүк каттоо (студент)"
-                    series={trends.dailySignups7d}
-                    color="#2563EB"
-                />
-                <TrendCard
-                    title="Күнүмдүк enrollments"
-                    series={trends.dailyEnrollments7d}
-                    color="#10B981"
-                />
-            </div>
-
-            <TopCoursesTable
-                courses={topCourses}
-                formatNumber={formatNumber}
-                formatPercent={formatPercent}
-                formatCurrency={formatCurrency}
-                loading={loading}
-            />
         </SmoothTabTransition>
     );
 };

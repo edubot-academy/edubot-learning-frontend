@@ -136,3 +136,14 @@ export const fetchCourseGroups = async ({ courseId, status } = {}) => {
     const { data } = await api.get('/course-groups', { params });
     return data;
 };
+
+export const fetchCourseGroupStudents = async (
+    groupId,
+    { page = 1, limit = 200, q, progressGte, progressLte } = {}
+) => {
+    const normalizedGroupId = ensurePositiveInt(groupId, 'groupId');
+    const { data } = await api.get(`/course-groups/${normalizedGroupId}/students`, {
+        params: clean({ page, limit, q, progressGte, progressLte }),
+    });
+    return data;
+};

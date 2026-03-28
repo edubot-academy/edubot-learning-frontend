@@ -57,13 +57,15 @@ const AnalyticsSection = ({
   }
 
   return (
-    <section className={`overflow-hidden rounded-3xl border border-edubot-line/80 bg-white/90 shadow-edubot-card dark:border-slate-700 dark:bg-slate-950 ${className}`}>
+    <section className={`group relative overflow-hidden rounded-3xl border border-edubot-line/80 bg-white/90 shadow-edubot-card transition-all duration-300 hover:-translate-y-1 hover:shadow-edubot-hover dark:border-slate-700 dark:bg-slate-950 ${className}`}>
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-white/60 via-transparent to-edubot-orange/8 opacity-80 transition-opacity duration-300 group-hover:opacity-100 dark:from-white/5 dark:to-edubot-soft/10" />
+      <div className="pointer-events-none absolute -right-10 -top-10 h-28 w-28 rounded-full bg-edubot-orange/10 blur-3xl transition-all duration-300 group-hover:scale-125 dark:bg-edubot-soft/10" />
       {(title || subtitle || action) && (
-        <div className={`border-b border-edubot-line/70 p-6 dark:border-slate-700 ${headerClassName}`}>
+        <div className={`relative border-b border-edubot-line/70 p-6 dark:border-slate-700 ${headerClassName}`}>
           <div className="flex items-center justify-between gap-4">
             <div>
               {title && (
-                <h3 className="text-lg font-semibold text-edubot-ink dark:text-gray-100">
+                <h3 className="text-lg font-semibold text-edubot-ink transition-colors duration-300 group-hover:text-edubot-orange dark:text-gray-100 dark:group-hover:text-edubot-soft">
                   {title}
                 </h3>
               )}
@@ -77,7 +79,7 @@ const AnalyticsSection = ({
           </div>
         </div>
       )}
-      <div className={contentClassName}>
+      <div className={`relative ${contentClassName}`}>
         {children}
       </div>
     </section>

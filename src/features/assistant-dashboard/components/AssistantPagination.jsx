@@ -1,5 +1,3 @@
-import React from "react";
-
 const AssistantPagination = ({ currentPage, totalPages, loading, setCurrentPage }) => {
     if (totalPages <= 1) return null;
 
@@ -11,38 +9,39 @@ const AssistantPagination = ({ currentPage, totalPages, loading, setCurrentPage 
     );
 
     return (
-        <div className="flex justify-center items-center mt-4 space-x-2">
+        <div className="flex flex-wrap justify-center items-center gap-2 pt-5">
             <button
                 onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
                 disabled={currentPage === 1 || loading}
-                className="px-3 py-1 border rounded disabled:opacity-50 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-slate-200 dark:border-slate-600 hover:bg-gray-50 dark:hover:bg-gray-600"
+                className="dashboard-button-secondary disabled:opacity-50"
             >
                 ⟨ Мурунку
             </button>
 
             {visiblePages.map((page, idx) => (
-                <React.Fragment key={page + 1}>
-                    {idx > 0 && page - visiblePages[idx - 1] > 1 && (
-                        <span className="px-2 text-gray-400 dark:text-gray-300">...</span>
-                    )}
+                <div key={page + 1} className="flex items-center gap-2">
+                    {idx > 0 && page - visiblePages[idx - 1] > 1 ? (
+                        <span className="px-1 text-edubot-muted dark:text-slate-400">...</span>
+                    ) : null}
 
                     <button
                         onClick={() => setCurrentPage(page + 1)}
                         disabled={loading}
-                        className={`px-3 py-1 rounded border ${currentPage === page + 1
-                            ? "bg-blue-600 text-white border-blue-600"
-                            : "bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-slate-200 dark:border-slate-600 hover:bg-gray-50 dark:hover:bg-slate-800"
-                            }`}
+                        className={`h-10 min-w-10 rounded-2xl border px-3 text-sm font-semibold transition ${
+                            currentPage === page + 1
+                                ? 'border-edubot-orange bg-gradient-to-r from-edubot-orange to-edubot-soft text-white shadow-edubot-soft'
+                                : 'border-edubot-line bg-white text-edubot-ink hover:border-edubot-orange/40 dark:border-slate-700 dark:bg-slate-900 dark:text-white'
+                        }`}
                     >
                         {page + 1}
                     </button>
-                </React.Fragment>
+                </div>
             ))}
 
             <button
                 onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
                 disabled={currentPage === totalPages || loading}
-                className="px-3 py-1 border rounded disabled:opacity-50 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-slate-200 dark:border-slate-600 hover:bg-gray-50 dark:hover:bg-gray-600"
+                className="dashboard-button-secondary disabled:opacity-50"
             >
                 Кийинки ⟩
             </button>

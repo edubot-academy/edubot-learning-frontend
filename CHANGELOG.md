@@ -1,5 +1,116 @@
 # Changelog
 
+## [1.3.13] - 2026-03-28
+
+### 🧭 DASHBOARD ENROLLMENT + GROUP WORKFLOW
+- Added a dedicated instructor `Groups` surface for group lifecycle and group-based learner enrollment.
+- Moved group create/edit into a reusable modal workflow with auto-generated editable group codes.
+- Updated admin delivery-course enrollment to require explicit group selection for `offline` and `online_live`.
+- Modernized instructor enrollment modals with tighter sizing, pinned actions, and improved dark-mode readability.
+
+### 📚 SESSION / ATTENDANCE / HOMEWORK
+- Migrated dashboard attendance to course -> group -> session flow instead of the legacy course/date model.
+- Made admin attendance read-first with explicit edit mode before changes.
+- Disabled attendance save actions when there is no real change in dashboard and session flows.
+- Removed the remaining legacy attendance write fallback from `SessionWorkspace`; attendance save now requires a selected session.
+- Fixed session workspace homework deadline display normalization and publish-state inconsistencies.
+- Added instructor-facing attachment visibility in homework review and improved session hero card layout.
+
+### 🧑‍🎓 STUDENT HOMEWORK SUBMISSIONS
+- Switched student tasks to trust `/student/homework` as the source of truth.
+- Added homework attachment upload support with file picker, validation, upload/submission phases, and cleaner error feedback.
+- Kept text and link submissions as complementary options alongside uploaded files.
+
+### 🔌 INTEGRATION DASHBOARD + DOCS
+- Extended LMS integration dashboard visibility for pending CRM enrollments, failed dispatches, quick filters, and row-level detail fetch.
+- Added copy actions for LMS enrollment ID, LMS student ID, and CRM lead ID inside integration event detail.
+- Updated contract, endpoint handoff, QA, backlog, and release-note docs to reflect the current CRM/LMS and session/group architecture.
+
+### 🐛 FIXES
+- Fixed attendance save buttons making unnecessary API calls when nothing changed.
+- Reduced accidental attendance status changes by replacing quick-tap status controls with more deliberate selectors.
+- Reverted out-of-scope public course/catalog enrollment wording changes to keep this iteration dashboard-only.
+
+## [1.3.12] - 2026-03-28
+
+### 🧩 SHARED DASHBOARD SYSTEM
+- Added reusable dashboard workspace primitives:
+  - `DashboardWorkspaceHero`
+  - `DashboardFilterBar`
+  - `StatusBadge`
+- Adopted the new shared hero/filter/badge layer across admin, instructor, student, and assistant surfaces.
+- Fixed the shared filter-bar contract so grid layout overrides no longer leak onto the wrapper container.
+
+### 🛠️ ADMIN PANEL OVERHAUL
+- Extracted major admin tabs into dedicated components:
+  - pending approvals
+  - companies
+  - skills
+  - AI prompts
+  - contacts
+  - users
+  - courses
+- Restyled admin stats, analytics, integration, and overview-related surfaces onto the shared dashboard system.
+- Replaced admin `confirm(...)` flows with a shared confirmation modal for destructive actions.
+- Improved admin pending-course review cards with richer metadata and preview access.
+- Reworked company management with inline rename flow and managed file inputs.
+
+### 🤝 ASSISTANT DASHBOARD
+- Rebuilt assistant dashboard core on the shared dashboard primitives.
+- Redesigned student enrollment management into a workspace with filters, course load cards, and card-based student rows.
+- Added a real assistant overview surface instead of routing `overview` to the same content as enrollments.
+- Removed unsupported placeholder tabs (`communication`, `analytics`) because there are no real backend APIs behind them.
+
+### 🎨 ANALYTICS + CONSISTENCY
+- Continued redesign of the shared analytics component library to match dashboard styling more closely.
+- Restructured admin analytics and stats to use the same workspace composition as newer attendance/dashboard surfaces.
+- Normalized admin-facing select controls through the shared dashboard select styling.
+
+### 🐛 FIXES
+- Removed duplicated KPI rendering in `SessionWorkspace`.
+- Fixed invalid highlight tones in admin metric cards.
+- Fixed assistant tab information architecture mismatch after nav cleanup.
+
+### ✅ BUILD STATUS
+- Production build passes after the admin/assistant/shared-component checkpoint.
+- Remaining warnings are unchanged:
+  - mixed dynamic/static import in course-builder validation
+  - large chunk-size warnings
+
+---
+
+## [1.3.11] - 2026-03-27
+
+### 🚀 NEW FEATURES
+- **Homework Publish Control**: Added publish/unpublish functionality for homework
+- **Draft Mode**: Homework created as draft by default (unpublished)
+- **Visibility Toggle**: Instructors can now control homework visibility to students
+
+### 🎨 UI/UX IMPROVEMENTS
+- **Publish Status Badge**: Visual indicator for homework publish status
+- **Toggle Button**: Easy one-click publish/unpublish for each homework item
+- **Draft Workflow**: Create homework as draft, publish when ready
+
+### 🐛 BUG FIXES
+- **Default Behavior**: Homework now defaults to unpublished (draft) state
+- **API Enhancement**: Added includeUnpublished parameter to fetch all homework
+- **Frontend Integration**: Updated to show both published and unpublished homework
+- **HTML Validation**: Fixed nested button issue by changing homework list items to div elements
+
+### 📝 CHANGES
+- Updated createSessionHomework to default isPublished: false
+- Added includeUnpublished parameter to fetchSessionHomework API
+- Added toggleHomeworkPublish function for status changes
+- Enhanced homework list UI with publish status badges and toggle buttons
+
+### 🔒 WORKFLOW
+1. Create homework as draft (unpublished)
+2. Review and edit homework details
+3. Publish homework when ready for students
+4. Unpublish if changes needed
+
+---
+
 ## [1.3.10] - 2026-03-27
 
 ### 🛠️ **ADMIN + INSTRUCTOR WORKFLOW FIXES**

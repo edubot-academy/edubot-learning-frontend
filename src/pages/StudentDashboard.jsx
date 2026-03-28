@@ -1,8 +1,7 @@
 import { useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import toast from 'react-hot-toast';
-import LeaderboardHub from '../features/leaderboard/components/LeaderboardHub';
 import StudentAnalyticsPage from './StudentAnalytics';
 import InternalLeaderboard from './InternalLeaderboard';
 import FloatingActionButton from '../components/ui/FloatingActionButton';
@@ -12,8 +11,8 @@ import {
     fetchStudentUpcomingSessions,
     fetchStudentRecordings,
     fetchStudentHomework,
-    fetchSessionHomework,
     submitSessionHomework,
+    uploadSessionHomeworkAttachment,
     fetchUserProfile,
     updateUserProfile,
     fetchStudentProgress,
@@ -54,6 +53,7 @@ import {
 const StudentDashboard = () => {
     const { user } = useContext(AuthContext);
     const [searchParams, setSearchParams] = useSearchParams();
+    const navigate = useNavigate();
     const initialTab = searchParams.get('tab');
     const validTabIds = useMemo(() => NAV_ITEMS.map((item) => item.id), []);
     const studentId = user?.id;
@@ -93,8 +93,8 @@ const StudentDashboard = () => {
     const [notificationsLoaded, setNotificationsLoaded] = useState(false);
     const [notificationLoading, setNotificationLoading] = useState(false);
     const [savingNotifications, setSavingNotifications] = useState(false);
-    const [submittingTaskId, setSubmittingTaskId] = useState('');
-    const [enrollingCourseId, setEnrollingCourseId] = useState(null);
+    const [submittingTaskState, setSubmittingTaskState] = useState(null);
+    const [openingCourseId, setOpeningCourseId] = useState(null);
 
     const studentFilters = useMemo(
         () => ({
@@ -186,44 +186,8 @@ const StudentDashboard = () => {
         if (!studentId) return;
         setTabLoading('tasks');
         try {
-            const [tasksRes, sessionsRes] = await Promise.all([
-                fetchStudentHomework(studentFilters),
-                fetchStudentUpcomingSessions(studentFilters),
-            ]);
-
-            const sessionIds = [
-                ...new Set(
-                    toItems(sessionsRes)
-                        .map((session) => session?.sessionId || session?.id || session?.offeringId)
-                        .filter(Boolean)
-                ),
-            ].slice(0, 10);
-
-            let sessionHomeworkItems = [];
-            if (sessionIds.length > 0) {
-                const responses = await Promise.all(
-                    sessionIds.map((sessionId) =>
-                        fetchSessionHomework(sessionId)
-                            .then((data) => ({ data, sessionId }))
-                            .catch(() => null)
-                    )
-                );
-
-                sessionHomeworkItems = responses
-                    .filter(Boolean)
-                    .flatMap(({ data, sessionId }) =>
-                        toItems(data).map((item) => ({
-                            ...item,
-                            sessionId,
-                        }))
-                    );
-            }
-
-            if (sessionHomeworkItems.length > 0) {
-                setTasks(sessionHomeworkItems);
-            } else {
-                setTasks(toItems(tasksRes));
-            }
+            const tasksRes = await fetchStudentHomework(studentFilters);
+            setTasks(toItems(tasksRes));
         } catch (error) {
             console.error('Failed to load tasks', error);
             toast.error('Тапшырмаларды жүктөө мүмкүн болбоду');
@@ -681,23 +645,22 @@ const StudentDashboard = () => {
         }
     }, [studentId, notificationSettings]);
 
-    const handleEnrollCourse = useCallback(async (courseId) => {
-        if (!studentId) {
-            toast.error('Студент ID табылган жок');
+    const handleOpenCourse = useCallback(async (courseId) => {
+        if (!courseId) {
+            toast.error('Курс табылган жок');
             return;
         }
 
         try {
-            setEnrollingCourseId(courseId);
-            // Add enrollment logic here
-            toast.success('Курска катышуу ийгиликтүү бүттү!');
+            setOpeningCourseId(courseId);
+            navigate(`/courses/${courseId}`);
         } catch (error) {
-            console.error('Failed to enroll in course:', error);
-            toast.error('Курска катышууда ката кетти');
+            console.error('Failed to open course:', error);
+            toast.error('Курсту ачууда ката кетти');
         } finally {
-            setEnrollingCourseId(null);
+            setOpeningCourseId(null);
         }
-    }, [studentId]);
+    }, [navigate]);
 
     const handleSaveProfile = useCallback(
         async ({ fullName, phoneNumber, avatarFile, newPassword, confirmPassword }) => {
@@ -780,16 +743,24 @@ const StudentDashboard = () => {
         const key = getTaskKey(task);
         const text = submission?.text?.trim() || '';
         const link = submission?.link?.trim() || '';
-        if (!text && !link) {
-            toast.error('Жооп же шилтеме киргизиңиз.');
+        const file = submission?.file instanceof File ? submission.file : null;
+        if (!text && !link && !file) {
+            toast.error('Жооп, шилтеме же файл кошуңуз.');
             return false;
         }
 
-        setSubmittingTaskId(key);
+        setSubmittingTaskState({ key, phase: file ? 'uploading' : 'submitting' });
         try {
+            let attachmentUrl = link || '';
+            if (file) {
+                const upload = await uploadSessionHomeworkAttachment(sessionId, homeworkId, file);
+                attachmentUrl = upload?.key || upload?.url || attachmentUrl;
+                setSubmittingTaskState({ key, phase: 'submitting' });
+            }
+
             await submitSessionHomework(sessionId, homeworkId, {
                 text: text || undefined,
-                link: link || undefined,
+                link: attachmentUrl || undefined,
             });
 
             setTasks((prev) =>
@@ -809,10 +780,26 @@ const StudentDashboard = () => {
             console.error('Failed to submit session homework', error);
             const rawMessage = error?.response?.data?.message || 'Тапшырманы жөнөтүү катасы';
             const message = Array.isArray(rawMessage) ? rawMessage.join(', ') : rawMessage;
+            const normalizedMessage = String(message || '').toLowerCase();
+
+            if (normalizedMessage.includes('unsupported homework attachment type')) {
+                toast.error('Файл түрү колдоого алынбайт. PDF, Word, Excel, PowerPoint, ZIP, TXT, CSV же сүрөт колдонуңуз.');
+                return false;
+            }
+
+            if (
+                normalizedMessage.includes('file too large') ||
+                normalizedMessage.includes('file size') ||
+                normalizedMessage.includes('larger than')
+            ) {
+                toast.error('Файл өтө чоң. Максималдуу көлөм 20 MB.');
+                return false;
+            }
+
             toast.error(message);
             return false;
         } finally {
-            setSubmittingTaskId('');
+            setSubmittingTaskState(null);
         }
     }, []);
 
@@ -887,7 +874,7 @@ const StudentDashboard = () => {
                     <TasksTab
                         tasks={tasks}
                         onSubmitHomework={handleSubmitHomework}
-                        submittingTaskId={submittingTaskId}
+                        submittingTaskState={submittingTaskState}
                     />
                 );
             case 'progress':
@@ -940,8 +927,8 @@ const StudentDashboard = () => {
                         milestoneItems={milestoneItems}
                         badgeItems={badgeItems}
                         progressItems={progressItems}
-                        onEnrollCourse={handleEnrollCourse}
-                        enrollingCourseId={enrollingCourseId}
+                        onOpenCourse={handleOpenCourse}
+                        openingCourseId={openingCourseId}
                     />
                 );
         }

@@ -24,17 +24,13 @@ import {
     resolveInstructorName,
 } from '../../utils/studentDashboard.helpers.js';
 import {
-    FiActivity,
     FiAlertCircle,
     FiArrowRight,
-    FiAward,
     FiBookOpen,
     FiCalendar,
     FiCheckCircle,
     FiClock,
     FiFlag,
-    FiPlay,
-    FiTrendingUp,
     FiUsers,
     FiZap,
 } from 'react-icons/fi';
@@ -53,8 +49,8 @@ const OverviewTab = ({
     milestoneItems,
     badgeItems,
     progressItems,
-    onEnrollCourse,
-    enrollingCourseId,
+    onOpenCourse,
+    openingCourseId,
 }) => {
     const [nowMs, setNowMs] = useState(Date.now());
 
@@ -274,15 +270,15 @@ const OverviewTab = ({
                                     <button
                                         type="button"
                                         onClick={() =>
-                                            onEnrollCourse?.(
+                                            onOpenCourse?.(
                                                 recommendedCourse.id || recommendedCourse.courseId
                                             )
                                         }
-                                        disabled={Boolean(enrollingCourseId)}
+                                        disabled={Boolean(openingCourseId)}
                                         className="dashboard-button-primary w-full"
                                     >
                                         <FiArrowRight className="h-4 w-4" />
-                                        {enrollingCourseId ===
+                                        {openingCourseId ===
                                         (recommendedCourse.id || recommendedCourse.courseId)
                                             ? 'Иштелүүдө...'
                                             : 'Курска өтүү'}
@@ -637,15 +633,15 @@ OverviewTab.propTypes = {
     milestoneItems: PropTypes.arrayOf(PropTypes.object).isRequired,
     badgeItems: PropTypes.arrayOf(PropTypes.object).isRequired,
     progressItems: PropTypes.arrayOf(PropTypes.object).isRequired,
-    onEnrollCourse: PropTypes.func,
-    enrollingCourseId: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
+    onOpenCourse: PropTypes.func,
+    openingCourseId: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
 };
 
 OverviewTab.defaultProps = {
     summary: null,
     leaderboardMeta: undefined,
-    onEnrollCourse: undefined,
-    enrollingCourseId: null,
+    onOpenCourse: undefined,
+    openingCourseId: null,
 };
 
 export default OverviewTab;

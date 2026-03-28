@@ -36,12 +36,14 @@ import {
     updateSkill,
     deleteSkill,
     markNotificationRead as markNotificationReadApi,
+    fetchCourseGroups,
 } from '@services/api';
 import toast from 'react-hot-toast';
 import NotificationsWidget from '@features/notifications/components/NotificationsWidget';
 import NotificationsTab from '@features/notifications/components/NotificationsTab';
-import Loader from '@shared/ui/Loader';
+import ConfirmationModal from '@shared/ui/ConfirmationModal';
 import IntegrationTab from '@features/integration/components/IntegrationTab';
+import { normalizeEnrollmentCourseType } from '@features/enrollments/policy';
 import AttendancePage from '../../../pages/Attendance';
 import AdminAnalyticsPage from '../../../pages/AdminAnalytics';
 import { isForbiddenError } from '@shared/api/error';
@@ -57,6 +59,11 @@ import {
 import AdminStatsTab from '../components/AdminStatsTab';
 import AdminUsersTab from '../components/AdminUsersTab';
 import AdminCoursesTab from '../components/AdminCoursesTab';
+import AdminCompaniesTab from '../components/AdminCompaniesTab';
+import AdminSkillsTab from '../components/AdminSkillsTab';
+import AdminAiPromptsTab from '../components/AdminAiPromptsTab';
+import AdminContactsTab from '../components/AdminContactsTab';
+import AdminPendingCoursesTab from '../components/AdminPendingCoursesTab';
 
 // Import constants and helpers
 import { ADMIN_TABS, NAV_ITEMS, USERS_QUERY_KEYS } from '../utils/adminPanel.constants';
@@ -75,6 +82,8 @@ const AdminPanel = () => {
     const [editingCategoryId, setEditingCategoryId] = useState(null);
     const [editingCategoryName, setEditingCategoryName] = useState('');
     const [pendingCourses, setPendingCourses] = useState([]);
+    const [courseGroupsByCourseId, setCourseGroupsByCourseId] = useState({});
+    const [selectedEnrollmentGroupIds, setSelectedEnrollmentGroupIds] = useState({});
 
     const [companies, setCompanies] = useState([]);
     const [, setCompaniesTotalPages] = useState(1);
@@ -102,6 +111,7 @@ const AdminPanel = () => {
     const [adminStats, setAdminStats] = useState(null);
     const [adminStatsLoading, setAdminStatsLoading] = useState(false);
     const [adminStatsLoaded, setAdminStatsLoaded] = useState(false);
+    const [confirmation, setConfirmation] = useState(null);
 
     // Users pagination state
     const [usersPage, setUsersPage] = useState(
@@ -292,8 +302,41 @@ const AdminPanel = () => {
                 fetchCourses(),
                 fetchCategories(),
             ]);
-            setCourses(coursesRes?.courses || []);
+            const loadedCourses = coursesRes?.courses || [];
+            setCourses(loadedCourses);
             setCategories(categoriesRes || []);
+
+            const deliveryCourses = loadedCourses.filter((course) =>
+                ['offline', 'online_live'].includes(
+                    normalizeEnrollmentCourseType(course?.courseType || course?.type)
+                )
+            );
+
+            if (!deliveryCourses.length) {
+                setCourseGroupsByCourseId({});
+                return;
+            }
+
+            const groupEntries = await Promise.all(
+                deliveryCourses.map(async (course) => {
+                    try {
+                        const response = await fetchCourseGroups({ courseId: Number(course.id) });
+                        const items = Array.isArray(response)
+                            ? response
+                            : Array.isArray(response?.items)
+                                ? response.items
+                                : Array.isArray(response?.data)
+                                    ? response.data
+                                    : [];
+                        return [String(course.id), items];
+                    } catch (error) {
+                        console.error('Failed to load groups for admin course', course.id, error);
+                        return [String(course.id), []];
+                    }
+                })
+            );
+
+            setCourseGroupsByCourseId(Object.fromEntries(groupEntries));
         } catch (error) {
             if (!isForbiddenError(error)) {
                 toast.error('Курстарды жана категорияларды жүктөөдө ката кетти');
@@ -391,16 +434,41 @@ const AdminPanel = () => {
     }, []);
 
     // Event handlers
-    const handleDeleteUser = async (id) => {
-        if (window.confirm('Бул колдонуучуну өчүрүүгө ишенимдүүсүзбү?')) {
-            try {
-                await deleteUser(id);
-                setUsers((prev) => prev.filter((u) => u.id !== id));
-                toast.success('Колдонуучу ийгиликтүү өчүрүлдү');
-            } catch {
-                toast.error('Колдонуучуну өчүрүүдө ката кетти');
-            }
+    const requestConfirmation = useCallback((config) => {
+        setConfirmation(config);
+    }, []);
+
+    const closeConfirmation = useCallback(() => {
+        setConfirmation(null);
+    }, []);
+
+    const confirmAndRun = useCallback(async () => {
+        if (!confirmation?.onConfirm) return;
+        try {
+            await confirmation.onConfirm();
+        } catch {
+            // handled in action handlers
+        } finally {
+            setConfirmation(null);
         }
+    }, [confirmation]);
+
+    const handleDeleteUser = async (id) => {
+        requestConfirmation({
+            title: 'Колдонуучуну өчүрүү',
+            message: 'Бул колдонуучуну өчүрүүгө ишенимдүүсүзбү?',
+            confirmLabel: 'Өчүрүү',
+            confirmVariant: 'danger',
+            onConfirm: async () => {
+                try {
+                    await deleteUser(id);
+                    setUsers((prev) => prev.filter((u) => u.id !== id));
+                    toast.success('Колдонуучу ийгиликтүү өчүрүлдү');
+                } catch {
+                    toast.error('Колдонуучуну өчүрүүдө ката кетти');
+                }
+            },
+        });
     };
 
     const handleRoleChange = async (userId, newRole) => {
@@ -414,21 +482,45 @@ const AdminPanel = () => {
     };
 
     const handleDeleteCourse = async (id) => {
-        if (window.confirm('Бул курсту өчүрүүгө ишенимдүүсүзбү?')) {
-            try {
-                await deleteCourse(id);
-                setCourses((prev) => prev.filter((c) => c.id !== id));
-                toast.success('Курс ийгиликтүү өчүрүлдү');
-            } catch {
-                toast.error('Курсту өчүрүүдө ката кетти');
-            }
-        }
+        requestConfirmation({
+            title: 'Курсту өчүрүү',
+            message: 'Бул курсту өчүрүүгө ишенимдүүсүзбү?',
+            confirmLabel: 'Өчүрүү',
+            confirmVariant: 'danger',
+            onConfirm: async () => {
+                try {
+                    await deleteCourse(id);
+                    setCourses((prev) => prev.filter((c) => c.id !== id));
+                    toast.success('Курс ийгиликтүү өчүрүлдү');
+                } catch {
+                    toast.error('Курсту өчүрүүдө ката кетти');
+                }
+            },
+        });
     };
 
     const handleEnrollUser = async (userId, courseId) => {
         if (!userId) return;
         try {
-            await enrollUserInCourse(userId, courseId);
+            const selectedCourse = courses.find((course) => Number(course.id) === Number(courseId));
+            const normalizedCourseType = normalizeEnrollmentCourseType(selectedCourse?.courseType);
+            const selectedGroupId = selectedEnrollmentGroupIds[String(courseId)];
+
+            if (
+                ['offline', 'online_live'].includes(normalizedCourseType) &&
+                (!selectedGroupId || Number.isNaN(Number(selectedGroupId)))
+            ) {
+                toast.error('Delivery курс үчүн адегенде группаны тандаңыз');
+                return;
+            }
+
+            await enrollUserInCourse(userId, courseId, {
+                courseType: normalizedCourseType,
+                groupId:
+                    ['offline', 'online_live'].includes(normalizedCourseType) && selectedGroupId
+                        ? Number(selectedGroupId)
+                        : undefined,
+            });
             toast.success('Студент курска ийгиликтүү катталды');
         } catch {
             toast.error('Каттоодо ката кетти');
@@ -463,15 +555,21 @@ const AdminPanel = () => {
     };
 
     const handleDeleteCategory = async (id) => {
-        if (window.confirm('Бул категорияны өчүрүүгө ишенимдүүсүзбү?')) {
-            try {
-                await deleteCategory(id);
-                setCategories((prev) => prev.filter((c) => c.id !== id));
-                toast.success('Категория ийгиликтүү өчүрүлдү');
-            } catch {
-                toast.error('Категорияны өчүрүүдө ката кетти');
-            }
-        }
+        requestConfirmation({
+            title: 'Категорияны өчүрүү',
+            message: 'Бул категорияны өчүрүүгө ишенимдүүсүзбү?',
+            confirmLabel: 'Өчүрүү',
+            confirmVariant: 'danger',
+            onConfirm: async () => {
+                try {
+                    await deleteCategory(id);
+                    setCategories((prev) => prev.filter((c) => c.id !== id));
+                    toast.success('Категория ийгиликтүү өчүрүлдү');
+                } catch {
+                    toast.error('Категорияны өчүрүүдө ката кетти');
+                }
+            },
+        });
     };
 
     const handleTranscode = async () => {
@@ -524,15 +622,21 @@ const AdminPanel = () => {
     };
 
     const handleDeleteCompany = async (companyId) => {
-        if (window.confirm('Бул компанияны өчүрүүгө ишенимдүүсүзбү?')) {
-            try {
-                await deleteCompany(companyId);
-                setCompanies((prev) => prev.filter((company) => company.id !== companyId));
-                toast.success('Компания ийгиликтүү өчүрүлдү');
-            } catch {
-                toast.error('Компанияны өчүрүүдө ката кетти');
-            }
-        }
+        requestConfirmation({
+            title: 'Компанияны өчүрүү',
+            message: 'Бул компанияны өчүрүүгө ишенимдүүсүзбү?',
+            confirmLabel: 'Өчүрүү',
+            confirmVariant: 'danger',
+            onConfirm: async () => {
+                try {
+                    await deleteCompany(companyId);
+                    setCompanies((prev) => prev.filter((company) => company.id !== companyId));
+                    toast.success('Компания ийгиликтүү өчүрүлдү');
+                } catch {
+                    toast.error('Компанияны өчүрүүдө ката кетти');
+                }
+            },
+        });
     };
 
     // Advanced company management handlers
@@ -559,16 +663,21 @@ const AdminPanel = () => {
     };
 
     const handleClearCourseCompany = async (courseId) => {
-        if (window.confirm('Бул курстун бардык компания таандоолорун алырга ишенимдүүсүзбү?')) {
-            try {
-                await clearCourseCompany(courseId);
-                toast.success('Курстун компания таандоолору тазаланды');
-                // Reload courses to update company assignments
-                loadCoursesAndCategories();
-            } catch {
-                toast.error('Компания таандоолорду тазалоодо ката кетти');
-            }
-        }
+        requestConfirmation({
+            title: 'Компания байланыштарын тазалоо',
+            message: 'Бул курстун бардык компания таандоолорун алырга ишенимдүүсүзбү?',
+            confirmLabel: 'Тазалоо',
+            confirmVariant: 'danger',
+            onConfirm: async () => {
+                try {
+                    await clearCourseCompany(courseId);
+                    toast.success('Курстун компания таандоолору тазаланды');
+                    loadCoursesAndCategories();
+                } catch {
+                    toast.error('Компания таандоолорду тазалоодо ката кетти');
+                }
+            },
+        });
     };
 
     const handleUploadCompanyLogo = async (companyId, file) => {
@@ -613,15 +722,21 @@ const AdminPanel = () => {
     };
 
     const handleDeleteSkill = async (skillId) => {
-        if (window.confirm('Бул скилди өчүрүүгө ишенимдүүсүзбү?')) {
-            try {
-                await deleteSkill(skillId);
-                setSkills((prev) => prev.filter((skill) => skill.id !== skillId));
-                toast.success('Скилл ийгиликтүү өчүрүлдү');
-            } catch {
-                toast.error('Скилди өчүрүүдө ката кетти');
-            }
-        }
+        requestConfirmation({
+            title: 'Скиллди өчүрүү',
+            message: 'Бул скилди өчүрүүгө ишенимдүүсүзбү?',
+            confirmLabel: 'Өчүрүү',
+            confirmVariant: 'danger',
+            onConfirm: async () => {
+                try {
+                    await deleteSkill(skillId);
+                    setSkills((prev) => prev.filter((skill) => skill.id !== skillId));
+                    toast.success('Скилл ийгиликтүү өчүрүлдү');
+                } catch {
+                    toast.error('Скилди өчүрүүдө ката кетти');
+                }
+            },
+        });
     };
 
     // AI Prompt management handlers
@@ -659,14 +774,40 @@ const AdminPanel = () => {
     };
 
     const handleDeletePrompt = async (promptId) => {
-        if (window.confirm('Бул AI промптти өчүрүүгө ишенимдүүсүзбү?')) {
-            try {
-                await deleteCourseAiPrompt(promptId);
-                setAiPrompts((prev) => prev.filter((prompt) => prompt.id !== promptId));
-                toast.success('AI промпт ийгиликтүү өчүрүлдү');
-            } catch {
-                toast.error('AI промптти өчүрүүдө ката кетти');
-            }
+        requestConfirmation({
+            title: 'AI промптти өчүрүү',
+            message: 'Бул AI промптти өчүрүүгө ишенимдүүсүзбү?',
+            confirmLabel: 'Өчүрүү',
+            confirmVariant: 'danger',
+            onConfirm: async () => {
+                try {
+                    await deleteCourseAiPrompt(promptId);
+                    setAiPrompts((prev) => prev.filter((prompt) => prompt.id !== promptId));
+                    toast.success('AI промпт ийгиликтүү өчүрүлдү');
+                } catch {
+                    toast.error('AI промптти өчүрүүдө ката кетти');
+                }
+            },
+        });
+    };
+
+    const handleApprovePendingCourse = async (courseId) => {
+        try {
+            await markCourseApproved(courseId);
+            setPendingCourses((prev) => prev.filter((course) => course.id !== courseId));
+            toast.success('Курс ийгиликтүү бекитилди');
+        } catch {
+            toast.error('Курсту бекитүүдө ката кетти');
+        }
+    };
+
+    const handleRejectPendingCourse = async (courseId) => {
+        try {
+            await markCourseRejected(courseId);
+            setPendingCourses((prev) => prev.filter((course) => course.id !== courseId));
+            toast.success('Курс баш тартылган тизмеге жылдырылды');
+        } catch {
+            toast.error('Курстан баш тартууда ката кетти');
         }
     };
 
@@ -681,16 +822,20 @@ const AdminPanel = () => {
     };
 
     const deleteNotification = async (notificationId) => {
-        if (window.confirm('Бул билдирүүнү өчүрүүгө ишенимдүүсүзбү?')) {
-            try {
-                // For contact messages, we'll remove from local state
-                // In a real implementation, this would call a delete API
-                setContacts((prev) => prev.filter((contact) => contact.id !== notificationId));
-                toast.success('Билдирүү ийгиликтүү өчүрүлдү');
-            } catch {
-                toast.error('Билдирүүнү өчүрүүдө ката кетти');
-            }
-        }
+        requestConfirmation({
+            title: 'Билдирүүнү өчүрүү',
+            message: 'Бул билдирүүнү өчүрүүгө ишенимдүүсүзбү?',
+            confirmLabel: 'Өчүрүү',
+            confirmVariant: 'danger',
+            onConfirm: async () => {
+                try {
+                    setContacts((prev) => prev.filter((contact) => contact.id !== notificationId));
+                    toast.success('Билдирүү ийгиликтүү өчүрүлдү');
+                } catch {
+                    toast.error('Билдирүүнү өчүрүүдө ката кетти');
+                }
+            },
+        });
     };
 
     // Effects for loading data based on active tab
@@ -813,6 +958,8 @@ const AdminPanel = () => {
                         newCategory={newCategory}
                         editingCategoryId={editingCategoryId}
                         editingCategoryName={editingCategoryName}
+                        courseGroupsByCourseId={courseGroupsByCourseId}
+                        selectedEnrollmentGroupIds={selectedEnrollmentGroupIds}
                         transcodeCourseId={transcodeCourseId}
                         transcodeSectionId={transcodeSectionId}
                         transcodeLessonId={transcodeLessonId}
@@ -820,6 +967,7 @@ const AdminPanel = () => {
                         setNewCategory={setNewCategory}
                         setEditingCategoryId={setEditingCategoryId}
                         setEditingCategoryName={setEditingCategoryName}
+                        setSelectedEnrollmentGroupIds={setSelectedEnrollmentGroupIds}
                         setTranscodeCourseId={setTranscodeCourseId}
                         setTranscodeSectionId={setTranscodeSectionId}
                         setTranscodeLessonId={setTranscodeLessonId}
@@ -834,348 +982,64 @@ const AdminPanel = () => {
 
             case 'companies':
                 return (
-                    <div className="bg-white dark:bg-gray-800 shadow-lg rounded-2xl p-4 border border-slate-200 dark:border-slate-700">
-                        <h2 className="text-2xl font-semibold mb-4">Компаниялар</h2>
-
-                        {/* Company Creation */}
-                        <div className="flex gap-2 mb-4">
-                            <input
-                                value={newCompanyName}
-                                onChange={(e) => setNewCompanyName(e.target.value)}
-                                className="border border-gray-200 dark:border-gray-700 px-3 py-2 rounded-xl w-full bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
-                                placeholder="Жаңы компаниянын аталышы"
-                            />
-                            <button
-                                onClick={handleCreateCompany}
-                                className="bg-gradient-to-r from-edubot-orange to-edubot-soft hover:from-edubot-soft hover:to-edubot-orange text-white px-4 py-2 rounded-xl whitespace-nowrap transition-all duration-300 transform hover:scale-105 hover:shadow-lg hover:shadow-edubot-orange/30 group"
-                            >
-                                <span className="transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3">
-                                    ➕ Компания кошуу
-                                </span>
-                            </button>
-                        </div>
-
-                        {/* Company Search */}
-                        <div className="flex gap-2 mb-4">
-                            <input
-                                value={companySearch}
-                                onChange={(e) => setCompanySearch(e.target.value)}
-                                className="border border-gray-200 dark:border-gray-700 px-3 py-2 rounded-xl w-full bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
-                                placeholder="Компаниянын аталышы боюнча издөө"
-                            />
-                        </div>
-
-                        {/* Company List */}
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-sm">
-                                <thead>
-                                    <tr className="border-b">
-                                        <th className="p-2 text-left">Аты</th>
-                                        <th className="p-2 text-left">Каттоолор</th>
-                                        <th className="p-2 text-left">Аракеттер</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {companies.map((company) => (
-                                        <tr key={company.id} className="border-b">
-                                            <td className="p-2">{company.name}</td>
-                                            <td className="p-2">{company.enrollmentCount || 0}</td>
-                                            <td className="p-2">
-                                                <div className="flex gap-2 flex-wrap">
-                                                    {/* Basic Actions */}
-                                                    <button
-                                                        onClick={() => {
-                                                            const newName = prompt('Компаниянын жаңы аталышы:', company.name);
-                                                            if (newName && newName !== company.name) {
-                                                                handleUpdateCompany(company.id, newName);
-                                                            }
-                                                        }}
-                                                        className="text-edubot-orange hover:underline text-xs"
-                                                    >
-                                                        Өзгөртүү
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleDeleteCompany(company.id)}
-                                                        className="text-red-500 hover:underline text-xs"
-                                                    >
-                                                        Өчүрүү
-                                                    </button>
-
-                                                    {/* Advanced Actions */}
-                                                    <div className="border-l border-gray-300 pl-2 ml-2">
-                                                        <button
-                                                            onClick={() => {
-                                                                const fileInput = document.createElement('input');
-                                                                fileInput.type = 'file';
-                                                                fileInput.accept = 'image/*';
-                                                                fileInput.onchange = (e) => {
-                                                                    if (e.target.files[0]) {
-                                                                        handleUploadCompanyLogo(company.id, e.target.files[0]);
-                                                                    }
-                                                                };
-                                                                fileInput.click();
-                                                            }}
-                                                            className="text-green-500 hover:underline text-xs"
-                                                        >
-                                                            Логотип жүктөө
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-
-                        {/* Course Assignment Section */}
-                        <div className="mt-6 p-4 border border-gray-200 dark:border-gray-700 rounded-2xl">
-                            <h3 className="text-lg font-semibold mb-4">Курс таандоолор</h3>
-                            <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-                                Курстарды компанияларга таандоңуз үчүн бөлүмү
-                            </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                {courses.slice(0, 6).map((course) => (
-                                    <div key={course.id} className="p-3 border border-gray-200 dark:border-gray-600 rounded">
-                                        <div className="flex justify-between items-start">
-                                            <div>
-                                                <p className="font-medium text-sm">{course.title}</p>
-                                                <p className="text-xs text-gray-500">
-                                                    Азыркы компания: {course.company?.name || 'Таандылган эмес'}
-                                                </p>
-                                            </div>
-                                            <div className="flex gap-1">
-                                                <select
-                                                    value={course.company?.id || ''}
-                                                    onChange={(e) => {
-                                                        if (e.target.value) {
-                                                            handleAssignCourseToCompany(course.id, e.target.value);
-                                                        } else {
-                                                            handleClearCourseCompany(course.id);
-                                                        }
-                                                    }}
-                                                    className="text-xs border border-gray-300 rounded px-2 py-1"
-                                                >
-                                                    <option value="">Компания тандаңыз</option>
-                                                    {companies.map((company) => (
-                                                        <option key={company.id} value={company.id}>
-                                                            {company.name}
-                                                        </option>
-                                                    ))}
-                                                </select>
-                                                {course.company?.id && (
-                                                    <button
-                                                        onClick={() => handleUnassignCourseFromCompany(course.id, course.company.id)}
-                                                        className="text-xs text-red-500 hover:underline"
-                                                    >
-                                                        Алынды
-                                                    </button>
-                                                )}
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
+                    <AdminCompaniesTab
+                        companies={companies}
+                        companySearch={companySearch}
+                        setCompanySearch={setCompanySearch}
+                        newCompanyName={newCompanyName}
+                        setNewCompanyName={setNewCompanyName}
+                        courses={courses}
+                        onCreateCompany={handleCreateCompany}
+                        onUpdateCompany={handleUpdateCompany}
+                        onDeleteCompany={handleDeleteCompany}
+                        onUploadCompanyLogo={handleUploadCompanyLogo}
+                        onAssignCourseToCompany={handleAssignCourseToCompany}
+                        onClearCourseCompany={handleClearCourseCompany}
+                        onUnassignCourseFromCompany={handleUnassignCourseFromCompany}
+                    />
                 );
 
             case 'skills':
                 return (
-                    <div className="bg-white dark:bg-gray-800 shadow-lg rounded-2xl p-4 border border-slate-200 dark:border-slate-700">
-                        <h2 className="text-2xl font-semibold mb-4">Скиллдер</h2>
-                        <div className="flex gap-2 mb-4">
-                            <input
-                                value={newSkillName}
-                                onChange={(e) => setNewSkillName(e.target.value)}
-                                className="border border-gray-200 dark:border-gray-700 px-3 py-2 rounded-xl w-full bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
-                                placeholder="Жаңы скиллдин аталышы"
-                            />
-                            <button
-                                onClick={handleCreateSkill}
-                                className="bg-gradient-to-r from-edubot-orange to-edubot-soft hover:from-edubot-soft hover:to-edubot-orange text-white px-4 py-2 rounded-xl whitespace-nowrap transition-all duration-300 transform hover:scale-105 hover:shadow-lg hover:shadow-edubot-orange/30 group"
-                            >
-                                <span className="transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3">
-                                    ➕ Кошуу
-                                </span>
-                            </button>
-                        </div>
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-sm">
-                                <thead>
-                                    <tr className="border-b">
-                                        <th className="p-2 text-left">Скилл</th>
-                                        <th className="p-2 text-left">Аракеттер</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {skills.map((skill) => (
-                                        <tr key={skill.id} className="border-b">
-                                            <td className="p-2">{skill.name}</td>
-                                            <td className="p-2">
-                                                <div className="flex gap-2">
-                                                    <button
-                                                        onClick={() => {
-                                                            const newName = prompt('Скиллдин жаңы аталышы:', skill.name);
-                                                            if (newName && newName !== skill.name) {
-                                                                handleUpdateSkill(skill.id, newName);
-                                                            }
-                                                        }}
-                                                        className="text-edubot-orange hover:underline mr-2"
-                                                    >
-                                                        Өзгөртүү
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleDeleteSkill(skill.id)}
-                                                        className="text-red-500 hover:underline"
-                                                    >
-                                                        Өчүрүү
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
+                    <AdminSkillsTab
+                        skills={skills}
+                        newSkillName={newSkillName}
+                        setNewSkillName={setNewSkillName}
+                        onCreateSkill={handleCreateSkill}
+                        onUpdateSkill={handleUpdateSkill}
+                        onDeleteSkill={handleDeleteSkill}
+                    />
                 );
 
             case 'ai-prompts':
                 return (
-                    <div className="bg-white dark:bg-gray-800 shadow-lg rounded-2xl p-4 border border-slate-200 dark:border-slate-700">
-                        <h2 className="text-2xl font-semibold mb-4">AI Промпттар</h2>
-                        <div className="mb-4">
-                            <label className="block text-sm mb-2">Курс тандаңыз</label>
-                            <select
-                                value={aiPromptCourseId || ''}
-                                onChange={(e) => setAiPromptCourseId(e.target.value)}
-                                className="border border-gray-200 dark:border-gray-700 px-3 py-2 rounded-xl w-full bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
-                            >
-                                <option value="">Курс тандаңыз</option>
-                                {courses.map((course) => (
-                                    <option key={course.id} value={course.id}>
-                                        {course.title}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-                        <div className="mb-4">
-                            <label className="block text-sm mb-2">Жаңы промпт</label>
-                            <div className="flex gap-2">
-                                <input
-                                    type="text"
-                                    value={newPromptText}
-                                    onChange={(e) => setNewPromptText(e.target.value)}
-                                    className="border border-gray-200 dark:border-gray-700 px-3 py-2 rounded-xl flex-1 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
-                                    placeholder="Промпт текстин киргизиңиз"
-                                />
-                                <select
-                                    value={newPromptLanguage}
-                                    onChange={(e) => setNewPromptLanguage(e.target.value)}
-                                    className="border border-gray-200 dark:border-gray-700 px-3 py-2 rounded-xl bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
-                                >
-                                    <option value="ky">Кыргызча</option>
-                                    <option value="ru">Русский</option>
-                                    <option value="en">English</option>
-                                </select>
-                                <select
-                                    value={newPromptOrder}
-                                    onChange={(e) => setNewPromptOrder(e.target.value)}
-                                    className="border border-gray-200 dark:border-gray-700 px-3 py-2 rounded-xl bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
-                                >
-                                    <option value="0">Жогорку</option>
-                                    <option value="1">Ортосу</option>
-                                    <option value="2">Аягы</option>
-                                </select>
-                                <input
-                                    type="checkbox"
-                                    checked={newPromptIsActive}
-                                    onChange={(e) => setNewPromptIsActive(e.target.checked)}
-                                    className="ml-2"
-                                />
-                                <label className="text-sm">Активдүү</label>
-                            </div>
-                            <button
-                                onClick={handleCreatePrompt}
-                                className="bg-gradient-to-r from-edubot-orange to-edubot-soft hover:from-edubot-soft hover:to-edubot-orange text-white px-4 py-2 rounded-xl whitespace-nowrap transition-all duration-300 transform hover:scale-105 hover:shadow-lg hover:shadow-edubot-orange/30 group"
-                            >
-                                <span className="transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3">
-                                    ➕ Промпт кошуу
-                                </span>
-                            </button>
-                        </div>
-                        {aiPromptsLoading ? (
-                            <div className="py-6">
-                                <Loader fullScreen={false} />
-                            </div>
-                        ) : aiPrompts.length ? (
-                            <div className="overflow-x-auto">
-                                <table className="w-full text-sm">
-                                    <thead>
-                                        <tr className="border-b">
-                                            <th className="p-2 text-left">Промпт</th>
-                                            <th className="p-2 text-left">Тил</th>
-                                            <th className="p-2 text-left">Тартип</th>
-                                            <th className="p-2 text-left">Аракеттер</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {aiPrompts.map((prompt) => (
-                                            <tr key={prompt.id} className="border-b">
-                                                <td className="p-2">{prompt.text}</td>
-                                                <td className="p-2">{prompt.language}</td>
-                                                <td className="p-2">{prompt.order}</td>
-                                                <td className="p-2">
-                                                    <div className="flex gap-2">
-                                                        <button
-                                                            onClick={() => {
-                                                                const newText = prompt('AI промпттин жаңы текстин киргизиңиз:', prompt.text);
-                                                                const newLanguage = prompt('Тил (ky/ru/en):', prompt.language);
-                                                                const newOrder = prompt('Тартип (0/1/2):', prompt.order.toString());
-                                                                const newActive = confirm('Активдүү өзгөртүүбү?', prompt.isActive ? 'Yes' : 'No');
-
-                                                                if (newText !== prompt.text || newLanguage !== prompt.language || newOrder !== prompt.order.toString() || newActive !== (prompt.isActive ? 'Yes' : 'No')) {
-                                                                    handleUpdatePrompt(prompt.id, {
-                                                                        text: newText,
-                                                                        language: newLanguage,
-                                                                        order: Number(newOrder),
-                                                                        isActive: newActive === 'Yes',
-                                                                    });
-                                                                }
-                                                            }}
-                                                            className="text-edubot-orange hover:underline mr-2"
-                                                        >
-                                                            Өзгөртүү
-                                                        </button>
-                                                        <button
-                                                            onClick={() => handleDeletePrompt(prompt.id)}
-                                                            className="text-red-500 hover:underline"
-                                                        >
-                                                            Өчүрүү
-                                                        </button>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        ) : (
-                            <p className="text-sm text-gray-500 dark:text-gray-400 py-4">
-                                AI промпттар табылган жок
-                            </p>
-                        )}
-                    </div>
+                    <AdminAiPromptsTab
+                        courses={courses}
+                        aiPromptCourseId={aiPromptCourseId}
+                        setAiPromptCourseId={setAiPromptCourseId}
+                        newPromptText={newPromptText}
+                        setNewPromptText={setNewPromptText}
+                        newPromptLanguage={newPromptLanguage}
+                        setNewPromptLanguage={setNewPromptLanguage}
+                        newPromptOrder={newPromptOrder}
+                        setNewPromptOrder={setNewPromptOrder}
+                        newPromptIsActive={newPromptIsActive}
+                        setNewPromptIsActive={setNewPromptIsActive}
+                        aiPrompts={aiPrompts}
+                        aiPromptsLoading={aiPromptsLoading}
+                        onCreatePrompt={handleCreatePrompt}
+                        onUpdatePrompt={handleUpdatePrompt}
+                        onDeletePrompt={handleDeletePrompt}
+                    />
                 );
 
             case 'notifications':
                 return (
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        <div className="bg-white dark:bg-gray-800 shadow-lg rounded-2xl p-4 border border-slate-200 dark:border-slate-700">
+                    <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                        <div className="rounded-3xl border border-edubot-line/80 bg-white/90 p-5 shadow-edubot-card dark:border-slate-700 dark:bg-slate-950">
                             <NotificationsWidget />
                         </div>
-                        <div className="bg-white dark:bg-gray-800 shadow-lg rounded-2xl p-4 border border-slate-200 dark:border-slate-700">
+                        <div className="rounded-3xl border border-edubot-line/80 bg-white/90 p-5 shadow-edubot-card dark:border-slate-700 dark:bg-slate-950">
                             <NotificationsTab />
                         </div>
                     </div>
@@ -1183,114 +1047,30 @@ const AdminPanel = () => {
 
             case 'contacts':
                 return (
-                    <div className="bg-white dark:bg-gray-800 shadow-lg rounded-2xl p-4 border border-slate-200 dark:border-slate-700">
-                        <h2 className="text-2xl font-semibold mb-4">Байланыштар</h2>
-                        {contacts.length ? (
-                            <ul className="space-y-3">
-                                {contacts.map((contact) => (
-                                    <li key={contact.id} className="border border-gray-200 dark:border-gray-800 rounded-2xl p-4 bg-gray-50 dark:bg-gray-900">
-                                        <div className="flex justify-between items-start gap-3">
-                                            <div className="min-w-0">
-                                                <p className="font-semibold text-gray-900 dark:text-gray-100 truncate">
-                                                    {contact.subject || contact.name}
-                                                </p>
-                                                <p className="text-sm text-gray-500 dark:text-gray-400">
-                                                    {contact.email}
-                                                </p>
-                                            </div>
-                                            <div className="flex gap-2">
-                                                <button
-                                                    onClick={() => markNotificationRead(contact.id)}
-                                                    className="bg-gradient-to-r from-edubot-orange to-edubot-soft hover:from-edubot-soft hover:to-edubot-orange text-white px-4 py-2 rounded-xl whitespace-nowrap transition-all duration-300 transform hover:scale-105 hover:shadow-lg hover:shadow-edubot-orange/30 group"
-                                                >
-                                                    <span className="transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3">
-                                                        ✅ Окулган деп белгилөө
-                                                    </span>
-                                                </button>
-                                                <button
-                                                    onClick={() => deleteNotification(contact.id)}
-                                                    className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg whitespace-nowrap transition-all duration-300 transform hover:scale-105 hover:shadow-lg hover:shadow-red-500/30 group"
-                                                >
-                                                    <span className="transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3">
-                                                        ❌ Өчүрүү
-                                                    </span>
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </li>
-                                ))}
-                            </ul>
-                        ) : (
-                            <p className="text-center text-gray-500 dark:text-gray-400 p-4 border border-dashed rounded-2xl">
-                                Байланыштар табылган жок.
-                            </p>
-                        )}
-                    </div>
+                    <AdminContactsTab
+                        contacts={contacts}
+                        onMarkRead={markNotificationRead}
+                        onDelete={deleteNotification}
+                    />
                 );
 
             case 'pending':
                 return (
-                    <div className="bg-white dark:bg-gray-800 shadow-lg rounded-2xl p-4 border border-slate-200 dark:border-slate-700">
-                        <h2 className="text-2xl font-semibold mb-4">Каралуудагы курстар</h2>
-                        {pendingCourses.length ? (
-                            <ul className="space-y-3">
-                                {pendingCourses.map((course) => (
-                                    <li key={course.id} className="border border-gray-200 dark:border-gray-800 rounded-2xl p-4 bg-gray-50 dark:bg-gray-900">
-                                        <div className="flex justify-between items-start gap-3">
-                                            <div className="min-w-0">
-                                                <p className="font-semibold text-gray-900 dark:text-gray-100 truncate">
-                                                    {course.title}
-                                                </p>
-                                                <p className="text-sm text-gray-500 dark:text-gray-400">
-                                                    Окутуучу: {course.instructor?.fullName || '—'}
-                                                </p>
-                                            </div>
-                                            <div className="flex gap-2">
-                                                <button
-                                                    onClick={() => markCourseApproved(course.id)}
-                                                    className="bg-edubot-green hover:bg-emerald-600 text-white px-4 py-2 rounded-xl whitespace-nowrap transition-all duration-300 transform hover:scale-105 hover:shadow-lg hover:shadow-emerald-500/30 group"
-                                                >
-                                                    <span className="transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3">
-                                                        ✅ Бекитүү
-                                                    </span>
-                                                </button>
-                                                <button
-                                                    onClick={() => markCourseRejected(course.id)}
-                                                    className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg whitespace-nowrap transition-all duration-300 transform hover:scale-105 hover:shadow-lg hover:shadow-red-500/30 group"
-                                                >
-                                                    <span className="transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3">
-                                                        ❌ Баш тартуу
-                                                    </span>
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </li>
-                                ))}
-                            </ul>
-                        ) : (
-                            <p className="text-center text-gray-500 dark:text-gray-400 p-4 border border-dashed rounded-2xl">
-                                Каралуудагы курстар табылган жок.
-                            </p>
-                        )}
-                    </div>
+                    <AdminPendingCoursesTab
+                        pendingCourses={pendingCourses}
+                        onApprove={handleApprovePendingCourse}
+                        onReject={handleRejectPendingCourse}
+                    />
                 );
 
             case 'integration':
                 return <IntegrationTab />;
 
             case 'attendance':
-                return (
-                    <div className="bg-white dark:bg-gray-800 shadow-lg rounded-2xl p-4 border border-slate-200 dark:border-slate-700">
-                        <AttendancePage embedded />
-                    </div>
-                );
+                return <AttendancePage embedded />;
 
             case 'analytics':
-                return (
-                    <div className="bg-white dark:bg-gray-800 shadow-lg rounded-2xl p-4 border border-slate-200 dark:border-slate-700">
-                        <AdminAnalyticsPage />
-                    </div>
-                );
+                return <AdminAnalyticsPage />;
 
             default:
                 // For other tabs, render the original inline components
@@ -1353,6 +1133,15 @@ const AdminPanel = () => {
 
             {/* Floating Action Button */}
             <FloatingActionButton role="admin" />
+            <ConfirmationModal
+                isOpen={!!confirmation}
+                onClose={closeConfirmation}
+                onConfirm={confirmAndRun}
+                title={confirmation?.title || 'Аракетти ырастоо'}
+                message={confirmation?.message || ''}
+                confirmLabel={confirmation?.confirmLabel || 'Ырастоо'}
+                confirmVariant={confirmation?.confirmVariant || 'danger'}
+            />
         </DashboardLayout>
     );
 };

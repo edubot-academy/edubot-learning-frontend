@@ -130,7 +130,13 @@ module.exports = {
                     '@apply pl-11': {},
                 },
                 '.dashboard-select': {
-                    '@apply appearance-none': {},
+                    '@apply w-full appearance-none rounded-2xl border border-edubot-line bg-white px-4 py-3 pr-11 text-sm text-edubot-ink outline-none transition-all duration-300 ease-out focus:-translate-y-0.5 focus:border-edubot-orange focus:ring-4 focus:ring-edubot-orange/10 hover:border-edubot-orange/50 hover:shadow-edubot-soft dark:border-slate-700 dark:bg-slate-900 dark:text-white': {},
+                    backgroundImage:
+                        "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16' fill='none'%3E%3Cpath d='M4 6L8 10L12 6' stroke='%2364758b' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E\")",
+                    backgroundRepeat: 'no-repeat',
+                    backgroundPosition: 'right 1rem center',
+                    backgroundSize: '1rem 1rem',
+                    cursor: 'pointer',
                 },
                 '.dashboard-button-primary': {
                     '@apply inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-edubot-orange to-edubot-soft px-4 py-2.5 text-sm font-semibold text-white shadow-edubot-soft transition-all duration-300 ease-out hover:-translate-y-1 hover:scale-[1.01] hover:shadow-edubot-hover-soft active:translate-y-0 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60': {},

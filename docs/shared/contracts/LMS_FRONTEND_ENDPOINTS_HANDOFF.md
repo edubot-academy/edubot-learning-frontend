@@ -170,6 +170,52 @@ Response:
 
 ---
 
+### GET `/course-groups/:groupId/students`
+
+Return the authoritative roster for one academic group.
+
+Roles:
+
+- `admin`, `assistant`, `instructor`
+
+Query params:
+
+- `page`
+- `limit`
+- `q`
+- `progressGte`
+- `progressLte`
+
+Response:
+
+```json
+{
+    "items": [
+        {
+            "id": 101,
+            "userId": 101,
+            "fullName": "Aizada Asanova",
+            "email": "aizada@example.com",
+            "groupId": 15,
+            "courseGroupId": 15,
+            "courseId": 12,
+            "enrolledAt": "2026-04-01T08:00:00.000Z"
+        }
+    ],
+    "total": 1,
+    "page": 1,
+    "limit": 50
+}
+```
+
+Notes:
+
+- This endpoint should be the primary roster source for delivery-course session flows.
+- Session attendance and session homework assignment must validate against this group roster.
+- Frontend dashboard/session flows should not fall back to course-wide student filtering when this endpoint is available.
+
+---
+
 ## 3. Attendance (Session-based)
 
 ### POST `/attendance/sessions/:sessionId/bulk`
@@ -237,9 +283,148 @@ Response:
 - `POST /attendance/session` (course/date based)
 - `GET /attendance/course?courseId=<id>&from=<date>&to=<date>`
 
+Notes:
+
+- These endpoints are legacy-only.
+- Instructor/admin dashboard attendance and session workspace should use session-based attendance endpoints with an explicit `sessionId`.
+- Frontend should not submit attendance writes unless a concrete session is selected.
+
 ---
 
-## 4. Live Integration
+## 4. Session Homework
+
+### GET `/course-sessions/:sessionId/homework?includeUnpublished=<bool>`
+
+List homework for one session.
+
+Roles:
+
+- `admin`, `assistant`, `instructor`, `student`
+
+Notes:
+
+- `student` sees only published homework that is visible to the logged-in learner.
+- `includeUnpublished=true` is intended for internal roles only.
+
+---
+
+### POST `/course-sessions/:sessionId/homework`
+
+Create homework for one session.
+
+Roles:
+
+- `admin`, `assistant`, `instructor`
+
+Request body:
+
+```json
+{
+    "title": "Homework 1",
+    "description": "Complete the worksheet",
+    "deadline": "2026-04-05T18:00:00.000Z",
+    "maxScore": 100,
+    "isPublished": true,
+    "assignedStudentIds": [101, 102]
+}
+```
+
+Notes:
+
+- Backend also accepts `dueAt`; frontend may normalize `deadline | dueAt | dueDate` for display.
+- `assignedStudentIds` must belong to the selected group roster for that session.
+
+---
+
+### PATCH `/course-sessions/:sessionId/homework/:homeworkId`
+
+Update one session homework item.
+
+Roles:
+
+- `admin`, `assistant`, `instructor`
+
+Notes:
+
+- Editing homework should preserve publish state unless `isPublished` is changed explicitly.
+
+---
+
+### POST `/course-sessions/:sessionId/homework/:homeworkId/submissions`
+
+Submit student homework.
+
+Roles:
+
+- `student`
+
+Request body:
+
+```json
+{
+    "text": "My answer",
+    "link": "https://drive.google.com/...",
+    "attachmentUrl": "https://signed.example.com/file.pdf"
+}
+```
+
+Notes:
+
+- Student payload aliases `text` -> `answerText` and `link` -> `attachmentUrl` are supported.
+- Submission must contain at least one of text, link, or uploaded attachment.
+
+---
+
+### POST `/course-sessions/:sessionId/homework/:homeworkId/submissions/upload`
+
+Upload one homework attachment before submission save.
+
+Roles:
+
+- `student`
+
+Content type:
+
+- `multipart/form-data`
+
+Form fields:
+
+- `file`
+
+Response:
+
+```json
+{
+    "key": "homework-submissions/dev/session-118/homework-2/student-55/1711612345678-solution.pdf",
+    "url": "https://signed.example.com/...",
+    "fileName": "solution.pdf",
+    "contentType": "application/pdf",
+    "size": 125004
+}
+```
+
+Validation:
+
+- max size: `20 MB`
+- allowed academic file types include PDF, DOC/DOCX, XLS/XLSX, PPT/PPTX, ZIP, TXT, CSV, JSON, JPG/JPEG, PNG, WEBP
+
+---
+
+### GET `/course-sessions/:sessionId/homework/:homeworkId/submissions`
+
+List instructor review submissions for one session homework item.
+
+Roles:
+
+- `admin`, `assistant`, `instructor`
+
+Notes:
+
+- Submission read payload should expose attachment metadata and downloadable URLs for instructor review UI.
+
+---
+
+## 5. Live Integration
 
 ### POST `/live-integration/sessions/:sessionId/meeting`
 
@@ -401,7 +586,7 @@ Response:
 
 ---
 
-## 5. Updated existing course endpoints
+## 6. Updated existing course endpoints
 
 ### POST `/courses`
 
@@ -413,7 +598,7 @@ New payload field:
 
 ---
 
-## 6. Zoom webhook endpoint (backend integration)
+## 7. Zoom webhook endpoint (backend integration)
 
 ### POST `/webhooks/zoom`
 
@@ -435,7 +620,7 @@ Responsibilities:
 4. For attendance bulk submit, send all visible students for current session in one request.
 5. For live classes, use `GET /live-integration/sessions/:sessionId/meeting` to restore join link state.
 
-## 7. Admin Ops Endpoints (LMS backend operations)
+## 8. Admin Ops Endpoints (LMS backend operations)
 
 ### GET `/live-integration/admin/health`
 
@@ -503,6 +688,57 @@ Replay one stored Zoom webhook event by DB id.
 Roles:
 
 - `admin`
+
+---
+
+## 9. CRM Integration Admin Endpoints (LMS dashboard operations)
+
+### GET `/admin/integration/health`
+
+Return CRM/LMS webhook queue health.
+
+Roles:
+
+- `admin`, `assistant`
+
+---
+
+### GET `/admin/integration/risk-summary`
+
+Return risk severity/issue summary for the integration dashboard.
+
+Roles:
+
+- `admin`, `assistant`
+
+---
+
+### GET `/admin/integration/events?page=<n>&limit=<n>&status=<pending|sent|failed>&eventType=<risk_alert|enrollment_status_changed>`
+
+List CRM integration events for the LMS dashboard.
+
+Roles:
+
+- `admin`, `assistant`
+
+Notes:
+
+- Enrollment monitoring UI should use `eventType=enrollment_status_changed`.
+- `status` here means webhook delivery state, not LMS enrollment state.
+
+---
+
+### GET `/admin/integration/events/:id`
+
+Get one CRM integration event with full payload detail.
+
+Roles:
+
+- `admin`, `assistant`
+
+Notes:
+
+- Dashboard event detail drawers may use this endpoint to show payload JSON, enrollment status, access status, and failure reason.
 
 Response:
 

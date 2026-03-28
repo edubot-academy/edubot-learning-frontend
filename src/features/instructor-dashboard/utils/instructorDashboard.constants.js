@@ -10,6 +10,7 @@ import {
     FiGlobe,
     FiBell,
     FiMessageCircle,
+    FiGrid,
 } from 'react-icons/fi';
 
 export const NAV_ITEMS = [
@@ -17,6 +18,7 @@ export const NAV_ITEMS = [
     { id: 'overview', label: 'Кыскача', icon: FiHome, category: 'primary', priority: 1 },
     { id: 'courses', label: 'Курстарым', icon: FiBookOpen, category: 'primary', priority: 2 },
     { id: 'students', label: 'Студенттер', icon: FiUsers, category: 'primary', priority: 3 },
+    { id: 'groups', label: 'Группалар', icon: FiGrid, category: 'primary', priority: 4 },
 
     // Secondary Navigation - Learning Management
     { id: 'offerings', label: 'Агымдар', icon: FiLayers, category: 'secondary', priority: 1 },

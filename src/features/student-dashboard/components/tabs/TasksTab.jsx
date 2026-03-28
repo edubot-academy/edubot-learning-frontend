@@ -10,11 +10,36 @@ import {
     FiFileText,
     FiFilter,
     FiLink,
+    FiPaperclip,
     FiSearch,
     FiSend,
 } from 'react-icons/fi';
-import { DashboardMetricCard } from '../../../../components/ui/dashboard';
+import {
+    DashboardFilterBar,
+    DashboardMetricCard,
+    DashboardWorkspaceHero,
+    StatusBadge,
+} from '../../../../components/ui/dashboard';
 import { getTaskKey, resolveSessionHomeworkIds } from '../../utils/studentDashboard.helpers.js';
+
+const MAX_HOMEWORK_FILE_SIZE_BYTES = 20 * 1024 * 1024;
+const ALLOWED_HOMEWORK_FILE_EXTENSIONS = new Set([
+    'pdf',
+    'doc',
+    'docx',
+    'xls',
+    'xlsx',
+    'ppt',
+    'pptx',
+    'zip',
+    'json',
+    'txt',
+    'csv',
+    'jpg',
+    'jpeg',
+    'png',
+    'webp',
+]);
 
 const STATUS_META = {
     overdue: {
@@ -81,6 +106,39 @@ const getTaskDescription = (task = {}) =>
     task.text ||
     'Тапшырма сүрөттөмөсү азырынча берилген эмес.';
 
+const formatBytes = (value) => {
+    if (!Number.isFinite(value) || value <= 0) return '0 B';
+    const units = ['B', 'KB', 'MB', 'GB'];
+    let size = value;
+    let index = 0;
+    while (size >= 1024 && index < units.length - 1) {
+        size /= 1024;
+        index += 1;
+    }
+    return `${size.toFixed(size >= 10 || index === 0 ? 0 : 1)} ${units[index]}`;
+};
+
+const validateHomeworkFile = (file) => {
+    if (!(file instanceof File)) return { valid: true };
+
+    const extension = file.name.split('.').pop()?.toLowerCase() || '';
+    if (!ALLOWED_HOMEWORK_FILE_EXTENSIONS.has(extension)) {
+        return {
+            valid: false,
+            message: 'Колдоого алынган файл түрүн тандаңыз: PDF, Word, Excel, PowerPoint, ZIP, TXT, CSV же сүрөт.',
+        };
+    }
+
+    if (file.size > MAX_HOMEWORK_FILE_SIZE_BYTES) {
+        return {
+            valid: false,
+            message: `Файл өтө чоң. Максималдуу көлөм ${formatBytes(MAX_HOMEWORK_FILE_SIZE_BYTES)}.`,
+        };
+    }
+
+    return { valid: true };
+};
+
 const getNormalizedStatus = (task = {}) => {
     const baseStatus = String(task.submissionStatus || task.status || '').toLowerCase();
     const { sessionId, homeworkId } = resolveSessionHomeworkIds(task);
@@ -103,7 +161,7 @@ const getNormalizedStatus = (task = {}) => {
     return 'pending';
 };
 
-const TasksTab = ({ tasks, onSubmitHomework, submittingTaskId }) => {
+const TasksTab = ({ tasks, onSubmitHomework, submittingTaskState }) => {
     const [drafts, setDrafts] = useState({});
     const [statusFilter, setStatusFilter] = useState('all');
     const [courseFilter, setCourseFilter] = useState('all');
@@ -176,14 +234,28 @@ const TasksTab = ({ tasks, onSubmitHomework, submittingTaskId }) => {
         }));
     };
 
+    const handleFileChange = (taskKey, file) => {
+        const nextFile = file || null;
+        const validation = validateHomeworkFile(nextFile);
+
+        if (!validation.valid) {
+            updateDraft(taskKey, 'file', null);
+            updateDraft(taskKey, 'fileError', validation.message);
+            return;
+        }
+
+        updateDraft(taskKey, 'file', nextFile);
+        updateDraft(taskKey, 'fileError', '');
+    };
+
     const submitTask = async (item) => {
         if (!onSubmitHomework) return;
-        const draft = drafts[item.key] || { text: '', link: '' };
+        const draft = drafts[item.key] || { text: '', link: '', file: null };
         const success = await onSubmitHomework(item.task, draft);
         if (success) {
             setDrafts((prev) => ({
                 ...prev,
-                [item.key]: { text: '', link: '' },
+                [item.key]: { text: '', link: '', file: null, fileError: '' },
             }));
             setExpandedTaskId('');
         }
@@ -191,23 +263,13 @@ const TasksTab = ({ tasks, onSubmitHomework, submittingTaskId }) => {
 
     return (
         <div className="space-y-6">
-            <section className="dashboard-panel overflow-hidden">
-                <div className="border-b border-edubot-line/70 px-6 py-5 dark:border-slate-700">
-                    <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-                        <div className="max-w-2xl">
-                            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-edubot-orange">
-                                Student Tasks
-                            </p>
-                            <h2 className="mt-2 text-2xl font-semibold text-edubot-ink dark:text-white">
-                                Тапшырмалар иш мейкиндиги
-                            </h2>
-                            <p className="mt-2 text-sm leading-6 text-edubot-muted dark:text-slate-300">
-                                Тапшырмалардын абалын көрүңүз, мөөнөттөрдү байкаңыз жана жоопторду
-                                ушул эле жерден жөнөтүңүз.
-                            </p>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <DashboardWorkspaceHero
+                className="dashboard-panel"
+                eyebrow="Student Tasks"
+                title="Тапшырмалар иш мейкиндиги"
+                description="Тапшырмалардын абалын көрүңүз, мөөнөттөрдү байкаңыз жана жоопторду ушул эле жерден жөнөтүңүз."
+                metrics={(
+                    <>
                             <DashboardMetricCard label="Жалпы" value={stats.total} icon={FiBookOpen} />
                             <DashboardMetricCard
                                 label="Күтүүдө"
@@ -227,11 +289,10 @@ const TasksTab = ({ tasks, onSubmitHomework, submittingTaskId }) => {
                                 tone="green"
                                 icon={FiCheckCircle}
                             />
-                        </div>
-                    </div>
-                </div>
-
-                <div className="grid gap-3 border-b border-edubot-line/70 px-6 py-5 dark:border-slate-700 lg:grid-cols-[minmax(0,1.5fr),minmax(0,0.7fr),minmax(0,0.7fr)]">
+                    </>
+                )}
+            >
+                <DashboardFilterBar gridClassName="lg:grid-cols-[minmax(0,1.5fr),minmax(0,0.7fr),minmax(0,0.7fr)]">
                     <label className="relative block">
                         <FiSearch className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-edubot-muted" />
                         <input
@@ -270,13 +331,14 @@ const TasksTab = ({ tasks, onSubmitHomework, submittingTaskId }) => {
                             </option>
                         ))}
                     </select>
-                </div>
+                </DashboardFilterBar>
 
-                <div className="space-y-4 p-6">
+                <div className="space-y-4 pt-5">
                     {filteredTasks.length ? (
                         filteredTasks.map((item) => {
                             const draft = drafts[item.key] || { text: '', link: '' };
-                            const isSubmitting = submittingTaskId === item.key;
+                            const isSubmitting = submittingTaskState?.key === item.key;
+                            const isUploading = isSubmitting && submittingTaskState?.phase === 'uploading';
                             const isExpanded = expandedTaskId === item.key;
                             const StatusIcon = item.meta.icon;
 
@@ -297,12 +359,10 @@ const TasksTab = ({ tasks, onSubmitHomework, submittingTaskId }) => {
                                                         <h3 className="text-lg font-semibold text-edubot-ink dark:text-white">
                                                             {item.title}
                                                         </h3>
-                                                        <span
-                                                            className={`inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-semibold ${item.meta.badgeClass}`}
-                                                        >
+                                                        <StatusBadge tone={item.meta.tone || 'default'} className="gap-1">
                                                             <StatusIcon className="h-3.5 w-3.5" />
                                                             {item.meta.label}
-                                                        </span>
+                                                        </StatusBadge>
                                                     </div>
 
                                                     <div className="mt-2 flex flex-wrap gap-x-4 gap-y-2 text-sm text-edubot-muted dark:text-slate-300">
@@ -332,7 +392,7 @@ const TasksTab = ({ tasks, onSubmitHomework, submittingTaskId }) => {
                                                                 Жооп жөнөтүү
                                                             </p>
                                                             <p className="mt-1 text-xs leading-5 text-edubot-muted dark:text-slate-400">
-                                                                Текст же шилтеме кошуп тапшырыңыз.
+                                                                Текст, шилтеме же файл кошуп тапшырыңыз.
                                                             </p>
                                                         </div>
                                                         <button
@@ -370,10 +430,52 @@ const TasksTab = ({ tasks, onSubmitHomework, submittingTaskId }) => {
                                                                     className="dashboard-field dashboard-field-icon"
                                                                 />
                                                             </label>
+                                                            <label className="flex cursor-pointer items-center justify-between gap-3 rounded-2xl border border-dashed border-edubot-line px-4 py-3 text-sm text-edubot-muted transition hover:border-edubot-orange hover:text-edubot-orange dark:border-slate-700 dark:text-slate-300">
+                                                                <span className="inline-flex items-center gap-2">
+                                                                    <FiPaperclip className="h-4 w-4" />
+                                                                    {draft.file?.name ||
+                                                                        'PDF, Word, Excel, сүрөт же ZIP кошуу'}
+                                                                </span>
+                                                                <span className="text-xs font-semibold">
+                                                                    {draft.file ? 'Алмаштыруу' : 'Файл тандоо'}
+                                                                </span>
+                                                                <input
+                                                                    type="file"
+                                                                    className="hidden"
+                                                                    accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip,.json,.txt,.csv,.jpg,.jpeg,.png,.webp"
+                                                                    disabled={isSubmitting}
+                                                                    onChange={(e) =>
+                                                                        handleFileChange(
+                                                                            item.key,
+                                                                            e.target.files?.[0] || null
+                                                                        )
+                                                                    }
+                                                                />
+                                                            </label>
+                                                            {draft.file ? (
+                                                                <div className="text-xs text-edubot-muted dark:text-slate-400">
+                                                                    {formatBytes(draft.file.size)}
+                                                                </div>
+                                                            ) : null}
+                                                            {draft.fileError ? (
+                                                                <div className="text-xs text-red-600 dark:text-red-300">
+                                                                    {draft.fileError}
+                                                                </div>
+                                                            ) : null}
                                                             <div className="flex items-center justify-between gap-3">
-                                                                <p className="text-xs text-edubot-muted dark:text-slate-400">
-                                                                    Жооп же шилтеме кеминде бирөө талап кылынат.
-                                                                </p>
+                                                                <div className="text-xs text-edubot-muted dark:text-slate-400">
+                                                                    <p>Жооп, шилтеме же файлдын кеминде бири талап кылынат.</p>
+                                                                    {isUploading ? (
+                                                                        <p className="mt-1 text-edubot-orange dark:text-edubot-soft">
+                                                                            Файл жүктөлүүдө...
+                                                                        </p>
+                                                                    ) : null}
+                                                                    {isSubmitting && !isUploading ? (
+                                                                        <p className="mt-1 text-edubot-orange dark:text-edubot-soft">
+                                                                            Тапшырма жөнөтүлүүдө...
+                                                                        </p>
+                                                                    ) : null}
+                                                                </div>
                                                                 <button
                                                                     type="button"
                                                                     onClick={() => submitTask(item)}
@@ -381,7 +483,11 @@ const TasksTab = ({ tasks, onSubmitHomework, submittingTaskId }) => {
                                                                     className="dashboard-button-primary min-h-[44px]"
                                                                 >
                                                                     <FiSend className="h-4 w-4" />
-                                                                    {isSubmitting ? 'Жөнөтүлүүдө...' : 'Жөнөтүү'}
+                                                                    {isUploading
+                                                                        ? 'Файл жүктөлүүдө...'
+                                                                        : isSubmitting
+                                                                            ? 'Жөнөтүлүүдө...'
+                                                                            : 'Жөнөтүү'}
                                                                 </button>
                                                             </div>
                                                         </div>
@@ -422,7 +528,7 @@ const TasksTab = ({ tasks, onSubmitHomework, submittingTaskId }) => {
                         </div>
                     )}
                 </div>
-            </section>
+            </DashboardWorkspaceHero>
         </div>
     );
 };
@@ -430,12 +536,15 @@ const TasksTab = ({ tasks, onSubmitHomework, submittingTaskId }) => {
 TasksTab.propTypes = {
     tasks: PropTypes.arrayOf(PropTypes.object).isRequired,
     onSubmitHomework: PropTypes.func,
-    submittingTaskId: PropTypes.string,
+    submittingTaskState: PropTypes.shape({
+        key: PropTypes.string,
+        phase: PropTypes.oneOf(['uploading', 'submitting']),
+    }),
 };
 
 TasksTab.defaultProps = {
     onSubmitHomework: undefined,
-    submittingTaskId: '',
+    submittingTaskState: null,
 };
 
 export default TasksTab;

@@ -12,9 +12,11 @@ import {
     FiVideo,
 } from 'react-icons/fi';
 import {
+    DashboardFilterBar,
     DashboardInsetPanel,
     DashboardMetricCard,
-    DashboardSectionHeader,
+    DashboardWorkspaceHero,
+    StatusBadge,
 } from '../../../../components/ui/dashboard';
 import StudentPanelEmpty from '../shared/StudentPanelEmpty.jsx';
 import {
@@ -110,12 +112,12 @@ const ScheduleTab = ({ offerings, recordings }) => {
 
     if (!scheduleItems.length) {
         return (
-            <section className="dashboard-panel overflow-hidden">
-                <DashboardSectionHeader
+            <DashboardWorkspaceHero
+                className="dashboard-panel"
                     eyebrow="Schedule"
                     title="Жүгүртмө"
                     description="Жакынкы сабактар, live терезелер жана жазуулар ушул жерде көрсөтүлөт."
-                />
+                >
                 <div className="p-6">
                     <StudentPanelEmpty
                         icon={FiCalendar}
@@ -123,14 +125,14 @@ const ScheduleTab = ({ offerings, recordings }) => {
                         description="Сессиялар пайда болгондо, алар бул жерде топтолуп көрүнөт."
                     />
                 </div>
-            </section>
+            </DashboardWorkspaceHero>
         );
     }
 
     return (
         <div className="space-y-6">
-            <section className="dashboard-panel overflow-hidden">
-                <DashboardSectionHeader
+            <DashboardWorkspaceHero
+                className="dashboard-panel"
                     eyebrow="Schedule"
                     title="Жүгүртмө жана live сессиялар"
                     description="Кийинки сабактарды, кошулуу мүмкүнчүлүгүн жана жазууларды бир экрандан көрүңүз."
@@ -142,9 +144,8 @@ const ScheduleTab = ({ offerings, recordings }) => {
                             <DashboardMetricCard label="Offline" value={stats.offline} icon={FiMapPin} tone="amber" />
                         </>
                     }
-                />
-
-                <div className="grid gap-3 border-b border-edubot-line/70 px-6 py-5 dark:border-slate-700 lg:grid-cols-[minmax(0,1.4fr),minmax(0,0.8fr)]">
+                >
+                <DashboardFilterBar gridClassName="lg:grid-cols-[minmax(0,1.4fr),minmax(0,0.8fr)]">
                     <label className="relative block">
                         <FiSearch className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-edubot-muted" />
                         <input
@@ -168,9 +169,9 @@ const ScheduleTab = ({ offerings, recordings }) => {
                             <option value="online_live">Онлайн түз эфир</option>
                         </select>
                     </label>
-                </div>
+                </DashboardFilterBar>
 
-                <div className="grid gap-4 p-6 xl:grid-cols-[minmax(0,1.35fr),minmax(0,0.65fr)]">
+                <div className="grid gap-4 pt-5 xl:grid-cols-[minmax(0,1.35fr),minmax(0,0.65fr)]">
                     <div className="space-y-3">
                         {filteredItems.length ? (
                             filteredItems.map(({ item, type, joinUrl, joinAllowed, itemRecordings, isPast }) => (
@@ -184,13 +185,13 @@ const ScheduleTab = ({ offerings, recordings }) => {
                                                 <p className="text-base font-semibold text-edubot-ink dark:text-white">
                                                     {item.courseTitle || item.course?.title || 'Class'}
                                                 </p>
-                                                <span className="rounded-full border border-edubot-line bg-white px-3 py-1 text-xs font-semibold text-edubot-ink dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200">
+                                                <StatusBadge tone="default">
                                                     {courseTypeLabel(type)}
-                                                </span>
+                                                </StatusBadge>
                                                 {isPast ? (
-                                                    <span className="rounded-full border border-slate-200 bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
+                                                    <StatusBadge tone="default">
                                                         Өтүп кетти
-                                                    </span>
+                                                    </StatusBadge>
                                                 ) : null}
                                             </div>
 
@@ -365,7 +366,7 @@ const ScheduleTab = ({ offerings, recordings }) => {
                         )}
                     </div>
                 </div>
-            </section>
+            </DashboardWorkspaceHero>
         </div>
     );
 };

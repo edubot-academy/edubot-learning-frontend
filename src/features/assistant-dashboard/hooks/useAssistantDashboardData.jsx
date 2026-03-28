@@ -9,6 +9,7 @@ import {
     myCompanies,
 } from "@services/api";
 import toast from "react-hot-toast";
+import { normalizeEnrollmentCourseType } from "@features/enrollments/policy";
 import { 
     createCoursesById, 
     buildCourseCounts, 
@@ -216,7 +217,11 @@ export const useAssistantDashboardData = (user) => {
             </>,
             async () => {
                 try {
-                    await enrollUserInCourse(student.id, selectedCourseId);
+                    await enrollUserInCourse(student.id, selectedCourseId, {
+                        courseType: normalizeEnrollmentCourseType(
+                            coursesById[selectedCourseId]?.courseType
+                        ),
+                    });
 
                     toast.success(
                         <span>

@@ -13,9 +13,10 @@ import {
 import toast from 'react-hot-toast';
 import {
     DashboardCardSkeleton,
+    DashboardFilterBar,
     DashboardInsetPanel,
     DashboardMetricCard,
-    DashboardSectionHeader,
+    DashboardWorkspaceHero,
     EmptyState,
 } from '@components/ui/dashboard';
 import {
@@ -29,6 +30,7 @@ import OfferingCard from './OfferingCard.jsx';
 import CreateOfferingModal from './modals/CreateOfferingModal.jsx';
 import EnrollStudentModal from './modals/EnrollStudentModal.jsx';
 import { formatDateTimeForInput } from '../utils/instructorDashboard.constants.js';
+import { normalizeEnrollmentCourseType } from '@features/enrollments/policy';
 
 const OfferingsSection = ({ courses = [], offerings = [], loading, refreshOfferings }) => {
     const getInitialForm = useCallback(
@@ -349,6 +351,9 @@ const OfferingsSection = ({ courses = [], offerings = [], loading, refreshOfferi
 
         try {
             await enrollUserInCourse(userIdValue, enrollOffering.course.id, {
+                courseType: normalizeEnrollmentCourseType(
+                    enrollOffering.course?.courseType || enrollOffering.courseType
+                ),
                 offeringId: enrollOffering.id,
                 discountPercentage: enrollForm.discountPercentage
                     ? Number(enrollForm.discountPercentage)
@@ -377,33 +382,12 @@ const OfferingsSection = ({ courses = [], offerings = [], loading, refreshOfferi
 
     return (
         <div className="space-y-6">
-            <div className="dashboard-panel overflow-hidden">
-                <DashboardSectionHeader
+            <DashboardWorkspaceHero
+                className="dashboard-panel"
                     eyebrow="Offering башкаруу"
                     title="Курс сунуштары"
                     description="Курстарыңызга арналган корпоративдик, публичный жана атайын offering агымдарын бир жерден көзөмөлдөңүз."
-                />
-
-                <div className="space-y-6 px-6 py-6">
-                    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
-                        {overviewMetrics.map((metric) => (
-                            <DashboardMetricCard
-                                key={metric.label}
-                                label={metric.label}
-                                value={metric.value}
-                                icon={metric.icon}
-                                tone={metric.tone}
-                            />
-                        ))}
-                    </div>
-
-                    <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                        <div className="max-w-2xl">
-                            <p className="text-sm leading-6 text-edubot-muted dark:text-slate-400">
-                                Offering түзүү, schedule жана enrollment агымдары ушул бөлүмдөн башкарылат.
-                            </p>
-                        </div>
-
+                    action={(
                         <button
                             type="button"
                             className="dashboard-button-primary inline-flex items-center gap-2 self-start"
@@ -412,13 +396,29 @@ const OfferingsSection = ({ courses = [], offerings = [], loading, refreshOfferi
                             <FiPlusCircle className="h-4 w-4" />
                             Offering түзүү
                         </button>
-                    </div>
+                    )}
+                    metrics={(
+                        <>
+                            {overviewMetrics.map((metric) => (
+                                <DashboardMetricCard
+                                    key={metric.label}
+                                    label={metric.label}
+                                    value={metric.value}
+                                    icon={metric.icon}
+                                    tone={metric.tone}
+                                />
+                            ))}
+                        </>
+                    )}
+                    metricsClassName="grid grid-cols-2 gap-3 sm:grid-cols-3 2xl:grid-cols-4"
+                >
+                <div className="space-y-6">
 
                     <DashboardInsetPanel
                         title="Фильтр жана издөө"
                         description="Курс, убакыт жана offering аталышы боюнча натыйжаларды тарытыңыз."
                     >
-                        <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_280px]">
+                        <DashboardFilterBar gridClassName="xl:grid-cols-[minmax(0,1fr)_280px]">
                             <div className="grid gap-3 md:grid-cols-2">
                                 <select
                                     value={filterCourseId}
@@ -454,7 +454,7 @@ const OfferingsSection = ({ courses = [], offerings = [], loading, refreshOfferi
                                     placeholder="Offering боюнча издөө..."
                                 />
                             </label>
-                        </div>
+                        </DashboardFilterBar>
                     </DashboardInsetPanel>
 
                     {loading ? (
@@ -486,7 +486,7 @@ const OfferingsSection = ({ courses = [], offerings = [], loading, refreshOfferi
                         />
                     )}
                 </div>
-            </div>
+            </DashboardWorkspaceHero>
 
             {showCreateModal ? (
                 <CreateOfferingModal

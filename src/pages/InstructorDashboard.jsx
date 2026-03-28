@@ -25,6 +25,7 @@ import InstructorHomework from './InstructorHomework';
 import {
     InstructorOverviewSection,
     CoursesSection,
+    GroupsSection,
     StudentsSection,
     ProfileSection,
     AiSection,
@@ -118,11 +119,6 @@ const InstructorDashboard = () => {
         () =>
             Object.entries(profile?.socialLinks || {}).filter(([, value]) => Boolean(value?.trim?.() || value)),
         [profile]
-    );
-
-    const offerings = useMemo(
-        () => courses.flatMap((course) => offeringsByCourse[course.id] || []),
-        [courses, offeringsByCourse]
     );
 
     const approvedOfferings = useMemo(
@@ -581,6 +577,8 @@ const InstructorDashboard = () => {
                         onProgressMaxChange={setProgressMax}
                     />
                 );
+            case 'groups':
+                return <GroupsSection courses={courses} />;
             case 'profile':
                 return (
                     <ProfileSection

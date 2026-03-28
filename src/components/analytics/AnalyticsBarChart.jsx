@@ -177,10 +177,10 @@ const AnalyticsBarChart = ({
     if (loading) {
         return (
             <div className="w-full" style={{ height }}>
-                <div className="flex items-center justify-center h-full bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                <div className="flex h-full items-center justify-center rounded-3xl border border-edubot-line/80 bg-white/90 shadow-edubot-card dark:border-slate-700 dark:bg-slate-950">
                     <div className="text-center">
                         <div className="animate-spin rounded-full border-2 border-gray-300 border-t-edubot-orange w-8 h-8 mx-auto mb-3"></div>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">Жүктөлүүдө...</p>
+                        <p className="text-sm text-edubot-muted dark:text-slate-400">Жүктөлүүдө...</p>
                     </div>
                 </div>
             </div>
@@ -191,12 +191,12 @@ const AnalyticsBarChart = ({
     if (error) {
         return (
             <div className="w-full" style={{ height }}>
-                <div className="flex items-center justify-center h-full bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                <div className="flex h-full items-center justify-center rounded-3xl border border-red-200 bg-red-50/90 dark:border-red-500/30 dark:bg-red-500/10">
                     <div className="text-center">
                         <svg className="w-12 h-12 text-gray-400 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z" />
                         </svg>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">{errorText}</p>
+                        <p className="text-sm text-red-700 dark:text-red-300">{errorText}</p>
                     </div>
                 </div>
             </div>
@@ -207,12 +207,12 @@ const AnalyticsBarChart = ({
     if (!data || data.length === 0) {
         return (
             <div className="w-full" style={{ height }}>
-                <div className="flex items-center justify-center h-full bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                <div className="flex h-full items-center justify-center rounded-3xl border border-edubot-line/80 bg-white/90 shadow-edubot-card dark:border-slate-700 dark:bg-slate-950">
                     <div className="text-center">
-                        <svg className="w-12 h-12 text-gray-400 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-12 h-12 text-edubot-muted mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                         </svg>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">Маалымат жок</p>
+                        <p className="text-sm text-edubot-muted dark:text-slate-400">Маалымат жок</p>
                     </div>
                 </div>
             </div>
@@ -220,16 +220,18 @@ const AnalyticsBarChart = ({
     }
 
     return (
-        <div className="w-full">
+        <div className="group relative w-full overflow-hidden rounded-3xl border border-edubot-line/80 bg-white/90 p-5 shadow-edubot-card transition-all duration-300 hover:-translate-y-1 hover:shadow-edubot-hover dark:border-slate-700 dark:bg-slate-950">
+            <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-white/55 via-transparent to-edubot-orange/8 opacity-80 transition-opacity duration-300 group-hover:opacity-100 dark:from-white/5 dark:to-edubot-soft/10" />
+            <div className="pointer-events-none absolute -right-10 -top-10 h-28 w-28 rounded-full bg-edubot-orange/10 blur-3xl transition-all duration-300 group-hover:scale-125 dark:bg-edubot-soft/10" />
             {(title || subtitle) && (
-                <div className="mb-4">
+                <div className="relative mb-4">
                     {title && (
-                        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                        <h3 className="text-lg font-semibold text-edubot-ink transition-colors duration-300 group-hover:text-edubot-orange dark:text-gray-100 dark:group-hover:text-edubot-soft">
                             {title}
                         </h3>
                     )}
                     {subtitle && (
-                        <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                        <p className="mt-1 text-sm text-edubot-muted dark:text-slate-400">
                             {subtitle}
                         </p>
                     )}
@@ -238,10 +240,10 @@ const AnalyticsBarChart = ({
             <div className="relative" style={{ height }}>
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none sm:hidden">
                     <div className="text-center p-4">
-                        <svg className="w-8 h-8 text-gray-400 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-8 h-8 text-edubot-muted animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                         </svg>
-                        <p className="text-xs text-gray-600 dark:text-gray-400 mt-2">Мобилдик үчүн жүктөлүүдө...</p>
+                        <p className="mt-2 text-xs text-edubot-muted dark:text-slate-400">Мобилдик үчүн жүктөлүүдө...</p>
                     </div>
                 </div>
                 <div style={{ height }}>

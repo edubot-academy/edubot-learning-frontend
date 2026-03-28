@@ -3,8 +3,6 @@ import {
     FiUsers,
     FiBookOpen,
     FiCalendar,
-    FiMail,
-    FiBarChart2,
 } from 'react-icons/fi';
 
 export const NAV_ITEMS = [
@@ -15,10 +13,6 @@ export const NAV_ITEMS = [
     // Secondary Navigation - Learning Management
     { id: 'courses', label: 'Курстар', icon: FiBookOpen, category: 'secondary', priority: 1 },
     { id: 'attendance', label: 'Катышуу', icon: FiCalendar, category: 'secondary', priority: 2 },
-
-    // Analytics & Communication
-    { id: 'communication', label: 'Байланыштар', icon: FiMail, category: 'analytics', priority: 1 },
-    { id: 'analytics', label: 'Аналитика', icon: FiBarChart2, category: 'analytics', priority: 2 },
 ];
 
 export const ASSISTANT_ROLES = {

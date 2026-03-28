@@ -22,9 +22,11 @@ export const fetchHomeworkSummary = async ({ courseId, groupId } = {}) => {
     return data;
 };
 
-export const fetchSessionHomework = async (sessionId) => {
+export const fetchSessionHomework = async (sessionId, { includeUnpublished = false } = {}) => {
     const validSessionId = ensurePositiveInt(sessionId, 'sessionId');
-    const { data } = await api.get(`/course-sessions/${validSessionId}/homework`);
+    const { data } = await api.get(`/course-sessions/${validSessionId}/homework`, {
+        params: clean({ includeUnpublished }),
+    });
     return data;
 };
 
@@ -50,6 +52,26 @@ export const submitSessionHomework = async (sessionId, homeworkId, payload) => {
     const { data } = await api.post(
         `/course-sessions/${validSessionId}/homework/${validHomeworkId}/submissions`,
         payload
+    );
+    return data;
+};
+
+export const uploadSessionHomeworkAttachment = async (sessionId, homeworkId, file) => {
+    const validSessionId = ensurePositiveInt(sessionId, 'sessionId');
+    const validHomeworkId = ensurePositiveInt(homeworkId, 'homeworkId');
+    if (!(file instanceof File)) {
+        throw new Error('file must be a File');
+    }
+
+    const form = new FormData();
+    form.append('file', file);
+
+    const { data } = await api.post(
+        `/course-sessions/${validSessionId}/homework/${validHomeworkId}/submissions/upload`,
+        form,
+        {
+            headers: { 'Content-Type': 'multipart/form-data' },
+        }
     );
     return data;
 };
