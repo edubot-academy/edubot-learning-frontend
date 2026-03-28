@@ -24,9 +24,11 @@ const AdminCoursesTab = ({
     courses,
     categories,
     users,
+    courseGroupsByCourseId,
     newCategory,
     editingCategoryId,
     editingCategoryName,
+    selectedEnrollmentGroupIds,
     transcodeCourseId,
     transcodeSectionId,
     transcodeLessonId,
@@ -34,6 +36,7 @@ const AdminCoursesTab = ({
     setNewCategory,
     setEditingCategoryId,
     setEditingCategoryName,
+    setSelectedEnrollmentGroupIds,
     setTranscodeCourseId,
     setTranscodeSectionId,
     setTranscodeLessonId,
@@ -80,6 +83,13 @@ const AdminCoursesTab = ({
                     {courses.length ? (
                         <div className="mt-4 space-y-3">
                             {courses.map((course) => (
+                                (() => {
+                                    const isDeliveryCourse =
+                                        course.courseType === 'offline' || course.courseType === 'online_live';
+                                    const groupOptions = courseGroupsByCourseId?.[String(course.id)] || [];
+                                    const selectedGroupId = selectedEnrollmentGroupIds?.[String(course.id)] || '';
+
+                                    return (
                                 <article
                                     key={course.id}
                                     className="rounded-2xl border border-edubot-line/70 bg-edubot-surfaceAlt/40 px-4 py-4 dark:border-slate-700 dark:bg-slate-900/60"
@@ -127,16 +137,47 @@ const AdminCoursesTab = ({
                                     </div>
 
                                     <div className="mt-4">
+                                        {isDeliveryCourse ? (
+                                            <div className="mb-3">
+                                                <label className="mb-2 block text-sm font-medium text-edubot-muted dark:text-slate-400">
+                                                    Группа тандаңыз
+                                                </label>
+                                                <select
+                                                    value={selectedGroupId}
+                                                    onChange={(e) =>
+                                                        setSelectedEnrollmentGroupIds((prev) => ({
+                                                            ...prev,
+                                                            [String(course.id)]: e.target.value,
+                                                        }))
+                                                    }
+                                                    className="dashboard-select w-full"
+                                                >
+                                                    <option value="">Группа тандаңыз</option>
+                                                    {groupOptions.map((group) => (
+                                                        <option key={group.id} value={group.id}>
+                                                            {(group.name || `Group #${group.id}`) +
+                                                                ` (${group.code || '—'})`}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                        ) : null}
+
                                         <label className="mb-2 block text-sm font-medium text-edubot-muted dark:text-slate-400">
-                                            Колдонуучуну курска жазуу
+                                            {isDeliveryCourse
+                                                ? 'Колдонуучуну группага жазуу'
+                                                : 'Колдонуучуну курска жазуу'}
                                         </label>
                                         <select
                                             onChange={(e) => handleEnrollUser(e.target.value, course.id)}
                                             className="dashboard-select w-full"
                                             defaultValue=""
+                                            disabled={isDeliveryCourse && !selectedGroupId}
                                         >
                                             <option value="" disabled>
-                                                Колдонуучуну тандаңыз
+                                                {isDeliveryCourse && !selectedGroupId
+                                                    ? 'Адегенде группа тандаңыз'
+                                                    : 'Колдонуучуну тандаңыз'}
                                             </option>
                                             {users.map((u) => (
                                                 <option key={u.id} value={u.id}>
@@ -146,6 +187,8 @@ const AdminCoursesTab = ({
                                         </select>
                                     </div>
                                 </article>
+                                    );
+                                })()
                             ))}
                         </div>
                     ) : (

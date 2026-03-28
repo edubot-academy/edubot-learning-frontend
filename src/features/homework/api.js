@@ -56,6 +56,26 @@ export const submitSessionHomework = async (sessionId, homeworkId, payload) => {
     return data;
 };
 
+export const uploadSessionHomeworkAttachment = async (sessionId, homeworkId, file) => {
+    const validSessionId = ensurePositiveInt(sessionId, 'sessionId');
+    const validHomeworkId = ensurePositiveInt(homeworkId, 'homeworkId');
+    if (!(file instanceof File)) {
+        throw new Error('file must be a File');
+    }
+
+    const form = new FormData();
+    form.append('file', file);
+
+    const { data } = await api.post(
+        `/course-sessions/${validSessionId}/homework/${validHomeworkId}/submissions/upload`,
+        form,
+        {
+            headers: { 'Content-Type': 'multipart/form-data' },
+        }
+    );
+    return data;
+};
+
 export const fetchSessionHomeworkSubmissions = async (sessionId, homeworkId) => {
     const validSessionId = ensurePositiveInt(sessionId, 'sessionId');
     const validHomeworkId = ensurePositiveInt(homeworkId, 'homeworkId');

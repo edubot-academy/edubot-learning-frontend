@@ -3,14 +3,12 @@ import PropTypes from 'prop-types';
 import { toast } from 'react-hot-toast';
 import {
     ATTENDANCE_STATUS,
-    COURSE_GROUP_STATUS,
     COURSE_SESSION_STATUS,
     COURSE_TYPE,
     MEETING_PROVIDER,
     SESSION_ATTENDANCE_STATUS,
 } from '@shared/contracts';
 import {
-    createCourseGroup,
     createCourseSession,
     createSessionHomework,
     createSessionMeeting,
@@ -21,15 +19,11 @@ import {
     fetchSessionHomeworkSubmissions,
     fetchSessionMeeting,
     fetchCourseSessions,
-    fetchCourseStudents,
-    fetchInstructorProfile,
     fetchInstructorCourses,
     fetchSessionAttendance,
     importSessionAttendance,
-    markAttendanceSession,
     markSessionAttendanceBulk,
     syncSessionRecordings,
-    updateCourseGroup,
     updateSessionHomework,
     updateSessionMeeting,
     updateCourseSession,
@@ -44,14 +38,17 @@ import {
     FiCheckCircle,
     FiClock,
     FiEdit3,
+    FiExternalLink,
     FiFileText,
     FiLayers,
+    FiPaperclip,
     FiPlayCircle,
     FiRadio,
     FiSearch,
     FiUsers,
     FiXCircle,
 } from 'react-icons/fi';
+import { fetchGroupRoster } from '@features/courseGroups/roster';
 import {
     DashboardFilterBar,
     DashboardInsetPanel,
@@ -65,20 +62,6 @@ import { AuthContext } from '../context/AuthContext';
 const todayIso = new Date().toISOString().slice(0, 10);
 const JOIN_WINDOW_MS = 10 * 60 * 1000;
 
-const QUICK_GROUP_DEFAULT = {
-    name: '',
-    code: '',
-    status: COURSE_GROUP_STATUS.PLANNED,
-    startDate: '',
-    endDate: '',
-    seatLimit: '',
-    timezone: '',
-    location: '',
-    meetingProvider: '',
-    meetingUrl: '',
-    instructorId: '',
-};
-
 const QUICK_SESSION_DEFAULT = {
     sessionIndex: '',
     title: '',
@@ -88,20 +71,6 @@ const QUICK_SESSION_DEFAULT = {
     recordingUrl: '',
     materialTitle: '',
     materialUrl: '',
-};
-
-const EDIT_GROUP_DEFAULT = {
-    name: '',
-    code: '',
-    status: COURSE_GROUP_STATUS.PLANNED,
-    startDate: '',
-    endDate: '',
-    seatLimit: '',
-    timezone: '',
-    location: '',
-    meetingProvider: '',
-    meetingUrl: '',
-    instructorId: '',
 };
 
 const EDIT_SESSION_DEFAULT = {
@@ -225,8 +194,10 @@ const formatDisplayDate = (value, fallback = 'Мөөнөт коюлган эме
     });
 };
 
+const resolveHomeworkDeadline = (item = {}) => item?.deadline || item?.dueAt || item?.dueDate || '';
+
 const getHomeworkDeadlineMeta = (item, nowMs) => {
-    const raw = item?.deadline || item?.dueAt || item?.dueDate;
+    const raw = resolveHomeworkDeadline(item);
     if (!raw) {
         return {
             label: 'Мөөнөт жок',
@@ -305,6 +276,7 @@ const getSubmissionPreview = (submission) =>
     submission?.content ||
     submission?.submissionText ||
     submission?.text ||
+    submission?.answerText ||
     submission?.description ||
     submission?.answer ||
     submission?.note ||
@@ -313,6 +285,20 @@ const getSubmissionPreview = (submission) =>
     submission?.attachmentUrl ||
     submission?.submissionUrl ||
     'Жооп текшерүү үчүн жүктөлгөн.';
+
+const getSubmissionAttachmentUrl = (submission) =>
+    submission?.attachmentUrl || submission?.fileUrl || submission?.submissionUrl || '';
+
+const getAttachmentName = (value) => {
+    if (!value) return 'Тиркеме';
+    try {
+        const withoutQuery = String(value).split('?')[0];
+        const lastSegment = withoutQuery.split('/').pop() || withoutQuery;
+        return decodeURIComponent(lastSegment) || 'Тиркеме';
+    } catch {
+        return 'Тиркеме';
+    }
+};
 
 const isJoinWindowOpen = (session, nowMs) => {
     const start = session?.startsAt ? new Date(session.startsAt).getTime() : null;
@@ -339,7 +325,6 @@ const getWorkspaceErrorMessage = (error, fallback) => {
 const SessionWorkspace = () => {
     const { user } = useContext(AuthContext);
     const [activeTab, setActiveTab] = useState('attendance');
-    const [workspaceEntity, setWorkspaceEntity] = useState('group');
     const [workspaceMode, setWorkspaceMode] = useState('create');
 
     const [courses, setCourses] = useState([]);
@@ -353,6 +338,7 @@ const SessionWorkspace = () => {
 
     const [students, setStudents] = useState([]);
     const [attendanceRows, setAttendanceRows] = useState({});
+    const [initialAttendanceRows, setInitialAttendanceRows] = useState({});
     const [attendanceHistory, setAttendanceHistory] = useState([]);
 
     const [loadingCourses, setLoadingCourses] = useState(false);
@@ -376,13 +362,9 @@ const SessionWorkspace = () => {
     const [importingAttendance, setImportingAttendance] = useState(false);
     const [syncingRecordings, setSyncingRecordings] = useState(false);
 
-    const [quickGroup, setQuickGroup] = useState(QUICK_GROUP_DEFAULT);
     const [quickSession, setQuickSession] = useState(QUICK_SESSION_DEFAULT);
-    const [editGroup, setEditGroup] = useState(EDIT_GROUP_DEFAULT);
     const [editSession, setEditSession] = useState(EDIT_SESSION_DEFAULT);
-    const [savingGroup, setSavingGroup] = useState(false);
     const [savingSession, setSavingSession] = useState(false);
-    const [savingGroupUpdate, setSavingGroupUpdate] = useState(false);
     const [savingSessionUpdate, setSavingSessionUpdate] = useState(false);
 
     const [sessionNotes, setSessionNotes] = useState('');
@@ -518,20 +500,28 @@ const SessionWorkspace = () => {
     }, [sessions]);
 
     useEffect(() => {
-        if (!selectedCourseId) return;
+        if (!selectedCourseId || !selectedGroupId) {
+            setStudents([]);
+            setAttendanceRows({});
+            setInitialAttendanceRows({});
+            return;
+        }
 
         let cancelled = false;
         const loadStudentsAndHistory = async () => {
-            setLoadingStudents(true);
+                setLoadingStudents(true);
             try {
                 const [studentsRes, attendanceRes] = await Promise.all([
-                    fetchCourseStudents(Number(selectedCourseId), { page: 1, limit: 200 }),
+                    fetchGroupRoster({
+                        groupId: Number(selectedGroupId),
+                        page: 1,
+                        limit: 200,
+                    }),
                     fetchCourseAttendance({ courseId: Number(selectedCourseId) }),
                 ]);
                 if (cancelled) return;
 
-                const rawStudents = toArray(studentsRes);
-                const normalized = rawStudents.map((item) => ({
+                const normalized = studentsRes.map((item) => ({
                     id: Number(item.userId || item.id),
                     fullName: item.fullName || item.user?.fullName || `#${item.userId || item.id}`,
                 }));
@@ -548,12 +538,14 @@ const SessionWorkspace = () => {
                     };
                 });
                 setAttendanceRows(rowState);
+                setInitialAttendanceRows(rowState);
                 setAttendanceHistory(attendanceRes?.items || []);
             } catch (error) {
                 console.error(error);
                 toast.error(getWorkspaceErrorMessage(error, 'Сессия маалыматтарын жүктөө катасы.'));
                 setStudents([]);
                 setAttendanceRows({});
+                setInitialAttendanceRows({});
                 setAttendanceHistory([]);
             } finally {
                 if (!cancelled) setLoadingStudents(false);
@@ -564,7 +556,7 @@ const SessionWorkspace = () => {
         return () => {
             cancelled = true;
         };
-    }, [selectedCourseId]);
+    }, [selectedCourseId, selectedGroupId]);
 
     useEffect(() => {
         if (!selectedSessionId) return;
@@ -577,6 +569,7 @@ const SessionWorkspace = () => {
                 const items = toArray(res);
                 if (!items.length) return;
 
+                let hydratedRows = null;
                 setAttendanceRows((prev) => {
                     const next = { ...prev };
                     items.forEach((item) => {
@@ -590,8 +583,10 @@ const SessionWorkspace = () => {
                             leftAt: item.leftAt || undefined,
                         };
                     });
+                    hydratedRows = next;
                     return next;
                 });
+                if (hydratedRows) setInitialAttendanceRows(hydratedRows);
             } catch (error) {
                 console.error(error);
             }
@@ -726,27 +721,6 @@ const SessionWorkspace = () => {
     );
 
     useEffect(() => {
-        if (!selectedGroup) {
-            setEditGroup(EDIT_GROUP_DEFAULT);
-            return;
-        }
-
-        setEditGroup({
-            name: selectedGroup.name || '',
-            code: selectedGroup.code || '',
-            status: selectedGroup.status || COURSE_GROUP_STATUS.PLANNED,
-            startDate: selectedGroup.startDate || '',
-            endDate: selectedGroup.endDate || '',
-            seatLimit: selectedGroup.seatLimit ? String(selectedGroup.seatLimit) : '',
-            timezone: selectedGroup.timezone || '',
-            location: selectedGroup.location || '',
-            meetingProvider: selectedGroup.meetingProvider || '',
-            meetingUrl: selectedGroup.meetingUrl || '',
-            instructorId: selectedGroup.instructorId ? String(selectedGroup.instructorId) : '',
-        });
-    }, [selectedGroup]);
-
-    useEffect(() => {
         if (!selectedSession) {
             setEditSession(EDIT_SESSION_DEFAULT);
             return;
@@ -821,6 +795,25 @@ const SessionWorkspace = () => {
             presentRate: values.length ? Math.round((present / values.length) * 100) : 0,
         };
     }, [attendanceRows]);
+
+    const hasAttendanceChanges = useMemo(() => {
+        const currentIds = Object.keys(attendanceRows);
+        const initialIds = Object.keys(initialAttendanceRows);
+        if (currentIds.length !== initialIds.length) return currentIds.length > 0;
+
+        return currentIds.some((studentId) => {
+            const current = attendanceRows[studentId];
+            const initial = initialAttendanceRows[studentId];
+            if (!current || !initial) return true;
+
+            return (
+                current.status !== initial.status ||
+                (current.notes || '').trim() !== (initial.notes || '').trim() ||
+                (current.joinedAt || '') !== (initial.joinedAt || '') ||
+                (current.leftAt || '') !== (initial.leftAt || '')
+            );
+        });
+    }, [attendanceRows, initialAttendanceRows]);
 
     const studentStreaks = useMemo(() => {
         const map = new Map();
@@ -958,6 +951,16 @@ const SessionWorkspace = () => {
     };
 
     const saveAttendance = async () => {
+        if (!selectedSessionId) {
+            toast.error('Катышууну сактоо үчүн сессияны тандаңыз.');
+            return;
+        }
+
+        if (!hasAttendanceChanges) {
+            toast('Өзгөртүү жок.');
+            return;
+        }
+
         const rows = Object.values(attendanceRows).map((row) => ({
             studentId: row.studentId,
             status: row.status,
@@ -968,78 +971,19 @@ const SessionWorkspace = () => {
 
         setSavingAttendance(true);
         try {
-            if (selectedSessionId) {
-                await markSessionAttendanceBulk(Number(selectedSessionId), {
-                    courseId: Number(selectedCourseId),
-                    rows,
-                });
-                toast.success('Session-based катышуу сакталды');
-            } else {
-                await markAttendanceSession({
-                    courseId: Number(selectedCourseId),
-                    sessionDate,
-                    rows: rows.map((row) => ({
-                        userId: row.studentId,
-                        status: sessionStatusMap[row.status] || ATTENDANCE_STATUS.ABSENT,
-                        notes: row.notes,
-                    })),
-                });
-                toast.success('Date-based катышуу сакталды');
-            }
+            await markSessionAttendanceBulk(Number(selectedSessionId), {
+                courseId: Number(selectedCourseId),
+                rows,
+            });
+            toast.success('Session-based катышуу сакталды');
 
             const refreshed = await fetchCourseAttendance({ courseId: Number(selectedCourseId) });
             setAttendanceHistory(refreshed?.items || []);
+            setInitialAttendanceRows(attendanceRows);
         } catch (error) {
             toast.error(getWorkspaceErrorMessage(error, 'Катышууну сактоо катасы'));
         } finally {
             setSavingAttendance(false);
-        }
-    };
-
-    const createQuickGroup = async () => {
-        if (!selectedCourseId) {
-            toast.error('Адегенде курсту тандаңыз.');
-            return;
-        }
-        if (!quickGroup.name.trim() || !quickGroup.code.trim()) {
-            toast.error('Группа үчүн аталыш жана код милдеттүү.');
-            return;
-        }
-
-        setSavingGroup(true);
-        try {
-            const payload = {
-                courseId: Number(selectedCourseId),
-                name: quickGroup.name.trim(),
-                code: quickGroup.code.trim(),
-                status: quickGroup.status || undefined,
-                startDate: quickGroup.startDate || undefined,
-                endDate: quickGroup.endDate || undefined,
-                seatLimit: quickGroup.seatLimit ? Number(quickGroup.seatLimit) : undefined,
-                timezone: quickGroup.timezone || undefined,
-                location: quickGroup.location || undefined,
-                meetingProvider: quickGroup.meetingProvider || undefined,
-                meetingUrl: quickGroup.meetingUrl || undefined,
-                instructorId: quickGroup.instructorId ? Number(quickGroup.instructorId) : undefined,
-            };
-
-            const created = await createCourseGroup(payload);
-            toast.success('Group түзүлдү.');
-
-            const res = await fetchCourseGroups({ courseId: Number(selectedCourseId) });
-            const list = toArray(res);
-            setGroups(list);
-            if (created?.id) setSelectedGroupId(String(created.id));
-
-            setQuickGroup((prev) => ({
-                ...QUICK_GROUP_DEFAULT,
-                timezone: prev.timezone,
-                meetingProvider: prev.meetingProvider,
-            }));
-        } catch (error) {
-            toast.error(getWorkspaceErrorMessage(error, 'Группа түзүү катасы'));
-        } finally {
-            setSavingGroup(false);
         }
     };
 
@@ -1098,43 +1042,6 @@ const SessionWorkspace = () => {
             toast.error(getWorkspaceErrorMessage(error, 'Сессия түзүү катасы'));
         } finally {
             setSavingSession(false);
-        }
-    };
-
-    const updateSelectedGroup = async () => {
-        if (!selectedGroupId) {
-            toast.error('Группаны тандаңыз.');
-            return;
-        }
-        if (!editGroup.name.trim() || !editGroup.code.trim()) {
-            toast.error('Группа үчүн аталыш жана код милдеттүү.');
-            return;
-        }
-
-        setSavingGroupUpdate(true);
-        try {
-            await updateCourseGroup(Number(selectedGroupId), {
-                name: editGroup.name.trim(),
-                code: editGroup.code.trim(),
-                status: editGroup.status || undefined,
-                startDate: editGroup.startDate || undefined,
-                endDate: editGroup.endDate || undefined,
-                seatLimit: editGroup.seatLimit ? Number(editGroup.seatLimit) : undefined,
-                timezone: editGroup.timezone || undefined,
-                location: editGroup.location || undefined,
-                meetingProvider: editGroup.meetingProvider || undefined,
-                meetingUrl: editGroup.meetingUrl || undefined,
-                instructorId: editGroup.instructorId ? Number(editGroup.instructorId) : undefined,
-            });
-
-            const res = await fetchCourseGroups({ courseId: Number(selectedCourseId) });
-            const list = toArray(res);
-            setGroups(list);
-            toast.success('Group жаңыртылды.');
-        } catch (error) {
-            toast.error(getWorkspaceErrorMessage(error, 'Группаны жаңыртуу катасы'));
-        } finally {
-            setSavingGroupUpdate(false);
         }
     };
 
@@ -1356,7 +1263,7 @@ const SessionWorkspace = () => {
                 title: homeworkTitle.trim(),
                 description: homeworkDescription.trim() || undefined,
                 deadline: homeworkDeadline || undefined,
-                isPublished: false,
+                isPublished: true,
                 assignedStudentIds,
             });
 
@@ -1384,7 +1291,9 @@ const SessionWorkspace = () => {
         setEditingHomeworkId(String(item.id));
         setEditHomeworkTitle(item.title || item.name || '');
         setEditHomeworkDescription(item.description || '');
-        setEditHomeworkDeadline(item.deadline ? String(item.deadline).slice(0, 10) : '');
+        setEditHomeworkDeadline(
+            resolveHomeworkDeadline(item) ? String(resolveHomeworkDeadline(item)).slice(0, 10) : ''
+        );
     };
 
     const cancelHomeworkEdit = () => {
@@ -1407,7 +1316,7 @@ const SessionWorkspace = () => {
                 title: editHomeworkTitle.trim(),
                 description: editHomeworkDescription.trim() || undefined,
                 deadline: editHomeworkDeadline || undefined,
-                isPublished: true,
+                isPublished: Boolean(selectedHomework?.isPublished),
             });
 
             const refreshed = await fetchSessionHomework(Number(selectedSessionId), { includeUnpublished: true });
@@ -1468,65 +1377,24 @@ const SessionWorkspace = () => {
 
     const selectedModeMeta = SESSION_MODE_META[selectedSessionMode] || SESSION_MODE_META.scheduled;
     const SelectedModeIcon = selectedModeMeta.icon;
-    const isGroupWorkspace = workspaceEntity === 'group';
     const isCreateWorkspace = workspaceMode === 'create';
-    const workspaceTitle = isGroupWorkspace
-        ? isCreateWorkspace
-            ? 'Create Group'
-            : 'Edit Group'
-        : isCreateWorkspace
-            ? 'Create Session'
-            : 'Edit Session';
-    const workspaceDescription = isGroupWorkspace
-        ? isCreateWorkspace
-            ? 'Курс үчүн жаңы группаны негизги маалымат, график жана жеткирүү параметрлери менен түзүңүз.'
-            : 'Тандалган группанын маалыматтарын жаңыртыңыз.'
-        : isCreateWorkspace
-            ? 'Тандалган группа үчүн жаңы сессия түзүп, убактысын жана материалдарын бекитиңиз.'
-            : 'Тандалган сессиянын убактысын жана статусун жаңыртыңыз.';
-    const workspaceDisabled = isGroupWorkspace
-        ? isCreateWorkspace
-            ? !selectedCourseId
-            : !selectedGroupId
-        : isCreateWorkspace
-            ? !selectedGroupId
-            : !selectedSessionId;
-    const workspaceDisabledReason = isGroupWorkspace
-        ? isCreateWorkspace
-            ? 'Жаңы группа түзүү үчүн курс тандаңыз.'
-            : 'Edit mode үчүн группа тандаңыз.'
-        : isCreateWorkspace
-            ? 'Жаңы сессия түзүү үчүн группа тандаңыз.'
-            : 'Edit mode үчүн сессия тандаңыз.';
-    const workspaceActionLabel = isGroupWorkspace
-        ? isCreateWorkspace
-            ? savingGroup
-                ? 'Түзүлүүдө...'
-                : 'Create Group'
-            : savingGroupUpdate
-                ? 'Жаңыртылууда...'
-                : 'Update Group'
-        : isCreateWorkspace
-            ? savingSession
-                ? 'Түзүлүүдө...'
-                : 'Create Session'
-            : savingSessionUpdate
-                ? 'Жаңыртылууда...'
-                : 'Update Session';
-    const workspaceAction = isGroupWorkspace
-        ? isCreateWorkspace
-            ? createQuickGroup
-            : updateSelectedGroup
-        : isCreateWorkspace
-            ? createQuickSession
-            : updateSelectedSession;
-    const workspaceSaving = isGroupWorkspace
-        ? isCreateWorkspace
-            ? savingGroup
-            : savingGroupUpdate
-        : isCreateWorkspace
-            ? savingSession
-            : savingSessionUpdate;
+    const workspaceTitle = isCreateWorkspace ? 'Create Session' : 'Edit Session';
+    const workspaceDescription = isCreateWorkspace
+        ? 'Тандалган группа үчүн жаңы сессия түзүп, убактысын жана материалдарын бекитиңиз.'
+        : 'Тандалган сессиянын убактысын жана статусун жаңыртыңыз.';
+    const workspaceDisabled = isCreateWorkspace ? !selectedGroupId : !selectedSessionId;
+    const workspaceDisabledReason = isCreateWorkspace
+        ? 'Жаңы сессия түзүү үчүн группа тандаңыз.'
+        : 'Edit mode үчүн сессия тандаңыз.';
+    const workspaceActionLabel = isCreateWorkspace
+        ? savingSession
+            ? 'Түзүлүүдө...'
+            : 'Create Session'
+        : savingSessionUpdate
+            ? 'Жаңыртылууда...'
+            : 'Update Session';
+    const workspaceAction = isCreateWorkspace ? createQuickSession : updateSelectedSession;
+    const workspaceSaving = isCreateWorkspace ? savingSession : savingSessionUpdate;
 
     return (
         <div className="pt-24 pb-12 px-4 max-w-7xl mx-auto space-y-6">
@@ -1545,33 +1413,37 @@ const SessionWorkspace = () => {
                         className="dashboard-panel"
                         eyebrow="Session Workspace"
                         title="Instructor Session Workspace"
-                        description="Сессияларды, группаларды жана жандуу сабак агымдарын бир жерден көзөмөлдөңүз."
+                        description="Сессияларды, катышууну, үй тапшырманы жана жандуу сабак агымдарын бир жерден көзөмөлдөңүз. Группа lifecycle эми өзүнчө Groups tab аркылуу башкарылат."
                         metrics={(
                             <>
                                 <DashboardMetricCard
                                     label="Бүгүнкү сессиялар"
                                     value={sessionsToday.length}
                                     icon={FiCalendar}
+                                    className="min-h-[11rem] min-w-0"
                                 />
                                 <DashboardMetricCard
                                     label="Катышуу %"
                                     value={`${attendanceStats.presentRate}%`}
                                     icon={FiActivity}
+                                    className="min-h-[11rem] min-w-0"
                                 />
                                 <DashboardMetricCard
                                     label="Тапшырма жарыяланды"
                                     value={publishedHomework.length}
                                     icon={FiBookOpen}
+                                    className="min-h-[11rem] min-w-0"
                                 />
                                 <DashboardMetricCard
                                     label="Кооптуу студенттер"
                                     value={students.length - attendanceStats.present}
                                     icon={FiUsers}
                                     tone="amber"
+                                    className="min-h-[11rem] min-w-0"
                                 />
                             </>
                         )}
-                        metricsClassName="grid grid-cols-2 gap-3 xl:grid-cols-4"
+                        metricsClassName="grid w-full grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-2 2xl:grid-cols-4 xl:min-w-[26rem] 2xl:min-w-[48rem]"
                     >
                         <DashboardFilterBar gridClassName="xl:grid-cols-[minmax(0,1fr),minmax(0,1fr),minmax(0,1fr),minmax(0,1fr)]">
                             <div className="max-w-2xl xl:col-span-4">
@@ -1661,33 +1533,19 @@ const SessionWorkspace = () => {
                         <div className="grid gap-4 xl:grid-cols-[280px,minmax(0,1fr)]">
                             <DashboardInsetPanel
                                 title="Workspace control"
-                                description="Бир учурда бир объект жана бир режим менен иштеңиз."
+                                description="Session management ушул жерде жүрөт. Group lifecycle өзүнчө Groups tab аркылуу башкарылат."
                             >
                                 <div className="space-y-4">
                                     <div>
-                                        <p className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-edubot-muted dark:text-slate-400">
-                                            Объект
-                                        </p>
-                                        <div className="grid grid-cols-2 gap-2">
-                                            <button
-                                                onClick={() => setWorkspaceEntity('group')}
-                                                className={`rounded-2xl px-4 py-3 text-sm font-semibold transition ${isGroupWorkspace
-                                                    ? 'bg-gradient-to-r from-edubot-orange to-edubot-soft text-white shadow-edubot-soft'
-                                                    : 'bg-white text-edubot-ink shadow-sm dark:bg-slate-950 dark:text-slate-200'
-                                                    }`}
-                                            >
-                                                Group
-                                            </button>
-                                            <button
-                                                onClick={() => setWorkspaceEntity('session')}
-                                                className={`rounded-2xl px-4 py-3 text-sm font-semibold transition ${!isGroupWorkspace
-                                                    ? 'bg-gradient-to-r from-edubot-orange to-edubot-soft text-white shadow-edubot-soft'
-                                                    : 'bg-white text-edubot-ink shadow-sm dark:bg-slate-950 dark:text-slate-200'
-                                                    }`}
-                                            >
-                                                Session
-                                            </button>
-                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                window.location.href = '/instructor?tab=groups';
+                                            }}
+                                            className="w-full rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-edubot-ink shadow-sm transition dark:bg-slate-950 dark:text-slate-200"
+                                        >
+                                            Groups tab ачуу
+                                        </button>
                                     </div>
 
                                     <div>
@@ -1750,157 +1608,7 @@ const SessionWorkspace = () => {
                                 description={workspaceDescription}
                             >
                                 <div className="space-y-5">
-                                    {isGroupWorkspace ? (
-                                        <>
-                                            <div className="space-y-3">
-                                                <div className="text-xs font-semibold uppercase tracking-[0.18em] text-edubot-muted dark:text-slate-400">
-                                                    Basics
-                                                </div>
-                                                <div className="grid gap-3 md:grid-cols-2">
-                                                    <input
-                                                        value={isCreateWorkspace ? quickGroup.name : editGroup.name}
-                                                        onChange={(e) =>
-                                                            isCreateWorkspace
-                                                                ? setQuickGroup((prev) => ({ ...prev, name: e.target.value }))
-                                                                : setEditGroup((prev) => ({ ...prev, name: e.target.value }))
-                                                        }
-                                                        placeholder="Group name *"
-                                                        className="dashboard-field md:col-span-2"
-                                                    />
-                                                    <input
-                                                        value={isCreateWorkspace ? quickGroup.code : editGroup.code}
-                                                        onChange={(e) =>
-                                                            isCreateWorkspace
-                                                                ? setQuickGroup((prev) => ({ ...prev, code: e.target.value }))
-                                                                : setEditGroup((prev) => ({ ...prev, code: e.target.value }))
-                                                        }
-                                                        placeholder="Group code *"
-                                                        className="dashboard-field"
-                                                    />
-                                                    <select
-                                                        value={isCreateWorkspace ? quickGroup.status : editGroup.status}
-                                                        onChange={(e) =>
-                                                            isCreateWorkspace
-                                                                ? setQuickGroup((prev) => ({ ...prev, status: e.target.value }))
-                                                                : setEditGroup((prev) => ({ ...prev, status: e.target.value }))
-                                                        }
-                                                        className="dashboard-field dashboard-select"
-                                                    >
-                                                        {Object.values(COURSE_GROUP_STATUS).map((status) => (
-                                                            <option key={status} value={status}>
-                                                                {status}
-                                                            </option>
-                                                        ))}
-                                                    </select>
-                                                </div>
-                                            </div>
-
-                                            <div className="space-y-3">
-                                                <div className="text-xs font-semibold uppercase tracking-[0.18em] text-edubot-muted dark:text-slate-400">
-                                                    Schedule
-                                                </div>
-                                                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-                                                    <input
-                                                        type="date"
-                                                        value={isCreateWorkspace ? quickGroup.startDate : editGroup.startDate}
-                                                        onChange={(e) =>
-                                                            isCreateWorkspace
-                                                                ? setQuickGroup((prev) => ({ ...prev, startDate: e.target.value }))
-                                                                : setEditGroup((prev) => ({ ...prev, startDate: e.target.value }))
-                                                        }
-                                                        className="dashboard-field"
-                                                    />
-                                                    <input
-                                                        type="date"
-                                                        value={isCreateWorkspace ? quickGroup.endDate : editGroup.endDate}
-                                                        onChange={(e) =>
-                                                            isCreateWorkspace
-                                                                ? setQuickGroup((prev) => ({ ...prev, endDate: e.target.value }))
-                                                                : setEditGroup((prev) => ({ ...prev, endDate: e.target.value }))
-                                                        }
-                                                        className="dashboard-field"
-                                                    />
-                                                    <input
-                                                        type="number"
-                                                        min="1"
-                                                        value={isCreateWorkspace ? quickGroup.seatLimit : editGroup.seatLimit}
-                                                        onChange={(e) =>
-                                                            isCreateWorkspace
-                                                                ? setQuickGroup((prev) => ({ ...prev, seatLimit: e.target.value }))
-                                                                : setEditGroup((prev) => ({ ...prev, seatLimit: e.target.value }))
-                                                        }
-                                                        placeholder="Seat limit"
-                                                        className="dashboard-field"
-                                                    />
-                                                    <input
-                                                        value={isCreateWorkspace ? quickGroup.timezone : editGroup.timezone}
-                                                        onChange={(e) =>
-                                                            isCreateWorkspace
-                                                                ? setQuickGroup((prev) => ({ ...prev, timezone: e.target.value }))
-                                                                : setEditGroup((prev) => ({ ...prev, timezone: e.target.value }))
-                                                        }
-                                                        placeholder="Timezone"
-                                                        className="dashboard-field"
-                                                    />
-                                                </div>
-                                            </div>
-
-                                            <div className="space-y-3">
-                                                <div className="text-xs font-semibold uppercase tracking-[0.18em] text-edubot-muted dark:text-slate-400">
-                                                    Delivery
-                                                </div>
-                                                <div className="grid gap-3 md:grid-cols-2">
-                                                    <input
-                                                        value={isCreateWorkspace ? quickGroup.location : editGroup.location}
-                                                        onChange={(e) =>
-                                                            isCreateWorkspace
-                                                                ? setQuickGroup((prev) => ({ ...prev, location: e.target.value }))
-                                                                : setEditGroup((prev) => ({ ...prev, location: e.target.value }))
-                                                        }
-                                                        placeholder="Location"
-                                                        className="dashboard-field md:col-span-2"
-                                                    />
-                                                    <select
-                                                        value={isCreateWorkspace ? quickGroup.meetingProvider : editGroup.meetingProvider}
-                                                        onChange={(e) =>
-                                                            isCreateWorkspace
-                                                                ? setQuickGroup((prev) => ({ ...prev, meetingProvider: e.target.value }))
-                                                                : setEditGroup((prev) => ({ ...prev, meetingProvider: e.target.value }))
-                                                        }
-                                                        className="dashboard-field dashboard-select"
-                                                    >
-                                                        <option value="">Meeting provider</option>
-                                                        {Object.values(MEETING_PROVIDER).map((provider) => (
-                                                            <option key={provider} value={provider}>
-                                                                {provider}
-                                                            </option>
-                                                        ))}
-                                                    </select>
-                                                    <input
-                                                        value={isCreateWorkspace ? quickGroup.instructorId : editGroup.instructorId}
-                                                        onChange={(e) =>
-                                                            isCreateWorkspace
-                                                                ? setQuickGroup((prev) => ({ ...prev, instructorId: e.target.value }))
-                                                                : setEditGroup((prev) => ({ ...prev, instructorId: e.target.value }))
-                                                        }
-                                                        placeholder="Instructor ID"
-                                                        className="dashboard-field"
-                                                    />
-                                                    <input
-                                                        value={isCreateWorkspace ? quickGroup.meetingUrl : editGroup.meetingUrl}
-                                                        onChange={(e) =>
-                                                            isCreateWorkspace
-                                                                ? setQuickGroup((prev) => ({ ...prev, meetingUrl: e.target.value }))
-                                                                : setEditGroup((prev) => ({ ...prev, meetingUrl: e.target.value }))
-                                                        }
-                                                        placeholder="Meeting URL"
-                                                        className="dashboard-field md:col-span-2"
-                                                    />
-                                                </div>
-                                            </div>
-                                        </>
-                                    ) : (
-                                        <>
+                                    <>
                                             <div className="space-y-3">
                                                 <div className="text-xs font-semibold uppercase tracking-[0.18em] text-edubot-muted dark:text-slate-400">
                                                     Basics
@@ -2017,8 +1725,7 @@ const SessionWorkspace = () => {
                                                     ) : null}
                                                 </div>
                                             </div>
-                                        </>
-                                    )}
+                                    </>
 
                                     <div className="flex items-center justify-between gap-3 border-t border-edubot-line/70 pt-4 dark:border-slate-700">
                                         <p className="text-sm text-edubot-muted dark:text-slate-400">
@@ -2132,11 +1839,19 @@ const SessionWorkspace = () => {
                                     <button
                                         onClick={saveAttendance}
                                         disabled={
-                                            savingAttendance || loadingStudents || !selectedCourseId
+                                            savingAttendance ||
+                                            loadingStudents ||
+                                            !selectedCourseId ||
+                                            !selectedSessionId ||
+                                            !hasAttendanceChanges
                                         }
                                         className="dashboard-button-primary"
                                     >
-                                        {savingAttendance ? 'Сакталууда...' : 'Катышууну сактоо'}
+                                        {savingAttendance
+                                            ? 'Сакталууда...'
+                                            : hasAttendanceChanges
+                                              ? 'Катышууну сактоо'
+                                              : 'Өзгөртүү жок'}
                                     </button>
                                 </div>
 
@@ -2185,25 +1900,25 @@ const SessionWorkspace = () => {
                                                                     <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-edubot-muted dark:text-slate-400">
                                                                         Катышуу
                                                                     </p>
-                                                                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-                                                                        {statusOptions.map((status) => (
-                                                                            <button
-                                                                                key={status.value}
-                                                                                onClick={() =>
-                                                                                    updateStatus(
-                                                                                        student.id,
-                                                                                        status.value
-                                                                                    )
-                                                                                }
-                                                                                className={`rounded-2xl px-3 py-2 text-xs font-semibold transition ${currentStatus === status.value
-                                                                                    ? status.className
-                                                                                    : 'bg-gray-100 text-gray-600 dark:bg-slate-800 dark:text-slate-300'
-                                                                                    }`}
-                                                                            >
-                                                                                {status.label}
-                                                                            </button>
-                                                                        ))}
+                                                                    <div className="relative">
+                                                                        <FiEdit3 className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-edubot-muted" />
+                                                                        <select
+                                                                            value={currentStatus}
+                                                                            onChange={(e) =>
+                                                                                updateStatus(student.id, e.target.value)
+                                                                            }
+                                                                            className="dashboard-field pl-11"
+                                                                        >
+                                                                            {statusOptions.map((status) => (
+                                                                                <option key={status.value} value={status.value}>
+                                                                                    {status.label}
+                                                                                </option>
+                                                                            ))}
+                                                                        </select>
                                                                     </div>
+                                                                    <p className="mt-2 text-xs text-edubot-muted dark:text-slate-400">
+                                                                        Статус тизмеден тандалат, ошондуктан кокус басуу азаят.
+                                                                    </p>
                                                                 </div>
 
                                                                 <div>
@@ -2602,7 +2317,9 @@ const SessionWorkspace = () => {
                                                             </div>
                                                         </div>
                                                         <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-edubot-muted dark:text-slate-400">
-                                                            <span>Deadline: {formatDisplayDate(item.deadline)}</span>
+                                                            <span>
+                                                                Deadline: {formatDisplayDate(resolveHomeworkDeadline(item))}
+                                                            </span>
                                                             <span>Session: {selectedSession?.title || `#${selectedSessionId}`}</span>
                                                         </div>
                                                     </div>
@@ -2657,7 +2374,7 @@ const SessionWorkspace = () => {
                                                                 Deadline
                                                             </div>
                                                             <div className="mt-2 text-sm font-semibold text-edubot-ink dark:text-white">
-                                                                {formatDisplayDate(selectedHomework.deadline)}
+                                                                {formatDisplayDate(resolveHomeworkDeadline(selectedHomework))}
                                                             </div>
                                                         </div>
                                                         <div className="dashboard-panel-muted rounded-2xl p-4">
@@ -2773,6 +2490,11 @@ const SessionWorkspace = () => {
                                                 <div className="mt-4 grid gap-3">
                                                     {homeworkSubmissions.map((submission) => {
                                                         const submissionMeta = getSubmissionStatusMeta(submission.status);
+                                                        const previewText = getSubmissionPreview(submission);
+                                                        const attachmentUrl = getSubmissionAttachmentUrl(submission);
+                                                        const hasAttachment =
+                                                            Boolean(attachmentUrl) &&
+                                                            previewText !== attachmentUrl;
                                                         return (
                                                             <div
                                                                 key={submission.id}
@@ -2791,7 +2513,12 @@ const SessionWorkspace = () => {
                                                                             </StatusBadge>
                                                                         </div>
                                                                         <div className="mt-1 text-xs text-edubot-muted dark:text-slate-400">
-                                                                            Жөнөтүлгөн: {formatDisplayDate(submission.submittedAt, '-')}
+                                                                            Жөнөтүлгөн:{' '}
+                                                                            {formatDisplayDate(
+                                                                                submission.submittedAt ||
+                                                                                    submission.createdAt,
+                                                                                '-'
+                                                                            )}
                                                                         </div>
                                                                         <div className="mt-3 rounded-2xl border border-edubot-line/80 bg-white/80 px-3 py-3 text-sm text-edubot-muted dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300">
                                                                             <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-edubot-muted dark:text-slate-500">
@@ -2799,9 +2526,38 @@ const SessionWorkspace = () => {
                                                                                 Жооп мазмуну
                                                                             </div>
                                                                             <p className="whitespace-pre-wrap break-words leading-6">
-                                                                                {getSubmissionPreview(submission)}
+                                                                                {previewText}
                                                                             </p>
                                                                         </div>
+                                                                        {hasAttachment && (
+                                                                            <div className="mt-3 rounded-2xl border border-edubot-line/80 bg-white/80 px-3 py-3 text-sm text-edubot-muted dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300">
+                                                                                <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-edubot-muted dark:text-slate-500">
+                                                                                    <FiPaperclip className="h-4 w-4" />
+                                                                                    Тиркелген файл
+                                                                                </div>
+                                                                                <div className="flex flex-wrap items-center justify-between gap-3">
+                                                                                    <div className="min-w-0 flex-1">
+                                                                                        <p className="truncate font-medium text-edubot-ink dark:text-white">
+                                                                                            {getAttachmentName(
+                                                                                                attachmentUrl
+                                                                                            )}
+                                                                                        </p>
+                                                                                        <p className="mt-1 text-xs text-edubot-muted dark:text-slate-400">
+                                                                                            LMSке жүктөлгөн файл же тышкы шилтеме
+                                                                                        </p>
+                                                                                    </div>
+                                                                                    <a
+                                                                                        href={attachmentUrl}
+                                                                                        target="_blank"
+                                                                                        rel="noreferrer"
+                                                                                        className="inline-flex items-center gap-2 rounded-xl border border-edubot-line px-3 py-2 text-xs font-semibold text-edubot-ink transition hover:border-edubot-orange hover:text-edubot-orange dark:border-slate-700 dark:text-slate-200"
+                                                                                    >
+                                                                                        <FiExternalLink className="h-4 w-4" />
+                                                                                        Ачуу
+                                                                                    </a>
+                                                                                </div>
+                                                                            </div>
+                                                                        )}
                                                                     </div>
                                                                     <div className="flex flex-wrap gap-2">
                                                                         <button

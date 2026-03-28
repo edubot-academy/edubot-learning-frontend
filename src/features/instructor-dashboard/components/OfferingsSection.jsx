@@ -30,6 +30,7 @@ import OfferingCard from './OfferingCard.jsx';
 import CreateOfferingModal from './modals/CreateOfferingModal.jsx';
 import EnrollStudentModal from './modals/EnrollStudentModal.jsx';
 import { formatDateTimeForInput } from '../utils/instructorDashboard.constants.js';
+import { normalizeEnrollmentCourseType } from '@features/enrollments/policy';
 
 const OfferingsSection = ({ courses = [], offerings = [], loading, refreshOfferings }) => {
     const getInitialForm = useCallback(
@@ -350,6 +351,9 @@ const OfferingsSection = ({ courses = [], offerings = [], loading, refreshOfferi
 
         try {
             await enrollUserInCourse(userIdValue, enrollOffering.course.id, {
+                courseType: normalizeEnrollmentCourseType(
+                    enrollOffering.course?.courseType || enrollOffering.courseType
+                ),
                 offeringId: enrollOffering.id,
                 discountPercentage: enrollForm.discountPercentage
                     ? Number(enrollForm.discountPercentage)

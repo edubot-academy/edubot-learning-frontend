@@ -1,5 +1,36 @@
 # Changelog
 
+## [1.3.13] - 2026-03-28
+
+### 🧭 DASHBOARD ENROLLMENT + GROUP WORKFLOW
+- Added a dedicated instructor `Groups` surface for group lifecycle and group-based learner enrollment.
+- Moved group create/edit into a reusable modal workflow with auto-generated editable group codes.
+- Updated admin delivery-course enrollment to require explicit group selection for `offline` and `online_live`.
+- Modernized instructor enrollment modals with tighter sizing, pinned actions, and improved dark-mode readability.
+
+### 📚 SESSION / ATTENDANCE / HOMEWORK
+- Migrated dashboard attendance to course -> group -> session flow instead of the legacy course/date model.
+- Made admin attendance read-first with explicit edit mode before changes.
+- Disabled attendance save actions when there is no real change in dashboard and session flows.
+- Removed the remaining legacy attendance write fallback from `SessionWorkspace`; attendance save now requires a selected session.
+- Fixed session workspace homework deadline display normalization and publish-state inconsistencies.
+- Added instructor-facing attachment visibility in homework review and improved session hero card layout.
+
+### 🧑‍🎓 STUDENT HOMEWORK SUBMISSIONS
+- Switched student tasks to trust `/student/homework` as the source of truth.
+- Added homework attachment upload support with file picker, validation, upload/submission phases, and cleaner error feedback.
+- Kept text and link submissions as complementary options alongside uploaded files.
+
+### 🔌 INTEGRATION DASHBOARD + DOCS
+- Extended LMS integration dashboard visibility for pending CRM enrollments, failed dispatches, quick filters, and row-level detail fetch.
+- Added copy actions for LMS enrollment ID, LMS student ID, and CRM lead ID inside integration event detail.
+- Updated contract, endpoint handoff, QA, backlog, and release-note docs to reflect the current CRM/LMS and session/group architecture.
+
+### 🐛 FIXES
+- Fixed attendance save buttons making unnecessary API calls when nothing changed.
+- Reduced accidental attendance status changes by replacing quick-tap status controls with more deliberate selectors.
+- Reverted out-of-scope public course/catalog enrollment wording changes to keep this iteration dashboard-only.
+
 ## [1.3.12] - 2026-03-28
 
 ### 🧩 SHARED DASHBOARD SYSTEM

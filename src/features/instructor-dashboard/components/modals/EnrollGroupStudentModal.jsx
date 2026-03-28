@@ -1,6 +1,7 @@
 import PropTypes from 'prop-types';
 import {
     FiCheckCircle,
+    FiLayers,
     FiPercent,
     FiSearch,
     FiUserPlus,
@@ -17,8 +18,9 @@ const getInitials = (value = '') =>
         .map((part) => part[0]?.toUpperCase())
         .join('') || 'S';
 
-const EnrollStudentModal = ({
-    offering,
+const EnrollGroupStudentModal = ({
+    group,
+    course,
     form,
     onChange,
     onClose,
@@ -34,27 +36,24 @@ const EnrollStudentModal = ({
     setShowDropdown,
 }) => {
     const selectedStudent = studentOptions.find((student) => String(student.id) === String(form.userId));
-    const seatUsage =
-        offering?.capacity != null
-            ? `${offering.enrolledCount ?? 0}/${offering.capacity}`
-            : 'Чектелбеген';
+    const seatUsage = group?.seatLimit ? `${students?.length ?? 0}/${group.seatLimit}` : 'Чектелбеген';
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/55 px-4 py-4 backdrop-blur-sm">
-            <div className="flex max-h-[88vh] w-full max-w-[52rem] flex-col overflow-hidden rounded-[2rem] border border-white/10 bg-white shadow-[0_30px_80px_rgba(15,23,42,0.22)] dark:bg-[#151922]">
-                <div className="border-b border-edubot-line/70 bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.14),_transparent_35%),linear-gradient(180deg,_rgba(248,250,252,0.98),_rgba(255,255,255,0.98))] px-6 py-5 dark:border-slate-700 dark:bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.12),_transparent_35%),linear-gradient(180deg,_rgba(24,28,39,0.98),_rgba(21,25,34,1))] sm:px-7">
+            <div className="flex max-h-[88vh] w-full max-w-3xl flex-col overflow-hidden rounded-[2rem] border border-white/10 bg-white shadow-[0_30px_80px_rgba(15,23,42,0.22)] dark:bg-[#151922]">
+                <div className="border-b border-edubot-line/70 bg-[radial-gradient(circle_at_top_left,_rgba(251,146,60,0.18),_transparent_38%),linear-gradient(135deg,_rgba(255,247,237,0.95),_rgba(255,255,255,0.98))] px-6 py-5 dark:border-slate-700 dark:bg-[radial-gradient(circle_at_top_left,_rgba(249,115,22,0.14),_transparent_35%),linear-gradient(180deg,_rgba(24,28,39,0.98),_rgba(21,25,34,1))] sm:px-7">
                     <div className="flex items-start justify-between gap-4">
                         <div className="space-y-3">
-                            <div className="inline-flex items-center gap-2 rounded-full border border-sky-200 bg-white/80 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-sky-700 dark:border-sky-500/20 dark:bg-slate-900/60 dark:text-sky-300">
+                            <div className="inline-flex items-center gap-2 rounded-full border border-edubot-orange/20 bg-white/80 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-edubot-orange dark:border-edubot-orange/25 dark:bg-slate-900/60">
                                 <FiUserPlus className="h-3.5 w-3.5" />
-                                Offering Enrollment
+                                Group Enrollment
                             </div>
                             <div>
                                 <h2 className="text-2xl font-semibold tracking-tight text-edubot-ink dark:text-white sm:text-[2rem]">
-                                    {offering?.course?.title || 'Offering'}
+                                    {group?.name || `Group #${group?.id}`}
                                 </h2>
                                 <p className="mt-1 text-sm text-edubot-muted dark:text-slate-400">
-                                    {offering?.title || 'Offering'} үчүн студент кошуу.
+                                    {course?.title || 'Delivery course'} боюнча студентти группага кошуу.
                                 </p>
                             </div>
                         </div>
@@ -62,20 +61,28 @@ const EnrollStudentModal = ({
                         <button
                             type="button"
                             onClick={onClose}
-                            className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-edubot-line/80 bg-white/80 text-edubot-muted transition hover:border-sky-300 hover:text-sky-700 dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-400"
+                            className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-edubot-line/80 bg-white/80 text-edubot-muted transition hover:border-edubot-orange/40 hover:text-edubot-orange dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-400"
                             aria-label="Жабуу"
                         >
                             <FiX className="h-5 w-5" />
                         </button>
                     </div>
 
-                    <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                    <div className="mt-4 grid gap-3 sm:grid-cols-3">
                         <div className="rounded-2xl border border-white/70 bg-white/80 px-4 py-3 dark:border-slate-700 dark:bg-slate-900/70">
                             <div className="text-xs font-semibold uppercase tracking-[0.16em] text-edubot-muted dark:text-slate-500">
-                                Offering
+                                Курс
                             </div>
                             <div className="mt-1 font-medium text-edubot-ink dark:text-white">
-                                {offering?.title || '—'}
+                                {course?.title || '—'}
+                            </div>
+                        </div>
+                        <div className="rounded-2xl border border-white/70 bg-white/80 px-4 py-3 dark:border-slate-700 dark:bg-slate-900/70">
+                            <div className="text-xs font-semibold uppercase tracking-[0.16em] text-edubot-muted dark:text-slate-500">
+                                Group Code
+                            </div>
+                            <div className="mt-1 font-medium text-edubot-ink dark:text-white">
+                                {group?.code || '—'}
                             </div>
                         </div>
                         <div className="rounded-2xl border border-white/70 bg-white/80 px-4 py-3 dark:border-slate-700 dark:bg-slate-900/70">
@@ -98,11 +105,11 @@ const EnrollStudentModal = ({
                         <div className="space-y-5">
                             <section className="rounded-[1.75rem] border border-edubot-line/70 bg-edubot-surfaceAlt/35 p-5 dark:border-slate-700 dark:bg-slate-900/35">
                             <div className="flex items-center gap-2 text-sm font-semibold text-edubot-ink dark:text-white">
-                                <FiSearch className="h-4 w-4 text-sky-600" />
-                                Студент издөө
+                                <FiSearch className="h-4 w-4 text-edubot-orange" />
+                                Студент издөө жана тандоо
                             </div>
                             <p className="mt-1 text-sm text-edubot-muted dark:text-slate-400">
-                                Аты же email менен издеп, offeringге кошула турган студентти тандаңыз.
+                                Аты, email же аккаунт маалыматы менен издеп, тизмеден так студентти тандаңыз.
                             </p>
 
                             <div className="relative mt-4">
@@ -130,7 +137,7 @@ const EnrollStudentModal = ({
                                                     type="button"
                                                     className={`flex w-full items-start gap-3 rounded-2xl px-3 py-3 text-left transition ${
                                                         active
-                                                            ? 'bg-sky-50 text-sky-700 dark:bg-sky-500/10 dark:text-sky-300'
+                                                            ? 'bg-edubot-orange/10 text-edubot-orange'
                                                             : 'hover:bg-slate-50 dark:hover:bg-slate-800/80'
                                                     }`}
                                                     onClick={() => {
@@ -183,7 +190,7 @@ const EnrollStudentModal = ({
                                     </div>
                                 ) : (
                                     <p className="text-sm text-edubot-muted dark:text-slate-400">
-                                        Тизмеден студент тандалгандан кийин жаздыруу даяр болот.
+                                        Кеминде эки тамга жазыңыз жана студентти тизмеден тандаңыз.
                                     </p>
                                 )}
                             </div>
@@ -191,9 +198,13 @@ const EnrollStudentModal = ({
 
                             <section className="rounded-[1.75rem] border border-edubot-line/70 bg-edubot-surfaceAlt/35 p-5 dark:border-slate-700 dark:bg-slate-900/35">
                             <div className="flex items-center gap-2 text-sm font-semibold text-edubot-ink dark:text-white">
-                                <FiPercent className="h-4 w-4 text-sky-600" />
-                                Скидка
+                                <FiPercent className="h-4 w-4 text-edubot-orange" />
+                                Баа шарты
                             </div>
+                            <p className="mt-1 text-sm text-edubot-muted dark:text-slate-400">
+                                Керек болсо ручной скидка көрсөтүңүз. Бош калса стандарттуу баа колдонулат.
+                            </p>
+
                             <div className="mt-4">
                                 <label className="mb-2 block text-sm font-medium text-edubot-muted dark:text-slate-400">
                                     Скидка %
@@ -212,13 +223,30 @@ const EnrollStudentModal = ({
                         </div>
 
                         <div className="space-y-5">
+                            <section className="rounded-[1.75rem] border border-edubot-line/70 bg-slate-900 px-5 py-5 text-white dark:border-slate-700 dark:bg-slate-800">
+                            <div className="flex items-center gap-2 text-sm font-semibold text-white">
+                                <FiLayers className="h-4 w-4 text-edubot-orange" />
+                                Group Snapshot
+                            </div>
+                            <div className="mt-4 grid gap-3">
+                                <div className="rounded-2xl bg-white/5 px-4 py-3">
+                                    <div className="text-xs uppercase tracking-[0.16em] text-slate-400">Group ID</div>
+                                    <div className="mt-1 text-sm font-medium">{group?.id || '—'}</div>
+                                </div>
+                                <div className="rounded-2xl bg-white/5 px-4 py-3">
+                                    <div className="text-xs uppercase tracking-[0.16em] text-slate-400">Толтурулушу</div>
+                                    <div className="mt-1 text-sm font-medium">{seatUsage}</div>
+                                </div>
+                            </div>
+                            </section>
+
                             <section className="rounded-[1.75rem] border border-edubot-line/70 bg-edubot-surfaceAlt/35 p-5 dark:border-slate-700 dark:bg-slate-900/35">
                             <div className="flex items-center gap-2 text-sm font-semibold text-edubot-ink dark:text-white">
-                                <FiUsers className="h-4 w-4 text-sky-600" />
+                                <FiUsers className="h-4 w-4 text-edubot-orange" />
                                 Азыркы студенттер
                             </div>
                             <p className="mt-1 text-sm text-edubot-muted dark:text-slate-400">
-                                Offeringдин учурдагы курамын текшерип туруп кошуңуз.
+                                Группадагы азыркы курамды тез текшерип туруп кошсоңуз болот.
                             </p>
 
                             <div className="mt-4 rounded-2xl border border-edubot-line/70 bg-white/80 p-3 dark:border-slate-700 dark:bg-slate-900/45">
@@ -247,7 +275,7 @@ const EnrollStudentModal = ({
                                     </div>
                                 ) : (
                                     <p className="text-sm text-edubot-muted dark:text-slate-400">
-                                        Бул offeringде азырынча студент жок.
+                                        Бул группада азырынча студент жок.
                                     </p>
                                 )}
                             </div>
@@ -271,7 +299,7 @@ const EnrollStudentModal = ({
                             disabled={enrolling}
                         >
                             <FiUserPlus className="h-4 w-4" />
-                            {enrolling ? 'Кошууда...' : 'Студент кошуу'}
+                            {enrolling ? 'Кошулууда...' : 'Студент кошуу'}
                         </button>
                     </div>
                 </form>
@@ -280,15 +308,15 @@ const EnrollStudentModal = ({
     );
 };
 
-EnrollStudentModal.propTypes = {
-    offering: PropTypes.shape({
+EnrollGroupStudentModal.propTypes = {
+    group: PropTypes.shape({
         id: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
+        name: PropTypes.string,
+        code: PropTypes.string,
+        seatLimit: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
+    }),
+    course: PropTypes.shape({
         title: PropTypes.string,
-        capacity: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
-        enrolledCount: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
-        course: PropTypes.shape({
-            title: PropTypes.string,
-        }),
     }),
     form: PropTypes.shape({
         userId: PropTypes.string,
@@ -320,8 +348,9 @@ EnrollStudentModal.propTypes = {
     setShowDropdown: PropTypes.func.isRequired,
 };
 
-EnrollStudentModal.defaultProps = {
-    offering: null,
+EnrollGroupStudentModal.defaultProps = {
+    group: null,
+    course: null,
     enrolling: false,
     students: [],
     loadingStudents: false,
@@ -331,4 +360,4 @@ EnrollStudentModal.defaultProps = {
     showDropdown: false,
 };
 
-export default EnrollStudentModal;
+export default EnrollGroupStudentModal;

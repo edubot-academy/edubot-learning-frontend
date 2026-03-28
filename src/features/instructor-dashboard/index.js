@@ -1,6 +1,7 @@
 // Main Components
 export { default as InstructorOverviewSection } from './components/InstructorOverviewSection.jsx';
 export { default as CoursesSection } from './components/CoursesSection.jsx';
+export { default as GroupsSection } from './components/GroupsSection.jsx';
 export { default as StudentsSection } from './components/StudentsSection.jsx';
 export { default as ProfileSection } from './components/ProfileSection.jsx';
 export { default as AiSection } from './components/AiSection.jsx';
@@ -18,6 +19,7 @@ export { default as OfferingCard } from './components/OfferingCard.jsx';
 export { default as CreateDeliveryCourseModal } from './components/modals/CreateDeliveryCourseModal.jsx';
 export { default as CreateOfferingModal } from './components/modals/CreateOfferingModal.jsx';
 export { default as EnrollStudentModal } from './components/modals/EnrollStudentModal.jsx';
+export { default as EnrollGroupStudentModal } from './components/modals/EnrollGroupStudentModal.jsx';
 
 // Hooks
 export {

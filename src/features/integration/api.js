@@ -78,3 +78,8 @@ export const fetchEnrollmentStatusEvents = async ({ page = 1, limit = 20 } = {})
     });
     return data;
 };
+
+export const fetchIntegrationEventDetail = async (id) => {
+    const { data } = await api.get(`/admin/integration/events/${id}`);
+    return data;
+};

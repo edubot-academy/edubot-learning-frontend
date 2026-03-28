@@ -36,13 +36,14 @@ import {
     updateSkill,
     deleteSkill,
     markNotificationRead as markNotificationReadApi,
+    fetchCourseGroups,
 } from '@services/api';
 import toast from 'react-hot-toast';
 import NotificationsWidget from '@features/notifications/components/NotificationsWidget';
 import NotificationsTab from '@features/notifications/components/NotificationsTab';
-import Loader from '@shared/ui/Loader';
 import ConfirmationModal from '@shared/ui/ConfirmationModal';
 import IntegrationTab from '@features/integration/components/IntegrationTab';
+import { normalizeEnrollmentCourseType } from '@features/enrollments/policy';
 import AttendancePage from '../../../pages/Attendance';
 import AdminAnalyticsPage from '../../../pages/AdminAnalytics';
 import { isForbiddenError } from '@shared/api/error';
@@ -81,6 +82,8 @@ const AdminPanel = () => {
     const [editingCategoryId, setEditingCategoryId] = useState(null);
     const [editingCategoryName, setEditingCategoryName] = useState('');
     const [pendingCourses, setPendingCourses] = useState([]);
+    const [courseGroupsByCourseId, setCourseGroupsByCourseId] = useState({});
+    const [selectedEnrollmentGroupIds, setSelectedEnrollmentGroupIds] = useState({});
 
     const [companies, setCompanies] = useState([]);
     const [, setCompaniesTotalPages] = useState(1);
@@ -299,8 +302,41 @@ const AdminPanel = () => {
                 fetchCourses(),
                 fetchCategories(),
             ]);
-            setCourses(coursesRes?.courses || []);
+            const loadedCourses = coursesRes?.courses || [];
+            setCourses(loadedCourses);
             setCategories(categoriesRes || []);
+
+            const deliveryCourses = loadedCourses.filter((course) =>
+                ['offline', 'online_live'].includes(
+                    normalizeEnrollmentCourseType(course?.courseType || course?.type)
+                )
+            );
+
+            if (!deliveryCourses.length) {
+                setCourseGroupsByCourseId({});
+                return;
+            }
+
+            const groupEntries = await Promise.all(
+                deliveryCourses.map(async (course) => {
+                    try {
+                        const response = await fetchCourseGroups({ courseId: Number(course.id) });
+                        const items = Array.isArray(response)
+                            ? response
+                            : Array.isArray(response?.items)
+                                ? response.items
+                                : Array.isArray(response?.data)
+                                    ? response.data
+                                    : [];
+                        return [String(course.id), items];
+                    } catch (error) {
+                        console.error('Failed to load groups for admin course', course.id, error);
+                        return [String(course.id), []];
+                    }
+                })
+            );
+
+            setCourseGroupsByCourseId(Object.fromEntries(groupEntries));
         } catch (error) {
             if (!isForbiddenError(error)) {
                 toast.error('Курстарды жана категорияларды жүктөөдө ката кетти');
@@ -466,7 +502,25 @@ const AdminPanel = () => {
     const handleEnrollUser = async (userId, courseId) => {
         if (!userId) return;
         try {
-            await enrollUserInCourse(userId, courseId);
+            const selectedCourse = courses.find((course) => Number(course.id) === Number(courseId));
+            const normalizedCourseType = normalizeEnrollmentCourseType(selectedCourse?.courseType);
+            const selectedGroupId = selectedEnrollmentGroupIds[String(courseId)];
+
+            if (
+                ['offline', 'online_live'].includes(normalizedCourseType) &&
+                (!selectedGroupId || Number.isNaN(Number(selectedGroupId)))
+            ) {
+                toast.error('Delivery курс үчүн адегенде группаны тандаңыз');
+                return;
+            }
+
+            await enrollUserInCourse(userId, courseId, {
+                courseType: normalizedCourseType,
+                groupId:
+                    ['offline', 'online_live'].includes(normalizedCourseType) && selectedGroupId
+                        ? Number(selectedGroupId)
+                        : undefined,
+            });
             toast.success('Студент курска ийгиликтүү катталды');
         } catch {
             toast.error('Каттоодо ката кетти');
@@ -904,6 +958,8 @@ const AdminPanel = () => {
                         newCategory={newCategory}
                         editingCategoryId={editingCategoryId}
                         editingCategoryName={editingCategoryName}
+                        courseGroupsByCourseId={courseGroupsByCourseId}
+                        selectedEnrollmentGroupIds={selectedEnrollmentGroupIds}
                         transcodeCourseId={transcodeCourseId}
                         transcodeSectionId={transcodeSectionId}
                         transcodeLessonId={transcodeLessonId}
@@ -911,6 +967,7 @@ const AdminPanel = () => {
                         setNewCategory={setNewCategory}
                         setEditingCategoryId={setEditingCategoryId}
                         setEditingCategoryName={setEditingCategoryName}
+                        setSelectedEnrollmentGroupIds={setSelectedEnrollmentGroupIds}
                         setTranscodeCourseId={setTranscodeCourseId}
                         setTranscodeSectionId={setTranscodeSectionId}
                         setTranscodeLessonId={setTranscodeLessonId}

@@ -1,14 +1,17 @@
 import toast from 'react-hot-toast';
 import api from '../../shared/api/client';
+import { validateManualEnrollmentContext } from './policy';
 
 export const enrollUserInCourse = async (userId, courseId, options = {}) => {
-    const { discountPercentage, offeringId } = options || {};
+    const { discountPercentage, offeringId, groupId, courseType } = options || {};
     try {
+        validateManualEnrollmentContext({ courseType, offeringId, groupId });
         const response = await api.post('/enrollments/enroll', {
             userId: parseInt(userId, 10),
             courseId: parseInt(courseId, 10),
             discountPercentage,
             offeringId,
+            groupId: groupId !== undefined && groupId !== null ? parseInt(groupId, 10) : undefined,
         });
         return response.data;
     } catch (error) {
