@@ -22,9 +22,11 @@ export const fetchHomeworkSummary = async ({ courseId, groupId } = {}) => {
     return data;
 };
 
-export const fetchSessionHomework = async (sessionId) => {
+export const fetchSessionHomework = async (sessionId, { includeUnpublished = false } = {}) => {
     const validSessionId = ensurePositiveInt(sessionId, 'sessionId');
-    const { data } = await api.get(`/course-sessions/${validSessionId}/homework`);
+    const { data } = await api.get(`/course-sessions/${validSessionId}/homework`, {
+        params: clean({ includeUnpublished }),
+    });
     return data;
 };
 

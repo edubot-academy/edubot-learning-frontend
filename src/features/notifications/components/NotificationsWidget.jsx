@@ -6,6 +6,11 @@ import {
     markAllNotificationsRead,
 } from '../api';
 import Loader from '@shared/ui/Loader';
+import {
+    DashboardInsetPanel,
+    EmptyState,
+} from '@components/ui/dashboard';
+import { FiBell, FiCheckCircle } from 'react-icons/fi';
 
 const NotificationsWidget = ({ title = 'Билдирүүлөр', limit = 5, link = '/notifications' }) => {
     const [items, setItems] = useState([]);
@@ -42,11 +47,16 @@ const NotificationsWidget = ({ title = 'Билдирүүлөр', limit = 5, link
     };
 
     return (
-        <div className="rounded-3xl p-4 sm:p-5 border border-gray-100 dark:border-gray-800 shadow-sm bg-white dark:bg-[#111111]">
-            <div className="flex items-center justify-between gap-2 mb-3">
+        <DashboardInsetPanel
+            title={title}
+            description="Жаңылык жана эскертмелер"
+        >
+            <div className="mt-4 flex items-center justify-between gap-2 mb-3">
                 <div>
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-[#E8ECF3]">{title}</h3>
-                    <p className="text-sm text-gray-500 dark:text-[#a6adba]">Жаңылык жана эскертмелер</p>
+                    <div className="inline-flex items-center gap-2 text-sm text-edubot-muted dark:text-slate-400">
+                        <FiBell className="h-4 w-4 text-edubot-orange" />
+                        Акыркы жаңыртуулар
+                    </div>
                 </div>
                 <div className="flex items-center gap-2">
                     {unreadCount > 0 && (
@@ -57,8 +67,9 @@ const NotificationsWidget = ({ title = 'Билдирүүлөр', limit = 5, link
                     <button
                         type="button"
                         onClick={handleMarkAll}
-                        className="text-xs text-gray-500 dark:text-[#a6adba] hover:text-gray-800 dark:hover:text-white"
+                        className="dashboard-button-secondary"
                     >
+                        <FiCheckCircle className="h-4 w-4" />
                         Баарын окулган деп белгилөө
                     </button>
                 </div>
@@ -67,15 +78,18 @@ const NotificationsWidget = ({ title = 'Билдирүүлөр', limit = 5, link
             {loading ? (
                 <Loader fullScreen={false} />
             ) : items.length === 0 ? (
-                <p className="text-sm text-gray-500 dark:text-[#a6adba]">Азырынча билдирүүлөр жок.</p>
+                <EmptyState
+                    title="Азырынча билдирүүлөр жок"
+                    subtitle="Жаңы окуялар болгондо бул жерден көрүнө баштайт."
+                />
             ) : (
-                <ul className="divide-y divide-gray-100 dark:divide-gray-800">
+                <ul className="divide-y divide-edubot-line/70 dark:divide-slate-800">
                     {items.map((item) => (
-                        <li key={item.id} className="py-2 text-sm">
-                            <p className="text-gray-800 dark:text-[#E8ECF3] line-clamp-2">
+                        <li key={item.id} className="py-3 text-sm">
+                            <p className="text-edubot-ink dark:text-[#E8ECF3] line-clamp-2">
                                 {item.message || item.subject}
                             </p>
-                            <p className="text-xs text-gray-500 dark:text-[#a6adba] mt-1">
+                            <p className="text-xs text-edubot-muted dark:text-[#a6adba] mt-1">
                                 {item.createdAt ? new Date(item.createdAt).toLocaleString() : ''}
                             </p>
                         </li>
@@ -83,12 +97,12 @@ const NotificationsWidget = ({ title = 'Билдирүүлөр', limit = 5, link
                 </ul>
             )}
 
-            <div className="mt-3 text-right">
-                <Link to={link} className="text-sm text-blue-600 dark:text-blue-400 hover:underline">
+            <div className="mt-4 text-right">
+                <Link to={link} className="text-sm font-semibold text-edubot-orange hover:underline">
                     Бардыгын көрүү
                 </Link>
             </div>
-        </div>
+        </DashboardInsetPanel>
     );
 };
 

@@ -13,7 +13,12 @@ import {
     FiSearch,
     FiSend,
 } from 'react-icons/fi';
-import { DashboardMetricCard } from '../../../../components/ui/dashboard';
+import {
+    DashboardFilterBar,
+    DashboardMetricCard,
+    DashboardWorkspaceHero,
+    StatusBadge,
+} from '../../../../components/ui/dashboard';
 import { getTaskKey, resolveSessionHomeworkIds } from '../../utils/studentDashboard.helpers.js';
 
 const STATUS_META = {
@@ -191,23 +196,13 @@ const TasksTab = ({ tasks, onSubmitHomework, submittingTaskId }) => {
 
     return (
         <div className="space-y-6">
-            <section className="dashboard-panel overflow-hidden">
-                <div className="border-b border-edubot-line/70 px-6 py-5 dark:border-slate-700">
-                    <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-                        <div className="max-w-2xl">
-                            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-edubot-orange">
-                                Student Tasks
-                            </p>
-                            <h2 className="mt-2 text-2xl font-semibold text-edubot-ink dark:text-white">
-                                Тапшырмалар иш мейкиндиги
-                            </h2>
-                            <p className="mt-2 text-sm leading-6 text-edubot-muted dark:text-slate-300">
-                                Тапшырмалардын абалын көрүңүз, мөөнөттөрдү байкаңыз жана жоопторду
-                                ушул эле жерден жөнөтүңүз.
-                            </p>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <DashboardWorkspaceHero
+                className="dashboard-panel"
+                eyebrow="Student Tasks"
+                title="Тапшырмалар иш мейкиндиги"
+                description="Тапшырмалардын абалын көрүңүз, мөөнөттөрдү байкаңыз жана жоопторду ушул эле жерден жөнөтүңүз."
+                metrics={(
+                    <>
                             <DashboardMetricCard label="Жалпы" value={stats.total} icon={FiBookOpen} />
                             <DashboardMetricCard
                                 label="Күтүүдө"
@@ -227,11 +222,10 @@ const TasksTab = ({ tasks, onSubmitHomework, submittingTaskId }) => {
                                 tone="green"
                                 icon={FiCheckCircle}
                             />
-                        </div>
-                    </div>
-                </div>
-
-                <div className="grid gap-3 border-b border-edubot-line/70 px-6 py-5 dark:border-slate-700 lg:grid-cols-[minmax(0,1.5fr),minmax(0,0.7fr),minmax(0,0.7fr)]">
+                    </>
+                )}
+            >
+                <DashboardFilterBar gridClassName="lg:grid-cols-[minmax(0,1.5fr),minmax(0,0.7fr),minmax(0,0.7fr)]">
                     <label className="relative block">
                         <FiSearch className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-edubot-muted" />
                         <input
@@ -270,9 +264,9 @@ const TasksTab = ({ tasks, onSubmitHomework, submittingTaskId }) => {
                             </option>
                         ))}
                     </select>
-                </div>
+                </DashboardFilterBar>
 
-                <div className="space-y-4 p-6">
+                <div className="space-y-4 pt-5">
                     {filteredTasks.length ? (
                         filteredTasks.map((item) => {
                             const draft = drafts[item.key] || { text: '', link: '' };
@@ -297,12 +291,10 @@ const TasksTab = ({ tasks, onSubmitHomework, submittingTaskId }) => {
                                                         <h3 className="text-lg font-semibold text-edubot-ink dark:text-white">
                                                             {item.title}
                                                         </h3>
-                                                        <span
-                                                            className={`inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-semibold ${item.meta.badgeClass}`}
-                                                        >
+                                                        <StatusBadge tone={item.meta.tone || 'default'} className="gap-1">
                                                             <StatusIcon className="h-3.5 w-3.5" />
                                                             {item.meta.label}
-                                                        </span>
+                                                        </StatusBadge>
                                                     </div>
 
                                                     <div className="mt-2 flex flex-wrap gap-x-4 gap-y-2 text-sm text-edubot-muted dark:text-slate-300">
@@ -422,7 +414,7 @@ const TasksTab = ({ tasks, onSubmitHomework, submittingTaskId }) => {
                         </div>
                     )}
                 </div>
-            </section>
+            </DashboardWorkspaceHero>
         </div>
     );
 };

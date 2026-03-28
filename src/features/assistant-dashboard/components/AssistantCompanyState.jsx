@@ -1,76 +1,59 @@
-import React from "react";
+import {
+    DashboardWorkspaceHero,
+    EmptyState,
+} from '@components/ui/dashboard';
+import { FiBriefcase } from 'react-icons/fi';
 
-const AssistantCompanyState = ({ 
-    assistantNoCompany, 
-    assistantNeedsSelect, 
-    companies, 
-    activeCompanyId, 
-    setActiveCompanyId 
+const AssistantCompanyState = ({
+    assistantNoCompany,
+    assistantNeedsSelect,
+    companies,
+    activeCompanyId,
+    setActiveCompanyId,
 }) => {
-    const renderNoCompanyState = () => (
-        <div className="bg-white dark:bg-gray-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-lg p-8">
-            <div className="text-center">
-                <div className="w-16 h-16 bg-edubot-orange/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <span className="text-2xl">🏢</span>
-                </div>
-
-                <h2 className="text-xl font-semibold text-slate-900 dark:text-white mb-2">
-                    Компания дайындалган эмес
-                </h2>
-
-                <p className="text-slate-600 dark:text-slate-400 mb-4">
-                    Сиз азырынча эч бир компанияга байланыштырылган жоксуз. Иштей баштоо үчүн
-                    администраторго же компания жетекчисине кайрылыңыз.
-                </p>
-
-                <p className="text-sm text-slate-500 dark:text-slate-400 italic">
-                    (RU) Вы пока не привязаны ни к одной компании. Обратитесь к администратору
-                    или руководителю компании.
-                </p>
-            </div>
-        </div>
-    );
-
-    const renderCompanySelector = () => (
-        <div className="bg-white dark:bg-gray-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-lg p-8">
-            <div className="text-center">
-                <div className="w-16 h-16 bg-edubot-orange/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <span className="text-2xl">🏢</span>
-                </div>
-
-                <h2 className="text-xl font-semibold text-slate-900 dark:text-white mb-4">
-                    Компанияны тандаңыз
-                </h2>
-
-                <p className="text-slate-600 dark:text-slate-400 mb-6">
-                    Сураныч, компанияны тандаңыз. Сиз бир нече компанияга байланыштырылгансыз.
-                    <br />
-                    (RU) Вы привязаны к нескольким компаниям — выберите, с какой работать.
-                </p>
-
-                <select
-                    className="w-full max-w-md px-4 py-3 bg-white dark:bg-gray-700 border border-slate-200 dark:border-slate-600 rounded-xl text-slate-900 dark:text-white focus:ring-2 focus:ring-edubot-orange focus:border-transparent transition-all duration-200 shadow-sm"
-                    value={activeCompanyId ?? ""}
-                    onChange={(e) => setActiveCompanyId(e.target.value ? Number(e.target.value) : null)}
-                >
-                    <option value="">-- Компанияны тандаңыз --</option>
-                    {companies.map((company) => (
-                        <option key={company.id} value={company.id}>
-                            {company.name}
-                            {company.role ? ` · ${company.role}` : ""}
-                        </option>
-                    ))}
-                </select>
-            </div>
-        </div>
-    );
-
     if (assistantNoCompany) {
-        return renderNoCompanyState();
+        return (
+            <DashboardWorkspaceHero
+                eyebrow="Assistant access"
+                title="Компания дайындалган эмес"
+                description="Сиз азырынча эч бир компанияга байланыштырылган жоксуз. Иштей баштоо үчүн администраторго же компания жетекчисине кайрылыңыз."
+            >
+                <EmptyState
+                    title="Компания байланышы керек"
+                    subtitle="Ассистент катары курстарды жана студенттерди көрүү үчүн сизге компания дайындалышы керек."
+                    icon={<FiBriefcase className="h-8 w-8 text-edubot-orange" />}
+                />
+            </DashboardWorkspaceHero>
+        );
     }
 
     if (assistantNeedsSelect) {
-        return renderCompanySelector();
+        return (
+            <DashboardWorkspaceHero
+                eyebrow="Assistant access"
+                title="Компанияны тандаңыз"
+                description="Сиз бир нече компанияга байланыштырылгансыз. Кайсы компания менен иштей турганыңызды тандаңыз."
+            >
+                <div className="max-w-xl">
+                    <label className="text-sm text-edubot-ink dark:text-white">
+                        <span className="mb-2 block font-medium">Компания</span>
+                        <select
+                            className="dashboard-select w-full"
+                            value={activeCompanyId ?? ''}
+                            onChange={(e) => setActiveCompanyId(e.target.value ? Number(e.target.value) : null)}
+                        >
+                            <option value="">-- Компанияны тандаңыз --</option>
+                            {companies.map((company) => (
+                                <option key={company.id} value={company.id}>
+                                    {company.name}
+                                    {company.role ? ` · ${company.role}` : ''}
+                                </option>
+                            ))}
+                        </select>
+                    </label>
+                </div>
+            </DashboardWorkspaceHero>
+        );
     }
 
     return null;

@@ -1,18 +1,52 @@
-import React from "react";
+import {
+    DashboardInsetPanel,
+    EmptyState,
+    StatusBadge,
+} from '@components/ui/dashboard';
+import { FiBookOpen } from 'react-icons/fi';
 
 const AssistantCourseStats = ({ courses, courseCounts, loading }) => {
-    return (
-        <div className="flex flex-wrap gap-4 text-sm text-gray-700 dark:text-[#a6adba]">
-            {courses.map((course) => (
-                <div key={course.id} className="bg-gray-100 dark:bg-slate-700 px-3 py-1 rounded">
-                    {course.title}: {courseCounts[course.id] || 0} студент
-                </div>
-            ))}
+    if (!courses.length && !loading) {
+        return (
+            <DashboardInsetPanel
+                title="Курс жүктөмү"
+                description="Компаниядагы курстар боюнча студенттердин бөлүштүрүлүшү."
+            >
+                <EmptyState
+                    title="Курс табылган жок"
+                    subtitle="Компания үчүн жеткиликтүү жарыяланган курстар чыккандан кийин бул жерде көрүнөт."
+                    icon={<FiBookOpen className="h-8 w-8 text-edubot-orange" />}
+                />
+            </DashboardInsetPanel>
+        );
+    }
 
-            {!courses.length && !loading && (
-                <div className="text-gray-500 dark:text-[#a6adba] italic">Курс табылган жок.</div>
-            )}
-        </div>
+    return (
+        <DashboardInsetPanel
+            title="Курс жүктөмү"
+            description="Компаниядагы курстар боюнча студенттердин бөлүштүрүлүшү."
+        >
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                {courses.map((course) => (
+                    <div
+                        key={course.id}
+                        className="dashboard-panel-muted flex items-start justify-between gap-3 rounded-3xl p-4"
+                    >
+                        <div className="min-w-0">
+                            <div className="text-sm font-semibold text-edubot-ink dark:text-white">
+                                {course.title}
+                            </div>
+                            <div className="mt-1 text-xs text-edubot-muted dark:text-slate-400">
+                                {course.shortDescription || 'Компаниядагы активдүү курс'}
+                            </div>
+                        </div>
+                        <StatusBadge tone={(courseCounts[course.id] || 0) > 0 ? 'green' : 'default'}>
+                            {courseCounts[course.id] || 0} студент
+                        </StatusBadge>
+                    </div>
+                ))}
+            </div>
+        </DashboardInsetPanel>
     );
 };
 

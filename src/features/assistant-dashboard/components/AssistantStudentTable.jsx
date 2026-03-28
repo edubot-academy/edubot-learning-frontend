@@ -1,7 +1,15 @@
 /* eslint-disable react/prop-types */
-import { EmptyState, DashboardTableSkeleton } from "@components/ui/dashboard";
-import AssistantCourseStats from "./AssistantCourseStats";
-import AssistantPagination from "./AssistantPagination";
+import {
+    DashboardFilterBar,
+    DashboardInsetPanel,
+    DashboardMetricCard,
+    DashboardWorkspaceHero,
+    EmptyState,
+    StatusBadge,
+} from '@components/ui/dashboard';
+import AssistantCourseStats from './AssistantCourseStats';
+import AssistantPagination from './AssistantPagination';
+import { FiBookOpen, FiCheckCircle, FiSearch, FiUsers } from 'react-icons/fi';
 
 const AssistantStudentTable = ({
     students,
@@ -20,186 +28,167 @@ const AssistantStudentTable = ({
     setCurrentPage,
     setCourseSelections,
     handleEnroll,
-    handleUnenroll
+    handleUnenroll,
 }) => {
     return (
-        <div className="relative">
-            <div className="flex gap-6 mb-4 text-sm font-medium flex-wrap">
-                <div>👥 Жалпы студенттер: {totalStudents}</div>
-                <div>✅ Катталган студенттер: {enrolledStudents.length}</div>
-                <div>🎓 Курстар: {courses.length}</div>
-            </div>
+        <div className="space-y-6">
+            <DashboardWorkspaceHero
+                eyebrow="Assistant workspace"
+                title="Студент каттоо агымы"
+                description="Компаниядагы студенттерди көрүп, жеткиликтүү курстарга тез каттап же чыгарыңыз."
+                metrics={(
+                    <>
+                        <DashboardMetricCard label="Жалпы студенттер" value={totalStudents} icon={FiUsers} />
+                        <DashboardMetricCard label="Катталган студенттер" value={enrolledStudents.length} icon={FiCheckCircle} tone="green" />
+                        <DashboardMetricCard label="Жарыяланган курстар" value={courses.length} icon={FiBookOpen} tone="blue" />
+                    </>
+                )}
+                metricsClassName="grid grid-cols-1 gap-3 sm:grid-cols-3"
+            >
+                <DashboardFilterBar gridClassName="xl:grid-cols-[minmax(0,1fr)]">
+                    <label className="relative block">
+                        <FiSearch className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-edubot-muted" />
+                        <input
+                            type="text"
+                            placeholder="Студент атын же email изде..."
+                            className="dashboard-field dashboard-field-icon"
+                            value={search}
+                            onChange={(e) => {
+                                setSearch(e.target.value);
+                                setCurrentPage(1);
+                            }}
+                            disabled={loading}
+                        />
+                    </label>
+                </DashboardFilterBar>
+            </DashboardWorkspaceHero>
 
-            <div className="mb-4">
-                <AssistantCourseStats
-                    courses={courses}
-                    courseCounts={courseCounts}
-                    loading={loading}
-                />
-            </div>
-
-            <div className="mb-6 max-w-md">
-                <div className="relative">
-                    <input
-                        type="text"
-                        placeholder="Студент атын же email изде..."
-                        className="w-full px-4 py-3 pl-12 bg-white dark:bg-gray-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:ring-2 focus:ring-edubot-orange focus:border-transparent transition-all duration-200 shadow-sm"
-                        value={search}
-                        onChange={(e) => {
-                            setSearch(e.target.value);
-                            setCurrentPage(1);
-                        }}
-                        disabled={loading}
-                    />
-                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">🔍</div>
-                </div>
-            </div>
-
-            {loading ? (
-                <div className="bg-white dark:bg-gray-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-lg overflow-hidden p-4">
-                    <DashboardTableSkeleton rows={5} columns={4} />
-                </div>
-            ) : (
-                <div className="bg-white dark:bg-gray-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-lg overflow-hidden">
-                    <table className="w-full table-auto text-sm">
-                        <thead className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700">
-                            <tr>
-                                <th className="p-4 text-left font-semibold text-slate-700 dark:text-slate-300">
-                                    Студент
-                                </th>
-                                <th className="p-4 text-left font-semibold text-slate-700 dark:text-slate-300">
-                                    Катталган курстар
-                                </th>
-                                <th className="p-4 text-left font-semibold text-slate-700 dark:text-slate-300">
-                                    Курс тандаңыз
-                                </th>
-                                <th className="p-4 text-left font-semibold text-slate-700 dark:text-slate-300">
-                                    Иш-аракет
-                                </th>
-                            </tr>
-                        </thead>
-
-                        <tbody>
-                            {students.length === 0 ? (
-                                <tr>
-                                    <td colSpan="4" className="p-8">
-                                        <EmptyState
-                                            title="Бекитилген студенттер жок"
-                                            subtitle="Ассистент катышуусу үчүн студенттер жок"
-                                        />
-                                    </td>
-                                </tr>
-                            ) : (
-                                students.map((student) => {
-                                    const selectedCourseId = courseSelections[student.id] || "";
-                                    const enrolledCourseIds = enrollmentsMap[student.id] || [];
-
-                                    const availableCourses = courses.filter(
-                                        (course) => !enrolledCourseIds.includes(course.id)
-                                    );
-
-                                    const isDisabled = !selectedCourseId || availableCourses.length === 0;
-
-                                    return (
-                                        <tr key={student.id} className="border-b border-slate-100 dark:border-slate-700">
-                                            <td className="p-4 align-top">
-                                                <div className="font-medium text-slate-900 dark:text-white">
-                                                    {student.fullName}
-                                                </div>
-                                                <div className="text-xs text-gray-500 dark:text-[#a6adba]">
-                                                    {student.email}
-                                                </div>
-                                                <div className="text-xs text-gray-500 dark:text-[#a6adba]">
-                                                    {student.phoneNumber || "—"}
-                                                </div>
-                                            </td>
-
-                                            <td className="p-4 align-top">
-                                                {enrolledCourseIds.length ? (
-                                                    <div className="flex flex-wrap gap-2">
-                                                        {enrolledCourseIds.map((courseId) => {
-                                                            const course = coursesById[courseId];
-                                                            if (!course) return null;
-
-                                                            return (
-                                                                <span
-                                                                    key={courseId}
-                                                                    className="inline-flex items-center gap-2 bg-green-50 border border-green-200 px-2 py-1 rounded dark:bg-green-900/20 dark:border-green-700"
-                                                                >
-                                                                    <span className="text-sm text-green-800 dark:text-green-200">{course.title}</span>
-                                                                    <button
-                                                                        className="text-xs px-2 py-0.5 rounded bg-red-600 text-white hover:bg-red-700"
-                                                                        onClick={() => handleUnenroll(student, courseId)}
-                                                                        title="Курстан чыгаруу"
-                                                                    >
-                                                                        Чыгаруу
-                                                                    </button>
-                                                                </span>
-                                                            );
-                                                        })}
-                                                    </div>
-                                                ) : (
-                                                    "—"
-                                                )}
-                                            </td>
-
-                                            <td className="p-4 align-top">
-                                                {availableCourses.length > 0 ? (
-                                                    <select
-                                                        className="w-full border p-2 rounded text-slate-900 dark:text-white bg-white dark:bg-gray-700 border-slate-200 dark:border-slate-600"
-                                                        value={selectedCourseId}
-                                                        onChange={(e) =>
-                                                            setCourseSelections((prev) => ({
-                                                                ...prev,
-                                                                [student.id]: e.target.value ? Number(e.target.value) : "",
-                                                            }))
-                                                        }
-                                                    >
-                                                        <option value="">-- Тандоо --</option>
-                                                        {availableCourses.map((course) => (
-                                                            <option key={course.id} value={course.id}>
-                                                                {course.title}
-                                                            </option>
-                                                        ))}
-                                                    </select>
-                                                ) : (
-                                                    <span className="text-gray-500 dark:text-[#a6adba] italic">
-                                                        Бардык курстарга катталган
-                                                    </span>
-                                                )}
-                                            </td>
-
-                                            <td className="p-4 align-top">
-                                                <button
-                                                    className={`px-3 py-2 rounded text-white ${isDisabled
-                                                        ? "bg-gray-400 cursor-not-allowed"
-                                                        : "bg-blue-600 hover:bg-blue-700"
-                                                        }`}
-                                                    disabled={isDisabled}
-                                                    onClick={() => {
-                                                        if (isDisabled) return;
-                                                        handleEnroll(student, selectedCourseId);
-                                                    }}
-                                                >
-                                                    Каттоо
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    );
-                                })
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-            )}
-
-            <AssistantPagination
-                currentPage={currentPage}
-                totalPages={totalPages}
+            <AssistantCourseStats
+                courses={courses}
+                courseCounts={courseCounts}
                 loading={loading}
-                setCurrentPage={setCurrentPage}
             />
 
+            <DashboardInsetPanel
+                title="Студенттер тизмеси"
+                description="Ар бир студент үчүн активдүү курстарды көрүп, жаңы курс тандап каттоо аракетин аткарыңыз."
+            >
+                {loading ? (
+                    <div className="dashboard-panel-muted p-10 text-center text-sm text-edubot-muted dark:text-slate-400">
+                        Жүктөлүүдө...
+                    </div>
+                ) : students.length === 0 ? (
+                    <EmptyState
+                        title="Бекитилген студенттер жок"
+                        subtitle="Ассистент катышуусу үчүн студенттер жок."
+                    />
+                ) : (
+                    <div className="grid gap-4">
+                        {students.map((student) => {
+                            const selectedCourseId = courseSelections[student.id] || '';
+                            const enrolledCourseIds = enrollmentsMap[student.id] || [];
+                            const availableCourses = courses.filter(
+                                (course) => !enrolledCourseIds.includes(course.id)
+                            );
+                            const isDisabled = !selectedCourseId || availableCourses.length === 0;
+
+                            return (
+                                <article
+                                    key={student.id}
+                                    className="dashboard-panel-muted rounded-3xl p-4"
+                                >
+                                    <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+                                        <div className="min-w-0 flex-1">
+                                            <div className="text-base font-semibold text-edubot-ink dark:text-white">
+                                                {student.fullName}
+                                            </div>
+                                            <div className="mt-1 text-sm text-edubot-muted dark:text-slate-400">
+                                                {student.email}
+                                            </div>
+                                            <div className="text-sm text-edubot-muted dark:text-slate-400">
+                                                {student.phoneNumber || '—'}
+                                            </div>
+
+                                            <div className="mt-4 flex flex-wrap gap-2">
+                                                {enrolledCourseIds.length ? (
+                                                    enrolledCourseIds.map((courseId) => {
+                                                        const course = coursesById[courseId];
+                                                        if (!course) return null;
+
+                                                        return (
+                                                            <div
+                                                                key={courseId}
+                                                                className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 dark:border-emerald-500/30 dark:bg-emerald-500/10"
+                                                            >
+                                                                <span className="text-xs font-medium text-emerald-800 dark:text-emerald-200">
+                                                                    {course.title}
+                                                                </span>
+                                                                <button
+                                                                    className="rounded-full bg-red-600 px-2 py-0.5 text-[11px] font-semibold text-white hover:bg-red-700"
+                                                                    onClick={() => handleUnenroll(student, courseId)}
+                                                                    title="Курстан чыгаруу"
+                                                                >
+                                                                    Чыгаруу
+                                                                </button>
+                                                            </div>
+                                                        );
+                                                    })
+                                                ) : (
+                                                    <StatusBadge tone="default">Катталган курс жок</StatusBadge>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        <div className="w-full xl:w-[20rem] space-y-3">
+                                            {availableCourses.length > 0 ? (
+                                                <select
+                                                    className="dashboard-select w-full"
+                                                    value={selectedCourseId}
+                                                    onChange={(e) =>
+                                                        setCourseSelections((prev) => ({
+                                                            ...prev,
+                                                            [student.id]: e.target.value ? Number(e.target.value) : '',
+                                                        }))
+                                                    }
+                                                >
+                                                    <option value="">-- Тандоо --</option>
+                                                    {availableCourses.map((course) => (
+                                                        <option key={course.id} value={course.id}>
+                                                            {course.title}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                            ) : (
+                                                <div className="text-sm italic text-edubot-muted dark:text-slate-400">
+                                                    Бардык курстарга катталган
+                                                </div>
+                                            )}
+
+                                            <button
+                                                className="dashboard-button-primary w-full justify-center disabled:opacity-50"
+                                                disabled={isDisabled}
+                                                onClick={() => {
+                                                    if (isDisabled) return;
+                                                    handleEnroll(student, selectedCourseId);
+                                                }}
+                                            >
+                                                Каттоо
+                                            </button>
+                                        </div>
+                                    </div>
+                                </article>
+                            );
+                        })}
+                    </div>
+                )}
+
+                <AssistantPagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    loading={loading}
+                    setCurrentPage={setCurrentPage}
+                />
+            </DashboardInsetPanel>
         </div>
     );
 };

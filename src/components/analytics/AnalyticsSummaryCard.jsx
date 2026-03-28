@@ -54,14 +54,14 @@ const AnalyticsSummaryCard = ({
 
   if (loading) {
     return (
-      <div className={`rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-6 ${className}`}>
+      <div className={`rounded-3xl border border-edubot-line/80 bg-white/90 dark:border-slate-700 dark:bg-slate-950 p-6 shadow-edubot-card ${className}`}>
         <div className="animate-pulse">
           <div className="flex items-center justify-between mb-4">
-            <div className={`w-12 h-12 ${currentColor.bg} rounded-xl`}></div>
-            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-16"></div>
+            <div className={`w-12 h-12 ${currentColor.bg} rounded-2xl`}></div>
+            <div className="h-4 rounded bg-edubot-surfaceAlt dark:bg-slate-800 w-16"></div>
           </div>
-          <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-2"></div>
-          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
+          <div className="h-8 rounded bg-edubot-surfaceAlt dark:bg-slate-800 w-3/4 mb-2"></div>
+          <div className="h-4 rounded bg-edubot-surfaceAlt dark:bg-slate-800 w-1/2"></div>
         </div>
       </div>
     );
@@ -85,21 +85,25 @@ const AnalyticsSummaryCard = ({
 
   return (
     <div className={`
+      group relative overflow-hidden
       p-4 sm:p-6
-      rounded-xl
+      rounded-3xl
       border
-      ${currentColor.bg}
-      ${currentColor.border}
-      transition-all duration-200
+      bg-white/90 dark:bg-slate-950
+      border-edubot-line/80 dark:border-slate-700
+      shadow-edubot-card
+      transition-all duration-300
       ${currentColor.hover}
-      transform
+      transform hover:-translate-y-1
       min-h-[120px] sm:min-h-[140px]
       touch-manipulation
       ${className}
     `}>
-      <div className="flex items-center justify-between mb-4">
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-white/55 via-transparent to-edubot-orange/10 opacity-80 transition-opacity duration-300 group-hover:opacity-100 dark:from-white/5 dark:to-edubot-soft/10" />
+      <div className="pointer-events-none absolute -right-10 -top-10 h-28 w-28 rounded-full bg-edubot-orange/10 blur-3xl transition-all duration-300 group-hover:scale-125 dark:bg-edubot-soft/10" />
+      <div className="relative flex items-center justify-between mb-4">
         {icon && (
-          <div className={`w-12 h-12 ${currentColor.bg} rounded-xl flex items-center justify-center`}>
+          <div className={`w-12 h-12 ${currentColor.bg} ${currentColor.border} border rounded-2xl flex items-center justify-center transition-all duration-300 group-hover:scale-110 group-hover:-rotate-3`}>
             <div className={currentColor.icon}>
               {icon}
             </div>
@@ -121,15 +125,15 @@ const AnalyticsSummaryCard = ({
         )}
       </div>
 
-      <div className="space-y-1">
-        <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+      <div className="relative space-y-1">
+        <div className="text-2xl font-bold text-edubot-ink dark:text-gray-100">
           {value}
         </div>
-        <div className="text-sm font-medium text-gray-600 dark:text-gray-400">
+        <div className="text-sm font-medium text-edubot-muted dark:text-slate-400">
           {title}
         </div>
         {subtitle && (
-          <div className="text-xs text-gray-500 dark:text-gray-500">
+          <div className="text-xs text-edubot-muted dark:text-slate-500">
             {subtitle}
           </div>
         )}

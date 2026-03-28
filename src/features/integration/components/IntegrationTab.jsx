@@ -9,6 +9,14 @@ import {
 } from '@features/integration/api';
 import { ENROLLMENT_STATUS, RISK_ISSUE_TYPE, RISK_SEVERITY } from '@shared/contracts';
 import { parseApiError } from '@shared/api/error';
+import {
+    DashboardFilterBar,
+    DashboardInsetPanel,
+    DashboardMetricCard,
+    EmptyState,
+    StatusBadge,
+    DashboardWorkspaceHero,
+} from '@components/ui/dashboard';
 
 const FILTER_KEYS = Object.freeze({
     severity: 'intSeverity',
@@ -28,28 +36,28 @@ const formatDateTime = (value) => {
 const riskBadgeClass = (severity) => {
     switch (severity) {
         case RISK_SEVERITY.CRITICAL:
-            return 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300';
+            return 'red';
         case RISK_SEVERITY.HIGH:
-            return 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300';
+            return 'orange';
         case RISK_SEVERITY.MEDIUM:
-            return 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300';
+            return 'amber';
         default:
-            return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300';
+            return 'green';
     }
 };
 
 const statusBadgeClass = (status) => {
     switch (status) {
         case ENROLLMENT_STATUS.ACTIVE:
-            return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300';
+            return 'green';
         case ENROLLMENT_STATUS.PENDING:
-            return 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300';
+            return 'default';
         case ENROLLMENT_STATUS.CANCELLED:
-            return 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300';
+            return 'red';
         case ENROLLMENT_STATUS.COMPLETED:
-            return 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300';
+            return 'indigo';
         default:
-            return 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300';
+            return 'default';
     }
 };
 
@@ -170,27 +178,22 @@ const IntegrationTab = ({ companyId = null }) => {
 
     return (
         <div className="space-y-6">
-            <div className="bg-white dark:bg-[#111111] shadow-sm rounded-2xl p-4 border border-gray-100 dark:border-gray-800">
-                <div className="flex items-center justify-between gap-3 flex-wrap">
-                    <div>
-                        <h2 className="text-2xl font-semibold text-gray-900 dark:text-[#E8ECF3]">
-                            CRM-LMS Интеграция
-                        </h2>
-                        <p className="text-sm text-gray-500 dark:text-[#a6adba]">
-                            LMSтин webhook абалы, тобокелдик жыйынтыгы жана enrollment статус окуялары.
-                        </p>
-                    </div>
+            <DashboardWorkspaceHero
+                eyebrow="CRM and LMS sync"
+                title="CRM-LMS Интеграция"
+                description="Webhook абалы, тобокелдик жыйынтыгы жана enrollment статус окуялары."
+                action={(
                     <button
                         type="button"
                         onClick={loadData}
                         disabled={loading}
-                        className="px-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700 text-sm text-gray-700 dark:text-[#E8ECF3] disabled:opacity-60"
+                        className="dashboard-button-secondary disabled:opacity-60"
                     >
                         {loading ? 'Жүктөлүүдө...' : 'Жаңыртуу'}
                     </button>
-                </div>
-
-                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 mt-4">
+                )}
+            >
+                <DashboardFilterBar gridClassName="lg:grid-cols-3">
                     <FilterSelect
                         label="Деңгээл"
                         value={severityFilter}
@@ -225,34 +228,34 @@ const IntegrationTab = ({ companyId = null }) => {
                         <button
                             type="button"
                             onClick={clearFilters}
-                            className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 text-sm text-gray-700 dark:text-[#E8ECF3]"
+                            className="dashboard-button-secondary w-full justify-center"
                         >
                             Фильтрди тазалоо
                         </button>
                     </div>
+                </DashboardFilterBar>
+
+                <div className="grid gap-4 mt-5 md:grid-cols-3">
+                    <DashboardMetricCard label="Бүгүнкү тобокелдик эскертмеси" value={riskSummary?.todayGenerated ?? 0} />
+                    <DashboardMetricCard label="Критикалык эскертме" value={criticalCount} tone={criticalCount ? 'red' : 'default'} />
+                    <DashboardMetricCard label="Каттоо окуялары" value={filteredEnrollmentEvents.length} tone={filteredEnrollmentEvents.length ? 'blue' : 'default'} />
                 </div>
 
-                <div className="grid md:grid-cols-3 gap-3 mt-4">
-                    <StatCard label="Бүгүнкү тобокелдик эскертмеси" value={riskSummary?.todayGenerated ?? 0} />
-                    <StatCard label="Критикалык эскертме" value={criticalCount} />
-                    <StatCard label="Каттоо окуялары" value={filteredEnrollmentEvents.length} />
+                <div className="grid gap-4 mt-4 md:grid-cols-3">
+                    <DashboardMetricCard label="Күтүүдөгү вебхук" value={integrationHealth?.pending ?? 0} />
+                    <DashboardMetricCard label="Ишке ашпаган вебхук" value={integrationHealth?.failed ?? 0} tone={(integrationHealth?.failed ?? 0) ? 'amber' : 'green'} />
+                    <DashboardMetricCard label="Акыркы жөнөтүү" value={formatDateTime(integrationHealth?.lastSentAt)} />
                 </div>
+            </DashboardWorkspaceHero>
 
-                <div className="grid md:grid-cols-3 gap-3 mt-3">
-                    <StatCard label="Күтүүдөгү вебхук" value={integrationHealth?.pending ?? 0} />
-                    <StatCard label="Ишке ашпаган вебхук" value={integrationHealth?.failed ?? 0} />
-                    <StatCard label="Акыркы жөнөтүү" value={formatDateTime(integrationHealth?.lastSentAt)} />
-                </div>
-            </div>
-
-            <section className="bg-white dark:bg-[#111111] shadow-sm rounded-2xl p-4 border border-gray-100 dark:border-gray-800">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-[#E8ECF3] mb-3">
-                    Акыркы критикалык тобокелдик эскертмелери
-                </h3>
+            <DashboardInsetPanel
+                title="Акыркы критикалык тобокелдик эскертмелери"
+                description="LMS жана CRM ортосундагы олуттуу бузулуулар."
+            >
                 <div className="overflow-x-auto">
                     <table className="w-full text-sm">
                         <thead>
-                            <tr className="text-left text-gray-500 dark:text-[#a6adba] border-b border-gray-100 dark:border-gray-800">
+                            <tr className="text-left text-edubot-muted dark:text-slate-400 border-b border-edubot-line/80 dark:border-slate-700">
                                 <th className="py-2 pr-3">Убакыт</th>
                                 <th className="py-2 pr-3">Деңгээл</th>
                                 <th className="py-2 pr-3">LMS студент</th>
@@ -271,11 +274,9 @@ const IntegrationTab = ({ companyId = null }) => {
                                         {formatDateTime(alert.createdAt || alert.occurredAt)}
                                     </td>
                                     <td className="py-2 pr-3">
-                                        <span
-                                            className={`inline-flex px-2 py-1 text-xs rounded-full ${riskBadgeClass(alert.severity)}`}
-                                        >
+                                        <StatusBadge tone={riskBadgeClass(alert.severity)}>
                                             {alert.severity || '-'}
-                                        </span>
+                                        </StatusBadge>
                                     </td>
                                     <td className="py-2 pr-3 text-gray-700 dark:text-gray-200">
                                         {alert.studentId || alert.lmsStudentId || '-'}
@@ -293,24 +294,27 @@ const IntegrationTab = ({ companyId = null }) => {
                             ))}
                             {filteredRiskAlerts.length === 0 && !loading && (
                                 <tr>
-                                    <td colSpan={6} className="py-8 text-center text-gray-500 dark:text-[#a6adba]">
-                                        Критикалык тобокелдик эскертмеси табылган жок.
+                                    <td colSpan={6} className="py-8">
+                                        <EmptyState
+                                            title="Критикалык тобокелдик эскертмеси табылган жок"
+                                            subtitle="Фильтрлерге туура келген олуттуу эскертмелер жок."
+                                        />
                                     </td>
                                 </tr>
                             )}
                         </tbody>
                     </table>
                 </div>
-            </section>
+            </DashboardInsetPanel>
 
-            <section className="bg-white dark:bg-[#111111] shadow-sm rounded-2xl p-4 border border-gray-100 dark:border-gray-800">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-[#E8ECF3] mb-3">
-                    Каттоо статус окуялары
-                </h3>
+            <DashboardInsetPanel
+                title="Каттоо статус окуялары"
+                description="Webhook аркылуу келген enrollment абал тарыхы."
+            >
                 <div className="overflow-x-auto">
                     <table className="w-full text-sm">
                         <thead>
-                            <tr className="text-left text-gray-500 dark:text-[#a6adba] border-b border-gray-100 dark:border-gray-800">
+                            <tr className="text-left text-edubot-muted dark:text-slate-400 border-b border-edubot-line/80 dark:border-slate-700">
                                 <th className="py-2 pr-3">Убакыт</th>
                                 <th className="py-2 pr-3">Окуя ID</th>
                                 <th className="py-2 pr-3">Каттоо</th>
@@ -338,9 +342,9 @@ const IntegrationTab = ({ companyId = null }) => {
                                         {event.studentId || event.lmsStudentId || '-'}
                                     </td>
                                     <td className="py-2 pr-3">
-                                        <span className={`inline-flex px-2 py-1 text-xs rounded-full ${statusBadgeClass(event.status)}`}>
+                                        <StatusBadge tone={statusBadgeClass(event.status)}>
                                             {event.status || '-'}
-                                        </span>
+                                        </StatusBadge>
                                     </td>
                                     <td className="py-2 pr-3 text-gray-600 dark:text-gray-300 max-w-xs truncate">
                                         {event.lastError || '-'}
@@ -349,26 +353,29 @@ const IntegrationTab = ({ companyId = null }) => {
                             ))}
                             {filteredEnrollmentEvents.length === 0 && !loading && (
                                 <tr>
-                                    <td colSpan={6} className="py-8 text-center text-gray-500 dark:text-[#a6adba]">
-                                        Каттоо окуясы табылган жок.
+                                    <td colSpan={6} className="py-8">
+                                        <EmptyState
+                                            title="Каттоо окуясы табылган жок"
+                                            subtitle="Фильтрлерге туура келген enrollment окуялары жок."
+                                        />
                                     </td>
                                 </tr>
                             )}
                         </tbody>
                     </table>
                 </div>
-            </section>
+            </DashboardInsetPanel>
         </div>
     );
 };
 
 const FilterSelect = ({ label, value, onChange, options }) => (
-    <label className="text-sm text-gray-700 dark:text-[#E8ECF3]">
+    <label className="text-sm text-edubot-ink dark:text-white">
         <span className="block mb-1">{label}</span>
         <select
             value={value}
             onChange={(e) => onChange(e.target.value)}
-            className="w-full border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-[#0E0E0E] px-3 py-2"
+            className="dashboard-select w-full"
         >
             <option value="">Баары</option>
             {options.map((option) => (
@@ -381,22 +388,15 @@ const FilterSelect = ({ label, value, onChange, options }) => (
 );
 
 const FilterInput = ({ label, value, onChange, type }) => (
-    <label className="text-sm text-gray-700 dark:text-[#E8ECF3]">
+    <label className="text-sm text-edubot-ink dark:text-white">
         <span className="block mb-1">{label}</span>
         <input
             type={type}
             value={value}
             onChange={(e) => onChange(e.target.value)}
-            className="w-full border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-[#0E0E0E] px-3 py-2"
+            className="dashboard-field w-full"
         />
     </label>
-);
-
-const StatCard = ({ label, value }) => (
-    <div className="rounded-xl border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-[#0f1114] p-4">
-        <div className="text-xs text-gray-500 dark:text-[#a6adba]">{label}</div>
-        <div className="mt-2 text-2xl font-semibold text-gray-900 dark:text-[#E8ECF3]">{value}</div>
-    </div>
 );
 
 IntegrationTab.propTypes = {
@@ -419,11 +419,6 @@ FilterInput.propTypes = {
 
 FilterInput.defaultProps = {
     type: 'text',
-};
-
-StatCard.propTypes = {
-    label: PropTypes.string.isRequired,
-    value: PropTypes.oneOfType([PropTypes.number, PropTypes.string]).isRequired,
 };
 
 export default IntegrationTab;

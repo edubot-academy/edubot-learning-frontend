@@ -9,9 +9,10 @@ import { useAssistantDashboardData } from "../hooks/useAssistantDashboardData.js
 import {
     DashboardLayout,
     DashboardHeader,
+    DashboardInsetPanel,
+    DashboardMetricCard,
     DashboardTabs,
-    StatCard,
-    EmptyState,
+    DashboardWorkspaceHero,
 } from "../../../components/ui/dashboard";
 import { NAV_ITEMS } from "../utils/assistantDashboard.constants";
 
@@ -133,33 +134,76 @@ const AssistantDashboard = () => {
     };
 
     const renderTabContent = () => {
-        if (activeTab === "attendance") {
-            return (
-                <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-lg p-6">
-                    <AttendancePage embedded />
-                </div>
-            );
-        }
+        if (activeTab === "overview") {
+            const availableCourses = courses.filter((course) => (courseCounts[course.id] || 0) === 0).length;
 
-        if (activeTab === "courses") {
             return (
                 <div className="space-y-6">
-                    <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-lg p-6">
-                        <div className="flex items-center gap-3 mb-4">
-                            <div className="w-8 h-8 bg-edubot-orange rounded-lg flex items-center justify-center">
-                                <span className="text-white text-lg">🎓</span>
-                            </div>
-                            <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
-                                Курстар жөнүндө маалымат
-                            </h3>
+                    <DashboardWorkspaceHero
+                        eyebrow="Assistant overview"
+                        title="Ассистенттин кыскача көрүнүшү"
+                        description="Компаниядагы студенттер, курстар жана каттоо агымы боюнча ыкчам абал."
+                        metrics={(
+                            <>
+                                <DashboardMetricCard label="Жалпы студенттер" value={totalStudents} tone="blue" />
+                                <DashboardMetricCard label="Катталган студенттер" value={enrolledStudents.length} tone="green" />
+                                <DashboardMetricCard label="Жарыяланган курстар" value={courses.length} tone="amber" />
+                            </>
+                        )}
+                        metricsClassName="grid grid-cols-1 gap-3 sm:grid-cols-3"
+                    >
+                        <div className="grid gap-4 xl:grid-cols-[minmax(0,1.3fr),minmax(0,0.7fr)]">
+                            <DashboardInsetPanel
+                                title="Иш агымы"
+                                description="Негизги милдеттер жана учурдагы компания контексти."
+                            >
+                                <div className="grid gap-3 md:grid-cols-2">
+                                    <div className="dashboard-panel-muted rounded-3xl p-4">
+                                        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-edubot-muted dark:text-slate-400">
+                                            Компания
+                                        </p>
+                                        <p className="mt-2 text-lg font-semibold text-edubot-ink dark:text-white">
+                                            {activeCompany?.name || 'Тандалган компания'}
+                                        </p>
+                                        <p className="mt-1 text-sm text-edubot-muted dark:text-slate-400">
+                                            Ассистент катары ушул компаниянын студент агымын жана курстарын башкарып жатасыз.
+                                        </p>
+                                    </div>
+                                    <div className="dashboard-panel-muted rounded-3xl p-4">
+                                        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-edubot-muted dark:text-slate-400">
+                                            Каттоо мүмкүнчүлүгү
+                                        </p>
+                                        <p className="mt-2 text-lg font-semibold text-edubot-ink dark:text-white">
+                                            {availableCourses} бош курс
+                                        </p>
+                                        <p className="mt-1 text-sm text-edubot-muted dark:text-slate-400">
+                                            Учурда студент кошула элек жарыяланган курстарды тез аныктап, андан ары каттоо табына өтүңүз.
+                                        </p>
+                                    </div>
+                                </div>
+                            </DashboardInsetPanel>
+
+                            <DashboardInsetPanel
+                                title="Кийинки кадам"
+                                description="Күндөлүк иш үчүн тез багыт."
+                            >
+                                <div className="space-y-3 text-sm text-edubot-muted dark:text-slate-300">
+                                    <div className="dashboard-panel-muted rounded-3xl p-4">
+                                        <p className="font-semibold text-edubot-ink dark:text-white">1. Студенттерди текшериңиз</p>
+                                        <p className="mt-1">Каттоо күтүп турган студенттерди `Студенттер` табынан караңыз.</p>
+                                    </div>
+                                    <div className="dashboard-panel-muted rounded-3xl p-4">
+                                        <p className="font-semibold text-edubot-ink dark:text-white">2. Курстарды салыштырыңыз</p>
+                                        <p className="mt-1">`Курстар` табынан ар бир курс боюнча жүктөмдү көрүңүз.</p>
+                                    </div>
+                                    <div className="dashboard-panel-muted rounded-3xl p-4">
+                                        <p className="font-semibold text-edubot-ink dark:text-white">3. Катышууну жаңыртыңыз</p>
+                                        <p className="mt-1">Сабак күнү келгенде `Катышуу` табынан күндүк белгилөөнү аткарыңыз.</p>
+                                    </div>
+                                </div>
+                            </DashboardInsetPanel>
                         </div>
-                        <div className="flex items-center gap-6 text-sm font-medium flex-wrap">
-                            <div className="flex items-center gap-2">
-                                <span className="w-3 h-3 bg-edubot-orange rounded-full"></span>
-                                <span>Курстар: {courses.length}</span>
-                            </div>
-                        </div>
-                    </div>
+                    </DashboardWorkspaceHero>
 
                     <AssistantCourseStats
                         courses={courses}
@@ -170,17 +214,29 @@ const AssistantDashboard = () => {
             );
         }
 
-        if (activeTab === "communication" || activeTab === "analytics") {
+        if (activeTab === "attendance") {
+            return <AttendancePage embedded />;
+        }
+
+        if (activeTab === "courses") {
             return (
-                <EmptyState
-                    title="Бул бөлүм даярдала элек"
-                    subtitle="Бул таб үчүн өзүнчө модуль керек. Азырынча негизги каттоо агымы гана калды."
-                    icon={
-                        <svg className="w-16 h-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                        </svg>
-                    }
-                />
+                <div className="space-y-6">
+                    <DashboardWorkspaceHero
+                        eyebrow="Assistant courses"
+                        title="Курстар жөнүндө маалымат"
+                        description="Компаниядагы жарыяланган курстар жана алардагы студент жүктөмү."
+                        metrics={(
+                            <DashboardMetricCard label="Курстар" value={courses.length} tone="blue" />
+                        )}
+                        metricsClassName="grid grid-cols-1 gap-3 sm:grid-cols-1"
+                    />
+
+                    <AssistantCourseStats
+                        courses={courses}
+                        courseCounts={courseCounts}
+                        loading={loading}
+                    />
+                </div>
             );
         }
 
@@ -238,9 +294,9 @@ const AssistantDashboard = () => {
 
             {/* Stats Display */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6">
-                <StatCard label="Жалпы студенттер" value={totalStudents} color="orange" />
-                <StatCard label="Катталган студенттер" value={enrolledStudents.length} color="blue" />
-                <StatCard label="Жарыяланган курстар" value={courses.length} color="green" />
+                <DashboardMetricCard label="Жалпы студенттер" value={totalStudents} tone="blue" />
+                <DashboardMetricCard label="Катталган студенттер" value={enrolledStudents.length} tone="green" />
+                <DashboardMetricCard label="Жарыяланган курстар" value={courses.length} tone="amber" />
             </div>
         </div>
     );

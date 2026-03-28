@@ -20,7 +20,12 @@ import {
     fetchInstructorProfile,
     markAttendanceSession,
 } from '@services/api';
-import { DashboardMetricCard, DashboardSectionHeader } from '../components/ui/dashboard';
+import {
+    DashboardFilterBar,
+    DashboardMetricCard,
+    DashboardWorkspaceHero,
+    StatusBadge,
+} from '../components/ui/dashboard';
 import { AuthContext } from '../context/AuthContext';
 
 const todayLocal = () => new Date().toISOString().slice(0, 10);
@@ -311,8 +316,8 @@ const AttendancePage = ({ embedded = false }) => {
                 </div>
             )}
 
-            <section className="dashboard-panel overflow-hidden">
-                <DashboardSectionHeader
+            <DashboardWorkspaceHero
+                className="dashboard-panel"
                     eyebrow="Attendance Workspace"
                     title="Катышууну белгилөө"
                     description="Курсту тандап, сабактагы катышууну тез белгилеп сактаңыз."
@@ -342,9 +347,8 @@ const AttendancePage = ({ embedded = false }) => {
                             />
                         </>
                     }
-                />
-
-                <div className="grid gap-3 border-b border-edubot-line/70 px-6 py-5 lg:grid-cols-[minmax(0,1.2fr),minmax(0,0.8fr),auto] dark:border-slate-700">
+                >
+                <DashboardFilterBar gridClassName="lg:grid-cols-[minmax(0,1.2fr),minmax(0,0.8fr),auto]">
                     <label className="text-sm text-edubot-ink dark:text-white">
                         <span className="mb-1.5 inline-flex items-center gap-2 font-medium">
                             <FiBookOpen className="h-4 w-4 text-edubot-orange" />
@@ -388,9 +392,9 @@ const AttendancePage = ({ embedded = false }) => {
                             {savingAttendance ? 'Сакталууда...' : 'Катышууну сактоо'}
                         </button>
                     </div>
-                </div>
+                </DashboardFilterBar>
 
-                <div className="grid gap-4 p-6">
+                <div className="grid gap-4 pt-5">
                     {selectedCourse ? (
                         <div className="dashboard-panel-muted flex flex-wrap items-center gap-3 p-4">
                             <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold uppercase tracking-wide text-edubot-orange dark:bg-slate-900">
@@ -441,11 +445,9 @@ const AttendancePage = ({ embedded = false }) => {
                                                     <h3 className="text-base font-semibold text-edubot-ink dark:text-white">
                                                         {student.fullName}
                                                     </h3>
-                                                    <span
-                                                        className={`inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-semibold ${meta.badgeClass}`}
-                                                    >
+                                                    <StatusBadge tone={meta.tone}>
                                                         {meta.label}
-                                                    </span>
+                                                    </StatusBadge>
                                                 </div>
 
                                                 <div className="mt-4 grid gap-3 lg:grid-cols-[1fr,1.1fr]">
@@ -504,10 +506,10 @@ const AttendancePage = ({ embedded = false }) => {
                         </div>
                     )}
                 </div>
-            </section>
+            </DashboardWorkspaceHero>
 
-            <section className="dashboard-panel overflow-hidden">
-                <DashboardSectionHeader
+            <DashboardWorkspaceHero
+                className="dashboard-panel"
                     eyebrow="Attendance Report"
                     title="Катышуу отчету"
                     description="Белгиленген катышууларды күн аралыгы боюнча чыгарып, тез талдаңыз."
@@ -534,9 +536,8 @@ const AttendancePage = ({ embedded = false }) => {
                             />
                         </>
                     }
-                />
-
-                <div className="grid gap-3 border-b border-edubot-line/70 px-6 py-5 lg:grid-cols-[minmax(0,0.8fr),minmax(0,0.8fr),minmax(0,0.9fr),auto] dark:border-slate-700">
+                >
+                <DashboardFilterBar gridClassName="lg:grid-cols-[minmax(0,0.8fr),minmax(0,0.8fr),minmax(0,0.9fr),auto]">
                     <label className="text-sm text-edubot-ink dark:text-white">
                         <span className="mb-1.5 block font-medium">Күндөн</span>
                         <input
@@ -580,9 +581,9 @@ const AttendancePage = ({ embedded = false }) => {
                             {loadingReport ? 'Жүктөлүүдө...' : 'Отчетту жүктөө'}
                         </button>
                     </div>
-                </div>
+                </DashboardFilterBar>
 
-                <div className="space-y-4 p-6">
+                <div className="space-y-4 pt-5">
                     {loadingReport ? (
                         <div className="dashboard-panel-muted p-10 text-center text-sm text-edubot-muted dark:text-slate-400">
                             Отчет жүктөлүүдө...
@@ -618,11 +619,9 @@ const AttendancePage = ({ embedded = false }) => {
                                                 <h3 className="font-semibold text-edubot-ink dark:text-white">
                                                     {item.user?.fullName || item.fullName || `#${item.userId}`}
                                                 </h3>
-                                                <span
-                                                    className={`inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-semibold ${meta.badgeClass}`}
-                                                >
+                                                <StatusBadge tone={statusMeta[item.status]?.tone || 'default'}>
                                                     {meta.label}
-                                                </span>
+                                                </StatusBadge>
                                             </div>
                                             <div className="mt-2 flex flex-wrap gap-x-4 gap-y-2 text-sm text-edubot-muted dark:text-slate-400">
                                                 <span className="inline-flex items-center gap-2">
@@ -643,7 +642,7 @@ const AttendancePage = ({ embedded = false }) => {
                         </div>
                     )}
                 </div>
-            </section>
+            </DashboardWorkspaceHero>
         </div>
     );
 };
