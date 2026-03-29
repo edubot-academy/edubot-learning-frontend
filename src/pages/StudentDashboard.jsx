@@ -55,6 +55,8 @@ const StudentDashboard = () => {
     const [searchParams, setSearchParams] = useSearchParams();
     const navigate = useNavigate();
     const initialTab = searchParams.get('tab');
+    const initialCourseFilter = searchParams.get('courseId') || '';
+    const initialGroupFilter = searchParams.get('groupId') || '';
     const validTabIds = useMemo(() => NAV_ITEMS.map((item) => item.id), []);
     const studentId = user?.id;
     const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -66,8 +68,8 @@ const StudentDashboard = () => {
     const [offerings, setOfferings] = useState([]);
     const [tasks, setTasks] = useState([]);
     const [recordings, setRecordings] = useState([]);
-    const [filterCourseId] = useState('');
-    const [filterGroupId, setFilterGroupId] = useState('');
+    const [filterCourseId, setFilterCourseId] = useState(initialCourseFilter);
+    const [filterGroupId, setFilterGroupId] = useState(initialGroupFilter);
     const [progress, setProgress] = useState([]);
     const [certificates, setCertificates] = useState([]);
     const [leaderboardItems, setLeaderboardItems] = useState([]);
@@ -259,6 +261,10 @@ const StudentDashboard = () => {
         const tabFromUrl = searchParams.get('tab');
         const nextTab = validTabIds.includes(tabFromUrl) ? tabFromUrl : 'overview';
         setActiveTab((prev) => (nextTab !== prev ? nextTab : prev));
+        const nextCourseId = searchParams.get('courseId') || '';
+        const nextGroupId = searchParams.get('groupId') || '';
+        setFilterCourseId((prev) => (prev !== nextCourseId ? nextCourseId : prev));
+        setFilterGroupId((prev) => (prev !== nextGroupId ? nextGroupId : prev));
     }, [searchParams, validTabIds]);
 
     useEffect(() => {
@@ -327,6 +333,16 @@ const StudentDashboard = () => {
             } else {
                 next.set('tab', activeTab);
             }
+            if (filterCourseId) {
+                next.set('courseId', filterCourseId);
+            } else {
+                next.delete('courseId');
+            }
+            if (filterGroupId) {
+                next.set('groupId', filterGroupId);
+            } else {
+                next.delete('groupId');
+            }
             return next;
         });
         const tab = activeTab;
@@ -362,6 +378,8 @@ const StudentDashboard = () => {
         notificationLoading,
         profileLoaded,
         profileLoading,
+        filterCourseId,
+        filterGroupId,
         setSearchParams,
     ]);
 

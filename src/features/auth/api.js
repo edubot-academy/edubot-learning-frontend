@@ -8,6 +8,8 @@ export const registerUser = async (userData) => await api.post('/auth/register',
 
 export const loginUser = async (userData) => await api.post('/auth/login', userData);
 
+export const completeAccountSetup = async (data) => await api.post('/auth/setup-account', data);
+
 export const logoutUser = async () => {
     try {
 

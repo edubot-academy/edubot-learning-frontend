@@ -36,6 +36,13 @@ const getProgressTone = (value) => {
     return 'amber';
 };
 
+const getCourseModeLabel = (item) => {
+    if (item.courseType === 'video') return 'Өз алдынча';
+    if (item.groupName) return item.groupName;
+    if (item.courseType === 'offline') return 'Оффлайн топ';
+    return 'Түз эфир тобу';
+};
+
 const CoursesTab = ({ courses, offeringsByCourse }) => {
     const [query, setQuery] = useState('');
     const [typeFilter, setTypeFilter] = useState('all');
@@ -60,6 +67,7 @@ const CoursesTab = ({ courses, offeringsByCourse }) => {
                     (acc, row) => acc + resolveRecordings(row).length,
                     0
                 );
+                const groupName = course.groupName || course.group?.name || course.offering?.groupName || null;
 
                 return {
                     course,
@@ -71,6 +79,7 @@ const CoursesTab = ({ courses, offeringsByCourse }) => {
                     nextSession,
                     courseType,
                     recordingsCount,
+                    groupName,
                     lessonsLabel:
                         course.lessonsCount ||
                         course.lessonCount ||
@@ -188,6 +197,23 @@ const CoursesTab = ({ courses, offeringsByCourse }) => {
                     {filteredCourses.length ? (
                         filteredCourses.map((item) => {
                             const progressTone = getProgressTone(item.progressValue);
+                            const isVideoCourse = item.courseType === 'video';
+                            const scheduleParams = new URLSearchParams({ tab: 'schedule' });
+                            if (item.courseId) {
+                                scheduleParams.set('courseId', String(item.courseId));
+                            }
+                            if (item.course.groupId || item.groupName) {
+                                const resolvedGroupId = item.course.groupId || item.course.group?.id;
+                                if (resolvedGroupId) {
+                                    scheduleParams.set('groupId', String(resolvedGroupId));
+                                }
+                            }
+                            const primaryLink = isVideoCourse
+                                ? (item.courseId ? `/courses/${item.courseId}` : '#')
+                                : `/student?${scheduleParams.toString()}`;
+                            const primaryActionLabel = isVideoCourse
+                                ? 'Курсту ачуу'
+                                : 'Расписаниени ачуу';
 
                             return (
                                 <article
@@ -206,7 +232,7 @@ const CoursesTab = ({ courses, offeringsByCourse }) => {
                                                 {courseTypeLabel(item.courseType)}
                                             </span>
                                             <span className="rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-semibold text-white backdrop-blur-sm">
-                                                {item.progressValue}%
+                                                {isVideoCourse ? `${item.progressValue}%` : courseTypeLabel(item.courseType)}
                                             </span>
                                         </div>
                                         <div className="absolute bottom-5 left-5 right-5">
@@ -219,38 +245,54 @@ const CoursesTab = ({ courses, offeringsByCourse }) => {
 
                                     <div className="space-y-4 p-5">
                                         <div>
-                                            <div className="mb-2 flex items-center justify-between gap-3 text-sm">
-                                                <span className="font-medium text-edubot-ink dark:text-white">
-                                                    Прогресс
-                                                </span>
-                                                <span className="font-semibold text-edubot-orange">
-                                                    {item.progressValue}%
-                                                </span>
-                                            </div>
-                                            <div className="h-3 rounded-full bg-edubot-surfaceAlt dark:bg-slate-800">
-                                                <div
-                                                    className={`h-3 rounded-full ${
-                                                        progressTone === 'green'
-                                                            ? 'bg-gradient-to-r from-emerald-500 to-edubot-green'
-                                                            : progressTone === 'blue'
-                                                              ? 'bg-gradient-to-r from-edubot-teal to-sky-500'
-                                                              : 'bg-gradient-to-r from-edubot-orange to-edubot-soft'
-                                                    }`}
-                                                    style={{ width: `${item.progressValue}%` }}
-                                                />
-                                            </div>
+                                            {isVideoCourse ? (
+                                                <>
+                                                    <div className="mb-2 flex items-center justify-between gap-3 text-sm">
+                                                        <span className="font-medium text-edubot-ink dark:text-white">
+                                                            Прогресс
+                                                        </span>
+                                                        <span className="font-semibold text-edubot-orange">
+                                                            {item.progressValue}%
+                                                        </span>
+                                                    </div>
+                                                    <div className="h-3 rounded-full bg-edubot-surfaceAlt dark:bg-slate-800">
+                                                        <div
+                                                            className={`h-3 rounded-full ${
+                                                                progressTone === 'green'
+                                                                    ? 'bg-gradient-to-r from-emerald-500 to-edubot-green'
+                                                                    : progressTone === 'blue'
+                                                                      ? 'bg-gradient-to-r from-edubot-teal to-sky-500'
+                                                                      : 'bg-gradient-to-r from-edubot-orange to-edubot-soft'
+                                                            }`}
+                                                            style={{ width: `${item.progressValue}%` }}
+                                                        />
+                                                    </div>
+                                                </>
+                                            ) : (
+                                                <div className="rounded-2xl border border-edubot-line/70 bg-edubot-surfaceAlt/70 px-4 py-3 text-sm text-edubot-muted dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-300">
+                                                    Бул курс график менен өтөт. Негизги маалыматтар расписание жана катышуу бөлүмдөрүндө көрсөтүлөт.
+                                                </div>
+                                            )}
                                         </div>
 
                                         <div className="grid gap-3 sm:grid-cols-3">
                                             <StudentMiniStat label="Сабактар" value={item.lessonsLabel} />
                                             <StudentMiniStat
-                                                label="Сессия"
-                                                value={item.linkedOfferings.length}
-                                                tone="blue"
+                                                label={item.courseType === 'video' ? 'Формат' : 'Топ'}
+                                                value={getCourseModeLabel(item)}
+                                                tone={item.courseType === 'video' ? 'amber' : 'blue'}
                                             />
                                             <StudentMiniStat
-                                                label="Жазуу"
-                                                value={item.recordingsCount}
+                                                label={item.courseType === 'video' ? 'Кийинки абал' : 'Алдыдагы'}
+                                                value={
+                                                    item.courseType === 'video'
+                                                        ? item.course.nextLesson?.title
+                                                            ? 'Улантуу'
+                                                            : 'Аяктады'
+                                                        : item.nextSession
+                                                            ? formatSessionDate(item.nextSession.startAt)
+                                                            : 'Күтүүдө'
+                                                }
                                                 tone="green"
                                             />
                                         </div>
@@ -258,9 +300,32 @@ const CoursesTab = ({ courses, offeringsByCourse }) => {
                                         <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr),minmax(0,0.8fr)]">
                                             <DashboardInsetPanel
                                                 title="Кийинки кадам"
-                                                description="Жакынкы сессия же окуу контексти."
+                                                description={
+                                                    item.courseType === 'video'
+                                                        ? 'Кийинки видео сабак же уланта турган жериңиз.'
+                                                        : 'Жакынкы сессия же топ боюнча маалымат.'
+                                                }
                                             >
-                                                {item.nextSession ? (
+                                                {item.courseType === 'video' ? (
+                                                    item.course.nextLesson ? (
+                                                        <div className="space-y-2 text-sm">
+                                                            <div className="inline-flex items-center gap-2 text-edubot-ink dark:text-white">
+                                                                <FiPlayCircle className="h-4 w-4 text-edubot-orange" />
+                                                                {item.course.nextLesson.title}
+                                                            </div>
+                                                            <div className="text-edubot-muted dark:text-slate-400">
+                                                                Видео курс өз темпиңизде өтүлөт. Курсту ачып, окууну улантыңыз.
+                                                            </div>
+                                                            <div className="text-edubot-muted dark:text-slate-400">
+                                                                Мугалим: {item.instructor}
+                                                            </div>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="text-sm text-edubot-muted dark:text-slate-400">
+                                                            Бул видео курстун бардык сабактары аяктаган окшойт.
+                                                        </div>
+                                                    )
+                                                ) : item.nextSession ? (
                                                     <div className="space-y-2 text-sm">
                                                         <div className="inline-flex items-center gap-2 text-edubot-ink dark:text-white">
                                                             <FiCalendar className="h-4 w-4 text-edubot-orange" />
@@ -280,9 +345,21 @@ const CoursesTab = ({ courses, offeringsByCourse }) => {
                                                             {resolveInstructorName(item.nextSession || item.course)}
                                                         </div>
                                                     </div>
+                                                ) : item.course.offering?.scheduleNote ? (
+                                                    <div className="space-y-2 text-sm">
+                                                        <div className="inline-flex items-center gap-2 text-edubot-ink dark:text-white">
+                                                            <FiClock className="h-4 w-4 text-edubot-orange" />
+                                                            График такталып жатат
+                                                        </div>
+                                                        <div className="text-edubot-muted dark:text-slate-400">
+                                                            {item.course.offering.scheduleNote}
+                                                        </div>
+                                                    </div>
                                                 ) : (
                                                     <div className="text-sm text-edubot-muted dark:text-slate-400">
-                                                        Жакынкы сессия азырынча дайындалган жок.
+                                                        {item.courseType === 'video'
+                                                            ? 'Курсту ачып, кийинки сабакты улантыңыз.'
+                                                            : 'Жакынкы сессия азырынча дайындалган жок.'}
                                                     </div>
                                                 )}
                                             </DashboardInsetPanel>
@@ -293,17 +370,17 @@ const CoursesTab = ({ courses, offeringsByCourse }) => {
                                             >
                                                 <div className="space-y-3">
                                                     <Link
-                                                        to={item.courseId ? `/courses/${item.courseId}` : '#'}
+                                                        to={primaryLink}
                                                         className="dashboard-button-primary w-full"
                                                     >
                                                         <FiPlayCircle className="h-4 w-4" />
-                                                        Курсту ачуу
+                                                        {primaryActionLabel}
                                                     </Link>
                                                     <div className="text-xs text-edubot-muted dark:text-slate-400">
                                                         {item.courseType === 'online_live'
-                                                            ? 'Live сессиялар жана жазуулар бул курста жеткиликтүү.'
+                                                            ? 'Түз эфир сабактары үчүн расписание жана жазуулар бөлүмүн колдонуңуз.'
                                                             : item.courseType === 'offline'
-                                                              ? 'Класс расписаниеси жана катышуу маалыматы ушул курста көрүнөт.'
+                                                              ? 'Оффлайн сабактар үчүн расписание жана катышуу бөлүмүн ачыңыз.'
                                                               : 'Видео сабактарды токтогон жериңизден уланта аласыз.'}
                                                     </div>
                                                 </div>

@@ -1,5 +1,21 @@
 # Changelog
 
+Version bumps are classified by delivery scale; see `VERSIONING.md`.
+
+## [1.4.1] - 2026-03-29
+
+### 🎓 STUDENT DASHBOARD COURSE EXPERIENCE
+- Delivery-course cards now show modality-aware badges instead of reusing the self-paced progress badge treatment.
+- `offline` and `online_live` course actions now open schedule views with course/group context instead of the generic course page.
+- Student dashboard filters now hydrate from and persist back to URL params for course-aware schedule navigation.
+
+## [1.4.0] - 2026-03-29
+
+### 🔐 LMS ACCOUNT SETUP
+- Added a public `/setup-account` page for CRM-created students to set their first LMS password from a one-time onboarding link.
+- Connected the new setup flow to the LMS auth API so successful account setup signs the student in immediately.
+- Kept the normal long-term login path as standard email + password after first setup.
+
 ## [1.3.14] - 2026-03-28
 
 ### 🧭 DELIVERY COURSE DASHBOARD ROUTING

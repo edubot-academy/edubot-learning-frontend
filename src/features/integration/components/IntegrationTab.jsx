@@ -71,6 +71,25 @@ const formatDateTime = (value) => {
     return date.toLocaleString('ky-KG');
 };
 
+const getStudentIdentity = (record) => ({
+    id: record?.studentId || record?.lmsStudentId || null,
+    name: record?.studentName || null,
+});
+
+const renderStudentCell = (record) => {
+    const { id, name } = getStudentIdentity(record);
+    if (!id && !name) return '-';
+
+    return (
+        <div className="leading-tight">
+            <div className="text-gray-700 dark:text-gray-200">{name || 'Аты белгисиз'}</div>
+            {id ? (
+                <div className="text-xs text-edubot-muted dark:text-slate-400">ID: {id}</div>
+            ) : null}
+        </div>
+    );
+};
+
 const riskBadgeClass = (severity) => {
     switch (severity) {
         case RISK_SEVERITY.CRITICAL:
@@ -443,7 +462,7 @@ const IntegrationTab = ({ companyId = null }) => {
                                         {event.enrollmentId || event.lmsEnrollmentId || '-'}
                                     </td>
                                     <td className="py-2 pr-3 text-gray-700 dark:text-gray-200">
-                                        {event.studentId || event.lmsStudentId || '-'}
+                                        {renderStudentCell(event)}
                                     </td>
                                     <td className="py-2 pr-3 text-gray-700 dark:text-gray-200">
                                         {event.crmLeadId || '-'}
@@ -518,7 +537,7 @@ const IntegrationTab = ({ companyId = null }) => {
                                         </StatusBadge>
                                     </td>
                                     <td className="py-2 pr-3 text-gray-700 dark:text-gray-200">
-                                        {alert.studentId || alert.lmsStudentId || '-'}
+                                        {renderStudentCell(alert)}
                                     </td>
                                     <td className="py-2 pr-3 text-gray-700 dark:text-gray-200">
                                         {alert.enrollmentId || alert.lmsEnrollmentId || '-'}
@@ -581,7 +600,7 @@ const IntegrationTab = ({ companyId = null }) => {
                                         {event.enrollmentId || event.lmsEnrollmentId || '-'}
                                     </td>
                                     <td className="py-2 pr-3 text-gray-700 dark:text-gray-200">
-                                        {event.studentId || event.lmsStudentId || '-'}
+                                        {renderStudentCell(event)}
                                     </td>
                                     <td className="py-2 pr-3">
                                         <StatusBadge tone={statusBadgeClass(event.enrollmentStatus)}>
@@ -732,6 +751,10 @@ const EnrollmentEventDetailModal = ({ event, detail, loading, error, onClose }) 
                         copyLabel="LMS каттоо ID"
                     />
                     <DetailField
+                        label="Студенттин аты"
+                        value={event.studentName || detail?.studentName || '-'}
+                    />
+                    <DetailField
                         label="LMS студент"
                         value={event.studentId || event.lmsStudentId || '-'}
                         copyLabel="LMS студент ID"
@@ -826,6 +849,7 @@ EnrollmentEventDetailModal.propTypes = {
         lmsEnrollmentId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
         studentId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
         lmsStudentId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+        studentName: PropTypes.string,
         crmLeadId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
         enrollmentStatus: PropTypes.string,
         accessStatus: PropTypes.string,
@@ -834,6 +858,7 @@ EnrollmentEventDetailModal.propTypes = {
         reason: PropTypes.string,
     }),
     detail: PropTypes.shape({
+        studentName: PropTypes.string,
         payload: PropTypes.oneOfType([PropTypes.object, PropTypes.array]),
     }),
     loading: PropTypes.bool,

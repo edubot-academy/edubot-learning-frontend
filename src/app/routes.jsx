@@ -8,6 +8,7 @@ import { isPublicVideoSignupEnabled } from '@shared/auth-config';
 const HomePage = lazy(() => import('../pages/Home'));
 const LoginPage = lazy(() => import('../pages/Login'));
 const SignupPage = lazy(() => import('../pages/Signup'));
+const SetupAccountPage = lazy(() => import('../pages/SetupAccount'));
 const CoursesPage = lazy(() => import('../pages/Courses'));
 const CourseDetailsPage = lazy(() => import('../pages/CourseDetails'));
 const ProfilePage = lazy(() => import('../pages/Profile'));
@@ -39,6 +40,7 @@ const AppRoutes = () => {
                 <Routes>
                     <Route path="/" element={<HomePage />} />
                     <Route path="/login" element={<LoginPage />} />
+                    <Route path="/setup-account" element={<SetupAccountPage />} />
                     {isPublicVideoSignupEnabled ? (
                         <Route path="/register" element={<SignupPage />} />
                     ) : (
