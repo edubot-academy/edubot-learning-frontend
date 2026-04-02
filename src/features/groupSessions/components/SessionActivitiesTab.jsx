@@ -5,6 +5,7 @@ import {
     FiClipboard,
     FiEdit3,
     FiEye,
+    FiFileText,
     FiMessageSquare,
     FiPlus,
     FiSave,
@@ -29,6 +30,29 @@ const ACTIVITY_STATUS_OPTIONS = [
 
 const typeMeta = Object.fromEntries(ACTIVITY_TYPE_OPTIONS.map((option) => [option.value, option]));
 
+const typeTone = {
+    discussion: {
+        chip: 'border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-500/30 dark:bg-sky-500/10 dark:text-sky-300',
+        panel: 'border-sky-200/80 bg-sky-50/40 dark:border-sky-500/20 dark:bg-sky-500/5',
+        helper: 'Окуучу текст же кыска жооп бере алат',
+    },
+    exercise: {
+        chip: 'border-violet-200 bg-violet-50 text-violet-700 dark:border-violet-500/30 dark:bg-violet-500/10 dark:text-violet-300',
+        panel: 'border-violet-200/80 bg-violet-50/40 dark:border-violet-500/20 dark:bg-violet-500/5',
+        helper: 'Текст, файл же шилтеме менен аткарылат',
+    },
+    quiz: {
+        chip: 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300',
+        panel: 'border-amber-200/80 bg-amber-50/40 dark:border-amber-500/20 dark:bg-amber-500/5',
+        helper: 'Авто бааланат, натыйжа дароо чыгат',
+    },
+    group_work: {
+        chip: 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300',
+        panel: 'border-emerald-200/80 bg-emerald-50/40 dark:border-emerald-500/20 dark:bg-emerald-500/5',
+        helper: 'Ар бир студент өзүнчө жыйынтык же кыска отчет тапшырат',
+    },
+};
+
 const statusMeta = {
     planned: {
         className:
@@ -45,6 +69,13 @@ const statusMeta = {
             'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300',
         helper: 'Студентке көрүнөт, жабык',
     },
+};
+
+const submissionStatusLabel = {
+    submitted: 'Текшерилүүдө',
+    approved: 'Бекитилди',
+    needs_revision: 'Оңдотуу керек',
+    rejected: 'Кайтарылды',
 };
 
 const createEmptyActivityOption = () => ({ text: '', isCorrect: false });
@@ -92,6 +123,13 @@ const formatSavedAt = (value) => {
         hour: '2-digit',
         minute: '2-digit',
     });
+};
+
+const formatSubmissionThreadLabel = (message = {}) => {
+    if (message.authorRole === 'student') {
+        return message.authorName || 'Студент';
+    }
+    return message.authorName || 'Мугалим';
 };
 
 const ActivityEditor = ({
@@ -193,6 +231,12 @@ const ActivityEditor = ({
                     {statusMeta[activity.status]?.helper || statusMeta.planned.helper}
                 </span>
             </div>
+
+            {activity.type !== 'quiz' ? (
+                <div className="mt-3 rounded-2xl border border-edubot-line/70 bg-edubot-surfaceAlt/60 px-4 py-3 text-xs leading-6 text-edubot-muted dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-300">
+                    Студентке пайдалуу жыйынтык көрсөтүү үчүн текшерүүдө жок дегенде пикир же баа калтырыңыз.
+                </div>
+            ) : null}
 
             {activity.type === 'quiz' && (
                 <details open className="mt-4 rounded-[1.25rem] border border-edubot-line/80 bg-edubot-surface/60 p-4 dark:border-slate-700 dark:bg-slate-900/70">
@@ -318,15 +362,24 @@ const SessionActivitiesTab = ({
     onCreateActivity,
     onUpdateActivity,
     onDeleteActivity,
+    onLoadResponses,
+    onReviewSubmission,
+    responsesByActivity,
     savedAt,
     creating,
     savingActivityId,
     deletingActivityId,
+    loadingResponsesId,
+    reviewingSubmissionId,
 }) => {
     const [isCreating, setIsCreating] = useState(false);
     const [createDraft, setCreateDraft] = useState(createEmptyActivity());
     const [editingId, setEditingId] = useState(null);
     const [editDraft, setEditDraft] = useState(null);
+    const [expandedResponsesId, setExpandedResponsesId] = useState(null);
+    const [reviewDrafts, setReviewDrafts] = useState({});
+    const [responseFilters, setResponseFilters] = useState({});
+    const [reviewEditingIds, setReviewEditingIds] = useState({});
 
     useEffect(() => {
         if (editingId && !activities.some((activity) => String(activity.id) === String(editingId))) {
@@ -486,6 +539,29 @@ const SessionActivitiesTab = ({
         }
     };
 
+    const toggleResponses = async (activityId) => {
+        if (String(expandedResponsesId) === String(activityId)) {
+            setExpandedResponsesId(null);
+            return;
+        }
+
+        setExpandedResponsesId(String(activityId));
+        setResponseFilters((prev) => ({
+            ...prev,
+            [activityId]: prev[activityId] || 'all',
+        }));
+        if (!responsesByActivity?.[activityId]) {
+            await onLoadResponses(activityId);
+        }
+    };
+
+    const saveReviewDraft = async (activityId, rowId, draft) => {
+        const ok = await onReviewSubmission(activityId, rowId, draft.status, draft.reviewComment, draft.score);
+        if (ok !== false) {
+            setReviewEditingIds((prev) => ({ ...prev, [rowId]: false }));
+        }
+    };
+
     return (
         <div className="space-y-4">
             <DashboardInsetPanel
@@ -556,6 +632,7 @@ const SessionActivitiesTab = ({
                     <div className="mt-4 space-y-4">
                         {activities.map((activity, index) => {
                             const meta = typeMeta[activity.type] || typeMeta.discussion;
+                            const tone = typeTone[activity.type] || typeTone.discussion;
                             const StatusIcon = meta.icon;
                             const isEditing = String(editingId) === String(activity.id);
 
@@ -586,7 +663,7 @@ const SessionActivitiesTab = ({
                             return (
                                 <div
                                     key={`activity-${activity.id || index}`}
-                                    className="rounded-[1.5rem] border border-edubot-line/80 bg-white p-4 dark:border-slate-700 dark:bg-slate-950"
+                                    className={`rounded-[1.5rem] border p-4 dark:bg-slate-950 ${tone.panel}`}
                                 >
                                     <div className="flex items-start justify-between gap-3">
                                         <div className="min-w-0">
@@ -601,6 +678,14 @@ const SessionActivitiesTab = ({
                                             ) : null}
                                         </div>
                                         <div className="flex flex-wrap gap-2">
+                                            <button
+                                                type="button"
+                                                onClick={() => toggleResponses(activity.id)}
+                                                className="inline-flex min-h-11 items-center gap-2 rounded-full border border-edubot-line bg-white px-4 py-2.5 text-sm font-semibold text-edubot-ink transition hover:border-edubot-orange/40 hover:text-edubot-orange dark:border-slate-700 dark:bg-slate-950 dark:text-white"
+                                            >
+                                                <FiEye className="h-4 w-4" />
+                                                Жооптор
+                                            </button>
                                             <button
                                                 type="button"
                                                 onClick={() => beginEdit(activity)}
@@ -622,7 +707,7 @@ const SessionActivitiesTab = ({
                                     </div>
 
                                     <div className="mt-3 flex flex-wrap gap-2">
-                                        <span className="rounded-full border border-edubot-line bg-edubot-surfaceAlt/70 px-3 py-1 text-xs font-semibold text-edubot-ink dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-200">
+                                        <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${tone.chip}`}>
                                             {meta.label}
                                         </span>
                                         <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${statusMeta[activity.status]?.className || statusMeta.planned.className}`}>
@@ -636,6 +721,10 @@ const SessionActivitiesTab = ({
                                                 {(activity.questions || []).length} суроо
                                             </span>
                                         ) : null}
+                                    </div>
+
+                                    <div className="mt-2 text-xs text-edubot-muted dark:text-slate-400">
+                                        {tone.helper}
                                     </div>
 
                                     {activity.type === 'quiz' ? (
@@ -654,6 +743,330 @@ const SessionActivitiesTab = ({
                                                     Көрүү режими
                                                 </span>
                                             </div>
+                                        </div>
+                                    ) : null}
+
+                                    {String(expandedResponsesId) === String(activity.id) ? (
+                                        <div className="mt-4 rounded-[1.25rem] border border-edubot-line/80 bg-edubot-surface/60 p-4 dark:border-slate-700 dark:bg-slate-900/70">
+                                            {String(loadingResponsesId) === String(activity.id) && !responsesByActivity?.[activity.id] ? (
+                                                <div className="text-sm text-edubot-muted dark:text-slate-400">Жүктөлүүдө...</div>
+                                            ) : !responsesByActivity?.[activity.id]?.items?.length ? (
+                                                <div className="text-sm text-edubot-muted dark:text-slate-400">Азырынча жооп жок.</div>
+                                            ) : responsesByActivity?.[activity.id]?.mode === 'quiz' ? (
+                                                (() => {
+                                                    const activeFilter = responseFilters[activity.id] || 'all';
+                                                    const rows = responsesByActivity[activity.id].items.filter((row) => {
+                                                        if (activeFilter === 'passed') return row.passed;
+                                                        if (activeFilter === 'failed') return !row.passed;
+                                                        return true;
+                                                    });
+                                                    return (
+                                                        <div className="space-y-3">
+                                                            <div className="grid gap-3 md:grid-cols-3">
+                                                                <div className="rounded-2xl border border-edubot-line/80 bg-white px-4 py-3 dark:border-slate-700 dark:bg-slate-950">
+                                                                    <div className="text-xs font-semibold uppercase tracking-[0.18em] text-edubot-muted dark:text-slate-400">Студент</div>
+                                                                    <div className="mt-2 text-2xl font-semibold text-edubot-ink dark:text-white">{rows.length}</div>
+                                                                </div>
+                                                                <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 dark:border-emerald-500/30 dark:bg-emerald-500/10">
+                                                                    <div className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-300">Өткөндөр</div>
+                                                                    <div className="mt-2 text-2xl font-semibold text-emerald-800 dark:text-emerald-100">{rows.filter((row) => row.passed).length}</div>
+                                                                </div>
+                                                                <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 dark:border-amber-500/30 dark:bg-amber-500/10">
+                                                                    <div className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-700 dark:text-amber-300">Өтпөгөндөр</div>
+                                                                    <div className="mt-2 text-2xl font-semibold text-amber-800 dark:text-amber-100">{rows.filter((row) => !row.passed).length}</div>
+                                                                </div>
+                                                            </div>
+                                                            <div className="flex flex-wrap items-center justify-between gap-3">
+                                                                <div className="text-sm text-edubot-muted dark:text-slate-400">
+                                                                    {rows.length} студент көрсөтүлдү
+                                                                </div>
+                                                                <div className="flex flex-wrap gap-2">
+                                                                    {[
+                                                                        ['all', 'Баары'],
+                                                                        ['passed', 'Өткөндөр'],
+                                                                        ['failed', 'Өтпөгөндөр'],
+                                                                    ].map(([value, label]) => (
+                                                                        <button
+                                                                            key={`${activity.id}-quiz-filter-${value}`}
+                                                                            type="button"
+                                                                            onClick={() => setResponseFilters((prev) => ({ ...prev, [activity.id]: value }))}
+                                                                            className={`rounded-full border px-3 py-1 text-xs font-semibold transition ${
+                                                                                activeFilter === value
+                                                                                    ? 'border-edubot-orange/40 bg-edubot-orange/10 text-edubot-orange'
+                                                                                    : 'border-edubot-line/80 bg-white text-edubot-muted dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300'
+                                                                            }`}
+                                                                        >
+                                                                            {label}
+                                                                        </button>
+                                                                    ))}
+                                                                </div>
+                                                            </div>
+                                                            <div className="overflow-hidden rounded-2xl border border-edubot-line/80 bg-white dark:border-slate-700 dark:bg-slate-950">
+                                                                <div className="grid grid-cols-[minmax(0,1.5fr),120px,120px,120px] gap-3 border-b border-edubot-line/80 px-4 py-3 text-xs font-semibold uppercase tracking-[0.18em] text-edubot-muted dark:border-slate-700 dark:text-slate-400">
+                                                                    <span>Студент</span>
+                                                                    <span>Аракет</span>
+                                                                    <span>Жооп</span>
+                                                                    <span>Натыйжа</span>
+                                                                </div>
+                                                                <div className="divide-y divide-edubot-line/80 dark:divide-slate-700">
+                                                                    {rows.map((row) => (
+                                                                        <div key={`attempt-${row.studentId}`} className="grid grid-cols-[minmax(0,1.5fr),120px,120px,120px] gap-3 px-4 py-3 text-sm">
+                                                                            <div className="min-w-0">
+                                                                                <div className="font-semibold text-edubot-ink dark:text-white">{row.studentName}</div>
+                                                                            </div>
+                                                                            <div className="text-edubot-muted dark:text-slate-300">{row.attemptsCount}</div>
+                                                                            <div className="text-edubot-muted dark:text-slate-300">{row.answeredCount}</div>
+                                                                            <div className="flex flex-wrap items-center gap-2">
+                                                                                <span className="rounded-full border border-edubot-line/80 bg-white px-2.5 py-1 text-xs font-semibold text-edubot-muted dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300">
+                                                                                    {row.score}%
+                                                                                </span>
+                                                                                <span className={`rounded-full border px-2.5 py-1 text-xs font-semibold ${row.passed ? statusMeta.done.className : statusMeta.active.className}`}>
+                                                                                    {row.passed ? 'Өттү' : 'Өткөн жок'}
+                                                                                </span>
+                                                                            </div>
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })()
+                                            ) : (
+                                                (() => {
+                                                    const activeFilter = responseFilters[activity.id] || 'all';
+                                                    const rows = responsesByActivity[activity.id].items.filter((row) => {
+                                                        if (activeFilter === 'pending') return row.status === 'submitted';
+                                                        if (activeFilter === 'reviewed') return row.status !== 'submitted';
+                                                        if (activeFilter === 'revision') return row.status === 'needs_revision' || row.status === 'rejected';
+                                                        return true;
+                                                    });
+                                                    return (
+                                                <div className="space-y-3">
+                                                    <div className="grid gap-3 md:grid-cols-4">
+                                                        <div className="rounded-2xl border border-edubot-line/80 bg-white px-4 py-3 dark:border-slate-700 dark:bg-slate-950">
+                                                            <div className="text-xs font-semibold uppercase tracking-[0.18em] text-edubot-muted dark:text-slate-400">Жооп</div>
+                                                            <div className="mt-2 text-2xl font-semibold text-edubot-ink dark:text-white">{rows.length}</div>
+                                                        </div>
+                                                        <div className="rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 dark:border-sky-500/30 dark:bg-sky-500/10">
+                                                            <div className="text-xs font-semibold uppercase tracking-[0.18em] text-sky-700 dark:text-sky-300">Текшериле элек</div>
+                                                            <div className="mt-2 text-2xl font-semibold text-sky-800 dark:text-sky-100">{rows.filter((row) => row.status === 'submitted').length}</div>
+                                                        </div>
+                                                        <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 dark:border-emerald-500/30 dark:bg-emerald-500/10">
+                                                            <div className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-300">Бекитилди</div>
+                                                            <div className="mt-2 text-2xl font-semibold text-emerald-800 dark:text-emerald-100">{rows.filter((row) => row.status === 'approved').length}</div>
+                                                        </div>
+                                                        <div className="rounded-2xl border border-orange-200 bg-orange-50 px-4 py-3 dark:border-orange-500/30 dark:bg-orange-500/10">
+                                                            <div className="text-xs font-semibold uppercase tracking-[0.18em] text-orange-700 dark:text-orange-300">Оңдотуу/кайтаруу</div>
+                                                            <div className="mt-2 text-2xl font-semibold text-orange-800 dark:text-orange-100">{rows.filter((row) => row.status === 'needs_revision' || row.status === 'rejected').length}</div>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                                        <div className="text-sm text-edubot-muted dark:text-slate-400">
+                                                            {rows.length} жооп көрсөтүлдү
+                                                        </div>
+                                                        <div className="flex flex-wrap gap-2">
+                                                            {[
+                                                                ['all', 'Баары'],
+                                                                ['pending', 'Текшериле элек'],
+                                                                ['reviewed', 'Текшерилген'],
+                                                                ['revision', 'Оңдотуу/кайтаруу'],
+                                                            ].map(([value, label]) => (
+                                                                <button
+                                                                    key={`${activity.id}-submission-filter-${value}`}
+                                                                    type="button"
+                                                                    onClick={() => setResponseFilters((prev) => ({ ...prev, [activity.id]: value }))}
+                                                                    className={`rounded-full border px-3 py-1 text-xs font-semibold transition ${
+                                                                        activeFilter === value
+                                                                            ? 'border-edubot-orange/40 bg-edubot-orange/10 text-edubot-orange'
+                                                                            : 'border-edubot-line/80 bg-white text-edubot-muted dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300'
+                                                                    }`}
+                                                                >
+                                                                    {label}
+                                                                </button>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                    {rows.map((row) => {
+                                                        const draft = reviewDrafts[row.id] || {
+                                                            status: row.status,
+                                                            reviewComment: row.reviewComment || '',
+                                                            score: row.score ?? '',
+                                                        };
+                                                        const latestStudentThreadMessage = row.latestSubmissionMessage || null;
+                                                        const latestReviewThreadMessage = row.latestReviewMessage || null;
+                                                        const historyThread = Array.isArray(row.historyMessages) ? row.historyMessages : [];
+                                                        const hasSavedReview =
+                                                            row.status !== 'submitted' ||
+                                                            row.score !== null ||
+                                                            Boolean(row.reviewComment) ||
+                                                            Boolean(row.reviewedAt);
+                                                        const isEditingReview = Boolean(reviewEditingIds[row.id]) || !hasSavedReview;
+                                                        return (
+                                                            <div key={`submission-${row.id}`} className="rounded-2xl border border-edubot-line/80 bg-white p-4 dark:border-slate-700 dark:bg-slate-950">
+                                                                <div className="flex flex-wrap items-center justify-between gap-3">
+                                                                    <div>
+                                                                        <div className="text-sm font-semibold text-edubot-ink dark:text-white">{row.studentName}</div>
+                                                                        <div className="text-xs text-edubot-muted dark:text-slate-400">{row.updatedAt ? formatSavedAt(row.updatedAt) : ''}</div>
+                                                                    </div>
+                                                                    <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${statusMeta[row.status]?.className || statusMeta.planned.className}`}>
+                                                                        {submissionStatusLabel[row.status] || row.status}
+                                                                    </span>
+                                                                </div>
+                                                                {hasSavedReview && !isEditingReview ? (
+                                                                    <div className="mt-4 rounded-2xl border border-edubot-line/70 bg-edubot-surfaceAlt/60 p-4 text-sm dark:border-slate-700 dark:bg-slate-900/70">
+                                                                        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+                                                                            <span className="font-semibold text-edubot-ink dark:text-white">
+                                                                                Учурдагы жыйынтык
+                                                                            </span>
+                                                                            {row.score !== null && row.score !== undefined ? (
+                                                                                <span className="font-semibold text-edubot-ink dark:text-white">
+                                                                                    Баа: {row.score}
+                                                                                </span>
+                                                                            ) : null}
+                                                                            {row.reviewedAt ? (
+                                                                                <span className="text-edubot-muted dark:text-slate-400">
+                                                                                    Текшерилген: {formatSavedAt(row.reviewedAt)}
+                                                                                </span>
+                                                                            ) : null}
+                                                                        </div>
+                                                                        {row.reviewComment ? (
+                                                                            <p className="mt-2 leading-6 text-edubot-ink dark:text-slate-200">
+                                                                                {row.reviewComment}
+                                                                            </p>
+                                                                        ) : null}
+                                                                        <div className="mt-3">
+                                                                            <button
+                                                                                type="button"
+                                                                                onClick={() => setReviewEditingIds((prev) => ({ ...prev, [row.id]: true }))}
+                                                                                className="inline-flex min-h-10 items-center gap-2 rounded-full border border-edubot-line bg-white px-4 py-2 text-sm font-semibold text-edubot-ink transition hover:border-edubot-orange/40 hover:text-edubot-orange dark:border-slate-700 dark:bg-slate-950 dark:text-white"
+                                                                            >
+                                                                                <FiEdit3 className="h-4 w-4" />
+                                                                                Review түзөтүү
+                                                                            </button>
+                                                                        </div>
+                                                                    </div>
+                                                                ) : null}
+                                                                {row.answerText ? (
+                                                                    <p className="mt-3 text-sm leading-6 text-edubot-muted dark:text-slate-300">{row.answerText}</p>
+                                                                ) : null}
+                                                                {row.attachmentUrl ? (
+                                                                    <a href={row.attachmentUrl} target="_blank" rel="noreferrer" className="mt-3 inline-flex items-center gap-2 rounded-xl border border-edubot-line px-3 py-2 text-sm font-medium text-edubot-ink transition hover:border-edubot-orange hover:text-edubot-orange dark:border-slate-700 dark:text-slate-200">
+                                                                        <FiFileText className="h-4 w-4" />
+                                                                        Тиркемени ачуу
+                                                                    </a>
+                                                                ) : null}
+                                                                {historyThread.length ? (
+                                                                    <div className="mt-4 space-y-3 border-t border-edubot-line/70 pt-4 dark:border-slate-700">
+                                                                        <div className="text-xs font-semibold uppercase tracking-[0.18em] text-edubot-muted dark:text-slate-400">
+                                                                            Мурунку алмашуулар
+                                                                        </div>
+                                                                        {historyThread.map((message) => {
+                                                                            const isInstructor = message.authorRole !== 'student';
+                                                                            return (
+                                                                                <div
+                                                                                    key={`submission-thread-${row.id}-${message.id}`}
+                                                                                    className={`rounded-2xl border px-4 py-3 ${
+                                                                                        isInstructor
+                                                                                            ? 'border-amber-200/80 bg-amber-50/70 dark:border-amber-500/20 dark:bg-amber-500/10'
+                                                                                            : 'border-edubot-line/70 bg-edubot-surfaceAlt/60 dark:border-slate-700 dark:bg-slate-800/70'
+                                                                                    }`}
+                                                                                >
+                                                                                    <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs">
+                                                                                        <span className="font-semibold text-edubot-ink dark:text-white">
+                                                                                            {formatSubmissionThreadLabel(message)}
+                                                                                        </span>
+                                                                                        {message.createdAt ? (
+                                                                                            <span className="text-edubot-muted dark:text-slate-400">
+                                                                                                {formatSavedAt(message.createdAt)}
+                                                                                            </span>
+                                                                                        ) : null}
+                                                                                        {message.status && message.authorRole !== 'student' ? (
+                                                                                            <span className={`rounded-full border px-2.5 py-1 font-semibold ${statusMeta[message.status]?.className || statusMeta.planned.className}`}>
+                                                                                                {submissionStatusLabel[message.status] || message.status}
+                                                                                            </span>
+                                                                                        ) : null}
+                                                                                        {message.score !== null && message.score !== undefined ? (
+                                                                                            <span className="font-semibold text-edubot-ink dark:text-white">
+                                                                                                Баа: {message.score}
+                                                                                            </span>
+                                                                                        ) : null}
+                                                                                    </div>
+                                                                                    {message.body ? (
+                                                                                        <p className="mt-2 leading-6 text-edubot-ink dark:text-slate-200">
+                                                                                            {message.body}
+                                                                                        </p>
+                                                                                    ) : null}
+                                                                                    {message.attachmentUrl ? (
+                                                                                        <a href={message.attachmentUrl} target="_blank" rel="noreferrer" className="mt-3 inline-flex items-center gap-2 rounded-xl border border-edubot-line px-3 py-2 text-sm font-medium text-edubot-ink transition hover:border-edubot-orange hover:text-edubot-orange dark:border-slate-700 dark:text-slate-200">
+                                                                                            <FiFileText className="h-4 w-4" />
+                                                                                            Тиркемени ачуу
+                                                                                        </a>
+                                                                                    ) : null}
+                                                                                </div>
+                                                                            );
+                                                                        })}
+                                                                    </div>
+                                                                ) : null}
+                                                                {isEditingReview ? (
+                                                                    <div className="mt-4 grid gap-3 lg:grid-cols-[180px,120px,minmax(0,1fr),auto]">
+                                                                        <select
+                                                                            value={draft.status}
+                                                                            onChange={(event) => setReviewDrafts((prev) => ({ ...prev, [row.id]: { ...draft, status: event.target.value } }))}
+                                                                            className="dashboard-field dashboard-select"
+                                                                        >
+                                                                            <option value="submitted">Текшерилүүдө</option>
+                                                                            <option value="approved">Бекитүү</option>
+                                                                            <option value="needs_revision">Оңдотуу</option>
+                                                                            <option value="rejected">Кайтаруу</option>
+                                                                        </select>
+                                                                        <input
+                                                                            type="number"
+                                                                            min="0"
+                                                                            max="1000"
+                                                                            value={draft.score}
+                                                                            onChange={(event) => setReviewDrafts((prev) => ({ ...prev, [row.id]: { ...draft, score: event.target.value } }))}
+                                                                            placeholder="Баа"
+                                                                            className="dashboard-field"
+                                                                        />
+                                                                        <input
+                                                                            value={draft.reviewComment}
+                                                                            onChange={(event) => setReviewDrafts((prev) => ({ ...prev, [row.id]: { ...draft, reviewComment: event.target.value } }))}
+                                                                            placeholder="Пикир"
+                                                                            className="dashboard-field"
+                                                                        />
+                                                                        <div className="flex items-center gap-2">
+                                                                            {hasSavedReview ? (
+                                                                                <button
+                                                                                    type="button"
+                                                                                    onClick={() => setReviewEditingIds((prev) => ({ ...prev, [row.id]: false }))}
+                                                                                    className="inline-flex min-h-11 items-center justify-center rounded-full border border-edubot-line bg-white px-4 py-2.5 text-sm font-semibold text-edubot-ink transition hover:border-edubot-orange/40 hover:text-edubot-orange dark:border-slate-700 dark:bg-slate-950 dark:text-white"
+                                                                                >
+                                                                                    Жыйуу
+                                                                                </button>
+                                                                            ) : null}
+                                                                            <button
+                                                                                type="button"
+                                                                                onClick={() => saveReviewDraft(activity.id, row.id, draft)}
+                                                                                disabled={String(reviewingSubmissionId) === String(row.id)}
+                                                                                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-edubot-orange px-4 py-2.5 text-sm font-semibold text-white transition hover:brightness-105 disabled:opacity-60"
+                                                                            >
+                                                                                {String(reviewingSubmissionId) === String(row.id) ? 'Сакталып жатат...' : 'Сактоо'}
+                                                                            </button>
+                                                                        </div>
+                                                                    </div>
+                                                                ) : null}
+                                                                {isEditingReview ? (
+                                                                    <div className="mt-2 text-xs leading-5 text-edubot-muted dark:text-slate-400">
+                                                                        `Бекитилди`, `Оңдотуу керек`, `Кайтарылды` үчүн жок дегенде пикир же баа керек.
+                                                                    </div>
+                                                                ) : null}
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                                    );
+                                                })()
+                                            )}
                                         </div>
                                     ) : null}
                                 </div>
@@ -699,13 +1112,21 @@ SessionActivitiesTab.propTypes = {
     deletingActivityId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
     onCreateActivity: PropTypes.func.isRequired,
     onDeleteActivity: PropTypes.func.isRequired,
+    onLoadResponses: PropTypes.func.isRequired,
+    onReviewSubmission: PropTypes.func.isRequired,
     onUpdateActivity: PropTypes.func.isRequired,
+    loadingResponsesId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    responsesByActivity: PropTypes.object,
+    reviewingSubmissionId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
     savedAt: PropTypes.string,
     savingActivityId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
 };
 
 SessionActivitiesTab.defaultProps = {
     deletingActivityId: null,
+    loadingResponsesId: null,
+    responsesByActivity: {},
+    reviewingSubmissionId: null,
     savedAt: '',
     savingActivityId: null,
 };

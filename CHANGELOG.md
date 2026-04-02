@@ -2,6 +2,24 @@
 
 Version bumps are classified by delivery scale; see `VERSIONING.md`.
 
+## [1.4.6] - 2026-04-03
+
+### 🧩 SESSION ACTIVITIES INTERACTION
+- Extended session activities from authoring-only into a full instructor/student workflow with student task execution, instructor review, and status-driven access for non-quiz activities and quizzes.
+- Added threaded non-quiz activity history so student replies and instructor reviews are preserved as a conversation instead of overwriting the previous exchange.
+- Split student activity UX more clearly between `Ресурстар` for session context and `Тапшырмалар` for actual action, including stronger handoff copy and state-driven quiz action labels such as `Квизди баштоо` and `Квизди кайра тапшыруу`.
+- Reworked instructor `Иштер` responses into clearer current-state plus history views with denser filters, localized review statuses, and read/edit separation for saved reviews.
+
+### 🛠️ REVIEW + SUBMISSION HARDENING
+- Hardened activity review rules so reviewed discussion/exercise/group-work responses require real feedback, and aligned review validation more closely with the homework review model.
+- Made student and instructor non-quiz submission/review writes transactional so latest submission state and thread history stay in sync.
+- Added explicit student attachment-removal behavior for non-quiz resubmissions instead of silently preserving older files.
+- Limited student submission attachments for both activities and homework to PDF/Word files only, with matching backend validation and frontend picker/error copy.
+- Clarified current-vs-history rendering by exposing latest submission/review and prior history separately instead of making frontend tabs infer that split from raw message arrays.
+
+### ✅ BUILD STATUS
+- Production build passes after the threaded activity interaction and review-hardening checkpoint.
+
 ## [1.4.5] - 2026-04-02
 
 ### 🧩 SESSION ACTIVITIES

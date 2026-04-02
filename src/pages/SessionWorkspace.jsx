@@ -16,6 +16,7 @@ import {
     createSessionMeeting,
     deleteSessionActivity,
     deleteSessionMeeting,
+    fetchSessionActivityResponses,
     fetchCourseAttendance,
     fetchCourseGroups,
     fetchSessionHomework,
@@ -33,6 +34,7 @@ import {
     updateSessionHomework,
     updateSessionMeeting,
     updateCourseSession,
+    reviewSessionActivitySubmission,
     reviewSessionHomeworkSubmission,
 } from '@services/api';
 import {
@@ -448,6 +450,9 @@ const SessionWorkspace = () => {
     const [creatingSessionActivity, setCreatingSessionActivity] = useState(false);
     const [savingSessionActivityId, setSavingSessionActivityId] = useState(null);
     const [deletingSessionActivityId, setDeletingSessionActivityId] = useState(null);
+    const [loadingActivityResponsesId, setLoadingActivityResponsesId] = useState(null);
+    const [reviewingActivitySubmissionId, setReviewingActivitySubmissionId] = useState(null);
+    const [activityResponses, setActivityResponses] = useState({});
 
     const [quickSession, setQuickSession] = useState(QUICK_SESSION_DEFAULT);
     const [editSession, setEditSession] = useState(EDIT_SESSION_DEFAULT);
@@ -1699,6 +1704,44 @@ const SessionWorkspace = () => {
         }
     };
 
+    const loadActivityResponses = async (activityId) => {
+        if (!selectedSessionId) return null;
+
+        setLoadingActivityResponsesId(String(activityId));
+        try {
+            const payload = await fetchSessionActivityResponses(Number(selectedSessionId), Number(activityId));
+            setActivityResponses((prev) => ({ ...prev, [activityId]: payload }));
+            return payload;
+        } catch (error) {
+            toast.error(getWorkspaceErrorMessage(error, 'Иш жыйынтыгын жүктөө катасы'));
+            return null;
+        } finally {
+            setLoadingActivityResponsesId(null);
+        }
+    };
+
+    const reviewActivitySubmissionItem = async (activityId, submissionId, status, reviewComment = '', score = '') => {
+        if (!selectedSessionId) return false;
+
+        setReviewingActivitySubmissionId(String(submissionId));
+        try {
+            await reviewSessionActivitySubmission(Number(selectedSessionId), Number(activityId), Number(submissionId), {
+                status,
+                reviewComment,
+                score: score === '' ? undefined : Number(score),
+            });
+            await loadActivityResponses(activityId);
+            await refreshSelectedGroupSessions();
+            toast.success('Иш жообу жаңыртылды.');
+            return true;
+        } catch (error) {
+            toast.error(getWorkspaceErrorMessage(error, 'Иш жообун сактоо катасы'));
+            return false;
+        } finally {
+            setReviewingActivitySubmissionId(null);
+        }
+    };
+
     const uploadSessionMaterialFile = async (file) => {
         if (!selectedSessionId) {
             toast.error('Сессия тандаңыз.');
@@ -2593,6 +2636,11 @@ const SessionWorkspace = () => {
                                 creating={creatingSessionActivity}
                                 savingActivityId={savingSessionActivityId}
                                 deletingActivityId={deletingSessionActivityId}
+                                responsesByActivity={activityResponses}
+                                loadingResponsesId={loadingActivityResponsesId}
+                                reviewingSubmissionId={reviewingActivitySubmissionId}
+                                onLoadResponses={loadActivityResponses}
+                                onReviewSubmission={reviewActivitySubmissionItem}
                             />
                         )}
 

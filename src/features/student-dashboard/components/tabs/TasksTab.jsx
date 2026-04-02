@@ -5,6 +5,7 @@ import {
     FiBookOpen,
     FiCalendar,
     FiCheckCircle,
+    FiCheckSquare,
     FiClock,
     FiEdit3,
     FiExternalLink,
@@ -24,26 +25,14 @@ import {
 import BasicModal from '@shared/ui/BasicModal';
 import { toast } from 'react-hot-toast';
 import { getTaskKey, resolveSessionHomeworkIds } from '../../utils/studentDashboard.helpers.js';
-import { fetchStudentHomeworkSubmissionAttachmentPreview } from '../../../student/api.js';
+import {
+    fetchStudentActivitySubmissionAttachmentPreview,
+    fetchStudentHomeworkSubmissionAttachmentPreview,
+} from '../../../student/api.js';
 
 const MAX_HOMEWORK_FILE_SIZE_BYTES = 20 * 1024 * 1024;
-const ALLOWED_HOMEWORK_FILE_EXTENSIONS = new Set([
-    'pdf',
-    'doc',
-    'docx',
-    'xls',
-    'xlsx',
-    'ppt',
-    'pptx',
-    'zip',
-    'json',
-    'txt',
-    'csv',
-    'jpg',
-    'jpeg',
-    'png',
-    'webp',
-]);
+const ALLOWED_HOMEWORK_FILE_EXTENSIONS = new Set(['pdf', 'doc', 'docx']);
+const ALLOWED_ACTIVITY_FILE_EXTENSIONS = new Set(['pdf', 'doc', 'docx']);
 
 const STATUS_META = {
     overdue: {
@@ -97,6 +86,51 @@ const STATUS_META = {
     },
 };
 
+const ACTIVITY_TYPE_LABEL = {
+    discussion: 'Талкуу',
+    exercise: 'Көнүгүү',
+    quiz: 'Квиз',
+    group_work: 'Топтук иш',
+};
+
+const ACTIVITY_TYPE_META = {
+    discussion: {
+        icon: FiEdit3,
+        badgeClass:
+            'border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-500/30 dark:bg-sky-500/10 dark:text-sky-300',
+        panelClass:
+            'border-sky-200/80 bg-sky-50/70 dark:border-sky-500/20 dark:bg-sky-500/10',
+    },
+    exercise: {
+        icon: FiCheckSquare,
+        badgeClass:
+            'border-violet-200 bg-violet-50 text-violet-700 dark:border-violet-500/30 dark:bg-violet-500/10 dark:text-violet-300',
+        panelClass:
+            'border-violet-200/80 bg-violet-50/70 dark:border-violet-500/20 dark:bg-violet-500/10',
+    },
+    quiz: {
+        icon: FiCheckCircle,
+        badgeClass:
+            'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300',
+        panelClass:
+            'border-amber-200/80 bg-amber-50/70 dark:border-amber-500/20 dark:bg-amber-500/10',
+    },
+    group_work: {
+        icon: FiBookOpen,
+        badgeClass:
+            'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300',
+        panelClass:
+            'border-emerald-200/80 bg-emerald-50/70 dark:border-emerald-500/20 dark:bg-emerald-500/10',
+    },
+};
+
+const ACTIVITY_REVIEW_STATUS_LABEL = {
+    submitted: 'Текшерилип жатат',
+    approved: 'Бекитилди',
+    needs_revision: 'Оңдотуу керек',
+    rejected: 'Кайтарылды',
+};
+
 const formatTaskDate = (task = {}) => {
     const raw = task.dueAt || task.deadline || task.due || task.submittedAt;
     if (!raw) return 'Мөөнөт көрсөтүлгөн эмес';
@@ -117,6 +151,12 @@ const formatSubmissionType = (submission = {}) => {
     if (submission.attachmentUrl) return 'Файл же шилтеме тиркелген';
     if (submission.answerText) return 'Текст жооп';
     return 'Жооп берилген';
+};
+
+const formatSubmissionThreadLabel = (message = {}) => {
+    if (message.authorRole === 'student') return 'Сиз';
+    if (message.kind === 'review') return 'Мугалим';
+    return 'Жооп';
 };
 
 const getTaskCourse = (task = {}) => task.courseTitle || task.course || 'Белгисиз курс';
@@ -142,14 +182,18 @@ const formatBytes = (value) => {
     return `${size.toFixed(size >= 10 || index === 0 ? 0 : 1)} ${units[index]}`;
 };
 
-const validateHomeworkFile = (file) => {
+const validateSubmissionFile = (file, task = {}) => {
     if (!(file instanceof File)) return { valid: true };
 
     const extension = file.name.split('.').pop()?.toLowerCase() || '';
-    if (!ALLOWED_HOMEWORK_FILE_EXTENSIONS.has(extension)) {
+    const isActivityAttachment = task?.kind === 'activity';
+    const allowedExtensions = isActivityAttachment ? ALLOWED_ACTIVITY_FILE_EXTENSIONS : ALLOWED_HOMEWORK_FILE_EXTENSIONS;
+    if (!allowedExtensions.has(extension)) {
         return {
             valid: false,
-            message: 'Колдоого алынган файл түрүн тандаңыз: PDF, Word, Excel, PowerPoint, ZIP, TXT, CSV же сүрөт.',
+            message: isActivityAttachment
+                ? 'Активдүүлүк үчүн PDF же Word файлын тандаңыз.'
+                : 'Тапшырма үчүн PDF же Word файлын тандаңыз.',
         };
     }
 
@@ -164,6 +208,11 @@ const validateHomeworkFile = (file) => {
 };
 
 const getNormalizedStatus = (task = {}) => {
+    if (task.kind === 'activity') {
+        if (task.activityStatus === 'done' && !task.mySubmission && !task.myAttempt) return 'unavailable';
+        return String(task.status || '').toLowerCase() || 'pending';
+    }
+
     const submissionStatus = String(
         task.mySubmission?.status || task.submissionStatus || task.status || ''
     ).toLowerCase();
@@ -239,7 +288,7 @@ const TasksTab = ({ tasks, onSubmitHomework, submittingTaskState }) => {
     }, []);
 
     const openAttachmentPreview = useCallback(
-        async (homeworkId, title) => {
+        async (kind, id, title) => {
             setPreviewState({
                 open: true,
                 title,
@@ -249,7 +298,10 @@ const TasksTab = ({ tasks, onSubmitHomework, submittingTaskState }) => {
             });
 
             try {
-                const result = await fetchStudentHomeworkSubmissionAttachmentPreview(homeworkId);
+                const result =
+                    kind === 'activity'
+                        ? await fetchStudentActivitySubmissionAttachmentPreview(id)
+                        : await fetchStudentHomeworkSubmissionAttachmentPreview(id);
                 const objectUrl = URL.createObjectURL(result.blob);
                 const kind = detectPreviewKind(result.contentType);
 
@@ -290,11 +342,18 @@ const TasksTab = ({ tasks, onSubmitHomework, submittingTaskState }) => {
                     key,
                     status,
                     meta,
+                    activityMeta:
+                        task.kind === 'activity'
+                            ? ACTIVITY_TYPE_META[task.activityType] || ACTIVITY_TYPE_META.discussion
+                            : null,
                     course,
                     title,
                     description,
                     dateLabel: formatTaskDate(task),
-                    canSubmit: Boolean(ids.sessionId && ids.homeworkId),
+                    canSubmit:
+                        task.kind === 'activity'
+                            ? task.activityStatus === 'active'
+                            : Boolean(ids.sessionId && ids.homeworkId),
                     isDone: status === 'completed' || status === 'submitted',
                 };
             }),
@@ -341,9 +400,22 @@ const TasksTab = ({ tasks, onSubmitHomework, submittingTaskState }) => {
         }));
     };
 
-    const handleFileChange = (taskKey, file) => {
+    const clearAttachmentDraft = (taskKey) => {
+        setDrafts((prev) => ({
+            ...prev,
+            [taskKey]: {
+                ...(prev[taskKey] || {}),
+                file: null,
+                link: '',
+                removeAttachment: true,
+                fileError: '',
+            },
+        }));
+    };
+
+    const handleFileChange = (taskKey, task, file) => {
         const nextFile = file || null;
-        const validation = validateHomeworkFile(nextFile);
+        const validation = validateSubmissionFile(nextFile, task);
 
         if (!validation.valid) {
             updateDraft(taskKey, 'file', null);
@@ -352,6 +424,7 @@ const TasksTab = ({ tasks, onSubmitHomework, submittingTaskState }) => {
         }
 
         updateDraft(taskKey, 'file', nextFile);
+        updateDraft(taskKey, 'removeAttachment', false);
         updateDraft(taskKey, 'fileError', '');
     };
 
@@ -362,7 +435,7 @@ const TasksTab = ({ tasks, onSubmitHomework, submittingTaskState }) => {
         if (success) {
             setDrafts((prev) => ({
                 ...prev,
-                [item.key]: { text: '', link: '', file: null, fileError: '' },
+                [item.key]: { text: '', link: '', file: null, fileError: '', quizAnswers: {} },
             }));
             setExpandedTaskId('');
         }
@@ -457,20 +530,43 @@ const TasksTab = ({ tasks, onSubmitHomework, submittingTaskState }) => {
                 <div className="space-y-4 pt-5">
                     {filteredTasks.length ? (
                         filteredTasks.map((item) => {
-                            const draft = drafts[item.key] || { text: '', link: '' };
+                            const draft = drafts[item.key] || {
+                                text: '',
+                                link: '',
+                                file: null,
+                                quizAnswers: {},
+                            };
                             const isSubmitting = submittingTaskState?.key === item.key;
                             const isUploading = isSubmitting && submittingTaskState?.phase === 'uploading';
                             const isExpanded = expandedTaskId === item.key;
                             const StatusIcon = item.meta.icon;
                             const reviewComment = item.task.mySubmission?.reviewComment || '';
-                            const reviewScore = item.task.mySubmission?.score;
+                            const reviewScore =
+                                item.task.mySubmission?.score ?? item.task.myAttempt?.score ?? null;
                             const reviewedAt = item.task.mySubmission?.reviewedAt;
                             const submittedAt =
-                                item.task.mySubmission?.updatedAt || item.task.mySubmission?.createdAt;
+                                item.task.mySubmission?.updatedAt ||
+                                item.task.mySubmission?.createdAt ||
+                                item.task.myAttempt?.createdAt;
                             const submissionAttachment = item.task.mySubmission?.attachmentUrl || '';
                             const submissionText = item.task.mySubmission?.answerText || '';
+                            const submissionThread = Array.isArray(item.task.mySubmission?.messages)
+                                ? item.task.mySubmission.messages
+                                : [];
+                            const latestStudentThreadMessage = item.task.mySubmission?.latestSubmissionMessage || null;
+                            const latestReviewThreadMessage = item.task.mySubmission?.latestReviewMessage || null;
+                            const historyThread = Array.isArray(item.task.mySubmission?.historyMessages)
+                                ? item.task.mySubmission.historyMessages
+                                : [];
+                            const ActivityIcon = item.activityMeta?.icon || FiBookOpen;
+                            const isQuizTask = item.task.kind === 'activity' && item.task.taskType === 'quiz';
+                            const hasQuizAttempt = Boolean(item.task.myAttempt);
                             const canResubmit =
-                                item.status === 'needs_revision' || item.status === 'rejected';
+                                item.task.kind === 'activity'
+                                    ? item.task.taskType === 'quiz'
+                                        ? item.task.activityStatus === 'active' && !item.task.myAttempt?.passed
+                                        : item.task.activityStatus === 'active'
+                                    : item.status === 'needs_revision' || item.status === 'rejected';
 
                             return (
                                 <article
@@ -480,8 +576,12 @@ const TasksTab = ({ tasks, onSubmitHomework, submittingTaskState }) => {
                                     <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
                                         <div className="min-w-0 flex-1 space-y-4">
                                             <div className="flex flex-wrap items-start gap-3">
-                                                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-edubot-surfaceAlt text-edubot-dark dark:bg-slate-800 dark:text-edubot-soft">
-                                                    <FiBookOpen className="h-5 w-5" />
+                                                <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-edubot-dark dark:text-edubot-soft ${
+                                                    item.task.kind === 'activity'
+                                                        ? item.activityMeta?.panelClass
+                                                        : 'bg-edubot-surfaceAlt dark:bg-slate-800'
+                                                }`}>
+                                                    <ActivityIcon className="h-5 w-5" />
                                                 </div>
 
                                                 <div className="min-w-0 flex-1">
@@ -500,6 +600,14 @@ const TasksTab = ({ tasks, onSubmitHomework, submittingTaskState }) => {
                                                             <FiBookOpen className="h-4 w-4" />
                                                             {item.course}
                                                         </span>
+                                                        {item.task.kind === 'activity' ? (
+                                                            <span className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold ${
+                                                                item.activityMeta?.badgeClass
+                                                            }`}>
+                                                                <ActivityIcon className="h-3.5 w-3.5" />
+                                                                {ACTIVITY_TYPE_LABEL[item.task.activityType] || 'Иш'}
+                                                            </span>
+                                                        ) : null}
                                                         <span className="inline-flex items-center gap-2">
                                                             <FiCalendar className="h-4 w-4" />
                                                             {item.dateLabel}
@@ -515,6 +623,9 @@ const TasksTab = ({ tasks, onSubmitHomework, submittingTaskState }) => {
                                             {reviewComment || reviewScore !== null || reviewedAt ? (
                                                 <div className="rounded-2xl border border-edubot-line/70 bg-edubot-surfaceAlt/60 p-4 text-sm dark:border-slate-700 dark:bg-slate-800/70">
                                                     <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+                                                        <span className="font-semibold text-edubot-ink dark:text-white">
+                                                            Учурдагы жыйынтык
+                                                        </span>
                                                         {reviewScore !== null && reviewScore !== undefined ? (
                                                             <span className="font-semibold text-edubot-ink dark:text-white">
                                                                 Баа: {reviewScore}
@@ -563,6 +674,7 @@ const TasksTab = ({ tasks, onSubmitHomework, submittingTaskState }) => {
                                                                 onClick={(e) => {
                                                                     e.preventDefault();
                                                                     openAttachmentPreview(
+                                                                        item.task.kind === 'activity' ? 'activity' : 'homework',
                                                                         Number(item.task.id || item.task.homeworkId),
                                                                         `${item.title} — Тиркеме`
                                                                     );
@@ -572,6 +684,114 @@ const TasksTab = ({ tasks, onSubmitHomework, submittingTaskState }) => {
                                                                 <FiPaperclip className="h-4 w-4" />
                                                                 Тиркемени ачуу
                                                             </a>
+                                                            {canResubmit ? (
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => clearAttachmentDraft(item.key)}
+                                                                    className="ml-3 inline-flex items-center gap-2 rounded-xl border border-edubot-line px-3 py-2 text-sm font-medium text-edubot-muted transition hover:border-rose-300 hover:text-rose-500 dark:border-slate-700 dark:text-slate-300"
+                                                                >
+                                                                    Тиркемени алып салуу
+                                                                </button>
+                                                            ) : null}
+                                                        </div>
+                                                    ) : null}
+
+                                                    {historyThread.length ? (
+                                                        <div className="mt-4 space-y-3 border-t border-edubot-line/70 pt-4 dark:border-slate-700">
+                                                            <div className="text-xs font-semibold uppercase tracking-[0.18em] text-edubot-muted dark:text-slate-400">
+                                                                Мурунку алмашуулар
+                                                            </div>
+                                                            {historyThread.map((message) => {
+                                                                const isInstructor = message.authorRole !== 'student';
+                                                                return (
+                                                                    <div
+                                                                        key={`task-thread-${item.key}-${message.id}`}
+                                                                        className={`rounded-2xl border px-4 py-3 ${
+                                                                            isInstructor
+                                                                                ? 'border-amber-200/80 bg-amber-50/70 dark:border-amber-500/20 dark:bg-amber-500/10'
+                                                                                : 'border-edubot-line/70 bg-edubot-surfaceAlt/60 dark:border-slate-700 dark:bg-slate-800/70'
+                                                                        }`}
+                                                                    >
+                                                                        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs">
+                                                                            <span className="font-semibold text-edubot-ink dark:text-white">
+                                                                                {formatSubmissionThreadLabel(message)}
+                                                                            </span>
+                                                                            {message.createdAt ? (
+                                                                                <span className="text-edubot-muted dark:text-slate-400">
+                                                                                    {formatTaskDate({ submittedAt: message.createdAt })}
+                                                                                </span>
+                                                                            ) : null}
+                                                                            {message.status && message.authorRole !== 'student' ? (
+                                                                                <span className="text-edubot-muted dark:text-slate-400">
+                                                                                    {ACTIVITY_REVIEW_STATUS_LABEL[message.status] || message.status}
+                                                                                </span>
+                                                                            ) : null}
+                                                                            {message.score !== null && message.score !== undefined ? (
+                                                                                <span className="font-semibold text-edubot-ink dark:text-white">
+                                                                                    Баа: {message.score}
+                                                                                </span>
+                                                                            ) : null}
+                                                                        </div>
+                                                                        {message.body ? (
+                                                                            <p className="mt-2 leading-6 text-edubot-ink dark:text-slate-200">
+                                                                                {message.body}
+                                                                            </p>
+                                                                        ) : null}
+                                                                        {message.attachmentUrl ? (
+                                                                            <div className="mt-3">
+                                                                                <a
+                                                                                    href={message.attachmentUrl}
+                                                                                    target="_blank"
+                                                                                    rel="noreferrer"
+                                                                                    className="inline-flex items-center gap-2 rounded-xl border border-edubot-line px-3 py-2 font-medium text-edubot-ink transition hover:border-edubot-orange hover:text-edubot-orange dark:border-slate-700 dark:text-slate-200"
+                                                                                >
+                                                                                    <FiPaperclip className="h-4 w-4" />
+                                                                                    Тиркемени ачуу
+                                                                                </a>
+                                                                            </div>
+                                                                        ) : null}
+                                                                    </div>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                    ) : null}
+                                                </div>
+                                            ) : item.task.myAttempt ? (
+                                                <div className={`rounded-2xl border p-4 text-sm ${
+                                                    item.task.myAttempt.passed
+                                                        ? 'border-emerald-200 bg-emerald-50/70 dark:border-emerald-500/30 dark:bg-emerald-500/10'
+                                                        : 'border-amber-200 bg-amber-50/70 dark:border-amber-500/30 dark:bg-amber-500/10'
+                                                }`}>
+                                                    <div className="flex flex-wrap items-start justify-between gap-3">
+                                                        <div>
+                                                            <div className="font-semibold text-edubot-ink dark:text-white">
+                                                                {item.task.myAttempt.passed ? 'Квиз ийгиликтүү тапшырылды' : 'Квиз аяктады'}
+                                                            </div>
+                                                            <div className="mt-1 text-sm text-edubot-muted dark:text-slate-300">
+                                                                {item.task.myAttempt.passed
+                                                                    ? 'Жыйынтык жакшы. Бул квиз жабылды.'
+                                                                    : item.task.activityStatus === 'active'
+                                                                        ? 'Жыйынтык жетишсиз. Кайра аракет кылсаңыз болот.'
+                                                                        : 'Квиз жабылды. Жыйынтык ушул бойдон сакталды.'}
+                                                            </div>
+                                                        </div>
+                                                        <div className="rounded-2xl border border-white/70 bg-white/70 px-4 py-3 text-right shadow-sm dark:border-slate-700 dark:bg-slate-950/50">
+                                                            <div className="text-xs font-semibold uppercase tracking-[0.18em] text-edubot-muted dark:text-slate-400">
+                                                                Натыйжа
+                                                            </div>
+                                                            <div className="mt-1 text-2xl font-semibold text-edubot-ink dark:text-white">
+                                                                {Math.round(Number(item.task.myAttempt.score) || 0)}%
+                                                            </div>
+                                                            <div className={`mt-1 text-xs font-semibold ${
+                                                                item.task.myAttempt.passed ? 'text-emerald-700 dark:text-emerald-300' : 'text-amber-700 dark:text-amber-300'
+                                                            }`}>
+                                                                {item.task.myAttempt.passed ? 'Өттү' : 'Өткөн жок'}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    {submittedAt ? (
+                                                        <div className="mt-3 text-xs text-edubot-muted dark:text-slate-400">
+                                                            Тапшырылган убакыт: {formatTaskDate({ submittedAt })}
                                                         </div>
                                                     ) : null}
                                                 </div>
@@ -584,14 +804,26 @@ const TasksTab = ({ tasks, onSubmitHomework, submittingTaskState }) => {
                                                     <div className="flex items-start justify-between gap-3">
                                                         <div>
                                                             <p className="text-sm font-semibold text-edubot-ink dark:text-white">
-                                                                {canResubmit ? 'Жоопту кайра жөнөтүү' : item.status === 'submitted' ? 'Жаңыртуу керек болсо кайра жөнөтүңүз' : 'Жооп жөнөтүү'}
+                                                                {isQuizTask
+                                                                    ? hasQuizAttempt
+                                                                        ? 'Квизди кайра тапшыруу'
+                                                                        : 'Квизди баштоо'
+                                                                    : canResubmit
+                                                                        ? 'Жоопту кайра жөнөтүү'
+                                                                        : item.status === 'submitted'
+                                                                            ? 'Жаңыртуу керек болсо кайра жөнөтүңүз'
+                                                                            : 'Жооп жөнөтүү'}
                                                             </p>
                                                             <p className="mt-1 text-xs leading-5 text-edubot-muted dark:text-slate-400">
-                                                                {canResubmit
-                                                                    ? 'Мугалимдин пикирин эске алып, жаңыртылган жоопту жибериңиз.'
-                                                                    : item.status === 'submitted'
-                                                                        ? 'Тапшырма текшерилип жатат. Зарыл болсо жоопту жаңыртып кайра жибере аласыз.'
-                                                                    : 'Текст, шилтеме же файл кошуп тапшырыңыз.'}
+                                                                {isQuizTask
+                                                                    ? hasQuizAttempt
+                                                                        ? 'Мурунку жыйынтык жаңыланып, акыркы аракет сакталат.'
+                                                                        : 'Суроолорго жооп берип, квизди ошол замат жөнөтүңүз.'
+                                                                    : canResubmit
+                                                                        ? 'Мугалимдин пикирин эске алып, жаңыртылган жоопту жибериңиз.'
+                                                                        : item.status === 'submitted'
+                                                                            ? 'Тапшырма текшерилип жатат. Зарыл болсо жоопту жаңыртып кайра жибере аласыз.'
+                                                                            : 'Текст, шилтеме же файл кошуп тапшырыңыз.'}
                                                             </p>
                                                         </div>
                                                         <button
@@ -603,70 +835,131 @@ const TasksTab = ({ tasks, onSubmitHomework, submittingTaskState }) => {
                                                             }
                                                             className="rounded-xl border border-edubot-line px-3 py-2 text-xs font-semibold text-edubot-ink transition hover:border-edubot-orange hover:text-edubot-orange dark:border-slate-700 dark:text-slate-200"
                                                         >
-                                                            {isExpanded ? 'Жыйуу' : 'Жооп берүү'}
+                                                            {isExpanded ? 'Жыйуу' : isQuizTask ? (hasQuizAttempt ? 'Кайра ачуу' : 'Баштоо') : 'Жооп берүү'}
                                                         </button>
                                                     </div>
 
                                                     {isExpanded ? (
                                                         <div className="mt-4 space-y-3">
-                                                            <textarea
-                                                                value={draft.text || ''}
-                                                                onChange={(e) =>
-                                                                    updateDraft(item.key, 'text', e.target.value)
-                                                                }
-                                                                rows={4}
-                                                                placeholder="Жооп жазыңыз"
-                                                                className="dashboard-field"
-                                                            />
-                                                            <label className="relative block">
-                                                                <FiLink className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-edubot-muted" />
-                                                                <input
-                                                                    value={draft.link || ''}
-                                                                    onChange={(e) =>
-                                                                        updateDraft(item.key, 'link', e.target.value)
-                                                                    }
-                                                                    placeholder="Шилтеме кошуу"
-                                                                    className="dashboard-field dashboard-field-icon"
-                                                                />
-                                                            </label>
-                                                            <label className="flex cursor-pointer items-center justify-between gap-3 rounded-2xl border border-dashed border-edubot-line px-4 py-3 text-sm text-edubot-muted transition hover:border-edubot-orange hover:text-edubot-orange dark:border-slate-700 dark:text-slate-300">
-                                                                <span className="inline-flex items-center gap-2">
-                                                                    <FiPaperclip className="h-4 w-4" />
-                                                                    {draft.file?.name ||
-                                                                        'PDF, Word, Excel, сүрөт же ZIP кошуу'}
-                                                                </span>
-                                                                <span className="text-xs font-semibold">
-                                                                    {draft.file ? 'Алмаштыруу' : 'Файл тандоо'}
-                                                                </span>
-                                                                <input
-                                                                    type="file"
-                                                                    className="hidden"
-                                                                    accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip,.json,.txt,.csv,.jpg,.jpeg,.png,.webp"
-                                                                    disabled={isSubmitting}
-                                                                    onChange={(e) =>
-                                                                        handleFileChange(
-                                                                            item.key,
-                                                                            e.target.files?.[0] || null
-                                                                        )
-                                                                    }
-                                                                />
-                                                            </label>
-                                                            {draft.file ? (
-                                                                <div className="text-xs text-edubot-muted dark:text-slate-400">
-                                                                    {formatBytes(draft.file.size)}
+                                                            {item.task.kind === 'activity' && item.task.taskType === 'quiz' ? (
+                                                                <div className="space-y-4">
+                                                                    {(item.task.questions || []).map((question, questionIndex) => {
+                                                                        const isMultiple = question.questionMode === 'multiple_choice';
+                                                                        const currentValue = draft.quizAnswers?.[question.id] || (isMultiple ? [] : '');
+                                                                        return (
+                                                                            <div key={question.id || questionIndex} className="rounded-2xl border border-edubot-line/70 bg-white/80 p-4 dark:border-slate-700 dark:bg-slate-900/70">
+                                                                                <div className="text-sm font-semibold text-edubot-ink dark:text-white">
+                                                                                    {questionIndex + 1}. {question.prompt}
+                                                                                </div>
+                                                                                <div className="mt-3 space-y-2">
+                                                                                    {(question.options || []).map((option, optionIndex) => {
+                                                                                        const checked = isMultiple
+                                                                                            ? Array.isArray(currentValue) && currentValue.includes(option.id)
+                                                                                            : String(currentValue) === String(option.id);
+                                                                                        return (
+                                                                                            <label key={option.id || optionIndex} className="flex items-center gap-3 rounded-xl border border-edubot-line/70 px-3 py-2 text-sm text-edubot-ink dark:border-slate-700 dark:text-slate-200">
+                                                                                                <input
+                                                                                                    type={isMultiple ? 'checkbox' : 'radio'}
+                                                                                                    name={`activity-${item.key}-${question.id}`}
+                                                                                                    checked={checked}
+                                                                                                    onChange={(e) => {
+                                                                                                        const nextValue = isMultiple
+                                                                                                            ? e.target.checked
+                                                                                                                ? [...(Array.isArray(currentValue) ? currentValue : []), option.id]
+                                                                                                                : (Array.isArray(currentValue) ? currentValue : []).filter((value) => String(value) !== String(option.id))
+                                                                                                            : option.id;
+                                                                                                        setDrafts((prev) => ({
+                                                                                                            ...prev,
+                                                                                                            [item.key]: {
+                                                                                                                ...(prev[item.key] || {}),
+                                                                                                                quizAnswers: {
+                                                                                                                    ...((prev[item.key] || {}).quizAnswers || {}),
+                                                                                                                    [question.id]: nextValue,
+                                                                                                                },
+                                                                                                            },
+                                                                                                        }));
+                                                                                                    }}
+                                                                                                />
+                                                                                                <span>{option.text}</span>
+                                                                                            </label>
+                                                                                        );
+                                                                                    })}
+                                                                                </div>
+                                                                            </div>
+                                                                        );
+                                                                    })}
                                                                 </div>
-                                                            ) : null}
-                                                            {draft.fileError ? (
-                                                                <div className="text-xs text-red-600 dark:text-red-300">
-                                                                    {draft.fileError}
-                                                                </div>
-                                                            ) : null}
+                                                            ) : (
+                                                                <>
+                                                                    <textarea
+                                                                        value={draft.text || ''}
+                                                                        onChange={(e) =>
+                                                                            updateDraft(item.key, 'text', e.target.value)
+                                                                        }
+                                                                        rows={4}
+                                                                        placeholder="Жооп жазыңыз"
+                                                                        className="dashboard-field"
+                                                                    />
+                                                                    <label className="relative block">
+                                                                        <FiLink className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-edubot-muted" />
+                                                                        <input
+                                                                            value={draft.link || ''}
+                                                                            onChange={(e) =>
+                                                                                updateDraft(item.key, 'link', e.target.value)
+                                                                            }
+                                                                            placeholder="Шилтеме кошуу"
+                                                                            className="dashboard-field dashboard-field-icon"
+                                                                        />
+                                                                    </label>
+                                                                    <label className="flex cursor-pointer items-center justify-between gap-3 rounded-2xl border border-dashed border-edubot-line px-4 py-3 text-sm text-edubot-muted transition hover:border-edubot-orange hover:text-edubot-orange dark:border-slate-700 dark:text-slate-300">
+                                                                        <span className="inline-flex items-center gap-2">
+                                                                            <FiPaperclip className="h-4 w-4" />
+                                                                            {draft.file?.name ||
+                                                                                item.task.kind === 'activity'
+                                                                                    ? 'PDF же Word кошуу'
+                                                                                    : 'PDF же Word кошуу'}
+                                                                        </span>
+                                                                        <span className="text-xs font-semibold">
+                                                                            {draft.file ? 'Алмаштыруу' : 'Файл тандоо'}
+                                                                        </span>
+                                                                        <input
+                                                                            type="file"
+                                                                            className="hidden"
+                                                                            accept=".pdf,.doc,.docx"
+                                                                            disabled={isSubmitting}
+                                                                            onChange={(e) =>
+                                                                                handleFileChange(
+                                                                                    item.key,
+                                                                                    item.task,
+                                                                                    e.target.files?.[0] || null
+                                                                                )
+                                                                            }
+                                                                        />
+                                                                    </label>
+                                                                    {draft.file ? (
+                                                                        <div className="text-xs text-edubot-muted dark:text-slate-400">
+                                                                            {formatBytes(draft.file.size)}
+                                                                        </div>
+                                                                    ) : null}
+                                                                    {draft.fileError ? (
+                                                                        <div className="text-xs text-red-600 dark:text-red-300">
+                                                                            {draft.fileError}
+                                                                        </div>
+                                                                    ) : null}
+                                                                </>
+                                                            )}
                                                             <div className="flex items-center justify-between gap-3">
                                                                 <div className="text-xs text-edubot-muted dark:text-slate-400">
-                                                                    <p>Жооп, шилтеме же файлдын кеминде бири талап кылынат.</p>
+                                                                    <p>
+                                                                        {isQuizTask
+                                                                            ? hasQuizAttempt
+                                                                                ? 'Жоопторду жаңыртып, квизди кайра тапшырыңыз.'
+                                                                                : 'Ар бир суроого жооп берип, квизди жөнөтүңүз.'
+                                                                            : 'Жооп, шилтеме же файлдын кеминде бири талап кылынат.'}
+                                                                    </p>
                                                                     {isUploading ? (
                                                                         <p className="mt-1 text-edubot-orange dark:text-edubot-soft">
-                                                                            Файл жүктөлүүдө...
+                                                                            {item.task.kind === 'activity' ? 'Файл жүктөлүүдө...' : 'Файл жүктөлүүдө...'}
                                                                         </p>
                                                                     ) : null}
                                                                     {isSubmitting && !isUploading ? (
@@ -686,14 +979,22 @@ const TasksTab = ({ tasks, onSubmitHomework, submittingTaskState }) => {
                                                                         ? 'Файл жүктөлүүдө...'
                                                                         : isSubmitting
                                                                             ? 'Жөнөтүлүүдө...'
-                                                                            : 'Жөнөтүү'}
+                                                                            : isQuizTask
+                                                                                ? hasQuizAttempt
+                                                                                    ? 'Кайра тапшыруу'
+                                                                                    : 'Квизди баштоо'
+                                                                                : 'Жөнөтүү'}
                                                                 </button>
                                                             </div>
                                                         </div>
                                                     ) : (
                                                         <div className="mt-4 flex items-center gap-2 text-xs text-edubot-muted dark:text-slate-400">
                                                             <FiExternalLink className="h-4 w-4" />
-                                                            {canResubmit
+                                                            {isQuizTask
+                                                                ? hasQuizAttempt
+                                                                    ? 'Басып, квизди кайра тапшырыңыз'
+                                                                    : 'Басып, квизди баштаңыз'
+                                                                : canResubmit
                                                                 ? 'Басып, оңдолгон жоопту кайра жөнөтүңүз'
                                                                 : 'Басып, тапшырманы тез тапшырыңыз'}
                                                         </div>

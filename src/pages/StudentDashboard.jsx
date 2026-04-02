@@ -11,8 +11,12 @@ import {
     fetchStudentRecordings,
     fetchStudentResources,
     fetchStudentHomework,
+    fetchStudentTasks,
     submitSessionHomework,
+    submitStudentActivity,
+    submitStudentActivityQuiz,
     uploadSessionHomeworkAttachment,
+    uploadStudentActivityAttachment,
     fetchUserProfile,
     updateUserProfile,
     fetchStudentProgress,
@@ -195,17 +199,23 @@ const StudentDashboard = () => {
         }
     }, [studentId, studentFilters]);
 
-    const loadTasks = useCallback(async () => {
+    const loadTasks = useCallback(async ({ silent = false } = {}) => {
         if (!studentId) return;
-        setTabLoading('tasks');
+        if (!silent) {
+            setTabLoading('tasks');
+        }
         try {
-            const tasksRes = await fetchStudentHomework(studentFilters);
+            const tasksRes = await fetchStudentTasks(studentFilters);
             setTasks(toItems(tasksRes));
         } catch (error) {
             console.error('Failed to load tasks', error);
-            toast.error('Тапшырмаларды жүктөө мүмкүн болбоду');
+            if (!silent) {
+                toast.error('Тапшырмаларды жүктөө мүмкүн болбоду');
+            }
         } finally {
-            setTabLoading(null);
+            if (!silent) {
+                setTabLoading(null);
+            }
             setLoadedTabs((prev) => ({ ...prev, tasks: true }));
         }
     }, [studentId, studentFilters]);
@@ -427,6 +437,33 @@ const StudentDashboard = () => {
             setFilterGroupId('');
         }
     }, [filterCourseId, filterGroupId, courses, groupOptions]);
+
+    useEffect(() => {
+        if (activeTab !== 'tasks' || !studentId) return;
+
+        const refreshTasksIfVisible = () => {
+            if (document.visibilityState === 'visible') {
+                loadTasks({ silent: true });
+            }
+        };
+
+        const handleWindowFocus = () => {
+            refreshTasksIfVisible();
+        };
+
+        const intervalId = window.setInterval(() => {
+            refreshTasksIfVisible();
+        }, 5000);
+
+        document.addEventListener('visibilitychange', refreshTasksIfVisible);
+        window.addEventListener('focus', handleWindowFocus);
+
+        return () => {
+            window.clearInterval(intervalId);
+            document.removeEventListener('visibilitychange', refreshTasksIfVisible);
+            window.removeEventListener('focus', handleWindowFocus);
+        };
+    }, [activeTab, studentId, loadTasks]);
 
     const hasAttendanceEligibleCourses = useMemo(() => {
         if (filterCourseId) {
@@ -702,6 +739,61 @@ const StudentDashboard = () => {
     );
 
     const handleSubmitHomework = useCallback(async (task, submission) => {
+        if (task?.kind === 'activity') {
+            const sessionId = Number(task.sessionId);
+            const activityId = Number(task.id || task.activityId);
+            if (!sessionId || !activityId) {
+                toast.error('Бул иш үчүн submit жеткиликтүү эмес.');
+                return false;
+            }
+
+            const key = getTaskKey(task);
+            setSubmittingTaskState({ key, phase: 'submitting' });
+            try {
+                if (task.taskType === 'quiz') {
+                    const answers = Object.entries(submission?.quizAnswers || {}).map(([questionId, value]) => ({
+                        questionId: Number(questionId),
+                        optionIds: Array.isArray(value) ? value.map(Number) : value ? [Number(value)] : [],
+                    }));
+                    await submitStudentActivityQuiz(sessionId, activityId, { answers });
+                } else {
+                    const text = submission?.text?.trim() || '';
+                    const link = submission?.link?.trim() || '';
+                    const file = submission?.file instanceof File ? submission.file : null;
+                    const removeAttachment = Boolean(submission?.removeAttachment);
+                    if (!text && !link && !file) {
+                        toast.error('Жооп, шилтеме же файл кошуңуз.');
+                        return false;
+                    }
+
+                    let attachmentUrl = removeAttachment ? '' : link || '';
+                    if (file) {
+                        setSubmittingTaskState({ key, phase: 'uploading' });
+                        const upload = await uploadStudentActivityAttachment(sessionId, activityId, file);
+                        attachmentUrl = upload?.key || upload?.url || attachmentUrl;
+                        setSubmittingTaskState({ key, phase: 'submitting' });
+                    }
+
+                    await submitStudentActivity(sessionId, activityId, {
+                        text: text || undefined,
+                        link: removeAttachment ? '' : attachmentUrl || undefined,
+                    });
+                }
+
+                const tasksRes = await fetchStudentTasks(studentFilters);
+                setTasks(toItems(tasksRes));
+                toast.success('Иш ийгиликтүү жөнөтүлдү.');
+                return true;
+            } catch (error) {
+                const rawMessage = error?.response?.data?.message || 'Ишти жөнөтүү катасы';
+                const message = Array.isArray(rawMessage) ? rawMessage.join(', ') : rawMessage;
+                toast.error(message);
+                return false;
+            } finally {
+                setSubmittingTaskState(null);
+            }
+        }
+
         const { sessionId, homeworkId } = resolveSessionHomeworkIds(task);
         if (!sessionId || !homeworkId) {
             toast.error('Бул тапшырма үчүн submit жеткиликтүү эмес.');
@@ -712,6 +804,7 @@ const StudentDashboard = () => {
         const text = submission?.text?.trim() || '';
         const link = submission?.link?.trim() || '';
         const file = submission?.file instanceof File ? submission.file : null;
+        const removeAttachment = Boolean(submission?.removeAttachment);
         if (!text && !link && !file) {
             toast.error('Жооп, шилтеме же файл кошуңуз.');
             return false;
@@ -719,7 +812,7 @@ const StudentDashboard = () => {
 
         setSubmittingTaskState({ key, phase: file ? 'uploading' : 'submitting' });
         try {
-            let attachmentUrl = link || '';
+            let attachmentUrl = removeAttachment ? '' : link || '';
             if (file) {
                 const upload = await uploadSessionHomeworkAttachment(sessionId, homeworkId, file);
                 attachmentUrl = upload?.key || upload?.url || attachmentUrl;
@@ -728,10 +821,10 @@ const StudentDashboard = () => {
 
             await submitSessionHomework(sessionId, homeworkId, {
                 text: text || undefined,
-                link: attachmentUrl || undefined,
+                link: removeAttachment ? '' : attachmentUrl || undefined,
             });
 
-            const tasksRes = await fetchStudentHomework(studentFilters);
+            const tasksRes = await fetchStudentTasks(studentFilters);
             setTasks(toItems(tasksRes));
             toast.success('Тапшырма ийгиликтүү жөнөтүлдү.');
             return true;
@@ -742,7 +835,7 @@ const StudentDashboard = () => {
             const normalizedMessage = String(message || '').toLowerCase();
 
             if (normalizedMessage.includes('unsupported homework attachment type')) {
-                toast.error('Файл түрү колдоого алынбайт. PDF, Word, Excel, PowerPoint, ZIP, TXT, CSV же сүрөт колдонуңуз.');
+                toast.error('Файл түрү колдоого алынбайт. PDF же Word колдонуңуз.');
                 return false;
             }
 
@@ -829,7 +922,12 @@ const StudentDashboard = () => {
             case 'schedule':
                 return <ScheduleTab offerings={offerings} recordings={recordings} />;
             case 'resources':
-                return <ResourcesTab items={resources} />;
+                return (
+                    <ResourcesTab
+                        items={resources}
+                        onOpenTasks={() => setActiveTab('tasks')}
+                    />
+                );
             case 'tasks':
                 return (
                     <TasksTab

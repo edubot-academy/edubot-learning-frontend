@@ -280,3 +280,28 @@ export const deleteSessionActivity = async (id, activityId) => {
     const { data } = await api.post(`/group-sessions/${sessionId}/activities/${normalizedActivityId}/delete`);
     return data;
 };
+
+export const fetchSessionActivityResponses = async (id, activityId) => {
+    const sessionId = ensurePositiveInt(id, 'id');
+    const normalizedActivityId = ensurePositiveInt(activityId, 'activityId');
+    const { data } = await api.get(`/group-sessions/${sessionId}/activities/${normalizedActivityId}/responses`);
+    return data;
+};
+
+export const reviewSessionActivitySubmission = async (id, activityId, submissionId, payload) => {
+    const sessionId = ensurePositiveInt(id, 'id');
+    const normalizedActivityId = ensurePositiveInt(activityId, 'activityId');
+    const normalizedSubmissionId = ensurePositiveInt(submissionId, 'submissionId');
+    const { data } = await api.patch(
+        `/group-sessions/${sessionId}/activities/${normalizedActivityId}/submissions/${normalizedSubmissionId}`,
+        clean({
+            status: payload?.status,
+            score: payload?.score !== undefined && payload?.score !== null ? Number(payload.score) : undefined,
+            reviewComment:
+                payload?.reviewComment !== undefined && payload?.reviewComment !== null
+                    ? String(payload.reviewComment || '').trim()
+                    : undefined,
+        })
+    );
+    return data;
+};

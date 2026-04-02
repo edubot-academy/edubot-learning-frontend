@@ -105,6 +105,13 @@ export const fetchStudentHomework = async ({ courseId, groupId, limit } = {}) =>
     return data;
 };
 
+export const fetchStudentTasks = async ({ courseId, groupId, limit } = {}) => {
+    const { data } = await api.get('/student/tasks', {
+        params: clean({ courseId, groupId, limit }),
+    });
+    return data;
+};
+
 export const fetchStudentHomeworkSubmissionAttachmentPreview = async (homeworkId) => {
     const { data, headers } = await api.get(`/student/homework/${homeworkId}/submission/attachment`, {
         responseType: 'blob',
@@ -114,4 +121,35 @@ export const fetchStudentHomeworkSubmissionAttachmentPreview = async (homeworkId
         blob: data,
         contentType: headers?.['content-type'] || data?.type || '',
     };
+};
+
+export const fetchStudentActivitySubmissionAttachmentPreview = async (activityId) => {
+    const { data, headers } = await api.get(`/student/activities/${activityId}/submission/attachment`, {
+        responseType: 'blob',
+    });
+
+    return {
+        blob: data,
+        contentType: headers?.['content-type'] || data?.type || '',
+    };
+};
+
+export const uploadStudentActivityAttachment = async (sessionId, activityId, file) => {
+    const form = new FormData();
+    form.append('file', file);
+
+    const { data } = await api.post(`/student/sessions/${sessionId}/activities/${activityId}/submissions/upload`, form, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return data;
+};
+
+export const submitStudentActivity = async (sessionId, activityId, payload) => {
+    const { data } = await api.post(`/student/sessions/${sessionId}/activities/${activityId}/submit`, payload);
+    return data;
+};
+
+export const submitStudentActivityQuiz = async (sessionId, activityId, payload) => {
+    const { data } = await api.post(`/student/sessions/${sessionId}/activities/${activityId}/quiz-attempt`, payload);
+    return data;
 };

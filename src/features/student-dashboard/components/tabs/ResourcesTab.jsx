@@ -58,7 +58,7 @@ const MATERIAL_TYPE_META = {
 const ACTIVITY_TYPE_META = {
     discussion: { label: 'Талкуу', icon: FiMessageSquare },
     exercise: { label: 'Көнүгүү', icon: FiEdit3 },
-    quiz: { label: 'Кыска quiz', icon: FiFileText },
+    quiz: { label: 'Квиз', icon: FiFileText },
     group_work: { label: 'Топтук иш', icon: FiUsers },
 };
 
@@ -90,7 +90,7 @@ const detectPreviewKind = (contentType = '', fallbackType = 'link') => {
     return fallbackType === 'video' ? 'video' : 'download';
 };
 
-const ResourcesTab = ({ items }) => {
+const ResourcesTab = ({ items, onOpenTasks }) => {
     const [query, setQuery] = useState('');
     const [typeFilter, setTypeFilter] = useState('all');
     const [selectedSessionId, setSelectedSessionId] = useState('');
@@ -597,17 +597,19 @@ const ResourcesTab = ({ items }) => {
 
                                 <DashboardInsetPanel
                                     title="Сессиядагы иштер"
-                                    description="Мугалим ушул сессия үчүн белгилеген иштер. Азырынча бул бөлүм көрүү үчүн гана."
+                                    description="Мугалим ушул сессия үчүн белгилеген иштер. Контекст бул жерде көрүнөт, аткаруу болсо `Тапшырмалар` бөлүмүндө жүрөт."
                                 >
                                     {Array.isArray(selectedItem.activities) && selectedItem.activities.length ? (
                                         <div className="mt-4 space-y-3">
                                             <div className="rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-800 dark:border-sky-500/30 dark:bg-sky-500/10 dark:text-sky-200">
-                                                Бул сессия иштери азырынча жооп берүүчү форматта эмес. Статус гана көрүнөт.
+                                                Бул бөлүмдө сессия иштери көрүнөт. Аткарыла турган quiz жана башка иштер `Тапшырмалар` бөлүмүндө ачылат.
                                             </div>
                                             {selectedItem.activities.map((activity, index) => {
                                                 const typeMeta = ACTIVITY_TYPE_META[activity.type] || ACTIVITY_TYPE_META.discussion;
                                                 const statusMeta = ACTIVITY_STATUS_META[activity.status] || ACTIVITY_STATUS_META.planned;
                                                 const Icon = typeMeta.icon;
+                                                const isActionable = activity.status === 'active';
+                                                const isClosed = activity.status === 'done';
                                                 return (
                                                     <div
                                                         key={`${selectedItem.sessionId}-activity-${index}`}
@@ -628,30 +630,52 @@ const ResourcesTab = ({ items }) => {
                                                                 {activity.type === 'quiz' &&
                                                                 Array.isArray(activity.questions) &&
                                                                 activity.questions.length ? (
-                                                                    <div className="mt-3 space-y-3 rounded-2xl border border-edubot-line/70 bg-edubot-surface/60 p-3 dark:border-slate-700 dark:bg-slate-950/50">
-                                                                        {activity.questions.map((question, questionIndex) => (
-                                                                            <div
-                                                                                key={`${selectedItem.sessionId}-activity-${index}-question-${question.id || questionIndex}`}
-                                                                                className="rounded-2xl border border-edubot-line/60 bg-white/80 px-3 py-3 dark:border-slate-700 dark:bg-slate-950"
-                                                                            >
-                                                                                <div className="text-sm font-semibold text-edubot-ink dark:text-white">
-                                                                                    Суроо #{questionIndex + 1}
-                                                                                </div>
-                                                                                <div className="mt-1 text-sm text-edubot-ink dark:text-slate-100">
+                                                                    <div className="mt-3 rounded-2xl border border-edubot-line/70 bg-edubot-surface/60 p-3 dark:border-slate-700 dark:bg-slate-950/50">
+                                                                        <div className="flex flex-wrap items-center gap-2">
+                                                                            <span className="rounded-full border border-edubot-line/80 bg-white px-3 py-1 text-xs font-semibold text-edubot-muted dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300">
+                                                                                {activity.questions.length} суроо
+                                                                            </span>
+                                                                            <span className="rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300">
+                                                                                Жооптор `Тапшырмалар` бөлүмүндө ачылат
+                                                                            </span>
+                                                                        </div>
+                                                                        <div className="mt-3 space-y-2">
+                                                                            {activity.questions.slice(0, 3).map((question, questionIndex) => (
+                                                                                <div
+                                                                                    key={`${selectedItem.sessionId}-activity-${index}-question-${question.id || questionIndex}`}
+                                                                                    className="rounded-xl border border-edubot-line/60 bg-white/80 px-3 py-2 text-sm text-edubot-ink dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200"
+                                                                                >
+                                                                                    <span className="font-semibold">Суроо #{questionIndex + 1}:</span>{' '}
                                                                                     {question.prompt}
                                                                                 </div>
-                                                                                <div className="mt-3 space-y-2">
-                                                                                    {(question.options || []).map((option, optionIndex) => (
-                                                                                        <div
-                                                                                            key={`${selectedItem.sessionId}-activity-${index}-question-${questionIndex}-option-${option.id || optionIndex}`}
-                                                                                            className="rounded-full border border-edubot-line/70 bg-edubot-surfaceAlt/70 px-3 py-2 text-sm text-edubot-muted dark:border-slate-700 dark:bg-slate-950/70 dark:text-slate-300"
-                                                                                        >
-                                                                                            {option.text}
-                                                                                        </div>
-                                                                                    ))}
+                                                                            ))}
+                                                                            {activity.questions.length > 3 ? (
+                                                                                <div className="text-xs text-edubot-muted dark:text-slate-400">
+                                                                                    Дагы {activity.questions.length - 3} суроо бар. Толук аткаруу үчүн `Тапшырмалар` бөлүмүнө өтүңүз.
                                                                                 </div>
-                                                                            </div>
-                                                                        ))}
+                                                                            ) : null}
+                                                                        </div>
+                                                                    </div>
+                                                                ) : null}
+
+                                                                {isActionable ? (
+                                                                    <div className="mt-3 flex flex-wrap items-center gap-3">
+                                                                        <div className="text-sm text-edubot-muted dark:text-slate-400">
+                                                                            Бул ишти аткаруу үчүн `Тапшырмалар` бөлүмүнө өтүңүз.
+                                                                        </div>
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={onOpenTasks}
+                                                                            className="inline-flex items-center rounded-full border border-edubot-orange/30 bg-edubot-orange/10 px-3 py-1.5 text-sm font-semibold text-edubot-orange transition hover:border-edubot-orange hover:bg-edubot-orange/15 dark:border-edubot-orange/40 dark:bg-edubot-orange/15"
+                                                                        >
+                                                                            Тапшырмалардан ачуу
+                                                                        </button>
+                                                                    </div>
+                                                                ) : null}
+
+                                                                {isClosed ? (
+                                                                    <div className="mt-3 text-sm text-edubot-muted dark:text-slate-400">
+                                                                        Бул иш жабык. Эгер жообуңуз же натыйжаңыз болсо, ал `Тапшырмалар` бөлүмүндө көрүнөт.
                                                                     </div>
                                                                 ) : null}
                                                             </div>
@@ -757,10 +781,12 @@ const ResourcesTab = ({ items }) => {
 
 ResourcesTab.propTypes = {
     items: PropTypes.arrayOf(PropTypes.object),
+    onOpenTasks: PropTypes.func,
 };
 
 ResourcesTab.defaultProps = {
     items: [],
+    onOpenTasks: () => {},
 };
 
 export default ResourcesTab;
