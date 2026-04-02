@@ -23,7 +23,7 @@ import {
 import { fetchCourses, fetchInstructorCourses } from '../features/courses/api';
 import { fetchCourseGroups } from '../features/courseGroups/api';
 import { fetchGroupRoster } from '../features/courseGroups/roster';
-import { fetchCourseSessions } from '../features/courseSessions/api';
+import { fetchCourseSessions } from '../features/groupSessions/api';
 import {
     DashboardFilterBar,
     DashboardMetricCard,

@@ -40,7 +40,7 @@ const DashboardLayout = ({
   };
 
   return (
-    <div className={`relative min-h-screen overflow-x-hidden bg-edubot-surface dark:bg-slate-950 ${className}`}>
+    <div className={`relative min-h-screen overflow-x-clip bg-edubot-surface dark:bg-slate-950 ${className}`}>
       <SkipNavigation />
 
       <div className="pointer-events-none absolute inset-x-0 top-0 h-[26rem] bg-edubot-surface opacity-80 dark:opacity-30" />

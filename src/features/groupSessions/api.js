@@ -97,14 +97,14 @@ const normalizeSessionPayload = (payload = {}, { partial = false } = {}) => {
 };
 
 export const createCourseSession = async (payload) => {
-    const { data } = await api.post('/course-sessions', normalizeSessionPayload(payload));
+    const { data } = await api.post('/group-sessions', normalizeSessionPayload(payload));
     return data;
 };
 
 export const updateCourseSession = async (id, patch) => {
     const sessionId = ensurePositiveInt(id, 'id');
     const { data } = await api.patch(
-        `/course-sessions/${sessionId}`,
+        `/group-sessions/${sessionId}`,
         normalizeSessionPayload(patch, { partial: true })
     );
     return data;
@@ -112,12 +112,12 @@ export const updateCourseSession = async (id, patch) => {
 
 export const fetchCourseSession = async (id) => {
     const sessionId = ensurePositiveInt(id, 'id');
-    const { data } = await api.get(`/course-sessions/${sessionId}`);
+    const { data } = await api.get(`/group-sessions/${sessionId}`);
     return data;
 };
 
 export const fetchCourseSessions = async ({ groupId } = {}) => {
-    const { data } = await api.get('/course-sessions', {
+    const { data } = await api.get('/group-sessions', {
         params: clean({
             groupId: groupId !== undefined ? ensurePositiveInt(groupId, 'groupId') : undefined,
         }),

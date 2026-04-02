@@ -2,6 +2,21 @@
 
 Version bumps are classified by delivery scale; see `VERSIONING.md`.
 
+## [1.4.2] - 2026-04-02
+
+### 🧭 INSTRUCTOR SESSION WORKSPACE
+- Reworked the instructor session workspace around a clearer course -> group -> session flow with a stronger session picker and sticky active-session bar.
+- Removed session-level chat from the workspace and moved session create/edit into a dedicated modal instead of keeping setup controls in the main teaching canvas.
+- Scoped the quick-switch strip to `Тандалган группанын бүгүнкү сессиялары` so it now reflects only today’s sessions for the selected group.
+
+### ✅ ATTENDANCE WORKFLOW
+- Upgraded session attendance with search, status filters, bulk actions, and clearer saved/unsaved state feedback.
+- Tightened course/group/session selector chaining so downstream selections clear predictably and stale session context no longer lingers during reloads.
+
+### 🛠️ UX FIXES
+- Fixed session setup modal behavior with proper portal rendering, background scroll lock, keyboard handling, and safer context copy for create vs edit flows.
+- Renamed the frontend session API feature surface from `courseSessions` to `groupSessions` to match the group-owned session model.
+
 ## [1.4.1] - 2026-03-29
 
 ### 🎓 STUDENT DASHBOARD COURSE EXPERIENCE

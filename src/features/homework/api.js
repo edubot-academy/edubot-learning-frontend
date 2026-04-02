@@ -24,7 +24,7 @@ export const fetchHomeworkSummary = async ({ courseId, groupId } = {}) => {
 
 export const fetchSessionHomework = async (sessionId, { includeUnpublished = false } = {}) => {
     const validSessionId = ensurePositiveInt(sessionId, 'sessionId');
-    const { data } = await api.get(`/course-sessions/${validSessionId}/homework`, {
+    const { data } = await api.get(`/group-sessions/${validSessionId}/homework`, {
         params: clean({ includeUnpublished }),
     });
     return data;
@@ -32,7 +32,7 @@ export const fetchSessionHomework = async (sessionId, { includeUnpublished = fal
 
 export const createSessionHomework = async (sessionId, payload) => {
     const validSessionId = ensurePositiveInt(sessionId, 'sessionId');
-    const { data } = await api.post(`/course-sessions/${validSessionId}/homework`, payload);
+    const { data } = await api.post(`/group-sessions/${validSessionId}/homework`, payload);
     return data;
 };
 
@@ -40,7 +40,7 @@ export const updateSessionHomework = async (sessionId, homeworkId, payload) => {
     const validSessionId = ensurePositiveInt(sessionId, 'sessionId');
     const validHomeworkId = ensurePositiveInt(homeworkId, 'homeworkId');
     const { data } = await api.patch(
-        `/course-sessions/${validSessionId}/homework/${validHomeworkId}`,
+        `/group-sessions/${validSessionId}/homework/${validHomeworkId}`,
         payload
     );
     return data;
@@ -50,7 +50,7 @@ export const submitSessionHomework = async (sessionId, homeworkId, payload) => {
     const validSessionId = ensurePositiveInt(sessionId, 'sessionId');
     const validHomeworkId = ensurePositiveInt(homeworkId, 'homeworkId');
     const { data } = await api.post(
-        `/course-sessions/${validSessionId}/homework/${validHomeworkId}/submissions`,
+        `/group-sessions/${validSessionId}/homework/${validHomeworkId}/submissions`,
         payload
     );
     return data;
@@ -67,7 +67,7 @@ export const uploadSessionHomeworkAttachment = async (sessionId, homeworkId, fil
     form.append('file', file);
 
     const { data } = await api.post(
-        `/course-sessions/${validSessionId}/homework/${validHomeworkId}/submissions/upload`,
+        `/group-sessions/${validSessionId}/homework/${validHomeworkId}/submissions/upload`,
         form,
         {
             headers: { 'Content-Type': 'multipart/form-data' },
@@ -80,7 +80,7 @@ export const fetchSessionHomeworkSubmissions = async (sessionId, homeworkId) => 
     const validSessionId = ensurePositiveInt(sessionId, 'sessionId');
     const validHomeworkId = ensurePositiveInt(homeworkId, 'homeworkId');
     const { data } = await api.get(
-        `/course-sessions/${validSessionId}/homework/${validHomeworkId}/submissions`
+        `/group-sessions/${validSessionId}/homework/${validHomeworkId}/submissions`
     );
     return data;
 };
@@ -95,7 +95,7 @@ export const reviewSessionHomeworkSubmission = async (
     const validHomeworkId = ensurePositiveInt(homeworkId, 'homeworkId');
     const validSubmissionId = ensurePositiveInt(submissionId, 'submissionId');
     const { data } = await api.patch(
-        `/course-sessions/${validSessionId}/homework/${validHomeworkId}/submissions/${validSubmissionId}`,
+        `/group-sessions/${validSessionId}/homework/${validHomeworkId}/submissions/${validSubmissionId}`,
         payload
     );
     return data;
