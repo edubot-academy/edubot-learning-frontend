@@ -11,8 +11,10 @@ import {
 } from '@shared/contracts';
 import {
     createCourseSession,
+    createSessionActivity,
     createSessionHomework,
     createSessionMeeting,
+    deleteSessionActivity,
     deleteSessionMeeting,
     fetchCourseAttendance,
     fetchCourseGroups,
@@ -27,6 +29,7 @@ import {
     markSessionAttendanceBulk,
     syncSessionRecordings,
     uploadSessionMaterial,
+    updateSessionActivity,
     updateSessionHomework,
     updateSessionMeeting,
     updateCourseSession,
@@ -53,6 +56,7 @@ import {
 } from 'react-icons/fi';
 import { fetchGroupRoster } from '@features/courseGroups/roster';
 import SessionAttendanceTab from '@features/groupSessions/components/SessionAttendanceTab.jsx';
+import SessionActivitiesTab from '@features/groupSessions/components/SessionActivitiesTab.jsx';
 import SessionEngagementTab from '@features/groupSessions/components/SessionEngagementTab.jsx';
 import SessionHomeworkTab from '@features/groupSessions/components/SessionHomeworkTab.jsx';
 import SessionNotesTab from '@features/groupSessions/components/SessionNotesTab.jsx';
@@ -100,10 +104,12 @@ const EDIT_SESSION_DEFAULT = {
     recordingUrl: '',
 };
 
+
 const tabList = [
     { id: 'attendance', label: 'Катышуу' },
     { id: 'materials', label: 'Ресурстар' },
     { id: 'homework', label: 'Үй тапшырма' },
+    { id: 'activities', label: 'Иштер' },
     { id: 'notes', label: 'Жазуулар' },
     { id: 'engagement', label: 'Кийинки аракеттер' },
 ];
@@ -439,6 +445,9 @@ const SessionWorkspace = () => {
     const [uploadingMaterialFile, setUploadingMaterialFile] = useState(false);
     const [sessionNotes, setSessionNotes] = useState('');
     const [savingSessionNotes, setSavingSessionNotes] = useState(false);
+    const [creatingSessionActivity, setCreatingSessionActivity] = useState(false);
+    const [savingSessionActivityId, setSavingSessionActivityId] = useState(null);
+    const [deletingSessionActivityId, setDeletingSessionActivityId] = useState(null);
 
     const [quickSession, setQuickSession] = useState(QUICK_SESSION_DEFAULT);
     const [editSession, setEditSession] = useState(EDIT_SESSION_DEFAULT);
@@ -1134,7 +1143,6 @@ const SessionWorkspace = () => {
         () => (sessionNotes || '').trim() !== String(selectedSession?.notes || '').trim(),
         [selectedSession?.notes, sessionNotes]
     );
-
     const selectedSessionJoinAllowed = useMemo(
         () => isJoinWindowOpen(selectedSession, nowMs),
         [selectedSession, nowMs]
@@ -1621,6 +1629,73 @@ const SessionWorkspace = () => {
             return false;
         } finally {
             setSavingSessionNotes(false);
+        }
+    };
+
+    const refreshSelectedGroupSessions = async () => {
+        const res = await fetchCourseSessions({ groupId: Number(selectedGroupId) });
+        const list = toArray(res);
+        setSessions(list);
+        return list;
+    };
+
+    const createActivityItem = async (activity) => {
+        if (!selectedSessionId) {
+            toast.error('Сессия тандаңыз.');
+            return false;
+        }
+
+        setCreatingSessionActivity(true);
+        try {
+            await createSessionActivity(Number(selectedSessionId), activity);
+            await refreshSelectedGroupSessions();
+            toast.success('Иш кошулду.');
+            return true;
+        } catch (error) {
+            toast.error(getWorkspaceErrorMessage(error, 'Ишти сактоо катасы'));
+            return false;
+        } finally {
+            setCreatingSessionActivity(false);
+        }
+    };
+
+    const updateActivityItem = async (activityId, activity) => {
+        if (!selectedSessionId) {
+            toast.error('Сессия тандаңыз.');
+            return false;
+        }
+
+        setSavingSessionActivityId(String(activityId));
+        try {
+            await updateSessionActivity(Number(selectedSessionId), Number(activityId), activity);
+            await refreshSelectedGroupSessions();
+            toast.success('Иш жаңыртылды.');
+            return true;
+        } catch (error) {
+            toast.error(getWorkspaceErrorMessage(error, 'Ишти жаңыртуу катасы'));
+            return false;
+        } finally {
+            setSavingSessionActivityId(null);
+        }
+    };
+
+    const deleteActivityItem = async (activityId) => {
+        if (!selectedSessionId) {
+            toast.error('Сессия тандаңыз.');
+            return false;
+        }
+
+        setDeletingSessionActivityId(String(activityId));
+        try {
+            await deleteSessionActivity(Number(selectedSessionId), Number(activityId));
+            await refreshSelectedGroupSessions();
+            toast.success('Иш өчүрүлдү.');
+            return true;
+        } catch (error) {
+            toast.error(getWorkspaceErrorMessage(error, 'Ишти өчүрүү катасы'));
+            return false;
+        } finally {
+            setDeletingSessionActivityId(null);
         }
     };
 
@@ -2504,6 +2579,20 @@ const SessionWorkspace = () => {
                                 onSave={saveSessionNotes}
                                 savedAt={selectedSession?.notes?.trim() ? selectedSession?.notesUpdatedAt || '' : ''}
                                 saving={savingSessionNotes}
+                            />
+                        )}
+
+                        {activeTab === 'activities' && (
+                            <SessionActivitiesTab
+                                activities={Array.isArray(selectedSession?.activities) ? selectedSession.activities : []}
+                                canEdit={Boolean(selectedSessionId)}
+                                onCreateActivity={createActivityItem}
+                                onUpdateActivity={updateActivityItem}
+                                onDeleteActivity={deleteActivityItem}
+                                savedAt={selectedSession?.activities?.length ? selectedSession?.activitiesUpdatedAt || '' : ''}
+                                creating={creatingSessionActivity}
+                                savingActivityId={savingSessionActivityId}
+                                deletingActivityId={deletingSessionActivityId}
                             />
                         )}
 

@@ -2,6 +2,22 @@
 
 Version bumps are classified by delivery scale; see `VERSIONING.md`.
 
+## [1.4.5] - 2026-04-02
+
+### 🧩 SESSION ACTIVITIES
+- Added a real instructor `Иштер` tab in the session workspace with read-first cards, per-activity create/edit/delete flows, and separate save behavior instead of saving the full activity list at once.
+- Added structured session activities with support for `Талкуу`, `Көнүгүү`, `Квиз`, and `Топтук иш`, including quiz questions, multiple-choice options, and explicit single-choice vs multi-choice authoring.
+- Reworked activity authoring so quiz editing has clearer internal hierarchy, collapsible question editing, and stronger status guidance about what students can or cannot see.
+- Made student `Ресурстар` reflect session activities from the same session source of truth, with view-only activity cards, clearer type/status cues, and student-safe visibility for `active` and `done` activities only.
+
+### 🛠️ UX FIXES
+- Fixed activity-title typing/focus loss caused by unstable list keys in the session activities editor.
+- Corrected instructor activity summary metrics so `Көрүнөт` now matches the actual student visibility rule.
+- Made quiz answer-mode switching safer by preserving one valid correct answer when changing a question back to single-choice.
+
+### ✅ BUILD STATUS
+- Production build passes after the session activities authoring/sync checkpoint.
+
 ## [1.4.4] - 2026-04-02
 
 ### 🗓️ GROUP SCHEDULE DEFAULTS

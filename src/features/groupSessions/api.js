@@ -53,6 +53,105 @@ const normalizeMaterials = (materials) => {
     });
 };
 
+const normalizeActivities = (activities) => {
+    if (activities === undefined) return undefined;
+    if (!Array.isArray(activities)) {
+        throw new Error('activities must be an array');
+    }
+
+    const validTypes = new Set(['discussion', 'exercise', 'quiz', 'group_work']);
+    const validStatuses = new Set(['planned', 'active', 'done']);
+
+    return activities
+        .map((activity, index) => {
+            const title = ensureNonEmptyString(activity?.title, `activities[${index}].title`);
+            const type = String(activity?.type || '').trim();
+            const status = String(activity?.status || '').trim();
+            const description = String(activity?.description || '').trim();
+
+            if (!validTypes.has(type)) {
+                throw new Error(`activities[${index}].type must be one of: ${Array.from(validTypes).join(', ')}`);
+            }
+            if (!validStatuses.has(status)) {
+                throw new Error(`activities[${index}].status must be one of: ${Array.from(validStatuses).join(', ')}`);
+            }
+
+            const questions =
+                type === 'quiz'
+                    ? (() => {
+                          if (!Array.isArray(activity?.questions) || !activity.questions.length) {
+                              throw new Error(`activities[${index}].questions must contain at least one question`);
+                          }
+
+                          return activity.questions.map((question, questionIndex) => {
+                              const prompt = ensureNonEmptyString(
+                                  question?.prompt,
+                                  `activities[${index}].questions[${questionIndex}].prompt`
+                              );
+
+                              if (!Array.isArray(question?.options) || question.options.length < 2) {
+                                  throw new Error(
+                                      `activities[${index}].questions[${questionIndex}].options must contain at least two options`
+                                  );
+                              }
+
+                              const options = question.options
+                                  .map((option, optionIndex) => ({
+                                      id:
+                                          option?.id !== undefined && option?.id !== null
+                                              ? ensurePositiveInt(option.id, `activities[${index}].questions[${questionIndex}].options[${optionIndex}].id`)
+                                              : undefined,
+                                      text: ensureNonEmptyString(
+                                          option?.text,
+                                          `activities[${index}].questions[${questionIndex}].options[${optionIndex}].text`
+                                      ),
+                                      isCorrect: Boolean(option?.isCorrect),
+                                  }))
+                                  .filter(Boolean);
+
+                              if (!options.some((option) => option.isCorrect)) {
+                                  throw new Error(
+                                      `activities[${index}].questions[${questionIndex}] must have at least one correct option`
+                                  );
+                              }
+
+                              return { prompt, options };
+                          });
+                      })()
+                    : undefined;
+
+            return clean({
+                id:
+                    activity?.id !== undefined && activity?.id !== null
+                        ? ensurePositiveInt(activity.id, `activities[${index}].id`)
+                        : undefined,
+                title,
+                description: description || undefined,
+                type,
+                status,
+                questions: questions?.map((question, questionIndex) =>
+                    clean({
+                        id:
+                            question?.id !== undefined && question?.id !== null
+                                ? ensurePositiveInt(question.id, `activities[${index}].questions[${questionIndex}].id`)
+                                : undefined,
+                        prompt: question.prompt,
+                        questionMode:
+                            activity.questions?.[questionIndex]?.questionMode === 'multiple_choice'
+                                ? 'multiple_choice'
+                                : 'single_choice',
+                        options: question.options,
+                    })
+                ),
+            });
+        });
+};
+
+const normalizeActivity = (activity) => {
+    const normalized = normalizeActivities([activity]);
+    return normalized?.[0];
+};
+
 const normalizeSessionPayload = (payload = {}, { partial = false } = {}) => {
     if (!payload || typeof payload !== 'object') {
         throw new Error('payload must be an object');
@@ -150,5 +249,34 @@ export const uploadSessionMaterial = async (id, file) => {
     const { data } = await api.post(`/group-sessions/${sessionId}/materials/upload`, form, {
         headers: { 'Content-Type': 'multipart/form-data' },
     });
+    return data;
+};
+
+export const fetchSessionActivities = async (id) => {
+    const sessionId = ensurePositiveInt(id, 'id');
+    const { data } = await api.get(`/group-sessions/${sessionId}/activities`);
+    return data;
+};
+
+export const createSessionActivity = async (id, activity) => {
+    const sessionId = ensurePositiveInt(id, 'id');
+    const { data } = await api.post(`/group-sessions/${sessionId}/activities`, normalizeActivity(activity));
+    return data;
+};
+
+export const updateSessionActivity = async (id, activityId, activity) => {
+    const sessionId = ensurePositiveInt(id, 'id');
+    const normalizedActivityId = ensurePositiveInt(activityId, 'activityId');
+    const { data } = await api.patch(
+        `/group-sessions/${sessionId}/activities/${normalizedActivityId}`,
+        normalizeActivity(activity)
+    );
+    return data;
+};
+
+export const deleteSessionActivity = async (id, activityId) => {
+    const sessionId = ensurePositiveInt(id, 'id');
+    const normalizedActivityId = ensurePositiveInt(activityId, 'activityId');
+    const { data } = await api.post(`/group-sessions/${sessionId}/activities/${normalizedActivityId}/delete`);
     return data;
 };

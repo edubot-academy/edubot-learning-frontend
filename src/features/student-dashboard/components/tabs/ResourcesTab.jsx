@@ -3,14 +3,17 @@ import PropTypes from 'prop-types';
 import {
     FiCalendar,
     FiDownload,
+    FiEdit3,
     FiFileText,
     FiFilter,
     FiFolder,
     FiImage,
     FiMapPin,
+    FiMessageSquare,
     FiPlayCircle,
     FiRadio,
     FiSearch,
+    FiUsers,
     FiVideo,
 } from 'react-icons/fi';
 import {
@@ -49,6 +52,31 @@ const MATERIAL_TYPE_META = {
     link: {
         label: 'Шилтеме',
         icon: FiDownload,
+    },
+};
+
+const ACTIVITY_TYPE_META = {
+    discussion: { label: 'Талкуу', icon: FiMessageSquare },
+    exercise: { label: 'Көнүгүү', icon: FiEdit3 },
+    quiz: { label: 'Кыска quiz', icon: FiFileText },
+    group_work: { label: 'Топтук иш', icon: FiUsers },
+};
+
+const ACTIVITY_STATUS_META = {
+    planned: {
+        label: 'Пландалды',
+        className:
+            'border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-500/30 dark:bg-sky-500/10 dark:text-sky-300',
+    },
+    active: {
+        label: 'Жүрүп жатат',
+        className:
+            'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300',
+    },
+    done: {
+        label: 'Аяктады',
+        className:
+            'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300',
     },
 };
 
@@ -231,6 +259,20 @@ const ResourcesTab = ({ items }) => {
                 item.sessionTitle,
                 item.location,
                 ...item.materials.map((material) => material.title),
+                ...(Array.isArray(item.activities)
+                    ? item.activities.flatMap((activity) => [
+                          activity.title,
+                          activity.description,
+                          ...(Array.isArray(activity.questions)
+                              ? activity.questions.flatMap((question) => [
+                                    question.prompt,
+                                    ...(Array.isArray(question.options)
+                                        ? question.options.map((option) => option.text)
+                                        : []),
+                                ])
+                              : []),
+                      ])
+                    : []),
             ]
                 .filter(Boolean)
                 .some((value) => String(value).toLowerCase().includes(normalizedQuery));
@@ -552,6 +594,86 @@ const ResourcesTab = ({ items }) => {
                                         </div>
                                     </DashboardInsetPanel>
                                 </div>
+
+                                <DashboardInsetPanel
+                                    title="Сессиядагы иштер"
+                                    description="Мугалим ушул сессия үчүн белгилеген иштер. Азырынча бул бөлүм көрүү үчүн гана."
+                                >
+                                    {Array.isArray(selectedItem.activities) && selectedItem.activities.length ? (
+                                        <div className="mt-4 space-y-3">
+                                            <div className="rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-800 dark:border-sky-500/30 dark:bg-sky-500/10 dark:text-sky-200">
+                                                Бул сессия иштери азырынча жооп берүүчү форматта эмес. Статус гана көрүнөт.
+                                            </div>
+                                            {selectedItem.activities.map((activity, index) => {
+                                                const typeMeta = ACTIVITY_TYPE_META[activity.type] || ACTIVITY_TYPE_META.discussion;
+                                                const statusMeta = ACTIVITY_STATUS_META[activity.status] || ACTIVITY_STATUS_META.planned;
+                                                const Icon = typeMeta.icon;
+                                                return (
+                                                    <div
+                                                        key={`${selectedItem.sessionId}-activity-${index}`}
+                                                        className="rounded-2xl border border-edubot-line/70 bg-white/80 px-4 py-3 dark:border-slate-700 dark:bg-slate-900"
+                                                    >
+                                                        <div className="flex flex-wrap items-start justify-between gap-3">
+                                                            <div className="min-w-0">
+                                                                <div className="inline-flex items-center gap-2 text-sm font-semibold text-edubot-ink dark:text-white">
+                                                                    <Icon className="h-4 w-4 text-edubot-orange" />
+                                                                    {activity.title}
+                                                                </div>
+                                                                {activity.description ? (
+                                                                    <p className="mt-2 text-sm text-edubot-muted dark:text-slate-400">
+                                                                        {activity.description}
+                                                                    </p>
+                                                                ) : null}
+
+                                                                {activity.type === 'quiz' &&
+                                                                Array.isArray(activity.questions) &&
+                                                                activity.questions.length ? (
+                                                                    <div className="mt-3 space-y-3 rounded-2xl border border-edubot-line/70 bg-edubot-surface/60 p-3 dark:border-slate-700 dark:bg-slate-950/50">
+                                                                        {activity.questions.map((question, questionIndex) => (
+                                                                            <div
+                                                                                key={`${selectedItem.sessionId}-activity-${index}-question-${question.id || questionIndex}`}
+                                                                                className="rounded-2xl border border-edubot-line/60 bg-white/80 px-3 py-3 dark:border-slate-700 dark:bg-slate-950"
+                                                                            >
+                                                                                <div className="text-sm font-semibold text-edubot-ink dark:text-white">
+                                                                                    Суроо #{questionIndex + 1}
+                                                                                </div>
+                                                                                <div className="mt-1 text-sm text-edubot-ink dark:text-slate-100">
+                                                                                    {question.prompt}
+                                                                                </div>
+                                                                                <div className="mt-3 space-y-2">
+                                                                                    {(question.options || []).map((option, optionIndex) => (
+                                                                                        <div
+                                                                                            key={`${selectedItem.sessionId}-activity-${index}-question-${questionIndex}-option-${option.id || optionIndex}`}
+                                                                                            className="rounded-full border border-edubot-line/70 bg-edubot-surfaceAlt/70 px-3 py-2 text-sm text-edubot-muted dark:border-slate-700 dark:bg-slate-950/70 dark:text-slate-300"
+                                                                                        >
+                                                                                            {option.text}
+                                                                                        </div>
+                                                                                    ))}
+                                                                                </div>
+                                                                            </div>
+                                                                        ))}
+                                                                    </div>
+                                                                ) : null}
+                                                            </div>
+                                                            <div className="flex flex-wrap gap-2">
+                                                                <span className="rounded-full border border-edubot-orange/30 bg-edubot-orange/10 px-3 py-1 text-xs font-semibold text-edubot-orange dark:border-edubot-orange/40 dark:bg-edubot-orange/15">
+                                                                    {typeMeta.label}
+                                                                </span>
+                                                                <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${statusMeta.className}`}>
+                                                                    {statusMeta.label}
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    ) : (
+                                        <div className="mt-4 rounded-2xl border border-dashed border-edubot-line/70 px-4 py-6 text-sm text-edubot-muted dark:border-slate-700 dark:text-slate-400">
+                                            Бул сессия үчүн өзүнчө иштер азырынча кошулган эмес.
+                                        </div>
+                                    )}
+                                </DashboardInsetPanel>
                             </section>
                         </>
                     ) : (
