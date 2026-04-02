@@ -42,7 +42,14 @@ const normalizeMaterials = (materials) => {
     return materials.map((item, index) => {
         const title = ensureNonEmptyString(item?.title, `materials[${index}].title`);
         const url = ensureNonEmptyString(item?.url, `materials[${index}].url`);
-        return { title, url };
+        return clean({
+            title,
+            url,
+            storageKey:
+                item?.storageKey !== undefined && item?.storageKey !== null && String(item.storageKey).trim()
+                    ? String(item.storageKey).trim()
+                    : undefined,
+        });
     });
 };
 
@@ -121,6 +128,21 @@ export const fetchCourseSessions = async ({ groupId } = {}) => {
         params: clean({
             groupId: groupId !== undefined ? ensurePositiveInt(groupId, 'groupId') : undefined,
         }),
+    });
+    return data;
+};
+
+export const uploadSessionMaterial = async (id, file) => {
+    const sessionId = ensurePositiveInt(id, 'id');
+    if (!(file instanceof File)) {
+        throw new Error('file is required');
+    }
+
+    const form = new FormData();
+    form.append('file', file);
+
+    const { data } = await api.post(`/group-sessions/${sessionId}/materials/upload`, form, {
+        headers: { 'Content-Type': 'multipart/form-data' },
     });
     return data;
 };

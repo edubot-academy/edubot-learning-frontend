@@ -8,14 +8,28 @@ Version bumps are classified by delivery scale; see `VERSIONING.md`.
 - Reworked the instructor session workspace around a clearer course -> group -> session flow with a stronger session picker and sticky active-session bar.
 - Removed session-level chat from the workspace and moved session create/edit into a dedicated modal instead of keeping setup controls in the main teaching canvas.
 - Scoped the quick-switch strip to `Тандалган группанын бүгүнкү сессиялары` so it now reflects only today’s sessions for the selected group.
+- Extracted the oversized session workspace into dedicated feature components for attendance, homework, resources, notes, engagement, and session setup.
 
 ### ✅ ATTENDANCE WORKFLOW
 - Upgraded session attendance with search, status filters, bulk actions, and clearer saved/unsaved state feedback.
 - Tightened course/group/session selector chaining so downstream selections clear predictably and stale session context no longer lingers during reloads.
 
+### 📎 RESOURCES + SESSION MATERIALS
+- Rebuilt the session `Resources` tab into a clearer teacher workflow for materials, live meeting state, recording access, and integration utilities.
+- Added direct session material management with link creation, real file upload, inline rename/edit, delete confirmation modal, and calmer row-level actions.
+- Added session material video preview using the shared player in a lazy-loaded modal instead of exposing raw signed URLs in the list.
+- Added reuse of lesson videos from the instructor’s published video courses into offline and online-live session materials through a dedicated picker flow.
+- Stopped showing raw meeting and recording URLs in the visible UI, replacing them with clearer state-based controls and copy/open actions.
+
 ### 🛠️ UX FIXES
 - Fixed session setup modal behavior with proper portal rendering, background scroll lock, keyboard handling, and safer context copy for create vs edit flows.
 - Renamed the frontend session API feature surface from `courseSessions` to `groupSessions` to match the group-owned session model.
+- Fixed stale homework submission requests when switching to a newly created or newly selected session.
+- Improved auto-generated session index suggestions to use the actual max session number in the selected group.
+- Applied delivery-mode-aware UI rules so live-only actions and meeting controls no longer appear for offline session contexts.
+
+### ✅ BUILD STATUS
+- Production build passes after the session workspace and resources refactor checkpoint.
 
 ## [1.4.1] - 2026-03-29
 

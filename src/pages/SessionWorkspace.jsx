@@ -21,9 +21,11 @@ import {
     fetchCourseSessions,
     fetchInstructorCourses,
     fetchSessionAttendance,
+    fetchSections,
     importSessionAttendance,
     markSessionAttendanceBulk,
     syncSessionRecordings,
+    uploadSessionMaterial,
     updateSessionHomework,
     updateSessionMeeting,
     updateCourseSession,
@@ -359,6 +361,7 @@ const SessionWorkspace = () => {
     const [isSessionSetupOpen, setIsSessionSetupOpen] = useState(false);
 
     const [courses, setCourses] = useState([]);
+    const [sourceVideoCourses, setSourceVideoCourses] = useState([]);
     const [groups, setGroups] = useState([]);
     const [sessions, setSessions] = useState([]);
 
@@ -387,6 +390,8 @@ const SessionWorkspace = () => {
     const [deletingMeeting, setDeletingMeeting] = useState(false);
     const [importingAttendance, setImportingAttendance] = useState(false);
     const [syncingRecordings, setSyncingRecordings] = useState(false);
+    const [savingMaterials, setSavingMaterials] = useState(false);
+    const [uploadingMaterialFile, setUploadingMaterialFile] = useState(false);
 
     const [quickSession, setQuickSession] = useState(QUICK_SESSION_DEFAULT);
     const [editSession, setEditSession] = useState(EDIT_SESSION_DEFAULT);
@@ -394,6 +399,9 @@ const SessionWorkspace = () => {
     const [savingSessionUpdate, setSavingSessionUpdate] = useState(false);
 
     const [sessionNotes, setSessionNotes] = useState('');
+    const [courseResourceAssets, setCourseResourceAssets] = useState([]);
+    const [loadingCourseResourceAssets, setLoadingCourseResourceAssets] = useState(false);
+    const [selectedSourceVideoCourseId, setSelectedSourceVideoCourseId] = useState('');
 
     const [homeworkTitle, setHomeworkTitle] = useState('');
     const [homeworkDescription, setHomeworkDescription] = useState('');
@@ -492,16 +500,35 @@ const SessionWorkspace = () => {
         const loadCourses = async () => {
             setLoadingCourses(true);
             try {
-                const data = await fetchInstructorCourses({ status: 'approved' });
+                const [deliveryData, sourceVideoData] = await Promise.all([
+                    fetchInstructorCourses({ status: 'approved', limit: 100 }),
+                    fetchInstructorCourses({
+                        status: 'all',
+                        courseType: COURSE_TYPE.VIDEO,
+                        limit: 100,
+                    }),
+                ]);
                 if (cancelled) return;
 
-                const teachingCourses = (Array.isArray(data?.courses) ? data.courses : []).filter(
+                const allInstructorCourses = Array.isArray(deliveryData?.courses)
+                    ? deliveryData.courses
+                    : [];
+                const allSourceVideoCourses = Array.isArray(sourceVideoData?.courses)
+                    ? sourceVideoData.courses
+                    : [];
+                const teachingCourses = allInstructorCourses.filter(
                     (course) => {
                         const type = course?.courseType || course?.type;
                         return type === COURSE_TYPE.OFFLINE || type === COURSE_TYPE.ONLINE_LIVE;
                     }
                 );
+                const publishedVideos = allSourceVideoCourses.filter((course) => {
+                    const type = String(course?.courseType || course?.type || '').trim().toLowerCase();
+                    return type === COURSE_TYPE.VIDEO && Boolean(course?.isPublished);
+                });
+
                 setCourses(teachingCourses);
+                setSourceVideoCourses(publishedVideos);
                 setSelectedCourseId((prev) => {
                     if (prev && teachingCourses.some((course) => String(course.id) === String(prev))) {
                         return prev;
@@ -511,6 +538,7 @@ const SessionWorkspace = () => {
             } catch (error) {
                 console.error(error);
                 toast.error(getWorkspaceErrorMessage(error, 'Курстар жүктөлгөн жок.'));
+                setSourceVideoCourses([]);
             } finally {
                 if (!cancelled) setLoadingCourses(false);
             }
@@ -823,6 +851,60 @@ const SessionWorkspace = () => {
         };
     }, [selectedSessionId]);
 
+    useEffect(() => {
+        if (!selectedSourceVideoCourseId) {
+            setCourseResourceAssets([]);
+            setLoadingCourseResourceAssets(false);
+            return;
+        }
+
+        let cancelled = false;
+        const loadCourseAssets = async () => {
+            setLoadingCourseResourceAssets(true);
+            try {
+                const sections = await fetchSections(Number(selectedSourceVideoCourseId));
+                if (cancelled) return;
+
+                const assets = (Array.isArray(sections) ? sections : []).flatMap((section) =>
+                    (Array.isArray(section.lessons) ? section.lessons : []).flatMap((lesson) => {
+                        const items = [];
+                        if (
+                            lesson.kind === 'video' &&
+                            lesson.videoUrl &&
+                            lesson.videoKey
+                        ) {
+                            items.push({
+                                id: `video-${lesson.id}`,
+                                lessonId: lesson.id,
+                                lessonTitle: lesson.title,
+                                sectionTitle: section.title,
+                                assetType: 'video',
+                                title: lesson.title || 'Сабак видеосу',
+                                url: lesson.videoUrl,
+                                storageKey: lesson.videoKey,
+                            });
+                        }
+                        return items;
+                    })
+                );
+
+                setCourseResourceAssets(assets);
+            } catch (error) {
+                if (!cancelled) {
+                    setCourseResourceAssets([]);
+                    toast.error(getWorkspaceErrorMessage(error, 'Курстун материалдарын жүктөө катасы'));
+                }
+            } finally {
+                if (!cancelled) setLoadingCourseResourceAssets(false);
+            }
+        };
+
+        loadCourseAssets();
+        return () => {
+            cancelled = true;
+        };
+    }, [selectedSourceVideoCourseId]);
+
     const selectedCourse = useMemo(
         () => courses.find((course) => String(course.id) === String(selectedCourseId)) || null,
         [courses, selectedCourseId]
@@ -840,11 +922,35 @@ const SessionWorkspace = () => {
         () => normalizeCourseType(selectedCourse, selectedSession, selectedGroup),
         [selectedCourse, selectedSession, selectedGroup]
     );
+    const canReusePublishedCourseAssets = useMemo(
+        () =>
+            (selectedDeliveryType === COURSE_TYPE.OFFLINE ||
+                selectedDeliveryType === COURSE_TYPE.ONLINE_LIVE) &&
+            sourceVideoCourses.length > 0,
+        [selectedDeliveryType, sourceVideoCourses.length]
+    );
     const selectedHomework = useMemo(
         () =>
             publishedHomework.find((item) => String(item.id) === String(selectedHomeworkId)) || null,
         [publishedHomework, selectedHomeworkId]
     );
+
+    useEffect(() => {
+        if (!sourceVideoCourses.length) {
+            setSelectedSourceVideoCourseId('');
+            return;
+        }
+
+        setSelectedSourceVideoCourseId((prev) => {
+            if (
+                prev &&
+                sourceVideoCourses.some((course) => String(course.id) === String(prev))
+            ) {
+                return prev;
+            }
+            return String(sourceVideoCourses[0].id);
+        });
+    }, [sourceVideoCourses]);
 
     useEffect(() => {
         if (!selectedSession) {
@@ -1279,6 +1385,86 @@ const SessionWorkspace = () => {
         } finally {
             setSavingSessionUpdate(false);
         }
+    };
+
+    const saveSessionMaterials = async (
+        materials,
+        { successMessage = 'Материалдар жаңыртылды.', suppressSuccessToast = false } = {}
+    ) => {
+        if (!selectedSessionId) {
+            toast.error('Сессия тандаңыз.');
+            return false;
+        }
+
+        setSavingMaterials(true);
+        try {
+            await updateCourseSession(Number(selectedSessionId), {
+                materials,
+            });
+
+            const res = await fetchCourseSessions({ groupId: Number(selectedGroupId) });
+            const list = toArray(res);
+            setSessions(list);
+            if (!suppressSuccessToast) {
+                toast.success(successMessage);
+            }
+            return true;
+        } catch (error) {
+            toast.error(getWorkspaceErrorMessage(error, 'Материалдарды жаңыртуу катасы'));
+            return false;
+        } finally {
+            setSavingMaterials(false);
+        }
+    };
+
+    const uploadSessionMaterialFile = async (file) => {
+        if (!selectedSessionId) {
+            toast.error('Сессия тандаңыз.');
+            return null;
+        }
+
+        setUploadingMaterialFile(true);
+        try {
+            const uploaded = await uploadSessionMaterial(Number(selectedSessionId), file);
+            const nextMaterials = [
+                ...selectedSessionMaterials,
+                {
+                    title: uploaded.title || file.name,
+                    url: uploaded.url || '',
+                    storageKey: uploaded.storageKey || undefined,
+                },
+            ];
+
+            const saved = await saveSessionMaterials(nextMaterials, {
+                successMessage: 'Файл материалдарга кошулду.',
+            });
+
+            return saved ? uploaded : null;
+        } catch (error) {
+            toast.error(getWorkspaceErrorMessage(error, 'Файлды жүктөө катасы'));
+            return null;
+        } finally {
+            setUploadingMaterialFile(false);
+        }
+    };
+
+    const addCourseAssetToSessionMaterials = async (asset) => {
+        const exists = selectedSessionMaterials.some(
+            (item) => item.storageKey && item.storageKey === asset.storageKey
+        );
+        if (exists) {
+            toast.error('Бул материал сессияга мурунтан кошулган.');
+            return false;
+        }
+
+        return saveSessionMaterials([
+            ...selectedSessionMaterials,
+            {
+                title: asset.title,
+                url: asset.url,
+                storageKey: asset.storageKey,
+            },
+        ]);
     };
 
     const saveMeetingLink = async () => {
@@ -2002,14 +2188,20 @@ const SessionWorkspace = () => {
                                 meetingId={meetingId}
                                 meetingJoinUrl={meetingJoinUrl}
                                 meetingProvider={meetingProvider}
-                                onEditSession={() => {
-                                    setWorkspaceMode('edit');
-                                    setIsSessionSetupOpen(true);
-                                }}
+                                availableCourseAssets={courseResourceAssets}
+                                loadingCourseAssets={loadingCourseResourceAssets}
+                                onAddCourseAsset={addCourseAssetToSessionMaterials}
+                                onSourceVideoCourseChange={setSelectedSourceVideoCourseId}
+                                onSaveMaterials={saveSessionMaterials}
+                                onUploadMaterialFile={uploadSessionMaterialFile}
+                                publishedVideoCourses={sourceVideoCourses}
                                 removeMeeting={removeMeeting}
                                 restoreMeetingState={restoreMeetingState}
                                 saveMeetingLink={saveMeetingLink}
+                                savingMaterials={savingMaterials}
                                 savingMeeting={savingMeeting}
+                                showCourseAssetReuse={canReusePublishedCourseAssets}
+                                selectedSourceVideoCourseId={selectedSourceVideoCourseId}
                                 selectedDeliveryType={selectedDeliveryType}
                                 selectedGroupLocation={selectedGroup?.location || ''}
                                 selectedSessionId={selectedSessionId}
@@ -2022,6 +2214,7 @@ const SessionWorkspace = () => {
                                 setMeetingProvider={setMeetingProvider}
                                 syncZoomRecordingsToSession={syncZoomRecordingsToSession}
                                 syncingRecordings={syncingRecordings}
+                                uploadingMaterialFile={uploadingMaterialFile}
                             />
                         )}
 
