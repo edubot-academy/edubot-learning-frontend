@@ -2,25 +2,19 @@ import { useEffect, useMemo, useState } from 'react';
 import PropTypes from 'prop-types';
 import NotificationsWidget from '@features/notifications/components/NotificationsWidget';
 import {
-    buildLeaderboardSnapshot,
-    LeaderboardListCard,
-    ChallengeRail,
-    AchievementCloud,
-} from '../../../../features/leaderboard/components/LeaderboardExperience';
-import {
     DashboardInsetPanel,
     DashboardMetricCard,
     DashboardSectionHeader,
 } from '../../../../components/ui/dashboard';
 import StudentHeroPill from '../shared/StudentHeroPill.jsx';
-import StudentMiniStat from '../shared/StudentMiniStat.jsx';
 import {
-    resolveCourseType,
-    isOnlineLiveOffering,
-    isStudentJoinWindowOpen,
     courseTypeLabel,
     formatCountdown,
     formatSessionDate,
+    isOfflineOrLiveCourse,
+    isOnlineLiveOffering,
+    isStudentJoinWindowOpen,
+    resolveCourseType,
     resolveInstructorName,
 } from '../../utils/studentDashboard.helpers.js';
 import {
@@ -30,10 +24,15 @@ import {
     FiCalendar,
     FiCheckCircle,
     FiClock,
-    FiFlag,
-    FiUsers,
-    FiZap,
+    FiMapPin,
+    FiPlayCircle,
+    FiRadio,
 } from 'react-icons/fi';
+
+const getSessionTitle = (item) =>
+    item.sessionTitle ||
+    item.title ||
+    (Number.isFinite(Number(item.sessionIndex)) ? `Сессия ${Number(item.sessionIndex) + 1}` : 'Сессия');
 
 const OverviewTab = ({
     student,
@@ -43,11 +42,6 @@ const OverviewTab = ({
     tasks,
     attendanceStats,
     attendanceEnabled,
-    engagement,
-    leaderboardItems,
-    leaderboardMeta,
-    milestoneItems,
-    badgeItems,
     progressItems,
     onOpenCourse,
     openingCourseId,
@@ -63,29 +57,63 @@ const OverviewTab = ({
         () =>
             offerings
                 .filter((item) => item.startAt && new Date(item.startAt).getTime() >= nowMs)
-                .sort((a, b) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime())
-                .slice(0, 4),
+                .sort((a, b) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime()),
         [offerings, nowMs]
     );
 
-    const pendingHomework = useMemo(
+    const nextSession = upcoming[0] || null;
+
+    const homeworkNeedingAction = useMemo(
         () =>
-            tasks
-                .filter((task) => {
-                    const status = String(task.submissionStatus || task.status || '').toLowerCase();
-                    return status !== 'completed' && status !== 'approved' && status !== 'submitted';
-                })
-                .slice(0, 4),
+            tasks.filter((task) => {
+                const status = String(task.submissionStatus || task.status || '').toLowerCase();
+                return (
+                    status !== 'completed' &&
+                    status !== 'approved' &&
+                    status !== 'submitted'
+                );
+            }),
         [tasks]
     );
 
-    const recommendedCourse = useMemo(() => {
-        const progressMap = new Map(
-            (progressItems || []).map((item) => [String(item.courseId || item.courseTitle), item])
-        );
+    const activeCourses =
+        Number(summary?.stats?.activeCourses || 0) || Number(courses.length || 0) || 0;
+    const lessonsCompleted =
+        Number(summary?.stats?.lessonsCompleted || 0) ||
+        progressItems.reduce((acc, item) => acc + Number(item.lessonsCompleted || 0), 0);
+    const upcomingCount =
+        Number(summary?.stats?.upcomingSessions || 0) || Number(upcoming.length || 0);
+    const availableRecordings = Number(summary?.stats?.availableRecordings || 0) || 0;
 
+    const progressMap = useMemo(
+        () => new Map((progressItems || []).map((item) => [String(item.courseId || item.courseTitle), item])),
+        [progressItems]
+    );
+
+    const modalityBuckets = useMemo(() => {
+        const video = [];
+        const delivery = [];
+
+        courses.forEach((course) => {
+            const type = String(resolveCourseType(course)).toLowerCase();
+            if (type === 'video') {
+                video.push(course);
+            } else if (type === 'offline' || type === 'online_live') {
+                delivery.push(course);
+            }
+        });
+
+        return { video, delivery };
+    }, [courses]);
+
+    const videoCourses = modalityBuckets.video;
+    const deliveryCourses = modalityBuckets.delivery;
+    const hasVideoLearning = videoCourses.length > 0;
+    const hasDeliveryLearning = deliveryCourses.length > 0 || upcoming.length > 0;
+
+    const recommendedVideoCourse = useMemo(() => {
         return (
-            courses
+            videoCourses
                 .map((course) => {
                     const key = String(course.id ?? course.courseId ?? course.title ?? '');
                     const progressItem = progressMap.get(key);
@@ -102,60 +130,43 @@ const OverviewTab = ({
                         progressItem,
                     };
                 })
+                .filter((course) => Number(course.progressPercent || 0) < 100)
                 .sort((a, b) => (a.progressPercent || 0) - (b.progressPercent || 0))[0] || null
         );
-    }, [courses, progressItems]);
+    }, [progressMap, videoCourses]);
 
-    const leaderboardSnapshot = useMemo(
+    const recentVideoProgress = useMemo(
         () =>
-            buildLeaderboardSnapshot({
-                items: leaderboardItems,
-                user: { id: student.id, fullName: student.name },
-                xp: engagement?.xp || 0,
-                streakDays: engagement?.streak || 0,
-                badges: badgeItems,
-                label: 'Dashboard',
-            }),
-        [leaderboardItems, student, engagement, badgeItems]
+            progressItems
+                .filter((item) => String(resolveCourseType(item)).toLowerCase() === 'video')
+                .sort((a, b) => Number(b.progressPercent || 0) - Number(a.progressPercent || 0))
+                .slice(0, 3),
+        [progressItems]
     );
 
-    const hasLeaderboardPreviewIssue = Boolean(leaderboardMeta?.fallback);
-    const emptyLeaderboardPreview = !hasLeaderboardPreviewIssue && !(leaderboardItems || []).length;
-
-    const leaderboardChallenges = useMemo(
-        () => [
-            {
-                id: 'overview-rank',
-                title: leaderboardSnapshot.rank
-                    ? `#${leaderboardSnapshot.rank} орунду бекемдөө`
-                    : 'Алгачкы рейтингге чыгуу',
-                detail: leaderboardSnapshot.targetGap
-                    ? `Дагы ${leaderboardSnapshot.targetGap} XP кийинки тепкичке жеткирет.`
-                    : '1 сабак жана 1 тапшырма сизди таблицага алып кирет.',
-            },
-            {
-                id: 'overview-streak',
-                title: `${engagement?.streak || 0} күндүк серияны сактоо`,
-                detail: 'Эртең дагы кирсеңиз, туруктуулук сигналы күчөйт.',
-            },
-            {
-                id: 'overview-homework',
-                title: 'Ачык тапшырманы жабуу',
-                detail: pendingHomework.length
-                    ? `${pendingHomework.length} тапшырма күтүп турат.`
-                    : 'Азырынча тапшырма жок, темп жакшы.',
-            },
-        ],
-        [leaderboardSnapshot, engagement?.streak, pendingHomework.length]
-    );
-
-    const activeCourses =
-        Number(summary?.stats?.activeCourses || 0) || Number(courses.length || 0) || 0;
-    const lessonsCompleted =
-        Number(summary?.stats?.lessonsCompleted || 0) ||
-        progressItems.reduce((acc, item) => acc + Number(item.lessonsCompleted || 0), 0);
-    const weeklyTime = summary?.stats?.timeThisWeek || '—';
     const welcomeName = student.name?.split(' ')[0] || 'Студент';
+
+    const heroCopy = useMemo(() => {
+        if (hasVideoLearning && hasDeliveryLearning) {
+            return {
+                title: 'Окуу жана сессиялар бир жерде',
+                description:
+                    'Өз алдынча видеокурстарыңызды улантып, жакынкы live же offline сабактарыңызды өткөрүп жибербей көзөмөлдөңүз.',
+            };
+        }
+        if (hasDeliveryLearning) {
+            return {
+                title: 'Кийинки сессияңызга даярданыңыз',
+                description:
+                    'Жакынкы сабак, join же жайгашкан жер, жана ошол сессияга тиешелүү тапшырмалар бул жерден көрүнөт.',
+            };
+        }
+        return {
+            title: 'Окууну улантууга даярсыз',
+            description:
+                'Акыркы токтогон жериңизден улантып, видеокурстардагы прогрессиңизди ишенимдүү көзөмөлдөңүз.',
+        };
+    }, [hasDeliveryLearning, hasVideoLearning]);
 
     return (
         <div className="space-y-6">
@@ -163,94 +174,115 @@ const OverviewTab = ({
                 <DashboardSectionHeader
                     eyebrow="Student Overview"
                     title={`Кош келиңиз, ${welcomeName}!`}
-                    description="Негизги окуу абалы, жакынкы сабактар жана тез аракеттер ушул бетке топтолду."
+                    description="Бүгүнкү негизги окуу аракеттери, жакынкы сессиялар жана прогресс ушул бетке топтолду."
                     metrics={
                         <>
-                            <DashboardMetricCard
-                                label="Активдүү курстар"
-                                value={activeCourses}
-                                icon={FiBookOpen}
-                            />
-                            <DashboardMetricCard
-                                label="Бүткөн сабак"
-                                value={lessonsCompleted}
-                                icon={FiCheckCircle}
-                                tone="green"
-                            />
-                            <DashboardMetricCard
-                                label="Күтүп турган"
-                                value={pendingHomework.length}
-                                icon={FiClock}
-                                tone="amber"
-                            />
-                            <DashboardMetricCard
-                                label="XP"
-                                value={engagement?.xp || 0}
-                                icon={FiZap}
-                            />
+                            <DashboardMetricCard label="Активдүү курстар" value={activeCourses} icon={FiBookOpen} />
+                            <DashboardMetricCard label="Бүткөн сабак" value={lessonsCompleted} icon={FiCheckCircle} tone="green" />
+                            <DashboardMetricCard label="Кийинки сессиялар" value={upcomingCount} icon={FiCalendar} tone="blue" />
+                            <DashboardMetricCard label="Аракет керек" value={homeworkNeedingAction.length} icon={FiClock} tone="amber" />
                         </>
                     }
                 />
 
-                <div className="grid gap-4 p-6 xl:grid-cols-[minmax(0,1.4fr),minmax(0,0.6fr)]">
+                <div className="grid gap-4 p-6 xl:grid-cols-[minmax(0,1.35fr),minmax(0,0.65fr)]">
                     <div className="rounded-panel bg-edubot-hero p-6 text-white shadow-edubot-glow">
                         <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
                             <div className="max-w-2xl">
-                                <p className="dashboard-pill">Daily Snapshot</p>
-                                <h3 className="mt-4 text-2xl font-semibold">
-                                    Окуу ритмиңиз жакшы жүрүп жатат
-                                </h3>
-                                <p className="mt-2 text-sm leading-6 text-white/80">
-                                    Бул жумада{' '}
-                                    <span className="font-semibold text-white">{weeklyTime}</span>{' '}
-                                    окуу убактысы топтолду. Азыркы серияңыз{' '}
-                                    <span className="font-semibold text-white">
-                                        {engagement?.streak || 0} күн
-                                    </span>
-                                    , ал эми деңгээлиңиз{' '}
-                                    <span className="font-semibold text-white">
-                                        {engagement?.level || 1}
-                                    </span>
-                                    .
-                                </p>
-                                {student.lastLesson ? (
-                                    <p className="mt-4 text-sm text-white/75">
-                                        Акыркы сабак:{' '}
+                                <p className="dashboard-pill">Today&apos;s Focus</p>
+                                <h3 className="mt-4 text-2xl font-semibold">{heroCopy.title}</h3>
+                                <p className="mt-2 text-sm leading-6 text-white/80">{heroCopy.description}</p>
+                                {nextSession ? (
+                                    <p className="mt-4 text-sm text-white/80">
+                                        Кийинки сессия:{' '}
                                         <span className="font-semibold text-white">
-                                            {student.lastLesson.lesson}
+                                            {getSessionTitle(nextSession)}
                                         </span>{' '}
-                                        · {student.lastLesson.course}
+                                        · {formatSessionDate(nextSession.startAt || nextSession.startsAt)}
+                                    </p>
+                                ) : recommendedVideoCourse ? (
+                                    <p className="mt-4 text-sm text-white/80">
+                                        Улантууга ылайыктуу курс:{' '}
+                                        <span className="font-semibold text-white">
+                                            {recommendedVideoCourse.title || recommendedVideoCourse.courseTitle}
+                                        </span>{' '}
+                                        · {recommendedVideoCourse.progressPercent || 0}%
                                     </p>
                                 ) : null}
                             </div>
 
                             <div className="grid gap-3 sm:grid-cols-3 lg:w-[22rem] lg:grid-cols-1">
-                                <StudentHeroPill label="Катышуу" value={attendanceEnabled ? `${attendanceStats?.rate || 0}%` : 'Off'} />
-                                <StudentHeroPill label="Badge" value={badgeItems.length} />
+                                <StudentHeroPill label="Видео курстар" value={videoCourses.length} />
+                                <StudentHeroPill label="Сессия курстары" value={deliveryCourses.length || upcoming.length} />
                                 <StudentHeroPill
-                                    label="Рейтинг"
-                                    value={
-                                        leaderboardSnapshot.rank
-                                            ? `#${leaderboardSnapshot.rank}`
-                                            : 'Tracked'
-                                    }
+                                    label="Катышуу"
+                                    value={attendanceEnabled ? `${attendanceStats?.rate || 0}%` : '—'}
                                 />
                             </div>
                         </div>
                     </div>
 
                     <DashboardInsetPanel
-                        title="Азыркы фокус"
-                        description="Кайсы курска азыр кайрылуу керек."
+                        title={hasDeliveryLearning ? 'Кийинки негизги аракет' : 'Улантуу чекити'}
+                        description={
+                            hasDeliveryLearning
+                                ? 'Жакынкы сабак же дароо көңүл бурууга тийиш болгон иш.'
+                                : 'Өз алдынча окууда азыр кайсы курска кайрылуу керек.'
+                        }
                     >
-                        {recommendedCourse ? (
+                        {nextSession ? (
                             <div className="space-y-4">
                                 <div>
                                     <p className="text-lg font-semibold text-edubot-ink dark:text-white">
-                                        {recommendedCourse.title || recommendedCourse.courseTitle}
+                                        {getSessionTitle(nextSession)}
                                     </p>
                                     <p className="mt-1 text-sm text-edubot-muted dark:text-slate-400">
-                                        Прогресс: {recommendedCourse.progressPercent || 0}%
+                                        {nextSession.courseTitle || 'Курс'} · {formatSessionDate(nextSession.startAt || nextSession.startsAt)}
+                                    </p>
+                                </div>
+
+                                <div className="grid gap-3 sm:grid-cols-2">
+                                    <StudentHeroPill
+                                        label="Формат"
+                                        value={courseTypeLabel(resolveCourseType(nextSession))}
+                                    />
+                                    <StudentHeroPill
+                                        label="Башталышына"
+                                        value={formatCountdown(new Date(nextSession.startAt || nextSession.startsAt).getTime(), nowMs)}
+                                    />
+                                </div>
+
+                                {isOnlineLiveOffering(nextSession) ? (
+                                    nextSession.liveJoinUrl && isStudentJoinWindowOpen(nextSession, nowMs) ? (
+                                        <a
+                                            href={nextSession.liveJoinUrl}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="dashboard-button-primary w-full"
+                                        >
+                                            <FiRadio className="h-4 w-4" />
+                                            Сабакка кошулуу
+                                        </a>
+                                    ) : (
+                                        <div className="inline-flex items-center gap-2 rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300">
+                                            <FiAlertCircle className="h-4 w-4" />
+                                            Кошулуу шилтемеси 10 мүнөт мурун ачылат
+                                        </div>
+                                    )
+                                ) : (
+                                    <div className="rounded-2xl border border-edubot-line bg-white px-4 py-3 text-sm text-edubot-muted dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
+                                        {nextSession.location || 'Оффлайн сессия. Жайгашкан жер кийин көрсөтүлөт.'}
+                                    </div>
+                                )}
+                            </div>
+                        ) : recommendedVideoCourse ? (
+                            <div className="space-y-4">
+                                <div>
+                                    <p className="text-lg font-semibold text-edubot-ink dark:text-white">
+                                        {recommendedVideoCourse.title || recommendedVideoCourse.courseTitle}
+                                    </p>
+                                    <p className="mt-1 text-sm text-edubot-muted dark:text-slate-400">
+                                        Прогресс: {recommendedVideoCourse.progressPercent || 0}%
                                     </p>
                                 </div>
 
@@ -260,18 +292,18 @@ const OverviewTab = ({
                                         style={{
                                             width: `${Math.min(
                                                 100,
-                                                Math.max(0, recommendedCourse.progressPercent || 0)
+                                                Math.max(0, recommendedVideoCourse.progressPercent || 0)
                                             )}%`,
                                         }}
                                     />
                                 </div>
 
-                                {recommendedCourse.id || recommendedCourse.courseId ? (
+                                {recommendedVideoCourse.id || recommendedVideoCourse.courseId ? (
                                     <button
                                         type="button"
                                         onClick={() =>
                                             onOpenCourse?.(
-                                                recommendedCourse.id || recommendedCourse.courseId
+                                                recommendedVideoCourse.id || recommendedVideoCourse.courseId
                                             )
                                         }
                                         disabled={Boolean(openingCourseId)}
@@ -279,15 +311,15 @@ const OverviewTab = ({
                                     >
                                         <FiArrowRight className="h-4 w-4" />
                                         {openingCourseId ===
-                                        (recommendedCourse.id || recommendedCourse.courseId)
+                                        (recommendedVideoCourse.id || recommendedVideoCourse.courseId)
                                             ? 'Иштелүүдө...'
-                                            : 'Курска өтүү'}
+                                            : 'Окууну улантуу'}
                                     </button>
                                 ) : null}
                             </div>
                         ) : (
                             <div className="text-sm text-edubot-muted dark:text-slate-400">
-                                Азырынча курс маалыматтары жетиштүү эмес.
+                                Азырынча негизги аракет табылган жок.
                             </div>
                         )}
                     </DashboardInsetPanel>
@@ -296,299 +328,207 @@ const OverviewTab = ({
 
             <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.35fr),minmax(0,0.65fr)]">
                 <div className="space-y-4">
-                    <section className="dashboard-panel overflow-hidden">
-                        <DashboardSectionHeader
-                            eyebrow="Upcoming Sessions"
-                            title="Жакынкы сабактар"
-                            description="Кийинки сессиялар, join терезеси жана окуу контексти."
-                            metricsClassName="grid grid-cols-2 gap-3 sm:grid-cols-2"
-                            metrics={
-                                <>
-                                    <DashboardMetricCard
-                                        label="Жакынкы сессия"
-                                        value={upcoming.length}
-                                        icon={FiCalendar}
-                                        tone="blue"
-                                    />
-                                    <DashboardMetricCard
-                                        label="Live курстар"
-                                        value={
-                                            upcoming.filter((item) =>
-                                                isOnlineLiveOffering(item)
-                                            ).length
-                                        }
-                                        icon={FiUsers}
-                                    />
-                                </>
-                            }
-                        />
+                    {hasDeliveryLearning ? (
+                        <section className="dashboard-panel overflow-hidden">
+                            <DashboardSectionHeader
+                                eyebrow="Live / Offline Learning"
+                                title="Жакынкы сессиялар"
+                                description="Түз эфир же оффлайн окуудагы кийинки сессиялар жана алардын контексти."
+                                metricsClassName="grid grid-cols-2 gap-3 sm:grid-cols-2"
+                                metrics={
+                                    <>
+                                        <DashboardMetricCard
+                                            label="Жакынкы сессия"
+                                            value={upcoming.length}
+                                            icon={FiCalendar}
+                                            tone="blue"
+                                        />
+                                        <DashboardMetricCard
+                                            label="Жазуулар"
+                                            value={availableRecordings}
+                                            icon={FiPlayCircle}
+                                        />
+                                    </>
+                                }
+                            />
 
-                        <div className="space-y-3 p-6">
-                            {upcoming.length ? (
-                                upcoming.map((item) => {
-                                    const type = resolveCourseType(item);
-                                    const joinUrl =
-                                        item.joinLink || item.link || item.joinUrl || '';
-                                    const joinAllowed =
-                                        !isOnlineLiveOffering(item) ||
-                                        isStudentJoinWindowOpen(item, nowMs);
-                                    const countdown = item.startAt
-                                        ? formatCountdown(new Date(item.startAt).getTime(), nowMs)
-                                        : null;
+                            <div className="space-y-3 p-6">
+                                {upcoming.length ? (
+                                    upcoming.slice(0, 4).map((item) => {
+                                        const type = resolveCourseType(item);
+                                        const joinUrl =
+                                            item.liveJoinUrl || item.joinLink || item.link || item.joinUrl || '';
+                                        const joinAllowed =
+                                            !isOnlineLiveOffering(item) ||
+                                            isStudentJoinWindowOpen(item, nowMs);
+                                        const countdown = item.startAt || item.startsAt
+                                            ? formatCountdown(new Date(item.startAt || item.startsAt).getTime(), nowMs)
+                                            : null;
 
-                                    return (
-                                        <div
-                                            key={item.id || `${item.courseId}-${item.startAt}`}
-                                            className="dashboard-panel-muted p-4"
-                                        >
-                                            <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-                                                <div className="min-w-0">
-                                                    <div className="flex flex-wrap items-center gap-2">
-                                                        <p className="text-base font-semibold text-edubot-ink dark:text-white">
-                                                            {item.courseTitle ||
-                                                                item.course?.title ||
-                                                                'Сабак'}
+                                        return (
+                                            <div
+                                                key={item.id || `${item.courseId}-${item.startAt || item.startsAt}`}
+                                                className="dashboard-panel-muted p-4"
+                                            >
+                                                <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                                                    <div className="min-w-0">
+                                                        <div className="flex flex-wrap items-center gap-2">
+                                                            <p className="text-base font-semibold text-edubot-ink dark:text-white">
+                                                                {getSessionTitle(item)}
+                                                            </p>
+                                                            <span className="rounded-full border border-edubot-line bg-white px-3 py-1 text-xs font-semibold text-edubot-ink dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200">
+                                                                {courseTypeLabel(type)}
+                                                            </span>
+                                                        </div>
+                                                        <p className="mt-2 text-sm text-edubot-muted dark:text-slate-400">
+                                                            {formatSessionDate(item.startAt || item.startsAt)}
                                                         </p>
-                                                        <span className="rounded-full border border-edubot-line bg-white px-3 py-1 text-xs font-semibold text-edubot-ink dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200">
-                                                            {courseTypeLabel(type)}
-                                                        </span>
+                                                        <p className="mt-1 text-sm text-edubot-muted dark:text-slate-400">
+                                                            {item.courseTitle || item.course?.title || 'Курс'}
+                                                            {resolveInstructorName(item)
+                                                                ? ` · ${resolveInstructorName(item)}`
+                                                                : ''}
+                                                        </p>
+                                                        {type === 'offline' ? (
+                                                            <p className="mt-1 inline-flex items-center gap-2 text-sm text-edubot-muted dark:text-slate-400">
+                                                                <FiMapPin className="h-4 w-4" />
+                                                                {item.location || item.room || 'Жайгашкан жер көрсөтүлгөн эмес'}
+                                                            </p>
+                                                        ) : null}
                                                     </div>
-                                                    <p className="mt-2 text-sm text-edubot-muted dark:text-slate-400">
-                                                        {formatSessionDate(item.startAt)}
-                                                    </p>
-                                                    <p className="mt-1 text-sm text-edubot-muted dark:text-slate-400">
-                                                        {resolveInstructorName(item)}
-                                                        {type === 'offline'
-                                                            ? ` · ${
-                                                                  item.location ||
-                                                                  item.room ||
-                                                                  'Класс али дайындала элек'
-                                                              }`
-                                                            : ''}
-                                                    </p>
-                                                </div>
 
-                                                <div className="lg:w-[18rem]">
-                                                    {type === 'online_live' ? (
-                                                        <div className="space-y-2">
-                                                            <div className="text-xs font-medium uppercase tracking-[0.14em] text-edubot-muted dark:text-slate-400">
-                                                                Башталышына
-                                                            </div>
-                                                            <div className="text-lg font-semibold text-edubot-ink dark:text-white">
-                                                                {countdown}
-                                                            </div>
-                                                            {joinUrl && joinAllowed ? (
-                                                                <a
-                                                                    href={joinUrl}
-                                                                    target="_blank"
-                                                                    rel="noopener noreferrer"
-                                                                    className="dashboard-button-primary w-full"
-                                                                >
-                                                                    Кошулуу
-                                                                </a>
-                                                            ) : (
-                                                                <div className="inline-flex items-center gap-2 rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300">
-                                                                    <FiAlertCircle className="h-4 w-4" />
-                                                                    Кошулуу 10 мүнөт калганда ачылат
+                                                    <div className="lg:w-[18rem]">
+                                                        {type === 'online_live' ? (
+                                                            <div className="space-y-2">
+                                                                <div className="text-xs font-medium uppercase tracking-[0.14em] text-edubot-muted dark:text-slate-400">
+                                                                    Башталышына
                                                                 </div>
-                                                            )}
-                                                        </div>
-                                                    ) : (
-                                                        <div className="rounded-2xl border border-edubot-line bg-white px-4 py-3 text-sm text-edubot-muted dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
-                                                            Offline сессия. Жайгашкан жерди алдын ала текшериңиз.
-                                                        </div>
-                                                    )}
+                                                                <div className="text-lg font-semibold text-edubot-ink dark:text-white">
+                                                                    {countdown}
+                                                                </div>
+                                                                {joinUrl && joinAllowed ? (
+                                                                    <a
+                                                                        href={joinUrl}
+                                                                        target="_blank"
+                                                                        rel="noopener noreferrer"
+                                                                        className="dashboard-button-primary w-full"
+                                                                    >
+                                                                        Кошулуу
+                                                                    </a>
+                                                                ) : (
+                                                                    <div className="inline-flex items-center gap-2 rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300">
+                                                                        <FiAlertCircle className="h-4 w-4" />
+                                                                        Кошулуу 10 мүнөт калганда ачылат
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        ) : (
+                                                            <div className="rounded-2xl border border-edubot-line bg-white px-4 py-3 text-sm text-edubot-muted dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
+                                                                Offline сессия. Жайгашкан жерди алдын ала текшериңиз.
+                                                            </div>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                    );
-                                })
-                            ) : (
-                                <div className="dashboard-panel-muted p-8 text-center text-sm text-edubot-muted dark:text-slate-400">
-                                    Жакынкы сабактар азырынча жок.
-                                </div>
-                            )}
-                        </div>
-                    </section>
-
-                    <div className="grid gap-4 lg:grid-cols-2">
-                        <DashboardInsetPanel
-                            title="Ачык тапшырмалар"
-                            description="Жакын арада жабуу керек болгон иштер."
-                        >
-                            <div className="space-y-3">
-                                {pendingHomework.length ? (
-                                    pendingHomework.map((task, index) => (
-                                        <div
-                                            key={task.id || task.taskId || index}
-                                            className="rounded-2xl border border-edubot-line/70 bg-white/80 px-4 py-3 dark:border-slate-700 dark:bg-slate-900"
-                                        >
-                                            <p className="font-medium text-edubot-ink dark:text-white">
-                                                {task.title || 'Тапшырма'}
-                                            </p>
-                                            <p className="mt-1 text-sm text-edubot-muted dark:text-slate-400">
-                                                {task.courseTitle || task.course || 'Курс көрсөтүлгөн эмес'}
-                                            </p>
-                                        </div>
-                                    ))
+                                        );
+                                    })
                                 ) : (
-                                    <div className="text-sm text-edubot-muted dark:text-slate-400">
-                                        Азырынча ачык тапшырма жок.
+                                    <div className="dashboard-panel-muted p-8 text-center text-sm text-edubot-muted dark:text-slate-400">
+                                        Жакынкы сабактар азырынча жок.
                                     </div>
                                 )}
                             </div>
-                        </DashboardInsetPanel>
+                        </section>
+                    ) : null}
 
-                        <DashboardInsetPanel
-                            title="Milestone"
-                            description="Кыска мөөнөттөгү окуу чекиттери."
-                        >
-                            <div className="space-y-3">
-                                {milestoneItems.length ? (
-                                    milestoneItems.slice(0, 3).map((item) => (
-                                        <div
-                                            key={item.id || item.title}
-                                            className="rounded-2xl border border-edubot-line/70 bg-white/80 px-4 py-3 dark:border-slate-700 dark:bg-slate-900"
-                                        >
-                                            <div className="flex items-start gap-3">
-                                                <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-edubot-surfaceAlt text-edubot-orange dark:bg-slate-800 dark:text-edubot-soft">
-                                                    <FiFlag className="h-4 w-4" />
-                                                </div>
-                                                <div>
-                                                    <p className="font-semibold text-edubot-ink dark:text-white">
-                                                        {item.title}
-                                                    </p>
-                                                    <p className="mt-1 text-sm text-edubot-muted dark:text-slate-400">
-                                                        {item.value}
-                                                    </p>
-                                                </div>
-                                            </div>
+                    {hasVideoLearning ? (
+                        <section className="dashboard-panel overflow-hidden">
+                            <DashboardSectionHeader
+                                eyebrow="Video Learning"
+                                title="Видео курстардагы прогресс"
+                                description="Өз алдынча окууда улантууга ылайыктуу курстар жана учурдагы прогресс."
+                            />
+
+                            <div className="grid gap-3 p-6 md:grid-cols-2 xl:grid-cols-3">
+                                {(recentVideoProgress.length ? recentVideoProgress : progressItems.slice(0, 3)).map((item, index) => (
+                                    <div
+                                        key={item.courseId || item.courseTitle || index}
+                                        className="dashboard-panel-muted p-4"
+                                    >
+                                        <p className="text-base font-semibold text-edubot-ink dark:text-white">
+                                            {item.courseTitle}
+                                        </p>
+                                        <p className="mt-1 text-sm text-edubot-muted dark:text-slate-400">
+                                            {item.lessonsCompleted}/{item.lessonsTotal || '—'} сабак бүттү
+                                        </p>
+                                        <div className="mt-4 h-2 rounded-full bg-edubot-surfaceAlt dark:bg-slate-800">
+                                            <div
+                                                className="h-2 rounded-full bg-gradient-to-r from-edubot-orange to-edubot-soft"
+                                                style={{
+                                                    width: `${Math.min(100, Math.max(0, Number(item.progressPercent || 0)))}%`,
+                                                }}
+                                            />
                                         </div>
-                                    ))
-                                ) : (
-                                    <div className="text-sm text-edubot-muted dark:text-slate-400">
-                                        Milestone табылган жок.
+                                        <div className="mt-2 flex items-center justify-between gap-3 text-sm">
+                                            <span className="text-edubot-muted dark:text-slate-400">
+                                                Прогресс
+                                            </span>
+                                            <span className="font-semibold text-edubot-orange">
+                                                {item.progressPercent || 0}%
+                                            </span>
+                                        </div>
                                     </div>
-                                )}
+                                ))}
                             </div>
-                        </DashboardInsetPanel>
-                    </div>
+                        </section>
+                    ) : null}
 
                     <NotificationsWidget />
                 </div>
 
                 <div className="space-y-4">
                     <DashboardInsetPanel
-                        title="XP & Level"
-                        description="Азыркы энергия жана кийинки тепкич."
+                        title="Аракет керек болгон тапшырмалар"
+                        description="Жакын арада көңүл буруу керек болгон үй тапшырмалары."
                     >
-                        <div className="space-y-4">
-                            <div className="flex items-start justify-between gap-3">
-                                <div>
-                                    <p className="text-2xl font-bold text-edubot-orange">
-                                        {engagement?.xp || 0} XP
-                                    </p>
-                                    <p className="mt-1 text-sm text-edubot-muted dark:text-slate-400">
-                                        Деңгээл {engagement?.level || 1}
-                                        {leaderboardSnapshot.rank
-                                            ? ` · #${leaderboardSnapshot.rank} орун`
-                                            : ''}
-                                    </p>
+                        <div className="space-y-3">
+                            {homeworkNeedingAction.length ? (
+                                homeworkNeedingAction.slice(0, 4).map((task, index) => (
+                                    <div
+                                        key={task.id || task.taskId || index}
+                                        className="rounded-2xl border border-edubot-line/70 bg-white/80 px-4 py-3 dark:border-slate-700 dark:bg-slate-900"
+                                    >
+                                        <p className="font-medium text-edubot-ink dark:text-white">
+                                            {task.title || 'Тапшырма'}
+                                        </p>
+                                        <p className="mt-1 text-sm text-edubot-muted dark:text-slate-400">
+                                            {task.courseTitle || task.course || 'Курс көрсөтүлгөн эмес'}
+                                        </p>
+                                        <p className="mt-1 text-xs text-edubot-muted dark:text-slate-400">
+                                            {task.meta?.label || task.statusLabel || task.status || 'Күтүүдө'}
+                                        </p>
+                                    </div>
+                                ))
+                            ) : (
+                                <div className="text-sm text-edubot-muted dark:text-slate-400">
+                                    Азырынча ачык тапшырма жок.
                                 </div>
-                                <div className="rounded-2xl bg-edubot-surface px-3 py-2 text-right dark:bg-slate-900">
-                                    <p className="text-[11px] uppercase tracking-[0.2em] text-edubot-muted dark:text-slate-400">
-                                        Next push
-                                    </p>
-                                    <p className="mt-1 text-sm font-semibold text-edubot-ink dark:text-white">
-                                        {leaderboardSnapshot.targetGap
-                                            ? `${leaderboardSnapshot.targetGap} XP`
-                                            : 'Баштаңыз'}
-                                    </p>
-                                </div>
-                            </div>
-                            <div className="h-2 rounded-full bg-edubot-surfaceAlt dark:bg-slate-800">
-                                <div
-                                    className="h-2 rounded-full bg-gradient-to-r from-edubot-orange to-edubot-soft"
-                                    style={{
-                                        width: `${Math.round(
-                                            ((engagement?.currentLevelXp || 0) /
-                                                Math.max(1, engagement?.nextLevelGap || 1)) *
-                                                100
-                                        )}%`,
-                                    }}
-                                />
-                            </div>
-                            <div className="grid gap-3 sm:grid-cols-2">
-                                <StudentMiniStat
-                                    label="Серия"
-                                    value={`${engagement?.streak || 0} күн`}
-                                    tone="amber"
-                                />
-                                <StudentMiniStat
-                                    label="Катышуу"
-                                    value={attendanceEnabled ? `${attendanceStats?.rate || 0}%` : 'Off'}
-                                    tone={attendanceEnabled && attendanceStats?.rate >= 85 ? 'green' : 'default'}
-                                />
-                            </div>
+                            )}
                         </div>
                     </DashboardInsetPanel>
 
-                    <div className="space-y-3">
-                        {hasLeaderboardPreviewIssue ? (
-                            <div className="rounded-3xl border border-amber-200 bg-amber-50/90 px-4 py-3 text-sm text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100">
-                                <p className="font-semibold uppercase tracking-[0.18em] text-amber-700 dark:text-amber-200">
-                                    Рейтинг эскертүүсү
-                                </p>
-                                <p className="mt-1">
-                                    Азыр кыска preview үчүн чыныгы рейтинг алынган жок. Жасалма
-                                    студенттер көрсөтүлгөн жок.
-                                </p>
-                                {leaderboardMeta?.message ? (
-                                    <p className="mt-2 text-xs opacity-80">{leaderboardMeta.message}</p>
-                                ) : null}
-                            </div>
-                        ) : null}
-
-                        {emptyLeaderboardPreview ? (
-                            <div className="rounded-3xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-600 dark:border-gray-800 dark:bg-[#222222] dark:text-slate-300">
-                                Бул кыска preview үчүн азырынча рейтинг маалыматтары толо элек.
-                            </div>
-                        ) : null}
-
-                        <LeaderboardListCard
-                            title="Сизге жакын рейтинг"
-                            description="Сизге реалдуу жакын орундар."
-                            items={leaderboardSnapshot.nearYou}
-                            currentUserId={student.id}
-                            embedded
-                        />
-                    </div>
-
-                    <ChallengeRail items={leaderboardChallenges} embedded />
-
-                    <AchievementCloud
-                        items={badgeItems}
-                        title="Жетишкендиктер"
-                        subtitle="Ачылган badge’дерди бөлүшүү же сактап калуу."
-                        embedded
-                        shareMeta={{
-                            displayName: student.name,
-                            rank: leaderboardSnapshot.rank || null,
-                            xp: engagement?.xp || null,
-                            streakDays: engagement?.streak || null,
-                            trackLabel: 'Dashboard',
-                        }}
-                    />
-
                     <DashboardInsetPanel
-                        title="Тез абал"
-                        description="Кыскача окуу ден соолугу."
+                        title="Окуу форматы"
+                        description="Катышып жаткан курстар боюнча негизги багыттар."
                     >
-                        <div className="grid gap-3 sm:grid-cols-2">
-                            <StudentMiniStat label="Курстар" value={courses.length} tone="blue" />
-                            <StudentMiniStat label="Сабактар" value={lessonsCompleted} tone="green" />
-                            <StudentMiniStat label="Upcoming" value={upcoming.length} tone="default" />
-                            <StudentMiniStat label="Badge" value={badgeItems.length} tone="amber" />
+                        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
+                            <StudentHeroPill label="Видео курстар" value={videoCourses.length} />
+                            <StudentHeroPill label="Сессия курстары" value={deliveryCourses.length || upcoming.length} />
+                            <StudentHeroPill label="Жазуулар" value={availableRecordings} />
+                            <StudentHeroPill
+                                label="Катышуу"
+                                value={attendanceEnabled ? `${attendanceStats.rate}%` : 'Эсептелбейт'}
+                            />
                         </div>
                     </DashboardInsetPanel>
                 </div>
@@ -601,11 +541,7 @@ OverviewTab.propTypes = {
     student: PropTypes.shape({
         id: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
         name: PropTypes.string,
-        streak: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
-        lastLesson: PropTypes.shape({
-            lesson: PropTypes.string,
-            course: PropTypes.string,
-        }),
+        lastLesson: PropTypes.object,
     }).isRequired,
     summary: PropTypes.object,
     courses: PropTypes.arrayOf(PropTypes.object).isRequired,
@@ -613,25 +549,8 @@ OverviewTab.propTypes = {
     tasks: PropTypes.arrayOf(PropTypes.object).isRequired,
     attendanceStats: PropTypes.shape({
         rate: PropTypes.number,
-        totalSessions: PropTypes.number,
-        present: PropTypes.number,
-        absent: PropTypes.number,
     }).isRequired,
     attendanceEnabled: PropTypes.bool.isRequired,
-    engagement: PropTypes.shape({
-        xp: PropTypes.number,
-        streak: PropTypes.number,
-        level: PropTypes.number,
-        currentLevelXp: PropTypes.number,
-        nextLevelGap: PropTypes.number,
-    }).isRequired,
-    leaderboardItems: PropTypes.arrayOf(PropTypes.object).isRequired,
-    leaderboardMeta: PropTypes.shape({
-        fallback: PropTypes.bool,
-        message: PropTypes.string,
-    }),
-    milestoneItems: PropTypes.arrayOf(PropTypes.object).isRequired,
-    badgeItems: PropTypes.arrayOf(PropTypes.object).isRequired,
     progressItems: PropTypes.arrayOf(PropTypes.object).isRequired,
     onOpenCourse: PropTypes.func,
     openingCourseId: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
@@ -639,7 +558,6 @@ OverviewTab.propTypes = {
 
 OverviewTab.defaultProps = {
     summary: null,
-    leaderboardMeta: undefined,
     onOpenCourse: undefined,
     openingCourseId: null,
 };

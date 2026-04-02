@@ -3,6 +3,13 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { SmoothTabTransition } from '@components/ui';
 import { Link, useSearchParams } from 'react-router-dom';
+import Loader from '@shared/ui/Loader';
+import {
+    DashboardInsetPanel,
+    DashboardMetricCard,
+    DashboardSectionHeader,
+    DashboardWorkspaceHero,
+} from '@components/ui/dashboard';
 import {
     fetchFastProgressLeaderboard,
     fetchLeaderboardAchievements,
@@ -20,7 +27,6 @@ import {
     AchievementCloud,
     buildLeaderboardSnapshot,
     ChallengeRail,
-    LeaderboardHero,
     LeaderboardListCard,
     MySkillProgressGrid,
     NearYouRail,
@@ -31,8 +37,6 @@ import {
 const tabs = [
     { id: 'overview', label: 'Кыскача' },
     { id: 'weekly', label: 'Апталык рейтинг' },
-    { id: 'skills', label: 'Көндүмдөр' },
-    { id: 'wins', label: 'Жетишкендиктер' },
 ];
 
 const publicTabs = [
@@ -42,8 +46,8 @@ const publicTabs = [
 
 const trackOptions = [
     { value: 'all', label: 'Бардыгы', helper: 'Жалпы рейтинг' },
-    { value: 'video', label: 'Окуу форматы', helper: 'Өз алдынча окуу' },
-    { value: 'live', label: 'Жандуу', helper: 'Жандуу жана офлайн сабактар' },
+    { value: 'video', label: 'Видео курстар', helper: 'Өз алдынча окуу' },
+    { value: 'live', label: 'Түз эфир жана офлайн', helper: 'Сессиялык окуу' },
 ];
 
 const LeaderboardHub = ({ embedded = false, initialTrack = 'all', lockTrack = false, publicMode = false }) => {
@@ -220,9 +224,12 @@ const LeaderboardHub = ({ embedded = false, initialTrack = 'all', lockTrack = fa
 
     const currentXp = mySummary?.windowXp ?? mySummary?.xp ?? currentUserWeeklyEntry?.xp ?? 0;
     const currentStreak = mySummary?.streakDays ?? currentUserWeeklyEntry?.streakDays ?? 0;
+    const weeklyItems = Array.isArray(weekly?.items) ? weekly.items : [];
+    const rankValue = snapshot.rank ? `#${snapshot.rank}` : 'Азырынча жок';
+    const targetGapValue = snapshot.targetGap ? `${snapshot.targetGap} XP` : 'Жакында';
 
     const fallbackAchievementItems = useMemo(() => {
-        const winners = Array.isArray(weekly?.items) ? weekly.items.slice(0, 3) : [];
+        const winners = weeklyItems.slice(0, 3);
         const items = [];
 
         if (studentOfWeek?.fullName) {
@@ -255,7 +262,7 @@ const LeaderboardHub = ({ embedded = false, initialTrack = 'all', lockTrack = fa
         }
 
         return items;
-    }, [weekly, studentOfWeek, snapshot]);
+    }, [weeklyItems, studentOfWeek, snapshot]);
 
     const challengeItems = useMemo(() => {
         const items = Array.isArray(backendChallenges?.items) ? backendChallenges.items : [];
@@ -291,17 +298,16 @@ const LeaderboardHub = ({ embedded = false, initialTrack = 'all', lockTrack = fa
     }, [backendAchievements, fallbackAchievementItems, achievementShareMeta]);
 
     const publicHighlights = useMemo(() => {
-        const leaders = Array.isArray(weekly?.items) ? weekly.items.slice(0, 3) : [];
+        const leaders = weeklyItems.slice(0, 3);
         const leaderNames = leaders.map((item) => item?.fullName).filter(Boolean);
         return [
             leaderNames.length ? `${leaderNames.join(', ')} бул жумада лидер болуп турат.` : null,
             studentOfWeek?.fullName ? `${studentOfWeek.fullName} туруктуу өсүш менен алдыга чыкты.` : null,
             'Жеңиштерди карточкага айландырып, социалдык тармакка бөлүшсө болот.',
         ].filter(Boolean);
-    }, [weekly, studentOfWeek]);
+    }, [weeklyItems, studentOfWeek]);
 
     const publicMetrics = useMemo(() => {
-        const weeklyItems = Array.isArray(weekly?.items) ? weekly.items : [];
         const totalXp = weeklyItems.reduce((sum, item) => sum + Number(item?.xp || 0), 0);
         const totalLessons = weeklyItems.reduce((sum, item) => sum + Number(item?.lessonsCompleted || 0), 0);
         const shareReady = achievementItems.slice(0, 3).length;
@@ -329,11 +335,13 @@ const LeaderboardHub = ({ embedded = false, initialTrack = 'all', lockTrack = fa
     const serviceIssueMessage = weekly?._fallbackMessage || fast?._fallbackMessage || 'Рейтинг сервиси убактылуу жеткиликсиз';
 
     const emptyWeeklyBoard = !hasLeaderboardServiceIssue && !loading && !(weekly?.items || []).length;
+    const improvementItems = challengeItems.slice(0, 3);
+    const strengthItems = mySkillProgress.slice(0, 3);
 
     const renderTrackSwitcher = () => {
         if (lockTrack) return null;
         return (
-            <div className={embedded ? 'max-w-full overflow-hidden rounded-[24px] border border-gray-100 bg-white p-2 shadow-sm dark:border-gray-800 dark:bg-[#222222]' : 'max-w-full overflow-hidden rounded-[24px] border border-slate-200 bg-white/90 p-2 shadow-sm backdrop-blur dark:border-slate-800 dark:bg-slate-900/70'}>
+            <div className="max-w-full overflow-hidden rounded-3xl border border-edubot-line bg-white p-2 dark:border-slate-700 dark:bg-slate-900">
                 <div className="flex flex-wrap gap-2 min-w-0">
                     {trackOptions.map((option) => {
                         const active = track === option.value;
@@ -345,16 +353,12 @@ const LeaderboardHub = ({ embedded = false, initialTrack = 'all', lockTrack = fa
                                 className={[
                                     'group min-w-0 flex-1 rounded-2xl px-4 py-3 text-left transition-all sm:min-w-[132px] sm:flex-none',
                                     active
-                                        ? embedded
-                                            ? 'bg-blue-600 text-white shadow-sm dark:bg-blue-500 dark:text-white'
-                                            : 'bg-slate-900 text-white shadow-lg shadow-slate-300/60 dark:bg-white dark:text-slate-900 dark:shadow-none'
-                                        : embedded
-                                            ? 'bg-gray-50 text-gray-600 hover:bg-gray-100 dark:bg-[#1A1A1A] dark:text-gray-300 dark:hover:bg-gray-800'
-                                            : 'bg-slate-50 text-slate-600 hover:bg-slate-100 dark:bg-slate-950/60 dark:text-slate-300 dark:hover:bg-slate-800',
+                                        ? 'bg-edubot-orange text-white shadow-sm'
+                                        : 'bg-edubot-surfaceAlt text-edubot-muted hover:bg-edubot-surface dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700',
                                 ].join(' ')}
                             >
                                 <div className="text-sm font-semibold">{option.label}</div>
-                                <div className={['mt-1 text-xs', active ? (embedded ? 'text-white/80' : 'text-white/75 dark:text-slate-600') : (embedded ? 'text-gray-400 dark:text-gray-500' : 'text-slate-400')].join(' ')}>
+                                <div className={['mt-1 text-xs', active ? 'text-white/80' : 'text-edubot-muted/80 dark:text-slate-400'].join(' ')}>
                                     {option.helper}
                                 </div>
                             </button>
@@ -365,6 +369,172 @@ const LeaderboardHub = ({ embedded = false, initialTrack = 'all', lockTrack = fa
         );
     };
 
+    if (embedded && !publicMode) {
+        return (
+            <div className="space-y-6">
+                <DashboardWorkspaceHero
+                    eyebrow="Student Ranking"
+                    title="Рейтинг"
+                    description="Бул жумадагы ордуңузду, сизге жакын студенттерди жана кийинки тепкичке чыгуу үчүн канча калганыңызды ушул жерден көрүңүз."
+                    metricsClassName="grid w-full max-w-3xl gap-3 md:grid-cols-2"
+                    metrics={(
+                        <>
+                            <DashboardMetricCard label="Менин ордум" value={rankValue} valueClassName="text-base sm:text-lg break-words leading-snug" />
+                            <DashboardMetricCard label="Жумалык XP" value={currentXp || 0} tone="amber" valueClassName="text-base sm:text-lg break-words leading-snug" />
+                            <DashboardMetricCard label="Серия" value={currentStreak ? `${currentStreak} күн` : 'Жок'} tone="blue" valueClassName="text-base sm:text-lg break-words leading-snug" />
+                            <DashboardMetricCard label="Кийинки максат" value={targetGapValue} tone="green" valueClassName="text-base sm:text-lg break-words leading-snug" />
+                        </>
+                    )}
+                    className="animate-fade-in"
+                >
+                    <div className="grid gap-4 xl:grid-cols-[minmax(0,1.15fr),minmax(0,0.85fr)]">
+                        <div className="rounded-panel bg-edubot-hero p-6 text-white shadow-edubot-glow transition-all duration-300 hover:-translate-y-0.5">
+                            <p className="dashboard-pill">This Week</p>
+                            <h3 className="mt-4 text-2xl font-semibold">
+                                {snapshot.rank
+                                    ? `Сиз азыр ${rankValue} орундасыз`
+                                    : 'Бул жумадагы рейтинг жаңы толуп жатат'}
+                            </h3>
+                            <p className="mt-2 text-sm leading-6 text-white/80">
+                                {snapshot.nextTargetEntry?.fullName
+                                    ? `${snapshot.nextTargetEntry.fullName}ди өтүү үчүн дагы ${targetGapValue} керек.`
+                                    : 'Сабактарды жана тесттерди аяктап, алгач рейтингге кирип алыңыз.'}
+                            </p>
+                            <div className="mt-5 grid gap-3 sm:grid-cols-3">
+                                <div className="rounded-2xl border border-white/15 bg-white/10 px-4 py-3 backdrop-blur-sm">
+                                    <div className="text-xs uppercase tracking-[0.16em] text-white/65">Лидерлер</div>
+                                    <div className="mt-2 text-xl font-semibold">{weeklyItems.length || 0}</div>
+                                </div>
+                                <div className="rounded-2xl border border-white/15 bg-white/10 px-4 py-3 backdrop-blur-sm">
+                                    <div className="text-xs uppercase tracking-[0.16em] text-white/65">Аптанын студенти</div>
+                                    <div className="mt-2 truncate text-sm font-semibold">{studentOfWeek?.fullName || 'Күтүүдө'}</div>
+                                </div>
+                                <div className="rounded-2xl border border-white/15 bg-white/10 px-4 py-3 backdrop-blur-sm">
+                                    <div className="text-xs uppercase tracking-[0.16em] text-white/65">Өзгөрүү</div>
+                                    <div className="mt-2 text-xl font-semibold">
+                                        {mySummary?.rankDelta
+                                            ? `${mySummary.rankDelta > 0 ? '+' : ''}${mySummary.rankDelta}`
+                                            : '0'}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <DashboardInsetPanel
+                            title="Кайсы рейтингди карап жатасыз"
+                            description="Окуу форматына жараша рейтинг бөлүнүп көрүнөт."
+                            className="transition-all duration-300 hover:-translate-y-0.5"
+                        >
+                            <div className="space-y-4">
+                                {renderTrackSwitcher()}
+                                <div className="rounded-2xl border border-edubot-line bg-white px-4 py-4 dark:border-slate-700 dark:bg-slate-900">
+                                    <p className="text-sm font-semibold text-edubot-ink dark:text-white">{trackMeta.label}</p>
+                                    <p className="mt-1 text-sm text-edubot-muted dark:text-slate-400">{trackMeta.helper}</p>
+                                </div>
+                            </div>
+                        </DashboardInsetPanel>
+                    </div>
+                </DashboardWorkspaceHero>
+
+                {hasLeaderboardServiceIssue ? (
+                    <div className="rounded-3xl border border-amber-200 bg-amber-50/90 px-5 py-4 text-amber-900 shadow-sm dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100 animate-fade-in">
+                        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                            <div>
+                                <p className="text-sm font-semibold uppercase tracking-[0.18em] text-amber-700 dark:text-amber-200">Рейтинг эскертүүсү</p>
+                                <p className="mt-1 text-sm">Азыр чыныгы рейтинг маалыматы алынган жок. Ошондуктан бош блоктор көрүнүшү мүмкүн.</p>
+                            </div>
+                            <p className="text-xs font-medium text-amber-700/80 dark:text-amber-200/80">{serviceIssueMessage}</p>
+                        </div>
+                    </div>
+                ) : null}
+
+                <section className="dashboard-panel overflow-hidden animate-fade-in">
+                    <DashboardSectionHeader
+                        eyebrow="Weekly Board"
+                        title="Бул жумадагы такта"
+                        description="Лидерлерди жана сизге эң жакын орундарды бир карап алыңыз."
+                    />
+                    <div className="grid gap-4 p-6 xl:grid-cols-[minmax(0,1fr),minmax(0,1fr)]">
+                        <div className="transition-all duration-300 hover:-translate-y-0.5">
+                            <LeaderboardListCard
+                                title={`${trackMeta.label} лидерлери`}
+                                description="Бул жумадагы активдүү студенттер."
+                                items={weeklyItems}
+                                currentUserId={user?.id}
+                                embedded
+                            />
+                        </div>
+                        <div className="transition-all duration-300 hover:-translate-y-0.5">
+                            <NearYouRail
+                                items={snapshot.nearYou || []}
+                                currentUserId={user?.id}
+                                targetGap={snapshot.targetGap}
+                                nextTargetName={snapshot.nextTargetEntry?.fullName || ''}
+                                embedded
+                            />
+                        </div>
+                    </div>
+                </section>
+
+                <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr),minmax(0,1fr)]">
+                    <DashboardInsetPanel
+                        title="Кантип тез өсөсүз"
+                        description="Аз аракет менен көбүрөөк пайда бере турган кийинки кадамдар."
+                        className="animate-fade-in transition-all duration-300 hover:-translate-y-0.5"
+                    >
+                        <div className="space-y-3">
+                            {(improvementItems.length ? improvementItems : [
+                                { title: '1 сабак бүтүрүңүз', detail: 'Рейтингге түз таасир этет.' },
+                                { title: '1 тест ийгиликтүү бүтүрүңүз', detail: 'Жумалык XP бат өсөт.' },
+                                { title: 'Серияны үзбөңүз', detail: 'Туруктуу кайтып туруу маанилүү.' },
+                            ]).map((item, index) => (
+                                <div
+                                    key={item.id || item.title || index}
+                                    className="rounded-2xl border border-edubot-line bg-white/80 px-4 py-4 transition-all duration-300 hover:border-edubot-orange/40 hover:bg-edubot-soft/10 dark:border-slate-700 dark:bg-slate-900"
+                                >
+                                    <div className="text-xs font-semibold uppercase tracking-[0.18em] text-edubot-orange">Кадам {index + 1}</div>
+                                    <p className="mt-2 text-base font-semibold text-edubot-ink dark:text-white">{item.title}</p>
+                                    <p className="mt-1 text-sm text-edubot-muted dark:text-slate-400">{item.detail || item.value || 'Бул аракет рейтингиңизге жардам берет.'}</p>
+                                </div>
+                            ))}
+                        </div>
+                    </DashboardInsetPanel>
+
+                    <DashboardInsetPanel
+                        title="Күчтүү жактарыңыз"
+                        description="Кайсы көндүмдөрдө жеке өсүш жакшы болуп жатканын ушул жерден көрөсүз."
+                        className="animate-fade-in transition-all duration-300 hover:-translate-y-0.5"
+                    >
+                        <div className="space-y-3">
+                            {(strengthItems.length ? strengthItems : achievementItems.slice(0, 3)).map((item, index) => (
+                                <div
+                                    key={item.id || item.slug || item.title || index}
+                                    className="rounded-2xl border border-edubot-line bg-white/80 px-4 py-4 transition-all duration-300 hover:border-edubot-teal/40 hover:bg-edubot-surfaceAlt dark:border-slate-700 dark:bg-slate-900"
+                                >
+                                    <div className="flex items-start justify-between gap-3">
+                                        <div className="min-w-0">
+                                            <p className="text-base font-semibold text-edubot-ink dark:text-white">
+                                                {item.name || item.title || 'Өсүү чекити'}
+                                            </p>
+                                            <p className="mt-1 text-sm text-edubot-muted dark:text-slate-400">
+                                                {item.progressPercent !== undefined
+                                                    ? `${item.progressPercent || 0}% өздөштүрүү · ${item.completedLessons || 0}/${item.totalLessons || 0} сабак`
+                                                    : item.description || 'Жеке өсүшүңүздүн позитивдүү сигналы.'}
+                                            </p>
+                                        </div>
+                                        <span className="rounded-full bg-edubot-surfaceAlt px-3 py-1 text-xs font-semibold text-edubot-ink dark:bg-slate-800 dark:text-slate-200">
+                                            {item.xp ? `${item.xp} XP` : 'Өсүү'}
+                                        </span>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </DashboardInsetPanel>
+                </div>
+            </div>
+        );
+    }
+
     const renderTab = () => {
         return (
             <SmoothTabTransition isLoading={loading} isDataLoaded={true}>
@@ -374,6 +544,30 @@ const LeaderboardHub = ({ embedded = false, initialTrack = 'all', lockTrack = fa
             </SmoothTabTransition>
         );
     };
+
+    const supportingSkillsSection = skillBoardCards.length ? (
+        <div className="space-y-6">
+            <MySkillProgressGrid items={mySkillProgress.slice(0, 6)} embedded={embedded} />
+            <SkillSpotlightGrid
+                boards={skillBoardCards.slice(0, 4)}
+                personalProgress={mySkillProgress}
+                featuredSlug={normalizedSkillQuery}
+                embedded={embedded}
+            />
+        </div>
+    ) : null;
+
+    const supportingWinsSection = (achievementItems.length || challengeItems.length) ? (
+        <div className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
+            <AchievementCloud
+                items={achievementItems.slice(0, 6)}
+                title="Жетишкендиктер"
+                subtitle="Окуудагы көрүнүктүү учурлар жана күчтүү жактарыңыз."
+                embedded={embedded}
+            />
+            <ChallengeRail items={challengeItems} embedded={embedded} />
+        </div>
+    ) : null;
 
     const renderContent = () => {
         switch (activeTab) {
@@ -417,52 +611,6 @@ const LeaderboardHub = ({ embedded = false, initialTrack = 'all', lockTrack = fa
                         )}
                     </div>
                 );
-            case 'skills':
-                return (
-                    <div className="space-y-6">
-                        {skillBoardsLoading ? (
-                            <div className="py-12 flex justify-center">
-                                <Loader fullScreen={false} />
-                            </div>
-                        ) : skillBoardCards.length ? (
-                            <>
-                                <MySkillProgressGrid items={mySkillProgress.slice(0, 6)} embedded={embedded} />
-                                <SkillSpotlightGrid boards={skillBoardCards} personalProgress={mySkillProgress} featuredSlug={normalizedSkillQuery} embedded={embedded} />
-                                <div className="grid gap-6 xl:grid-cols-2">
-                                    {skillBoardCards.slice(0, 4).map((board) => (
-                                        <LeaderboardListCard
-                                            key={board.slug}
-                                            title={`${board.label} рейтинги`}
-                                            description={normalizedSkillQuery && board.slug === normalizedSkillQuery ? `Тандалган багыт: ${board.label}. Жогоруда жеке прогрессиңиз көрүнөт.` : 'Бул багыттагы алдыңкы студенттер. Жогоруда жеке прогрессиңиз көрүнөт.'}
-                                            items={board.items}
-                                            currentUserId={user?.id}
-                                            embedded={embedded}
-                                        />
-                                    ))}
-                                </div>
-                            </>
-                        ) : (
-                            <div className={embedded ? 'rounded-[28px] border border-gray-100 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-[#222222]' : 'rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_18px_60px_-42px_rgba(15,23,42,0.45)] dark:border-slate-800 dark:bg-[#161b22]'}>
-                                <p className={embedded ? 'text-sm font-semibold uppercase tracking-[0.18em] text-blue-600 dark:text-blue-300' : 'text-sm font-semibold uppercase tracking-[0.18em] text-orange-500'}>Көндүмдөр күтүлүүдө</p>
-                                <p className={embedded ? 'mt-2 text-sm text-gray-500 dark:text-gray-400' : 'mt-2 text-sm text-slate-500 dark:text-slate-300'}>
-                                    Азырынча backend каталогунда көндүмдөр табылган жок. Көндүмдөр кошулганда бул жерде алардын рейтингдери жана жеке прогресс көрүнөт.
-                                </p>
-                            </div>
-                        )}
-                    </div>
-                );
-            case 'wins':
-                return (
-                    <div className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
-                        <AchievementCloud
-                            items={achievementItems}
-                            title="Жетишкендиктер дубалы"
-                            subtitle={`Бул жерде ${trackMeta.label.toLowerCase()} багыты боюнча упай, статус жана окуялар чыгат.`}
-                            embedded={embedded}
-                        />
-                        <ChallengeRail items={challengeItems} embedded={embedded} />
-                    </div>
-                );
             default:
                 return publicMode ? (
                     <div className="space-y-6">
@@ -484,43 +632,60 @@ const LeaderboardHub = ({ embedded = false, initialTrack = 'all', lockTrack = fa
                         </div>
                     </div>
                 ) : (
-                    <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
-                        <div className="space-y-6">
-                            <LeaderboardListCard
-                                title={`${trackMeta.label} мыкты 10`}
-                                description={`Жалпы көрүнүктүү прогресс ушул жерде. Азыр тандалган фокус: ${trackMeta.helper.toLowerCase()}.`}
-                                items={weekly?.items || []}
-                                currentUserId={user?.id}
-                                embedded={embedded}
-                                footer={
-                                    embedded ? null : (
-                                        <div className="flex flex-wrap gap-3 text-sm text-slate-500 dark:text-slate-300">
-                                            <span>Алдыңкы студенттер көрүнгөн формат</span>
-                                            <Link to="/student?tab=leaderboard" className="font-semibold text-orange-500">
-                                                Дашборддан ачуу
-                                            </Link>
-                                        </div>
-                                    )
-                                }
-                            />
-                            <NearYouRail
-                                items={snapshot.nearYou || []}
-                                currentUserId={user?.id}
-                                targetGap={snapshot.targetGap}
-                                nextTargetName={snapshot.nextTargetEntry?.fullName || ''}
-                                embedded={embedded}
-                            />
+                    <div className="space-y-6">
+                        <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
+                            <div className="space-y-6">
+                                <LeaderboardListCard
+                                    title={`${trackMeta.label} мыкты 10`}
+                                    description={`Бул жумада кимдер активдүү экенин жана сиз кайсы орундарга жакын экениңизди ушул жерден көрөсүз.`}
+                                    items={weekly?.items || []}
+                                    currentUserId={user?.id}
+                                    embedded={embedded}
+                                    footer={
+                                        embedded ? null : (
+                                            <div className="flex flex-wrap gap-3 text-sm text-slate-500 dark:text-slate-300">
+                                                <span>Жумалык лидерлер жана сизге жакын орундар</span>
+                                                <Link to="/student?tab=leaderboard" className="font-semibold text-orange-500">
+                                                    Дашборддан ачуу
+                                                </Link>
+                                            </div>
+                                        )
+                                    }
+                                />
+                                <NearYouRail
+                                    items={snapshot.nearYou || []}
+                                    currentUserId={user?.id}
+                                    targetGap={snapshot.targetGap}
+                                    nextTargetName={snapshot.nextTargetEntry?.fullName || ''}
+                                    embedded={embedded}
+                                />
+                            </div>
+                            <div className="space-y-6">
+                                {supportingWinsSection}
+                            </div>
                         </div>
-                        <div className="space-y-6">
-                            <ChallengeRail items={challengeItems} embedded={embedded} />
-                            <AchievementCloud
-                                items={achievementItems}
-                                title="Бөлүшүүгө даяр учурлар"
-                                subtitle={`Бөлүшүүгө ылайыктуу эң күчтүү учурлар. Багыт: ${trackMeta.label}.`}
-                                embedded={embedded}
-                            />
-                            <SkillSpotlightGrid boards={skillBoardCards} personalProgress={mySkillProgress} featuredSlug={normalizedSkillQuery} embedded={embedded} />
-                        </div>
+                        {skillBoardsLoading ? (
+                            <div className="py-12 flex justify-center">
+                                <Loader fullScreen={false} />
+                            </div>
+                        ) : supportingSkillsSection ? (
+                            supportingSkillsSection
+                        ) : (
+                            <div className={embedded ? 'rounded-[28px] border border-gray-100 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-[#222222]' : 'rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_18px_60px_-42px_rgba(15,23,42,0.45)] dark:border-slate-800 dark:bg-[#161b22]'}>
+                                <p className={embedded ? 'text-sm font-semibold uppercase tracking-[0.18em] text-blue-600 dark:text-blue-300' : 'text-sm font-semibold uppercase tracking-[0.18em] text-orange-500'}>Көндүмдөр күтүлүүдө</p>
+                                <p className={embedded ? 'mt-2 text-sm text-gray-500 dark:text-gray-400' : 'mt-2 text-sm text-slate-500 dark:text-slate-300'}>
+                                    Азырынча бул бөлүктө көрсөтө турган кошумча көндүм маалыматы жок.
+                                </p>
+                            </div>
+                        )}
+                        {!supportingWinsSection ? (
+                            <div className={embedded ? 'rounded-[28px] border border-gray-100 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-[#222222]' : 'rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_18px_60px_-42px_rgba(15,23,42,0.45)] dark:border-slate-800 dark:bg-[#161b22]'}>
+                                <p className={embedded ? 'text-sm font-semibold uppercase tracking-[0.18em] text-blue-600 dark:text-blue-300' : 'text-sm font-semibold uppercase tracking-[0.18em] text-orange-500'}>Кийинки кадам</p>
+                                <p className={embedded ? 'mt-2 text-sm text-gray-500 dark:text-gray-400' : 'mt-2 text-sm text-slate-500 dark:text-slate-300'}>
+                                    Рейтинг жакшыраак иштеши үчүн көбүрөөк чыныгы окуу активдүүлүгү чогулушу керек.
+                                </p>
+                            </div>
+                        ) : null}
                     </div>
                 );
         }
@@ -533,22 +698,61 @@ const LeaderboardHub = ({ embedded = false, initialTrack = 'all', lockTrack = fa
                 : 'min-h-screen w-full max-w-full overflow-x-hidden bg-[linear-gradient(180deg,_#fff7ed_0%,_#ffffff_16%,_#f8fafc_100%)] px-4 py-10 text-slate-900 dark:bg-[linear-gradient(180deg,_#0b1120_0%,_#1a1f2e_16%,_#1e293b_100%)] dark:text-white md:px-8 xl:px-10'}
         >
             <div className={embedded ? 'w-full max-w-full min-w-0 space-y-8' : 'mx-auto w-full max-w-7xl min-w-0 space-y-8'}>
-                <LeaderboardHero
-                    userName={user?.fullName || user?.name || ''}
-                    snapshot={snapshot}
-                    xp={currentXp}
-                    streakDays={currentStreak}
-                    embedded={embedded}
-                    levelLabel={embedded ? 'Жеке кабинет рейтинги' : publicMode ? 'Ачык рейтинг' : 'Жаңыланган рейтинг'}
-                    title={embedded ? 'Рейтинг жана жеңиш картасы' : publicMode ? 'Ачык рейтинг' : 'Рейтингди мотивацияга айландырган мейкиндик'}
-                    description={
-                        embedded
-                            ? `Бул табда ${trackMeta.label.toLowerCase()} боюнча сизге жакын орундар, кайсы кадам тез өсүш алып келери жана кайсы жеңишти бөлүшсө болору көрүнөт.`
-                            : publicMode
-                                ? 'Бул ачык бетте аптанын лидерлери, күчтүү өсүш жана бөлүшүүгө татыктуу жеңиштер көрүнөт.'
-                                : `Бул жерде жөн гана ким биринчи экени эмес, кайсы кадам сизди кийинки секирикке алып барары көрсөтүлөт. Азыркы фокус: ${trackMeta.helper.toLowerCase()}.`
-                    }
-                />
+                <section className="dashboard-panel overflow-hidden">
+                    <DashboardSectionHeader
+                        eyebrow="Student Ranking"
+                        title="Рейтинг"
+                        description="Бул жумадагы ордуңузду, сизге жакын студенттерди жана алдыга чыгуу үчүн канча калганыңызды ушул жерден көрүңүз."
+                        metrics={(
+                            <>
+                                <DashboardMetricCard label="Менин ордум" value={rankValue} />
+                                <DashboardMetricCard label="Бул жумадагы XP" value={currentXp || 0} tone="amber" />
+                                <DashboardMetricCard label="Серия" value={currentStreak ? `${currentStreak} күн` : 'Жок'} tone="blue" />
+                                <DashboardMetricCard label="Кийинки максат" value={targetGapValue} tone="green" />
+                            </>
+                        )}
+                    />
+
+                    <div className="grid gap-4 p-6 xl:grid-cols-[minmax(0,1.1fr),minmax(0,0.9fr)]">
+                        <DashboardInsetPanel
+                            title="Бул жумадагы абал"
+                            description={`Тандалган багыт: ${trackMeta.label}. Бул бөлүк сиз кайсы орунда экениңизди жана кимге жакындап калганыңызды көрсөтөт.`}
+                        >
+                            <div className="grid gap-3 sm:grid-cols-3">
+                                <div className="rounded-2xl border border-edubot-line bg-white px-4 py-4 dark:border-slate-700 dark:bg-slate-900">
+                                    <div className="text-xs font-semibold uppercase tracking-[0.18em] text-edubot-muted">Жумалык такта</div>
+                                    <div className="mt-2 text-2xl font-semibold text-edubot-ink dark:text-white">{weeklyItems.length || 0}</div>
+                                    <div className="mt-1 text-sm text-edubot-muted dark:text-slate-400">активдүү студент</div>
+                                </div>
+                                <div className="rounded-2xl border border-edubot-line bg-white px-4 py-4 dark:border-slate-700 dark:bg-slate-900">
+                                    <div className="text-xs font-semibold uppercase tracking-[0.18em] text-edubot-muted">Аптанын студенти</div>
+                                    <div className="mt-2 text-sm font-semibold text-edubot-ink dark:text-white">
+                                        {studentOfWeek?.fullName || 'Азырынча жок'}
+                                    </div>
+                                    <div className="mt-1 text-sm text-edubot-muted dark:text-slate-400">{studentOfWeek?.xp || 0} XP</div>
+                                </div>
+                                <div className="rounded-2xl border border-edubot-line bg-white px-4 py-4 dark:border-slate-700 dark:bg-slate-900">
+                                    <div className="text-xs font-semibold uppercase tracking-[0.18em] text-edubot-muted">Кийинки орун</div>
+                                    <div className="mt-2 text-sm font-semibold text-edubot-ink dark:text-white">
+                                        {snapshot.nextTargetEntry?.fullName || 'Күтүүдө'}
+                                    </div>
+                                    <div className="mt-1 text-sm text-edubot-muted dark:text-slate-400">{targetGapValue}</div>
+                                </div>
+                            </div>
+                        </DashboardInsetPanel>
+
+                        <DashboardInsetPanel
+                            title="Рейтинг кантип жакшырат"
+                            description="Бул жер жөн гана атаандаштык эмес. Сабакты бүтүрүү, туруктуу окуу жана жумалык активдүүлүк позицияны жогорулатат."
+                        >
+                            <div className="space-y-3 text-sm text-edubot-muted dark:text-slate-400">
+                                <p>Сабактарды бүтүргөн сайын жана туруктуу кайтып келген сайын позиция жогорулайт.</p>
+                                <p>Тандалган багытты алмаштырсаңыз, видео жана сессиялык окуунун рейтинги өзүнчө көрүнөт.</p>
+                                <p>Негизги максат: өзүңүзгө жакын студенттерден алдыга өтүү жана жеке темпти сактоо.</p>
+                            </div>
+                        </DashboardInsetPanel>
+                    </div>
+                </section>
 
                 {hasLeaderboardServiceIssue ? (
                     <div className={embedded ? 'rounded-[24px] border border-amber-200 bg-amber-50/90 px-5 py-4 text-amber-900 shadow-sm dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100' : 'rounded-[24px] border border-amber-200 bg-amber-50/90 px-5 py-4 text-amber-900 shadow-sm dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100'}>
@@ -573,23 +777,23 @@ const LeaderboardHub = ({ embedded = false, initialTrack = 'all', lockTrack = fa
                     </div>
                 ) : null}
 
-                <div className="grid max-w-full min-w-0 gap-4 xl:grid-cols-[1fr_auto] xl:items-end">
-                    <div className="min-w-0 space-y-4">
-                        <div>
-                            <p className={embedded ? 'text-sm font-semibold uppercase tracking-[0.26em] text-blue-600 dark:text-blue-300' : 'text-sm font-semibold uppercase tracking-[0.26em] text-orange-500'}>EduBot өсүү цикли</p>
-                            <h2 className={embedded ? 'mt-2 text-2xl font-semibold text-gray-900 dark:text-[#E8ECF3] sm:text-3xl' : 'mt-2 text-2xl font-semibold text-slate-900 dark:text-white sm:text-3xl'}>
-                                Кайра келтирген рейтинг тажрыйбасы
-                            </h2>
-                            <p className={embedded ? 'mt-2 max-w-3xl text-sm text-gray-500 dark:text-gray-400 sm:text-base' : 'mt-2 max-w-3xl text-sm text-slate-600 dark:text-slate-300 sm:text-base'}>
-                                Көрүнүктүү жеңиштер, өзгөчө көрүнгөн көндүмдөр жана кыска циклдеги максаттар студентти кайра кайтууга түртүшү керек.
-                                {mySummary?.rankDelta
-                                    ? ` Азырынча сиздин өзгөрүүңүз: ${mySummary.rankDelta > 0 ? '+' : ''}${mySummary.rankDelta} орун.`
-                                    : ''}
-                            </p>
+                    <div className="grid max-w-full min-w-0 gap-4 xl:grid-cols-[1fr_auto] xl:items-end">
+                        <div className="min-w-0 space-y-4">
+                            <div>
+                                <p className="text-sm font-semibold uppercase tracking-[0.26em] text-edubot-orange">Жумалык көрүнүш</p>
+                                <h2 className="mt-2 text-2xl font-semibold text-edubot-ink dark:text-white sm:text-3xl">
+                                    Сизге жакын орундар жана такта
+                                </h2>
+                                <p className="mt-2 max-w-3xl text-sm text-edubot-muted dark:text-slate-400 sm:text-base">
+                                    Негизги көрүнүштү гана калтырдык: бул жумадагы лидерлер, сизге жакын студенттер жана кошумча колдоочу сигналдар.
+                                    {mySummary?.rankDelta
+                                        ? ` Учурдагы өзгөрүү: ${mySummary.rankDelta > 0 ? '+' : ''}${mySummary.rankDelta} орун.`
+                                        : ''}
+                                </p>
+                            </div>
+                            {renderTrackSwitcher()}
                         </div>
-                        {renderTrackSwitcher()}
-                    </div>
-                    <div className={embedded ? 'grid w-full max-w-full min-w-0 grid-cols-2 gap-2 rounded-[24px] border border-gray-100 bg-white p-1 shadow-sm dark:border-gray-800 dark:bg-[#222222] sm:flex sm:flex-wrap xl:w-auto xl:rounded-full' : 'grid w-full max-w-full min-w-0 grid-cols-2 gap-2 rounded-[24px] border border-slate-200 bg-white/85 p-1 shadow-sm backdrop-blur dark:border-slate-800 dark:bg-slate-900/70 sm:flex sm:flex-wrap xl:w-auto xl:rounded-full'}>
+                        <div className="grid w-full max-w-full min-w-0 grid-cols-2 gap-2 rounded-3xl border border-edubot-line bg-white p-1 shadow-sm dark:border-slate-700 dark:bg-slate-900 sm:flex sm:flex-wrap xl:w-auto xl:rounded-full">
                         {visibleTabs.map((tab) => (
                             <button
                                 key={tab.id}
@@ -598,12 +802,8 @@ const LeaderboardHub = ({ embedded = false, initialTrack = 'all', lockTrack = fa
                                 className={[
                                     'min-w-0 rounded-full px-3 py-2 text-sm font-medium transition-colors sm:px-4',
                                     activeTab === tab.id
-                                        ? embedded
-                                            ? 'bg-blue-600 text-white dark:bg-blue-500 dark:text-white'
-                                            : 'bg-slate-900 text-white dark:bg-white dark:text-slate-900'
-                                        : embedded
-                                            ? 'text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800'
-                                            : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800',
+                                        ? 'bg-edubot-orange text-white'
+                                        : 'text-edubot-muted hover:bg-edubot-surfaceAlt dark:text-slate-300 dark:hover:bg-slate-800',
                                 ].join(' ')}
                             >
                                 {tab.label}

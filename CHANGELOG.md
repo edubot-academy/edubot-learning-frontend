@@ -2,6 +2,23 @@
 
 Version bumps are classified by delivery scale; see `VERSIONING.md`.
 
+## [1.4.3] - 2026-04-02
+
+### 🧑‍🎓 STUDENT DASHBOARD TRUTHFULNESS
+- Rebuilt student `Overview` around real, modality-aware learning signals instead of synthetic XP, badge, milestone, and leaderboard-driven dashboard framing.
+- Reworked student `Прогресс` to focus on real course progress, completed lessons, certificates, continue-learning, and delivery-mode-specific context instead of decorative gamification metrics.
+- Folded the useful student analytics content into `Прогресс` as an embedded advanced-progress section so the dashboard no longer feels like two separate student products.
+- Removed the old standalone student analytics tab path from the active dashboard IA and redirected `/student/analytics` into `Прогресс`.
+- Simplified student `Рейтинг` into a lighter secondary companion with calmer top-level structure and clearer track labels aligned to student language.
+
+### 🧭 STUDENT DASHBOARD HARDENING
+- Removed dead overview leaderboard-preview loading so the student overview no longer makes an unnecessary weekly leaderboard request.
+- Tightened student advanced-progress behavior by removing the old cross-role swipe navigation pattern from the embedded/standalone analytics surface.
+- Stopped overstating group-scoped precision in embedded student progress analytics; advanced progress now presents honest course-scoped context where the backend model is truly course-based.
+
+### ✅ BUILD STATUS
+- Production build passes after the student overview/progress/truthfulness cleanup.
+
 ## [1.4.2] - 2026-04-02
 
 ### 🧑‍🎓 STUDENT DASHBOARD ALIGNMENT

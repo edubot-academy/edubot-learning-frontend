@@ -9,7 +9,6 @@ import {
     FiBell,
     FiMessageCircle,
     FiPlay,
-    FiFilter,
     FiTarget
 } from 'react-icons/fi';
 
@@ -24,10 +23,7 @@ export const NAV_ITEMS = [
 
     // Secondary Navigation - Learning Management
     { id: 'chat', label: 'Чат', icon: FiMessageCircle, category: 'secondary', priority: 2 },
-
-    // Analytics & Performance
-    { id: 'analytics', label: 'Аналитика', icon: FiFilter, category: 'analytics', priority: 1 },
-    { id: 'leaderboard', label: 'Рейтинг', icon: FiCheckCircle, category: 'analytics', priority: 2 },
+    { id: 'leaderboard', label: 'Рейтинг', icon: FiCheckCircle, category: 'secondary', priority: 3 },
 
     // Administrative - Settings & Communication
     { id: 'profile', label: 'Профиль', icon: FiUser, category: 'admin', priority: 1 },

@@ -1,10 +1,8 @@
 import { useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import PropTypes from 'prop-types';
-import { useNavigate } from 'react-router-dom';
 import { fetchStudentOverviewAnalytics } from '@services/api';
 import { AuthContext } from '../context/AuthContext';
 import { toast } from 'react-hot-toast';
-import { useSwipeNavigation } from '../hooks/useSwipeGestures';
 import {
     AnalyticsSection,
     ProgressList,
@@ -18,7 +16,7 @@ import {
     DashboardMetricCard,
     DashboardSectionHeader,
 } from '@components/ui/dashboard';
-import { FiAward, FiBookOpen, FiTrendingUp, FiZap } from 'react-icons/fi';
+import { FiAward, FiBookOpen, FiCalendar, FiTrendingUp, FiZap } from 'react-icons/fi';
 
 const toList = (payload) => {
     if (Array.isArray(payload)) return payload;
@@ -32,31 +30,25 @@ const metricNumber = (value, fallback = 0) => {
     return Number.isFinite(num) ? num : fallback;
 };
 
-const StudentAnalyticsPage = ({ embedded = false }) => {
-    const navigate = useNavigate();
+const StudentAnalyticsPage = ({
+    embedded = false,
+    courseId,
+    showHeader = true,
+    showFilters = true,
+}) => {
     const { user } = useContext(AuthContext);
     const [filters, setFilters] = useState({ from: '', to: '' });
     const [loading, setLoading] = useState(false);
     const [overview, setOverview] = useState(null);
 
-    // Swipe navigation for mobile
-    const analyticsPages = ['/student/analytics', '/instructor/analytics', '/admin/analytics'];
-    const currentPageIndex = analyticsPages.indexOf('/student/analytics');
-
-    const swipeRef = useSwipeNavigation({
-        goBack: () => navigate('/instructor/analytics'),
-        goForward: () => navigate('/admin/analytics'),
-        pages: analyticsPages,
-        currentIndex: currentPageIndex,
-    });
-
     const requestFilters = useMemo(
         () => ({
             from: filters.from || undefined,
             to: filters.to || undefined,
+            courseId: courseId || undefined,
             studentId: user?.role === 'student' ? undefined : user?.id,
         }),
-        [filters.from, filters.to, user?.role, user?.id] // Only depend on actual values
+        [courseId, filters.from, filters.to, user?.role, user?.id]
     );
 
     const loadOverview = useCallback(async () => {
@@ -75,7 +67,7 @@ const StudentAnalyticsPage = ({ embedded = false }) => {
 
     useEffect(() => {
         loadOverview();
-    }, [requestFilters.from, requestFilters.to, requestFilters.studentId]); // Depend on filter values
+    }, [requestFilters.courseId, requestFilters.from, requestFilters.groupId, requestFilters.studentId, requestFilters.to]);
 
     const kpis = useMemo(
         () => ({
@@ -93,7 +85,6 @@ const StudentAnalyticsPage = ({ embedded = false }) => {
 
     return (
         <div
-            ref={swipeRef}
             className={
                 embedded
                     ? 'space-y-6'
@@ -101,43 +92,62 @@ const StudentAnalyticsPage = ({ embedded = false }) => {
             }
         >
             <div className={embedded ? 'space-y-6' : 'max-w-4xl mx-auto px-4 lg:px-6 space-y-6'}>
-                <DashboardSectionHeader
-                    eyebrow="Analytics workspace"
-                    title="Окуучу аналитикасы"
-                    description="Прогрессиңизди, акыркы активдүүлүгүңүздү жана кайсы курста эмнеге көңүл буруу керектигин ушул жерден көрүңүз."
-                    action={(
-                        <button
-                            type="button"
-                            onClick={loadOverview}
-                            disabled={loading}
-                            className="dashboard-button-primary"
-                        >
-                            {loading ? 'Жүктөлүүдө...' : 'Жаңылоо'}
-                        </button>
-                    )}
-                />
+                {showHeader ? (
+                    <DashboardSectionHeader
+                        eyebrow="Advanced Progress"
+                        title="Тереңирээк прогресс"
+                        description="Чыныгы окуу прогрессиңизди, акыркы активдүүлүгүңүздү жана кайсы курста улантуу керек экенин ушул жерден көрүңүз."
+                        action={(
+                            <button
+                                type="button"
+                                onClick={loadOverview}
+                                disabled={loading}
+                                className="dashboard-button-primary"
+                            >
+                                {loading ? 'Жүктөлүүдө...' : 'Жаңылоо'}
+                            </button>
+                        )}
+                    />
+                ) : null}
 
-                <DashboardInsetPanel
-                    title="Мезгил фильтри"
-                    description="Көрсөткүчтөрдү белгилүү күн аралыгы боюнча чыпкалоо."
-                >
-                    <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                        <input
-                            type="date"
-                            value={filters.from || ''}
-                            onChange={(e) => setFilters((prev) => ({ ...prev, from: e.target.value }))}
-                            className="dashboard-field"
-                            placeholder="Башталган күнү"
-                        />
-                        <input
-                            type="date"
-                            value={filters.to || ''}
-                            onChange={(e) => setFilters((prev) => ({ ...prev, to: e.target.value }))}
-                            className="dashboard-field"
-                            placeholder="Аягындашкан күнү"
-                        />
-                    </div>
-                </DashboardInsetPanel>
+                {courseId ? (
+                    <DashboardInsetPanel
+                        title="Учурдагы контекст"
+                        description="Тереңирээк прогресс учурда тандалган курс чыпкасы менен шайкеш иштейт."
+                    >
+                        <div className="flex flex-wrap gap-2">
+                            {courseId ? (
+                                <span className="rounded-full border border-edubot-line bg-white px-3 py-2 text-xs font-semibold text-edubot-ink dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200">
+                                    Курс чыпкасы активдүү
+                                </span>
+                            ) : null}
+                        </div>
+                    </DashboardInsetPanel>
+                ) : null}
+
+                {showFilters ? (
+                    <DashboardInsetPanel
+                        title="Мезгил фильтри"
+                        description="Көрсөткүчтөрдү белгилүү күн аралыгы боюнча чыпкалоо."
+                    >
+                        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                            <input
+                                type="date"
+                                value={filters.from || ''}
+                                onChange={(e) => setFilters((prev) => ({ ...prev, from: e.target.value }))}
+                                className="dashboard-field"
+                                placeholder="Башталган күнү"
+                            />
+                            <input
+                                type="date"
+                                value={filters.to || ''}
+                                onChange={(e) => setFilters((prev) => ({ ...prev, to: e.target.value }))}
+                                className="dashboard-field"
+                                placeholder="Аягындашкан күнү"
+                            />
+                        </div>
+                    </DashboardInsetPanel>
+                ) : null}
 
                 <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                     <DashboardMetricCard
@@ -165,9 +175,8 @@ const StudentAnalyticsPage = ({ embedded = false }) => {
                     />
                 </div>
 
-                {/* Окууну Улантыруу */}
                 {continueLearning && (
-                    <AnalyticsSection title="Окууну Улантыруу" subtitle="Акыркы сабакка кайтуу">
+                    <AnalyticsSection title="Окууну улантуу" subtitle="Акыркы активдүү курс жана сабак">
                         <div className="rounded-3xl border border-edubot-line/80 bg-gradient-to-br from-edubot-orange via-edubot-soft to-edubot-orange p-6 text-white shadow-edubot-hover dark:border-edubot-soft/20">
                             <div className="flex items-start justify-between">
                                 <div className="flex-1">
@@ -209,9 +218,8 @@ const StudentAnalyticsPage = ({ embedded = false }) => {
                     </AnalyticsSection>
                 )}
 
-                {/* Менин Курстарым жана Акыркы Активдүүлүк */}
                 <div className="grid lg:grid-cols-2 gap-6">
-                    <AnalyticsSection title="Менин Курстарым" subtitle="Бардык катышкан курстарым">
+                    <AnalyticsSection title="Курстар боюнча прогресс" subtitle="Катышып жаткан курстар жана алардын абалы">
                         <ProgressList
                             items={myCourses.map((course) => ({
                                 title: course.courseTitle || `Курс #${course.courseId}`,
@@ -232,7 +240,7 @@ const StudentAnalyticsPage = ({ embedded = false }) => {
                         />
                     </AnalyticsSection>
 
-                    <AnalyticsSection title="Акыркы Активдүүлүк" subtitle="Сиздин акыркы аракеттериңиз">
+                    <AnalyticsSection title="Акыркы активдүүлүк" subtitle="Сиздин акыркы окуу аракеттериңиз">
                         {recentActivity && recentActivity.length > 0 ? (
                             <div className="space-y-3">
                                 {recentActivity.slice(0, 10).map((activity, index) => (
@@ -288,11 +296,10 @@ const StudentAnalyticsPage = ({ embedded = false }) => {
                     </AnalyticsSection>
                 </div>
 
-                {/* Окуучу Прогресс Аналитикасы */}
                 <div className="grid lg:grid-cols-2 gap-6">
                     <AnalyticsBarChart
-                        title="Курс Прогресс Көрүнүчүсү"
-                        subtitle="Катышкан курстардагы прогрессиңиз"
+                        title="Курс прогресс көрүнүшү"
+                        subtitle="Катышкан курстардагы реалдуу прогрессиңиз"
                         data={myCourses.map((course) => ({
                             label: course.courseTitle || `Курс #${course.courseId}`,
                             value: metricNumber(course.progress || 0),
@@ -305,8 +312,8 @@ const StudentAnalyticsPage = ({ embedded = false }) => {
                     />
 
                     <AnalyticsDoughnutChart
-                        title="Окуу Активдүүлүк Бөлүштөрү"
-                        subtitle="Окуу убактыңызды кантип өткөрөсүз"
+                        title="Активдүүлүк бөлүштүрүлүшү"
+                        subtitle="Акыркы аракеттериңиз кайсы типке көбүрөөк туура келет"
                         data={recentActivity.reduce((acc, activity) => {
                             const type = activity.type || 'other';
                             const existing = acc.find(item => item.label === type);
@@ -326,54 +333,40 @@ const StudentAnalyticsPage = ({ embedded = false }) => {
                     />
                 </div>
 
-                {/* Окуу Корутулары */}
-                <AnalyticsSection title="Окуу Корутулары" subtitle="Ийгиликке жетүү үчүн жеке сунуштар">
-                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        <div className="rounded-3xl border border-blue-200 bg-blue-50/90 p-4 dark:border-blue-500/30 dark:bg-blue-500/10">
-                            <div className="flex items-center gap-3 mb-3">
-                                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-blue-500">
-                                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                                    </svg>
-                                </div>
-                                <h4 className="font-semibold text-blue-900 dark:text-blue-100">Окууну Улантыруу</h4>
+                <DashboardInsetPanel
+                    title="Бул барак эмнеге керек"
+                    description="Бул жер мотивация баннерлеринен көрө, реалдуу окуу тарыхын жана прогрессти тереңирээк көрүү үчүн керек."
+                >
+                    <div className="grid gap-3 sm:grid-cols-3">
+                        <div className="rounded-2xl border border-edubot-line/70 bg-white/80 px-4 py-3 dark:border-slate-700 dark:bg-slate-900">
+                            <div className="flex items-center gap-2 text-sm font-semibold text-edubot-ink dark:text-white">
+                                <FiBookOpen className="h-4 w-4" />
+                                Курстар
                             </div>
-                            <p className="text-sm text-blue-800 dark:text-blue-200">
-                                {kpis.averageProgress > 50
-                                    ? "Улуу прогресс көрсөтүүдөсүз! Активдүү окууну улантыңыз."
-                                    : "Окууга жаңы баштадыңыз. Билим жана көндүмдөрүңүздү өнүктүрүңүз."}
+                            <p className="mt-2 text-sm text-edubot-muted dark:text-slate-400">
+                                Кайсы курстарда прогресс токтоп калганын тез байкайсыз.
                             </p>
                         </div>
-
-                        <div className="rounded-3xl border border-green-200 bg-green-50/90 p-4 dark:border-green-500/30 dark:bg-green-500/10">
-                            <div className="flex items-center gap-3 mb-3">
-                                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-green-500">
-                                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                    </svg>
-                                </div>
-                                <h4 className="font-semibold text-green-900 dark:text-green-100">Туруктуу Окуу</h4>
+                        <div className="rounded-2xl border border-edubot-line/70 bg-white/80 px-4 py-3 dark:border-slate-700 dark:bg-slate-900">
+                            <div className="flex items-center gap-2 text-sm font-semibold text-edubot-ink dark:text-white">
+                                <FiCalendar className="h-4 w-4" />
+                                Убакыт
                             </div>
-                            <p className="text-sm text-green-800 dark:text-green-200">
-                                Туруктуу окуу адаттары маалыматты жакшыраак сактайт. Күнүнө аз убакыт окууга аракет кылыңыз.
+                            <p className="mt-2 text-sm text-edubot-muted dark:text-slate-400">
+                                Белгилүү мезгил боюнча окуу активдүүлүгүн салыштыра аласыз.
                             </p>
                         </div>
-
-                        <div className="rounded-3xl border border-purple-200 bg-purple-50/90 p-4 dark:border-purple-500/30 dark:bg-purple-500/10">
-                            <div className="flex items-center gap-3 mb-3">
-                                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-purple-500">
-                                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                                    </svg>
-                                </div>
-                                <h4 className="font-semibold text-purple-900 dark:text-purple-100">Көбүрөөк Изилдөө</h4>
+                        <div className="rounded-2xl border border-edubot-line/70 bg-white/80 px-4 py-3 dark:border-slate-700 dark:bg-slate-900">
+                            <div className="flex items-center gap-2 text-sm font-semibold text-edubot-ink dark:text-white">
+                                <FiTrendingUp className="h-4 w-4" />
+                                Прогресс
                             </div>
-                            <p className="text-sm text-purple-800 dark:text-purple-200">
-                                Жаңы курстарды ачып, билимиңизди кеңитүңүз. Окуу акылыңызды күчтөйт!
+                            <p className="mt-2 text-sm text-edubot-muted dark:text-slate-400">
+                                Жалпы көрсөткүчтөн тереңирээк деталдарды ушул жерден көрөсүз.
                             </p>
                         </div>
                     </div>
-                </AnalyticsSection>
+                </DashboardInsetPanel>
             </div>
         </div>
     );
@@ -384,4 +377,7 @@ export default StudentAnalyticsPage;
 
 StudentAnalyticsPage.propTypes = {
     embedded: PropTypes.bool,
+    courseId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    showHeader: PropTypes.bool,
+    showFilters: PropTypes.bool,
 };

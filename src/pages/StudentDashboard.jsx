@@ -2,8 +2,6 @@ import { useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import toast from 'react-hot-toast';
-import StudentAnalyticsPage from './StudentAnalytics';
-import InternalLeaderboard from './InternalLeaderboard';
 import FloatingActionButton from '../components/ui/FloatingActionButton';
 import {
     fetchStudentCourses,
@@ -20,7 +18,6 @@ import {
     fetchStudentProgress,
     fetchStudentCertificates,
     fetchStudentNotificationSettings,
-    fetchWeeklyLeaderboard,
     updateStudentNotificationSettings,
 } from '@services/api';
 import NotificationsTab from '@features/notifications/components/NotificationsTab';
@@ -45,6 +42,7 @@ import TasksTab from '@features/student-dashboard/components/tabs/TasksTab.jsx';
 import ProgressTab from '@features/student-dashboard/components/tabs/ProgressTab.jsx';
 import ProfileTab from '@features/student-dashboard/components/tabs/ProfileTab.jsx';
 import ChatTab from '@features/student-dashboard/components/ChatTab.jsx';
+import LeaderboardHub from '@features/leaderboard/components/LeaderboardHub.jsx';
 import {
     DashboardLayout,
     DashboardHeader,
@@ -79,8 +77,6 @@ const StudentDashboard = () => {
     const [filterGroupId, setFilterGroupId] = useState(initialGroupFilter);
     const [progress, setProgress] = useState([]);
     const [certificates, setCertificates] = useState([]);
-    const [leaderboardItems, setLeaderboardItems] = useState([]);
-    const [leaderboardPreviewMeta, setLeaderboardPreviewMeta] = useState({ fallback: false, message: '' });
     const [notificationSettings, setNotificationSettings] = useState(null);
     const [profileData, setProfileData] = useState(null);
     const [profileLoaded, setProfileLoaded] = useState(false);
@@ -94,7 +90,6 @@ const StudentDashboard = () => {
         resources: false,
         tasks: false,
         progress: false,
-        analytics: true,
         leaderboard: true,
         notifications: true,
         profile: true,
@@ -132,10 +127,9 @@ const StudentDashboard = () => {
         if (!studentId) return;
         setTabLoading('overview');
         try {
-            const [accessResult, summaryResult, leaderboardResult] = await Promise.allSettled([
+            const [accessResult, summaryResult] = await Promise.allSettled([
                 fetchStudentAccessState(),
                 fetchStudentDashboard(studentFilters),
-                fetchWeeklyLeaderboard({ limit: 5 }),
             ]);
 
             if (accessResult.status === 'fulfilled') {
@@ -153,20 +147,6 @@ const StudentDashboard = () => {
                 toast.error('Кыскача маалымат жүктөлгөн жок');
             }
 
-            if (leaderboardResult.status === 'fulfilled') {
-                const leaderboardRes = leaderboardResult.value;
-                setLeaderboardItems(
-                    Array.isArray(leaderboardRes?.items) ? leaderboardRes.items : leaderboardRes || []
-                );
-                setLeaderboardPreviewMeta({
-                    fallback: Boolean(leaderboardRes?._fallback),
-                    message: leaderboardRes?._fallbackMessage || '',
-                });
-            } else {
-                console.error('Failed to load leaderboard preview', leaderboardResult.reason);
-                setLeaderboardItems([]);
-                setLeaderboardPreviewMeta({ fallback: true, message: '' });
-            }
         } catch (error) {
             console.error('Failed to load overview', error);
             toast.error('Кыскача маалымат жүктөлгөн жок');
@@ -460,7 +440,6 @@ const StudentDashboard = () => {
         () => ({
             id: user?.id || null,
             name: summary?.name || user?.fullName || 'Студент',
-            streak: summary?.streak || 0,
             lastLesson: summary?.lastLesson || null,
         }),
         [summary, user]
@@ -519,87 +498,6 @@ const StudentDashboard = () => {
         if (Number(overviewStats.activeCourses || 0) > 0) return true;
         return false;
     }, [accessLoaded, accessState, accessStateError, summary, overviewStats.activeCourses]);
-
-    const engagement = useMemo(() => {
-        const calculatedXp =
-            readNumber(summary, ['xp', 'stats.xp', 'gamification.xp', 'engagement.xp']) ||
-            progress.reduce(
-                (acc, item) => acc + Math.round((Number(item.progressPercent || 0) || 0) * 4),
-                0
-            ) +
-            tasks.filter((task) => task.status === 'completed').length * 30;
-        const xp = Math.max(0, calculatedXp);
-        const level = Math.max(1, Math.floor(xp / 500) + 1);
-        const currentLevelStart = (level - 1) * 500;
-        const nextLevelXp = level * 500;
-        const streak =
-            readNumber(summary, [
-                'streak',
-                'stats.streakDays',
-                'engagement.streak',
-                'gamification.streakDays',
-            ]) || 0;
-        return {
-            xp,
-            streak,
-            level,
-            currentLevelXp: xp - currentLevelStart,
-            nextLevelGap: nextLevelXp - currentLevelStart,
-        };
-    }, [summary, progress, tasks]);
-
-    const milestoneItems = useMemo(() => {
-        const incoming = readArray(summary, [
-            'milestones',
-            'engagement.milestones',
-            'gamification.milestones',
-        ]);
-        if (incoming.length) {
-            return incoming.map((item, index) => ({
-                id: item.id || item.milestoneId || `m-${index}`,
-                title: item.title || item.name || item.label || 'Этап',
-                value: item.value || item.description || item.progressText || '',
-            }));
-        }
-        return [
-            {
-                id: 'm1',
-                title: 'Курсту аяктоо',
-                value: `${overviewStats.lessonsCompleted || 0} сабак бүткөн`,
-            },
-            {
-                id: 'm2',
-                title: 'Катышуу максаты',
-                value: `${attendanceStats.rate}% айлык катышуу`,
-            },
-            {
-                id: 'm3',
-                title: 'Жумалык туруктуулук',
-                value: `${engagement.streak} күн катары менен окуу`,
-            },
-        ];
-    }, [summary, overviewStats.lessonsCompleted, attendanceStats.rate, engagement.streak]);
-
-    const badgeItems = useMemo(() => {
-        const incoming = readArray(summary, [
-            'badges',
-            'engagement.badges',
-            'gamification.badges',
-            'achievements',
-        ]);
-        if (incoming.length) {
-            return incoming.map((item, index) => ({
-                id: item.id || item.badgeId || `b-${index}`,
-                title: item.title || item.name || item.label || 'Badge',
-            }));
-        }
-        const badges = [];
-        if (engagement.streak >= 3) badges.push({ id: 'b1', title: 'Streak Starter' });
-        if (attendanceStats.rate >= 90) badges.push({ id: 'b2', title: 'Perfect Presence' });
-        if (engagement.xp >= 1000) badges.push({ id: 'b3', title: 'XP 1000+' });
-        if (!badges.length) badges.push({ id: 'b0', title: 'First Step' });
-        return badges;
-    }, [summary, engagement.streak, attendanceStats.rate, engagement.xp]);
 
     const offeringsByCourse = useMemo(() => {
         const map = new Map();
@@ -891,7 +789,7 @@ const StudentDashboard = () => {
         tabLoading === resolvedTab ||
         (activeTab === 'profile' && (notificationLoading || profileLoading));
     const renderTab = () => {
-        const requiresActiveAccess = ['overview', 'my-courses', 'schedule', 'resources', 'tasks', 'progress', 'analytics', 'leaderboard'].includes(activeTab);
+        const requiresActiveAccess = ['overview', 'my-courses', 'schedule', 'resources', 'tasks', 'progress', 'leaderboard'].includes(activeTab);
         if (requiresActiveAccess && !hasActiveStudentAccess) {
             return <StudentEmptyState />;
         }
@@ -944,19 +842,14 @@ const StudentDashboard = () => {
                 return (
                     <ProgressTab
                         items={progressItems}
+                        courses={courses}
                         attendanceStats={attendanceStats}
                         attendanceEnabled={hasAttendanceEligibleCourses}
-                        engagement={engagement}
-                        leaderboardItems={leaderboardItems}
-                        leaderboardMeta={leaderboardPreviewMeta}
-                        milestoneItems={milestoneItems}
-                        badgeItems={badgeItems}
+                        courseId={filterCourseId || undefined}
                     />
                 );
-            case 'analytics':
-                return <StudentAnalyticsPage embedded />;
             case 'leaderboard':
-                return <InternalLeaderboard />;
+                return <LeaderboardHub embedded initialTrack="all" />;
             case 'notifications':
                 return <NotificationsTab />;
             case 'profile':
@@ -984,11 +877,6 @@ const StudentDashboard = () => {
                         tasks={tasks}
                         attendanceStats={attendanceStats}
                         attendanceEnabled={hasAttendanceEligibleCourses}
-                        engagement={engagement}
-                        leaderboardItems={leaderboardItems}
-                        leaderboardMeta={leaderboardPreviewMeta}
-                        milestoneItems={milestoneItems}
-                        badgeItems={badgeItems}
                         progressItems={progressItems}
                         onOpenCourse={handleOpenCourse}
                         openingCourseId={openingCourseId}
