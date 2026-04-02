@@ -99,7 +99,7 @@ const EDIT_SESSION_DEFAULT = {
 
 const tabList = [
     { id: 'attendance', label: 'Катышуу' },
-    { id: 'materials', label: 'Материалдар' },
+    { id: 'materials', label: 'Ресурстар' },
     { id: 'notes', label: 'Сессия жазуулары' },
     { id: 'homework', label: 'Үй тапшырма' },
     { id: 'engagement', label: 'Активдүүлүк' },
@@ -337,6 +337,12 @@ const normalizeCourseType = (course, session, group) =>
     session?.course?.courseType ||
     group?.course?.courseType ||
     COURSE_TYPE.VIDEO;
+
+const getCourseTypeLabel = (type) => {
+    if (type === COURSE_TYPE.OFFLINE) return 'Оффлайн';
+    if (type === COURSE_TYPE.ONLINE_LIVE) return 'Онлайн түз эфир';
+    return 'Видео курс';
+};
 
 const getWorkspaceErrorMessage = (error, fallback) => {
     const status = error?.response?.status;
@@ -829,6 +835,10 @@ const SessionWorkspace = () => {
     const selectedSession = useMemo(
         () => sessions.find((session) => String(session.id) === String(selectedSessionId)) || null,
         [sessions, selectedSessionId]
+    );
+    const selectedDeliveryType = useMemo(
+        () => normalizeCourseType(selectedCourse, selectedSession, selectedGroup),
+        [selectedCourse, selectedSession, selectedGroup]
     );
     const selectedHomework = useMemo(
         () =>
@@ -1550,7 +1560,7 @@ const SessionWorkspace = () => {
     const SelectedModeIcon = selectedModeMeta.icon;
     const nextSessionIndex = useMemo(() => getNextSessionIndex(sessions), [sessions]);
     const isCreateWorkspace = workspaceMode === 'create';
-    const workspaceTitle = isCreateWorkspace ? 'Create Session' : 'Edit Session';
+    const workspaceTitle = isCreateWorkspace ? 'Жаңы сессия' : 'Сессияны түзөтүү';
     const workspaceDescription = isCreateWorkspace
         ? 'Тандалган группа үчүн жаңы сессия түзүп, убактысын жана материалдарын бекитиңиз.'
         : 'Тандалган сессиянын убактысын жана статусун жаңыртыңыз.';
@@ -1760,16 +1770,15 @@ const SessionWorkspace = () => {
 
                     <div className="sticky top-24 z-30 rounded-[1.75rem] border border-edubot-line bg-white p-4 shadow-[0_18px_50px_rgba(15,23,42,0.18)] dark:border-slate-700 dark:bg-slate-950">
                         <SessionHeaderContent
-                            activeTab={activeTab}
                             joinLiveSession={joinLiveSession}
                             selectedCourse={selectedCourse}
+                            selectedDeliveryType={selectedDeliveryType}
                             selectedGroup={selectedGroup}
                             selectedModeMeta={selectedModeMeta}
                             selectedSession={selectedSession}
                             selectedSessionJoinAllowed={selectedSessionJoinAllowed}
                             selectedSessionJoinUrl={selectedSessionJoinUrl}
                             selectedSessionMode={selectedSessionMode}
-                            setActiveTab={setActiveTab}
                         />
                     </div>
 
@@ -1884,8 +1893,7 @@ const SessionWorkspace = () => {
                         </div>
 
                         {selectedSession &&
-                            normalizeCourseType(selectedCourse, selectedSession, selectedGroup) ===
-                            COURSE_TYPE.ONLINE_LIVE && (
+                            selectedDeliveryType === COURSE_TYPE.ONLINE_LIVE && (
                                 <div className="dashboard-panel-muted flex flex-wrap items-center justify-between gap-3 p-4">
                                     <div className="text-sm">
                                         <div className="flex items-center gap-2 font-medium text-edubot-ink dark:text-white">
@@ -1918,7 +1926,7 @@ const SessionWorkspace = () => {
                                         }
                                         className="dashboard-button-primary"
                                     >
-                                        Join Class
+                                        Сабакка кирүү
                                     </button>
                                     {!selectedSessionJoinAllowed &&
                                         selectedSessionMode !== 'completed' && (
@@ -2002,6 +2010,8 @@ const SessionWorkspace = () => {
                                 restoreMeetingState={restoreMeetingState}
                                 saveMeetingLink={saveMeetingLink}
                                 savingMeeting={savingMeeting}
+                                selectedDeliveryType={selectedDeliveryType}
+                                selectedGroupLocation={selectedGroup?.location || ''}
                                 selectedSessionId={selectedSessionId}
                                 selectedSessionJoinAllowed={selectedSessionJoinAllowed}
                                 selectedSessionJoinUrl={selectedSessionJoinUrl}
@@ -2119,18 +2129,18 @@ const SessionWorkspace = () => {
 };
 
 const SessionHeaderContent = ({
-    activeTab,
     joinLiveSession,
     selectedCourse,
+    selectedDeliveryType,
     selectedGroup,
     selectedModeMeta,
     selectedSession,
     selectedSessionJoinAllowed,
     selectedSessionJoinUrl,
     selectedSessionMode,
-    setActiveTab,
 }) => {
     const SelectedModeIcon = selectedModeMeta.icon;
+    const isOnlineLive = selectedDeliveryType === COURSE_TYPE.ONLINE_LIVE;
 
     return (
         <div className="flex flex-wrap items-start justify-between gap-4">
@@ -2160,69 +2170,47 @@ const SessionHeaderContent = ({
                         ? ` • ${toSessionTime(selectedSession.startsAt)} - ${toSessionTime(selectedSession.endsAt)}`
                         : ''}
                 </div>
+                {selectedSession ? (
+                    <div className="mt-2 text-xs font-medium text-edubot-muted dark:text-slate-400">
+                        {getCourseTypeLabel(selectedDeliveryType)}
+                        {selectedDeliveryType === COURSE_TYPE.OFFLINE && selectedGroup?.location
+                            ? ` • ${selectedGroup.location}`
+                            : ''}
+                    </div>
+                ) : null}
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
-                <button
-                    type="button"
-                    onClick={() => setActiveTab('attendance')}
-                    className={`rounded-full px-3 py-2 text-sm font-medium transition ${
-                        activeTab === 'attendance'
-                            ? 'bg-edubot-dark text-white'
-                            : 'bg-edubot-surfaceAlt text-edubot-ink dark:bg-slate-900 dark:text-slate-200'
-                    }`}
-                >
-                    Катышуу
-                </button>
-                <button
-                    type="button"
-                    onClick={() => setActiveTab('homework')}
-                    className={`rounded-full px-3 py-2 text-sm font-medium transition ${
-                        activeTab === 'homework'
-                            ? 'bg-edubot-dark text-white'
-                            : 'bg-edubot-surfaceAlt text-edubot-ink dark:bg-slate-900 dark:text-slate-200'
-                    }`}
-                >
-                    Үй тапшырма
-                </button>
-                <button
-                    type="button"
-                    onClick={() => setActiveTab('materials')}
-                    className={`rounded-full px-3 py-2 text-sm font-medium transition ${
-                        activeTab === 'materials'
-                            ? 'bg-edubot-dark text-white'
-                            : 'bg-edubot-surfaceAlt text-edubot-ink dark:bg-slate-900 dark:text-slate-200'
-                    }`}
-                >
-                    Ресурстар
-                </button>
-                <button
-                    type="button"
-                    onClick={() => joinLiveSession(selectedSessionJoinUrl)}
-                    disabled={
-                        !selectedSessionJoinUrl ||
-                        !selectedSessionJoinAllowed ||
-                        selectedSessionMode === 'completed'
-                    }
-                    className="dashboard-button-primary"
-                >
-                    Join Class
-                </button>
+                {isOnlineLive && (
+                    <button
+                        type="button"
+                        onClick={() => joinLiveSession(selectedSessionJoinUrl)}
+                        disabled={
+                            !selectedSessionJoinUrl ||
+                            !selectedSessionJoinAllowed ||
+                            selectedSessionMode === 'completed'
+                        }
+                        className="dashboard-button-primary"
+                    >
+                        Сабакка кирүү
+                    </button>
+                )}
             </div>
         </div>
     );
 };
 
 SessionHeaderContent.propTypes = {
-    activeTab: PropTypes.string.isRequired,
     joinLiveSession: PropTypes.func.isRequired,
     selectedCourse: PropTypes.shape({
         title: PropTypes.string,
         name: PropTypes.string,
     }),
+    selectedDeliveryType: PropTypes.string.isRequired,
     selectedGroup: PropTypes.shape({
         name: PropTypes.string,
         code: PropTypes.string,
+        location: PropTypes.string,
     }),
     selectedModeMeta: PropTypes.shape({
         icon: PropTypes.elementType.isRequired,
@@ -2239,7 +2227,6 @@ SessionHeaderContent.propTypes = {
     selectedSessionJoinAllowed: PropTypes.bool.isRequired,
     selectedSessionJoinUrl: PropTypes.string,
     selectedSessionMode: PropTypes.string.isRequired,
-    setActiveTab: PropTypes.func.isRequired,
 };
 
 export default SessionWorkspace;

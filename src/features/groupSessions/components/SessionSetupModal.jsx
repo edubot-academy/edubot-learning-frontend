@@ -1,7 +1,7 @@
 import PropTypes from 'prop-types';
 import { createPortal } from 'react-dom';
-import { FiCalendar, FiEdit3, FiPaperclip } from 'react-icons/fi';
-import { COURSE_SESSION_STATUS } from '@shared/contracts';
+import { FiCalendar, FiEdit3, FiMapPin, FiPaperclip, FiVideo } from 'react-icons/fi';
+import { COURSE_SESSION_STATUS, COURSE_TYPE } from '@shared/contracts';
 
 const SessionSetupModal = ({
     editSession,
@@ -25,6 +25,11 @@ const SessionSetupModal = ({
     workspaceTitle,
 }) => {
     if (!isOpen || typeof document === 'undefined') return null;
+
+    const deliveryType = String(selectedCourse?.courseType || selectedCourse?.type || '').trim().toLowerCase();
+    const isOffline = deliveryType === COURSE_TYPE.OFFLINE;
+    const isOnlineLive = deliveryType === COURSE_TYPE.ONLINE_LIVE;
+    const sessionForm = isCreateWorkspace ? quickSession : editSession;
 
     return createPortal(
         <div
@@ -170,20 +175,38 @@ const SessionSetupModal = ({
                         <div className="space-y-5">
                             <section className="rounded-[1.75rem] border border-edubot-line/70 bg-edubot-surfaceAlt/35 p-5 dark:border-slate-700 dark:bg-slate-900/35">
                                 <div className="flex items-center gap-2 text-sm font-semibold text-edubot-ink dark:text-white">
-                                    <FiPaperclip className="h-4 w-4 text-edubot-orange" />
-                                    Materials & recording
+                                    {isOffline ? (
+                                        <FiMapPin className="h-4 w-4 text-edubot-orange" />
+                                    ) : isOnlineLive ? (
+                                        <FiVideo className="h-4 w-4 text-edubot-orange" />
+                                    ) : (
+                                        <FiPaperclip className="h-4 w-4 text-edubot-orange" />
+                                    )}
+                                    {isOffline ? 'Location & materials' : isOnlineLive ? 'Materials & recording' : 'Materials'}
                                 </div>
                                 <div className="mt-4 grid gap-3">
-                                    <input
-                                        value={isCreateWorkspace ? quickSession.recordingUrl : editSession.recordingUrl}
-                                        onChange={(e) =>
-                                            isCreateWorkspace
-                                                ? setQuickSession((prev) => ({ ...prev, recordingUrl: e.target.value }))
-                                                : setEditSession((prev) => ({ ...prev, recordingUrl: e.target.value }))
-                                        }
-                                        placeholder="Recording URL"
-                                        className="dashboard-field"
-                                    />
+                                    {isOffline ? (
+                                        <div className="rounded-2xl border border-edubot-line/70 bg-white/70 px-4 py-3 text-sm dark:border-slate-700 dark:bg-slate-950/60">
+                                            <div className="font-medium text-edubot-ink dark:text-white">
+                                                Группанын локациясы
+                                            </div>
+                                            <div className="mt-1 text-edubot-muted dark:text-slate-400">
+                                                {selectedGroup?.location || 'Локация көрсөтүлгөн эмес'}
+                                            </div>
+                                        </div>
+                                    ) : null}
+                                    {isOnlineLive ? (
+                                        <input
+                                            value={sessionForm.recordingUrl}
+                                            onChange={(e) =>
+                                                isCreateWorkspace
+                                                    ? setQuickSession((prev) => ({ ...prev, recordingUrl: e.target.value }))
+                                                    : setEditSession((prev) => ({ ...prev, recordingUrl: e.target.value }))
+                                            }
+                                            placeholder="Жазуу шилтемеси"
+                                            className="dashboard-field"
+                                        />
+                                    ) : null}
                                     {isCreateWorkspace ? (
                                         <>
                                             <input
@@ -203,7 +226,11 @@ const SessionSetupModal = ({
                                                 className="dashboard-field"
                                             />
                                         </>
-                                    ) : null}
+                                    ) : (
+                                        <div className="rounded-2xl border border-dashed border-edubot-line/70 px-4 py-4 text-sm text-edubot-muted dark:border-slate-700 dark:text-slate-400">
+                                            Материалдарды өзгөртүү үчүн сессияны түзөтүү режимин колдонуп, ресурстар табындагы сакталган шилтемелерди жаңыртыңыз.
+                                        </div>
+                                    )}
                                 </div>
                             </section>
 
@@ -217,6 +244,14 @@ const SessionSetupModal = ({
                                     <div>
                                         <span className="font-semibold text-white">Группа:</span>{' '}
                                         {selectedGroup?.name || selectedGroup?.code || 'Тандала элек'}
+                                    </div>
+                                    <div>
+                                        <span className="font-semibold text-white">Формат:</span>{' '}
+                                        {isOffline
+                                            ? 'Оффлайн'
+                                            : isOnlineLive
+                                              ? 'Онлайн түз эфир'
+                                              : 'Видео курс'}
                                     </div>
                                     {isCreateWorkspace ? (
                                         <div>

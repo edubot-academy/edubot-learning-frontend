@@ -3,13 +3,14 @@ import {
     FiCalendar,
     FiEdit3,
     FiLayers,
+    FiLink,
     FiMapPin,
     FiPlus,
     FiRefreshCw,
     FiVideo,
     FiX,
 } from 'react-icons/fi';
-import { COURSE_GROUP_STATUS, MEETING_PROVIDER } from '@shared/contracts';
+import { COURSE_GROUP_STATUS, COURSE_TYPE, MEETING_PROVIDER } from '@shared/contracts';
 
 const GroupFormModal = ({
     mode,
@@ -22,6 +23,10 @@ const GroupFormModal = ({
     onRegenerateCode,
 }) => {
     const isEdit = mode === 'edit';
+    const deliveryType = String(course?.courseType || course?.type || '').trim().toLowerCase();
+    const isOffline = deliveryType === COURSE_TYPE.OFFLINE;
+    const isOnlineLive = deliveryType === COURSE_TYPE.ONLINE_LIVE;
+    const deliveryLabel = isOffline ? 'Оффлайн группа' : isOnlineLive ? 'Онлайн live группа' : 'Delivery группа';
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/55 px-4 py-4 backdrop-blur-sm">
@@ -153,45 +158,72 @@ const GroupFormModal = ({
                         <div className="space-y-5">
                             <section className="rounded-[1.75rem] border border-edubot-line/70 bg-edubot-surfaceAlt/35 p-5 dark:border-slate-700 dark:bg-slate-900/35">
                                 <div className="flex items-center gap-2 text-sm font-semibold text-edubot-ink dark:text-white">
-                                    <FiMapPin className="h-4 w-4 text-edubot-orange" />
+                                    {isOffline ? (
+                                        <FiMapPin className="h-4 w-4 text-edubot-orange" />
+                                    ) : (
+                                        <FiVideo className="h-4 w-4 text-edubot-orange" />
+                                    )}
                                     Delivery
                                 </div>
+                                <div className="mt-3 rounded-2xl border border-edubot-line/70 bg-white/70 px-4 py-3 text-sm text-edubot-muted dark:border-slate-700 dark:bg-slate-950/60 dark:text-slate-400">
+                                    Бул курс форматы: <span className="font-semibold text-edubot-ink dark:text-white">{deliveryLabel}</span>
+                                </div>
                                 <div className="mt-4 grid gap-3">
-                                    <input
-                                        value={form.location}
-                                        onChange={(e) => onChange('location', e.target.value)}
-                                        placeholder="Location"
-                                        className="dashboard-field"
-                                    />
-                                    <select
-                                        value={form.meetingProvider}
-                                        onChange={(e) => onChange('meetingProvider', e.target.value)}
-                                        className="dashboard-field dashboard-select"
-                                    >
-                                        <option value="">Meeting provider</option>
-                                        {Object.values(MEETING_PROVIDER).map((provider) => (
-                                            <option key={provider} value={provider}>
-                                                {provider}
-                                            </option>
-                                        ))}
-                                    </select>
-                                    <input
-                                        value={form.meetingUrl}
-                                        onChange={(e) => onChange('meetingUrl', e.target.value)}
-                                        placeholder="Meeting URL"
-                                        className="dashboard-field"
-                                    />
+                                    {isOffline && (
+                                        <input
+                                            value={form.location}
+                                            onChange={(e) => onChange('location', e.target.value)}
+                                            placeholder="Location"
+                                            className="dashboard-field"
+                                        />
+                                    )}
+                                    {isOnlineLive && (
+                                        <>
+                                            <select
+                                                value={form.meetingProvider}
+                                                onChange={(e) => onChange('meetingProvider', e.target.value)}
+                                                className="dashboard-field dashboard-select"
+                                            >
+                                                <option value="">Meeting provider</option>
+                                                {Object.values(MEETING_PROVIDER).map((provider) => (
+                                                    <option key={provider} value={provider}>
+                                                        {provider}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                            <input
+                                                value={form.meetingUrl}
+                                                onChange={(e) => onChange('meetingUrl', e.target.value)}
+                                                placeholder="Meeting URL"
+                                                className="dashboard-field"
+                                            />
+                                        </>
+                                    )}
+                                    {!isOffline && !isOnlineLive && (
+                                        <div className="rounded-2xl border border-dashed border-edubot-line/70 px-4 py-4 text-sm text-edubot-muted dark:border-slate-700 dark:text-slate-400">
+                                            Бул курс үчүн кошумча delivery талаалары талап кылынбайт.
+                                        </div>
+                                    )}
                                 </div>
                             </section>
 
                             <section className="rounded-[1.75rem] border border-edubot-line/70 bg-slate-900 px-5 py-5 text-white dark:border-slate-700 dark:bg-slate-800">
                                 <div className="flex items-center gap-2 text-sm font-semibold text-white">
-                                    <FiVideo className="h-4 w-4 text-edubot-orange" />
+                                    {isOffline ? (
+                                        <FiMapPin className="h-4 w-4 text-edubot-orange" />
+                                    ) : isOnlineLive ? (
+                                        <FiLink className="h-4 w-4 text-edubot-orange" />
+                                    ) : (
+                                        <FiVideo className="h-4 w-4 text-edubot-orange" />
+                                    )}
                                     Эскертүү
                                 </div>
                                 <p className="mt-3 text-sm leading-6 text-slate-300">
-                                    Группа enrollment үчүн контейнер. Session, attendance, homework жана meeting
-                                    workflow өзүнчө session workspace&apos;те калат.
+                                    {isOffline
+                                        ? 'Бул группа оффлайн окутулат. Локацияны так кармаңыз, ал session workspace контекстинде көрсөтүлөт.'
+                                        : isOnlineLive
+                                          ? 'Бул группа онлайн live окутулат. Meeting provider жана URL session workflow үчүн негизги дефолт болуп калат.'
+                                          : 'Группа enrollment үчүн контейнер. Session, attendance, homework жана meeting workflow өзүнчө session workspace\'те калат.'}
                                 </p>
                             </section>
                         </div>
