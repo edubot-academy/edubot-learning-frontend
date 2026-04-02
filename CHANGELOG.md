@@ -27,6 +27,7 @@ Version bumps are classified by delivery scale; see `VERSIONING.md`.
 - Added session material video preview using the shared player in a lazy-loaded modal instead of exposing raw signed URLs in the list.
 - Added reuse of lesson videos from the instructor’s published video courses into offline and online-live session materials through a dedicated picker flow.
 - Stopped showing raw meeting and recording URLs in the visible UI, replacing them with clearer state-based controls and copy/open actions.
+- Stopped using group meeting URLs as a session-workspace fallback so `Join Class` and meeting actions now reflect only the selected session’s own live state.
 
 ### 🛠️ UX FIXES
 - Fixed session setup modal behavior with proper portal rendering, background scroll lock, keyboard handling, and safer context copy for create vs edit flows.

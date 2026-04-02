@@ -182,11 +182,9 @@ const toInputDateTime = (isoValue) => {
     return local.toISOString().slice(0, 16);
 };
 
-const resolveSessionJoinUrl = (session, group) =>
+const resolveSessionJoinUrl = (session) =>
+    session?.liveJoinUrl ||
     session?.joinUrl ||
-    session?.meetingUrl ||
-    session?.meetingUrlSnapshot ||
-    group?.meetingUrl ||
     '';
 
 const getSessionMode = (session, nowMs) => {
@@ -998,8 +996,8 @@ const SessionWorkspace = () => {
     );
 
     const selectedSessionJoinUrl = useMemo(
-        () => resolveSessionJoinUrl(selectedSession, selectedGroup),
-        [selectedSession, selectedGroup]
+        () => resolveSessionJoinUrl(selectedSession),
+        [selectedSession]
     );
     const selectedSessionMaterials = useMemo(
         () => (Array.isArray(selectedSession?.materials) ? selectedSession.materials : []),
@@ -1040,7 +1038,7 @@ const SessionWorkspace = () => {
                 startsAt: session.startsAt,
                 endsAt: session.endsAt,
                 mode: getSessionMode(session, nowMs),
-                joinUrl: resolveSessionJoinUrl(session, selectedGroup),
+                joinUrl: resolveSessionJoinUrl(session),
                 joinAllowed: isJoinWindowOpen(session, nowMs),
             }));
     }, [sessions, selectedCourseId, selectedCourse, selectedGroup, nowMs]);
