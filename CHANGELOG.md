@@ -13,6 +13,10 @@ Version bumps are classified by delivery scale; see `VERSIONING.md`.
 ### ✅ ATTENDANCE WORKFLOW
 - Upgraded session attendance with search, status filters, bulk actions, and clearer saved/unsaved state feedback.
 - Tightened course/group/session selector chaining so downstream selections clear predictably and stale session context no longer lingers during reloads.
+- Aligned session attendance fully to a session-first workflow: students now start as `Белгилене элек`, attendance is blocked until a session is selected, and session switching no longer leaks the previous session’s marked statuses.
+- Scoped session attendance history to the selected group so session-derived summaries and engagement signals no longer read from unrelated groups in the same course.
+- Moved Zoom attendance import into the attendance action bar and show it only for Zoom-backed `online_live` sessions with an attached meeting.
+- Simplified the attendance marking surface into a denser list layout, removed streak/history from the row UI, added a reset action for the filtered set, and clarified summary counts with explicit `Уруксат менен` and `Белгилене элек` states.
 
 ### 📎 RESOURCES + SESSION MATERIALS
 - Rebuilt the session `Resources` tab into a clearer teacher workflow for materials, live meeting state, recording access, and integration utilities.

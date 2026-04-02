@@ -1,4 +1,4 @@
-import { useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import PropTypes from 'prop-types';
 import { toast } from 'react-hot-toast';
 import {
@@ -146,6 +146,8 @@ const sessionStatusMap = {
     [SESSION_ATTENDANCE_STATUS.ABSENT]: ATTENDANCE_STATUS.ABSENT,
     [SESSION_ATTENDANCE_STATUS.EXCUSED]: ATTENDANCE_STATUS.ABSENT,
 };
+
+const UNMARKED_ATTENDANCE_STATUS = '__unmarked__';
 
 const toArray = (payload) => {
     if (Array.isArray(payload)) return payload;
@@ -637,6 +639,20 @@ const SessionWorkspace = () => {
         }));
     }, [sessions]);
 
+    const buildBlankAttendanceRows = useCallback((roster) => {
+        const next = {};
+        roster.forEach((student) => {
+            next[student.id] = {
+                studentId: student.id,
+                status: UNMARKED_ATTENDANCE_STATUS,
+                notes: '',
+                joinedAt: undefined,
+                leftAt: undefined,
+            };
+        });
+        return next;
+    }, []);
+
     useEffect(() => {
         if (!selectedCourseId || !selectedGroupId) {
             setStudents([]);
@@ -655,7 +671,10 @@ const SessionWorkspace = () => {
                         page: 1,
                         limit: 200,
                     }),
-                    fetchCourseAttendance({ courseId: Number(selectedCourseId) }),
+                    fetchCourseAttendance({
+                        courseId: Number(selectedCourseId),
+                        groupId: Number(selectedGroupId),
+                    }),
                 ]);
                 if (cancelled) return;
 
@@ -665,16 +684,7 @@ const SessionWorkspace = () => {
                 }));
                 setStudents(normalized);
 
-                const rowState = {};
-                normalized.forEach((student) => {
-                    rowState[student.id] = {
-                        studentId: student.id,
-                        status: SESSION_ATTENDANCE_STATUS.PRESENT,
-                        notes: '',
-                        joinedAt: undefined,
-                        leftAt: undefined,
-                    };
-                });
+                const rowState = buildBlankAttendanceRows(normalized);
                 setAttendanceRows(rowState);
                 setInitialAttendanceRows(rowState);
                 setAttendanceHistory(attendanceRes?.items || []);
@@ -694,9 +704,13 @@ const SessionWorkspace = () => {
         return () => {
             cancelled = true;
         };
-    }, [selectedCourseId, selectedGroupId]);
+    }, [buildBlankAttendanceRows, selectedCourseId, selectedGroupId]);
 
     useEffect(() => {
+        const blankRows = buildBlankAttendanceRows(students);
+        setAttendanceRows(blankRows);
+        setInitialAttendanceRows(blankRows);
+
         if (!selectedSessionId) return;
 
         let cancelled = false;
@@ -734,7 +748,7 @@ const SessionWorkspace = () => {
         return () => {
             cancelled = true;
         };
-    }, [selectedSessionId]);
+    }, [buildBlankAttendanceRows, selectedSessionId, students]);
 
     useEffect(() => {
         setSelectedHomeworkId('');
@@ -820,6 +834,7 @@ const SessionWorkspace = () => {
 
     useEffect(() => {
         if (!selectedSessionId) {
+            setMeetingProvider(MEETING_PROVIDER.CUSTOM);
             setMeetingJoinUrl('');
             setMeetingId('');
             return;
@@ -829,15 +844,14 @@ const SessionWorkspace = () => {
         const loadMeetingState = async () => {
             setLoadingMeetingState(true);
             try {
-                const res = await fetchSessionMeeting(Number(selectedSessionId), {
-                    provider: meetingProvider || undefined,
-                });
+                const res = await fetchSessionMeeting(Number(selectedSessionId));
                 if (cancelled) return;
                 setMeetingJoinUrl(res?.joinUrl || '');
                 setMeetingId(String(res?.meetingId || ''));
                 if (res?.provider) setMeetingProvider(res.provider);
             } catch {
                 if (cancelled) return;
+                setMeetingProvider(MEETING_PROVIDER.CUSTOM);
                 setMeetingJoinUrl('');
                 setMeetingId('');
             } finally {
@@ -928,6 +942,13 @@ const SessionWorkspace = () => {
                 selectedDeliveryType === COURSE_TYPE.ONLINE_LIVE) &&
             sourceVideoCourses.length > 0,
         [selectedDeliveryType, sourceVideoCourses.length]
+    );
+    const canImportZoomAttendance = useMemo(
+        () =>
+            selectedDeliveryType === COURSE_TYPE.ONLINE_LIVE &&
+            meetingProvider === MEETING_PROVIDER.ZOOM &&
+            Boolean(meetingId),
+        [meetingId, meetingProvider, selectedDeliveryType]
     );
     const selectedHomework = useMemo(
         () =>
@@ -1021,17 +1042,19 @@ const SessionWorkspace = () => {
         const values = Object.values(attendanceRows);
         const present = values.filter((r) => r.status === SESSION_ATTENDANCE_STATUS.PRESENT).length;
         const late = values.filter((r) => r.status === SESSION_ATTENDANCE_STATUS.LATE).length;
-        const absent = values.filter(
-            (r) =>
-                r.status === SESSION_ATTENDANCE_STATUS.ABSENT ||
-                r.status === SESSION_ATTENDANCE_STATUS.EXCUSED
-        ).length;
+        const absent = values.filter((r) => r.status === SESSION_ATTENDANCE_STATUS.ABSENT).length;
+        const excused = values.filter((r) => r.status === SESSION_ATTENDANCE_STATUS.EXCUSED).length;
+        const marked = values.filter((r) => r.status && r.status !== UNMARKED_ATTENDANCE_STATUS).length;
+        const unmarked = Math.max(0, values.length - marked);
         return {
             total: values.length,
             present,
             late,
             absent,
-            presentRate: values.length ? Math.round((present / values.length) * 100) : 0,
+            excused,
+            marked,
+            unmarked,
+            presentRate: marked ? Math.round((present / marked) * 100) : 0,
         };
     }, [attendanceRows]);
 
@@ -1070,6 +1093,7 @@ const SessionWorkspace = () => {
             if (!matchesQuery) return false;
 
             if (attendanceFilter === 'all') return true;
+            if (attendanceFilter === 'unmarked') return !status || status === UNMARKED_ATTENDANCE_STATUS;
             if (attendanceFilter === 'changed') {
                 return (
                     status !== initial?.status ||
@@ -1262,6 +1286,14 @@ const SessionWorkspace = () => {
             return;
         }
 
+        const unmarkedCount = Object.values(attendanceRows).filter(
+            (row) => !row.status || row.status === UNMARKED_ATTENDANCE_STATUS
+        ).length;
+        if (unmarkedCount > 0) {
+            toast.error(`Адегенде ${unmarkedCount} студент үчүн катышуу статусун тандаңыз.`);
+            return;
+        }
+
         if (!hasAttendanceChanges) {
             toast('Өзгөртүү жок.');
             return;
@@ -1278,12 +1310,14 @@ const SessionWorkspace = () => {
         setSavingAttendance(true);
         try {
             await markSessionAttendanceBulk(Number(selectedSessionId), {
-                courseId: Number(selectedCourseId),
                 rows,
             });
-            toast.success('Session-based катышуу сакталды');
+            toast.success('Катышуу ушул сессия үчүн сакталды.');
 
-            const refreshed = await fetchCourseAttendance({ courseId: Number(selectedCourseId) });
+            const refreshed = await fetchCourseAttendance({
+                courseId: Number(selectedCourseId),
+                groupId: Number(selectedGroupId),
+            });
             setAttendanceHistory(refreshed?.items || []);
             setInitialAttendanceRows(attendanceRows);
         } catch (error) {
@@ -1566,7 +1600,10 @@ const SessionWorkspace = () => {
                     return next;
                 });
             }
-            const refreshed = await fetchCourseAttendance({ courseId: Number(selectedCourseId) });
+            const refreshed = await fetchCourseAttendance({
+                courseId: Number(selectedCourseId),
+                groupId: Number(selectedGroupId),
+            });
             setAttendanceHistory(refreshed?.items || []);
 
             toast.success('Zoom attendance импорттолду.');
@@ -2125,7 +2162,7 @@ const SessionWorkspace = () => {
 
                         {activeTab === 'attendance' && (
                             <div className="space-y-4">
-                                <div className="grid gap-3 md:grid-cols-4">
+                                <div className="grid gap-3 md:grid-cols-5">
                                     <DashboardMetricCard
                                         label="Жалпы студент"
                                         value={attendanceStats.total}
@@ -2149,6 +2186,12 @@ const SessionWorkspace = () => {
                                         tone="red"
                                         icon={FiActivity}
                                     />
+                                    <DashboardMetricCard
+                                        label="Уруксат менен"
+                                        value={attendanceStats.excused}
+                                        tone="default"
+                                        icon={FiAlertCircle}
+                                    />
                                 </div>
 
                                 <SessionAttendanceTab
@@ -2157,8 +2200,11 @@ const SessionWorkspace = () => {
                                     attendanceQuery={attendanceQuery}
                                     attendanceRows={attendanceRows}
                                     attendanceStats={attendanceStats}
+                                    canImportZoomAttendance={canImportZoomAttendance}
                                     filteredStudents={filteredStudents}
                                     hasAttendanceChanges={hasAttendanceChanges}
+                                    importZoomAttendanceToSession={importZoomAttendanceToSession}
+                                    importingAttendance={importingAttendance}
                                     loadingStudents={loadingStudents}
                                     saveAttendance={saveAttendance}
                                     savingAttendance={savingAttendance}
@@ -2169,7 +2215,6 @@ const SessionWorkspace = () => {
                                     selectedSessionMode={selectedSessionMode}
                                     setAttendanceFilter={setAttendanceFilter}
                                     setAttendanceQuery={setAttendanceQuery}
-                                    studentStreaks={studentStreaks}
                                     students={students}
                                     toSessionTime={toSessionTime}
                                     updateNotes={updateNotes}

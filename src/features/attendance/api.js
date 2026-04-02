@@ -72,9 +72,10 @@ export const markAttendanceSession = async ({ courseId, sessionDate, rows }) => 
     return data;
 };
 
-export const fetchCourseAttendance = async ({ courseId, from, to }) => {
+export const fetchCourseAttendance = async ({ courseId, groupId, from, to }) => {
     const params = clean({
         courseId: ensurePositiveInt(courseId, 'courseId'),
+        groupId: groupId !== undefined ? ensurePositiveInt(groupId, 'groupId') : undefined,
         from: from ? ensureDateOnly(from, 'from') : undefined,
         to: to ? ensureDateOnly(to, 'to') : undefined,
     });
@@ -84,10 +85,9 @@ export const fetchCourseAttendance = async ({ courseId, from, to }) => {
 };
 
 // New session-based attendance
-export const markSessionAttendanceBulk = async (sessionId, { courseId, rows }) => {
+export const markSessionAttendanceBulk = async (sessionId, { rows }) => {
     const validSessionId = ensurePositiveInt(sessionId, 'sessionId');
     const payload = {
-        courseId: ensurePositiveInt(courseId, 'courseId'),
         rows: normalizeSessionRows(rows),
     };
 
