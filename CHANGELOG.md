@@ -9,6 +9,9 @@ Version bumps are classified by delivery scale; see `VERSIONING.md`.
 - Removed session-level chat from the workspace and moved session create/edit into a dedicated modal instead of keeping setup controls in the main teaching canvas.
 - Scoped the quick-switch strip to `Тандалган группанын бүгүнкү сессиялары` so it now reflects only today’s sessions for the selected group.
 - Extracted the oversized session workspace into dedicated feature components for attendance, homework, resources, notes, engagement, and session setup.
+- Restored session notes as a real persisted session feature instead of a local-only draft textarea.
+- Reframed the old engagement surface into `Кийинки аракеттер` so the tab now shows real follow-up signals instead of mock badges and arbitrary XP.
+- Removed the extra right-side session summary card to reduce duplicate context and keep the workspace focused on the active tab.
 
 ### ✅ ATTENDANCE WORKFLOW
 - Upgraded session attendance with search, status filters, bulk actions, and clearer saved/unsaved state feedback.
@@ -31,6 +34,7 @@ Version bumps are classified by delivery scale; see `VERSIONING.md`.
 - Fixed stale homework submission requests when switching to a newly created or newly selected session.
 - Improved auto-generated session index suggestions to use the actual max session number in the selected group.
 - Applied delivery-mode-aware UI rules so live-only actions and meeting controls no longer appear for offline session contexts.
+- Added stronger notes save confidence with explicit unsaved/saved-empty states and note-specific last-saved feedback.
 
 ### ✅ BUILD STATUS
 - Production build passes after the session workspace and resources refactor checkpoint.

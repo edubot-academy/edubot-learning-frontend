@@ -102,9 +102,9 @@ const EDIT_SESSION_DEFAULT = {
 const tabList = [
     { id: 'attendance', label: 'Катышуу' },
     { id: 'materials', label: 'Ресурстар' },
-    { id: 'notes', label: 'Сессия жазуулары' },
     { id: 'homework', label: 'Үй тапшырма' },
-    { id: 'engagement', label: 'Активдүүлүк' },
+    { id: 'notes', label: 'Жазуулар' },
+    { id: 'engagement', label: 'Кийинки аракеттер' },
 ];
 
 const SESSION_MODE_META = {
@@ -394,13 +394,14 @@ const SessionWorkspace = () => {
     const [syncingRecordings, setSyncingRecordings] = useState(false);
     const [savingMaterials, setSavingMaterials] = useState(false);
     const [uploadingMaterialFile, setUploadingMaterialFile] = useState(false);
+    const [sessionNotes, setSessionNotes] = useState('');
+    const [savingSessionNotes, setSavingSessionNotes] = useState(false);
 
     const [quickSession, setQuickSession] = useState(QUICK_SESSION_DEFAULT);
     const [editSession, setEditSession] = useState(EDIT_SESSION_DEFAULT);
     const [savingSession, setSavingSession] = useState(false);
     const [savingSessionUpdate, setSavingSessionUpdate] = useState(false);
 
-    const [sessionNotes, setSessionNotes] = useState('');
     const [courseResourceAssets, setCourseResourceAssets] = useState([]);
     const [loadingCourseResourceAssets, setLoadingCourseResourceAssets] = useState(false);
     const [selectedSourceVideoCourseId, setSelectedSourceVideoCourseId] = useState('');
@@ -976,6 +977,7 @@ const SessionWorkspace = () => {
     useEffect(() => {
         if (!selectedSession) {
             setEditSession(EDIT_SESSION_DEFAULT);
+            setSessionNotes('');
             return;
         }
 
@@ -987,6 +989,7 @@ const SessionWorkspace = () => {
             status: selectedSession.status || COURSE_SESSION_STATUS.SCHEDULED,
             recordingUrl: selectedSession.recordingUrl || '',
         });
+        setSessionNotes(selectedSession.notes || '');
     }, [selectedSession]);
 
     const selectedSessionMode = useMemo(
@@ -1003,6 +1006,10 @@ const SessionWorkspace = () => {
         [selectedSession]
     );
     const selectedSessionRecordingUrl = selectedSession?.recordingUrl || '';
+    const hasSessionNotesChanges = useMemo(
+        () => (sessionNotes || '').trim() !== String(selectedSession?.notes || '').trim(),
+        [selectedSession?.notes, sessionNotes]
+    );
 
     const selectedSessionJoinAllowed = useMemo(
         () => isJoinWindowOpen(selectedSession, nowMs),
@@ -1132,31 +1139,41 @@ const SessionWorkspace = () => {
         return streakByStudent;
     }, [attendanceHistory]);
 
-    const leaderboard = useMemo(() => {
+    const attentionStudents = useMemo(() => {
         return students
             .map((student) => {
-                const streak = studentStreaks[student.id] || 0;
-                const homeworkPoints =
-                    publishedHomework.filter((h) => {
-                        const assignees =
-                            h.assignedTo ||
-                            h.assignedStudentIds ||
-                            h.assignedStudents?.map((item) => item.id) ||
-                            [];
-                        return assignees.includes(student.id);
-                    }).length * 5;
-                const attendancePoint =
-                    attendanceRows[student.id]?.status === SESSION_ATTENDANCE_STATUS.PRESENT
-                        ? 10
-                        : 0;
-                const xp = streak * 3 + homeworkPoints + attendancePoint;
-                return { ...student, streak, xp };
-            })
-            .sort((a, b) => b.xp - a.xp)
-            .slice(0, 10);
-    }, [students, studentStreaks, publishedHomework, attendanceRows]);
+                const status = attendanceRows[student.id]?.status;
+                const reasons = [];
+                let severity = 99;
 
-    const topStudents = leaderboard.slice(0, 3);
+                if (status === SESSION_ATTENDANCE_STATUS.ABSENT) {
+                    reasons.push('Бул сессияда келген жок');
+                    severity = 0;
+                } else if (status === SESSION_ATTENDANCE_STATUS.LATE) {
+                    reasons.push('Бул сессияда кечикти');
+                    severity = 1;
+                } else if (status === SESSION_ATTENDANCE_STATUS.EXCUSED) {
+                    reasons.push('Бул сессияда уруксат менен белгиленди');
+                    severity = 2;
+                }
+
+                return reasons.length ? { ...student, reasons, severity } : null;
+            })
+            .filter(Boolean)
+            .sort((a, b) => a.severity - b.severity || a.fullName.localeCompare(b.fullName))
+            .slice(0, 8);
+    }, [attendanceRows, students]);
+
+    const consistentStudents = useMemo(() => {
+        return students
+            .map((student) => ({
+                ...student,
+                streak: studentStreaks[student.id] || 0,
+            }))
+            .filter((student) => student.streak > 0)
+            .sort((a, b) => b.streak - a.streak || a.fullName.localeCompare(b.fullName))
+            .slice(0, 8);
+    }, [studentStreaks, students]);
 
     const homeworkCards = useMemo(
         () =>
@@ -1448,6 +1465,31 @@ const SessionWorkspace = () => {
             return false;
         } finally {
             setSavingMaterials(false);
+        }
+    };
+
+    const saveSessionNotes = async () => {
+        if (!selectedSessionId) {
+            toast.error('Сессия тандаңыз.');
+            return false;
+        }
+
+        setSavingSessionNotes(true);
+        try {
+            await updateCourseSession(Number(selectedSessionId), {
+                notes: sessionNotes,
+            });
+
+            const res = await fetchCourseSessions({ groupId: Number(selectedGroupId) });
+            const list = toArray(res);
+            setSessions(list);
+            toast.success('Жазуулар сакталды.');
+            return true;
+        } catch (error) {
+            toast.error(getWorkspaceErrorMessage(error, 'Жазууларды сактоо катасы'));
+            return false;
+        } finally {
+            setSavingSessionNotes(false);
         }
     };
 
@@ -2263,13 +2305,6 @@ const SessionWorkspace = () => {
                             />
                         )}
 
-                        {activeTab === 'notes' && (
-                            <SessionNotesTab
-                                sessionNotes={sessionNotes}
-                                setSessionNotes={setSessionNotes}
-                            />
-                        )}
-
                         {activeTab === 'homework' && (
                             <SessionHomeworkTab
                                 beginHomeworkEdit={beginHomeworkEdit}
@@ -2322,44 +2357,27 @@ const SessionWorkspace = () => {
                             />
                         )}
 
+                        {activeTab === 'notes' && (
+                            <SessionNotesTab
+                                canEdit={Boolean(selectedSessionId)}
+                                hasChanges={hasSessionNotesChanges}
+                                notes={sessionNotes}
+                                onChange={setSessionNotes}
+                                onSave={saveSessionNotes}
+                                savedAt={selectedSession?.notes?.trim() ? selectedSession?.notesUpdatedAt || '' : ''}
+                                saving={savingSessionNotes}
+                            />
+                        )}
+
                         {activeTab === 'engagement' && (
                             <SessionEngagementTab
-                                leaderboard={leaderboard}
-                                onSendBadge={(badge) => toast.success(`${badge} badge жиберилди`)}
-                                studentStreaks={studentStreaks}
-                                students={students}
-                                topStudents={topStudents}
+                                attentionStudents={attentionStudents}
+                                attendanceStats={attendanceStats}
+                                consistentStudents={consistentStudents}
+                                homeworkStats={homeworkStats}
                             />
                         )}
                     </section>
-
-                    <div className="flex justify-end">
-                        <section className="dashboard-panel w-full max-w-[320px] p-4">
-                            <h3 className="mb-3 font-semibold text-gray-900 dark:text-[#E8ECF3]">
-                                Engagement Stats
-                            </h3>
-                            <div className="space-y-2 text-sm">
-                                <div className="flex justify-between">
-                                    <span>Катышкан</span>
-                                    <span>{attendanceStats.present}</span>
-                                </div>
-                                <div className="flex justify-between">
-                                    <span>Кечиккен</span>
-                                    <span>{attendanceStats.late}</span>
-                                </div>
-                                <div className="flex justify-between">
-                                    <span>Келбеген</span>
-                                    <span>{attendanceStats.absent}</span>
-                                </div>
-                                <div className="w-full bg-gray-100 rounded-full h-2 mt-2">
-                                    <div
-                                        className="h-2 rounded-full bg-blue-500"
-                                        style={{ width: `${attendanceStats.presentRate}%` }}
-                                    />
-                                </div>
-                            </div>
-                        </section>
-                    </div>
                 </div>
             ) : null}
         </div>

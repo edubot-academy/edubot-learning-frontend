@@ -74,7 +74,7 @@ const normalizeSessionPayload = (payload = {}, { partial = false } = {}) => {
         throw new Error('endsAt is required');
     }
 
-    return clean({
+    const normalized = clean({
         groupId:
             payload.groupId !== undefined
                 ? ensurePositiveInt(payload.groupId, 'groupId')
@@ -101,6 +101,12 @@ const normalizeSessionPayload = (payload = {}, { partial = false } = {}) => {
         recordingUrl: payload.recordingUrl,
         materials: normalizeMaterials(payload.materials),
     });
+
+    if (payload.notes !== undefined) {
+        normalized.notes = String(payload.notes || '').trim();
+    }
+
+    return normalized;
 };
 
 export const createCourseSession = async (payload) => {
