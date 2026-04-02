@@ -270,6 +270,22 @@ input[type='radio']::after {
     transition: transform 0.2s ease;
 }
 
+input[type='date'],
+input[type='time'] {
+    color-scheme: light;
+}
+
+.dark input[type='date'],
+.dark input[type='time'] {
+    color-scheme: dark;
+}
+
+.dark input[type='date']::-webkit-calendar-picker-indicator,
+.dark input[type='time']::-webkit-calendar-picker-indicator {
+    filter: invert(1) brightness(1.2);
+    opacity: 0.9;
+}
+
 input[type='radio']:checked {
     border-color: #ea580c;
     background: #ea580c;

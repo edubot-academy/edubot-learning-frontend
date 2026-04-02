@@ -15,7 +15,9 @@ import {
     createCourseGroup,
     enrollUserInCourse,
     fetchCourseGroups,
+    fetchCourseGroupSessionGenerationPreview,
     fetchUsers,
+    generateCourseGroupSessions,
     updateCourseGroup,
 } from '@services/api';
 import {
@@ -29,11 +31,21 @@ import {
     FiUsers,
 } from 'react-icons/fi';
 import EnrollGroupStudentModal from './modals/EnrollGroupStudentModal.jsx';
+import GenerateGroupSessionsModal from './modals/GenerateGroupSessionsModal.jsx';
 import GroupFormModal from './modals/GroupFormModal.jsx';
 import { normalizeEnrollmentCourseType } from '@features/enrollments/policy';
 import { fetchGroupRoster } from '@features/courseGroups/roster';
 
 const DELIVERY_TYPES = new Set(['offline', 'online_live']);
+const WEEKDAY_LABELS = {
+    mon: 'Дүйшөмбү',
+    tue: 'Шейшемби',
+    wed: 'Шаршемби',
+    thu: 'Бейшемби',
+    fri: 'Жума',
+    sat: 'Ишемби',
+    sun: 'Жекшемби',
+};
 const GROUP_FORM_DEFAULT = {
     name: '',
     code: '',
@@ -45,7 +57,34 @@ const GROUP_FORM_DEFAULT = {
     location: '',
     meetingProvider: '',
     meetingUrl: '',
+    scheduleNote: '',
+    scheduleBlocks: [{ day: '', startTime: '', endTime: '' }],
     instructorId: '',
+};
+
+const toDateInputValue = (value) => {
+    if (!value) return '';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '';
+    return date.toISOString().slice(0, 10);
+};
+
+const addDays = (value, days) => {
+    const date = new Date(`${value}T00:00:00`);
+    if (Number.isNaN(date.getTime())) return value;
+    date.setDate(date.getDate() + days);
+    return date.toISOString().slice(0, 10);
+};
+
+const buildGenerationRange = (group = {}) => {
+    const today = toDateInputValue(new Date());
+    const startDate = group.startDate && group.startDate > today ? group.startDate : today;
+    const endDate = group.endDate && group.endDate >= startDate ? group.endDate : addDays(startDate, 28);
+
+    return {
+        fromDate: startDate,
+        toDate: endDate,
+    };
 };
 
 const normalizeCourseType = (course = {}) =>
@@ -94,6 +133,14 @@ const buildSuggestedGroupCode = (course, groups = [], startDate) => {
     return `${courseToken}-${year}-${month}-G${sequence}`;
 };
 
+const resolveDefaultInstructorId = (course = null) => {
+    const rawValue = course?.instructorId ?? course?.instructor?.id ?? '';
+    return rawValue ? String(rawValue) : '';
+};
+
+const resolveDefaultTimezone = (course = null) =>
+    String(course?.timezone || '').trim() || 'Asia/Bishkek';
+
 const normalizeGroupForm = (group = {}) => ({
     name: group.name || '',
     code: group.code || '',
@@ -105,8 +152,21 @@ const normalizeGroupForm = (group = {}) => ({
     location: group.location || '',
     meetingProvider: group.meetingProvider || '',
     meetingUrl: group.meetingUrl || '',
+    scheduleNote: group.scheduleNote || '',
+    scheduleBlocks: Array.isArray(group.scheduleBlocks) && group.scheduleBlocks.length
+        ? group.scheduleBlocks.map((block) => ({
+            day: block.day || '',
+            startTime: block.startTime || '',
+            endTime: block.endTime || '',
+        }))
+        : [{ day: '', startTime: '', endTime: '' }],
     instructorId: group.instructorId ? String(group.instructorId) : '',
 });
+
+const formatScheduleBlocks = (blocks = []) =>
+    (Array.isArray(blocks) ? blocks : [])
+        .filter((block) => block?.day && block?.startTime && block?.endTime)
+        .map((block) => `${WEEKDAY_LABELS[String(block.day).toLowerCase()] || block.day} · ${block.startTime}–${block.endTime}`);
 
 const GroupsSection = ({ courses = [] }) => {
     const [searchParams] = useSearchParams();
@@ -135,7 +195,14 @@ const GroupsSection = ({ courses = [] }) => {
     const [editForm, setEditForm] = useState(GROUP_FORM_DEFAULT);
     const [savingGroup, setSavingGroup] = useState(false);
     const [savingGroupUpdate, setSavingGroupUpdate] = useState(false);
+    const [showGenerateModal, setShowGenerateModal] = useState(false);
+    const [generationGroup, setGenerationGroup] = useState(null);
+    const [generationForm, setGenerationForm] = useState({ fromDate: '', toDate: '' });
+    const [generationPreview, setGenerationPreview] = useState(null);
+    const [previewLoading, setPreviewLoading] = useState(false);
+    const [generatingSessions, setGeneratingSessions] = useState(false);
     const previousCourseIdRef = useRef('');
+    const generationPreviewRequestRef = useRef(0);
 
     useEffect(() => {
         const hasRequestedCourse = requestedCourseId
@@ -199,9 +266,10 @@ const GroupsSection = ({ courses = [] }) => {
         setEditForm(GROUP_FORM_DEFAULT);
         setCreateForm((prev) => ({
             ...GROUP_FORM_DEFAULT,
-            timezone: prev.timezone,
+            timezone: resolveDefaultTimezone(selectedCourse),
             meetingProvider: prev.meetingProvider,
             code: buildSuggestedGroupCode(selectedCourse, groups, ''),
+            instructorId: resolveDefaultInstructorId(selectedCourse),
         }));
     }, [groups, selectedCourse, selectedCourseId]);
 
@@ -260,9 +328,10 @@ const GroupsSection = ({ courses = [] }) => {
     const resetCreateForm = useCallback(() => {
         setCreateForm((prev) => ({
             ...GROUP_FORM_DEFAULT,
-            timezone: prev.timezone,
+            timezone: resolveDefaultTimezone(selectedCourse),
             meetingProvider: prev.meetingProvider,
             code: buildSuggestedGroupCode(selectedCourse, groups, ''),
+            instructorId: resolveDefaultInstructorId(selectedCourse),
         }));
     }, [selectedCourse, groups]);
 
@@ -291,6 +360,8 @@ const GroupsSection = ({ courses = [] }) => {
                 location: createForm.location || undefined,
                 meetingProvider: createForm.meetingProvider || undefined,
                 meetingUrl: createForm.meetingUrl || undefined,
+                scheduleNote: createForm.scheduleNote || undefined,
+                scheduleBlocks: createForm.scheduleBlocks,
                 instructorId: createForm.instructorId ? Number(createForm.instructorId) : undefined,
             });
 
@@ -333,6 +404,8 @@ const GroupsSection = ({ courses = [] }) => {
                 location: editForm.location || undefined,
                 meetingProvider: editForm.meetingProvider || undefined,
                 meetingUrl: editForm.meetingUrl || undefined,
+                scheduleNote: editForm.scheduleNote || undefined,
+                scheduleBlocks: editForm.scheduleBlocks,
                 instructorId: editForm.instructorId ? Number(editForm.instructorId) : undefined,
             });
 
@@ -398,6 +471,70 @@ const GroupsSection = ({ courses = [] }) => {
         setEditingGroupId(String(group.id));
         setShowEditModal(true);
     }, []);
+
+    const loadGenerationPreview = useCallback(async (group, form) => {
+        if (!group?.id) return;
+        const requestId = generationPreviewRequestRef.current + 1;
+        generationPreviewRequestRef.current = requestId;
+        setPreviewLoading(true);
+        try {
+            const data = await fetchCourseGroupSessionGenerationPreview(Number(group.id), form);
+            if (generationPreviewRequestRef.current !== requestId) return;
+            setGenerationPreview(data);
+        } catch (error) {
+            if (generationPreviewRequestRef.current !== requestId) return;
+            console.error('Failed to load generation preview', error);
+            const message =
+                error.response?.data?.message || error.message || 'Preview жүктөө мүмкүн болбоду';
+            toast.error(Array.isArray(message) ? message.join(', ') : message);
+            setGenerationPreview(null);
+        } finally {
+            if (generationPreviewRequestRef.current !== requestId) return;
+            setPreviewLoading(false);
+        }
+    }, []);
+
+    const handleOpenGenerateModal = useCallback((group) => {
+        if (!Array.isArray(group?.scheduleBlocks) || !group.scheduleBlocks.length) {
+            toast.error('Адегенде группа үчүн дефолт график сактаңыз');
+            return;
+        }
+
+        const nextRange = buildGenerationRange(group);
+        generationPreviewRequestRef.current += 1;
+        setGenerationGroup(group);
+        setGenerationForm(nextRange);
+        setGenerationPreview(null);
+        setShowGenerateModal(true);
+        loadGenerationPreview(group, nextRange);
+    }, [loadGenerationPreview]);
+
+    const handleGenerateSessions = useCallback(async () => {
+        if (!generationGroup?.id) return;
+
+        setGeneratingSessions(true);
+        try {
+            const result = await generateCourseGroupSessions(Number(generationGroup.id), generationForm);
+            const createdCount = Number(result?.createdCount || 0);
+            if (createdCount > 0) {
+                toast.success(`${createdCount} сессия түзүлдү`);
+            } else {
+                toast('Жаңы сессия жок, мурунтан барларын өткөрүп жиберди', {
+                    icon: 'ℹ️',
+                });
+            }
+            setShowGenerateModal(false);
+            setGenerationGroup(null);
+            setGenerationPreview(null);
+        } catch (error) {
+            console.error('Failed to generate sessions', error);
+            const message =
+                error.response?.data?.message || error.message || 'Сессияларды түзүү мүмкүн болбоду';
+            toast.error(Array.isArray(message) ? message.join(', ') : message);
+        } finally {
+            setGeneratingSessions(false);
+        }
+    }, [generationForm, generationGroup]);
 
     useEffect(() => {
         if (!showEnrollModal) return;
@@ -597,7 +734,12 @@ const GroupsSection = ({ courses = [] }) => {
                         <DashboardCardSkeleton cards={4} />
                     ) : groups.length ? (
                         <div className="grid gap-4 md:grid-cols-2">
-                            {groups.map((group) => (
+                            {groups.map((group) => {
+                                const formattedScheduleBlocks = formatScheduleBlocks(group.scheduleBlocks);
+                                const scheduleSummary = group.scheduleNote || '';
+                                const hasDefaultSchedule = Boolean(scheduleSummary || formattedScheduleBlocks.length);
+
+                                return (
                                 <div
                                     key={group.id}
                                     className="rounded-3xl border border-edubot-line/80 bg-white/90 p-5 shadow-edubot-card dark:border-slate-700 dark:bg-slate-950"
@@ -658,28 +800,58 @@ const GroupsSection = ({ courses = [] }) => {
                                         </span>
                                     </div>
 
+                                    <div className="mt-4 rounded-2xl border border-edubot-line/70 bg-edubot-surfaceAlt/60 px-4 py-3 dark:border-slate-700 dark:bg-slate-900/70">
+                                        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-edubot-muted dark:text-slate-400">
+                                            Дефолт график
+                                        </p>
+                                        <p className="mt-2 text-sm font-semibold text-edubot-ink dark:text-white">
+                                            {scheduleSummary || (!formattedScheduleBlocks.length ? 'Азырынча коюлган эмес' : '')}
+                                        </p>
+                                        {formattedScheduleBlocks.length ? (
+                                            <div className={scheduleSummary ? 'mt-3 flex flex-wrap gap-2' : 'mt-2 flex flex-wrap gap-2'}>
+                                                {formattedScheduleBlocks.map((line) => (
+                                                    <span
+                                                        key={line}
+                                                        className="rounded-full border border-edubot-line bg-white px-3 py-1 text-[11px] font-semibold text-edubot-ink dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+                                                    >
+                                                        {line}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        ) : null}
+                                    </div>
+
                                     <div className="mt-5 flex flex-wrap gap-2">
                                         <Link to="/instructor?tab=sessions" className="dashboard-button-secondary">
                                             Сессияларды башкаруу
                                         </Link>
                                         <button
                                             type="button"
+                                            onClick={() => handleOpenGenerateModal(group)}
+                                            className={hasDefaultSchedule ? 'dashboard-button-primary' : 'dashboard-button-secondary'}
+                                        >
+                                            <FiCalendar className="h-4 w-4" />
+                                            Сессия түзүү
+                                        </button>
+                                        <button
+                                            type="button"
                                             onClick={() => handleOpenEnrollModal(group)}
-                                            className="dashboard-button-primary"
+                                            className="dashboard-button-secondary"
                                         >
                                             Студент кошуу
                                         </button>
                                         <button
                                             type="button"
                                             onClick={() => handleOpenEditModal(group)}
-                                            className="dashboard-button-secondary"
+                                            className="inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm font-medium text-edubot-muted transition hover:bg-edubot-surfaceAlt hover:text-edubot-ink dark:text-slate-400 dark:hover:bg-slate-900/70 dark:hover:text-white"
                                         >
                                             <FiEdit3 className="h-4 w-4" />
                                             Өзгөртүү
                                         </button>
                                     </div>
                                 </div>
-                            ))}
+                                );
+                            })}
                         </div>
                     ) : (
                         <EmptyState
@@ -790,6 +962,39 @@ const GroupsSection = ({ courses = [] }) => {
                             buildSuggestedGroupCode(selectedCourse, groups, editForm.startDate)
                         )
                     }
+                />
+            ) : null}
+
+            {showGenerateModal && generationGroup ? (
+                <GenerateGroupSessionsModal
+                    group={generationGroup}
+                    form={generationForm}
+                    onChange={(field, value) => {
+                        setGenerationForm((prev) => {
+                            const next = {
+                                ...prev,
+                                [field]: value,
+                            };
+                            if (prev[field] !== value) {
+                                generationPreviewRequestRef.current += 1;
+                                setGenerationPreview(null);
+                                setPreviewLoading(false);
+                            }
+                            return next;
+                        });
+                    }}
+                    onClose={() => {
+                        generationPreviewRequestRef.current += 1;
+                        setShowGenerateModal(false);
+                        setGenerationGroup(null);
+                        setGenerationPreview(null);
+                        setPreviewLoading(false);
+                    }}
+                    onPreview={() => loadGenerationPreview(generationGroup, generationForm)}
+                    onGenerate={handleGenerateSessions}
+                    preview={generationPreview}
+                    previewLoading={previewLoading}
+                    generating={generatingSessions}
                 />
             ) : null}
         </div>

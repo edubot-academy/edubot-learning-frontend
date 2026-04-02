@@ -3,6 +3,7 @@ import { COURSE_GROUP_STATUS, MEETING_PROVIDER } from '@shared/contracts';
 
 const VALID_GROUP_STATUS = new Set(Object.values(COURSE_GROUP_STATUS));
 const VALID_PROVIDER = new Set(Object.values(MEETING_PROVIDER));
+const VALID_SCHEDULE_DAYS = new Set(['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']);
 
 const ensurePositiveInt = (value, fieldName) => {
     const numeric = Number(value);
@@ -25,6 +26,52 @@ const ensureNonEmptyString = (value, fieldName) => {
         throw new Error(`${fieldName} is required`);
     }
     return value.trim();
+};
+
+const compareTimeStrings = (left, right) => {
+    const [leftHour, leftMinute] = String(left || '00:00').split(':').map(Number);
+    const [rightHour, rightMinute] = String(right || '00:00').split(':').map(Number);
+    return leftHour * 60 + leftMinute - (rightHour * 60 + rightMinute);
+};
+
+const normalizeScheduleBlocks = (blocks) => {
+    if (blocks === undefined) return undefined;
+    if (blocks === null) return null;
+    if (!Array.isArray(blocks)) {
+        throw new Error('scheduleBlocks must be an array');
+    }
+
+    const seen = new Set();
+    const normalized = blocks
+        .map((block) => ({
+            day: String(block?.day || '').trim().toLowerCase(),
+            startTime: String(block?.startTime || '').trim(),
+            endTime: String(block?.endTime || '').trim(),
+        }))
+        .filter((block) => block.day || block.startTime || block.endTime)
+        .map((block) => {
+            if (!VALID_SCHEDULE_DAYS.has(block.day)) {
+                throw new Error('scheduleBlocks.day must be a valid weekday');
+            }
+            if (!/^\d{2}:\d{2}$/.test(block.startTime)) {
+                throw new Error('scheduleBlocks.startTime must be HH:MM');
+            }
+            if (!/^\d{2}:\d{2}$/.test(block.endTime)) {
+                throw new Error('scheduleBlocks.endTime must be HH:MM');
+            }
+            if (compareTimeStrings(block.startTime, block.endTime) >= 0) {
+                throw new Error('scheduleBlocks.endTime must be later than startTime');
+            }
+
+            const key = `${block.day}:${block.startTime}:${block.endTime}`;
+            if (seen.has(key)) {
+                throw new Error('scheduleBlocks cannot contain duplicate schedule blocks');
+            }
+            seen.add(key);
+            return block;
+        });
+
+    return normalized.length ? normalized : null;
 };
 
 const normalizeGroupPayload = (payload = {}, { partial = false } = {}) => {
@@ -88,6 +135,9 @@ const normalizeGroupPayload = (payload = {}, { partial = false } = {}) => {
                   })()
                 : undefined,
         meetingUrl: payload.meetingUrl,
+        scheduleNote:
+            payload.scheduleNote !== undefined ? String(payload.scheduleNote || '').trim() || null : undefined,
+        scheduleBlocks: normalizeScheduleBlocks(payload.scheduleBlocks),
         instructorId:
             payload.instructorId !== undefined
                 ? ensurePositiveInt(payload.instructorId, 'instructorId')
@@ -145,5 +195,28 @@ export const fetchCourseGroupStudents = async (
     const { data } = await api.get(`/course-groups/${normalizedGroupId}/students`, {
         params: clean({ page, limit, q, progressGte, progressLte }),
     });
+    return data;
+};
+
+export const fetchCourseGroupSessionGenerationPreview = async (
+    groupId,
+    { fromDate, toDate } = {}
+) => {
+    const normalizedGroupId = ensurePositiveInt(groupId, 'groupId');
+    const { data } = await api.get(`/course-groups/${normalizedGroupId}/session-generation/preview`, {
+        params: clean({
+            fromDate: ensureDateString(fromDate, 'fromDate'),
+            toDate: ensureDateString(toDate, 'toDate'),
+        }),
+    });
+    return data;
+};
+
+export const generateCourseGroupSessions = async (groupId, { fromDate, toDate } = {}) => {
+    const normalizedGroupId = ensurePositiveInt(groupId, 'groupId');
+    const { data } = await api.post(`/course-groups/${normalizedGroupId}/session-generation`, clean({
+        fromDate: ensureDateString(fromDate, 'fromDate'),
+        toDate: ensureDateString(toDate, 'toDate'),
+    }));
     return data;
 };

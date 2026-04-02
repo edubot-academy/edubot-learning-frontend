@@ -174,8 +174,8 @@ const DashboardStatsSkeleton = () => (
  */
 const DashboardListSkeleton = ({ items = 5 }) => (
     <div className="space-y-4">
-        {Array.from({ length: items }).map((i) => (
-            <div key={i} className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-6 shadow-sm animate-pulse">
+        {Array.from({ length: items }).map((_, index) => (
+            <div key={index} className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-6 shadow-sm animate-pulse">
                 <div className="flex items-start gap-4">
                     {/* Image/avatar skeleton */}
                     <div className="w-16 h-16 bg-slate-200 dark:bg-slate-700 rounded-xl flex-shrink-0"></div>
@@ -215,8 +215,8 @@ const DashboardListSkeleton = ({ items = 5 }) => (
  */
 const DashboardCardSkeleton = ({ cards = 6 }) => (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {Array.from({ length: cards }).map((i) => (
-            <div key={i} className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden animate-pulse">
+        {Array.from({ length: cards }).map((_, index) => (
+            <div key={index} className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden animate-pulse">
                 {/* Card image skeleton */}
                 <div className="h-48 bg-slate-200 dark:bg-slate-700"></div>
                 

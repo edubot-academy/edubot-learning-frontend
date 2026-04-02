@@ -1,6 +1,7 @@
 import PropTypes from 'prop-types';
 import {
     FiCalendar,
+    FiClock,
     FiEdit3,
     FiLayers,
     FiLink,
@@ -11,6 +12,16 @@ import {
     FiX,
 } from 'react-icons/fi';
 import { COURSE_GROUP_STATUS, COURSE_TYPE, MEETING_PROVIDER } from '@shared/contracts';
+
+const WEEKDAY_OPTIONS = [
+    { value: 'mon', label: 'Дүйшөмбү' },
+    { value: 'tue', label: 'Шейшемби' },
+    { value: 'wed', label: 'Шаршемби' },
+    { value: 'thu', label: 'Бейшемби' },
+    { value: 'fri', label: 'Жума' },
+    { value: 'sat', label: 'Ишемби' },
+    { value: 'sun', label: 'Жекшемби' },
+];
 
 const GroupFormModal = ({
     mode,
@@ -27,9 +38,28 @@ const GroupFormModal = ({
     const isOffline = deliveryType === COURSE_TYPE.OFFLINE;
     const isOnlineLive = deliveryType === COURSE_TYPE.ONLINE_LIVE;
     const deliveryLabel = isOffline ? 'Оффлайн группа' : isOnlineLive ? 'Онлайн live группа' : 'Delivery группа';
+    const scheduleBlocks = Array.isArray(form.scheduleBlocks) ? form.scheduleBlocks : [];
+
+    const handleScheduleBlockChange = (index, field, value) => {
+        const next = scheduleBlocks.map((block, idx) =>
+            idx === index ? { ...block, [field]: value } : block
+        );
+        onChange('scheduleBlocks', next);
+    };
+
+    const handleScheduleBlockAdd = () => {
+        onChange('scheduleBlocks', [...scheduleBlocks, { day: '', startTime: '', endTime: '' }]);
+    };
+
+    const handleScheduleBlockRemove = (index) => {
+        onChange(
+            'scheduleBlocks',
+            scheduleBlocks.filter((_, idx) => idx !== index)
+        );
+    };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/55 px-4 py-4 backdrop-blur-sm">
+        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/55 px-4 py-4 backdrop-blur-sm">
             <div className="flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden rounded-[2rem] border border-white/10 bg-white shadow-[0_30px_80px_rgba(15,23,42,0.22)] dark:bg-[#151922]">
                 <div className="border-b border-edubot-line/70 bg-[radial-gradient(circle_at_top_left,_rgba(251,146,60,0.14),_transparent_36%),linear-gradient(180deg,_rgba(248,250,252,0.98),_rgba(255,255,255,0.98))] px-6 py-5 dark:border-slate-700 dark:bg-[radial-gradient(circle_at_top_left,_rgba(249,115,22,0.12),_transparent_35%),linear-gradient(180deg,_rgba(24,28,39,0.98),_rgba(21,25,34,1))] sm:px-7">
                     <div className="flex items-start justify-between gap-4">
@@ -60,15 +90,15 @@ const GroupFormModal = ({
                 </div>
 
                 <form
-                    className="flex min-h-0 flex-1 flex-col"
+                    className="flex min-h-0 flex-1 flex-col overflow-hidden"
                     onSubmit={(e) => {
                         e.preventDefault();
                         onSubmit();
                     }}
                 >
-                    <div className="grid min-h-0 flex-1 gap-5 overflow-y-auto px-6 py-5 sm:px-7 lg:grid-cols-[minmax(0,1.1fr),minmax(260px,0.9fr)]">
+                    <div className="grid min-h-0 flex-1 gap-5 overflow-y-auto px-6 pb-6 pt-6 sm:px-7 lg:grid-cols-[minmax(0,1.1fr),minmax(260px,0.9fr)]">
                         <div className="space-y-5">
-                            <section className="rounded-[1.75rem] border border-edubot-line/70 bg-edubot-surfaceAlt/35 p-5 dark:border-slate-700 dark:bg-slate-900/35">
+                            <section className="rounded-[1.75rem] border border-edubot-line/70 bg-edubot-surfaceAlt/25 p-5 dark:border-slate-700 dark:bg-slate-900/25">
                                 <div className="flex items-center gap-2 text-sm font-semibold text-edubot-ink dark:text-white">
                                     <FiLayers className="h-4 w-4 text-edubot-orange" />
                                     Негизги маалымат
@@ -119,7 +149,7 @@ const GroupFormModal = ({
                                 </div>
                             </section>
 
-                            <section className="rounded-[1.75rem] border border-edubot-line/70 bg-edubot-surfaceAlt/35 p-5 dark:border-slate-700 dark:bg-slate-900/35">
+                            <section className="rounded-[1.75rem] border border-edubot-line/70 bg-edubot-surfaceAlt/25 p-5 dark:border-slate-700 dark:bg-slate-900/25">
                                 <div className="flex items-center gap-2 text-sm font-semibold text-edubot-ink dark:text-white">
                                     <FiCalendar className="h-4 w-4 text-edubot-orange" />
                                     Период жана орундар
@@ -156,7 +186,7 @@ const GroupFormModal = ({
                         </div>
 
                         <div className="space-y-5">
-                            <section className="rounded-[1.75rem] border border-edubot-line/70 bg-edubot-surfaceAlt/35 p-5 dark:border-slate-700 dark:bg-slate-900/35">
+                            <section className="rounded-[1.75rem] border border-edubot-line/70 bg-edubot-surfaceAlt/25 p-5 dark:border-slate-700 dark:bg-slate-900/25">
                                 <div className="flex items-center gap-2 text-sm font-semibold text-edubot-ink dark:text-white">
                                     {isOffline ? (
                                         <FiMapPin className="h-4 w-4 text-edubot-orange" />
@@ -207,7 +237,7 @@ const GroupFormModal = ({
                                 </div>
                             </section>
 
-                            <section className="rounded-[1.75rem] border border-edubot-line/70 bg-slate-900 px-5 py-5 text-white dark:border-slate-700 dark:bg-slate-800">
+                            <section className="rounded-[1.75rem] border border-edubot-line/70 bg-slate-900/95 px-5 py-5 text-white dark:border-slate-700 dark:bg-slate-800/90">
                                 <div className="flex items-center gap-2 text-sm font-semibold text-white">
                                     {isOffline ? (
                                         <FiMapPin className="h-4 w-4 text-edubot-orange" />
@@ -227,6 +257,127 @@ const GroupFormModal = ({
                                 </p>
                             </section>
                         </div>
+
+                        <section className="rounded-[1.75rem] border border-edubot-orange/20 bg-[radial-gradient(circle_at_top_left,_rgba(251,146,60,0.08),_transparent_36%),rgba(248,250,252,0.72)] p-5 dark:border-edubot-orange/20 dark:bg-[radial-gradient(circle_at_top_left,_rgba(249,115,22,0.10),_transparent_34%),rgba(15,23,42,0.52)] lg:col-span-2">
+                            <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                                <div>
+                                    <div className="inline-flex items-center gap-2 rounded-full border border-edubot-orange/20 bg-white/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-edubot-orange dark:border-edubot-orange/20 dark:bg-slate-950/60">
+                                        <FiClock className="h-4 w-4 text-edubot-orange" />
+                                        Пландоо блогу
+                                    </div>
+                                    <div className="mt-3 flex items-center gap-2 text-sm font-semibold text-edubot-ink dark:text-white">
+                                        <FiClock className="h-4 w-4 text-edubot-orange" />
+                                        Жумалык дефолт график
+                                    </div>
+                                    <p className="mt-2 max-w-2xl text-sm text-edubot-muted dark:text-slate-400">
+                                        Бул сессияларды автоматтык түзбөйт. Бирок группа үчүн кадимки жумалык графикти сактап, кийинки сессияларды пландаштырууну жеңилдетет.
+                                    </p>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={handleScheduleBlockAdd}
+                                    className="dashboard-button-secondary shrink-0"
+                                >
+                                    <FiPlus className="h-4 w-4" />
+                                    Блок кошуу
+                                </button>
+                            </div>
+
+                            <div className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,0.88fr),minmax(0,1.12fr)]">
+                                <div className="rounded-2xl border border-edubot-line/70 bg-white/70 p-4 dark:border-slate-700 dark:bg-slate-950/60">
+                                    <label className="block text-xs font-semibold uppercase tracking-[0.16em] text-edubot-muted dark:text-slate-400">
+                                        Кыскача эскертүү
+                                    </label>
+                                    <textarea
+                                        value={form.scheduleNote}
+                                        onChange={(e) => onChange('scheduleNote', e.target.value)}
+                                        placeholder="Мисалы: Дүйшөмбү, Шаршемби · 19:00–21:00"
+                                        rows={3}
+                                        className="dashboard-field mt-3 min-h-[104px]"
+                                    />
+                                </div>
+
+                                <div className="rounded-2xl border border-edubot-line/70 bg-white/70 p-4 dark:border-slate-700 dark:bg-slate-950/60">
+                                    <div className="hidden items-center gap-3 border-b border-edubot-line/70 pb-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-edubot-muted dark:border-slate-700 dark:text-slate-400 xl:grid xl:grid-cols-[minmax(0,1fr),minmax(160px,180px),minmax(160px,180px)]">
+                                        <span className="truncate">Күн</span>
+                                        <span className="truncate">Башталышы</span>
+                                        <span className="truncate">Аягы</span>
+                                    </div>
+
+                                    <div className="mt-3 space-y-3">
+                                        {scheduleBlocks.map((block, index) => (
+                                            <div
+                                                key={`${block.day || 'day'}-${index}`}
+                                                className="rounded-2xl border border-edubot-line/70 bg-edubot-surfaceAlt/45 p-3 dark:border-slate-700 dark:bg-slate-900/70"
+                                            >
+                                                <div className="mb-2 flex items-center justify-between md:hidden">
+                                                    <p className="text-sm font-semibold text-edubot-ink dark:text-white">
+                                                        Блок #{index + 1}
+                                                    </p>
+                                                    {scheduleBlocks.length > 1 ? (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => handleScheduleBlockRemove(index)}
+                                                            className="text-xs font-semibold text-rose-500"
+                                                        >
+                                                            Өчүрүү
+                                                        </button>
+                                                    ) : null}
+                                                </div>
+
+                                                <div className="grid gap-3 xl:grid-cols-1">
+                                                    <select
+                                                        value={block.day}
+                                                        onChange={(e) => handleScheduleBlockChange(index, 'day', e.target.value)}
+                                                        className="dashboard-field dashboard-select min-w-0"
+                                                        aria-label={`Блок ${index + 1} күнү`}
+                                                    >
+                                                        <option value="">Күн</option>
+                                                        {WEEKDAY_OPTIONS.map((option) => (
+                                                            <option key={option.value} value={option.value}>
+                                                                {option.label}
+                                                            </option>
+                                                        ))}
+                                                    </select>
+                                                    <div className="grid gap-3 sm:grid-cols-2">
+                                                        <input
+                                                            type="time"
+                                                            value={block.startTime}
+                                                            onChange={(e) => handleScheduleBlockChange(index, 'startTime', e.target.value)}
+                                                            className="dashboard-field min-w-0"
+                                                            aria-label={`Блок ${index + 1} башталышы`}
+                                                        />
+                                                        <input
+                                                            type="time"
+                                                            value={block.endTime}
+                                                            onChange={(e) => handleScheduleBlockChange(index, 'endTime', e.target.value)}
+                                                            className="dashboard-field min-w-0"
+                                                            aria-label={`Блок ${index + 1} аягы`}
+                                                        />
+                                                    </div>
+                                                </div>
+
+                                                <div className="mt-3 hidden items-center justify-end xl:flex">
+                                                    {scheduleBlocks.length > 1 ? (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => handleScheduleBlockRemove(index)}
+                                                            className="rounded-full px-2 py-2 text-[11px] font-semibold text-rose-500 transition hover:bg-rose-50 dark:hover:bg-rose-500/10"
+                                                        >
+                                                            Өчүрүү
+                                                        </button>
+                                                    ) : (
+                                                        <span className="px-1 py-2 text-[11px] font-medium text-edubot-muted dark:text-slate-500">
+                                                            Негизги блок
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
                     </div>
 
                     <div className="flex flex-wrap justify-end gap-3 border-t border-edubot-line/70 bg-white/95 px-6 py-4 sm:px-7 dark:border-slate-700 dark:bg-[#151922]/95">
@@ -274,6 +425,14 @@ GroupFormModal.propTypes = {
         meetingProvider: PropTypes.string,
         meetingUrl: PropTypes.string,
         instructorId: PropTypes.string,
+        scheduleNote: PropTypes.string,
+        scheduleBlocks: PropTypes.arrayOf(
+            PropTypes.shape({
+                day: PropTypes.string,
+                startTime: PropTypes.string,
+                endTime: PropTypes.string,
+            })
+        ),
     }).isRequired,
     onChange: PropTypes.func.isRequired,
     onClose: PropTypes.func.isRequired,

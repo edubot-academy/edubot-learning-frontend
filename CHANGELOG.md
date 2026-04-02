@@ -2,6 +2,28 @@
 
 Version bumps are classified by delivery scale; see `VERSIONING.md`.
 
+## [1.4.4] - 2026-04-02
+
+### 🗓️ GROUP SCHEDULE DEFAULTS
+- Added weekly default schedule support to instructor group create/edit so delivery groups can persist a reusable planning template with `scheduleNote` and structured weekday/time blocks.
+- Reworked the group create/edit modal to treat weekly schedule defaults as a dedicated planning section instead of burying them among the core metadata fields.
+- Added saved default-schedule visibility on group cards so instructors can see at a glance whether a group already has a reusable weekly plan.
+- Autofilled new delivery groups with the selected course instructor and a default timezone to reduce repetitive admin work during group creation.
+
+### 🧭 SESSION GENERATION FLOW
+- Added an explicit preview-first `Сессияларды түзүү` flow from group cards so instructors can pick a date range, inspect which sessions are new versus already present, and only then create the missing sessions.
+- Grouped generated-session preview rows by date and clarified the step sequence inside the generation modal so the workflow reads as plan -> preview -> create.
+- Promoted `Сессия түзүү` as the main next-step action on delivery-group cards while keeping `Студент кошуу` and `Өзгөртүү` secondary.
+- Hardened the generation modal so stale preview responses no longer overwrite a newer date range after the user changes the form.
+
+### 🛠️ UX FIXES
+- Fixed dashboard skeleton list/card key warnings caused by placeholder loops without stable keys.
+- Raised group-related modals above the dashboard chrome so create/edit, enroll, and session-generation modals no longer render under the app header.
+- Improved default-schedule card rendering so all saved weekday/time blocks display with equal visual weight instead of promoting the first block above the others.
+
+### ✅ BUILD STATUS
+- Production build passes after the group schedule-defaults and explicit session-generation checkpoint.
+
 ## [1.4.3] - 2026-04-02
 
 ### 🧑‍🎓 STUDENT DASHBOARD TRUTHFULNESS
