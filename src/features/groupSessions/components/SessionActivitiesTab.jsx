@@ -78,6 +78,17 @@ const submissionStatusLabel = {
     rejected: 'Кайтарылды',
 };
 
+const activityResponseFilterMeta = {
+    all: { label: 'Баары', helper: 'Жалпы көрүнүш' },
+    pending: { label: 'Текшериле элек', helper: 'Submitted жоопторго көңүл буруңуз' },
+    reviewed: { label: 'Текшерилген', helper: 'Бүтүп калган жооптор' },
+    revision: { label: 'Оңдотуу/кайтаруу', helper: 'Кайра кароону талап кылгандар' },
+    passed: { label: 'Өткөн квиздер', helper: 'Ийгиликтүү бүткөн аракеттер' },
+    failed: { label: 'Өтпөгөн квиздер', helper: 'Кайра follow-up талап кылат' },
+    not_started: { label: 'Башталбаган квиздер', helper: 'Студент али аракет кылган жок' },
+    missing_response: { label: 'Жооп жок', helper: 'Ачык иштерге жооп бере элек' },
+};
+
 const createEmptyActivityOption = () => ({ text: '', isCorrect: false });
 const createEmptyActivityQuestion = () => ({
     prompt: '',
@@ -371,6 +382,7 @@ const SessionActivitiesTab = ({
     deletingActivityId,
     loadingResponsesId,
     reviewingSubmissionId,
+    activityResponseFilter,
 }) => {
     const [isCreating, setIsCreating] = useState(false);
     const [createDraft, setCreateDraft] = useState(createEmptyActivity());
@@ -387,6 +399,15 @@ const SessionActivitiesTab = ({
             setEditDraft(null);
         }
     }, [activities, editingId]);
+
+    useEffect(() => {
+        if (!expandedResponsesId) return;
+        if (!activityResponseFilter || activityResponseFilter === 'all') return;
+        setResponseFilters((prev) => ({
+            ...prev,
+            [expandedResponsesId]: activityResponseFilter,
+        }));
+    }, [activityResponseFilter, expandedResponsesId]);
 
     const activityStats = useMemo(() => ({
         total: activities.length,
@@ -548,7 +569,7 @@ const SessionActivitiesTab = ({
         setExpandedResponsesId(String(activityId));
         setResponseFilters((prev) => ({
             ...prev,
-            [activityId]: prev[activityId] || 'all',
+            [activityId]: prev[activityId] || activityResponseFilter || 'all',
         }));
         if (!responsesByActivity?.[activityId]) {
             await onLoadResponses(activityId);
@@ -568,6 +589,19 @@ const SessionActivitiesTab = ({
                 title="Сессия иштери"
                 description="Бул бөлүм окуучу менен синхрондолот. Ар бир иш өзүнчө сакталат: пландалды — студентке көрүнбөйт, активдүү — көрүнөт, аяктады — көрүнөт бирок жабык."
             >
+                {activityResponseFilter && activityResponseFilter !== 'all' ? (
+                    <div className="mt-4 rounded-[1.25rem] border border-amber-200 bg-amber-50 px-4 py-3 dark:border-amber-500/30 dark:bg-amber-500/10">
+                        <div className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-700 dark:text-amber-300">
+                            Insight фокус
+                        </div>
+                        <div className="mt-1 text-sm font-semibold text-amber-800 dark:text-amber-100">
+                            {activityResponseFilterMeta[activityResponseFilter]?.label || 'Фокус'}
+                        </div>
+                        <div className="mt-1 text-xs text-amber-700/90 dark:text-amber-200/90">
+                            {activityResponseFilterMeta[activityResponseFilter]?.helper || 'Ушул багыттагы жоопторду биринчи караңыз.'}
+                        </div>
+                    </div>
+                ) : null}
                 <div className="mt-4 grid gap-3 md:grid-cols-4">
                     <div className="rounded-[1.25rem] border border-edubot-line/80 bg-white px-4 py-3 dark:border-slate-700 dark:bg-slate-950">
                         <div className="text-xs font-semibold uppercase tracking-[0.22em] text-edubot-muted dark:text-slate-400">Жалпы</div>
@@ -1120,9 +1154,11 @@ SessionActivitiesTab.propTypes = {
     reviewingSubmissionId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
     savedAt: PropTypes.string,
     savingActivityId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    activityResponseFilter: PropTypes.string,
 };
 
 SessionActivitiesTab.defaultProps = {
+    activityResponseFilter: 'all',
     deletingActivityId: null,
     loadingResponsesId: null,
     responsesByActivity: {},

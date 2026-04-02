@@ -2,6 +2,28 @@
 
 Version bumps are classified by delivery scale; see `VERSIONING.md`.
 
+## [1.5.0] - 2026-04-03
+
+### 🚀 DELIVERY BATCH
+- Released the full session-workspace delivery batch as a minor version because it adds multiple backward-compatible capabilities across instructor and student workflows.
+- Consolidated the recent session-related work into a coherent release line covering group schedule defaults, explicit session generation, session activities, student dashboard truthfulness, and backend-backed session insights.
+
+### 🧭 SESSION WORKSPACE + GROUP DELIVERY
+- Added reusable group schedule defaults in create/edit group and an explicit preview-first `Сессияларды түзүү` flow for delivery groups.
+- Reworked the instructor session workspace into a real operational surface with session-owned attendance, resources, homework, activities, notes, and insights.
+- Added backend-backed `Кийинки аракеттер` with actionable attendance/homework/activity signals, prioritization, and drill-down routing into the right workspace tabs.
+
+### 🧑‍🎓 STUDENT EXPERIENCE
+- Rebuilt the student dashboard around truthful modality-aware learning signals instead of synthetic gamification.
+- Added a real student `Ресурстар` workflow and strengthened the homework/activity/review loop so students can see current state, history, and teacher feedback more clearly.
+
+### 🧩 SESSION ACTIVITIES
+- Added a normalized session-activity domain, per-activity instructor CRUD, quiz authoring, student task execution, instructor review, and status-driven visibility.
+- Extended non-quiz activities into a threaded review/submission model so student and instructor exchanges persist as history instead of overwriting each other.
+
+### ✅ RELEASE STATUS
+- Frontend production build passes for the full `1.5.0` delivery batch.
+
 ## [1.4.6] - 2026-04-03
 
 ### 🧩 SESSION ACTIVITIES INTERACTION

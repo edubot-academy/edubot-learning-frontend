@@ -19,6 +19,7 @@ import {
     fetchSessionActivityResponses,
     fetchCourseAttendance,
     fetchCourseGroups,
+    fetchSessionInsights,
     fetchSessionHomework,
     fetchSessionHomeworkReviewRoster,
     fetchSessionMeeting,
@@ -401,6 +402,7 @@ const SessionWorkspace = () => {
     const [searchParams, setSearchParams] = useSearchParams();
     const initialWorkspaceTab = searchParams.get('workspaceTab') || 'attendance';
     const initialHomeworkReviewFilter = searchParams.get('homeworkReviewFilter') || 'all';
+    const initialActivityResponseFilter = searchParams.get('activityResponseFilter') || 'all';
     const pendingRouteSelectionRef = useRef({
         courseId: searchParams.get('courseId') || '',
         groupId: searchParams.get('groupId') || '',
@@ -453,6 +455,8 @@ const SessionWorkspace = () => {
     const [loadingActivityResponsesId, setLoadingActivityResponsesId] = useState(null);
     const [reviewingActivitySubmissionId, setReviewingActivitySubmissionId] = useState(null);
     const [activityResponses, setActivityResponses] = useState({});
+    const [sessionInsights, setSessionInsights] = useState(null);
+    const [loadingSessionInsights, setLoadingSessionInsights] = useState(false);
 
     const [quickSession, setQuickSession] = useState(QUICK_SESSION_DEFAULT);
     const [editSession, setEditSession] = useState(EDIT_SESSION_DEFAULT);
@@ -488,9 +492,22 @@ const SessionWorkspace = () => {
             ? initialHomeworkReviewFilter
             : 'all'
     );
+    const [activityResponseFilter, setActivityResponseFilterState] = useState(
+        ['all', 'pending', 'reviewed', 'revision', 'passed', 'failed', 'not_started', 'missing_response'].includes(
+            initialActivityResponseFilter
+        )
+            ? initialActivityResponseFilter
+            : 'all'
+    );
     const [nowMs, setNowMs] = useState(Date.now());
     const sessionSetupModalRef = useRef(null);
     const previousModalFocusRef = useRef(null);
+    const latestInsightsRequestRef = useRef(0);
+    const selectedSessionIdRef = useRef('');
+
+    useEffect(() => {
+        selectedSessionIdRef.current = selectedSessionId;
+    }, [selectedSessionId]);
 
     useEffect(() => {
         pendingRouteSelectionRef.current = {
@@ -509,6 +526,14 @@ const SessionWorkspace = () => {
                 nextHomeworkReviewFilter
             )
                 ? nextHomeworkReviewFilter
+                : 'all'
+        );
+        const nextActivityResponseFilter = searchParams.get('activityResponseFilter') || 'all';
+        setActivityResponseFilterState(
+            ['all', 'pending', 'reviewed', 'revision', 'passed', 'failed', 'not_started', 'missing_response'].includes(
+                nextActivityResponseFilter
+            )
+                ? nextActivityResponseFilter
                 : 'all'
         );
     }, [searchParams]);
@@ -1058,6 +1083,97 @@ const SessionWorkspace = () => {
         };
     }, [selectedSourceVideoCourseId]);
 
+    const refreshSessionInsights = useCallback(async () => {
+        if (!selectedSessionId) {
+            setSessionInsights(null);
+            return null;
+        }
+
+        const requestedSessionId = String(selectedSessionId);
+        const requestId = latestInsightsRequestRef.current + 1;
+        latestInsightsRequestRef.current = requestId;
+        setLoadingSessionInsights(true);
+        try {
+            const payload = await fetchSessionInsights(Number(selectedSessionId));
+            if (
+                latestInsightsRequestRef.current !== requestId ||
+                selectedSessionIdRef.current !== requestedSessionId
+            ) {
+                return null;
+            }
+            setSessionInsights(payload || null);
+            return payload || null;
+        } catch (error) {
+            console.error(error);
+            if (
+                latestInsightsRequestRef.current === requestId &&
+                selectedSessionIdRef.current === requestedSessionId
+            ) {
+                toast.error(getWorkspaceErrorMessage(error, 'Кийинки аракеттерди жүктөө катасы.'));
+                setSessionInsights(null);
+            }
+            return null;
+        } finally {
+            if (
+                latestInsightsRequestRef.current === requestId &&
+                selectedSessionIdRef.current === requestedSessionId
+            ) {
+                setLoadingSessionInsights(false);
+            }
+        }
+    }, [selectedSessionId]);
+
+    useEffect(() => {
+        if (!selectedSessionId) {
+            setSessionInsights(null);
+            setLoadingSessionInsights(false);
+            return;
+        }
+
+        let cancelled = false;
+        const loadInsights = async () => {
+            const requestedSessionId = String(selectedSessionId);
+            const requestId = latestInsightsRequestRef.current + 1;
+            latestInsightsRequestRef.current = requestId;
+            setLoadingSessionInsights(true);
+            try {
+                const payload = await fetchSessionInsights(Number(selectedSessionId));
+                if (
+                    cancelled ||
+                    latestInsightsRequestRef.current !== requestId ||
+                    selectedSessionIdRef.current !== requestedSessionId
+                ) {
+                    return;
+                }
+                setSessionInsights(payload || null);
+            } catch (error) {
+                if (
+                    cancelled ||
+                    latestInsightsRequestRef.current !== requestId ||
+                    selectedSessionIdRef.current !== requestedSessionId
+                ) {
+                    return;
+                }
+                console.error(error);
+                toast.error(getWorkspaceErrorMessage(error, 'Кийинки аракеттерди жүктөө катасы.'));
+                setSessionInsights(null);
+            } finally {
+                if (
+                    !cancelled &&
+                    latestInsightsRequestRef.current === requestId &&
+                    selectedSessionIdRef.current === requestedSessionId
+                ) {
+                    setLoadingSessionInsights(false);
+                }
+            }
+        };
+
+        loadInsights();
+        return () => {
+            cancelled = true;
+        };
+    }, [selectedSessionId]);
+
     const selectedCourse = useMemo(
         () => courses.find((course) => String(course.id) === String(selectedCourseId)) || null,
         [courses, selectedCourseId]
@@ -1249,69 +1365,6 @@ const SessionWorkspace = () => {
         });
     }, [attendanceFilter, attendanceQuery, attendanceRows, initialAttendanceRows, students]);
 
-    const studentStreaks = useMemo(() => {
-        const map = new Map();
-        attendanceHistory.forEach((row) => {
-            const arr = map.get(row.userId) || [];
-            arr.push(row);
-            map.set(row.userId, arr);
-        });
-
-        const streakByStudent = {};
-        map.forEach((rows, userId) => {
-            const sorted = rows
-                .slice()
-                .sort(
-                    (a, b) => new Date(a.sessionDate).getTime() - new Date(b.sessionDate).getTime()
-                );
-
-            let streak = 0;
-            for (let i = sorted.length - 1; i >= 0; i -= 1) {
-                if (sorted[i].status === ATTENDANCE_STATUS.PRESENT) streak += 1;
-                else break;
-            }
-            streakByStudent[userId] = streak;
-        });
-
-        return streakByStudent;
-    }, [attendanceHistory]);
-
-    const attentionStudents = useMemo(() => {
-        return students
-            .map((student) => {
-                const status = attendanceRows[student.id]?.status;
-                const reasons = [];
-                let severity = 99;
-
-                if (status === SESSION_ATTENDANCE_STATUS.ABSENT) {
-                    reasons.push('Бул сессияда келген жок');
-                    severity = 0;
-                } else if (status === SESSION_ATTENDANCE_STATUS.LATE) {
-                    reasons.push('Бул сессияда кечикти');
-                    severity = 1;
-                } else if (status === SESSION_ATTENDANCE_STATUS.EXCUSED) {
-                    reasons.push('Бул сессияда уруксат менен белгиленди');
-                    severity = 2;
-                }
-
-                return reasons.length ? { ...student, reasons, severity } : null;
-            })
-            .filter(Boolean)
-            .sort((a, b) => a.severity - b.severity || a.fullName.localeCompare(b.fullName))
-            .slice(0, 8);
-    }, [attendanceRows, students]);
-
-    const consistentStudents = useMemo(() => {
-        return students
-            .map((student) => ({
-                ...student,
-                streak: studentStreaks[student.id] || 0,
-            }))
-            .filter((student) => student.streak > 0)
-            .sort((a, b) => b.streak - a.streak || a.fullName.localeCompare(b.fullName))
-            .slice(0, 8);
-    }, [studentStreaks, students]);
-
     const homeworkCards = useMemo(
         () =>
             publishedHomework
@@ -1441,6 +1494,51 @@ const SessionWorkspace = () => {
         setSelectedSessionId(sessionId);
     };
 
+    const openWorkspaceTab = useCallback(
+        (target) => {
+            const tabId = typeof target === 'string' ? target : target?.tab;
+            if (!tabList.some((tab) => tab.id === tabId)) return;
+            setActiveTab(tabId);
+            const nextHomeworkReviewFilter =
+                tabId === 'homework' && typeof target === 'object'
+                    ? target?.homeworkReviewFilter
+                    : undefined;
+            const nextActivityResponseFilter =
+                tabId === 'activities' && typeof target === 'object'
+                    ? target?.activityResponseFilter
+                    : undefined;
+            if (nextHomeworkReviewFilter) {
+                setHomeworkReviewFilterState(nextHomeworkReviewFilter);
+            } else {
+                setHomeworkReviewFilterState('all');
+            }
+            if (nextActivityResponseFilter) {
+                setActivityResponseFilterState(nextActivityResponseFilter);
+            } else {
+                setActivityResponseFilterState('all');
+            }
+            setSearchParams(
+                (prev) => {
+                    const next = new URLSearchParams(prev);
+                    next.set('workspaceTab', tabId);
+                    if (tabId === 'homework' && nextHomeworkReviewFilter && nextHomeworkReviewFilter !== 'all') {
+                        next.set('homeworkReviewFilter', nextHomeworkReviewFilter);
+                    } else if (tabId !== 'homework' || !nextHomeworkReviewFilter || nextHomeworkReviewFilter === 'all') {
+                        next.delete('homeworkReviewFilter');
+                    }
+                    if (tabId === 'activities' && nextActivityResponseFilter && nextActivityResponseFilter !== 'all') {
+                        next.set('activityResponseFilter', nextActivityResponseFilter);
+                    } else if (tabId !== 'activities' || !nextActivityResponseFilter || nextActivityResponseFilter === 'all') {
+                        next.delete('activityResponseFilter');
+                    }
+                    return next;
+                },
+                { replace: true }
+            );
+        },
+        [setSearchParams]
+    );
+
     const saveAttendance = async () => {
         if (!selectedSessionId) {
             toast.error('Катышууну сактоо үчүн сессияны тандаңыз.');
@@ -1481,6 +1579,7 @@ const SessionWorkspace = () => {
             });
             setAttendanceHistory(refreshed?.items || []);
             setInitialAttendanceRows(attendanceRows);
+            await refreshSessionInsights();
         } catch (error) {
             toast.error(getWorkspaceErrorMessage(error, 'Катышууну сактоо катасы'));
         } finally {
@@ -1654,6 +1753,7 @@ const SessionWorkspace = () => {
         try {
             await createSessionActivity(Number(selectedSessionId), activity);
             await refreshSelectedGroupSessions();
+            await refreshSessionInsights();
             toast.success('Иш кошулду.');
             return true;
         } catch (error) {
@@ -1674,6 +1774,7 @@ const SessionWorkspace = () => {
         try {
             await updateSessionActivity(Number(selectedSessionId), Number(activityId), activity);
             await refreshSelectedGroupSessions();
+            await refreshSessionInsights();
             toast.success('Иш жаңыртылды.');
             return true;
         } catch (error) {
@@ -1694,6 +1795,7 @@ const SessionWorkspace = () => {
         try {
             await deleteSessionActivity(Number(selectedSessionId), Number(activityId));
             await refreshSelectedGroupSessions();
+            await refreshSessionInsights();
             toast.success('Иш өчүрүлдү.');
             return true;
         } catch (error) {
@@ -1732,6 +1834,7 @@ const SessionWorkspace = () => {
             });
             await loadActivityResponses(activityId);
             await refreshSelectedGroupSessions();
+            await refreshSessionInsights();
             toast.success('Иш жообу жаңыртылды.');
             return true;
         } catch (error) {
@@ -1896,6 +1999,7 @@ const SessionWorkspace = () => {
                 groupId: Number(selectedGroupId),
             });
             setAttendanceHistory(refreshed?.items || []);
+            await refreshSessionInsights();
 
             toast.success('Zoom attendance импорттолду.');
         } catch (error) {
@@ -1972,6 +2076,7 @@ const SessionWorkspace = () => {
             setHomeworkTitle('');
             setHomeworkDescription('');
             setHomeworkDeadline('');
+            await refreshSessionInsights();
             toast.success('Үй тапшырма жарыяланды.');
         } catch (error) {
             console.error(error);
@@ -2018,6 +2123,7 @@ const SessionWorkspace = () => {
             const items = toArray(refreshed);
             setPublishedHomework(items);
             cancelHomeworkEdit();
+            await refreshSessionInsights();
             toast.success('Үй тапшырма жаңыртылды.');
         } catch (error) {
             console.error(error);
@@ -2045,6 +2151,7 @@ const SessionWorkspace = () => {
                 Number(selectedHomeworkId)
             );
             setHomeworkSubmissions(toArray(refreshed?.items));
+            await refreshSessionInsights();
             toast.success('Тапшырма жооп статусу жаңыртылды.');
             return true;
         } catch (error) {
@@ -2067,6 +2174,7 @@ const SessionWorkspace = () => {
             const refreshed = await fetchSessionHomework(Number(selectedSessionId), { includeUnpublished: true });
             const items = toArray(refreshed);
             setPublishedHomework(items);
+            await refreshSessionInsights();
 
             toast.success(!currentStatus ? 'Үй тапшырма жарыяланды.' : 'Үй тапшырма жарыялоодон алынды.');
         } catch (error) {
@@ -2641,15 +2749,15 @@ const SessionWorkspace = () => {
                                 reviewingSubmissionId={reviewingActivitySubmissionId}
                                 onLoadResponses={loadActivityResponses}
                                 onReviewSubmission={reviewActivitySubmissionItem}
+                                activityResponseFilter={activityResponseFilter}
                             />
                         )}
 
                         {activeTab === 'engagement' && (
                             <SessionEngagementTab
-                                attentionStudents={attentionStudents}
-                                attendanceStats={attendanceStats}
-                                consistentStudents={consistentStudents}
-                                homeworkStats={homeworkStats}
+                                insights={sessionInsights}
+                                loading={loadingSessionInsights}
+                                onOpenTab={openWorkspaceTab}
                             />
                         )}
                     </section>

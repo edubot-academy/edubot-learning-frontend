@@ -460,20 +460,20 @@ const SessionHomeworkTab = ({
                     description="Издеп табыңыз, deadline абалы боюнча чыпкалап, керектүүсүн тандап текшерүүгө өтүңүз."
                     action={<StatusBadge tone="default">{publishedHomework.length}</StatusBadge>}
                 >
-                    <DashboardFilterBar className="mt-4" gridClassName="items-center lg:grid-cols-[minmax(0,1fr),160px]">
-                        <div className="relative flex-1">
+                    <DashboardFilterBar className="mt-4" gridClassName="items-center lg:grid-cols-[minmax(0,1fr),180px] xl:grid-cols-[minmax(0,1fr),180px]">
+                        <div className="relative min-w-0 w-full">
                             <FiSearch className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-edubot-muted dark:text-slate-500" />
                             <input
                                 value={homeworkQuery}
                                 onChange={(e) => setHomeworkQuery(e.target.value)}
                                 placeholder="Тапшырма издөө"
-                                className="dashboard-field-icon h-12 pl-10"
+                                className="dashboard-field dashboard-field-icon h-12 w-full pl-10"
                             />
                         </div>
                         <select
                             value={homeworkFilter}
                             onChange={(e) => setHomeworkFilter(e.target.value)}
-                            className="dashboard-select h-12 w-full"
+                            className="dashboard-select h-12 min-w-0 w-full"
                         >
                             <option value="all">Баары</option>
                             <option value="active">Активдүү</option>

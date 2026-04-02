@@ -258,6 +258,12 @@ export const fetchSessionActivities = async (id) => {
     return data;
 };
 
+export const fetchSessionInsights = async (id) => {
+    const sessionId = ensurePositiveInt(id, 'id');
+    const { data } = await api.get(`/group-sessions/${sessionId}/insights`);
+    return data;
+};
+
 export const createSessionActivity = async (id, activity) => {
     const sessionId = ensurePositiveInt(id, 'id');
     const { data } = await api.post(`/group-sessions/${sessionId}/activities`, normalizeActivity(activity));
