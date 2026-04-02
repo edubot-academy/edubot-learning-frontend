@@ -148,6 +148,16 @@ const toArray = (payload) => {
     return [];
 };
 
+const getNextSessionIndex = (sessionList = []) => {
+    const maxSessionIndex = sessionList.reduce((maxValue, session) => {
+        const parsedIndex = Number(session?.sessionIndex);
+        if (!Number.isFinite(parsedIndex)) return maxValue;
+        return Math.max(maxValue, parsedIndex);
+    }, 0);
+
+    return String(maxSessionIndex + 1);
+};
+
 const toSessionTime = (isoValue) => {
     if (!isoValue) return '-';
     const d = new Date(isoValue);
@@ -381,6 +391,7 @@ const SessionWorkspace = () => {
     const [homeworkDescription, setHomeworkDescription] = useState('');
     const [homeworkDeadline, setHomeworkDeadline] = useState('');
     const [publishedHomework, setPublishedHomework] = useState([]);
+    const [homeworkLoadedSessionId, setHomeworkLoadedSessionId] = useState('');
     const [loadingHomework, setLoadingHomework] = useState(false);
     const [savingHomework, setSavingHomework] = useState(false);
     const [selectedHomeworkId, setSelectedHomeworkId] = useState('');
@@ -586,7 +597,7 @@ const SessionWorkspace = () => {
     useEffect(() => {
         setQuickSession((prev) => ({
             ...prev,
-            sessionIndex: prev.sessionIndex || String((sessions?.length || 0) + 1),
+            sessionIndex: prev.sessionIndex || getNextSessionIndex(sessions),
         }));
     }, [sessions]);
 
@@ -690,11 +701,13 @@ const SessionWorkspace = () => {
     }, [selectedSessionId]);
 
     useEffect(() => {
+        setSelectedHomeworkId('');
+        setHomeworkSubmissions([]);
+        setEditingHomeworkId('');
+        setPublishedHomework([]);
+        setHomeworkLoadedSessionId('');
+
         if (!selectedSessionId) {
-            setPublishedHomework([]);
-            setSelectedHomeworkId('');
-            setHomeworkSubmissions([]);
-            setEditingHomeworkId('');
             return;
         }
 
@@ -706,6 +719,7 @@ const SessionWorkspace = () => {
                 if (cancelled) return;
                 const items = toArray(response);
                 setPublishedHomework(items);
+                setHomeworkLoadedSessionId(String(selectedSessionId));
                 setSelectedHomeworkId((prev) => {
                     if (prev && items.some((item) => String(item.id) === String(prev))) return prev;
                     return items[0]?.id ? String(items[0].id) : '';
@@ -715,6 +729,7 @@ const SessionWorkspace = () => {
                 console.error(error);
                 toast.error(getWorkspaceErrorMessage(error, 'Үй тапшырмалар жүктөлгөн жок.'));
                 setPublishedHomework([]);
+                setHomeworkLoadedSessionId('');
                 setSelectedHomeworkId('');
             } finally {
                 if (!cancelled) setLoadingHomework(false);
@@ -728,7 +743,15 @@ const SessionWorkspace = () => {
     }, [selectedSessionId]);
 
     useEffect(() => {
-        if (!selectedSessionId || !selectedHomeworkId) {
+        const activeHomework = publishedHomework.find(
+            (item) => String(item.id) === String(selectedHomeworkId)
+        );
+
+        if (
+            !selectedSessionId ||
+            homeworkLoadedSessionId !== String(selectedSessionId) ||
+            !activeHomework
+        ) {
             setHomeworkSubmissions([]);
             return;
         }
@@ -739,7 +762,7 @@ const SessionWorkspace = () => {
             try {
                 const response = await fetchSessionHomeworkSubmissions(
                     Number(selectedSessionId),
-                    Number(selectedHomeworkId)
+                    Number(activeHomework.id)
                 );
                 if (cancelled) return;
                 setHomeworkSubmissions(toArray(response));
@@ -757,7 +780,7 @@ const SessionWorkspace = () => {
         return () => {
             cancelled = true;
         };
-    }, [selectedHomeworkId, selectedSessionId]);
+    }, [homeworkLoadedSessionId, publishedHomework, selectedHomeworkId, selectedSessionId]);
 
     useEffect(() => {
         if (!selectedSessionId) {
@@ -790,7 +813,7 @@ const SessionWorkspace = () => {
         return () => {
             cancelled = true;
         };
-    }, [selectedSessionId, meetingProvider]);
+    }, [selectedSessionId]);
 
     const selectedCourse = useMemo(
         () => courses.find((course) => String(course.id) === String(selectedCourseId)) || null,
@@ -1090,12 +1113,20 @@ const SessionWorkspace = () => {
         setSelectedSessionId('');
         setGroups([]);
         setSessions([]);
+        setQuickSession((prev) => ({
+            ...QUICK_SESSION_DEFAULT,
+            status: prev.status,
+        }));
     };
 
     const handleGroupChange = (groupId) => {
         setSelectedGroupId(groupId);
         setSelectedSessionId('');
         setSessions([]);
+        setQuickSession((prev) => ({
+            ...QUICK_SESSION_DEFAULT,
+            status: prev.status,
+        }));
     };
 
     const handleSessionChange = (sessionId) => {
@@ -1188,7 +1219,7 @@ const SessionWorkspace = () => {
 
             setQuickSession((prev) => ({
                 ...QUICK_SESSION_DEFAULT,
-                sessionIndex: String((list?.length || 0) + 1),
+                sessionIndex: getNextSessionIndex(list),
                 status: prev.status,
             }));
         } catch (error) {
@@ -1517,6 +1548,7 @@ const SessionWorkspace = () => {
 
     const selectedModeMeta = SESSION_MODE_META[selectedSessionMode] || SESSION_MODE_META.scheduled;
     const SelectedModeIcon = selectedModeMeta.icon;
+    const nextSessionIndex = useMemo(() => getNextSessionIndex(sessions), [sessions]);
     const isCreateWorkspace = workspaceMode === 'create';
     const workspaceTitle = isCreateWorkspace ? 'Create Session' : 'Edit Session';
     const workspaceDescription = isCreateWorkspace
@@ -1757,6 +1789,11 @@ const SessionWorkspace = () => {
                                         type="button"
                                         onClick={() => {
                                             setWorkspaceMode('create');
+                                            setQuickSession((prev) => ({
+                                                ...QUICK_SESSION_DEFAULT,
+                                                status: prev.status,
+                                                sessionIndex: nextSessionIndex,
+                                            }));
                                             setIsSessionSetupOpen(true);
                                         }}
                                         disabled={!selectedGroupId}
@@ -1889,7 +1926,7 @@ const SessionWorkspace = () => {
                                                             />
                                                             <p className="text-xs text-edubot-muted dark:text-slate-400">
                                                                 {isCreateWorkspace
-                                                                    ? 'Кийинки номер автоматтык толот. Зарыл болсо гана өзгөртүңүз.'
+                                                                    ? `Кийинки жеткиликтүү номер: ${nextSessionIndex}. Зарыл болсо гана өзгөртүңүз.`
                                                                     : 'Номер ушул группанын ичинде уникалдуу болушу керек.'}
                                                             </p>
                                                         </div>
