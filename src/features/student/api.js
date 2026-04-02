@@ -60,6 +60,37 @@ export const fetchStudentRecordings = async ({ courseId, groupId, limit } = {}) 
     return data;
 };
 
+export const fetchStudentResources = async ({ courseId, groupId, limit } = {}) => {
+    const { data } = await api.get('/student/resources', {
+        params: clean({ courseId, groupId, limit }),
+    });
+    return data;
+};
+
+export const fetchStudentSessionMaterialPreview = async (sessionId, materialIndex) => {
+    const { data, headers } = await api.get(
+        `/student/sessions/${sessionId}/materials/${materialIndex}`,
+        {
+            responseType: 'blob',
+        }
+    );
+
+    return {
+        blob: data,
+        contentType: headers?.['content-type'] || data?.type || '',
+    };
+};
+
+export const fetchStudentSessionMaterialMeta = async (sessionId, materialIndex) => {
+    const { data } = await api.get(`/student/sessions/${sessionId}/materials/${materialIndex}/meta`);
+    return data;
+};
+
+export const fetchStudentSessionRecordingMeta = async (sessionId) => {
+    const { data } = await api.get(`/student/sessions/${sessionId}/recording/meta`);
+    return data;
+};
+
 export const fetchStudentAttendance = async ({ from, to, courseId, groupId, limit } = {}) => {
     const { data } = await api.get('/student/attendance', {
         params: clean({ from, to, courseId, groupId, limit }),
@@ -72,4 +103,15 @@ export const fetchStudentHomework = async ({ courseId, groupId, limit } = {}) =>
         params: clean({ courseId, groupId, limit }),
     });
     return data;
+};
+
+export const fetchStudentHomeworkSubmissionAttachmentPreview = async (homeworkId) => {
+    const { data, headers } = await api.get(`/student/homework/${homeworkId}/submission/attachment`, {
+        responseType: 'blob',
+    });
+
+    return {
+        blob: data,
+        contentType: headers?.['content-type'] || data?.type || '',
+    };
 };

@@ -7,9 +7,11 @@ import InternalLeaderboard from './InternalLeaderboard';
 import FloatingActionButton from '../components/ui/FloatingActionButton';
 import {
     fetchStudentCourses,
+    fetchStudentAccessState,
     fetchStudentDashboard,
     fetchStudentUpcomingSessions,
     fetchStudentRecordings,
+    fetchStudentResources,
     fetchStudentHomework,
     submitSessionHomework,
     uploadSessionHomeworkAttachment,
@@ -38,6 +40,7 @@ import StudentEmptyState from '@features/student-dashboard/components/shared/Stu
 import OverviewTab from '@features/student-dashboard/components/tabs/OverviewTab.jsx';
 import CoursesTab from '@features/student-dashboard/components/tabs/CoursesTab.jsx';
 import ScheduleTab from '@features/student-dashboard/components/tabs/ScheduleTab.jsx';
+import ResourcesTab from '@features/student-dashboard/components/tabs/ResourcesTab.jsx';
 import TasksTab from '@features/student-dashboard/components/tabs/TasksTab.jsx';
 import ProgressTab from '@features/student-dashboard/components/tabs/ProgressTab.jsx';
 import ProfileTab from '@features/student-dashboard/components/tabs/ProfileTab.jsx';
@@ -64,8 +67,12 @@ const StudentDashboard = () => {
         validTabIds.includes(initialTab) ? initialTab : 'overview'
     );
     const [summary, setSummary] = useState(null);
+    const [accessState, setAccessState] = useState(null);
+    const [accessLoaded, setAccessLoaded] = useState(false);
+    const [accessStateError, setAccessStateError] = useState(false);
     const [courses, setCourses] = useState([]);
     const [offerings, setOfferings] = useState([]);
+    const [resources, setResources] = useState([]);
     const [tasks, setTasks] = useState([]);
     const [recordings, setRecordings] = useState([]);
     const [filterCourseId, setFilterCourseId] = useState(initialCourseFilter);
@@ -84,6 +91,7 @@ const StudentDashboard = () => {
         overview: false,
         'my-courses': false,
         schedule: false,
+        resources: false,
         tasks: false,
         progress: false,
         analytics: true,
@@ -124,23 +132,46 @@ const StudentDashboard = () => {
         if (!studentId) return;
         setTabLoading('overview');
         try {
-            const [summaryRes, leaderboardRes] = await Promise.all([
+            const [accessResult, summaryResult, leaderboardResult] = await Promise.allSettled([
+                fetchStudentAccessState(),
                 fetchStudentDashboard(studentFilters),
                 fetchWeeklyLeaderboard({ limit: 5 }),
             ]);
 
-            setSummary(summaryRes || null);
-            setLeaderboardItems(
-                Array.isArray(leaderboardRes?.items) ? leaderboardRes.items : leaderboardRes || []
-            );
-            setLeaderboardPreviewMeta({
-                fallback: Boolean(leaderboardRes?._fallback),
-                message: leaderboardRes?._fallbackMessage || '',
-            });
+            if (accessResult.status === 'fulfilled') {
+                setAccessStateError(false);
+                setAccessState(accessResult.value || null);
+            } else {
+                console.error('Failed to load student access state', accessResult.reason);
+                setAccessStateError(true);
+            }
+
+            if (summaryResult.status === 'fulfilled') {
+                setSummary(summaryResult.value || null);
+            } else {
+                console.error('Failed to load overview summary', summaryResult.reason);
+                toast.error('Кыскача маалымат жүктөлгөн жок');
+            }
+
+            if (leaderboardResult.status === 'fulfilled') {
+                const leaderboardRes = leaderboardResult.value;
+                setLeaderboardItems(
+                    Array.isArray(leaderboardRes?.items) ? leaderboardRes.items : leaderboardRes || []
+                );
+                setLeaderboardPreviewMeta({
+                    fallback: Boolean(leaderboardRes?._fallback),
+                    message: leaderboardRes?._fallbackMessage || '',
+                });
+            } else {
+                console.error('Failed to load leaderboard preview', leaderboardResult.reason);
+                setLeaderboardItems([]);
+                setLeaderboardPreviewMeta({ fallback: true, message: '' });
+            }
         } catch (error) {
             console.error('Failed to load overview', error);
             toast.error('Кыскача маалымат жүктөлгөн жок');
         } finally {
+            setAccessLoaded(true);
             setTabLoading(null);
             setLoadedTabs((prev) => ({ ...prev, overview: true }));
         }
@@ -196,6 +227,21 @@ const StudentDashboard = () => {
         } finally {
             setTabLoading(null);
             setLoadedTabs((prev) => ({ ...prev, tasks: true }));
+        }
+    }, [studentId, studentFilters]);
+
+    const loadResources = useCallback(async () => {
+        if (!studentId) return;
+        setTabLoading('resources');
+        try {
+            const resourcesRes = await fetchStudentResources(studentFilters);
+            setResources(Array.isArray(resourcesRes?.items) ? resourcesRes.items : resourcesRes || []);
+        } catch (error) {
+            console.error('Failed to load student resources', error);
+            toast.error('Ресурстарды жүктөө мүмкүн болбоду');
+        } finally {
+            setTabLoading(null);
+            setLoadedTabs((prev) => ({ ...prev, resources: true }));
         }
     }, [studentId, studentFilters]);
 
@@ -352,6 +398,8 @@ const StudentDashboard = () => {
             loadCourses();
         } else if (tab === 'schedule') {
             loadSchedule();
+        } else if (tab === 'resources') {
+            loadResources();
         } else if (tab === 'tasks') {
             loadTasks();
         } else if (tab === 'progress') {
@@ -370,6 +418,7 @@ const StudentDashboard = () => {
         loadOverview,
         loadCourses,
         loadSchedule,
+        loadResources,
         loadTasks,
         loadProgress,
         loadProfileData,
@@ -457,16 +506,19 @@ const StudentDashboard = () => {
     }, [summary, offerings, hasAttendanceEligibleCourses]);
 
     const hasActiveStudentAccess = useMemo(() => {
+        if (typeof accessState?.hasActiveAccess === 'boolean') {
+            return accessState.hasActiveAccess;
+        }
+
+        if (accessStateError) return true;
+        if (!accessLoaded) return true;
+
         if (Number(summary?.stats?.upcomingSessions || 0) > 0) return true;
         if (Number(summary?.stats?.availableRecordings || 0) > 0) return true;
         if (Number(summary?.stats?.homeworkOpen || 0) > 0) return true;
         if (Number(overviewStats.activeCourses || 0) > 0) return true;
-        if (courses.length > 0) return true;
-        if (offerings.length > 0) return true;
-        if (tasks.length > 0) return true;
-        if (progress.length > 0) return true;
         return false;
-    }, [summary, overviewStats.activeCourses, courses.length, offerings.length, tasks.length, progress.length]);
+    }, [accessLoaded, accessState, accessStateError, summary, overviewStats.activeCourses]);
 
     const engagement = useMemo(() => {
         const calculatedXp =
@@ -781,17 +833,8 @@ const StudentDashboard = () => {
                 link: attachmentUrl || undefined,
             });
 
-            setTasks((prev) =>
-                prev.map((item) => {
-                    if (getTaskKey(item) !== key) return item;
-                    return {
-                        ...item,
-                        status: 'submitted',
-                        submissionStatus: 'submitted',
-                        submittedAt: new Date().toISOString(),
-                    };
-                })
-            );
+            const tasksRes = await fetchStudentHomework(studentFilters);
+            setTasks(toItems(tasksRes));
             toast.success('Тапшырма ийгиликтүү жөнөтүлдү.');
             return true;
         } catch (error) {
@@ -819,7 +862,7 @@ const StudentDashboard = () => {
         } finally {
             setSubmittingTaskState(null);
         }
-    }, []);
+    }, [studentFilters]);
 
     const mergedNotificationSettings = useMemo(
         () => ({
@@ -848,14 +891,14 @@ const StudentDashboard = () => {
         tabLoading === resolvedTab ||
         (activeTab === 'profile' && (notificationLoading || profileLoading));
     const renderTab = () => {
-        const requiresActiveAccess = ['overview', 'my-courses', 'schedule', 'tasks', 'progress', 'analytics', 'leaderboard'].includes(activeTab);
+        const requiresActiveAccess = ['overview', 'my-courses', 'schedule', 'resources', 'tasks', 'progress', 'analytics', 'leaderboard'].includes(activeTab);
         if (requiresActiveAccess && !hasActiveStudentAccess) {
             return <StudentEmptyState />;
         }
 
         if (!isTabDataLoaded || !isProfileReady) {
             if (activeTab === 'overview') return <LoadingState type="card" count={3} />;
-            if (['my-courses', 'schedule', 'tasks'].includes(activeTab)) {
+            if (['my-courses', 'schedule', 'resources', 'tasks'].includes(activeTab)) {
                 return <LoadingState type="list" />;
             }
             return <LoadingState type="table" />;
@@ -887,6 +930,8 @@ const StudentDashboard = () => {
                 return <CoursesTab courses={courses} offeringsByCourse={offeringsByCourse} />;
             case 'schedule':
                 return <ScheduleTab offerings={offerings} recordings={recordings} />;
+            case 'resources':
+                return <ResourcesTab items={resources} />;
             case 'tasks':
                 return (
                     <TasksTab

@@ -4,6 +4,15 @@ Version bumps are classified by delivery scale; see `VERSIONING.md`.
 
 ## [1.4.2] - 2026-04-02
 
+### 🧑‍🎓 STUDENT DASHBOARD ALIGNMENT
+- Added a dedicated student `Ресурстар` tab backed by a session-safe read model so learners can find materials, recordings, live join info, location, and instructor context without relying on schedule cards alone.
+- Reworked student resource access around protected preview flows, including same-page preview modals for materials, recordings, and homework attachments with backend-controlled access instead of exposing raw storage URLs in the normal UI path.
+- Changed student `Resources` to a one-session-at-a-time workflow with a session picker, quick session chips, and focused session context instead of a mixed archive list.
+- Upgraded student task cards to show the real homework review loop, including `Бекитилди`, `Оңдотуу керек`, and `Кайтарылды` states plus teacher comment, score, reviewed time, latest submission context, and resubmission-friendly copy.
+- Made student homework submit flow refresh from backend after save so task cards reflect the true reviewed/submitted state instead of local optimistic status only.
+- Aligned student schedule with the session-first model by using `liveJoinUrl`, removing the misleading `Видео` filter, normalizing session/course/group/instructor display, and keeping the live side panel in sync with active list filters.
+- Hardened student access gating so overview load failures no longer masquerade as “no active access,” and isolated optional leaderboard failures from the rest of the overview state.
+
 ### 🧭 INSTRUCTOR SESSION WORKSPACE
 - Reworked the instructor session workspace around a clearer course -> group -> session flow with a stronger session picker and sticky active-session bar.
 - Removed session-level chat from the workspace and moved session create/edit into a dedicated modal instead of keeping setup controls in the main teaching canvas.

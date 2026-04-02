@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import PropTypes from 'prop-types';
 import {
     FiAlertCircle,
@@ -6,6 +6,7 @@ import {
     FiCalendar,
     FiCheckCircle,
     FiClock,
+    FiEdit3,
     FiExternalLink,
     FiFileText,
     FiFilter,
@@ -20,7 +21,10 @@ import {
     DashboardWorkspaceHero,
     StatusBadge,
 } from '../../../../components/ui/dashboard';
+import BasicModal from '@shared/ui/BasicModal';
+import { toast } from 'react-hot-toast';
 import { getTaskKey, resolveSessionHomeworkIds } from '../../utils/studentDashboard.helpers.js';
+import { fetchStudentHomeworkSubmissionAttachmentPreview } from '../../../student/api.js';
 
 const MAX_HOMEWORK_FILE_SIZE_BYTES = 20 * 1024 * 1024;
 const ALLOWED_HOMEWORK_FILE_EXTENSIONS = new Set([
@@ -63,8 +67,22 @@ const STATUS_META = {
         accentClass: 'border-sky-200/90 dark:border-sky-500/30',
         icon: FiSend,
     },
+    needs_revision: {
+        label: 'Оңдотуу керек',
+        badgeClass:
+            'border-orange-200 bg-orange-50 text-orange-700 dark:border-orange-500/30 dark:bg-orange-500/10 dark:text-orange-300',
+        accentClass: 'border-orange-200/90 dark:border-orange-500/30',
+        icon: FiEdit3,
+    },
+    rejected: {
+        label: 'Кайтарылды',
+        badgeClass:
+            'border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-300',
+        accentClass: 'border-rose-200/90 dark:border-rose-500/30',
+        icon: FiAlertCircle,
+    },
     completed: {
-        label: 'Жабылды',
+        label: 'Бекитилди',
         badgeClass:
             'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300',
         accentClass: 'border-emerald-200/90 dark:border-emerald-500/30',
@@ -93,6 +111,12 @@ const formatTaskDate = (task = {}) => {
         hour: '2-digit',
         minute: '2-digit',
     });
+};
+
+const formatSubmissionType = (submission = {}) => {
+    if (submission.attachmentUrl) return 'Файл же шилтеме тиркелген';
+    if (submission.answerText) return 'Текст жооп';
+    return 'Жооп берилген';
 };
 
 const getTaskCourse = (task = {}) => task.courseTitle || task.course || 'Белгисиз курс';
@@ -140,25 +164,40 @@ const validateHomeworkFile = (file) => {
 };
 
 const getNormalizedStatus = (task = {}) => {
-    const baseStatus = String(task.submissionStatus || task.status || '').toLowerCase();
+    const submissionStatus = String(
+        task.mySubmission?.status || task.submissionStatus || task.status || ''
+    ).toLowerCase();
     const { sessionId, homeworkId } = resolveSessionHomeworkIds(task);
     const canSubmit = Boolean(sessionId && homeworkId);
     const dueRaw = task.dueAt || task.deadline || task.due;
     const dueDate = dueRaw ? new Date(dueRaw) : null;
-    const isDone = baseStatus === 'completed' || baseStatus === 'approved';
-    const isSubmitted = baseStatus === 'submitted';
+    const isDone = submissionStatus === 'completed' || submissionStatus === 'approved';
+    const isSubmitted = submissionStatus === 'submitted';
     const isOverdue =
         !isDone &&
         !isSubmitted &&
+        submissionStatus !== 'needs_revision' &&
+        submissionStatus !== 'rejected' &&
         dueDate &&
         !Number.isNaN(dueDate.getTime()) &&
         dueDate.getTime() < Date.now();
 
     if (!canSubmit && !isDone) return 'unavailable';
+    if (submissionStatus === 'needs_revision') return 'needs_revision';
+    if (submissionStatus === 'rejected') return 'rejected';
     if (isDone) return 'completed';
     if (isSubmitted) return 'submitted';
     if (isOverdue) return 'overdue';
     return 'pending';
+};
+
+const detectPreviewKind = (contentType = '') => {
+    const normalized = String(contentType || '').toLowerCase();
+    if (normalized.startsWith('image/')) return 'image';
+    if (normalized.startsWith('audio/')) return 'audio';
+    if (normalized.includes('pdf')) return 'pdf';
+    if (normalized.startsWith('text/')) return 'text';
+    return 'download';
 };
 
 const TasksTab = ({ tasks, onSubmitHomework, submittingTaskState }) => {
@@ -167,6 +206,73 @@ const TasksTab = ({ tasks, onSubmitHomework, submittingTaskState }) => {
     const [courseFilter, setCourseFilter] = useState('all');
     const [query, setQuery] = useState('');
     const [expandedTaskId, setExpandedTaskId] = useState('');
+    const [previewState, setPreviewState] = useState({
+        open: false,
+        title: '',
+        objectUrl: '',
+        kind: 'download',
+        loading: false,
+    });
+
+    useEffect(
+        () => () => {
+            if (previewState.objectUrl?.startsWith('blob:')) {
+                URL.revokeObjectURL(previewState.objectUrl);
+            }
+        },
+        [previewState.objectUrl]
+    );
+
+    const closePreview = useCallback(() => {
+        setPreviewState((prev) => {
+            if (prev.objectUrl?.startsWith('blob:')) {
+                URL.revokeObjectURL(prev.objectUrl);
+            }
+            return {
+                open: false,
+                title: '',
+                objectUrl: '',
+                kind: 'download',
+                loading: false,
+            };
+        });
+    }, []);
+
+    const openAttachmentPreview = useCallback(
+        async (homeworkId, title) => {
+            setPreviewState({
+                open: true,
+                title,
+                objectUrl: '',
+                kind: 'download',
+                loading: true,
+            });
+
+            try {
+                const result = await fetchStudentHomeworkSubmissionAttachmentPreview(homeworkId);
+                const objectUrl = URL.createObjectURL(result.blob);
+                const kind = detectPreviewKind(result.contentType);
+
+                setPreviewState((prev) => {
+                    if (prev.objectUrl?.startsWith('blob:')) {
+                        URL.revokeObjectURL(prev.objectUrl);
+                    }
+                    return {
+                        open: true,
+                        title,
+                        objectUrl,
+                        kind,
+                        loading: false,
+                    };
+                });
+            } catch (error) {
+                console.error('Failed to preview homework attachment', error);
+                toast.error('Тиркемени ачуу мүмкүн болбоду');
+                closePreview();
+            }
+        },
+        [closePreview]
+    );
 
     const taskView = useMemo(
         () =>
@@ -204,10 +310,11 @@ const TasksTab = ({ tasks, onSubmitHomework, submittingTaskState }) => {
         const total = taskView.length;
         const pending = taskView.filter((item) => item.status === 'pending').length;
         const overdue = taskView.filter((item) => item.status === 'overdue').length;
-        const completed = taskView.filter((item) => item.status === 'completed').length;
         const submitted = taskView.filter((item) => item.status === 'submitted').length;
+        const needsRevision = taskView.filter((item) => item.status === 'needs_revision').length;
+        const approved = taskView.filter((item) => item.status === 'completed').length;
 
-        return { total, pending, overdue, completed, submitted };
+        return { total, pending, overdue, submitted, needsRevision, approved };
     }, [taskView]);
 
     const filteredTasks = useMemo(() => {
@@ -284,8 +391,20 @@ const TasksTab = ({ tasks, onSubmitHomework, submittingTaskState }) => {
                                 icon={FiAlertCircle}
                             />
                             <DashboardMetricCard
-                                label="Жабылды"
-                                value={stats.completed + stats.submitted}
+                                label="Оңдотуу керек"
+                                value={stats.needsRevision}
+                                tone="amber"
+                                icon={FiEdit3}
+                            />
+                            <DashboardMetricCard
+                                label="Текшерилип жатат"
+                                value={stats.submitted}
+                                tone="blue"
+                                icon={FiSend}
+                            />
+                            <DashboardMetricCard
+                                label="Бекитилди"
+                                value={stats.approved}
                                 tone="green"
                                 icon={FiCheckCircle}
                             />
@@ -313,7 +432,9 @@ const TasksTab = ({ tasks, onSubmitHomework, submittingTaskState }) => {
                             <option value="all">Бардык статустар</option>
                             <option value="pending">Күтүүдө</option>
                             <option value="submitted">Жөнөтүлгөн</option>
+                            <option value="needs_revision">Оңдотуу керек</option>
                             <option value="completed">Жабылган</option>
+                            <option value="rejected">Кайтарылды</option>
                             <option value="overdue">Мөөнөт өттү</option>
                             <option value="unavailable">Туташкан эмес</option>
                         </select>
@@ -341,6 +462,15 @@ const TasksTab = ({ tasks, onSubmitHomework, submittingTaskState }) => {
                             const isUploading = isSubmitting && submittingTaskState?.phase === 'uploading';
                             const isExpanded = expandedTaskId === item.key;
                             const StatusIcon = item.meta.icon;
+                            const reviewComment = item.task.mySubmission?.reviewComment || '';
+                            const reviewScore = item.task.mySubmission?.score;
+                            const reviewedAt = item.task.mySubmission?.reviewedAt;
+                            const submittedAt =
+                                item.task.mySubmission?.updatedAt || item.task.mySubmission?.createdAt;
+                            const submissionAttachment = item.task.mySubmission?.attachmentUrl || '';
+                            const submissionText = item.task.mySubmission?.answerText || '';
+                            const canResubmit =
+                                item.status === 'needs_revision' || item.status === 'rejected';
 
                             return (
                                 <article
@@ -381,6 +511,71 @@ const TasksTab = ({ tasks, onSubmitHomework, submittingTaskState }) => {
                                             <p className="text-sm leading-6 text-edubot-muted dark:text-slate-300">
                                                 {item.description}
                                             </p>
+
+                                            {reviewComment || reviewScore !== null || reviewedAt ? (
+                                                <div className="rounded-2xl border border-edubot-line/70 bg-edubot-surfaceAlt/60 p-4 text-sm dark:border-slate-700 dark:bg-slate-800/70">
+                                                    <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+                                                        {reviewScore !== null && reviewScore !== undefined ? (
+                                                            <span className="font-semibold text-edubot-ink dark:text-white">
+                                                                Баа: {reviewScore}
+                                                            </span>
+                                                        ) : null}
+                                                        {reviewedAt ? (
+                                                            <span className="text-edubot-muted dark:text-slate-400">
+                                                                Текшерилген: {formatTaskDate({ submittedAt: reviewedAt })}
+                                                            </span>
+                                                        ) : null}
+                                                    </div>
+                                                    {reviewComment ? (
+                                                        <p className="mt-2 leading-6 text-edubot-ink dark:text-slate-200">
+                                                            {reviewComment}
+                                                        </p>
+                                                    ) : null}
+                                                </div>
+                                            ) : null}
+
+                                            {item.task.mySubmission ? (
+                                                <div className="rounded-2xl border border-edubot-line/70 bg-white/80 p-4 text-sm dark:border-slate-700 dark:bg-slate-900/70">
+                                                    <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+                                                        <span className="font-semibold text-edubot-ink dark:text-white">
+                                                            Акыркы жооп
+                                                        </span>
+                                                        {submittedAt ? (
+                                                            <span className="text-edubot-muted dark:text-slate-400">
+                                                                {formatTaskDate({ submittedAt })}
+                                                            </span>
+                                                        ) : null}
+                                                        <span className="text-edubot-muted dark:text-slate-400">
+                                                            {formatSubmissionType(item.task.mySubmission)}
+                                                        </span>
+                                                    </div>
+
+                                                    {submissionText ? (
+                                                        <p className="mt-2 line-clamp-3 leading-6 text-edubot-muted dark:text-slate-300">
+                                                            {submissionText}
+                                                        </p>
+                                                    ) : null}
+
+                                                    {submissionAttachment ? (
+                                                        <div className="mt-3">
+                                                            <a
+                                                                href="#"
+                                                                onClick={(e) => {
+                                                                    e.preventDefault();
+                                                                    openAttachmentPreview(
+                                                                        Number(item.task.id || item.task.homeworkId),
+                                                                        `${item.title} — Тиркеме`
+                                                                    );
+                                                                }}
+                                                                className="inline-flex items-center gap-2 rounded-xl border border-edubot-line px-3 py-2 font-medium text-edubot-ink transition hover:border-edubot-orange hover:text-edubot-orange dark:border-slate-700 dark:text-slate-200"
+                                                            >
+                                                                <FiPaperclip className="h-4 w-4" />
+                                                                Тиркемени ачуу
+                                                            </a>
+                                                        </div>
+                                                    ) : null}
+                                                </div>
+                                            ) : null}
                                         </div>
 
                                         <div className="w-full xl:w-[22rem]">
@@ -389,10 +584,14 @@ const TasksTab = ({ tasks, onSubmitHomework, submittingTaskState }) => {
                                                     <div className="flex items-start justify-between gap-3">
                                                         <div>
                                                             <p className="text-sm font-semibold text-edubot-ink dark:text-white">
-                                                                Жооп жөнөтүү
+                                                                {canResubmit ? 'Жоопту кайра жөнөтүү' : item.status === 'submitted' ? 'Жаңыртуу керек болсо кайра жөнөтүңүз' : 'Жооп жөнөтүү'}
                                                             </p>
                                                             <p className="mt-1 text-xs leading-5 text-edubot-muted dark:text-slate-400">
-                                                                Текст, шилтеме же файл кошуп тапшырыңыз.
+                                                                {canResubmit
+                                                                    ? 'Мугалимдин пикирин эске алып, жаңыртылган жоопту жибериңиз.'
+                                                                    : item.status === 'submitted'
+                                                                        ? 'Тапшырма текшерилип жатат. Зарыл болсо жоопту жаңыртып кайра жибере аласыз.'
+                                                                    : 'Текст, шилтеме же файл кошуп тапшырыңыз.'}
                                                             </p>
                                                         </div>
                                                         <button
@@ -494,7 +693,9 @@ const TasksTab = ({ tasks, onSubmitHomework, submittingTaskState }) => {
                                                     ) : (
                                                         <div className="mt-4 flex items-center gap-2 text-xs text-edubot-muted dark:text-slate-400">
                                                             <FiExternalLink className="h-4 w-4" />
-                                                            Басып, тапшырманы тез тапшырыңыз
+                                                            {canResubmit
+                                                                ? 'Басып, оңдолгон жоопту кайра жөнөтүңүз'
+                                                                : 'Басып, тапшырманы тез тапшырыңыз'}
                                                         </div>
                                                     )}
                                                 </div>
@@ -529,6 +730,61 @@ const TasksTab = ({ tasks, onSubmitHomework, submittingTaskState }) => {
                     )}
                 </div>
             </DashboardWorkspaceHero>
+
+            <BasicModal
+                isOpen={previewState.open}
+                onClose={closePreview}
+                title={previewState.title || 'Тиркеме'}
+                size="2xl"
+            >
+                {previewState.loading ? (
+                    <div className="flex min-h-[16rem] items-center justify-center text-sm text-edubot-muted dark:text-slate-400">
+                        Жүктөлүүдө...
+                    </div>
+                ) : !previewState.objectUrl ? (
+                    <div className="flex min-h-[16rem] items-center justify-center text-sm text-edubot-muted dark:text-slate-400">
+                        Алдын ала көрүү жеткиликтүү эмес.
+                    </div>
+                ) : previewState.kind === 'image' ? (
+                    <div className="flex justify-center">
+                        <img
+                            src={previewState.objectUrl}
+                            alt={previewState.title}
+                            className="max-h-[70vh] rounded-2xl object-contain"
+                        />
+                    </div>
+                ) : previewState.kind === 'pdf' ? (
+                    <iframe
+                        src={previewState.objectUrl}
+                        title={previewState.title}
+                        className="h-[70vh] w-full rounded-2xl border border-edubot-line dark:border-slate-700"
+                    />
+                ) : previewState.kind === 'audio' ? (
+                    <div className="flex min-h-[12rem] items-center justify-center">
+                        <audio controls src={previewState.objectUrl} className="w-full max-w-xl" />
+                    </div>
+                ) : previewState.kind === 'text' ? (
+                    <iframe
+                        src={previewState.objectUrl}
+                        title={previewState.title}
+                        className="h-[60vh] w-full rounded-2xl border border-edubot-line dark:border-slate-700"
+                    />
+                ) : (
+                    <div className="space-y-4 text-center">
+                        <p className="text-sm text-edubot-muted dark:text-slate-400">
+                            Бул файлды браузерде түз көрүү жеткиликтүү эмес.
+                        </p>
+                        <a
+                            href={previewState.objectUrl}
+                            download
+                            className="dashboard-button-primary inline-flex"
+                        >
+                            <FiPaperclip className="h-4 w-4" />
+                            Жүктөп алуу
+                        </a>
+                    </div>
+                )}
+            </BasicModal>
         </div>
     );
 };

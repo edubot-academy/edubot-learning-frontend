@@ -47,7 +47,8 @@ const ScheduleTab = ({ offerings, recordings }) => {
                 .sort((a, b) => new Date(a.startAt || 0).getTime() - new Date(b.startAt || 0).getTime())
                 .map((item) => {
                     const type = resolveCourseType(item);
-                    const joinUrl = item.joinLink || item.link || item.joinUrl || '';
+                    const joinUrl =
+                        item.liveJoinUrl || item.joinLink || item.link || item.joinUrl || '';
                     const joinAllowed =
                         !isOnlineLiveOffering(item) || isStudentJoinWindowOpen(item, nowMs);
                     const itemRecordings = resolveRecordings(item);
@@ -66,6 +67,15 @@ const ScheduleTab = ({ offerings, recordings }) => {
         [offerings, nowMs]
     );
 
+    const getSessionTitle = (item) =>
+        item.sessionTitle ||
+        item.title ||
+        (Number.isFinite(Number(item.sessionIndex)) ? `Сессия ${Number(item.sessionIndex) + 1}` : 'Сессия');
+
+    const getCourseTitle = (item) => item.courseTitle || item.course?.title || 'Курс';
+
+    const getGroupTitle = (item) => item.groupName || item.group?.name || '';
+
     useEffect(() => {
         if (selectedLiveId) return;
         const firstLive = scheduleItems.find((entry) => entry.type === 'online_live');
@@ -79,27 +89,64 @@ const ScheduleTab = ({ offerings, recordings }) => {
             if (typeFilter !== 'all' && type !== typeFilter) return false;
             if (!normalizedQuery) return true;
 
-            return [item.courseTitle, item.course?.title, resolveInstructorName(item), item.location, item.room]
+            return [
+                getSessionTitle(item),
+                getCourseTitle(item),
+                getGroupTitle(item),
+                resolveInstructorName(item),
+                item.location,
+                item.room,
+            ]
                 .filter(Boolean)
                 .some((value) => String(value).toLowerCase().includes(normalizedQuery));
         });
     }, [query, scheduleItems, typeFilter]);
 
-    const selectedLive = scheduleItems.find(
+    useEffect(() => {
+        if (!filteredItems.length) {
+            setSelectedLiveId('');
+            return;
+        }
+
+        const hasSelected = filteredItems.some(
+            ({ item, type }) => type === 'online_live' && String(item.id) === String(selectedLiveId)
+        );
+        if (hasSelected) return;
+
+        const firstVisibleLive = filteredItems.find(({ type }) => type === 'online_live');
+        setSelectedLiveId(firstVisibleLive?.item?.id ? String(firstVisibleLive.item.id) : '');
+    }, [filteredItems, selectedLiveId]);
+
+    const selectedLive = filteredItems.find(
         ({ item }) => String(item.id) === String(selectedLiveId)
     )?.item;
 
-    const selectedRecordings = [
-        ...resolveRecordings(selectedLive || {}),
-        ...recordings.filter((rec) => {
-            const recSessionId = rec.sessionId || rec.courseSessionId || rec.offeringId;
-            const liveSessionId =
-                selectedLive?.sessionId || selectedLive?.id || selectedLive?.offeringId;
-            return recSessionId && liveSessionId && String(recSessionId) === String(liveSessionId);
-        }),
-    ];
+    const selectedRecordings = useMemo(() => {
+        const merged = [
+            ...resolveRecordings(selectedLive || {}),
+            ...recordings.filter((rec) => {
+                const recSessionId = rec.sessionId || rec.courseSessionId || rec.offeringId;
+                const liveSessionId =
+                    selectedLive?.sessionId || selectedLive?.id || selectedLive?.offeringId;
+                return recSessionId && liveSessionId && String(recSessionId) === String(liveSessionId);
+            }),
+        ];
 
-    const selectedJoinUrl = selectedLive?.joinLink || selectedLive?.link || selectedLive?.joinUrl || '';
+        const seen = new Set();
+        return merged.filter((rec) => {
+            const key = String(rec.id || rec.url || rec.title || '');
+            if (!key || seen.has(key)) return false;
+            seen.add(key);
+            return true;
+        });
+    }, [recordings, selectedLive]);
+
+    const selectedJoinUrl =
+        selectedLive?.liveJoinUrl ||
+        selectedLive?.joinLink ||
+        selectedLive?.link ||
+        selectedLive?.joinUrl ||
+        '';
     const selectedJoinAllowed = !selectedLive || isStudentJoinWindowOpen(selectedLive, nowMs);
 
     const stats = useMemo(() => {
@@ -164,7 +211,6 @@ const ScheduleTab = ({ offerings, recordings }) => {
                             className="dashboard-field dashboard-field-icon dashboard-select"
                         >
                             <option value="all">Бардык типтер</option>
-                            <option value="video">Видео</option>
                             <option value="offline">Оффлайн</option>
                             <option value="online_live">Онлайн түз эфир</option>
                         </select>
@@ -183,7 +229,7 @@ const ScheduleTab = ({ offerings, recordings }) => {
                                         <div className="min-w-0 flex-1">
                                             <div className="flex flex-wrap items-center gap-2">
                                                 <p className="text-base font-semibold text-edubot-ink dark:text-white">
-                                                    {item.courseTitle || item.course?.title || 'Class'}
+                                                    {getSessionTitle(item)}
                                                 </p>
                                                 <StatusBadge tone="default">
                                                     {courseTypeLabel(type)}
@@ -200,6 +246,8 @@ const ScheduleTab = ({ offerings, recordings }) => {
                                                     <FiCalendar className="h-4 w-4" />
                                                     {formatSessionDate(item.startAt)}
                                                 </span>
+                                                <span>{getCourseTitle(item)}</span>
+                                                {getGroupTitle(item) ? <span>{getGroupTitle(item)}</span> : null}
                                                 <span className="inline-flex items-center gap-2">
                                                     <FiUsers className="h-4 w-4" />
                                                     {resolveInstructorName(item)}
@@ -248,7 +296,7 @@ const ScheduleTab = ({ offerings, recordings }) => {
                                                             </a>
                                                         ) : (
                                                             <div className="rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300">
-                                                                Join 10 мүнөт мурун ачылат
+                                                                Кошулуу шилтемеси 10 мүнөт мурун ачылат
                                                             </div>
                                                         )}
 
@@ -283,7 +331,7 @@ const ScheduleTab = ({ offerings, recordings }) => {
                         {selectedLive && resolveCourseType(selectedLive) === 'online_live' ? (
                             <DashboardInsetPanel
                                 title="Түз эфир сабак барагы"
-                                description={selectedLive.courseTitle || selectedLive.course?.title}
+                                description={getCourseTitle(selectedLive)}
                             >
                                 <div className="space-y-4">
                                     <div className="rounded-panel bg-edubot-hero p-5 text-white shadow-edubot-glow">
@@ -291,9 +339,13 @@ const ScheduleTab = ({ offerings, recordings }) => {
                                             <div>
                                                 <p className="dashboard-pill">Live Session</p>
                                                 <p className="mt-4 text-lg font-semibold">
-                                                    {selectedLive.courseTitle ||
-                                                        selectedLive.course?.title}
+                                                    {getSessionTitle(selectedLive)}
                                                 </p>
+                                                {getGroupTitle(selectedLive) ? (
+                                                    <p className="mt-2 text-sm text-white/80">
+                                                        {getGroupTitle(selectedLive)}
+                                                    </p>
+                                                ) : null}
                                             </div>
                                             <FiRadio className="h-6 w-6 text-edubot-soft" />
                                         </div>
