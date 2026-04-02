@@ -29,6 +29,15 @@ Version bumps are classified by delivery scale; see `VERSIONING.md`.
 - Stopped showing raw meeting and recording URLs in the visible UI, replacing them with clearer state-based controls and copy/open actions.
 - Stopped using group meeting URLs as a session-workspace fallback so `Join Class` and meeting actions now reflect only the selected session’s own live state.
 
+### 📚 HOMEWORK QUEUE + REVIEW
+- Repositioned instructor homework into a real triage board with queue-first cards, action-required emphasis, clickable summary metrics, and deep links into the exact session homework context.
+- Reworked session homework review around a full assigned roster so instructors can now see `Текшерүү керек`, `Жөнөткөн жок`, `Оңдотуу керек`, and `Кеч тапшырган` states in one place instead of submissions only.
+- Added URL-backed session homework review filters and dashboard-to-session homework navigation that preserves the targeted course, group, session, homework, and review state.
+- Simplified the session homework layout to reduce card overlap, overflow, and badge collisions across publish, list, and review areas.
+- Added in-page homework attachment preview in a modal for previewable files with backend-served blobs and a fallback download action for unsupported file types.
+- Added comment-based homework review actions so `Оңдотуу` and `Кайтаруу` now collect instructor feedback before saving, while approved responses can keep optional feedback.
+- Hardened homework review UX so failed saves keep the review modal open, attachment preview failures surface visible feedback, and review comments remain visible on the submission row after save.
+
 ### 🛠️ UX FIXES
 - Fixed session setup modal behavior with proper portal rendering, background scroll lock, keyboard handling, and safer context copy for create vs edit flows.
 - Renamed the frontend session API feature surface from `courseSessions` to `groupSessions` to match the group-owned session model.

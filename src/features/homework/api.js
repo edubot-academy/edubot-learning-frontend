@@ -85,6 +85,31 @@ export const fetchSessionHomeworkSubmissions = async (sessionId, homeworkId) => 
     return data;
 };
 
+export const fetchSessionHomeworkReviewRoster = async (sessionId, homeworkId) => {
+    const validSessionId = ensurePositiveInt(sessionId, 'sessionId');
+    const validHomeworkId = ensurePositiveInt(homeworkId, 'homeworkId');
+    const { data } = await api.get(
+        `/group-sessions/${validSessionId}/homework/${validHomeworkId}/review-roster`
+    );
+    return data;
+};
+
+export const fetchSessionHomeworkAttachmentBlob = async (sessionId, homeworkId, submissionId) => {
+    const validSessionId = ensurePositiveInt(sessionId, 'sessionId');
+    const validHomeworkId = ensurePositiveInt(homeworkId, 'homeworkId');
+    const validSubmissionId = ensurePositiveInt(submissionId, 'submissionId');
+    const { data, headers } = await api.get(
+        `/group-sessions/${validSessionId}/homework/${validHomeworkId}/submissions/${validSubmissionId}/attachment`,
+        {
+            responseType: 'blob',
+        }
+    );
+    return {
+        blob: data,
+        contentType: headers['content-type'] || data?.type || '',
+    };
+};
+
 export const reviewSessionHomeworkSubmission = async (
     sessionId,
     homeworkId,

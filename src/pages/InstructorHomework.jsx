@@ -1,5 +1,6 @@
 import { useContext, useEffect, useMemo, useState } from 'react';
 import { toast } from 'react-hot-toast';
+import { Link } from 'react-router-dom';
 import { FiAlertCircle, FiBookOpen, FiCalendar, FiCheckCircle, FiClock, FiLayers, FiSearch } from 'react-icons/fi';
 import { fetchInstructorCourses, fetchCourseGroups, fetchHomework, fetchHomeworkSummary } from '@services/api';
 import Loader from '@shared/ui/Loader';
@@ -39,6 +40,40 @@ const formatDisplayDate = (value, fallback = 'Мөөнөт коюлган эме
 };
 
 const getHomeworkStateMeta = (item) => {
+    const queue = item?.queue || {};
+    if (!item?.isPublished) {
+        return {
+            label: 'Жарыялана элек',
+            tone: 'default',
+            badgeClass:
+                'border-edubot-line bg-white text-edubot-muted dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300',
+        };
+    }
+    if (Number(queue.needsReviewCount || 0) > 0) {
+        return {
+            label: 'Текшерүү керек',
+            tone: 'amber',
+            badgeClass:
+                'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300',
+        };
+    }
+    if (Number(queue.missingCount || 0) > 0) {
+        return {
+            label: 'Жөнөткөн жок',
+            tone: 'red',
+            badgeClass:
+                'border-red-200 bg-red-50 text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300',
+        };
+    }
+    if (Number(queue.needsRevisionCount || 0) > 0) {
+        return {
+            label: 'Оңдотуу керек',
+            tone: 'amber',
+            badgeClass:
+                'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300',
+        };
+    }
+
     const status = String(item?.status || '').toLowerCase();
     const rawDeadline = item?.deadline || item?.dueAt || item?.dueDate;
 
@@ -102,6 +137,96 @@ const getHomeworkStateMeta = (item) => {
     };
 };
 
+const getHomeworkQueueBadges = (item) => {
+    const queue = item?.queue || {};
+    const badges = [];
+
+    if (!item?.isPublished) {
+        badges.push({
+            key: 'draft',
+            label: 'Жарыялана элек',
+            className:
+                'border-edubot-line bg-white text-edubot-muted dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300',
+        });
+        return badges;
+    }
+
+    if (Number(queue.needsReviewCount || 0) > 0) {
+        badges.push({
+            key: 'needs_review',
+            label: 'Текшерүү керек',
+            className:
+                'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300',
+        });
+    }
+    if (Number(queue.missingCount || 0) > 0) {
+        badges.push({
+            key: 'missing',
+            label: 'Жөнөткөн жок',
+            className:
+                'border-red-200 bg-red-50 text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300',
+        });
+    }
+    if (Number(queue.needsRevisionCount || 0) > 0) {
+        badges.push({
+            key: 'needs_revision',
+            label: 'Оңдотуу керек',
+            className:
+                'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300',
+        });
+    }
+    if (Number(queue.lateCount || 0) > 0) {
+        badges.push({
+            key: 'late',
+            label: 'Кеч тапшырган',
+            className:
+                'border-orange-200 bg-orange-50 text-orange-700 dark:border-orange-500/30 dark:bg-orange-500/10 dark:text-orange-300',
+        });
+    }
+
+    if (!badges.length) {
+        badges.push({
+            key: 'state',
+            label: getHomeworkStateMeta(item).label,
+            className: getHomeworkStateMeta(item).badgeClass,
+        });
+    }
+
+    return badges;
+};
+
+const buildSessionHomeworkPath = (item) => {
+    const courseId = item?.courseId || item?.session?.group?.course?.id;
+    const groupId = item?.groupId || item?.session?.group?.id;
+    const sessionId = item?.sessionId || item?.session?.id;
+    const homeworkId = item?.id;
+    const params = new URLSearchParams({ tab: 'sessions', workspaceTab: 'homework' });
+    if (courseId) params.set('courseId', String(courseId));
+    if (groupId) params.set('groupId', String(groupId));
+    if (sessionId) params.set('sessionId', String(sessionId));
+    if (homeworkId) params.set('homeworkId', String(homeworkId));
+    return `/instructor?${params.toString()}`;
+};
+
+const getQueuePriority = (item) => {
+    const queue = item?.queue || {};
+    if (Number(queue.needsReviewCount || 0) > 0) return 0;
+    if (Number(queue.missingCount || 0) > 0) return 1;
+    if (Number(queue.needsRevisionCount || 0) > 0) return 2;
+    if (Number(queue.lateCount || 0) > 0) return 3;
+    return 4;
+};
+
+const matchesHomeworkQueueFilter = (item, filter) => {
+    if (filter === 'all') return true;
+    const queue = item?.queue || {};
+    if (filter === 'текшерүү керек') return Number(queue.needsReviewCount || 0) > 0;
+    if (filter === 'жөнөткөн жок') return Number(queue.missingCount || 0) > 0;
+    if (filter === 'оңдотуу керек') return Number(queue.needsRevisionCount || 0) > 0;
+    if (filter === 'кеч тапшырган') return Number(queue.lateCount || 0) > 0;
+    return item.stateMeta.label.toLowerCase() === filter;
+};
+
 const InstructorHomework = () => {
     const { user } = useContext(AuthContext);
     const [courses, setCourses] = useState([]);
@@ -119,7 +244,7 @@ const InstructorHomework = () => {
     useEffect(() => {
         if (!user?.id || user.role !== 'instructor') return;
         const loadCourses = async () => {
-            const response = await fetchInstructorCourses({ status: 'approved' });
+            const response = await fetchInstructorCourses({ status: 'all' });
             setCourses(toArray(response?.courses || response));
         };
         loadCourses().catch((error) => {
@@ -193,24 +318,42 @@ const InstructorHomework = () => {
                     item.course?.title,
                     item.groupName,
                     item.group?.name,
+                    item.sessionTitle,
+                    item.session?.title,
                 ]
                     .filter(Boolean)
                     .some((value) => String(value).toLowerCase().includes(normalizedQuery));
-            const matchesState =
-                statusFilter === 'all' || item.stateMeta.label.toLowerCase() === statusFilter;
+            const matchesState = matchesHomeworkQueueFilter(item, statusFilter);
             return matchesQuery && matchesState;
+        }).sort((left, right) => {
+            const priorityDiff = getQueuePriority(left) - getQueuePriority(right);
+            if (priorityDiff !== 0) return priorityDiff;
+            const leftDeadline = left.deadline ? new Date(left.deadline).getTime() : Number.POSITIVE_INFINITY;
+            const rightDeadline = right.deadline ? new Date(right.deadline).getTime() : Number.POSITIVE_INFINITY;
+            return leftDeadline - rightDeadline;
         });
     }, [enrichedItems, query, statusFilter]);
 
     const stats = useMemo(
         () => ({
             total: summary?.total ?? items.length,
-            pending: summary?.pending ?? summary?.todo ?? 0,
-            checked: summary?.reviewed ?? summary?.checked ?? 0,
-            overdue: enrichedItems.filter((item) => item.stateMeta.label === 'Өтүп кеткен').length,
+            actionRequired: summary?.actionRequired ?? 0,
+            needsReview: summary?.needsReview ?? 0,
+            missing: summary?.missing ?? 0,
+            needsRevision: summary?.needsRevision ?? 0,
+            overdue: summary?.overdue ?? enrichedItems.filter((item) => item.stateMeta.label === 'Өтүп кеткен').length,
         }),
         [summary, items.length, enrichedItems]
     );
+
+    const applyQueueFilter = (nextFilter) => {
+        setStatusFilter((current) => (current === nextFilter ? 'all' : nextFilter));
+    };
+
+    const metricCardClass = (isActive) =>
+        isActive
+            ? 'ring-2 ring-edubot-orange/60 ring-offset-2 ring-offset-white dark:ring-offset-slate-950'
+            : '';
 
     return (
         <div className="pt-24 p-4 md:p-6 max-w-7xl mx-auto space-y-5">
@@ -218,43 +361,67 @@ const InstructorHomework = () => {
                 <div className="grid gap-5 xl:grid-cols-[minmax(0,1.1fr),minmax(0,0.9fr)] xl:items-end">
                     <div className="space-y-4">
                         <div className="text-sm font-semibold uppercase tracking-[0.28em] text-edubot-orange">
-                            Homework Workspace
+                            Homework Queue
                         </div>
                         <h1 className="text-3xl font-semibold tracking-tight text-edubot-ink dark:text-white md:text-5xl">
-                            Үй тапшырмаларды башкаруу
+                            Үй тапшырма кезеги
                         </h1>
                         <p className="max-w-3xl text-base leading-8 text-edubot-muted dark:text-slate-300 md:text-lg">
-                            Курс жана группа боюнча фильтрлеп, мөөнөтү жакындаган же өтүп кеткен
-                            тапшырмаларды ылдам карап чыгыңыз.
+                            Бул жерден кайсы курс, группа жана сессия боюнча иш бар экенин табыңыз.
+                            Толук текшерүү агымы тиешелүү сессиянын ичиндеги үй тапшырма бөлүгүндө ачылат.
                         </p>
                     </div>
                     <div className="grid gap-3 sm:grid-cols-2">
-                        <DashboardMetricCard label="Жалпы" value={stats.total} icon={FiBookOpen} />
-                        <DashboardMetricCard
-                            label="Күтүүдө"
-                            value={stats.pending}
-                            icon={FiClock}
-                            tone="amber"
-                        />
-                        <DashboardMetricCard
-                            label="Текшерилген"
-                            value={stats.checked}
-                            icon={FiCheckCircle}
-                            tone="green"
-                        />
-                        <DashboardMetricCard
-                            label="Өтүп кеткен"
-                            value={stats.overdue}
-                            icon={FiAlertCircle}
-                            tone="red"
-                        />
+                        <button
+                            type="button"
+                            onClick={() => setStatusFilter('all')}
+                            className="text-left"
+                        >
+                            <DashboardMetricCard label="Жалпы" value={stats.total} icon={FiBookOpen} />
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => applyQueueFilter('текшерүү керек')}
+                            className={`text-left ${metricCardClass(statusFilter === 'текшерүү керек')}`}
+                        >
+                            <DashboardMetricCard
+                                label="Аракет керек"
+                                value={stats.actionRequired}
+                                icon={FiClock}
+                                tone="amber"
+                            />
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => applyQueueFilter('жөнөткөн жок')}
+                            className={`text-left ${metricCardClass(statusFilter === 'жөнөткөн жок')}`}
+                        >
+                            <DashboardMetricCard
+                                label="Жөнөткөн жок"
+                                value={stats.missing}
+                                icon={FiAlertCircle}
+                                tone="red"
+                            />
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => applyQueueFilter('оңдотуу керек')}
+                            className={`text-left ${metricCardClass(statusFilter === 'оңдотуу керек')}`}
+                        >
+                            <DashboardMetricCard
+                                label="Оңдотуу керек"
+                                value={stats.needsRevision}
+                                icon={FiCheckCircle}
+                                tone="amber"
+                            />
+                        </button>
                     </div>
                 </div>
             </div>
 
             <DashboardInsetPanel
                 title="Фильтрлер"
-                description="Тапшырмаларды курс, группа, абал жана издөө боюнча иреттеңиз."
+                description="Кезекти курс, группа, абал жана издөө боюнча тарылтыңыз."
             >
                 <div className="mt-4 grid gap-3 xl:grid-cols-[minmax(0,1fr),minmax(0,1fr),minmax(0,0.9fr),minmax(0,0.8fr),minmax(0,0.7fr)]">
                     <select
@@ -300,6 +467,11 @@ const InstructorHomework = () => {
                         className="dashboard-field dashboard-select"
                     >
                         <option value="all">Баары</option>
+                        <option value="текшерүү керек">Текшерүү керек</option>
+                        <option value="жөнөткөн жок">Жөнөткөн жок</option>
+                        <option value="оңдотуу керек">Оңдотуу керек</option>
+                        <option value="кеч тапшырган">Кеч тапшырган</option>
+                        <option value="жарыялана элек">Жарыялана элек</option>
                         <option value="активдүү">Активдүү</option>
                         <option value="жакында бүтөт">Жакында бүтөт</option>
                         <option value="өтүп кеткен">Өтүп кеткен</option>
@@ -335,8 +507,8 @@ const InstructorHomework = () => {
                 </DashboardInsetPanel>
             ) : (
                 <DashboardInsetPanel
-                    title="Тапшырмалар"
-                    description="Ар бир карточкада курс, группа, мөөнөт жана учурдагы абал көрсөтүлөт."
+                    title="Кезектеги тапшырмалар"
+                    description="Ар бир карточка тиешелүү сессияга өтүп, толук текшерүү агымын ачууга жардам берет."
                     action={
                         <span className="rounded-full border border-edubot-line bg-white px-3 py-1 text-xs font-semibold text-edubot-ink dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200">
                             {filteredItems.length} жазуу
@@ -349,35 +521,90 @@ const InstructorHomework = () => {
                                 key={item.id || `${item.title}-${item.deadline || ''}`}
                                 className="dashboard-panel-muted rounded-3xl p-5 transition duration-300 hover:-translate-y-1 hover:shadow-edubot-card"
                             >
-                                <div className="flex items-start justify-between gap-3">
+                                <div className="flex items-start justify-between gap-4">
                                     <div className="min-w-0">
                                         <h3 className="text-base font-semibold text-edubot-ink dark:text-white">
                                             {item.title || item.name || 'Үй тапшырма'}
                                         </h3>
-                                        <p className="mt-2 line-clamp-2 text-sm leading-6 text-edubot-muted dark:text-slate-400">
-                                            {item.description || 'Түшүндүрмө кошула элек.'}
-                                        </p>
+                                        <div className="mt-2 flex flex-wrap gap-2">
+                                            {getHomeworkQueueBadges(item).map((badge) => (
+                                                <span
+                                                    key={badge.key}
+                                                    className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold ${badge.className}`}
+                                                >
+                                                    {badge.label}
+                                                </span>
+                                            ))}
+                                        </div>
                                     </div>
-                                    <span
-                                        className={`shrink-0 rounded-full border px-2.5 py-1 text-[11px] font-semibold ${item.stateMeta.badgeClass}`}
-                                    >
-                                        {item.stateMeta.label}
-                                    </span>
+                                    <div className="shrink-0 rounded-2xl border border-edubot-orange/20 bg-edubot-orange/10 px-3 py-2 text-right">
+                                        <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-edubot-orange">
+                                            Аракет керек
+                                        </div>
+                                        <div className="mt-1 text-2xl font-semibold text-edubot-ink dark:text-white">
+                                            {Number(item.queue?.needsReviewCount || 0) +
+                                                Number(item.queue?.missingCount || 0) +
+                                                Number(item.queue?.needsRevisionCount || 0)}
+                                        </div>
+                                    </div>
                                 </div>
 
-                                <div className="mt-4 grid gap-3 text-sm">
+                                <div className="mt-4 space-y-2 text-sm">
                                     <div className="flex items-center gap-2 text-edubot-muted dark:text-slate-400">
-                                        <FiBookOpen className="h-4 w-4 text-edubot-orange" />
-                                        <span>{item.courseTitle || item.course?.title || '-'}</span>
+                                        <FiClock className="h-4 w-4 text-edubot-orange" />
+                                        <span className="font-medium text-edubot-ink dark:text-white">
+                                            {item.sessionTitle || item.session?.title || 'Сессия көрсөтүлгөн эмес'}
+                                        </span>
                                     </div>
-                                    <div className="flex items-center gap-2 text-edubot-muted dark:text-slate-400">
-                                        <FiLayers className="h-4 w-4 text-edubot-orange" />
-                                        <span>{item.groupName || item.group?.name || '-'}</span>
+                                    <div className="flex flex-wrap gap-x-4 gap-y-2 text-edubot-muted dark:text-slate-400">
+                                        <span className="inline-flex items-center gap-2">
+                                            <FiBookOpen className="h-4 w-4 text-edubot-orange" />
+                                            {item.courseTitle || item.course?.title || '-'}
+                                        </span>
+                                        <span className="inline-flex items-center gap-2">
+                                            <FiLayers className="h-4 w-4 text-edubot-orange" />
+                                            {item.groupName || item.group?.name || '-'}
+                                        </span>
+                                        <span className="inline-flex items-center gap-2">
+                                            <FiCalendar className="h-4 w-4 text-edubot-orange" />
+                                            {formatDisplayDate(item.deadline)}
+                                        </span>
                                     </div>
-                                    <div className="flex items-center gap-2 text-edubot-muted dark:text-slate-400">
-                                        <FiCalendar className="h-4 w-4 text-edubot-orange" />
-                                        <span>{formatDisplayDate(item.deadline)}</span>
-                                    </div>
+                                    {item.description ? (
+                                        <p className="line-clamp-2 text-sm leading-6 text-edubot-muted dark:text-slate-400">
+                                            {item.description}
+                                        </p>
+                                    ) : null}
+                                </div>
+
+                                <div className="mt-4 flex flex-wrap gap-2 text-xs">
+                                    <span className="rounded-full border border-edubot-line/70 bg-white/70 px-3 py-1.5 text-edubot-muted dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300">
+                                        Текшерүү керек:{' '}
+                                        <span className="font-semibold text-edubot-ink dark:text-white">{item.queue?.needsReviewCount || 0}</span>
+                                    </span>
+                                    <span className="rounded-full border border-edubot-line/70 bg-white/70 px-3 py-1.5 text-edubot-muted dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300">
+                                        Жөнөткөн жок:{' '}
+                                        <span className="font-semibold text-edubot-ink dark:text-white">{item.queue?.missingCount || 0}</span>
+                                    </span>
+                                    <span className="rounded-full border border-edubot-line/70 bg-white/70 px-3 py-1.5 text-edubot-muted dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300">
+                                        Оңдотуу керек:{' '}
+                                        <span className="font-semibold text-edubot-ink dark:text-white">{item.queue?.needsRevisionCount || 0}</span>
+                                    </span>
+                                    {(item.queue?.lateCount || 0) > 0 && (
+                                        <span className="rounded-full border border-edubot-line/70 bg-white/70 px-3 py-1.5 text-edubot-muted dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300">
+                                            Кеч тапшырган:{' '}
+                                            <span className="font-semibold text-edubot-ink dark:text-white">{item.queue?.lateCount || 0}</span>
+                                        </span>
+                                    )}
+                                </div>
+
+                                <div className="mt-5 flex flex-wrap gap-2">
+                                    <Link
+                                        to={buildSessionHomeworkPath(item)}
+                                        className="dashboard-button-secondary"
+                                    >
+                                        Сессияда ачуу
+                                    </Link>
                                 </div>
                             </article>
                         ))}

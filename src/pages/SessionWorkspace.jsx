@@ -1,6 +1,7 @@
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import PropTypes from 'prop-types';
 import { toast } from 'react-hot-toast';
+import { useSearchParams } from 'react-router-dom';
 import {
     ATTENDANCE_STATUS,
     COURSE_SESSION_STATUS,
@@ -16,7 +17,7 @@ import {
     fetchCourseAttendance,
     fetchCourseGroups,
     fetchSessionHomework,
-    fetchSessionHomeworkSubmissions,
+    fetchSessionHomeworkReviewRoster,
     fetchSessionMeeting,
     fetchCourseSessions,
     fetchInstructorCourses,
@@ -284,7 +285,14 @@ const getSubmissionStatusMeta = (status) => {
                 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300',
         };
     }
-    if (['rejected', 'declined', 'needs_revision'].includes(normalized)) {
+    if (['needs_revision'].includes(normalized)) {
+        return {
+            label: 'Оңдоп кайра жиберүү',
+            badgeClass:
+                'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300',
+        };
+    }
+    if (['rejected', 'declined'].includes(normalized)) {
         return {
             label: 'Кайтарылды',
             badgeClass:
@@ -326,6 +334,32 @@ const getAttachmentName = (value) => {
     }
 };
 
+const openAttachmentInBrowser = async (url, filename = 'attachment') => {
+    if (!url) return;
+
+    const response = await fetch(url);
+    if (!response.ok) {
+        throw new Error('Тиркемени ачуу мүмкүн болгон жок.');
+    }
+
+    const blob = await response.blob();
+    const blobUrl = URL.createObjectURL(blob);
+    const popup = window.open(blobUrl, '_blank', 'noopener,noreferrer');
+
+    if (!popup) {
+        const link = document.createElement('a');
+        link.href = blobUrl;
+        link.target = '_blank';
+        link.rel = 'noreferrer';
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+    }
+
+    window.setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000);
+};
+
 const isJoinWindowOpen = (session, nowMs) => {
     const start = session?.startsAt ? new Date(session.startsAt).getTime() : null;
     const end = session?.endsAt ? new Date(session.endsAt).getTime() : null;
@@ -356,7 +390,18 @@ const getWorkspaceErrorMessage = (error, fallback) => {
 
 const SessionWorkspace = () => {
     const { user } = useContext(AuthContext);
-    const [activeTab, setActiveTab] = useState('attendance');
+    const [searchParams, setSearchParams] = useSearchParams();
+    const initialWorkspaceTab = searchParams.get('workspaceTab') || 'attendance';
+    const initialHomeworkReviewFilter = searchParams.get('homeworkReviewFilter') || 'all';
+    const pendingRouteSelectionRef = useRef({
+        courseId: searchParams.get('courseId') || '',
+        groupId: searchParams.get('groupId') || '',
+        sessionId: searchParams.get('sessionId') || '',
+        homeworkId: searchParams.get('homeworkId') || '',
+    });
+    const [activeTab, setActiveTab] = useState(
+        tabList.some((tab) => tab.id === initialWorkspaceTab) ? initialWorkspaceTab : 'attendance'
+    );
     const [workspaceMode, setWorkspaceMode] = useState('create');
     const [isSessionSetupOpen, setIsSessionSetupOpen] = useState(false);
 
@@ -422,9 +467,58 @@ const SessionWorkspace = () => {
     const [updatingHomework, setUpdatingHomework] = useState(false);
     const [homeworkQuery, setHomeworkQuery] = useState('');
     const [homeworkFilter, setHomeworkFilter] = useState('all');
+    const [homeworkReviewFilter, setHomeworkReviewFilterState] = useState(
+        ['all', 'needs_review', 'missing', 'needs_revision', 'late'].includes(
+            initialHomeworkReviewFilter
+        )
+            ? initialHomeworkReviewFilter
+            : 'all'
+    );
     const [nowMs, setNowMs] = useState(Date.now());
     const sessionSetupModalRef = useRef(null);
     const previousModalFocusRef = useRef(null);
+
+    useEffect(() => {
+        pendingRouteSelectionRef.current = {
+            courseId: searchParams.get('courseId') || '',
+            groupId: searchParams.get('groupId') || '',
+            sessionId: searchParams.get('sessionId') || '',
+            homeworkId: searchParams.get('homeworkId') || '',
+        };
+        const nextWorkspaceTab = searchParams.get('workspaceTab') || 'attendance';
+        if (tabList.some((tab) => tab.id === nextWorkspaceTab)) {
+            setActiveTab(nextWorkspaceTab);
+        }
+        const nextHomeworkReviewFilter = searchParams.get('homeworkReviewFilter') || 'all';
+        setHomeworkReviewFilterState(
+            ['all', 'needs_review', 'missing', 'needs_revision', 'late'].includes(
+                nextHomeworkReviewFilter
+            )
+                ? nextHomeworkReviewFilter
+                : 'all'
+        );
+    }, [searchParams]);
+
+    const setHomeworkReviewFilter = useCallback(
+        (nextFilter) => {
+            const normalized = ['all', 'needs_review', 'missing', 'needs_revision', 'late'].includes(
+                nextFilter
+            )
+                ? nextFilter
+                : 'all';
+            setHomeworkReviewFilterState(normalized);
+            setSearchParams(
+                (prev) => {
+                    const next = new URLSearchParams(prev);
+                    if (normalized === 'all') next.delete('homeworkReviewFilter');
+                    else next.set('homeworkReviewFilter', normalized);
+                    return next;
+                },
+                { replace: true }
+            );
+        },
+        [setSearchParams]
+    );
 
     useEffect(() => {
         const timer = setInterval(() => setNowMs(Date.now()), 1000);
@@ -531,6 +625,14 @@ const SessionWorkspace = () => {
                 setCourses(teachingCourses);
                 setSourceVideoCourses(publishedVideos);
                 setSelectedCourseId((prev) => {
+                    const pendingCourseId = pendingRouteSelectionRef.current.courseId;
+                    if (
+                        pendingCourseId &&
+                        teachingCourses.some((course) => String(course.id) === String(pendingCourseId))
+                    ) {
+                        pendingRouteSelectionRef.current.courseId = '';
+                        return String(pendingCourseId);
+                    }
                     if (prev && teachingCourses.some((course) => String(course.id) === String(prev))) {
                         return prev;
                     }
@@ -572,6 +674,14 @@ const SessionWorkspace = () => {
                 const list = toArray(res);
                 setGroups(list);
                 setSelectedGroupId((prev) => {
+                    const pendingGroupId = pendingRouteSelectionRef.current.groupId;
+                    if (
+                        pendingGroupId &&
+                        list.some((group) => String(group.id) === String(pendingGroupId))
+                    ) {
+                        pendingRouteSelectionRef.current.groupId = '';
+                        return String(pendingGroupId);
+                    }
                     if (prev && list.some((group) => String(group.id) === String(prev))) {
                         return prev;
                     }
@@ -610,6 +720,14 @@ const SessionWorkspace = () => {
                 const list = toArray(res);
                 setSessions(list);
                 setSelectedSessionId((prev) => {
+                    const pendingSessionId = pendingRouteSelectionRef.current.sessionId;
+                    if (
+                        pendingSessionId &&
+                        list.some((session) => String(session.id) === String(pendingSessionId))
+                    ) {
+                        pendingRouteSelectionRef.current.sessionId = '';
+                        return String(pendingSessionId);
+                    }
                     if (prev && list.some((session) => String(session.id) === String(prev))) {
                         return prev;
                     }
@@ -770,6 +888,14 @@ const SessionWorkspace = () => {
                 setPublishedHomework(items);
                 setHomeworkLoadedSessionId(String(selectedSessionId));
                 setSelectedHomeworkId((prev) => {
+                    const pendingHomeworkId = pendingRouteSelectionRef.current.homeworkId;
+                    if (
+                        pendingHomeworkId &&
+                        items.some((item) => String(item.id) === String(pendingHomeworkId))
+                    ) {
+                        pendingRouteSelectionRef.current.homeworkId = '';
+                        return String(pendingHomeworkId);
+                    }
                     if (prev && items.some((item) => String(item.id) === String(prev))) return prev;
                     return items[0]?.id ? String(items[0].id) : '';
                 });
@@ -806,26 +932,26 @@ const SessionWorkspace = () => {
         }
 
         let cancelled = false;
-        const loadSubmissions = async () => {
+        const loadReviewRoster = async () => {
             setLoadingHomeworkSubmissions(true);
             try {
-                const response = await fetchSessionHomeworkSubmissions(
+                const response = await fetchSessionHomeworkReviewRoster(
                     Number(selectedSessionId),
                     Number(activeHomework.id)
                 );
                 if (cancelled) return;
-                setHomeworkSubmissions(toArray(response));
+                setHomeworkSubmissions(toArray(response?.items));
             } catch (error) {
                 if (cancelled) return;
                 console.error(error);
-                toast.error(getWorkspaceErrorMessage(error, 'Тапшырма жооптору жүктөлгөн жок.'));
+                toast.error(getWorkspaceErrorMessage(error, 'Текшерүү тизмеси жүктөлгөн жок.'));
                 setHomeworkSubmissions([]);
             } finally {
                 if (!cancelled) setLoadingHomeworkSubmissions(false);
             }
         };
 
-        loadSubmissions();
+        loadReviewRoster();
         return () => {
             cancelled = true;
         };
@@ -1217,21 +1343,28 @@ const SessionWorkspace = () => {
     );
 
     const submissionStats = useMemo(() => {
-        const approved = homeworkSubmissions.filter((item) =>
-            ['approved', 'completed', 'reviewed', 'accepted'].includes(
-                String(item.status || '').toLowerCase()
-            )
+        const approved = homeworkSubmissions.filter((item) => item.reviewState === 'approved').length;
+        const rejected = homeworkSubmissions.filter((item) => item.reviewState === 'rejected').length;
+        const needsRevision = homeworkSubmissions.filter(
+            (item) => item.reviewState === 'needs_revision'
         ).length;
-        const rejected = homeworkSubmissions.filter((item) =>
-            ['rejected', 'declined', 'needs_revision'].includes(
-                String(item.status || '').toLowerCase()
-            )
+        const missing = homeworkSubmissions.filter((item) => item.reviewState === 'missing').length;
+        const needsReview = homeworkSubmissions.filter(
+            (item) => item.reviewState === 'needs_review'
         ).length;
+        const pendingSubmission = homeworkSubmissions.filter(
+            (item) => item.reviewState === 'pending_submission'
+        ).length;
+        const late = homeworkSubmissions.filter((item) => Boolean(item.isLate)).length;
         return {
             total: homeworkSubmissions.length,
             approved,
             rejected,
-            pending: Math.max(0, homeworkSubmissions.length - approved - rejected),
+            needsRevision,
+            missing,
+            needsReview,
+            pendingSubmission,
+            late,
         };
     }, [homeworkSubmissions]);
 
@@ -1776,7 +1909,7 @@ const SessionWorkspace = () => {
         }
     };
 
-    const reviewHomeworkSubmission = async (submissionId, status) => {
+    const reviewHomeworkSubmission = async (submissionId, status, reviewComment = '') => {
         if (!selectedSessionId || !selectedHomeworkId || !submissionId) return;
         setReviewingSubmissionId(String(submissionId));
         try {
@@ -1784,17 +1917,22 @@ const SessionWorkspace = () => {
                 Number(selectedSessionId),
                 Number(selectedHomeworkId),
                 Number(submissionId),
-                { status }
+                {
+                    status,
+                    reviewComment: String(reviewComment || '').trim() || undefined,
+                }
             );
-            const refreshed = await fetchSessionHomeworkSubmissions(
+            const refreshed = await fetchSessionHomeworkReviewRoster(
                 Number(selectedSessionId),
                 Number(selectedHomeworkId)
             );
-            setHomeworkSubmissions(toArray(refreshed));
+            setHomeworkSubmissions(toArray(refreshed?.items));
             toast.success('Тапшырма жооп статусу жаңыртылды.');
+            return true;
         } catch (error) {
             console.error(error);
             toast.error(getWorkspaceErrorMessage(error, 'Тапшырма жоопун баалоо катасы'));
+            return false;
         } finally {
             setReviewingSubmissionId('');
         }
@@ -2321,6 +2459,7 @@ const SessionWorkspace = () => {
                                 homeworkDescription={homeworkDescription}
                                 homeworkFilter={homeworkFilter}
                                 homeworkQuery={homeworkQuery}
+                                homeworkReviewFilter={homeworkReviewFilter}
                                 homeworkStats={homeworkStats}
                                 homeworkSubmissions={homeworkSubmissions}
                                 homeworkTitle={homeworkTitle}
@@ -2346,6 +2485,7 @@ const SessionWorkspace = () => {
                                 setHomeworkDescription={setHomeworkDescription}
                                 setHomeworkFilter={setHomeworkFilter}
                                 setHomeworkQuery={setHomeworkQuery}
+                                setHomeworkReviewFilter={setHomeworkReviewFilter}
                                 setHomeworkTitle={setHomeworkTitle}
                                 setSelectedHomeworkId={setSelectedHomeworkId}
                                 students={students}
