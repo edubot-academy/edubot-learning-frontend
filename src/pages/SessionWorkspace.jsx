@@ -1,7 +1,6 @@
 import { useContext, useEffect, useMemo, useRef, useState } from 'react';
 import PropTypes from 'prop-types';
 import { toast } from 'react-hot-toast';
-import { createPortal } from 'react-dom';
 import {
     ATTENDANCE_STATUS,
     COURSE_SESSION_STATUS,
@@ -50,6 +49,9 @@ import {
     FiXCircle,
 } from 'react-icons/fi';
 import { fetchGroupRoster } from '@features/courseGroups/roster';
+import SessionAttendanceTab from '@features/groupSessions/components/SessionAttendanceTab.jsx';
+import SessionResourcesTab from '@features/groupSessions/components/SessionResourcesTab.jsx';
+import SessionSetupModal from '@features/groupSessions/components/SessionSetupModal.jsx';
 import {
     DashboardFilterBar,
     DashboardInsetPanel,
@@ -367,9 +369,6 @@ const SessionWorkspace = () => {
     const [loadingSessions, setLoadingSessions] = useState(false);
     const [loadingStudents, setLoadingStudents] = useState(false);
     const [savingAttendance, setSavingAttendance] = useState(false);
-
-    const [materials, setMaterials] = useState([]);
-    const [recordingLink, setRecordingLink] = useState('');
 
     const [meetingProvider, setMeetingProvider] = useState(MEETING_PROVIDER.CUSTOM);
     const [meetingJoinUrl, setMeetingJoinUrl] = useState('');
@@ -859,6 +858,11 @@ const SessionWorkspace = () => {
         () => resolveSessionJoinUrl(selectedSession, selectedGroup),
         [selectedSession, selectedGroup]
     );
+    const selectedSessionMaterials = useMemo(
+        () => (Array.isArray(selectedSession?.materials) ? selectedSession.materials : []),
+        [selectedSession]
+    );
+    const selectedSessionRecordingUrl = selectedSession?.recordingUrl || '';
 
     const selectedSessionJoinAllowed = useMemo(
         () => isJoinWindowOpen(selectedSession, nowMs),
@@ -1385,7 +1389,15 @@ const SessionWorkspace = () => {
             const res = await syncSessionRecordings(Number(selectedSessionId), {
                 setSessionRecordingUrl: true,
             });
-            if (res?.recordingUrl) setRecordingLink(res.recordingUrl);
+            if (res?.recordingUrl) {
+                setSessions((prev) =>
+                    prev.map((session) =>
+                        String(session.id) === String(selectedSessionId)
+                            ? { ...session, recordingUrl: res.recordingUrl }
+                            : session
+                    )
+                );
+            }
             toast.success('Zoom recordings синхрондолду.');
         } catch (error) {
             toast.error(getWorkspaceErrorMessage(error, 'Жазууларды синхрондоо катасы'));
@@ -1400,21 +1412,6 @@ const SessionWorkspace = () => {
             return;
         }
         window.open(joinUrl, '_blank', 'noopener,noreferrer');
-    };
-
-    const addMaterialFiles = (event) => {
-        const files = Array.from(event.target.files || []);
-        if (files.length === 0) return;
-
-        setMaterials((prev) => [
-            ...prev,
-            ...files.map((file) => ({
-                id: `f-${Date.now()}-${file.name}`,
-                name: file.name,
-                sizeKb: Math.round(file.size / 1024),
-            })),
-        ]);
-        toast.success('Материал кошулду.');
     };
 
     const publishHomework = async () => {
@@ -1846,245 +1843,27 @@ const SessionWorkspace = () => {
                             </div>
                         </div>
 
-                        {isSessionSetupOpen && typeof document !== 'undefined'
-                            ? createPortal(
-                            <div
-                                className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/55 px-4 py-4 backdrop-blur-sm"
-                                onMouseDown={(event) => {
-                                    if (event.target === event.currentTarget) {
-                                        setIsSessionSetupOpen(false);
-                                    }
-                                }}
-                            >
-                                <div className="flex max-h-[90vh] w-full max-w-4xl flex-col overflow-hidden rounded-[2rem] border border-white/10 bg-white shadow-[0_30px_80px_rgba(15,23,42,0.22)] dark:bg-[#151922]">
-                                    <div className="border-b border-edubot-line/70 bg-[radial-gradient(circle_at_top_left,_rgba(251,146,60,0.14),_transparent_36%),linear-gradient(180deg,_rgba(248,250,252,0.98),_rgba(255,255,255,0.98))] px-6 py-5 dark:border-slate-700 dark:bg-[radial-gradient(circle_at_top_left,_rgba(249,115,22,0.12),_transparent_35%),linear-gradient(180deg,_rgba(24,28,39,0.98),_rgba(21,25,34,1))] sm:px-7">
-                                        <div className="flex items-start justify-between gap-4">
-                                            <div className="space-y-3">
-                                                <div className="inline-flex items-center gap-2 rounded-full border border-edubot-orange/20 bg-white/80 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-edubot-orange dark:border-edubot-orange/25 dark:bg-slate-900/60">
-                                                    {workspaceTitle}
-                                                </div>
-                                                <div>
-                                                    <h2
-                                                        id="session-setup-modal-title"
-                                                        className="text-2xl font-semibold tracking-tight text-edubot-ink dark:text-white sm:text-[2rem]"
-                                                    >
-                                                        {workspaceTitle}
-                                                    </h2>
-                                                    <p className="mt-1 text-sm text-edubot-muted dark:text-slate-400">
-                                                        {workspaceDescription}
-                                                    </p>
-                                                    <p className="mt-2 text-xs font-medium uppercase tracking-[0.14em] text-edubot-muted dark:text-slate-500">
-                                                        {isCreateWorkspace
-                                                            ? 'Курс жана группа жогору жактагы picker аркылуу тандалат'
-                                                            : 'Түзөтүү активдүү сессиянын контекстинде жүрөт'}
-                                                    </p>
-                                                </div>
-                                            </div>
-
-                                            <button
-                                                type="button"
-                                                onClick={() => setIsSessionSetupOpen(false)}
-                                                className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-edubot-line/80 bg-white/80 text-edubot-muted transition hover:border-edubot-orange/40 hover:text-edubot-orange dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-400"
-                                                aria-label="Жабуу"
-                                            >
-                                                <span className="text-xl leading-none">×</span>
-                                            </button>
-                                        </div>
-                                    </div>
-
-                                    <form
-                                        ref={sessionSetupModalRef}
-                                        className="flex min-h-0 flex-1 flex-col"
-                                        role="dialog"
-                                        aria-modal="true"
-                                        aria-labelledby="session-setup-modal-title"
-                                        onSubmit={(e) => {
-                                            e.preventDefault();
-                                            workspaceAction();
-                                        }}
-                                    >
-                                        <div className="grid min-h-0 flex-1 gap-5 overflow-y-auto px-6 py-5 sm:px-7 lg:grid-cols-[minmax(0,1.1fr),minmax(260px,0.9fr)]">
-                                            <div className="space-y-5">
-                                                <section className="rounded-[1.75rem] border border-edubot-line/70 bg-edubot-surfaceAlt/35 p-5 dark:border-slate-700 dark:bg-slate-900/35">
-                                                    <div className="flex items-center gap-2 text-sm font-semibold text-edubot-ink dark:text-white">
-                                                        <FiEdit3 className="h-4 w-4 text-edubot-orange" />
-                                                        Негизги маалымат
-                                                    </div>
-                                                    <div className="mt-4 grid gap-3 md:grid-cols-2">
-                                                        <div className="space-y-2">
-                                                            <input
-                                                                type="number"
-                                                                min="1"
-                                                                value={isCreateWorkspace ? quickSession.sessionIndex : editSession.sessionIndex}
-                                                                onChange={(e) =>
-                                                                    isCreateWorkspace
-                                                                        ? setQuickSession((prev) => ({ ...prev, sessionIndex: e.target.value }))
-                                                                        : setEditSession((prev) => ({ ...prev, sessionIndex: e.target.value }))
-                                                                }
-                                                                placeholder="Session index *"
-                                                                className="dashboard-field"
-                                                            />
-                                                            <p className="text-xs text-edubot-muted dark:text-slate-400">
-                                                                {isCreateWorkspace
-                                                                    ? `Кийинки жеткиликтүү номер: ${nextSessionIndex}. Зарыл болсо гана өзгөртүңүз.`
-                                                                    : 'Номер ушул группанын ичинде уникалдуу болушу керек.'}
-                                                            </p>
-                                                        </div>
-                                                        <select
-                                                            value={isCreateWorkspace ? quickSession.status : editSession.status}
-                                                            onChange={(e) =>
-                                                                isCreateWorkspace
-                                                                    ? setQuickSession((prev) => ({ ...prev, status: e.target.value }))
-                                                                    : setEditSession((prev) => ({ ...prev, status: e.target.value }))
-                                                            }
-                                                            className="dashboard-field dashboard-select"
-                                                        >
-                                                            {[COURSE_SESSION_STATUS.SCHEDULED, COURSE_SESSION_STATUS.COMPLETED, COURSE_SESSION_STATUS.CANCELLED].map((status) => (
-                                                                <option key={status} value={status}>
-                                                                    {status}
-                                                                </option>
-                                                            ))}
-                                                        </select>
-                                                        <input
-                                                            value={isCreateWorkspace ? quickSession.title : editSession.title}
-                                                            onChange={(e) =>
-                                                                isCreateWorkspace
-                                                                    ? setQuickSession((prev) => ({ ...prev, title: e.target.value }))
-                                                                    : setEditSession((prev) => ({ ...prev, title: e.target.value }))
-                                                            }
-                                                            placeholder="Session title *"
-                                                            className="dashboard-field md:col-span-2"
-                                                        />
-                                                    </div>
-                                                </section>
-
-                                                <section className="rounded-[1.75rem] border border-edubot-line/70 bg-edubot-surfaceAlt/35 p-5 dark:border-slate-700 dark:bg-slate-900/35">
-                                                    <div className="flex items-center gap-2 text-sm font-semibold text-edubot-ink dark:text-white">
-                                                        <FiCalendar className="h-4 w-4 text-edubot-orange" />
-                                                        Schedule
-                                                    </div>
-                                                    <div className="mt-4 grid gap-3 md:grid-cols-2">
-                                                        <input
-                                                            type="datetime-local"
-                                                            value={isCreateWorkspace ? quickSession.startsAt : editSession.startsAt}
-                                                            onChange={(e) =>
-                                                                isCreateWorkspace
-                                                                    ? setQuickSession((prev) => ({ ...prev, startsAt: e.target.value }))
-                                                                    : setEditSession((prev) => ({ ...prev, startsAt: e.target.value }))
-                                                            }
-                                                            className="dashboard-field"
-                                                        />
-                                                        <input
-                                                            type="datetime-local"
-                                                            value={isCreateWorkspace ? quickSession.endsAt : editSession.endsAt}
-                                                            onChange={(e) =>
-                                                                isCreateWorkspace
-                                                                    ? setQuickSession((prev) => ({ ...prev, endsAt: e.target.value }))
-                                                                    : setEditSession((prev) => ({ ...prev, endsAt: e.target.value }))
-                                                            }
-                                                            className="dashboard-field"
-                                                        />
-                                                    </div>
-                                                </section>
-                                            </div>
-
-                                            <div className="space-y-5">
-                                                <section className="rounded-[1.75rem] border border-edubot-line/70 bg-edubot-surfaceAlt/35 p-5 dark:border-slate-700 dark:bg-slate-900/35">
-                                                    <div className="flex items-center gap-2 text-sm font-semibold text-edubot-ink dark:text-white">
-                                                        <FiPaperclip className="h-4 w-4 text-edubot-orange" />
-                                                        Materials & recording
-                                                    </div>
-                                                    <div className="mt-4 grid gap-3">
-                                                        <input
-                                                            value={isCreateWorkspace ? quickSession.recordingUrl : editSession.recordingUrl}
-                                                            onChange={(e) =>
-                                                                isCreateWorkspace
-                                                                    ? setQuickSession((prev) => ({ ...prev, recordingUrl: e.target.value }))
-                                                                    : setEditSession((prev) => ({ ...prev, recordingUrl: e.target.value }))
-                                                            }
-                                                            placeholder="Recording URL"
-                                                            className="dashboard-field"
-                                                        />
-                                                        {isCreateWorkspace ? (
-                                                            <>
-                                                                <input
-                                                                    value={quickSession.materialTitle}
-                                                                    onChange={(e) =>
-                                                                        setQuickSession((prev) => ({ ...prev, materialTitle: e.target.value }))
-                                                                    }
-                                                                    placeholder="Material title"
-                                                                    className="dashboard-field"
-                                                                />
-                                                                <input
-                                                                    value={quickSession.materialUrl}
-                                                                    onChange={(e) =>
-                                                                        setQuickSession((prev) => ({ ...prev, materialUrl: e.target.value }))
-                                                                    }
-                                                                    placeholder="Material URL"
-                                                                    className="dashboard-field"
-                                                                />
-                                                            </>
-                                                        ) : null}
-                                                    </div>
-                                                </section>
-
-                                                <section className="rounded-[1.75rem] border border-edubot-line/70 bg-slate-900 px-5 py-5 text-white dark:border-slate-700 dark:bg-slate-800">
-                                                    <div className="text-sm font-semibold text-white">Контекст</div>
-                                                    <div className="mt-3 space-y-2 text-sm text-slate-300">
-                                                        <div>
-                                                            <span className="font-semibold text-white">Курс:</span>{' '}
-                                                            {selectedCourse?.title || selectedCourse?.name || 'Тандала элек'}
-                                                        </div>
-                                                        <div>
-                                                            <span className="font-semibold text-white">Группа:</span>{' '}
-                                                            {selectedGroup?.name || selectedGroup?.code || 'Тандала элек'}
-                                                        </div>
-                                                        {isCreateWorkspace ? (
-                                                            <div>
-                                                                <span className="font-semibold text-white">Жаңы сессия:</span>{' '}
-                                                                Тандалган группага кошулат
-                                                            </div>
-                                                        ) : (
-                                                            <div>
-                                                                <span className="font-semibold text-white">Сессия:</span>{' '}
-                                                                {selectedSession?.title ||
-                                                                    (selectedSession
-                                                                        ? `Session #${selectedSession.sessionIndex || selectedSession.id}`
-                                                                        : 'Тандала элек')}
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                </section>
-                                            </div>
-                                        </div>
-
-                                        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-edubot-line/70 bg-white/95 px-6 py-4 sm:px-7 dark:border-slate-700 dark:bg-[#151922]/95">
-                                            <p className="text-sm text-edubot-muted dark:text-slate-400">
-                                                {workspaceDisabled ? workspaceDisabledReason : 'Бардык өзгөртүүлөрдү ушул жерде сактаңыз.'}
-                                            </p>
-                                            <div className="flex flex-wrap gap-3">
-                                                <button
-                                                    type="button"
-                                                    className="dashboard-button-secondary"
-                                                    onClick={() => setIsSessionSetupOpen(false)}
-                                                    disabled={workspaceSaving}
-                                                >
-                                                    Жабуу
-                                                </button>
-                                                <button
-                                                    type="submit"
-                                                    disabled={workspaceDisabled || workspaceSaving}
-                                                    className="dashboard-button-primary disabled:cursor-not-allowed disabled:opacity-60"
-                                                >
-                                                    {workspaceActionLabel}
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </form>
-                                </div>
-                            </div>,
-                            document.body
-                        ) : null}
+                        <SessionSetupModal
+                            editSession={editSession}
+                            isCreateWorkspace={isCreateWorkspace}
+                            isOpen={isSessionSetupOpen}
+                            modalRef={sessionSetupModalRef}
+                            nextSessionIndex={nextSessionIndex}
+                            onClose={() => setIsSessionSetupOpen(false)}
+                            onSubmit={workspaceAction}
+                            quickSession={quickSession}
+                            selectedCourse={selectedCourse}
+                            selectedGroup={selectedGroup}
+                            selectedSession={selectedSession}
+                            setEditSession={setEditSession}
+                            setQuickSession={setQuickSession}
+                            workspaceActionLabel={workspaceActionLabel}
+                            workspaceDescription={workspaceDescription}
+                            workspaceDisabled={workspaceDisabled}
+                            workspaceDisabledReason={workspaceDisabledReason}
+                            workspaceSaving={workspaceSaving}
+                            workspaceTitle={workspaceTitle}
+                        />
 
                         <div className="flex flex-wrap gap-2 rounded-[1.5rem] border border-edubot-line/70 bg-edubot-surfaceAlt/70 p-2 dark:border-slate-700 dark:bg-slate-900/70">
                             {tabList.map((tab) => (
@@ -2175,355 +1954,62 @@ const SessionWorkspace = () => {
                                     />
                                 </div>
 
-                                <DashboardInsetPanel
-                                    title="Session attendance"
-                                    description="Катышуу түздөн-түз активдүү сессияга сакталат. Издөө, фильтр жана bulk аракеттер менен тез бүтүрүңүз."
-                                    action={
-                                        <span className={`rounded-full px-3 py-1 text-xs font-semibold ${hasAttendanceChanges
-                                            ? 'bg-amber-100 text-amber-800 dark:bg-amber-500/15 dark:text-amber-200'
-                                            : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-200'
-                                            }`}>
-                                            {hasAttendanceChanges ? 'Сакталбаган өзгөртүү бар' : 'Баары сакталган'}
-                                        </span>
-                                    }
-                                >
-                                    <div className="mt-4 space-y-4">
-                                        <div className="flex flex-wrap items-center justify-between gap-3 rounded-[1.25rem] border border-edubot-line/70 bg-white/80 p-4 dark:border-slate-700 dark:bg-slate-950/80">
-                                            <div>
-                                                <p className="text-sm font-semibold text-edubot-ink dark:text-white">
-                                                    {selectedSession?.title || `Session #${selectedSession?.sessionIndex || selectedSession?.id || '—'}`}
-                                                </p>
-                                                <p className="mt-1 text-xs text-edubot-muted dark:text-slate-400">
-                                                    {selectedGroup?.name || selectedGroup?.code || 'Группа'} • {selectedSession?.startsAt ? toSessionTime(selectedSession.startsAt) : 'Убакыт жок'}
-                                                    {selectedSessionMode === 'upcoming' ? ' • Күтүүдө' : ''}
-                                                    {selectedSessionMode === 'live' ? ' • Түз эфирде' : ''}
-                                                    {selectedSessionMode === 'completed' ? ' • Аяктаган' : ''}
-                                                </p>
-                                            </div>
-                                            <button
-                                                onClick={saveAttendance}
-                                                disabled={
-                                                    savingAttendance ||
-                                                    loadingStudents ||
-                                                    !selectedCourseId ||
-                                                    !selectedSessionId ||
-                                                    !hasAttendanceChanges
-                                                }
-                                                className="dashboard-button-primary"
-                                            >
-                                                {savingAttendance
-                                                    ? 'Сакталууда...'
-                                                    : hasAttendanceChanges
-                                                        ? 'Катышууну сактоо'
-                                                        : 'Өзгөртүү жок'}
-                                            </button>
-                                        </div>
-
-                                        <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr),auto]">
-                                            <div className="grid gap-3 md:grid-cols-[minmax(0,1fr),220px]">
-                                                <input
-                                                    value={attendanceQuery}
-                                                    onChange={(e) => setAttendanceQuery(e.target.value)}
-                                                    placeholder="Студент издөө"
-                                                    className="dashboard-field"
-                                                />
-                                                <select
-                                                    value={attendanceFilter}
-                                                    onChange={(e) => setAttendanceFilter(e.target.value)}
-                                                    className="dashboard-field dashboard-select"
-                                                >
-                                                    <option value="all">Баары</option>
-                                                    <option value={SESSION_ATTENDANCE_STATUS.PRESENT}>Катышты</option>
-                                                    <option value={SESSION_ATTENDANCE_STATUS.LATE}>Кечикти</option>
-                                                    <option value={SESSION_ATTENDANCE_STATUS.ABSENT}>Келген жок</option>
-                                                    <option value={SESSION_ATTENDANCE_STATUS.EXCUSED}>Уруксат менен</option>
-                                                    <option value="changed">Өзгөртүлгөндөр</option>
-                                                </select>
-                                            </div>
-                                            <div className="flex flex-wrap gap-2">
-                                                <button
-                                                    type="button"
-                                                    onClick={() =>
-                                                        applyAttendanceStatus(
-                                                            filteredStudents.map((student) => student.id),
-                                                            SESSION_ATTENDANCE_STATUS.PRESENT
-                                                        )
-                                                    }
-                                                    className="rounded-2xl border border-edubot-line bg-white px-4 py-3 text-sm font-semibold text-edubot-ink transition hover:border-edubot-orange/40 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200"
-                                                >
-                                                    Баарын катышты
-                                                </button>
-                                                <button
-                                                    type="button"
-                                                    onClick={() =>
-                                                        applyAttendanceStatus(
-                                                            filteredStudents.map((student) => student.id),
-                                                            SESSION_ATTENDANCE_STATUS.LATE
-                                                        )
-                                                    }
-                                                    className="rounded-2xl border border-edubot-line bg-white px-4 py-3 text-sm font-semibold text-edubot-ink transition hover:border-edubot-orange/40 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200"
-                                                >
-                                                    Баарын кечикти
-                                                </button>
-                                                <button
-                                                    type="button"
-                                                    onClick={() =>
-                                                        applyAttendanceStatus(
-                                                            filteredStudents.map((student) => student.id),
-                                                            SESSION_ATTENDANCE_STATUS.ABSENT
-                                                        )
-                                                    }
-                                                    className="rounded-2xl border border-edubot-line bg-white px-4 py-3 text-sm font-semibold text-edubot-ink transition hover:border-edubot-orange/40 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200"
-                                                >
-                                                    Баарын жок
-                                                </button>
-                                            </div>
-                                        </div>
-
-                                        <div className="flex flex-wrap gap-2 text-xs text-edubot-muted dark:text-slate-400">
-                                            <span className="rounded-full bg-edubot-surface px-3 py-1 dark:bg-slate-900">
-                                                Көрсөтүлгөндөр: {filteredStudents.length}
-                                            </span>
-                                            <span className="rounded-full bg-edubot-surface px-3 py-1 dark:bg-slate-900">
-                                                Сакталбаган: {hasAttendanceChanges ? 'ооба' : 'жок'}
-                                            </span>
-                                            <span className="rounded-full bg-edubot-surface px-3 py-1 dark:bg-slate-900">
-                                                Катышуу даярдыгы: {attendanceStats.presentRate}%
-                                            </span>
-                                        </div>
-                                    </div>
-                                </DashboardInsetPanel>
-
-                                <div className="flex items-center justify-between gap-3">
-                                    <div className="text-sm text-edubot-muted dark:text-slate-400">
-                                        Ар бир студентти ушул сессиянын контекстинде белгилеңиз. Bulk аракеттер учурдагы фильтрге жараша иштейт.
-                                    </div>
-                                    {hasAttendanceChanges ? (
-                                        <div className="text-xs font-semibold text-amber-700 dark:text-amber-300">
-                                            Өзгөртүүлөр али сактала элек
-                                        </div>
-                                    ) : null}
-                                </div>
-
-                                {loadingStudents ? (
-                                    <div className="dashboard-panel-muted p-10 text-center text-sm text-edubot-muted dark:text-slate-400">
-                                        Студенттер жүктөлүүдө...
-                                    </div>
-                                ) : students.length === 0 ? (
-                                    <div className="dashboard-panel-muted p-10 text-center text-sm text-edubot-muted dark:text-slate-400">
-                                        Студент табылган жок.
-                                    </div>
-                                ) : filteredStudents.length === 0 ? (
-                                    <div className="dashboard-panel-muted p-10 text-center text-sm text-edubot-muted dark:text-slate-400">
-                                        Бул фильтр боюнча студент табылган жок.
-                                    </div>
-                                ) : (
-                                    <div className="grid gap-4 xl:grid-cols-2">
-                                        {filteredStudents.map((student) => {
-                                            const currentStatus = attendanceRows[student.id]?.status;
-                                            const streak = studentStreaks[student.id] || 0;
-
-                                            return (
-                                                <article
-                                                    key={student.id}
-                                                    className="rounded-[1.5rem] border border-edubot-line/80 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-950"
-                                                >
-                                                    <div className="flex items-start gap-4">
-                                                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-edubot-surfaceAlt text-sm font-bold text-edubot-dark dark:bg-slate-800 dark:text-edubot-soft">
-                                                            {student.fullName
-                                                                .split(' ')
-                                                                .filter(Boolean)
-                                                                .slice(0, 2)
-                                                                .map((part) => part[0]?.toUpperCase())
-                                                                .join('') || 'S'}
-                                                        </div>
-
-                                                        <div className="min-w-0 flex-1">
-                                                            <div className="flex flex-wrap items-center gap-2">
-                                                                <h3 className="text-base font-semibold text-edubot-ink dark:text-white">
-                                                                    {student.fullName}
-                                                                </h3>
-                                                                <StatusBadge tone="default" className="gap-1">
-                                                                    <FiActivity className="h-3.5 w-3.5" />
-                                                                    {streak} күн streak
-                                                                </StatusBadge>
-                                                            </div>
-
-                                                            <div className="mt-4 grid gap-3">
-                                                                <div>
-                                                                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-edubot-muted dark:text-slate-400">
-                                                                        Катышуу
-                                                                    </p>
-                                                                    <div className="relative">
-                                                                        <FiEdit3 className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-edubot-muted" />
-                                                                        <select
-                                                                            value={currentStatus}
-                                                                            onChange={(e) =>
-                                                                                updateStatus(student.id, e.target.value)
-                                                                            }
-                                                                            className="dashboard-field pl-11"
-                                                                        >
-                                                                            {statusOptions.map((status) => (
-                                                                                <option key={status.value} value={status.value}>
-                                                                                    {status.label}
-                                                                                </option>
-                                                                            ))}
-                                                                        </select>
-                                                                    </div>
-                                                                    <p className="mt-2 text-xs text-edubot-muted dark:text-slate-400">
-                                                                        Статус тизмеден тандалат, ошондуктан кокус басуу азаят.
-                                                                    </p>
-                                                                </div>
-
-                                                                <div>
-                                                                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-edubot-muted dark:text-slate-400">
-                                                                        Эскертүү
-                                                                    </p>
-                                                                    <input
-                                                                        value={attendanceRows[student.id]?.notes || ''}
-                                                                        onChange={(e) =>
-                                                                            updateNotes(student.id, e.target.value)
-                                                                        }
-                                                                        className="dashboard-field"
-                                                                        placeholder="Эскертүү"
-                                                                    />
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </article>
-                                            );
-                                        })}
-                                    </div>
-                                )}
+                                <SessionAttendanceTab
+                                    applyAttendanceStatus={applyAttendanceStatus}
+                                    attendanceFilter={attendanceFilter}
+                                    attendanceQuery={attendanceQuery}
+                                    attendanceRows={attendanceRows}
+                                    attendanceStats={attendanceStats}
+                                    filteredStudents={filteredStudents}
+                                    hasAttendanceChanges={hasAttendanceChanges}
+                                    loadingStudents={loadingStudents}
+                                    saveAttendance={saveAttendance}
+                                    savingAttendance={savingAttendance}
+                                    selectedCourseId={selectedCourseId}
+                                    selectedGroup={selectedGroup}
+                                    selectedSession={selectedSession}
+                                    selectedSessionId={selectedSessionId}
+                                    selectedSessionMode={selectedSessionMode}
+                                    setAttendanceFilter={setAttendanceFilter}
+                                    setAttendanceQuery={setAttendanceQuery}
+                                    studentStreaks={studentStreaks}
+                                    students={students}
+                                    toSessionTime={toSessionTime}
+                                    updateNotes={updateNotes}
+                                    updateStatus={updateStatus}
+                                />
                             </div>
                         )}
 
                         {activeTab === 'materials' && (
-                            <div className="space-y-3">
-                                <label className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 cursor-pointer">
-                                    <span>Материал жүктөө</span>
-                                    <input
-                                        type="file"
-                                        multiple
-                                        className="hidden"
-                                        onChange={addMaterialFiles}
-                                    />
-                                </label>
-                                <div className="space-y-2">
-                                    {materials.map((file) => (
-                                        <div
-                                            key={file.id}
-                                            className="text-sm border border-gray-100 dark:border-gray-800 rounded px-3 py-2"
-                                        >
-                                            {file.name} ({file.sizeKb} KB)
-                                        </div>
-                                    ))}
-                                    {materials.length === 0 && (
-                                        <div className="text-sm text-gray-500">
-                                            Материал кошула элек.
-                                        </div>
-                                    )}
-                                </div>
-
-                                <div className="grid md:grid-cols-3 gap-2">
-                                    <select
-                                        value={meetingProvider}
-                                        onChange={(e) => setMeetingProvider(e.target.value)}
-                                        className="border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 bg-white dark:bg-[#0E0E0E]"
-                                    >
-                                        {Object.values(MEETING_PROVIDER).map((provider) => (
-                                            <option key={provider} value={provider}>
-                                                {provider}
-                                            </option>
-                                        ))}
-                                    </select>
-                                    <input
-                                        value={meetingJoinUrl}
-                                        onChange={(e) => setMeetingJoinUrl(e.target.value)}
-                                        placeholder="Meeting URL"
-                                        className="md:col-span-2 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 bg-white dark:bg-[#0E0E0E]"
-                                    />
-                                </div>
-                                <div className="flex flex-wrap gap-2 items-center">
-                                    <button
-                                        onClick={saveMeetingLink}
-                                        disabled={!selectedSessionId || savingMeeting}
-                                        className="px-4 py-2 rounded-lg bg-blue-600 text-white disabled:opacity-60"
-                                    >
-                                        {savingMeeting
-                                            ? 'Сакталууда...'
-                                            : meetingId
-                                                ? 'Meeting жаңыртуу'
-                                                : 'Meeting түзүү'}
-                                    </button>
-                                    <button
-                                        onClick={restoreMeetingState}
-                                        disabled={!selectedSessionId || loadingMeetingState}
-                                        className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 dark:text-[#E8ECF3] disabled:opacity-60"
-                                    >
-                                        {loadingMeetingState
-                                            ? 'Жүктөлүүдө...'
-                                            : 'Meeting абалын жүктөө'}
-                                    </button>
-                                    <button
-                                        onClick={removeMeeting}
-                                        disabled={!selectedSessionId || deletingMeeting}
-                                        className="px-4 py-2 rounded-lg border border-red-400 text-red-600 disabled:opacity-60"
-                                    >
-                                        {deletingMeeting ? 'Өчүрүлүүдө...' : 'Meeting өчүрүү'}
-                                    </button>
-                                    {meetingId && (
-                                        <span className="text-xs text-gray-500">ID: {meetingId}</span>
-                                    )}
-                                </div>
-
-                                <button
-                                    onClick={() =>
-                                        joinLiveSession(meetingJoinUrl || selectedSessionJoinUrl)
-                                    }
-                                    disabled={
-                                        !(meetingJoinUrl || selectedSessionJoinUrl) ||
-                                        !selectedSessionJoinAllowed
-                                    }
-                                    className="px-4 py-2 rounded-lg border border-blue-500 text-blue-700 disabled:opacity-60"
-                                >
-                                    Join Class
-                                </button>
-                                {!selectedSessionJoinAllowed && selectedSessionMode !== 'completed' && (
-                                    <div className="text-xs text-gray-500">
-                                        Join 10 мүнөт калганда гана жеткиликтүү.
-                                    </div>
-                                )}
-
-                                <input
-                                    value={recordingLink}
-                                    onChange={(e) => setRecordingLink(e.target.value)}
-                                    placeholder="Recording URL"
-                                    className="w-full border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 bg-white dark:bg-[#0E0E0E]"
-                                />
-
-                                <div className="flex flex-wrap gap-2">
-                                    <button
-                                        onClick={importZoomAttendanceToSession}
-                                        disabled={!selectedSessionId || importingAttendance}
-                                        className="px-4 py-2 rounded-lg border border-indigo-400 text-indigo-700 disabled:opacity-60"
-                                    >
-                                        {importingAttendance
-                                            ? 'Импорттолууда...'
-                                            : 'Zoom attendance импорт'}
-                                    </button>
-                                    <button
-                                        onClick={syncZoomRecordingsToSession}
-                                        disabled={!selectedSessionId || syncingRecordings}
-                                        className="px-4 py-2 rounded-lg border border-indigo-400 text-indigo-700 disabled:opacity-60"
-                                    >
-                                        {syncingRecordings
-                                            ? 'Синхрондолууда...'
-                                            : 'Zoom recordings sync'}
-                                    </button>
-                                </div>
-                            </div>
+                            <SessionResourcesTab
+                                deletingMeeting={deletingMeeting}
+                                importZoomAttendanceToSession={importZoomAttendanceToSession}
+                                importingAttendance={importingAttendance}
+                                joinLiveSession={joinLiveSession}
+                                loadingMeetingState={loadingMeetingState}
+                                meetingId={meetingId}
+                                meetingJoinUrl={meetingJoinUrl}
+                                meetingProvider={meetingProvider}
+                                onEditSession={() => {
+                                    setWorkspaceMode('edit');
+                                    setIsSessionSetupOpen(true);
+                                }}
+                                removeMeeting={removeMeeting}
+                                restoreMeetingState={restoreMeetingState}
+                                saveMeetingLink={saveMeetingLink}
+                                savingMeeting={savingMeeting}
+                                selectedSessionId={selectedSessionId}
+                                selectedSessionJoinAllowed={selectedSessionJoinAllowed}
+                                selectedSessionJoinUrl={selectedSessionJoinUrl}
+                                selectedSessionMaterials={selectedSessionMaterials}
+                                selectedSessionMode={selectedSessionMode}
+                                selectedSessionRecordingUrl={selectedSessionRecordingUrl}
+                                setMeetingJoinUrl={setMeetingJoinUrl}
+                                setMeetingProvider={setMeetingProvider}
+                                syncZoomRecordingsToSession={syncZoomRecordingsToSession}
+                                syncingRecordings={syncingRecordings}
+                            />
                         )}
 
                         {activeTab === 'notes' && (
@@ -3230,14 +2716,6 @@ const SessionHeaderContent = ({
         </div>
     );
 };
-
-const statusOptions = Object.values(SESSION_ATTENDANCE_STATUS).map((status) => ({
-    value: status,
-    label: statusMeta[sessionStatusMap[status] || ATTENDANCE_STATUS.ABSENT]?.label || status,
-    className:
-        statusMeta[sessionStatusMap[status] || ATTENDANCE_STATUS.ABSENT]?.className ||
-        'bg-gray-100 text-gray-600',
-}));
 
 Card.propTypes = {
     title: PropTypes.string.isRequired,
