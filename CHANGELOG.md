@@ -16,14 +16,19 @@ Version bumps are classified by delivery scale; see `VERSIONING.md`.
 ### 🐛 CRITICAL FIXES
 - Fixed React state mutation bug in `CurriculumStep` where `expandedSections` was directly assigned instead of using `setExpandedSections`.
 - Fixed React key warnings by using stable IDs (`section.id`/`lesson.id`) instead of array indices.
+- Added `VideoErrorBoundary` component for graceful video player error handling and recovery.
+- Fixed `VideoErrorBoundary` to use `import.meta.env` instead of `process.env` for Vite environment variable compatibility.
 
 ### 🔧 IMPROVEMENTS
 - Added `videoUtils.js` module with `getVideoDuration`, `getPlayableVideoUrl`, `isHlsPlayback`, and `getPlaybackStatus` helpers.
 - Updated `CourseVideoPlayer` and `ModalPreviewVideo` to use unified playback URL resolution.
 - Enhanced video upload flow with duration extraction using `getVideoDuration`.
+- Updated admin courses tab and admin panel components.
+- Enhanced courses API integration.
 
 ### 📁 NEW FILES
 - `src/utils/videoUtils.js` - Video playback utilities and URL resolution.
+- `src/shared/VideoErrorBoundary.jsx` - Error boundary for video playback components.
 
 ---
 

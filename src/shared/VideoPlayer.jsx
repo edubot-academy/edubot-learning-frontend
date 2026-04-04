@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
+import PropTypes from 'prop-types';
 import VideoPlayerUI from './ui/Play.jsx';
+import VideoErrorBoundary from './VideoErrorBoundary.jsx';
 import toast from 'react-hot-toast';
 import Hls from 'hls.js';
 
@@ -14,7 +16,7 @@ const getStoredAuthToken = () => {
     }
 };
 
-const VideoPlayer = ({
+const VideoPlayerInner = ({
     videoUrl,
     videoRef: externalVideoRef,
     resumeTime,
@@ -61,13 +63,28 @@ const VideoPlayer = ({
     const retryLoad = useCallback(() => {
         setHasError(false);
         setIsLoading(true);
-        setReloadToken((current) => current + 1);
+        // Use setTimeout to prevent rapid retries
+        setTimeout(() => {
+            setReloadToken((current) => current + 1);
+        }, 100);
     }, []);
 
     useEffect(() => {
         const videoEl = internalVideoRef.current;
-        if (!videoEl || !videoUrl) return;
+        if (!videoEl || !videoUrl) {
+            // Clean up if videoUrl becomes null/undefined
+            if (hlsRef.current) {
+                hlsRef.current.destroy();
+                hlsRef.current = null;
+            }
+            return;
+        }
 
+        // Abort controller for cleanup
+        const abortController = new AbortController();
+        const signal = abortController.signal;
+
+        // Cleanup previous HLS instance
         if (hlsRef.current) {
             hlsRef.current.destroy();
             hlsRef.current = null;
@@ -76,6 +93,9 @@ const VideoPlayer = ({
         videoEl.pause();
         videoEl.removeAttribute('src');
         videoEl.load();
+
+        if (signal.aborted) return;
+
         setHasError(false);
         setIsLoading(true);
         setCurrentQuality('auto');
@@ -85,17 +105,20 @@ const VideoPlayer = ({
 
         const isHlsSource = videoUrl.includes('.m3u8');
         const tryAutoPlay = () => {
-            if (!autoPlay || !allowPlay) return;
+            if (!autoPlay || !allowPlay || signal.aborted) return;
             videoEl.play().catch(() => undefined);
         };
         const failPlayback = () => {
+            if (signal.aborted) return;
             setHasError(true);
             setIsLoading(false);
             toast.error('Тилекке каршы, видео ойнотулбай калды.');
         };
 
+        let hls = null;
+
         if (isHlsSource && Hls.isSupported()) {
-            const hls = new Hls({
+            hls = new Hls({
                 xhrSetup: (xhr) => {
                     xhr.withCredentials = true;
                     const token = getStoredAuthToken();
@@ -106,10 +129,39 @@ const VideoPlayer = ({
             });
             hlsRef.current = hls;
 
-            hls.loadSource(videoUrl);
-            hls.attachMedia(videoEl);
+            // Error handler with cleanup on fatal errors
+            const handleError = (_, data) => {
+                if (signal.aborted) return;
+
+                if (data.fatal) {
+                    if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
+                        if (hlsRecoveryRef.current.network >= MAX_HLS_NETWORK_RECOVERIES) {
+                            failPlayback();
+                            return;
+                        }
+                        hlsRecoveryRef.current.network += 1;
+                        hls.startLoad();
+                        return;
+                    }
+
+                    if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
+                        if (hlsRecoveryRef.current.media >= MAX_HLS_MEDIA_RECOVERIES) {
+                            failPlayback();
+                            return;
+                        }
+                        hlsRecoveryRef.current.media += 1;
+                        hls.recoverMediaError();
+                        return;
+                    }
+
+                    failPlayback();
+                }
+            };
+
+            hls.on(Hls.Events.ERROR, handleError);
 
             hls.on(Hls.Events.MANIFEST_PARSED, (_, data) => {
+                if (signal.aborted) return;
                 const levels = data.levels || [];
                 setQualityOptions([
                     { id: 'auto', label: 'Auto' },
@@ -118,49 +170,38 @@ const VideoPlayer = ({
                 tryAutoPlay();
             });
 
-            hls.on(Hls.Events.ERROR, (_, data) => {
-                if (data.fatal) {
-                    if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
-                        if (
-                            hlsRecoveryRef.current.network >=
-                            MAX_HLS_NETWORK_RECOVERIES
-                        ) {
-                            failPlayback();
-                            return;
-                        }
-
-                        hlsRecoveryRef.current.network += 1;
-                        hls.startLoad();
-                        return;
-                    }
-
-                    if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
-                        if (
-                            hlsRecoveryRef.current.media >=
-                            MAX_HLS_MEDIA_RECOVERIES
-                        ) {
-                            failPlayback();
-                            return;
-                        }
-
-                        hlsRecoveryRef.current.media += 1;
-                        hls.recoverMediaError();
-                        return;
-                    }
-
-                    failPlayback();
-                }
-            });
-
-            return () => {
-                hls.destroy();
-                hlsRef.current = null;
-            };
+            hls.loadSource(videoUrl);
+            hls.attachMedia(videoEl);
+        } else if (isHlsSource && videoEl.canPlayType('application/vnd.apple.mpegurl')) {
+            // Native HLS support (Safari, iOS) - use native player
+            videoEl.src = videoUrl;
+            videoEl.load();
+            tryAutoPlay();
+        } else if (isHlsSource) {
+            // HLS source but no HLS support - show error with fallback message
+            failPlayback();
+            toast.error('Браузер HLS форматын колдобойт. MP4 форматындагы видеону колдонууңузду суранабыз.');
         } else {
+            // MP4 or other native format
             videoEl.src = videoUrl;
             videoEl.load();
             tryAutoPlay();
         }
+
+        return () => {
+            abortController.abort();
+
+            if (hls) {
+                hls.destroy();
+                hlsRef.current = null;
+            }
+
+            if (videoEl) {
+                videoEl.pause();
+                videoEl.removeAttribute('src');
+                videoEl.load();
+            }
+        };
     }, [allowPlay, autoPlay, reloadToken, videoUrl]);
 
     useEffect(() => {
@@ -169,10 +210,22 @@ const VideoPlayer = ({
 
         const handleCanPlay = () => setIsLoading(false);
         const handleWaiting = () => setIsLoading(true);
+
+        // Debounced timeupdate to reduce re-renders (100ms delay)
+        let debounceTimer = null;
         const handleTimeProgress = () => {
             if (!Number.isFinite(video.duration) || video.duration <= 0) return;
-            onProgress?.(video.currentTime / video.duration);
+
+            if (debounceTimer) {
+                clearTimeout(debounceTimer);
+            }
+
+            debounceTimer = setTimeout(() => {
+                onProgress?.(video.currentTime / video.duration);
+                onTimeUpdate?.(video.currentTime);
+            }, 100);
         };
+
         const handleEnded = () => onEnded?.();
 
         video.addEventListener('canplay', handleCanPlay);
@@ -181,12 +234,15 @@ const VideoPlayer = ({
         video.addEventListener('ended', handleEnded);
 
         return () => {
+            if (debounceTimer) {
+                clearTimeout(debounceTimer);
+            }
             video.removeEventListener('canplay', handleCanPlay);
             video.removeEventListener('waiting', handleWaiting);
             video.removeEventListener('timeupdate', handleTimeProgress);
             video.removeEventListener('ended', handleEnded);
         };
-    }, [onEnded, onProgress]);
+    }, [onEnded, onProgress, onTimeUpdate]);
 
     useEffect(() => {
         const v = internalVideoRef.current;
@@ -227,6 +283,9 @@ const VideoPlayer = ({
                     className="absolute inset-0 w-full h-full object-contain"
                     preload="metadata"
                     playsInline
+                    aria-label="Видео окуу"
+                    aria-describedby="video-description"
+                    controlsList="nodownload"
                     onError={() => {
                         setHasError(true);
                         setIsLoading(false);
@@ -274,6 +333,45 @@ const VideoPlayer = ({
             )}
         </div>
     );
+};
+
+/**
+ * VideoPlayer with Error Boundary wrapper.
+ * Catches JavaScript errors and displays fallback UI.
+ */
+const VideoPlayer = (props) => (
+    <VideoErrorBoundary>
+        <VideoPlayerInner {...props} />
+    </VideoErrorBoundary>
+);
+
+VideoPlayerInner.propTypes = {
+    videoUrl: PropTypes.string,
+    videoRef: PropTypes.oneOfType([
+        PropTypes.func,
+        PropTypes.shape({ current: PropTypes.any }),
+    ]),
+    resumeTime: PropTypes.number,
+    onProgress: PropTypes.func,
+    onTimeUpdate: PropTypes.func,
+    onPause: PropTypes.func,
+    allowPlay: PropTypes.bool,
+    containerRef: PropTypes.shape({ current: PropTypes.any }),
+    onEnded: PropTypes.func,
+    autoPlay: PropTypes.bool,
+};
+
+VideoPlayerInner.defaultProps = {
+    videoUrl: null,
+    videoRef: null,
+    resumeTime: null,
+    onProgress: null,
+    onTimeUpdate: null,
+    onPause: null,
+    allowPlay: true,
+    containerRef: null,
+    onEnded: null,
+    autoPlay: false,
 };
 
 export default VideoPlayer;

@@ -1,5 +1,5 @@
 /* eslint-disable react/prop-types */
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
     DashboardInsetPanel,
     DashboardMetricCard,
@@ -10,6 +10,7 @@ import { Link } from 'react-router-dom';
 import Loader from '@shared/ui/Loader';
 import { FiBookOpen, FiEye, FiFolder, FiLayers, FiTrash2, FiUploadCloud, FiUsers } from 'react-icons/fi';
 import DeliveryCourseDetailsModal from './DeliveryCourseDetailsModal';
+import { fetchSections, fetchLessons } from '@features/courses/api';
 
 const getCourseTypeLabel = (courseType) => {
     switch (courseType) {
@@ -53,8 +54,66 @@ const AdminCoursesTab = ({
     handleBulkTranscode,
 }) => {
     const [detailCourse, setDetailCourse] = useState(null);
+    const [sections, setSections] = useState([]);
+    const [lessons, setLessons] = useState([]);
+    const [sectionsLoading, setSectionsLoading] = useState(false);
+    const [lessonsLoading, setLessonsLoading] = useState(false);
     const publishedCourses = courses.filter((course) => course.isPublished).length;
     const deliveryCourses = courses.filter((course) => course.courseType !== 'video').length;
+
+    // Fetch sections when course is selected
+    useEffect(() => {
+        if (!transcodeCourseId) {
+            setSections([]);
+            setLessons([]);
+            setTranscodeSectionId('');
+            setTranscodeLessonId('');
+            return;
+        }
+
+        const loadSections = async () => {
+            setSectionsLoading(true);
+            try {
+                const data = await fetchSections(Number(transcodeCourseId));
+                setSections(data);
+            } catch {
+                setSections([]);
+            } finally {
+                setSectionsLoading(false);
+            }
+        };
+
+        loadSections();
+    }, [transcodeCourseId, setTranscodeSectionId]);
+
+    // Fetch lessons when section is selected
+    useEffect(() => {
+        if (!transcodeCourseId || !transcodeSectionId) {
+            setLessons([]);
+            setTranscodeLessonId('');
+            return;
+        }
+
+        const loadLessons = async () => {
+            setLessonsLoading(true);
+            try {
+                const data = await fetchLessons(Number(transcodeCourseId), Number(transcodeSectionId));
+                // Only video lessons
+                setLessons(data.filter((l) => l.kind === 'video'));
+            } catch {
+                setLessons([]);
+            } finally {
+                setLessonsLoading(false);
+            }
+        };
+
+        loadLessons();
+    }, [transcodeCourseId, transcodeSectionId, setTranscodeLessonId]);
+
+    // Get selected course, section, lesson names for display
+    const selectedCourse = courses.find((c) => String(c.id) === String(transcodeCourseId));
+    const selectedSection = sections.find((s) => String(s.id) === String(transcodeSectionId));
+    const selectedLesson = lessons.find((l) => String(l.id) === String(transcodeLessonId));
 
     return (
         <div className="space-y-6">
@@ -96,115 +155,115 @@ const AdminCoursesTab = ({
                                     const selectedGroupId = selectedEnrollmentGroupIds?.[String(course.id)] || '';
 
                                     return (
-                                <article
-                                    key={course.id}
-                                    className="rounded-2xl border border-edubot-line/70 bg-edubot-surfaceAlt/40 px-4 py-4 dark:border-slate-700 dark:bg-slate-900/60"
-                                >
-                                    <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                                        <div className="min-w-0">
-                                            <div className="flex flex-wrap items-center gap-2">
-                                                <p className="font-semibold text-edubot-ink dark:text-white">{course.title}</p>
-                                                <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700 dark:bg-slate-500/15 dark:text-slate-300">
-                                                    {getCourseTypeLabel(course.courseType)}
-                                                </span>
-                                                {course.isPublished ? (
-                                                    <span className="inline-flex items-center rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300">
-                                                        Жарыяланган
-                                                    </span>
-                                                ) : (
-                                                    <span className="inline-flex items-center rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-700 dark:bg-amber-500/15 dark:text-amber-300">
-                                                        Даярдалууда
-                                                    </span>
-                                                )}
+                                        <article
+                                            key={course.id}
+                                            className="rounded-2xl border border-edubot-line/70 bg-edubot-surfaceAlt/40 px-4 py-4 dark:border-slate-700 dark:bg-slate-900/60"
+                                        >
+                                            <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                                                <div className="min-w-0">
+                                                    <div className="flex flex-wrap items-center gap-2">
+                                                        <p className="font-semibold text-edubot-ink dark:text-white">{course.title}</p>
+                                                        <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700 dark:bg-slate-500/15 dark:text-slate-300">
+                                                            {getCourseTypeLabel(course.courseType)}
+                                                        </span>
+                                                        {course.isPublished ? (
+                                                            <span className="inline-flex items-center rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300">
+                                                                Жарыяланган
+                                                            </span>
+                                                        ) : (
+                                                            <span className="inline-flex items-center rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-700 dark:bg-amber-500/15 dark:text-amber-300">
+                                                                Даярдалууда
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    <p className="mt-2 text-sm text-edubot-muted dark:text-slate-400">
+                                                        Окутуучу: {course.instructor?.fullName || '—'}
+                                                    </p>
+                                                    {course.shortDescription ? (
+                                                        <p className="mt-2 line-clamp-2 text-sm text-edubot-muted dark:text-slate-400">
+                                                            {course.shortDescription}
+                                                        </p>
+                                                    ) : null}
+                                                </div>
+
+                                                <div className="flex flex-wrap gap-2">
+                                                    {isDeliveryCourse ? (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setDetailCourse(course)}
+                                                            className="dashboard-button-secondary"
+                                                        >
+                                                            <FiEye className="h-4 w-4" />
+                                                            Ички маалымат
+                                                        </button>
+                                                    ) : (
+                                                        <Link to={`/courses/${course.id}`} className="dashboard-button-secondary">
+                                                            <FiEye className="h-4 w-4" />
+                                                            Көрүү
+                                                        </Link>
+                                                    )}
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleDeleteCourse(course.id)}
+                                                        className="dashboard-button-secondary"
+                                                    >
+                                                        <FiTrash2 className="h-4 w-4" />
+                                                        Өчүрүү
+                                                    </button>
+                                                </div>
                                             </div>
-                                            <p className="mt-2 text-sm text-edubot-muted dark:text-slate-400">
-                                                Окутуучу: {course.instructor?.fullName || '—'}
-                                            </p>
-                                            {course.shortDescription ? (
-                                                <p className="mt-2 line-clamp-2 text-sm text-edubot-muted dark:text-slate-400">
-                                                    {course.shortDescription}
-                                                </p>
-                                            ) : null}
-                                        </div>
 
-                                        <div className="flex flex-wrap gap-2">
-                                            {isDeliveryCourse ? (
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setDetailCourse(course)}
-                                                    className="dashboard-button-secondary"
-                                                >
-                                                    <FiEye className="h-4 w-4" />
-                                                    Ички маалымат
-                                                </button>
-                                            ) : (
-                                                <Link to={`/courses/${course.id}`} className="dashboard-button-secondary">
-                                                    <FiEye className="h-4 w-4" />
-                                                    Көрүү
-                                                </Link>
-                                            )}
-                                            <button
-                                                type="button"
-                                                onClick={() => handleDeleteCourse(course.id)}
-                                                className="dashboard-button-secondary"
-                                            >
-                                                <FiTrash2 className="h-4 w-4" />
-                                                Өчүрүү
-                                            </button>
-                                        </div>
-                                    </div>
+                                            <div className="mt-4">
+                                                {isDeliveryCourse ? (
+                                                    <div className="mb-3">
+                                                        <label className="mb-2 block text-sm font-medium text-edubot-muted dark:text-slate-400">
+                                                            Группа тандаңыз
+                                                        </label>
+                                                        <select
+                                                            value={selectedGroupId}
+                                                            onChange={(e) =>
+                                                                setSelectedEnrollmentGroupIds((prev) => ({
+                                                                    ...prev,
+                                                                    [String(course.id)]: e.target.value,
+                                                                }))
+                                                            }
+                                                            className="dashboard-select w-full"
+                                                        >
+                                                            <option value="">Группа тандаңыз</option>
+                                                            {groupOptions.map((group) => (
+                                                                <option key={group.id} value={group.id}>
+                                                                    {(group.name || `Group #${group.id}`) +
+                                                                        ` (${group.code || '—'})`}
+                                                                </option>
+                                                            ))}
+                                                        </select>
+                                                    </div>
+                                                ) : null}
 
-                                    <div className="mt-4">
-                                        {isDeliveryCourse ? (
-                                            <div className="mb-3">
                                                 <label className="mb-2 block text-sm font-medium text-edubot-muted dark:text-slate-400">
-                                                    Группа тандаңыз
+                                                    {isDeliveryCourse
+                                                        ? 'Колдонуучуну группага жазуу'
+                                                        : 'Колдонуучуну курска жазуу'}
                                                 </label>
                                                 <select
-                                                    value={selectedGroupId}
-                                                    onChange={(e) =>
-                                                        setSelectedEnrollmentGroupIds((prev) => ({
-                                                            ...prev,
-                                                            [String(course.id)]: e.target.value,
-                                                        }))
-                                                    }
+                                                    onChange={(e) => handleEnrollUser(e.target.value, course.id)}
                                                     className="dashboard-select w-full"
+                                                    defaultValue=""
+                                                    disabled={isDeliveryCourse && !selectedGroupId}
                                                 >
-                                                    <option value="">Группа тандаңыз</option>
-                                                    {groupOptions.map((group) => (
-                                                        <option key={group.id} value={group.id}>
-                                                            {(group.name || `Group #${group.id}`) +
-                                                                ` (${group.code || '—'})`}
+                                                    <option value="" disabled>
+                                                        {isDeliveryCourse && !selectedGroupId
+                                                            ? 'Адегенде группа тандаңыз'
+                                                            : 'Колдонуучуну тандаңыз'}
+                                                    </option>
+                                                    {users.map((u) => (
+                                                        <option key={u.id} value={u.id}>
+                                                            {u.fullName} ({u.role})
                                                         </option>
                                                     ))}
                                                 </select>
                                             </div>
-                                        ) : null}
-
-                                        <label className="mb-2 block text-sm font-medium text-edubot-muted dark:text-slate-400">
-                                            {isDeliveryCourse
-                                                ? 'Колдонуучуну группага жазуу'
-                                                : 'Колдонуучуну курска жазуу'}
-                                        </label>
-                                        <select
-                                            onChange={(e) => handleEnrollUser(e.target.value, course.id)}
-                                            className="dashboard-select w-full"
-                                            defaultValue=""
-                                            disabled={isDeliveryCourse && !selectedGroupId}
-                                        >
-                                            <option value="" disabled>
-                                                {isDeliveryCourse && !selectedGroupId
-                                                    ? 'Адегенде группа тандаңыз'
-                                                    : 'Колдонуучуну тандаңыз'}
-                                            </option>
-                                            {users.map((u) => (
-                                                <option key={u.id} value={u.id}>
-                                                    {u.fullName} ({u.role})
-                                                </option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                </article>
+                                        </article>
                                     );
                                 })()
                             ))}
@@ -306,59 +365,122 @@ const AdminCoursesTab = ({
 
                     <DashboardInsetPanel
                         title="HLS транс коддоо"
-                        description="Жеке сабакты же бир section ичиндеги бир нече сабакты HLSке айлантыңыз."
+                        description="Видеолор азыр автоматтык түрдө HLSке транскоддолот. Бул жерде тек ката кеткен же эски видеолор үчүн колдонуңуз."
                     >
-                        <div className="mt-4 grid gap-3">
-                            <input
-                                type="number"
-                                placeholder="Course ID"
-                                value={transcodeCourseId || ''}
-                                onChange={(e) => setTranscodeCourseId(e.target.value)}
-                                className="dashboard-field"
-                            />
-                            <input
-                                type="number"
-                                placeholder="Section ID"
-                                value={transcodeSectionId}
-                                onChange={(e) => setTranscodeSectionId(e.target.value)}
-                                className="dashboard-field"
-                            />
-                            <input
-                                type="number"
-                                placeholder="Lesson ID"
-                                value={transcodeLessonId || ''}
-                                onChange={(e) => setTranscodeLessonId(e.target.value)}
-                                className="dashboard-field"
-                            />
-                            <input
-                                type="text"
-                                placeholder="Lesson IDs (мисалы: 61,62,63) же бош калтырсаңыз section бүтүндөй"
-                                value={transcodeLessonIds || ''}
-                                onChange={(e) => setTranscodeLessonIds(e.target.value)}
-                                className="dashboard-field"
-                            />
+                        <div className="mt-4 rounded-lg bg-blue-50 dark:bg-blue-900/20 p-3 text-sm text-blue-700 dark:text-blue-300">
+                            <p>Авто-транскоддоо иштейет: жаңы видеолор жүктөлгөндө автоматтык түрдө HLSке айланат.</p>
                         </div>
+
+                        {/* Selection summary */}
+                        {(selectedCourse || selectedSection) && (
+                            <div className="mt-3 rounded-lg bg-slate-100 dark:bg-slate-800 p-2 text-sm">
+                                {selectedCourse && <p className="text-slate-700 dark:text-slate-300">Курс: <span className="font-medium">{selectedCourse.title}</span></p>}
+                                {selectedSection && <p className="text-slate-700 dark:text-slate-300">Секция: <span className="font-medium">{selectedSection.title}</span></p>}
+                                {selectedLesson && <p className="text-slate-700 dark:text-slate-300">Сабак: <span className="font-medium">{selectedLesson.title}</span></p>}
+                            </div>
+                        )}
+
+                        <div className="mt-4 grid gap-3">
+                            {/* Course selector */}
+                            <div>
+                                <label className="mb-1 block text-sm font-medium text-edubot-muted dark:text-slate-400">
+                                    Курс тандаңыз
+                                </label>
+                                <select
+                                    value={transcodeCourseId || ''}
+                                    onChange={(e) => {
+                                        setTranscodeCourseId(e.target.value ? Number(e.target.value) : '');
+                                        setTranscodeSectionId('');
+                                        setTranscodeLessonId('');
+                                    }}
+                                    className="dashboard-select w-full"
+                                >
+                                    <option value="">Курс тандаңыз</option>
+                                    {courses.filter(c => c.courseType === 'video').map((course) => (
+                                        <option key={course.id} value={course.id}>
+                                            {course.title}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            {/* Section selector */}
+                            <div>
+                                <label className="mb-1 block text-sm font-medium text-edubot-muted dark:text-slate-400">
+                                    Секция тандаңыз
+                                </label>
+                                <select
+                                    value={transcodeSectionId || ''}
+                                    onChange={(e) => {
+                                        setTranscodeSectionId(e.target.value ? Number(e.target.value) : '');
+                                        setTranscodeLessonId('');
+                                    }}
+                                    disabled={!transcodeCourseId || sectionsLoading}
+                                    className="dashboard-select w-full disabled:opacity-50"
+                                >
+                                    <option value="">{sectionsLoading ? 'Жүктөлүүдө...' : 'Секция тандаңыз'}</option>
+                                    {sections.map((section) => (
+                                        <option key={section.id} value={section.id}>
+                                            {section.title || `Секция #${section.id}`}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            {/* Lesson selector */}
+                            <div>
+                                <label className="mb-1 block text-sm font-medium text-edubot-muted dark:text-slate-400">
+                                    Сабак тандаңыз (же бош калтырыңыз бардыгы үчүн)
+                                </label>
+                                <select
+                                    value={transcodeLessonId || ''}
+                                    onChange={(e) => setTranscodeLessonId(e.target.value ? Number(e.target.value) : '')}
+                                    disabled={!transcodeSectionId || lessonsLoading}
+                                    className="dashboard-select w-full disabled:opacity-50"
+                                >
+                                    <option value="">{lessonsLoading ? 'Жүктөлүүдө...' : 'Бардык видео сабактар'}</option>
+                                    {lessons.map((lesson) => (
+                                        <option key={lesson.id} value={lesson.id}>
+                                            {lesson.title || `Сабак #${lesson.id}`} {lesson.playbackStatus === 'processing' ? '(транскоддолууда)' : ''}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            {/* Lesson IDs input for specific lessons */}
+                            <div>
+                                <label className="mb-1 block text-sm font-medium text-edubot-muted dark:text-slate-400">
+                                    Же ID ларды киргизиңиз (бөлүүчү: 61,62,63)
+                                </label>
+                                <input
+                                    type="text"
+                                    placeholder="Lesson IDs (топтук үчүн)"
+                                    value={transcodeLessonIds || ''}
+                                    onChange={(e) => setTranscodeLessonIds(e.target.value)}
+                                    disabled={transcodeLessonId}
+                                    className="dashboard-field disabled:opacity-50"
+                                />
+                            </div>
+                        </div>
+
                         <div className="mt-4 flex flex-wrap items-center gap-3">
                             <button
                                 type="button"
-                                onClick={handleTranscode}
-                                disabled={transcodeLoading}
+                                onClick={() => {
+                                    if (transcodeLessonId && transcodeCourseId && transcodeSectionId) {
+                                        handleTranscode();
+                                    } else if (transcodeCourseId && transcodeSectionId) {
+                                        handleBulkTranscode();
+                                    }
+                                }}
+                                disabled={transcodeLoading || !transcodeCourseId || !transcodeSectionId}
                                 className="dashboard-button-primary disabled:cursor-not-allowed disabled:opacity-60"
                             >
                                 <FiUploadCloud className="h-4 w-4" />
-                                {transcodeLoading ? <Loader fullScreen={false} /> : 'Транс коддоо'}
-                            </button>
-                            <button
-                                type="button"
-                                onClick={handleBulkTranscode}
-                                disabled={transcodeLoading}
-                                className="dashboard-button-secondary disabled:cursor-not-allowed disabled:opacity-60"
-                            >
-                                <FiLayers className="h-4 w-4" />
-                                Топтук транскоддоо
+                                {transcodeLoading ? <Loader fullScreen={false} /> : transcodeLessonId ? 'Кайра транскоддоо' : 'Топтук транскоддоо'}
                             </button>
                             <p className="text-xs text-edubot-muted dark:text-slate-400">
-                                Section ID милдеттүү. Lesson IDs талаасын бош калтырсаңыз, section ичиндеги бардык video сабактар иштетилет.
+                                Курс жана секция милдеттүү. Бардык видео сабактарды же конкреттүү бирөөнү тандаңыз.
                             </p>
                         </div>
                     </DashboardInsetPanel>

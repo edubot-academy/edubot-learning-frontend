@@ -199,6 +199,13 @@ export const bulkTranscodeLessonHls = async ({ courseId, sectionId, lessonIds })
     );
     return response.data;
 };
+
+export const getTranscodeStatus = async ({ courseId, sectionId, lessonId }) => {
+    const response = await api.get(
+        `/courses/${courseId}/sections/${sectionId}/lessons/${lessonId}/transcode-status`
+    );
+    return response.data;
+};
 export async function deleteLesson(courseId, sectionId, lessonId) {
     await api.delete(`/courses/${courseId}/sections/${sectionId}/lessons/${lessonId}`);
 }
