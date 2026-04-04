@@ -46,6 +46,7 @@ export const useCourseBuilderInfo = (courseBuilderState) => {
             setCourseInfo((prev) => ({
                 ...prev,
                 cover: file,
+                pendingCoverName: file.name,
                 coverImageUrl: createFilePreviewUrl(file),
             }));
             setInfoTouched((prev) => ({ ...prev, cover: true }));

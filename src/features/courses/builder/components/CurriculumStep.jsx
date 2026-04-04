@@ -58,6 +58,7 @@ export const CurriculumStep = ({
     curriculumStats,
     isUploading,
     expandedSections,
+    setExpandedSections,
     singleSectionFocus,
     dragSectionIndex,
     setDragSectionIndex,
@@ -197,7 +198,7 @@ export const CurriculumStep = ({
                                         for (let idx = 0; idx < curriculum.length; idx += 1) {
                                             nextExpanded[idx] = idx === openIdx;
                                         }
-                                        expandedSections = nextExpanded;
+                                        setExpandedSections(nextExpanded);
                                     }
                                     return nextMode;
                                 });
@@ -256,7 +257,7 @@ export const CurriculumStep = ({
             {curriculum.map((section, sIdx) => (
                 <details
                     id={`section-${sIdx}`}
-                    key={sIdx}
+                    key={section.id ?? section.tempId ?? `section-${sIdx}`}
                     onDragOver={(event) => event.preventDefault()}
                     onDrop={() => handleSectionDrop(sIdx)}
                     open={expandedSections[sIdx] ?? sIdx === 0}
@@ -265,10 +266,13 @@ export const CurriculumStep = ({
                         if (singleSectionFocus && isOpen) {
                             const next = {};
                             for (let idx = 0; idx < curriculum.length; idx += 1) next[idx] = idx === sIdx;
-                            expandedSections = next;
+                            setExpandedSections(next);
                             return;
                         }
-                        expandedSections = { ...expandedSections, [sIdx]: isOpen };
+                        setExpandedSections((prevExpanded) => ({
+                            ...prevExpanded,
+                            [sIdx]: isOpen,
+                        }));
                     }}
                     className={`mb-5 overflow-hidden rounded-2xl border border-gray-200 bg-white/80 shadow-sm transition dark:border-gray-700 dark:bg-gray-800/80 ${dragSectionIndex === sIdx ? 'opacity-80 ring-2 ring-amber-300 dark:ring-amber-600' : ''
                         }`}
@@ -384,7 +388,7 @@ export const CurriculumStep = ({
                             return (
                                 <div
                                     id={`lesson-${sIdx}-${lIdx}`}
-                                    key={lIdx}
+                                    key={lesson.id ?? lesson.tempId ?? `lesson-${sIdx}-${lIdx}`}
                                     onDragOver={(event) => event.preventDefault()}
                                     onDrop={() => handleLessonDrop(sIdx, lIdx)}
                                     className={`mb-4 rounded-xl border p-3 transition ${lessonIssue

@@ -30,6 +30,7 @@ import {
     updateCourseAiPrompt,
     deleteCourseAiPrompt,
     transcodeLessonHls,
+    bulkTranscodeLessonHls,
     fetchAdminStats,
     fetchSkills,
     createSkill,
@@ -106,6 +107,7 @@ const AdminPanel = () => {
     const [transcodeCourseId, setTranscodeCourseId] = useState('');
     const [transcodeSectionId, setTranscodeSectionId] = useState('');
     const [transcodeLessonId, setTranscodeLessonId] = useState('');
+    const [transcodeLessonIds, setTranscodeLessonIds] = useState('');
     const [transcodeLoading, setTranscodeLoading] = useState(false);
 
     const [adminStats, setAdminStats] = useState(null);
@@ -595,6 +597,35 @@ const AdminPanel = () => {
         }
     };
 
+    const handleBulkTranscode = async () => {
+        if (!transcodeCourseId || !transcodeSectionId) {
+            toast.error('Course жана Section ID толтуруңуз');
+            return;
+        }
+
+        const lessonIds = transcodeLessonIds
+            .split(',')
+            .map((value) => value.trim())
+            .filter(Boolean)
+            .map(Number)
+            .filter(Number.isFinite);
+
+        setTranscodeLoading(true);
+        try {
+            const result = await bulkTranscodeLessonHls({
+                courseId: Number(transcodeCourseId),
+                sectionId: Number(transcodeSectionId),
+                lessonIds: lessonIds.length ? lessonIds : undefined,
+            });
+            toast.success(`Топтук транскоддоо башталды: ${result.started}/${result.total}`);
+            setTranscodeLessonIds('');
+        } catch {
+            toast.error('Топтук транскоддоодо ката кетти');
+        } finally {
+            setTranscodeLoading(false);
+        }
+    };
+
     // Company management handlers
     const handleCreateCompany = async () => {
         if (!newCompanyName.trim()) return;
@@ -963,6 +994,7 @@ const AdminPanel = () => {
                         transcodeCourseId={transcodeCourseId}
                         transcodeSectionId={transcodeSectionId}
                         transcodeLessonId={transcodeLessonId}
+                        transcodeLessonIds={transcodeLessonIds}
                         transcodeLoading={transcodeLoading}
                         setNewCategory={setNewCategory}
                         setEditingCategoryId={setEditingCategoryId}
@@ -971,12 +1003,14 @@ const AdminPanel = () => {
                         setTranscodeCourseId={setTranscodeCourseId}
                         setTranscodeSectionId={setTranscodeSectionId}
                         setTranscodeLessonId={setTranscodeLessonId}
+                        setTranscodeLessonIds={setTranscodeLessonIds}
                         handleDeleteCourse={handleDeleteCourse}
                         handleEnrollUser={handleEnrollUser}
                         handleAddCategory={handleAddCategory}
                         handleUpdateCategory={handleUpdateCategory}
                         handleDeleteCategory={handleDeleteCategory}
                         handleTranscode={handleTranscode}
+                        handleBulkTranscode={handleBulkTranscode}
                     />
                 );
 

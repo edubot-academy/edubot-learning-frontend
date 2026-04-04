@@ -92,7 +92,13 @@ export const prepareCourseInfoForApi = (courseInfo) => {
  * Creates an empty lesson object
  * @returns {Object} - Default lesson structure
  */
-export const createEmptyLesson = () => ({ ...DEFAULT_LESSON });
+export const createEmptyLesson = () => ({
+    ...DEFAULT_LESSON,
+    tempId: generateTempId(),
+    uploading: { ...DEFAULT_LESSON.uploading },
+    uploadProgress: { ...DEFAULT_LESSON.uploadProgress },
+    resources: [...(DEFAULT_LESSON.resources || [])],
+});
 
 /**
  * Creates an empty section object
@@ -101,7 +107,9 @@ export const createEmptyLesson = () => ({ ...DEFAULT_LESSON });
  */
 export const createEmptySection = (index = 1) => ({
     ...DEFAULT_SECTION,
+    tempId: generateTempId(),
     sectionTitle: `Бөлүм ${index}`,
+    lessons: [...DEFAULT_SECTION.lessons],
 });
 
 /**

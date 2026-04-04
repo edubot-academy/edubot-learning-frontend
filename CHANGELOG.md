@@ -2,6 +2,31 @@
 
 Version bumps are classified by delivery scale; see `VERSIONING.md`.
 
+## [1.6.0] - 2026-04-04
+
+### 🎥 HLS VIDEO PLAYBACK + TRANSCODING
+- Added HLS.js integration to `VideoPlayer` with adaptive quality selection (360p/480p/720p) and auto quality.
+- Implemented playback state-aware video resolution via `getPlayableVideoUrl()` utility prioritizing `playbackUrl` when `playbackStatus === 'ready'`.
+- Added HLS stream authentication via `xhrSetup` with Bearer token injection for secure CDN requests.
+- Implemented HLS error recovery with configurable retry limits (2 network, 2 media recoveries max).
+- Added quality selector UI with dynamic level detection from HLS manifest.
+- Created admin HLS transcoding panel with single and bulk transcoding controls.
+- Added `transcodeLessonHls` and `bulkTranscodeLessonHls` API functions.
+
+### 🐛 CRITICAL FIXES
+- Fixed React state mutation bug in `CurriculumStep` where `expandedSections` was directly assigned instead of using `setExpandedSections`.
+- Fixed React key warnings by using stable IDs (`section.id`/`lesson.id`) instead of array indices.
+
+### 🔧 IMPROVEMENTS
+- Added `videoUtils.js` module with `getVideoDuration`, `getPlayableVideoUrl`, `isHlsPlayback`, and `getPlaybackStatus` helpers.
+- Updated `CourseVideoPlayer` and `ModalPreviewVideo` to use unified playback URL resolution.
+- Enhanced video upload flow with duration extraction using `getVideoDuration`.
+
+### 📁 NEW FILES
+- `src/utils/videoUtils.js` - Video playback utilities and URL resolution.
+
+---
+
 ## [1.5.0] - 2026-04-03
 
 ### 🚀 DELIVERY BATCH

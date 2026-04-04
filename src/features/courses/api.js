@@ -191,6 +191,14 @@ export const transcodeLessonHls = async ({ courseId, sectionId, lessonId }) => {
     );
     return response.data;
 };
+
+export const bulkTranscodeLessonHls = async ({ courseId, sectionId, lessonIds }) => {
+    const response = await api.post(
+        `/courses/${courseId}/sections/${sectionId}/lessons/bulk-transcode-hls`,
+        { lessonIds }
+    );
+    return response.data;
+};
 export async function deleteLesson(courseId, sectionId, lessonId) {
     await api.delete(`/courses/${courseId}/sections/${sectionId}/lessons/${lessonId}`);
 }

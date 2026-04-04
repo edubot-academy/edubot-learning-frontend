@@ -73,6 +73,8 @@ export const useCourseBuilder = ({ mode = 'create', courseId: initialCourseId = 
     const navigate = useNavigate();
     const dataLoadedRef = useRef(false);
     const [courseId, setCourseId] = useState(initialCourseId);
+    const lastCoverPreviewUrlRef = useRef('');
+    const pendingCoverNameRef = useRef('');
 
     // Basic state (identical to both components)
     const [step, setStep] = useState(1);
@@ -170,9 +172,26 @@ export const useCourseBuilder = ({ mode = 'create', courseId: initialCourseId = 
                 const saved = localStorage.getItem('draftCourse');
                 if (saved) {
                     const parsed = JSON.parse(saved);
+                    const sanitizedDraftInfo = {
+                        ...(parsed.courseInfo || {}),
+                    };
+
+                    if (typeof sanitizedDraftInfo.coverImageUrl === 'string' && sanitizedDraftInfo.coverImageUrl.startsWith('blob:')) {
+                        sanitizedDraftInfo.coverImageUrl = '';
+                    }
+
+                    if (sanitizedDraftInfo.cover && typeof sanitizedDraftInfo.cover === 'object') {
+                        sanitizedDraftInfo.cover = null;
+                    }
+
+                    pendingCoverNameRef.current =
+                        typeof sanitizedDraftInfo.pendingCoverName === 'string'
+                            ? sanitizedDraftInfo.pendingCoverName
+                            : '';
+
                     setCourseInfo((prev) => ({
                         ...prev,
-                        ...(parsed.courseInfo || {}),
+                        ...sanitizedDraftInfo,
                     }));
                     setStep(parsed.step || 1);
                 }
@@ -185,24 +204,17 @@ export const useCourseBuilder = ({ mode = 'create', courseId: initialCourseId = 
                 toast.error(parseApiError(error, 'Маалымат жүктөлбөдү').message);
             }
         } else {
-            // Edit mode - load existing course data only if not already loaded
-            // Check both ref and localStorage to handle component remounts
-            // But only skip loading if we actually have meaningful data (more than default curriculum)
-            const hasLoadedData = dataLoadedRef.current || (
-                localStorage.getItem(`course_${courseId}_data_loaded`) &&
-                curriculum.length > 0 // Only consider data loaded if we have more than default section
-            );
-
-            if (!hasLoadedData) {
-                dataLoadedRef.current = true;
-                localStorage.setItem(`course_${courseId}_data_loaded`, 'true');
-                try {
-                    const [courseData, categoryData, sectionData, skillsData] = await Promise.all([
-                        fetchCourseDetails(courseId),
-                        fetchCategories(),
-                        fetchSections(courseId),
-                        fetchSkills().catch(() => []),
-                    ]);
+            // Edit mode must always hydrate from the API for the current course.
+            // The previous localStorage gate could skip fetchSections entirely and leave
+            // the builder rendering stale default state.
+            dataLoadedRef.current = true;
+            try {
+                const [courseData, categoryData, sectionData, skillsData] = await Promise.all([
+                    fetchCourseDetails(courseId),
+                    fetchCategories(),
+                    fetchSections(courseId),
+                    fetchSkills().catch(() => []),
+                ]);
 
                     // Process skills data
                     const mappedSkillOptions = Array.isArray(skillsData) && skillsData.length
@@ -269,26 +281,22 @@ export const useCourseBuilder = ({ mode = 'create', courseId: initialCourseId = 
                         })
                     );
 
-                    const hydratedCourse = hydrateCourseInfo(courseData);
-                    setCourseInfo(hydratedCourse);
-                    setOriginalCourse(hydratedCourse);
-                    setCategories(categoryData);
-                    setSkillOptions(skillOptionsWithBlank);
-                    setCurriculum(allSections);
-                    setOriginalSections(JSON.parse(JSON.stringify(allSections)));
-                } catch (err) {
-                    console.error(err);
-                    if (isForbiddenError(err)) {
-                        navigate('/unauthorized');
-                        return;
-                    }
-                    toast.error(parseApiError(err, 'Маалыматты жүктөө катасы').message);
-                } finally {
-                    setLoading(false);
+                const hydratedCourse = hydrateCourseInfo(courseData);
+                setCourseInfo(hydratedCourse);
+                setOriginalCourse(hydratedCourse);
+                setCategories(categoryData);
+                setSkillOptions(skillOptionsWithBlank);
+                setCurriculum(allSections);
+                setOriginalSections(JSON.parse(JSON.stringify(allSections)));
+            } catch (err) {
+                console.error(err);
+                if (isForbiddenError(err)) {
+                    navigate('/unauthorized');
+                    return;
                 }
-            } else {
-                // Data already loaded, but we need to preserve local deletions
-                setLoading(false); // Ensure loading is turned off
+                toast.error(parseApiError(err, 'Маалыматты жүктөө катасы').message);
+            } finally {
+                setLoading(false);
             }
         }
     }, [mode, courseId, navigate]);
@@ -357,7 +365,19 @@ export const useCourseBuilder = ({ mode = 'create', courseId: initialCourseId = 
     // Save draft for create mode
     const saveDraft = useCallback(() => {
         if (mode === 'create') {
-            localStorage.setItem('draftCourse', JSON.stringify({ courseInfo, courseId, step }));
+            const draftCourseInfo = {
+                ...courseInfo,
+                cover: null,
+                pendingCoverName:
+                    courseInfo.cover instanceof File
+                        ? courseInfo.cover.name
+                        : courseInfo.pendingCoverName || '',
+                coverImageUrl:
+                    typeof courseInfo.coverImageUrl === 'string' && courseInfo.coverImageUrl.startsWith('blob:')
+                        ? ''
+                        : courseInfo.coverImageUrl,
+            };
+            localStorage.setItem('draftCourse', JSON.stringify({ courseInfo: draftCourseInfo, courseId, step }));
         }
     }, [mode, courseInfo, courseId, step]);
 
@@ -371,6 +391,32 @@ export const useCourseBuilder = ({ mode = 'create', courseId: initialCourseId = 
             saveDraft();
         }
     }, [saveDraft]);
+
+    useEffect(() => {
+        const currentPreviewUrl = courseInfo.coverImageUrl;
+        const previousPreviewUrl = lastCoverPreviewUrlRef.current;
+
+        if (
+            previousPreviewUrl &&
+            previousPreviewUrl !== currentPreviewUrl &&
+            previousPreviewUrl.startsWith('blob:')
+        ) {
+            URL.revokeObjectURL(previousPreviewUrl);
+        }
+
+        lastCoverPreviewUrlRef.current =
+            typeof currentPreviewUrl === 'string' && currentPreviewUrl.startsWith('blob:')
+                ? currentPreviewUrl
+                : '';
+
+        return () => {
+            const lastUrl = lastCoverPreviewUrlRef.current;
+            if (lastUrl && lastUrl.startsWith('blob:')) {
+                URL.revokeObjectURL(lastUrl);
+                lastCoverPreviewUrlRef.current = '';
+            }
+        };
+    }, [courseInfo.coverImageUrl]);
 
     // Get step items
     const stepItems = getStepItems(mode === 'create' ? courseId : Boolean(courseInfo?.id));

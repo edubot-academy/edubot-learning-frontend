@@ -34,6 +34,7 @@ const AdminCoursesTab = ({
     transcodeCourseId,
     transcodeSectionId,
     transcodeLessonId,
+    transcodeLessonIds,
     transcodeLoading,
     setNewCategory,
     setEditingCategoryId,
@@ -42,12 +43,14 @@ const AdminCoursesTab = ({
     setTranscodeCourseId,
     setTranscodeSectionId,
     setTranscodeLessonId,
+    setTranscodeLessonIds,
     handleDeleteCourse,
     handleEnrollUser,
     handleAddCategory,
     handleUpdateCategory,
     handleDeleteCategory,
     handleTranscode,
+    handleBulkTranscode,
 }) => {
     const [detailCourse, setDetailCourse] = useState(null);
     const publishedCourses = courses.filter((course) => course.isPublished).length;
@@ -303,7 +306,7 @@ const AdminCoursesTab = ({
 
                     <DashboardInsetPanel
                         title="HLS транс коддоо"
-                        description="MP4 сабакты HLSке айландыруу үчүн Course / Section / Lesson ID киргизиңиз."
+                        description="Жеке сабакты же бир section ичиндеги бир нече сабакты HLSке айлантыңыз."
                     >
                         <div className="mt-4 grid gap-3">
                             <input
@@ -327,6 +330,13 @@ const AdminCoursesTab = ({
                                 onChange={(e) => setTranscodeLessonId(e.target.value)}
                                 className="dashboard-field"
                             />
+                            <input
+                                type="text"
+                                placeholder="Lesson IDs (мисалы: 61,62,63) же бош калтырсаңыз section бүтүндөй"
+                                value={transcodeLessonIds || ''}
+                                onChange={(e) => setTranscodeLessonIds(e.target.value)}
+                                className="dashboard-field"
+                            />
                         </div>
                         <div className="mt-4 flex flex-wrap items-center gap-3">
                             <button
@@ -338,8 +348,17 @@ const AdminCoursesTab = ({
                                 <FiUploadCloud className="h-4 w-4" />
                                 {transcodeLoading ? <Loader fullScreen={false} /> : 'Транс коддоо'}
                             </button>
+                            <button
+                                type="button"
+                                onClick={handleBulkTranscode}
+                                disabled={transcodeLoading}
+                                className="dashboard-button-secondary disabled:cursor-not-allowed disabled:opacity-60"
+                            >
+                                <FiLayers className="h-4 w-4" />
+                                Топтук транскоддоо
+                            </button>
                             <p className="text-xs text-edubot-muted dark:text-slate-400">
-                                ffmpeg серверде орнотулган болушу керек.
+                                Section ID милдеттүү. Lesson IDs талаасын бош калтырсаңыз, section ичиндеги бардык video сабактар иштетилет.
                             </p>
                         </div>
                     </DashboardInsetPanel>

@@ -7,6 +7,7 @@ import { MdQuiz, MdDownload } from 'react-icons/md';
 import { HiOutlineFolderOpen } from 'react-icons/hi2';
 import ReelsIcon from '@assets/icons/reelsIcon.svg';
 import { formatMinutesToTime, formatSecondsToTime } from '../../../utils/timeUtils';
+import { getPlayableVideoUrl } from '../../../utils/videoUtils';
 import ModalPreviewVideo from './ModalPreviewVideo';
 
 const CourseContent = ({
@@ -182,15 +183,7 @@ const CourseContent = ({
     };
 
     const getLessonPreviewVideoUrl = (lesson) => {
-        if (!lesson) return null;
-        if (lesson.videoUrl) return lesson.videoUrl;
-        if (lesson.previewUrl) return lesson.previewUrl;
-        if (lesson.previewVideo && typeof lesson.previewVideo === 'string')
-            return lesson.previewVideo;
-        if (lesson.previewVideo && lesson.previewVideo.videoUrl)
-            return lesson.previewVideo.videoUrl;
-        if (lesson.previewVideos?.[0]?.videoUrl) return lesson.previewVideos[0].videoUrl;
-        return null;
+        return getPlayableVideoUrl(lesson);
     };
 
     const handleLessonClick = (e, lesson) => {
