@@ -15,6 +15,7 @@
     "dependencies": {
         "@chepchik/react-rating": "^0.0.5",
         "@fontsource/inter": "^5.2.5",
+        "@sentry/react": "^10.47.0",
         "@tailwindcss/forms": "^0.5.11",
         "@tailwindcss/typography": "^0.5.19",
         "autoprefixer": "^10.4.20",

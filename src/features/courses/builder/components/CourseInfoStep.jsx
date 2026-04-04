@@ -234,6 +234,11 @@ export const CourseInfoStep = ({
                     disabled={disabled}
                     className="w-full p-2 border rounded bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white disabled:opacity-50"
                 />
+                {!courseInfo.coverImageUrl && courseInfo.pendingCoverName && (
+                    <p className="mt-2 text-xs text-amber-600 dark:text-amber-300">
+                        Тандалган cover сакталган эмес: {courseInfo.pendingCoverName}. Сураныч, файлды кайра тандаңыз.
+                    </p>
+                )}
                 <p className="mt-1 text-xs text-slate-500">PNG/JPG, максимум 5MB</p>
             </div>
 

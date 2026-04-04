@@ -98,6 +98,9 @@ const CourseDetailsPage = () => {
     const chatRef = useRef(null);
     const buttonRef = useRef(null);
     const [videoHeight, setVideoHeight] = useState(0);
+    const [isDesktop, setIsDesktop] = useState(
+        typeof window !== 'undefined' ? window.innerWidth >= 1024 : false
+    );
     const videoContainerRef = useRef(null);
     // Обработчик клика вне чата
     useEffect(() => {
@@ -128,10 +131,16 @@ const CourseDetailsPage = () => {
             }
         };
 
+        const updateBreakpoint = () => {
+            setIsDesktop(window.innerWidth >= 1024);
+        };
+
         updateVideoHeight();
+        updateBreakpoint();
 
         const handleResize = debounce(() => {
             updateVideoHeight();
+            updateBreakpoint();
         }, 100);
 
         window.addEventListener('resize', handleResize);
@@ -429,18 +438,7 @@ const CourseDetailsPage = () => {
         setActiveSectionId(lesson.sectionId);
         scrollToLesson(lesson.id);
 
-        if (!isArticle && !isQuiz && !isCode) {
-            setTimeout(() => {
-                if (videoRef.current) {
-                    videoRef.current.load();
-                    if (!hasPlayedRef.current) {
-                        videoRef.current
-                            .play()
-                            .catch((err) => console.warn('Autoplay failed:', err));
-                    }
-                }
-            }, 0);
-        } else {
+        if (isArticle || isQuiz || isCode) {
             setResumeVideoTime(0);
         }
 
@@ -1041,8 +1039,9 @@ const CourseDetailsPage = () => {
             )}
             <div className="mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-8">
                 <div className="space-y-6 lg:space-y-0 lg:grid lg:grid-cols-3 lg:gap-6">
-                    {enrolled ? (
-                        <div className="space-y-6 lg:hidden">
+                    {!isDesktop ? (
+                        enrolled ? (
+                        <div className="space-y-6">
                             {activeLesson &&
                                 (activeLesson.kind === 'article' ? (
                                     <ArticleLessonViewer
@@ -1131,8 +1130,8 @@ const CourseDetailsPage = () => {
                             />
                             <Comment courseId={id} />
                         </div>
-                    ) : (
-                        <div className="space-y-6 lg:hidden">
+                        ) : (
+                        <div className="space-y-6">
                             <CardVideo
                                 key={id}
                                 course={course}
@@ -1160,9 +1159,11 @@ const CourseDetailsPage = () => {
                                 ratingBreakdown={course?.ratingBreakdown}
                             />
                         </div>
-                    )}
+                        )
+                    ) : null}
 
-                    <div className="hidden lg:block lg:col-span-2">
+                    {isDesktop && (
+                    <div className="lg:col-span-2">
                         {enrolled ? (
                             <div className="space-y-8" ref={videoContainerRef}>
                                 {activeLesson &&
@@ -1245,6 +1246,7 @@ const CourseDetailsPage = () => {
                             </div>
                         )}
                     </div>
+                    )}
 
                     <div className="hidden lg:block lg:col-span-1">
                         <div className="space-y-6 sticky top-6">

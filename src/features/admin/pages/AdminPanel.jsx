@@ -30,6 +30,8 @@ import {
     updateCourseAiPrompt,
     deleteCourseAiPrompt,
     transcodeLessonHls,
+    bulkTranscodeLessonHls,
+    getTranscodeStatus,
     fetchAdminStats,
     fetchSkills,
     createSkill,
@@ -106,7 +108,9 @@ const AdminPanel = () => {
     const [transcodeCourseId, setTranscodeCourseId] = useState('');
     const [transcodeSectionId, setTranscodeSectionId] = useState('');
     const [transcodeLessonId, setTranscodeLessonId] = useState('');
+    const [transcodeLessonIds, setTranscodeLessonIds] = useState('');
     const [transcodeLoading, setTranscodeLoading] = useState(false);
+    const [activeTranscodes, setActiveTranscodes] = useState([]); // [{courseId, sectionId, lessonId, status}]
 
     const [adminStats, setAdminStats] = useState(null);
     const [adminStatsLoading, setAdminStatsLoading] = useState(false);
@@ -579,17 +583,68 @@ const AdminPanel = () => {
         }
         setTranscodeLoading(true);
         try {
-            await transcodeLessonHls({
+            const result = await transcodeLessonHls({
                 courseId: Number(transcodeCourseId),
                 sectionId: Number(transcodeSectionId),
                 lessonId: Number(transcodeLessonId),
             });
             toast.success('Транскоддоо ийгиликтүү башталды');
+            // Add to active transcodes for polling
+            setActiveTranscodes((prev) => [
+                ...prev,
+                {
+                    courseId: Number(transcodeCourseId),
+                    sectionId: Number(transcodeSectionId),
+                    lessonId: Number(transcodeLessonId),
+                    status: 'processing',
+                    jobId: result.jobId,
+                },
+            ]);
             setTranscodeCourseId('');
             setTranscodeSectionId('');
             setTranscodeLessonId('');
         } catch {
             toast.error('Транскоддоодо ката кетти');
+        } finally {
+            setTranscodeLoading(false);
+        }
+    };
+
+    const handleBulkTranscode = async () => {
+        if (!transcodeCourseId || !transcodeSectionId) {
+            toast.error('Course жана Section ID толтуруңуз');
+            return;
+        }
+
+        const lessonIds = transcodeLessonIds
+            .split(',')
+            .map((value) => value.trim())
+            .filter(Boolean)
+            .map(Number)
+            .filter(Number.isFinite);
+
+        setTranscodeLoading(true);
+        try {
+            const result = await bulkTranscodeLessonHls({
+                courseId: Number(transcodeCourseId),
+                sectionId: Number(transcodeSectionId),
+                lessonIds: lessonIds.length ? lessonIds : undefined,
+            });
+            toast.success(`Топтук транскоддоо башталды: ${result.started}/${result.total}`);
+            // Add started lessons to active transcodes for polling
+            const startedLessons = result.results
+                .filter((r) => r.status === 'started')
+                .map((r) => ({
+                    courseId: Number(transcodeCourseId),
+                    sectionId: Number(transcodeSectionId),
+                    lessonId: r.lessonId,
+                    status: 'processing',
+                    jobId: r.jobId,
+                }));
+            setActiveTranscodes((prev) => [...prev, ...startedLessons]);
+            setTranscodeLessonIds('');
+        } catch {
+            toast.error('Топтук транскоддоодо ката кетти');
         } finally {
             setTranscodeLoading(false);
         }
@@ -890,6 +945,55 @@ const AdminPanel = () => {
         }
     }, [companySearch, activeTab, loadCompanies]);
 
+    // Transcode status polling
+    useEffect(() => {
+        if (activeTranscodes.length === 0) return;
+
+        const interval = setInterval(async () => {
+            const updates = await Promise.all(
+                activeTranscodes.map(async (t) => {
+                    try {
+                        const status = await getTranscodeStatus({
+                            courseId: t.courseId,
+                            sectionId: t.sectionId,
+                            lessonId: t.lessonId,
+                        });
+                        return { ...t, status: status.playbackStatus, jobStatus: status.jobStatus };
+                    } catch (e) {
+                        return t;
+                    }
+                })
+            );
+
+            // Remove completed/failed transcodes from polling
+            const stillProcessing = updates.filter(
+                (u) => u.status === 'processing' && !['COMPLETE', 'ERROR', 'CANCELED'].includes(u.jobStatus)
+            );
+
+            // Show toast for completed/failed and refresh courses
+            let shouldRefreshCourses = false;
+            updates.forEach((u) => {
+                if (u.status === 'ready' && !u.notified) {
+                    toast.success(`Lesson ${u.lessonId} transcode complete`);
+                    u.notified = true;
+                    shouldRefreshCourses = true;
+                } else if (u.status === 'failed' && !u.notified) {
+                    toast.error(`Lesson ${u.lessonId} transcode failed`);
+                    u.notified = true;
+                }
+            });
+
+            // Refresh courses to get updated playbackStatus for completed transcodes
+            if (shouldRefreshCourses) {
+                loadCoursesAndCategories();
+            }
+
+            setActiveTranscodes(stillProcessing);
+        }, 10000); // Poll every 10 seconds
+
+        return () => clearInterval(interval);
+    }, [activeTranscodes, loadCoursesAndCategories]);
+
     // Anti-flickering wrapper for tab content
     const renderTab = () => {
         const isLoading = adminStatsLoading || aiPromptsLoading || transcodeLoading;
@@ -963,6 +1067,7 @@ const AdminPanel = () => {
                         transcodeCourseId={transcodeCourseId}
                         transcodeSectionId={transcodeSectionId}
                         transcodeLessonId={transcodeLessonId}
+                        transcodeLessonIds={transcodeLessonIds}
                         transcodeLoading={transcodeLoading}
                         setNewCategory={setNewCategory}
                         setEditingCategoryId={setEditingCategoryId}
@@ -971,12 +1076,14 @@ const AdminPanel = () => {
                         setTranscodeCourseId={setTranscodeCourseId}
                         setTranscodeSectionId={setTranscodeSectionId}
                         setTranscodeLessonId={setTranscodeLessonId}
+                        setTranscodeLessonIds={setTranscodeLessonIds}
                         handleDeleteCourse={handleDeleteCourse}
                         handleEnrollUser={handleEnrollUser}
                         handleAddCategory={handleAddCategory}
                         handleUpdateCategory={handleUpdateCategory}
                         handleDeleteCategory={handleDeleteCategory}
                         handleTranscode={handleTranscode}
+                        handleBulkTranscode={handleBulkTranscode}
                     />
                 );
 

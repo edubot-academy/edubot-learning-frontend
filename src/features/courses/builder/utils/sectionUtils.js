@@ -1,7 +1,7 @@
 // Section-specific utility functions
 // Extracted from section operations in CreateCourse.jsx and EditInstructorCourse.jsx
 
-import { createEmptyLesson } from './courseBuilderUtils';
+import { createEmptyLesson, generateTempId } from './courseBuilderUtils';
 
 /**
  * Adds a new section to the curriculum
@@ -12,6 +12,7 @@ export const addSection = (curriculum) => {
     return [
         ...curriculum,
         {
+            tempId: generateTempId(),
             sectionTitle: `Бөлүм ${curriculum.length + 1}`,
             skillId: '',
             lessons: [],
@@ -27,9 +28,9 @@ export const addSection = (curriculum) => {
  * @returns {Array} - Updated curriculum
  */
 export const updateSectionTitle = (curriculum, sectionIndex, title) => {
-    const updated = [...curriculum];
-    updated[sectionIndex].sectionTitle = title;
-    return updated;
+    return curriculum.map((section, index) =>
+        index === sectionIndex ? { ...section, sectionTitle: title } : section
+    );
 };
 
 /**
@@ -40,9 +41,9 @@ export const updateSectionTitle = (curriculum, sectionIndex, title) => {
  * @returns {Array} - Updated curriculum
  */
 export const updateSectionSkill = (curriculum, sectionIndex, skillId) => {
-    const updated = [...curriculum];
-    updated[sectionIndex].skillId = skillId;
-    return updated;
+    return curriculum.map((section, index) =>
+        index === sectionIndex ? { ...section, skillId } : section
+    );
 };
 
 /**
@@ -78,9 +79,14 @@ export const reorderSections = (curriculum, fromIndex, toIndex) => {
  * @returns {Array} - Updated curriculum with new lesson
  */
 export const addLessonToSection = (curriculum, sectionIndex) => {
-    const updated = [...curriculum];
-    updated[sectionIndex].lessons.push(createEmptyLesson());
-    return updated;
+    return curriculum.map((section, index) =>
+        index === sectionIndex
+            ? {
+                ...section,
+                lessons: [...section.lessons, createEmptyLesson()],
+            }
+            : section
+    );
 };
 
 /**
@@ -93,26 +99,29 @@ export const addLessonToSection = (curriculum, sectionIndex) => {
  * @returns {Array} - Updated curriculum
  */
 export const updateLessonInSection = (curriculum, sectionIndex, lessonIndex, field, value) => {
-    const updated = [...curriculum];
-    const lesson = updated[sectionIndex].lessons[lessonIndex];
-    lesson[field] = value;
+    return curriculum.map((section, sIdx) => {
+        if (sIdx !== sectionIndex) return section;
 
-    // Handle kind-specific logic
-    if (field === 'kind') {
-        if (value === 'article') {
-            lesson.previewVideo = false;
-        }
-        if (value === 'quiz') {
-            lesson.previewVideo = false;
-            lesson.videoKey = '';
-        }
-        if (value === 'code') {
-            lesson.previewVideo = false;
-            lesson.videoKey = '';
-        }
-    }
+        const lessons = section.lessons.map((lesson, lIdx) => {
+            if (lIdx !== lessonIndex) return lesson;
 
-    return updated;
+            const updatedLesson = { ...lesson, [field]: value };
+
+            if (field === 'kind') {
+                if (value === 'article') {
+                    updatedLesson.previewVideo = false;
+                }
+                if (value === 'quiz' || value === 'code') {
+                    updatedLesson.previewVideo = false;
+                    updatedLesson.videoKey = '';
+                }
+            }
+
+            return updatedLesson;
+        });
+
+        return { ...section, lessons };
+    });
 };
 
 /**
@@ -123,9 +132,14 @@ export const updateLessonInSection = (curriculum, sectionIndex, lessonIndex, fie
  * @returns {Array} - Updated curriculum with lesson removed
  */
 export const removeLessonFromSection = (curriculum, sectionIndex, lessonIndex) => {
-    const updated = [...curriculum];
-    updated[sectionIndex].lessons.splice(lessonIndex, 1);
-    return updated;
+    return curriculum.map((section, index) =>
+        index === sectionIndex
+            ? {
+                ...section,
+                lessons: section.lessons.filter((_, lessonIdx) => lessonIdx !== lessonIndex),
+            }
+            : section
+    );
 };
 
 /**
@@ -157,9 +171,23 @@ export const reorderLessonsInSection = (curriculum, sectionIndex, fromLessonInde
  * @returns {Array} - Updated curriculum
  */
 export const updateLessonUploadProgress = (curriculum, sectionIndex, lessonIndex, type, percent) => {
-    const updated = [...curriculum];
-    updated[sectionIndex].lessons[lessonIndex].uploadProgress[type] = percent;
-    return updated;
+    return curriculum.map((section, sIdx) => {
+        if (sIdx !== sectionIndex) return section;
+        return {
+            ...section,
+            lessons: section.lessons.map((lesson, lIdx) =>
+                lIdx === lessonIndex
+                    ? {
+                        ...lesson,
+                        uploadProgress: {
+                            ...lesson.uploadProgress,
+                            [type]: percent,
+                        },
+                    }
+                    : lesson
+            ),
+        };
+    });
 };
 
 /**
@@ -172,9 +200,23 @@ export const updateLessonUploadProgress = (curriculum, sectionIndex, lessonIndex
  * @returns {Array} - Updated curriculum
  */
 export const setLessonUploading = (curriculum, sectionIndex, lessonIndex, type, uploading) => {
-    const updated = [...curriculum];
-    updated[sectionIndex].lessons[lessonIndex].uploading[type] = uploading;
-    return updated;
+    return curriculum.map((section, sIdx) => {
+        if (sIdx !== sectionIndex) return section;
+        return {
+            ...section,
+            lessons: section.lessons.map((lesson, lIdx) =>
+                lIdx === lessonIndex
+                    ? {
+                        ...lesson,
+                        uploading: {
+                            ...lesson.uploading,
+                            [type]: uploading,
+                        },
+                    }
+                    : lesson
+            ),
+        };
+    });
 };
 
 /**
@@ -186,9 +228,16 @@ export const setLessonUploading = (curriculum, sectionIndex, lessonIndex, type, 
  * @returns {Array} - Updated curriculum
  */
 export const updateLessonQuiz = (curriculum, sectionIndex, lessonIndex, quiz) => {
-    const updated = [...curriculum];
-    updated[sectionIndex].lessons[lessonIndex].quiz = quiz;
-    return updated;
+    return curriculum.map((section, sIdx) =>
+        sIdx === sectionIndex
+            ? {
+                ...section,
+                lessons: section.lessons.map((lesson, lIdx) =>
+                    lIdx === lessonIndex ? { ...lesson, quiz } : lesson
+                ),
+            }
+            : section
+    );
 };
 
 /**
@@ -200,9 +249,16 @@ export const updateLessonQuiz = (curriculum, sectionIndex, lessonIndex, quiz) =>
  * @returns {Array} - Updated curriculum
  */
 export const updateLessonChallenge = (curriculum, sectionIndex, lessonIndex, challenge) => {
-    const updated = [...curriculum];
-    updated[sectionIndex].lessons[lessonIndex].challenge = challenge;
-    return updated;
+    return curriculum.map((section, sIdx) =>
+        sIdx === sectionIndex
+            ? {
+                ...section,
+                lessons: section.lessons.map((lesson, lIdx) =>
+                    lIdx === lessonIndex ? { ...lesson, challenge } : lesson
+                ),
+            }
+            : section
+    );
 };
 
 /**

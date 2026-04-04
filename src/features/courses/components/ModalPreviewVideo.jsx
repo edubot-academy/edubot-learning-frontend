@@ -4,7 +4,7 @@ import BasicModal from '@shared/ui/BasicModal';
 import { fetchCoursePreview } from '../api';
 import { formatSecondsToTime } from '../../../utils/timeUtils';
 import VideoPlayer from '@shared/VideoPlayer';
-import toast from 'react-hot-toast';
+import { getPlayableVideoUrl } from '../../../utils/videoUtils';
 import {
     FiShare2,
     FiTwitter,
@@ -28,24 +28,7 @@ function ModalPreviewVideo({ isOpen, onClose, courseId, previewData: previewData
     const [loading, setLoading] = useState(previewDataProp ? false : true);
     const [activeVideo, setActiveVideo] = useState(initialVideo || previewDataProp?.previewVideos?.[0] || null);
     const containerRef = React.useRef(null);
-    const [videoKey, setVideoKey] = React.useState(Date.now());
-
-    React.useEffect(() => {
-        // При смене урока обновляем ключ
-        setVideoKey(Date.now());
-
-        // Принудительно запускаем воспроизведение через небольшую задержку
-        const timer = setTimeout(() => {
-            if (videoRef?.current && !activeVideo?.locked) {
-                videoRef.current.play().catch(err => {
-                    console.warn('Autoplay failed:', err);
-                    // Если авто-воспроизведение заблокировано браузером,
-                    // показываем кнопку воспроизведения
-                });
-            }
-        }, 100);
-        return () => clearTimeout(timer);
-    }, [activeVideo, videoRef]);
+    const activeVideoUrl = getPlayableVideoUrl(activeVideo);
 
     useEffect(() => {
         if (!isOpen) {
@@ -105,18 +88,18 @@ function ModalPreviewVideo({ isOpen, onClose, courseId, previewData: previewData
             {!loading && previewData && (
                 <div ref={containerRef} className="w-full videoFs pb-9 relative">
 
-                    {activeVideo?.videoUrl && (
+                    {activeVideoUrl && (
                         <VideoPlayer
-                            key={videoKey}
-                            videoUrl={activeVideo.videoUrl}
+                            videoRef={videoRef}
+                            videoUrl={activeVideoUrl}
                             resumeTime={resumeVideoTime}
-                            allowPlay={!activeVideo.locked}
+                            allowPlay={!activeVideo.locked && Boolean(activeVideoUrl)}
                             containerRef={containerRef}
                             onEnded={onEnded}
-                            onProgress={(p) => handleVideoProgress(p, activeVideo)}
+                            onProgress={(p) => handleVideoProgress?.(p, activeVideo)}
                             onTimeUpdate={handleTimeUpdate}
                             onPause={handlePause}
-                            autoPlay={true}
+                            autoPlay
                             className="w-full aspect-video rounded"
                         />
                     )}
@@ -127,7 +110,8 @@ function ModalPreviewVideo({ isOpen, onClose, courseId, previewData: previewData
                                 key={lesson.id}
                                 onClick={() => setActiveVideo(lesson)}
                                 className={`w-full flex items-center gap-3 p-3 rounded border
-                                    ${activeVideo?.id === lesson.id || activeVideo?.videoUrl === lesson.videoUrl
+                                    ${activeVideo?.id === lesson.id ||
+                                    getPlayableVideoUrl(activeVideo) === getPlayableVideoUrl(lesson)
                                         ? 'bg-blue-50 dark:bg-blue-950 border-blue-500 darck'
                                         : 'hover:bg-gray-100 dark:hover:bg-gray-700'
                                     }

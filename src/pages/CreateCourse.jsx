@@ -39,6 +39,7 @@ const CreateCourse = () => {
         curriculumStats,
         isUploading,
         expandedSections,
+        setExpandedSections,
         singleSectionFocus,
         dragSectionIndex,
         setDragSectionIndex,
@@ -181,6 +182,7 @@ const CreateCourse = () => {
                     curriculumStats={curriculumStats}
                     isUploading={isUploading}
                     expandedSections={expandedSections}
+                    setExpandedSections={setExpandedSections}
                     singleSectionFocus={singleSectionFocus}
                     dragSectionIndex={dragSectionIndex}
                     setDragSectionIndex={setDragSectionIndex}
