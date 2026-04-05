@@ -66,6 +66,7 @@ const AdminCoursesTab = ({
     const [transcodingContextCourseId, setTranscodingContextCourseId] = useState(null);
     const [transcodingContextSectionId, setTranscodingContextSectionId] = useState(null);
     const [pendingTranscodeAction, setPendingTranscodeAction] = useState(null);
+    const [alreadyTranscodedMessage, setAlreadyTranscodedMessage] = useState('');
 
     // Handle transcode after state is set
     useEffect(() => {
@@ -155,6 +156,11 @@ const AdminCoursesTab = ({
 
         loadLessons();
     }, [transcodeCourseId, transcodeSectionId, setTranscodeLessonId]);
+
+    // Clear already transcoded message when selections change
+    useEffect(() => {
+        setAlreadyTranscodedMessage('');
+    }, [transcodeCourseId, transcodeSectionId, transcodeLessonId]);
 
     // Fetch function for transcoding status polling
     const fetchTranscodingStatus = useCallback(async () => {
@@ -558,7 +564,17 @@ const AdminCoursesTab = ({
                             <button
                                 type="button"
                                 onClick={() => {
+                                    setAlreadyTranscodedMessage(''); // Clear previous message
+
                                     if (transcodeLessonId && transcodeCourseId && transcodeSectionId) {
+                                        // Check if lesson is already transcoded
+                                        const selectedLesson = lessons.find(l => l.id === transcodeLessonId);
+                                        if (selectedLesson?.playbackStatus === 'ready' && selectedLesson?.playbackType === 'hls') {
+                                            // Already transcoded - show message
+                                            setAlreadyTranscodedMessage(`"${selectedLesson.title || `Сабак #${selectedLesson.id}`}" альпача HLSке транскоддолгон.`);
+                                            return;
+                                        }
+
                                         // Store context for status polling
                                         setTranscodingContextCourseId(transcodeCourseId);
                                         setTranscodingContextSectionId(transcodeSectionId);
@@ -567,6 +583,17 @@ const AdminCoursesTab = ({
                                         // Queue the action to run after state is set
                                         setPendingTranscodeAction({ type: 'individual' });
                                     } else if (transcodeCourseId && transcodeSectionId) {
+                                        // Check if all video lessons in section are already transcoded
+                                        const untranscodedLessons = lessons.filter(l =>
+                                            !(l.playbackStatus === 'ready' && l.playbackType === 'hls')
+                                        );
+
+                                        if (untranscodedLessons.length === 0) {
+                                            // All lessons already transcoded - show message
+                                            setAlreadyTranscodedMessage(`Бардык видео сабактар альпача HLSке транскоддолгон.`);
+                                            return;
+                                        }
+
                                         // Store context for status polling
                                         setTranscodingContextCourseId(transcodeCourseId);
                                         setTranscodingContextSectionId(transcodeSectionId);
@@ -585,6 +612,13 @@ const AdminCoursesTab = ({
                             <p className="text-xs text-edubot-muted dark:text-slate-400">
                                 Курс жана секция милдеттүү. Бардык видео сабактарды же конкреттүү бирөөнү тандаңыз.
                             </p>
+
+                            {/* Already Transcoded Message */}
+                            {alreadyTranscodedMessage && (
+                                <div className="mt-2 px-3 py-2 bg-green-50 border border-green-200 rounded-md text-green-700 text-sm">
+                                    {alreadyTranscodedMessage}
+                                </div>
+                            )}
                         </div>
 
                         {/* Transcoding Status Display - Individual Lesson */}

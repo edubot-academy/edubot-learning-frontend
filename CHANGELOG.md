@@ -2,6 +2,22 @@
 
 Version bumps are classified by delivery scale; see `VERSIONING.md`.
 
+## [1.6.2] - 2026-04-05
+
+### 🚀 TRANSCODING OPTIMIZATION
+- Added smart checks to prevent unnecessary API calls for already transcoded videos
+- Individual transcoding now checks `playbackStatus === 'ready'` and `playbackType === 'hls'` before making API calls
+- Bulk transcoding filters out already transcoded lessons and only processes untranscoded content
+- Added user-friendly green success messages when content is already HLS transcoded
+- Messages auto-clear when user changes selections to provide clean UX
+
+### 🎨 USER EXPERIENCE IMPROVEMENTS
+- Clear visual feedback for already transcoded content
+- Prevents confusing behavior when clicking transcoded videos
+- Optimized admin workflow by eliminating redundant transcoding operations
+
+---
+
 ## [1.6.1] - 2026-04-05
 
 ### 🔄 REAL-TIME TRANSCODING STATUS MONITORING
