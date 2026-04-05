@@ -210,8 +210,7 @@ export const getTranscodeStatus = async ({ courseId, sectionId, lessonId }) => {
 export const retryTranscodeLessonHls = async ({ courseId, sectionId, lessonId }) => {
     const response = await api.post(
         `/courses/${courseId}/sections/${sectionId}/lessons/${lessonId}/transcode-hls`,
-        {},
-        { params: { retry: true } }
+        { retry: true }
     );
     return response.data;
 };
@@ -219,8 +218,7 @@ export const retryTranscodeLessonHls = async ({ courseId, sectionId, lessonId })
 export const forceTranscodeLessonHls = async ({ courseId, sectionId, lessonId }) => {
     const response = await api.post(
         `/courses/${courseId}/sections/${sectionId}/lessons/${lessonId}/transcode-hls`,
-        {},
-        { params: { force: true } }
+        { force: true }
     );
     return response.data;
 };
