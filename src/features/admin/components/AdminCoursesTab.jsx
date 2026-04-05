@@ -1,5 +1,5 @@
 /* eslint-disable react/prop-types */
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
     DashboardInsetPanel,
     DashboardMetricCard,
@@ -10,7 +10,10 @@ import { Link } from 'react-router-dom';
 import Loader from '@shared/ui/Loader';
 import { FiBookOpen, FiEye, FiFolder, FiLayers, FiTrash2, FiUploadCloud, FiUsers } from 'react-icons/fi';
 import DeliveryCourseDetailsModal from './DeliveryCourseDetailsModal';
-import { fetchSections, fetchLessons } from '@features/courses/api';
+import { fetchSections, fetchLessons, getTranscodeStatus, retryTranscodeLessonHls, transcodeLessonHls, bulkTranscodeLessonHls } from '@features/courses/api';
+import useTranscodingStatus from '@hooks/useTranscodingStatus';
+import TranscodingStatusBadge from '@features/courses/components/TranscodingStatusBadge';
+import RetryTranscodeButton from '@features/courses/components/RetryTranscodeButton';
 
 const getCourseTypeLabel = (courseType) => {
     switch (courseType) {
@@ -58,6 +61,49 @@ const AdminCoursesTab = ({
     const [lessons, setLessons] = useState([]);
     const [sectionsLoading, setSectionsLoading] = useState(false);
     const [lessonsLoading, setLessonsLoading] = useState(false);
+    const [lastTranscodedLessonId, setLastTranscodedLessonId] = useState(null);
+    const [isBulkTranscoding, setIsBulkTranscoding] = useState(false);
+    const [transcodingContextCourseId, setTranscodingContextCourseId] = useState(null);
+    const [transcodingContextSectionId, setTranscodingContextSectionId] = useState(null);
+    const [pendingTranscodeAction, setPendingTranscodeAction] = useState(null);
+
+    // Handle transcode after state is set
+    useEffect(() => {
+        if (pendingTranscodeAction) {
+
+            // Execute API call directly without calling parent handlers (which clear state)
+            if (pendingTranscodeAction.type === 'individual' && lastTranscodedLessonId && transcodingContextCourseId && transcodingContextSectionId) {
+                // Call the individual transcode API directly
+                (async () => {
+                    try {
+                        await transcodeLessonHls({
+                            courseId: Number(transcodingContextCourseId),
+                            sectionId: Number(transcodingContextSectionId),
+                            lessonId: Number(lastTranscodedLessonId),
+                        });
+                    } catch (err) {
+                        console.error('[AdminCoursesTab] Transcode API error:', err);
+                    }
+                })();
+            } else if (pendingTranscodeAction.type === 'bulk' && transcodingContextCourseId && transcodingContextSectionId) {
+                // Call the bulk transcode API directly (transcode all lessons in section)
+                (async () => {
+                    try {
+                        await bulkTranscodeLessonHls({
+                            courseId: Number(transcodingContextCourseId),
+                            sectionId: Number(transcodingContextSectionId),
+                            lessonIds: [], // Empty array means transcode all
+                        });
+                    } catch (err) {
+                        console.error('[AdminCoursesTab] Bulk transcode API error:', err);
+                    }
+                })();
+            }
+
+            setPendingTranscodeAction(null);
+        }
+    }, [pendingTranscodeAction, lastTranscodedLessonId, transcodingContextCourseId, transcodingContextSectionId]);
+
     const publishedCourses = courses.filter((course) => course.isPublished).length;
     const deliveryCourses = courses.filter((course) => course.courseType !== 'video').length;
 
@@ -109,6 +155,51 @@ const AdminCoursesTab = ({
 
         loadLessons();
     }, [transcodeCourseId, transcodeSectionId, setTranscodeLessonId]);
+
+    // Fetch function for transcoding status polling
+    const fetchTranscodingStatus = useCallback(async () => {
+        if (!lastTranscodedLessonId || !transcodingContextCourseId || !transcodingContextSectionId) {
+            throw new Error('Missing required IDs for transcoding status check');
+        }
+
+        try {
+            const response = await getTranscodeStatus({
+                courseId: transcodingContextCourseId,
+                sectionId: transcodingContextSectionId,
+                lessonId: lastTranscodedLessonId,
+            });
+            return response;
+        } catch (error) {
+            console.error('[AdminCoursesTab] Failed to fetch transcode status:', error);
+            throw error; // Let hook handle error state
+        }
+    }, [lastTranscodedLessonId, transcodingContextCourseId, transcodingContextSectionId]);
+
+    // Use polling hook to monitor transcoding status
+    const { status, error, isPolling, manualRefresh } = useTranscodingStatus(
+        lastTranscodedLessonId,
+        'missing',
+        fetchTranscodingStatus,
+        Boolean(lastTranscodedLessonId) // Enable when a lesson is being transcoded
+    );
+
+    // Handle successful transcode - reset after completion
+    useEffect(() => {
+        if (lastTranscodedLessonId && status === 'ready') {
+            // Refresh lessons list to show updated status
+            if (transcodingContextCourseId && transcodingContextSectionId) {
+                const loadLessons = async () => {
+                    try {
+                        const data = await fetchLessons(Number(transcodingContextCourseId), Number(transcodingContextSectionId));
+                        setLessons(data.filter((l) => l.kind === 'video'));
+                    } catch {
+                        // Silent fail - polling will retry
+                    }
+                };
+                loadLessons();
+            }
+        }
+    }, [lastTranscodedLessonId, status, transcodingContextCourseId, transcodingContextSectionId]);
 
     // Get selected course, section, lesson names for display
     const selectedCourse = courses.find((c) => String(c.id) === String(transcodeCourseId));
@@ -468,9 +559,21 @@ const AdminCoursesTab = ({
                                 type="button"
                                 onClick={() => {
                                     if (transcodeLessonId && transcodeCourseId && transcodeSectionId) {
-                                        handleTranscode();
+                                        // Store context for status polling
+                                        setTranscodingContextCourseId(transcodeCourseId);
+                                        setTranscodingContextSectionId(transcodeSectionId);
+                                        setLastTranscodedLessonId(transcodeLessonId);
+                                        setIsBulkTranscoding(false);
+                                        // Queue the action to run after state is set
+                                        setPendingTranscodeAction({ type: 'individual' });
                                     } else if (transcodeCourseId && transcodeSectionId) {
-                                        handleBulkTranscode();
+                                        // Store context for status polling
+                                        setTranscodingContextCourseId(transcodeCourseId);
+                                        setTranscodingContextSectionId(transcodeSectionId);
+                                        setLastTranscodedLessonId(null);
+                                        setIsBulkTranscoding(true);
+                                        // Queue the action to run after state is set
+                                        setPendingTranscodeAction({ type: 'bulk' });
                                     }
                                 }}
                                 disabled={transcodeLoading || !transcodeCourseId || !transcodeSectionId}
@@ -483,6 +586,115 @@ const AdminCoursesTab = ({
                                 Курс жана секция милдеттүү. Бардык видео сабактарды же конкреттүү бирөөнү тандаңыз.
                             </p>
                         </div>
+
+                        {/* Transcoding Status Display - Individual Lesson */}
+                        {lastTranscodedLessonId && (
+                            <div className="mt-6 space-y-3 border-t border-edubot-line/50 dark:border-slate-700 pt-4">
+                                <div className="flex items-center justify-between gap-3">
+                                    <div className="text-sm text-edubot-muted dark:text-slate-400">
+                                        Транскоддоо статусу: <span className="font-medium">{lessons.find(l => l.id === lastTranscodedLessonId)?.title || `Сабак #${lastTranscodedLessonId}`}</span>
+                                    </div>
+                                    <button
+                                        onClick={manualRefresh}
+                                        disabled={isPolling}
+                                        aria-label="Транскоддоо статусун кайра текшеңиз"
+                                        className="text-xs px-2 py-1 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 disabled:text-gray-400 transition-colors"
+                                        title="Статусун кайра текшеңиз"
+                                    >
+                                        <span aria-hidden="true">🔄</span>
+                                    </button>
+                                </div>
+
+                                <TranscodingStatusBadge
+                                    status={status}
+                                    error={error}
+                                    isPolling={isPolling}
+                                    onRetry={status === 'failed' ? async () => {
+                                        try {
+                                            await retryTranscodeLessonHls({
+                                                courseId: transcodingContextCourseId,
+                                                sectionId: transcodingContextSectionId,
+                                                lessonId: lastTranscodedLessonId,
+                                            });
+                                            setTimeout(manualRefresh, 1000);
+                                        } catch (err) {
+                                            console.error('[AdminCoursesTab] Retry failed:', err);
+                                        }
+                                    } : null}
+                                />
+
+                                {status === 'failed' && error && (
+                                    <div className="mt-3 space-y-2" role="alert">
+                                        <div className="px-3 py-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900/50 rounded-md">
+                                            <p className="text-xs font-medium text-red-700 dark:text-red-300 mb-1">Трансформация ката</p>
+                                            <p className="text-xs text-red-600 dark:text-red-400">{error}</p>
+                                        </div>
+                                        <RetryTranscodeButton
+                                            courseId={transcodingContextCourseId}
+                                            sectionId={transcodingContextSectionId}
+                                            lessonId={lastTranscodedLessonId}
+                                            retryFn={async (cid, sid, lid) => {
+                                                await retryTranscodeLessonHls({ courseId: cid, sectionId: sid, lessonId: lid });
+                                            }}
+                                            onSuccess={() => {
+                                                setTimeout(manualRefresh, 1000);
+                                            }}
+                                            onError={(err) => {
+                                                console.error('[AdminCoursesTab] Retry error:', err);
+                                            }}
+                                            className="w-full"
+                                        />
+                                    </div>
+                                )}
+
+                                {status === 'ready' && (
+                                    <div className="px-3 py-2 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-900/50 rounded-md">
+                                        <p className="text-xs text-green-700 dark:text-green-300">✅ Транскоддоо ийгиликтүү аякталды. Видео ойнотууга даяр!</p>
+                                    </div>
+                                )}
+
+                                {(status === 'starting' || status === 'processing') && (
+                                    <div className="px-3 py-2 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-900/50 rounded-md">
+                                        <p className="text-xs text-blue-700 dark:text-blue-300">⏳ Видеонун HLS форматына айларын күтүүдө...</p>
+                                    </div>
+                                )}
+
+                                <button
+                                    onClick={() => {
+                                        setLastTranscodedLessonId(null);
+                                        setTranscodingContextCourseId(null);
+                                        setTranscodingContextSectionId(null);
+                                    }}
+                                    className="text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+                                >
+                                    Жабуу
+                                </button>
+                            </div>
+                        )}
+
+                        {/* Transcoding Status Display - Bulk */}
+                        {isBulkTranscoding && (
+                            <div className="mt-6 space-y-3 border-t border-edubot-line/50 dark:border-slate-700 pt-4">
+                                <div className="text-sm text-edubot-muted dark:text-slate-400">
+                                    Топтук транскоддоо статусу: <span className="font-medium">{courses.find(c => c.id === transcodingContextCourseId)?.title || 'Курс'} - {sections.find(s => s.id === transcodingContextSectionId)?.title || 'Секция'}</span>
+                                </div>
+
+                                <div className="px-3 py-2 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-900/50 rounded-md">
+                                    <p className="text-xs text-blue-700 dark:text-blue-300">⏳ Бул секциядагы бардык видеолор HLS форматына айланып жатат. Бул процесс бир нече мүнөт мүмкүн. Статусун көрүү үчүн секцияны кайра жүктөңүз.</p>
+                                </div>
+
+                                <button
+                                    onClick={() => {
+                                        setIsBulkTranscoding(false);
+                                        setTranscodingContextCourseId(null);
+                                        setTranscodingContextSectionId(null);
+                                    }}
+                                    className="text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+                                >
+                                    Жабуу
+                                </button>
+                            </div>
+                        )}
                     </DashboardInsetPanel>
                 </div>
             </div>

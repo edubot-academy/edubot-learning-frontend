@@ -10,7 +10,8 @@
             "@utils/*": ["src/utils/*"],
             "@assets/*": ["src/assets/*"],
             "@services/*": ["src/services/*"],
-            "@shared-ui/*": ["src/shared/ui/*"]
+            "@shared-ui/*": ["src/shared/ui/*"],
+            "@hooks/*": ["src/hooks/*"]
         }
     },
     "exclude": ["node_modules", "dist"]

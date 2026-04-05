@@ -2,6 +2,38 @@
 
 Version bumps are classified by delivery scale; see `VERSIONING.md`.
 
+## [1.6.1] - 2026-04-05
+
+### 🔄 REAL-TIME TRANSCODING STATUS MONITORING
+- Added comprehensive real-time transcoding status monitoring system with automatic polling
+- Implemented `useTranscodingStatus` custom hook for efficient status polling with 5-second intervals
+- Added visual transcoding status indicators with `TranscodingStatusBadge` component
+- Created `RetryTranscodeButton` component for failed transcoding recovery
+- Enhanced admin transcoding panel with live status updates and retry functionality
+
+### 🔧 ADMIN TRANSCODING WORKFLOW IMPROVEMENTS
+- Enhanced AdminCoursesTab with real-time transcoding status display
+- Added individual and bulk transcoding status monitoring
+- Implemented automatic lesson list refresh after successful transcoding
+- Added proper error handling and user feedback for transcoding operations
+
+### 📁 NEW COMPONENTS & HOOKS
+- `src/hooks/useTranscodingStatus.js` - Custom hook for polling transcoding status
+- `src/features/courses/components/TranscodingStatusBadge.jsx` - Visual status indicator
+- `src/features/courses/components/RetryTranscodeButton.jsx` - Retry functionality component
+
+### 🔌 API ENHANCEMENTS
+- Added `retryTranscodeLessonHls` API function for retrying failed transcoding operations
+- Enhanced transcoding API integration with proper error handling
+- Improved admin transcoding workflow with better status tracking
+
+### ⚙️ CONFIGURATION UPDATES
+- Added `@hooks/*` path alias to jsconfig.json and vite.config.js
+- Updated import paths to support new hook structure
+- Enhanced build configuration for better module resolution
+
+---
+
 ## [1.6.0] - 2026-04-04
 
 ### 🎥 HLS VIDEO PLAYBACK + TRANSCODING
