@@ -10,7 +10,7 @@ import { Link } from 'react-router-dom';
 import Loader from '@shared/ui/Loader';
 import { FiBookOpen, FiEye, FiFolder, FiLayers, FiTrash2, FiUploadCloud, FiUsers } from 'react-icons/fi';
 import DeliveryCourseDetailsModal from './DeliveryCourseDetailsModal';
-import { fetchSections, fetchLessons, getTranscodeStatus, retryTranscodeLessonHls, transcodeLessonHls, bulkTranscodeLessonHls } from '@features/courses/api';
+import { fetchSections, fetchLessons, getTranscodeStatus, retryTranscodeLessonHls, forceTranscodeLessonHls, transcodeLessonHls, bulkTranscodeLessonHls } from '@features/courses/api';
 import useTranscodingStatus from '@hooks/useTranscodingStatus';
 import TranscodingStatusBadge from '@features/courses/components/TranscodingStatusBadge';
 import RetryTranscodeButton from '@features/courses/components/RetryTranscodeButton';
@@ -87,13 +87,13 @@ const AdminCoursesTab = ({
                     }
                 })();
             } else if (pendingTranscodeAction.type === 'bulk' && transcodingContextCourseId && transcodingContextSectionId) {
-                // Call the bulk transcode API directly (transcode all lessons in section)
+                // Call the bulk transcode API directly with specific untranscoded lesson IDs
                 (async () => {
                     try {
                         await bulkTranscodeLessonHls({
                             courseId: Number(transcodingContextCourseId),
                             sectionId: Number(transcodingContextSectionId),
-                            lessonIds: [], // Empty array means transcode all
+                            lessonIds: pendingTranscodeAction.lessonIds || [], // Send only untranscoded lesson IDs
                         });
                     } catch (err) {
                         console.error('[AdminCoursesTab] Bulk transcode API error:', err);
@@ -599,8 +599,11 @@ const AdminCoursesTab = ({
                                         setTranscodingContextSectionId(transcodeSectionId);
                                         setLastTranscodedLessonId(null);
                                         setIsBulkTranscoding(true);
-                                        // Queue the action to run after state is set
-                                        setPendingTranscodeAction({ type: 'bulk' });
+                                        // Queue the action to run after state is set with untranscoded lesson IDs
+                                        setPendingTranscodeAction({
+                                            type: 'bulk',
+                                            lessonIds: untranscodedLessons.map(l => l.id)
+                                        });
                                     }
                                 }}
                                 disabled={transcodeLoading || !transcodeCourseId || !transcodeSectionId}
@@ -643,6 +646,7 @@ const AdminCoursesTab = ({
                                     status={status}
                                     error={error}
                                     isPolling={isPolling}
+                                    playbackType={lessons.find(l => l.id === lastTranscodedLessonId)?.playbackType}
                                     onRetry={status === 'failed' ? async () => {
                                         try {
                                             await retryTranscodeLessonHls({
@@ -653,6 +657,18 @@ const AdminCoursesTab = ({
                                             setTimeout(manualRefresh, 1000);
                                         } catch (err) {
                                             console.error('[AdminCoursesTab] Retry failed:', err);
+                                        }
+                                    } : null}
+                                    onForceRetry={status === 'starting' && lessons.find(l => l.id === lastTranscodedLessonId)?.playbackType === 'hls' ? async () => {
+                                        try {
+                                            await forceTranscodeLessonHls({
+                                                courseId: transcodingContextCourseId,
+                                                sectionId: transcodingContextSectionId,
+                                                lessonId: lastTranscodedLessonId,
+                                            });
+                                            setTimeout(manualRefresh, 1000);
+                                        } catch (err) {
+                                            console.error('[AdminCoursesTab] Force retry failed:', err);
                                         }
                                     } : null}
                                 />

@@ -14,6 +14,8 @@ const TranscodingStatusBadge = ({
   error = null,
   isPolling = false,
   onRetry = null,
+  onForceRetry = null,
+  playbackType = null,
 }) => {
   const statusConfig = {
     missing: {
@@ -29,9 +31,9 @@ const TranscodingStatusBadge = ({
       show: true,
     },
     starting: {
-      label: 'Starting Transcode...',
-      color: 'bg-yellow-100 text-yellow-800 animate-pulse',
-      icon: '⏳',
+      label: playbackType === 'hls' ? 'Stuck - Force Retry Needed' : 'Starting Transcode...',
+      color: playbackType === 'hls' ? 'bg-orange-100 text-orange-800' : 'bg-yellow-100 text-yellow-800 animate-pulse',
+      icon: playbackType === 'hls' ? '⚠️' : '⏳',
       show: true,
     },
     processing: {
@@ -61,7 +63,7 @@ const TranscodingStatusBadge = ({
   }
 
   return (
-    <div 
+    <div
       className={`inline-flex items-center gap-2 px-3 py-2 rounded-md ${config.color}`}
       role="status"
       aria-live="polite"
@@ -69,7 +71,7 @@ const TranscodingStatusBadge = ({
     >
       <span className="text-base" aria-hidden="true">{config.icon}</span>
       <span className="font-medium text-sm">{config.label}</span>
-      
+
       {isPolling && status === 'processing' && (
         <span className="ml-1 inline-block w-2 h-2 bg-current rounded-full animate-bounce" aria-hidden="true"></span>
       )}
@@ -82,6 +84,17 @@ const TranscodingStatusBadge = ({
           title="Retry transcoding"
         >
           Retry
+        </button>
+      )}
+
+      {status === 'starting' && playbackType === 'hls' && onForceRetry && (
+        <button
+          onClick={onForceRetry}
+          className="ml-2 px-2 py-1 text-xs bg-orange-600 text-white rounded hover:bg-orange-700 transition-colors"
+          aria-label="Force retry stuck transcoding"
+          title="Force restart stuck transcoding"
+        >
+          Force Retry
         </button>
       )}
     </div>

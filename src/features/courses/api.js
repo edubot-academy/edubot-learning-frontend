@@ -216,6 +216,15 @@ export const retryTranscodeLessonHls = async ({ courseId, sectionId, lessonId })
     return response.data;
 };
 
+export const forceTranscodeLessonHls = async ({ courseId, sectionId, lessonId }) => {
+    const response = await api.post(
+        `/courses/${courseId}/sections/${sectionId}/lessons/${lessonId}/transcode-hls`,
+        {},
+        { params: { force: true } }
+    );
+    return response.data;
+};
+
 export async function deleteLesson(courseId, sectionId, lessonId) {
     await api.delete(`/courses/${courseId}/sections/${sectionId}/lessons/${lessonId}`);
 }
