@@ -1,0 +1,195 @@
+/* Attendance System Design Tokens */
+/* Following existing EduBot dashboard design patterns */
+
+:root {
+  /* Attendance Status Colors - Using existing brand colors */
+  --attendance-present: var(--brand-success);
+  --attendance-late: var(--brand-warning);
+  --attendance-absent: var(--brand-error);
+  --attendance-not-scheduled: #6b7280;
+  --attendance-excused: var(--brand-info);
+
+  /* Attendance Status Background Colors - Following StatusBadge pattern */
+  --attendance-present-bg: #10b98125;
+  --attendance-late-bg: #f59e0b25;
+  --attendance-absent-bg: #ef444425;
+  --attendance-not-scheduled-bg: #6b728025;
+  --attendance-excused-bg: #3b82f625;
+
+  /* Interactive States - Using existing orange brand color */
+  --attendance-cell-hover: rgba(241, 126, 34, 0.1);
+  --attendance-cell-selected: rgba(241, 126, 34, 0.2);
+  --attendance-cell-active: rgba(241, 126, 34, 0.3);
+
+  /* Table Specific Tokens */
+  --attendance-table-border: #e5e7eb;
+  --attendance-table-header-bg: #f9fafb;
+  --attendance-table-row-hover: #f9fafb;
+  --attendance-table-sticky-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+
+  /* Dark Mode Overrides */
+}
+
+.dark {
+  /* Attendance Status Background Colors - Dark Mode */
+  --attendance-present-bg: rgba(16, 185, 129, 0.2);
+  --attendance-late-bg: rgba(245, 158, 11, 0.2);
+  --attendance-absent-bg: rgba(239, 68, 68, 0.2);
+  --attendance-not-scheduled-bg: rgba(107, 114, 128, 0.2);
+  --attendance-excused-bg: rgba(59, 130, 246, 0.2);
+
+  /* Table Specific Tokens - Dark Mode */
+  --attendance-table-border: #374151;
+  --attendance-table-header-bg: #1f2937;
+  --attendance-table-row-hover: #374151;
+  --attendance-table-sticky-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* Attendance Status Classes - Following StatusBadge pattern */
+.attendance-status {
+  @apply inline-flex items-center justify-center w-8 h-8 rounded-full text-xs font-medium transition-all duration-200 cursor-pointer border-2;
+}
+
+.attendance-status:hover {
+  @apply scale-110 shadow-lg;
+  transform: translateY(-1px);
+}
+
+.attendance-status.present {
+  background-color: var(--attendance-present-bg);
+  color: var(--attendance-present);
+  border-color: var(--attendance-present);
+}
+
+.attendance-status.late {
+  background-color: var(--attendance-late-bg);
+  color: var(--attendance-late);
+  border-color: var(--attendance-late);
+}
+
+.attendance-status.absent {
+  background-color: var(--attendance-absent-bg);
+  color: var(--attendance-absent);
+  border-color: var(--attendance-absent);
+}
+
+.attendance-status.not-scheduled {
+  background-color: var(--attendance-not-scheduled-bg);
+  color: var(--attendance-not-scheduled);
+  border-color: var(--attendance-not-scheduled);
+}
+
+.attendance-status.excused {
+  background-color: var(--attendance-excused-bg);
+  color: var(--attendance-excused);
+  border-color: var(--attendance-excused);
+}
+
+/* Interactive States */
+.attendance-cell {
+  @apply relative transition-all duration-200;
+}
+
+.attendance-cell:hover {
+  background-color: var(--attendance-cell-hover);
+}
+
+.attendance-cell.selected {
+  background-color: var(--attendance-cell-selected);
+  box-shadow: 0 0 0 2px var(--brand-primary-orange);
+}
+
+.attendance-cell.active {
+  background-color: var(--attendance-cell-active);
+}
+
+/* Table Styles - Following dashboard patterns */
+.attendance-table {
+  @apply w-full border-collapse;
+}
+
+.attendance-table th {
+  @apply sticky top-0 z-20 bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider;
+  box-shadow: var(--attendance-table-sticky-shadow);
+}
+
+.attendance-table td {
+  @apply border-b border-gray-200 dark:border-gray-700 px-4 py-3 text-sm text-gray-900 dark:text-gray-100;
+}
+
+.attendance-table tbody tr:hover {
+  @apply bg-gray-50 dark:bg-gray-800;
+}
+
+/* Responsive Table Container */
+.attendance-table-container {
+  @apply overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900;
+}
+
+/* Summary Statistics */
+.attendance-summary {
+  @apply bg-gray-50 dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 px-4 py-3;
+}
+
+.attendance-summary-cell {
+  @apply text-center text-sm font-medium;
+}
+
+/* Loading States */
+.attendance-loading {
+  @apply animate-pulse bg-gray-200 dark:bg-gray-700 rounded;
+}
+
+/* Animation Classes */
+.attendance-cell-updating {
+  animation: attendance-pulse 0.6s ease-in-out;
+}
+
+@keyframes attendance-pulse {
+
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+
+  50% {
+    transform: scale(1.05);
+    opacity: 0.8;
+  }
+}
+
+/* Mobile Optimizations */
+@media (max-width: 768px) {
+  .attendance-table th {
+    @apply px-2 py-2 text-xs;
+  }
+
+  .attendance-table td {
+    @apply px-2 py-2 text-xs;
+  }
+
+  .attendance-status {
+    @apply w-6 h-6 text-[10px];
+  }
+}
+
+/* Accessibility */
+.attendance-cell:focus {
+  @apply outline-none ring-2 ring-orange-500 ring-offset-2;
+}
+
+.attendance-cell:focus-visible {
+  @apply outline-none ring-2 ring-orange-500 ring-offset-2;
+}
+
+/* Print Styles */
+@media print {
+  .attendance-table-container {
+    @apply border-none shadow-none;
+  }
+
+  .attendance-status {
+    @apply border-gray-400;
+  }
+}

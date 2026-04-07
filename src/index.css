@@ -8,6 +8,8 @@
 
 /* Modal dropdown styling */
 @import './styles/modal-select-styles.css';
+/* Attendance system styling */
+@import './styles/attendance-system.css';
 
 /* 2. Brand Configuration */
 /* Brand variables are defined directly in :root below */

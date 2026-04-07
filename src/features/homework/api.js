@@ -125,3 +125,12 @@ export const reviewSessionHomeworkSubmission = async (
     );
     return data;
 };
+
+export const deleteSessionHomework = async (sessionId, homeworkId) => {
+    const validSessionId = ensurePositiveInt(sessionId, 'sessionId');
+    const validHomeworkId = ensurePositiveInt(homeworkId, 'homeworkId');
+    const { data } = await api.delete(
+        `/group-sessions/${validSessionId}/homework/${validHomeworkId}`
+    );
+    return data;
+};
