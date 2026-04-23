@@ -11,7 +11,6 @@ import {
     courseTypeLabel,
     formatCountdown,
     formatSessionDate,
-    isOfflineOrLiveCourse,
     isOnlineLiveOffering,
     isStudentJoinWindowOpen,
     resolveCourseType,

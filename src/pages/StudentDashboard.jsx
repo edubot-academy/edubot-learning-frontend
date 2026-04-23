@@ -10,7 +10,6 @@ import {
     fetchStudentUpcomingSessions,
     fetchStudentRecordings,
     fetchStudentResources,
-    fetchStudentHomework,
     fetchStudentTasks,
     submitSessionHomework,
     submitStudentActivity,
@@ -31,7 +30,6 @@ import {
 } from '@features/student-dashboard/utils/studentDashboard.constants.js';
 import {
     readNumber,
-    readArray,
     toItems,
     getTaskKey,
     resolveSessionHomeworkIds,
@@ -497,29 +495,58 @@ const StudentDashboard = () => {
         if (!hasAttendanceEligibleCourses) {
             return { rate: 0, totalSessions: 0, present: 0, absent: 0 };
         }
+
         const rawRate = readNumber(summary, [
             'attendance.rate',
             'stats.attendanceRate',
             'attendanceRate',
             'attendance.percent',
         ]);
+        const rawTotalSessions = readNumber(summary, [
+            'attendance.totalSessions',
+            'stats.totalSessions',
+        ]);
+        const rawPresent = readNumber(summary, [
+            'attendance.present',
+            'stats.attendedSessions',
+        ]);
+        const rawAbsent = readNumber(summary, ['attendance.absent', 'stats.absentSessions']);
+
+        if (rawRate === null && rawTotalSessions === null && rawPresent === null && rawAbsent === null) {
+            return { rate: 0, totalSessions: 0, present: 0, absent: 0 };
+        }
+
         const rate = rawRate !== null ? Math.round(rawRate) : null;
-        const totalSessions =
-            readNumber(summary, ['attendance.totalSessions', 'stats.totalSessions']) ||
-            offerings.filter(
-                (item) => item.startAt && new Date(item.startAt).getTime() < Date.now()
-            ).length;
-        const present =
-            readNumber(summary, ['attendance.present', 'stats.attendedSessions']) ||
-            Math.round((totalSessions * (rate ?? 80)) / 100);
-        const absent = Math.max(0, totalSessions - present);
+        const totalSessions = rawTotalSessions ?? Math.max(0, (rawPresent || 0) + (rawAbsent || 0));
+        const present = rawPresent ?? (
+            rate !== null && totalSessions > 0 ? Math.round((totalSessions * rate) / 100) : 0
+        );
+        const absent = rawAbsent ?? Math.max(0, totalSessions - present);
+
         return {
             rate: rate ?? (totalSessions ? Math.round((present / totalSessions) * 100) : 0),
             totalSessions,
             present,
             absent,
         };
-    }, [summary, offerings, hasAttendanceEligibleCourses]);
+    }, [summary, hasAttendanceEligibleCourses]);
+
+    const attendanceEnabled = useMemo(() => {
+        if (!hasAttendanceEligibleCourses) return false;
+
+        return [
+            'attendance.rate',
+            'stats.attendanceRate',
+            'attendanceRate',
+            'attendance.percent',
+            'attendance.totalSessions',
+            'stats.totalSessions',
+            'attendance.present',
+            'stats.attendedSessions',
+            'attendance.absent',
+            'stats.absentSessions',
+        ].some((path) => readNumber(summary, path) !== null);
+    }, [summary, hasAttendanceEligibleCourses]);
 
     const hasActiveStudentAccess = useMemo(() => {
         if (typeof accessState?.hasActiveAccess === 'boolean') {
@@ -942,7 +969,7 @@ const StudentDashboard = () => {
                         items={progressItems}
                         courses={courses}
                         attendanceStats={attendanceStats}
-                        attendanceEnabled={hasAttendanceEligibleCourses}
+                        attendanceEnabled={attendanceEnabled}
                         courseId={filterCourseId || undefined}
                     />
                 );
@@ -974,7 +1001,7 @@ const StudentDashboard = () => {
                         offerings={offerings}
                         tasks={tasks}
                         attendanceStats={attendanceStats}
-                        attendanceEnabled={hasAttendanceEligibleCourses}
+                        attendanceEnabled={attendanceEnabled}
                         progressItems={progressItems}
                         onOpenCourse={handleOpenCourse}
                         openingCourseId={openingCourseId}

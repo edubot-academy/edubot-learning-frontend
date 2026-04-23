@@ -69,7 +69,7 @@ const DashboardLayout = ({
               />
 
               <main
-                className="flex-1 space-y-6 lg:space-y-7"
+                className="min-w-0 flex-1 space-y-6 lg:space-y-7"
                 id="main-content"
                 tabIndex={-1}
                 role="main"

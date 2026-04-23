@@ -6,6 +6,7 @@ import {
     FiAlertCircle,
     FiBookOpen,
     FiCheck,
+    FiCheckCircle,
     FiClock,
     FiDownload,
     FiEdit3,
@@ -15,6 +16,7 @@ import {
     FiPaperclip,
     FiPlayCircle,
     FiSearch,
+    FiTrash2,
     FiXCircle,
 } from 'react-icons/fi';
 import BasicModal from '../../../shared/ui/BasicModal';
@@ -25,7 +27,8 @@ import {
     EmptyState,
     StatusBadge,
 } from '../../../components/ui/dashboard';
-import { fetchSessionHomeworkAttachmentBlob } from '../../homework/api';
+import { fetchSessionHomeworkAttachmentBlob, deleteSessionHomework } from '../../homework/api';
+import HomeworkModal from './HomeworkModal';
 
 const getReviewStateMeta = (item, getSubmissionStatusMeta) => {
     if (item.reviewState === 'missing') {
@@ -102,6 +105,7 @@ const SessionHomeworkTab = ({
     submissionStats,
     toggleHomeworkPublish,
     updatingHomework,
+    updateHomework,
     homeworkTitle,
     editingHomeworkId,
 }) => {
@@ -119,6 +123,17 @@ const SessionHomeworkTab = ({
         status: 'approved',
         comment: '',
         studentName: '',
+    });
+    const [deleteModal, setDeleteModal] = useState({
+        open: false,
+        homeworkId: null,
+        homeworkTitle: '',
+        loading: false,
+    });
+    const [homeworkModal, setHomeworkModal] = useState({
+        open: false,
+        mode: 'create',
+        homework: null,
     });
 
     useEffect(() => {
@@ -173,6 +188,84 @@ const SessionHomeworkTab = ({
             studentName: '',
         });
     }, []);
+
+    const openDeleteModal = (homeworkId, homeworkTitle) => {
+        setDeleteModal({
+            open: true,
+            homeworkId,
+            homeworkTitle,
+            loading: false,
+        });
+    };
+
+    const closeDeleteModal = useCallback(() => {
+        setDeleteModal({
+            open: false,
+            homeworkId: null,
+            homeworkTitle: '',
+            loading: false,
+        });
+    }, []);
+
+    const openHomeworkModal = useCallback((mode = 'create', homework = null) => {
+        setHomeworkModal({
+            open: true,
+            mode,
+            homework,
+        });
+    }, []);
+
+    const closeHomeworkModal = useCallback(() => {
+        setHomeworkModal({
+            open: false,
+            mode: 'create',
+            homework: null,
+        });
+    }, []);
+
+    const handleHomeworkSubmit = useCallback(async (formData) => {
+        try {
+            if (homeworkModal.mode === 'create') {
+                await publishHomework({
+                    title: formData.title,
+                    description: formData.description,
+                    deadline: formData.deadline,
+                    isPublished: formData.isPublished,
+                });
+                toast.success('Үй тапшырма ийгиликтүү түзүлдү');
+            } else {
+                await updateHomework(homeworkModal.homework.id, {
+                    title: formData.title,
+                    description: formData.description,
+                    deadline: formData.deadline,
+                });
+                toast.success('Үй тапшырма ийгиликтүү өзгөртүлдү');
+            }
+            closeHomeworkModal();
+        } catch (error) {
+            const message = error?.response?.data?.message || error?.message || 'Ката кетти';
+            toast.error(Array.isArray(message) ? message.join(', ') : message);
+        }
+    }, [homeworkModal.mode, homeworkModal.homework, publishHomework, updateHomework, closeHomeworkModal]);
+
+    const confirmDelete = async () => {
+        if (!deleteModal.homeworkId || !selectedSessionId) return;
+
+        setDeleteModal(prev => ({ ...prev, loading: true }));
+
+        try {
+            await deleteSessionHomework(selectedSessionId, deleteModal.homeworkId);
+            toast.success('Үй тапшырма ийгиликтүү өчүрүлдү');
+            closeDeleteModal();
+            // Refresh the homework list by triggering a refetch
+            // This will be handled by the parent component
+        } catch (error) {
+            const message = error?.response?.data?.message || error?.message || 'Үй тапшырманы өчүрүүдө ката кетти';
+            toast.error(Array.isArray(message) ? message.join(', ') : message);
+        } finally {
+            setDeleteModal(prev => ({ ...prev, loading: false }));
+        }
+    };
 
     const openReviewModal = (submissionId, status, item) => {
         const existingComment = item?.submission?.reviewComment || '';
@@ -373,84 +466,36 @@ const SessionHomeworkTab = ({
 
             <div className="grid gap-4 xl:grid-cols-[minmax(320px,0.85fr),minmax(0,1.15fr)]">
                 <DashboardInsetPanel
-                    title="Тапшырма жарыялоо"
-                    description="Жаңы тапшырманы ушул сессиядагы бардык студенттерге жарыялаңыз."
+                    title="Жаңы үй тапшырма"
+                    description="Студенттер үчүн жаңы үй тапшырма түзүңүз."
                     action={
-                        <span className="rounded-full border border-edubot-line bg-white px-3 py-1 text-xs font-semibold text-edubot-ink dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200">
-                            {students.length} студент
-                        </span>
+                        <button
+                            onClick={() => openHomeworkModal('create')}
+                            disabled={!selectedSessionId}
+                            className="dashboard-button-primary"
+                        >
+                            Үй тапшырма түзүү
+                        </button>
                     }
                 >
-                    <div className="mt-4 space-y-4">
-                        <div className="space-y-3">
-                            <div className="space-y-2">
-                                <label className="text-xs font-semibold uppercase tracking-[0.12em] text-edubot-muted dark:text-slate-400">
-                                    Аталышы
-                                </label>
-                                <input
-                                    value={homeworkTitle}
-                                    onChange={(e) => setHomeworkTitle(e.target.value)}
-                                    placeholder="Мисалы: Lesson 5 reflection"
-                                    className="dashboard-field"
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <label className="text-xs font-semibold uppercase tracking-[0.12em] text-edubot-muted dark:text-slate-400">
-                                    Түшүндүрмө
-                                </label>
-                                <textarea
-                                    value={homeworkDescription}
-                                    onChange={(e) => setHomeworkDescription(e.target.value)}
-                                    rows={5}
-                                    placeholder="Эмне тапшырыш керек, кайсы форматта жана кандай бааланат..."
-                                    className="dashboard-field"
-                                />
-                            </div>
-                            <div className="space-y-3">
-                                <div className="space-y-2">
-                                    <label className="text-xs font-semibold uppercase tracking-[0.12em] text-edubot-muted dark:text-slate-400">
-                                        Deadline
-                                    </label>
-                                    <input
-                                        type="date"
-                                        value={homeworkDeadline}
-                                        onChange={(e) => setHomeworkDeadline(e.target.value)}
-                                        className="dashboard-field w-full"
-                                    />
+                    <div className="dashboard-panel-muted rounded-2xl px-4 py-3">
+                        <div className="grid gap-3 sm:grid-cols-2">
+                            <div className="min-w-0">
+                                <div className="text-xs font-semibold uppercase tracking-[0.12em] text-edubot-muted dark:text-slate-400">
+                                    Дайындалат
                                 </div>
-                                <div className="dashboard-panel-muted w-full rounded-2xl px-4 py-3">
-                                    <div className="grid gap-3 sm:grid-cols-2">
-                                        <div className="min-w-0">
-                                            <div className="text-xs font-semibold uppercase tracking-[0.12em] text-edubot-muted dark:text-slate-400">
-                                                Дайындалат
-                                            </div>
-                                            <div className="mt-1 break-words text-sm font-semibold text-edubot-ink dark:text-white">
-                                                {selectedGroup?.name || selectedGroup?.code || 'Группа тандалган жок'}
-                                            </div>
-                                        </div>
-                                        <div className="min-w-0 sm:text-right">
-                                            <div className="text-xs text-edubot-muted dark:text-slate-400">
-                                                Сессия
-                                            </div>
-                                            <div className="mt-1 break-words text-sm font-semibold text-edubot-ink dark:text-white">
-                                                {selectedSession?.title || `#${selectedSessionId}`}
-                                            </div>
-                                        </div>
-                                    </div>
+                                <div className="mt-1 break-words text-sm font-semibold text-edubot-ink dark:text-white">
+                                    {selectedGroup?.name || selectedGroup?.code || 'Группа тандалган жок'}
                                 </div>
                             </div>
-                        </div>
-                        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-edubot-line/70 pt-3 dark:border-slate-700">
-                            <p className="text-sm text-edubot-muted dark:text-slate-400">
-                                Бул тапшырма жарыяланганда сессиядагы бардык студентке байланат.
-                            </p>
-                            <button
-                                onClick={publishHomework}
-                                disabled={!selectedSessionId || savingHomework}
-                                className="dashboard-button-primary"
-                            >
-                                {savingHomework ? 'Жарыяланып жатат...' : 'Үй тапшырмасын жарыялоо'}
-                            </button>
+                            <div className="min-w-0 sm:text-right">
+                                <div className="text-xs text-edubot-muted dark:text-slate-400">
+                                    Сессия
+                                </div>
+                                <div className="mt-1 break-words text-sm font-semibold text-edubot-ink dark:text-white">
+                                    {selectedSession?.title || `#${selectedSessionId}`}
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </DashboardInsetPanel>
@@ -520,17 +565,34 @@ const SessionHomeworkTab = ({
                                                 e.stopPropagation();
                                                 toggleHomeworkPublish(item.id, item.isPublished);
                                             }}
-                                            className={`inline-flex shrink-0 transition ${item.isPublished
-                                                ? 'text-emerald-700 dark:text-emerald-300'
-                                                : 'text-amber-700 dark:text-amber-300'
+                                            className={`inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-[11px] font-semibold transition-all hover:scale-105 active:scale-95 ${item.isPublished
+                                                ? 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:border-emerald-300 hover:bg-emerald-100 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300 dark:hover:border-emerald-500/50 dark:hover:bg-emerald-500/20'
+                                                : 'border-amber-200 bg-amber-50 text-amber-700 hover:border-amber-300 hover:bg-amber-100 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300 dark:hover:border-amber-500/50 dark:hover:bg-amber-500/20'
                                                 }`}
+                                            title={item.isPublished ? 'Жарыялоону токтотуу' : 'Жарыялоо'}
                                         >
-                                            <StatusBadge
-                                                tone={item.isPublished ? 'green' : 'amber'}
-                                                className="text-[11px]"
-                                            >
-                                                {item.isPublished ? 'Жарыяланган' : 'Жарыяланбаган'}
-                                            </StatusBadge>
+                                            {item.isPublished ? (
+                                                <>
+                                                    <FiCheckCircle className="h-3 w-3" />
+                                                    Жарыяланган
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <FiAlertCircle className="h-3 w-3" />
+                                                    Жарыяланбаган
+                                                </>
+                                            )}
+                                        </button>
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                openDeleteModal(item.id, item.title || item.name || 'Үй тапшырма');
+                                            }}
+                                            className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-red-200 bg-red-50 px-3 py-1.5 text-[11px] font-semibold text-red-700 transition-all hover:scale-105 hover:border-red-300 hover:bg-red-100 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300 dark:hover:border-red-500/50 dark:hover:bg-red-500/20"
+                                            title="Үй тапшырманы өчүрүү"
+                                        >
+                                            <FiTrash2 className="h-3 w-3" />
+                                            Өчүрүү
                                         </button>
                                     </div>
                                 </div>
@@ -559,7 +621,7 @@ const SessionHomeworkTab = ({
                         action={
                             <button
                                 type="button"
-                                onClick={() => beginHomeworkEdit(selectedHomework)}
+                                onClick={() => openHomeworkModal('edit', selectedHomework)}
                                 className="dashboard-button-secondary"
                             >
                                 <FiEdit3 className="h-4 w-4" />
@@ -596,49 +658,6 @@ const SessionHomeworkTab = ({
                                 </StatusBadge>
                             </div>
 
-                            {editingHomeworkId === String(selectedHomework.id) && (
-                                <DashboardInsetPanel
-                                    title="Тапшырманы өзгөртүү"
-                                    description="Аталышын, мазмунун же мөөнөтүн жаңыртып сактаңыз."
-                                >
-                                    <div className="mt-4 space-y-3">
-                                        <input
-                                            value={editHomeworkTitle}
-                                            onChange={(e) => setEditHomeworkTitle(e.target.value)}
-                                            className="dashboard-field"
-                                        />
-                                        <textarea
-                                            value={editHomeworkDescription}
-                                            onChange={(e) => setEditHomeworkDescription(e.target.value)}
-                                            rows={4}
-                                            className="dashboard-field"
-                                        />
-                                        <input
-                                            type="date"
-                                            value={editHomeworkDeadline}
-                                            onChange={(e) => setEditHomeworkDeadline(e.target.value)}
-                                            className="dashboard-field"
-                                        />
-                                        <div className="flex flex-wrap gap-2">
-                                            <button
-                                                type="button"
-                                                onClick={saveHomeworkEdit}
-                                                disabled={updatingHomework}
-                                                className="dashboard-button-primary"
-                                            >
-                                                {updatingHomework ? 'Сакталып жатат...' : 'Сактоо'}
-                                            </button>
-                                            <button
-                                                type="button"
-                                                onClick={cancelHomeworkEdit}
-                                                className="dashboard-button-secondary"
-                                            >
-                                                Жокко чыгаруу
-                                            </button>
-                                        </div>
-                                    </div>
-                                </DashboardInsetPanel>
-                            )}
                         </div>
                     </DashboardInsetPanel>
 
@@ -693,11 +712,10 @@ const SessionHomeworkTab = ({
                                     key={filterOption.id}
                                     type="button"
                                     onClick={() => setHomeworkReviewFilter(filterOption.id)}
-                                    className={`rounded-full px-4 py-2 text-xs font-semibold transition ${
-                                        homeworkReviewFilter === filterOption.id
-                                            ? 'bg-edubot-orange text-white shadow-edubot-card'
-                                            : 'border border-edubot-line bg-white text-edubot-ink dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200'
-                                    }`}
+                                    className={`rounded-full px-4 py-2 text-xs font-semibold transition ${homeworkReviewFilter === filterOption.id
+                                        ? 'bg-edubot-orange text-white shadow-edubot-card'
+                                        : 'border border-edubot-line bg-white text-edubot-ink dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200'
+                                        }`}
                                 >
                                     {filterOption.label}
                                 </button>
@@ -734,13 +752,12 @@ const SessionHomeworkTab = ({
                                 return (
                                     <div
                                         key={submission?.id || `student-${item.studentId}`}
-                                        className={`rounded-2xl border p-4 ${
-                                            submission
-                                                ? 'dashboard-panel-muted'
-                                                : item.reviewState === 'missing'
-                                                  ? 'border-red-200 bg-red-50/80 dark:border-red-500/30 dark:bg-red-500/10'
-                                                  : 'border-edubot-line/80 bg-white/70 dark:border-slate-700 dark:bg-slate-950'
-                                        }`}
+                                        className={`rounded-2xl border p-4 ${submission
+                                            ? 'dashboard-panel-muted'
+                                            : item.reviewState === 'missing'
+                                                ? 'border-red-200 bg-red-50/80 dark:border-red-500/30 dark:bg-red-500/10'
+                                                : 'border-edubot-line/80 bg-white/70 dark:border-slate-700 dark:bg-slate-950'
+                                            }`}
                                     >
                                         <div className="space-y-3">
                                             <div className="min-w-0">
@@ -760,13 +777,13 @@ const SessionHomeworkTab = ({
                                                 <div className="mt-1 text-xs text-edubot-muted dark:text-slate-400">
                                                     {submission
                                                         ? `Жөнөтүлгөн: ${formatDisplayDate(
-                                                              submission.submittedAt ||
-                                                                  submission.createdAt,
-                                                              '-'
-                                                          )}`
+                                                            submission.submittedAt ||
+                                                            submission.createdAt,
+                                                            '-'
+                                                        )}`
                                                         : item.reviewState === 'missing'
-                                                          ? 'Deadline өтүп кетти, бирок студент бул тапшырманы жөнөткөн жок.'
-                                                          : 'Бул студент азырынча тапшырма жөнөтө элек.'}
+                                                            ? 'Deadline өтүп кетти, бирок студент бул тапшырманы жөнөткөн жок.'
+                                                            : 'Бул студент азырынча тапшырма жөнөтө элек.'}
                                                 </div>
                                                 {submission ? (
                                                     <>
@@ -927,8 +944,8 @@ const SessionHomeworkTab = ({
                     reviewModal.status === 'approved'
                         ? 'Жоопту бекитүү'
                         : reviewModal.status === 'needs_revision'
-                          ? 'Оңдотууга кайтаруу'
-                          : 'Жоопту кайтаруу'
+                            ? 'Оңдотууга кайтаруу'
+                            : 'Жоопту кайтаруу'
                 }
                 subtitle={
                     reviewModal.studentName
@@ -991,31 +1008,69 @@ const SessionHomeworkTab = ({
                             {reviewModal.status === 'approved'
                                 ? 'Бекитүү'
                                 : reviewModal.status === 'needs_revision'
-                                  ? 'Оңдотууга жөнөтүү'
-                                  : 'Кайтаруу'}
+                                    ? 'Оңдотууга жөнөтүү'
+                                    : 'Кайтаруу'}
                         </button>
                     </div>
                 </div>
             </BasicModal>
+
+            <BasicModal
+                isOpen={deleteModal.open}
+                onClose={closeDeleteModal}
+                title="Үй тапшырманы өчүрүү"
+                subtitle={`"${deleteModal.homeworkTitle}" деген үй тапшырманы өчүрүүгө ишендиңиз. Бул аракет кайтарылбайт.`}
+                size="md"
+            >
+                <div className="space-y-4">
+                    <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300">
+                        <div className="font-semibold">⚠️ Эскертүү</div>
+                        <div className="mt-2">
+                            Үй тапшырманы өчүрүүдөн кийин аны калыбына кайтаруу мүмкүн эмес. Бардык студент жооптору жана байланышкан маалыматтар жок болот.
+                        </div>
+                    </div>
+                    <div className="flex flex-wrap justify-end gap-3">
+                        <button
+                            type="button"
+                            onClick={closeDeleteModal}
+                            disabled={deleteModal.loading}
+                            className="dashboard-button-secondary"
+                        >
+                            Жокко чыгаруу
+                        </button>
+                        <button
+                            type="button"
+                            onClick={confirmDelete}
+                            disabled={deleteModal.loading}
+                            className="dashboard-button-primary bg-red-600 hover:bg-red-700 focus:ring-red-500 disabled:opacity-50"
+                        >
+                            {deleteModal.loading ? 'Өчүрүлүүдө...' : 'Өчүрүүгө макулмун'}
+                        </button>
+                    </div>
+                </div>
+            </BasicModal>
+
+            <HomeworkModal
+                isOpen={homeworkModal.open}
+                onClose={closeHomeworkModal}
+                onSubmit={handleHomeworkSubmit}
+                homework={homeworkModal.homework}
+                mode={homeworkModal.mode}
+                loading={savingHomework || updatingHomework}
+                selectedSession={selectedSession}
+            />
         </div>
     );
 };
 
 SessionHomeworkTab.propTypes = {
-    beginHomeworkEdit: PropTypes.func.isRequired,
-    cancelHomeworkEdit: PropTypes.func.isRequired,
-    editHomeworkDeadline: PropTypes.string.isRequired,
-    editHomeworkDescription: PropTypes.string.isRequired,
-    editHomeworkTitle: PropTypes.string.isRequired,
-    editingHomeworkId: PropTypes.string.isRequired,
+    deleteSessionHomework: PropTypes.func.isRequired,
     filteredHomework: PropTypes.arrayOf(PropTypes.object).isRequired,
     formatDisplayDate: PropTypes.func.isRequired,
     getAttachmentName: PropTypes.func.isRequired,
     getSubmissionAttachmentUrl: PropTypes.func.isRequired,
     getSubmissionPreview: PropTypes.func.isRequired,
     getSubmissionStatusMeta: PropTypes.func.isRequired,
-    homeworkDeadline: PropTypes.string.isRequired,
-    homeworkDescription: PropTypes.string.isRequired,
     homeworkFilter: PropTypes.string.isRequired,
     homeworkQuery: PropTypes.string.isRequired,
     homeworkReviewFilter: PropTypes.string.isRequired,
@@ -1026,7 +1081,6 @@ SessionHomeworkTab.propTypes = {
         overdue: PropTypes.number,
     }).isRequired,
     homeworkSubmissions: PropTypes.arrayOf(PropTypes.object).isRequired,
-    homeworkTitle: PropTypes.string.isRequired,
     loadingHomework: PropTypes.bool.isRequired,
     loadingHomeworkSubmissions: PropTypes.bool.isRequired,
     publishHomework: PropTypes.func.isRequired,
@@ -1034,45 +1088,29 @@ SessionHomeworkTab.propTypes = {
     resolveHomeworkDeadline: PropTypes.func.isRequired,
     reviewHomeworkSubmission: PropTypes.func.isRequired,
     reviewingSubmissionId: PropTypes.string.isRequired,
-    saveHomeworkEdit: PropTypes.func.isRequired,
     savingHomework: PropTypes.bool.isRequired,
     selectedGroup: PropTypes.shape({
         name: PropTypes.string,
         code: PropTypes.string,
     }),
-    selectedHomework: PropTypes.object,
-    selectedHomeworkId: PropTypes.string.isRequired,
-    selectedHomeworkMeta: PropTypes.shape({
-        tone: PropTypes.string,
-        label: PropTypes.string,
-    }),
     selectedSession: PropTypes.shape({
         title: PropTypes.string,
     }),
     selectedSessionId: PropTypes.string,
-    setEditHomeworkDeadline: PropTypes.func.isRequired,
-    setEditHomeworkDescription: PropTypes.func.isRequired,
-    setEditHomeworkTitle: PropTypes.func.isRequired,
-    setHomeworkDeadline: PropTypes.func.isRequired,
-    setHomeworkDescription: PropTypes.func.isRequired,
     setHomeworkFilter: PropTypes.func.isRequired,
     setHomeworkQuery: PropTypes.func.isRequired,
     setHomeworkReviewFilter: PropTypes.func.isRequired,
-    setHomeworkTitle: PropTypes.func.isRequired,
     setSelectedHomeworkId: PropTypes.func.isRequired,
     students: PropTypes.arrayOf(PropTypes.object).isRequired,
     submissionStats: PropTypes.shape({
         total: PropTypes.number,
-        approved: PropTypes.number,
-        rejected: PropTypes.number,
-        needsRevision: PropTypes.number,
-        missing: PropTypes.number,
+        pending: PropTypes.number,
         needsReview: PropTypes.number,
-        pendingSubmission: PropTypes.number,
-        late: PropTypes.number,
+        overdue: PropTypes.number,
     }).isRequired,
     toggleHomeworkPublish: PropTypes.func.isRequired,
     updatingHomework: PropTypes.bool.isRequired,
+    updateHomework: PropTypes.func.isRequired,
 };
 
 SessionHomeworkTab.defaultProps = {

@@ -2,26 +2,64 @@
 
 Version bumps are classified by delivery scale; see `VERSIONING.md`.
 
-## [1.6.3] - 2026-04-05
+## [1.6.4] - 2026-04-23
 
-### 🔧 STUCK LESSON RECOVERY SYSTEM
-- Added `forceTranscodeLessonHls` API function with `force=true` parameter for stuck lessons
-- Enhanced `TranscodingStatusBadge` component with `onForceRetry` and `playbackType` props
-- Smart detection of lessons stuck in 'starting' + 'hls' state with orange warning badges
-- Added "Force Retry" button for stuck lessons with proper accessibility labels
-- Updated `AdminCoursesTab` to pass `playbackType` and force retry handlers to status badge
+### 🎯 ATTENDANCE FEATURE REFACTORING
+- **Critical Bug Fixes**: Fixed missing `getNextStatus` import in `useAccessibility.js` hook
+- **Component Consolidation**: Created `UnifiedAttendanceTable.jsx` to replace three separate table implementations
+- **Data Structure Standardization**: Unified student data handling (`fullName` vs `name`) across all attendance components
+- **Error Handling**: Implemented centralized error handling with `errorHandling.js` utility
+- **Type Safety**: Added comprehensive PropTypes validation through `propTypes.js`
+- **Design System**: Created centralized styling constants in `designSystem.js`
+- **Popup Functionality**: Restored original popup-based status selection from AttendanceTableView
+- **API Fixes**: Fixed import paths and environment variable issues in attendance API
 
-### 🚀 BULK TRANSCODING OPTIMIZATION
-- Modified bulk transcoding to send only untranscoded lesson IDs instead of empty array
-- Updated `AdminCoursesTab` to filter lessons before bulk API calls
-- Enhanced `pendingTranscodeAction` to include specific `lessonIds` array
-- Optimized API payload by filtering out already HLS transcoded lessons
+### 🏗️ ARCHITECTURAL IMPROVEMENTS
+- **Single Source of Truth**: Consolidated `AttendanceTableView`, `AttendanceTable`, and `RefactoredAttendanceTableView` into one unified component
+- **Consolidated Exports**: Updated `index.js` to properly export all attendance functions from correct source files
+- **Standardized Patterns**: Unified error handling, response normalization, and styling across attendance feature
+- **Backward Compatibility**: Maintained all existing functionality while improving code organization
 
-### 🎨 ENHANCED USER EXPERIENCE
-- Visual differentiation: orange badges for stuck lessons, yellow for normal processing
-- Clear user feedback distinguishing stuck vs normal starting states
-- Improved error handling and user feedback for transcoding operations
-- Better accessibility with proper ARIA labels for force retry actions
+### 📁 NEW FILES
+- `src/features/attendance/components/UnifiedAttendanceTable.jsx` - Main consolidated attendance component
+- `src/features/attendance/utils/errorHandling.js` - Centralized error handling utilities
+- `src/features/attendance/types/propTypes.js` - Comprehensive PropTypes definitions
+- `src/features/attendance/constants/designSystem.js` - Centralized styling system
+
+### 🔧 ENHANCED FILES
+- `src/features/attendance/index.js` - Updated with clean, consolidated exports
+- `src/pages/Attendance.jsx` - Updated to use UnifiedAttendanceTable
+- `src/features/attendance/hooks/useAccessibility.js` - Fixed missing imports and removed duplicates
+
+### ✅ BENEFITS
+- **Reduced Code Duplication**: Eliminated 3 separate table implementations
+- **Improved Maintainability**: Single component for all attendance functionality
+- **Better Error Handling**: Consistent error messages and user feedback
+- **Enhanced Type Safety**: Comprehensive PropTypes validation
+- **Consistent Styling**: Centralized design system for UI consistency
+- **Preserved UX**: Maintained original popup-based status selection workflow
+
+### 🛠️ ATTENDANCE TABLE FIXES
+- Fixed attendance save detection so edited statuses are compared against an immutable saved snapshot instead of a mutated shared reference.
+- Disabled the save button when there are no unsaved attendance changes, and made discard restore the saved snapshot locally without flickering the table.
+- Removed unused bulk-selection checkboxes from attendance table, card, and virtualized views to keep the workflow focused on direct cell editing.
+- Fixed attendance table horizontal overflow, sticky `Студент` header overlap, and filter-control clipping/overlap.
+- Removed the `Келечекте` future-session label from attendance cells while preserving future-session disabled behavior.
+
+### 🔎 ATTENDANCE FILTERS
+- Wired advanced session/date/attendance-rate filters into the active attendance table data instead of rendering them as UI-only controls.
+- Added active visual states for quick filters so selected `Тез фильтрлер` are visibly highlighted.
+
+### 🧩 SESSION HOMEWORK STABILITY
+- Fixed homework tab crashes caused by missing homework delete/update wiring.
+- Fixed homework modal hook ordering so opening and closing the modal no longer violates React hook rules.
+
+### 🧑‍🎓 STUDENT DASHBOARD TRUTHFULNESS
+- Stopped showing inferred attendance percentages on the student dashboard when real attendance data is not present in the student summary payload.
+
+### ✅ BUILD STATUS
+- Focused attendance/homework lint checks pass for the changed components.
+- Production build passes.
 
 ---
 

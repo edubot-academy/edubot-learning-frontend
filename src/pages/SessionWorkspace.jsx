@@ -15,6 +15,7 @@ import {
     createSessionHomework,
     createSessionMeeting,
     deleteSessionActivity,
+    deleteSessionHomework,
     deleteSessionMeeting,
     fetchSessionActivityResponses,
     fetchCourseAttendance,
@@ -190,6 +191,57 @@ const toInputDateTime = (isoValue) => {
     if (Number.isNaN(date.getTime())) return '';
     const local = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
     return local.toISOString().slice(0, 16);
+};
+
+const getNextSessionDateTime = (group, existingSessions = []) => {
+    if (!group) return { startsAt: '', endsAt: '' };
+
+    // If group has schedule blocks, use them to calculate next session
+    if (group.scheduleBlocks && group.scheduleBlocks.length > 0) {
+        const now = new Date();
+        const dayOfWeek = now.getDay(); // 0 = Sunday, 1 = Monday, etc.
+        const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+        const currentDay = dayNames[dayOfWeek];
+
+        // Find today's schedule block
+        const todaySchedule = group.scheduleBlocks.find(block => block.day.toLowerCase() === currentDay);
+
+        if (todaySchedule) {
+            // Parse the times
+            const [startHour, startMinute] = todaySchedule.startTime.split(':').map(Number);
+            const [endHour, endMinute] = todaySchedule.endTime.split(':').map(Number);
+
+            // Create datetime for today's session
+            const sessionStart = new Date();
+            sessionStart.setHours(startHour, startMinute, 0, 0);
+            const sessionEnd = new Date();
+            sessionEnd.setHours(endHour, endMinute, 0, 0);
+
+            // If today's session time has passed, schedule for next week
+            if (sessionStart <= now) {
+                sessionStart.setDate(sessionStart.getDate() + 7);
+                sessionEnd.setDate(sessionEnd.getDate() + 7);
+            }
+
+            return {
+                startsAt: toInputDateTime(sessionStart.toISOString()),
+                endsAt: toInputDateTime(sessionEnd.toISOString()),
+            };
+        }
+    }
+
+    // Fallback: use start date or default to tomorrow at same time
+    const fallbackStart = new Date();
+    fallbackStart.setDate(fallbackStart.getDate() + 1); // Tomorrow
+    fallbackStart.setHours(14, 0, 0, 0); // 2:00 PM default
+
+    const fallbackEnd = new Date(fallbackStart);
+    fallbackEnd.setHours(16, 0, 0, 0); // 4:00 PM default
+
+    return {
+        startsAt: toInputDateTime(fallbackStart.toISOString()),
+        endsAt: toInputDateTime(fallbackEnd.toISOString()),
+    };
 };
 
 const resolveSessionJoinUrl = (session) =>
@@ -819,7 +871,7 @@ const SessionWorkspace = () => {
 
         let cancelled = false;
         const loadStudentsAndHistory = async () => {
-                setLoadingStudents(true);
+            setLoadingStudents(true);
             try {
                 const [studentsRes, attendanceRes] = await Promise.all([
                     fetchGroupRoster({
@@ -2133,6 +2185,26 @@ const SessionWorkspace = () => {
         }
     };
 
+    const updateHomework = async (homeworkId, updates) => {
+        if (!selectedSessionId) return;
+
+        setUpdatingHomework(true);
+        try {
+            await updateSessionHomework(Number(selectedSessionId), Number(homeworkId), updates);
+
+            const refreshed = await fetchSessionHomework(Number(selectedSessionId), { includeUnpublished: true });
+            const items = toArray(refreshed);
+            setPublishedHomework(items);
+            await refreshSessionInsights();
+        } catch (error) {
+            console.error(error);
+            toast.error(getWorkspaceErrorMessage(error, 'Үй тапшырманы жаңыртуу катасы'));
+            throw error; // Re-throw to let modal handle the error
+        } finally {
+            setUpdatingHomework(false);
+        }
+    };
+
     const reviewHomeworkSubmission = async (submissionId, status, reviewComment = '') => {
         if (!selectedSessionId || !selectedHomeworkId || !submissionId) return;
         setReviewingSubmissionId(String(submissionId));
@@ -2425,10 +2497,13 @@ const SessionWorkspace = () => {
                                         type="button"
                                         onClick={() => {
                                             setWorkspaceMode('create');
+                                            const nextDateTime = getNextSessionDateTime(selectedGroup, sessions);
                                             setQuickSession((prev) => ({
                                                 ...QUICK_SESSION_DEFAULT,
                                                 status: prev.status,
                                                 sessionIndex: nextSessionIndex,
+                                                startsAt: nextDateTime.startsAt,
+                                                endsAt: nextDateTime.endsAt,
                                             }));
                                             setIsSessionSetupOpen(true);
                                         }}
@@ -2669,26 +2744,18 @@ const SessionWorkspace = () => {
 
                         {activeTab === 'homework' && (
                             <SessionHomeworkTab
-                                beginHomeworkEdit={beginHomeworkEdit}
-                                cancelHomeworkEdit={cancelHomeworkEdit}
-                                editHomeworkDeadline={editHomeworkDeadline}
-                                editHomeworkDescription={editHomeworkDescription}
-                                editHomeworkTitle={editHomeworkTitle}
-                                editingHomeworkId={editingHomeworkId}
+                                deleteSessionHomework={deleteSessionHomework}
                                 filteredHomework={filteredHomework}
                                 formatDisplayDate={formatDisplayDate}
                                 getAttachmentName={getAttachmentName}
                                 getSubmissionAttachmentUrl={getSubmissionAttachmentUrl}
                                 getSubmissionPreview={getSubmissionPreview}
                                 getSubmissionStatusMeta={getSubmissionStatusMeta}
-                                homeworkDeadline={homeworkDeadline}
-                                homeworkDescription={homeworkDescription}
                                 homeworkFilter={homeworkFilter}
                                 homeworkQuery={homeworkQuery}
                                 homeworkReviewFilter={homeworkReviewFilter}
                                 homeworkStats={homeworkStats}
                                 homeworkSubmissions={homeworkSubmissions}
-                                homeworkTitle={homeworkTitle}
                                 loadingHomework={loadingHomework}
                                 loadingHomeworkSubmissions={loadingHomeworkSubmissions}
                                 publishHomework={publishHomework}
@@ -2696,7 +2763,6 @@ const SessionWorkspace = () => {
                                 resolveHomeworkDeadline={resolveHomeworkDeadline}
                                 reviewHomeworkSubmission={reviewHomeworkSubmission}
                                 reviewingSubmissionId={reviewingSubmissionId}
-                                saveHomeworkEdit={saveHomeworkEdit}
                                 savingHomework={savingHomework}
                                 selectedGroup={selectedGroup}
                                 selectedHomework={selectedHomework}
@@ -2704,20 +2770,15 @@ const SessionWorkspace = () => {
                                 selectedHomeworkMeta={selectedHomeworkMeta}
                                 selectedSession={selectedSession}
                                 selectedSessionId={selectedSessionId}
-                                setEditHomeworkDeadline={setEditHomeworkDeadline}
-                                setEditHomeworkDescription={setEditHomeworkDescription}
-                                setEditHomeworkTitle={setEditHomeworkTitle}
-                                setHomeworkDeadline={setHomeworkDeadline}
-                                setHomeworkDescription={setHomeworkDescription}
                                 setHomeworkFilter={setHomeworkFilter}
                                 setHomeworkQuery={setHomeworkQuery}
                                 setHomeworkReviewFilter={setHomeworkReviewFilter}
-                                setHomeworkTitle={setHomeworkTitle}
                                 setSelectedHomeworkId={setSelectedHomeworkId}
                                 students={students}
                                 submissionStats={submissionStats}
                                 toggleHomeworkPublish={toggleHomeworkPublish}
                                 updatingHomework={updatingHomework}
+                                updateHomework={updateHomework}
                             />
                         )}
 
@@ -2806,7 +2867,7 @@ const SessionHeaderContent = ({
                     {' • '}
                     {selectedGroup?.name || selectedGroup?.code || 'Группа тандаңыз'}
                     {selectedSession
-                        ? ` • ${toSessionTime(selectedSession.startsAt)} - ${toSessionTime(selectedSession.endsAt)}`
+                        ? ` • ${formatDisplayDate(selectedSession.startsAt)} ${toSessionTime(selectedSession.startsAt)} - ${toSessionTime(selectedSession.endsAt)}`
                         : ''}
                 </div>
                 {selectedSession ? (
