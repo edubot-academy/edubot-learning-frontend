@@ -126,13 +126,6 @@ const AttendanceCell = memo(({
           </span>
         )}
 
-        {/* Future session indicator */}
-        {isSessionIncomplete && (
-          <span className="text-xs text-gray-500 dark:text-gray-400">
-            Келечекте
-          </span>
-        )}
-
         {/* Selection indicator */}
         {isSelected && !isUpdating && (
           <div className="absolute -top-1 -right-1 w-3 h-3 bg-orange-500 rounded-full border-2 border-white dark:border-gray-900" />

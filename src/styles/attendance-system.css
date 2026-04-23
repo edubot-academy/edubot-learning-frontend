@@ -113,6 +113,10 @@
   box-shadow: var(--attendance-table-sticky-shadow);
 }
 
+.attendance-table .attendance-table-sticky-corner {
+  @apply sticky left-0 top-0 z-40 bg-gray-50 dark:bg-gray-900;
+}
+
 .attendance-table td {
   @apply border-b border-gray-200 dark:border-gray-700 px-4 py-3 text-sm text-gray-900 dark:text-gray-100;
 }
@@ -124,6 +128,8 @@
 /* Responsive Table Container */
 .attendance-table-container {
   @apply overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900;
+  max-width: 100%;
+  min-width: 0;
 }
 
 /* Summary Statistics */

@@ -105,6 +105,7 @@ const SessionHomeworkTab = ({
     submissionStats,
     toggleHomeworkPublish,
     updatingHomework,
+    updateHomework,
     homeworkTitle,
     editingHomeworkId,
 }) => {

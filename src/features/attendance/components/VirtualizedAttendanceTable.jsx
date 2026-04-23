@@ -6,9 +6,7 @@ const VirtualizedAttendanceTable = ({
   students = [],
   sessions = [],
   attendanceData = {},
-  selectedCells = new Set(),
   onStatusChange,
-  onSelectionChange,
   rowHeight = 80,
   headerHeight = 60,
   containerHeight = 600,
@@ -125,8 +123,6 @@ const VirtualizedAttendanceTable = ({
       const student = students.find((s) => s.id === studentId);
       const session = sessions.find((s) => s.id === sessionId);
       const currentStatus = attendanceData[studentId]?.[sessionId] || 'not_scheduled';
-      const cellKey = `${studentId}-${sessionId}`;
-      const isSelected = selectedCells.has(cellKey);
 
       return {
         studentId,
@@ -135,15 +131,14 @@ const VirtualizedAttendanceTable = ({
         sessionTitle: session?.title,
         sessionDate: session?.startsAt,
         currentStatus,
-        isSelected,
+        isSelected: false,
         isUpdating: false,
         isDisabled: false,
         size: 'compact',
         onStatusChange,
-        onSelectionChange,
       };
     },
-    [students, sessions, attendanceData, selectedCells, onStatusChange, onSelectionChange]
+    [students, sessions, attendanceData, onStatusChange]
   );
 
   useEffect(() => {
@@ -155,8 +150,8 @@ const VirtualizedAttendanceTable = ({
   }, []);
 
   return (
-    <div className={`virtualized-attendance-table ${className}`}>
-      <div className="overflow-x-auto">
+    <div className={`virtualized-attendance-table min-w-0 max-w-full ${className}`}>
+      <div className="min-w-0 max-w-full overflow-x-auto">
         <div
           className="sticky top-0 z-20 border-b border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900"
           style={{ height: headerHeight, minWidth: gridWidth }}
@@ -166,23 +161,6 @@ const VirtualizedAttendanceTable = ({
             style={{ gridTemplateColumns: `200px repeat(${sessions.length}, 80px) 100px` }}
           >
             <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
-              <input
-                type="checkbox"
-                className="h-4 w-4 rounded border-gray-300 text-orange-600 focus:ring-orange-500"
-                onChange={(e) => {
-                  const newSelectedCells = new Set();
-
-                  if (e.target.checked) {
-                    students.forEach((student) => {
-                      sessions.forEach((session) => {
-                        newSelectedCells.add(`${student.id}-${session.id}`);
-                      });
-                    });
-                  }
-
-                  onSelectionChange(newSelectedCells);
-                }}
-              />
               Студент
             </div>
 
@@ -248,28 +226,6 @@ const VirtualizedAttendanceTable = ({
                   }}
                 >
                   <div className="flex items-center gap-3 p-3">
-                    <input
-                      type="checkbox"
-                      checked={sessions.every((session) =>
-                        selectedCells.has(`${student.id}-${session.id}`)
-                      )}
-                      onChange={(e) => {
-                        const newSelectedCells = new Set(selectedCells);
-
-                        sessions.forEach((session) => {
-                          const cellKey = `${student.id}-${session.id}`;
-                          if (e.target.checked) {
-                            newSelectedCells.add(cellKey);
-                          } else {
-                            newSelectedCells.delete(cellKey);
-                          }
-                        });
-
-                        onSelectionChange(newSelectedCells);
-                      }}
-                      className="h-4 w-4 rounded border-gray-300 text-orange-600 focus:ring-orange-500"
-                    />
-
                     <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-200 text-xs font-medium text-gray-600 dark:bg-gray-700 dark:text-gray-300">
                       {(student.fullName || 'Unknown')
                         .split(' ')
@@ -352,9 +308,7 @@ VirtualizedAttendanceTable.propTypes = {
       PropTypes.oneOf(['present', 'late', 'absent', 'not_scheduled', 'excused'])
     )
   ),
-  selectedCells: PropTypes.instanceOf(Set),
   onStatusChange: PropTypes.func,
-  onSelectionChange: PropTypes.func,
   rowHeight: PropTypes.number,
   headerHeight: PropTypes.number,
   containerHeight: PropTypes.number,
@@ -365,9 +319,7 @@ VirtualizedAttendanceTable.defaultProps = {
   students: [],
   sessions: [],
   attendanceData: {},
-  selectedCells: new Set(),
   onStatusChange: null,
-  onSelectionChange: null,
   rowHeight: 80,
   headerHeight: 60,
   containerHeight: 600,

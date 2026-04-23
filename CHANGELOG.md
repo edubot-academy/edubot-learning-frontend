@@ -2,7 +2,7 @@
 
 Version bumps are classified by delivery scale; see `VERSIONING.md`.
 
-## [1.6.4] - 2026-04-07
+## [1.6.4] - 2026-04-23
 
 ### 🎯 ATTENDANCE FEATURE REFACTORING
 - **Critical Bug Fixes**: Fixed missing `getNextStatus` import in `useAccessibility.js` hook
@@ -38,6 +38,28 @@ Version bumps are classified by delivery scale; see `VERSIONING.md`.
 - **Enhanced Type Safety**: Comprehensive PropTypes validation
 - **Consistent Styling**: Centralized design system for UI consistency
 - **Preserved UX**: Maintained original popup-based status selection workflow
+
+### 🛠️ ATTENDANCE TABLE FIXES
+- Fixed attendance save detection so edited statuses are compared against an immutable saved snapshot instead of a mutated shared reference.
+- Disabled the save button when there are no unsaved attendance changes, and made discard restore the saved snapshot locally without flickering the table.
+- Removed unused bulk-selection checkboxes from attendance table, card, and virtualized views to keep the workflow focused on direct cell editing.
+- Fixed attendance table horizontal overflow, sticky `Студент` header overlap, and filter-control clipping/overlap.
+- Removed the `Келечекте` future-session label from attendance cells while preserving future-session disabled behavior.
+
+### 🔎 ATTENDANCE FILTERS
+- Wired advanced session/date/attendance-rate filters into the active attendance table data instead of rendering them as UI-only controls.
+- Added active visual states for quick filters so selected `Тез фильтрлер` are visibly highlighted.
+
+### 🧩 SESSION HOMEWORK STABILITY
+- Fixed homework tab crashes caused by missing homework delete/update wiring.
+- Fixed homework modal hook ordering so opening and closing the modal no longer violates React hook rules.
+
+### 🧑‍🎓 STUDENT DASHBOARD TRUTHFULNESS
+- Stopped showing inferred attendance percentages on the student dashboard when real attendance data is not present in the student summary payload.
+
+### ✅ BUILD STATUS
+- Focused attendance/homework lint checks pass for the changed components.
+- Production build passes.
 
 ---
 

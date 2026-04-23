@@ -15,6 +15,7 @@ import {
     createSessionHomework,
     createSessionMeeting,
     deleteSessionActivity,
+    deleteSessionHomework,
     deleteSessionMeeting,
     fetchSessionActivityResponses,
     fetchCourseAttendance,

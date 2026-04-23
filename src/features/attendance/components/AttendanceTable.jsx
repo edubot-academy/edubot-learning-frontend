@@ -301,11 +301,11 @@ const AttendanceTable = ({
       </div>
 
       {/* Main table */}
-      <div className="overflow-x-auto">
+      <div className="min-w-0 max-w-full overflow-x-auto">
         <table className="attendance-table">
           <thead>
             <tr>
-              <th className="sticky left-0 z-10 bg-gray-50 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700">
+              <th className="attendance-table-sticky-corner border-r border-gray-200 dark:border-gray-700">
                 Student Name
               </th>
               {sessions.map(session => (

@@ -32,7 +32,7 @@ export const useAccessibility = ({
 
   // Keyboard navigation handlers
   const handleKeyDown = useCallback((event, studentId, sessionId) => {
-    const { key, ctrlKey, metaKey, shiftKey, altKey } = event;
+    const { key, ctrlKey, metaKey } = event;
 
     // Prevent default for our handled keys
     const handledKeys = [' ', 'Enter', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Escape', 'Delete', 'Backspace'];
@@ -45,7 +45,6 @@ export const useAccessibility = ({
       case 'Enter': {
         // Space or Enter to cycle status
         const currentStatus = attendanceData[studentId]?.[sessionId] || 'not_scheduled';
-        const statusConfig = ATTENDANCE_STATUS_CONFIG[currentStatus];
         const nextStatus = getNextStatus(currentStatus);
         const nextConfig = ATTENDANCE_STATUS_CONFIG[nextStatus];
 
@@ -129,7 +128,7 @@ export const useAccessibility = ({
 
       case 'a':
       case 'A': {
-        if (ctrlKey || metaKey) {
+        if ((ctrlKey || metaKey) && onSelectionChange) {
           // Ctrl/Cmd + A to select all
           event.preventDefault();
           const allCells = new Set();
@@ -178,7 +177,6 @@ export const useAccessibility = ({
   const getCellAriaProps = useCallback((studentId, sessionId, currentStatus) => {
     const student = students.find(s => s.id === studentId);
     const session = sessions.find(s => s.id === sessionId);
-    const statusConfig = ATTENDANCE_STATUS_CONFIG[currentStatus];
     const isFocused = focusedCell === `${studentId}-${sessionId}`;
 
     return {
@@ -232,44 +230,6 @@ export const useAccessibility = ({
     ];
   }, []);
 
-  // Focus trap for modals
-  const useFocusTrap = useCallback((containerRef) => {
-    useEffect(() => {
-      const container = containerRef.current;
-      if (!container) return;
-
-      const focusableElements = container.querySelectorAll(
-        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-      );
-
-      const firstElement = focusableElements[0];
-      const lastElement = focusableElements[focusableElements.length - 1];
-
-      const handleTabKey = (e) => {
-        if (e.key !== 'Tab') return;
-
-        if (e.shiftKey) {
-          if (document.activeElement === firstElement) {
-            lastElement.focus();
-            e.preventDefault();
-          }
-        } else {
-          if (document.activeElement === lastElement) {
-            firstElement.focus();
-            e.preventDefault();
-          }
-        }
-      };
-
-      container.addEventListener('keydown', handleTabKey);
-      firstElement?.focus();
-
-      return () => {
-        container.removeEventListener('keydown', handleTabKey);
-      };
-    }, [containerRef]);
-  }, []);
-
   // Cleanup
   useEffect(() => {
     return () => {
@@ -297,8 +257,42 @@ export const useAccessibility = ({
 
     // Utilities
     getKeyboardShortcuts,
-    useFocusTrap,
   };
+};
+
+export const useFocusTrap = (containerRef) => {
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return undefined;
+
+    const focusableElements = container.querySelectorAll(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    );
+
+    const firstElement = focusableElements[0];
+    const lastElement = focusableElements[focusableElements.length - 1];
+
+    const handleTabKey = (e) => {
+      if (e.key !== 'Tab') return;
+
+      if (e.shiftKey) {
+        if (document.activeElement === firstElement) {
+          lastElement?.focus();
+          e.preventDefault();
+        }
+      } else if (document.activeElement === lastElement) {
+        firstElement?.focus();
+        e.preventDefault();
+      }
+    };
+
+    container.addEventListener('keydown', handleTabKey);
+    firstElement?.focus();
+
+    return () => {
+      container.removeEventListener('keydown', handleTabKey);
+    };
+  }, [containerRef]);
 };
 
 

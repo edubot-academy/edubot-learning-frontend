@@ -490,7 +490,7 @@ const AttendancePage = ({ embedded = false }) => {
     };
 
     return (
-        <div className={embedded ? 'space-y-6' : 'mx-auto max-w-7xl space-y-6 px-4 pb-12 pt-24'}>
+        <div className={embedded ? 'min-w-0 space-y-6' : 'mx-auto max-w-7xl min-w-0 space-y-6 px-4 pb-12 pt-24'}>
             {!embedded && (
                 <div className="max-w-2xl">
                     <div className="mb-8">

@@ -5,9 +5,6 @@ import { FiX, FiCheckCircle, FiClock, FiXCircle, FiAlertCircle } from 'react-ico
 import { SESSION_ATTENDANCE_STATUS } from '@shared/contracts';
 import {
   PERFORMANCE_THRESHOLDS,
-  ATTENDANCE_STATUS_CONFIG,
-  getNextStatus,
-  getStatusConfig,
 } from '../constants/attendanceConfig';
 import { fetchGroupRoster } from '../../courseGroups/roster';
 import { fetchCourseSessions } from '../../groupSessions/api';
@@ -16,18 +13,13 @@ import {
   handleAttendanceError,
   handleAttendanceSuccess,
   validateAndNormalizeResponse,
-  formatStudentName,
-  formatSessionTitle,
-  formatDate,
 } from '../utils/errorHandling';
 import {
   commonComponentProps,
   defaultProps,
 } from '../types/propTypes';
 import AttendanceFilters from './AttendanceFilters';
-import AttendanceBulkActions from './AttendanceBulkActions';
 import EnhancedAttendanceSummary from './EnhancedAttendanceSummary';
-import AttendanceCell from './AttendanceCell';
 import AttendanceCardView from './AttendanceCardView';
 import VirtualizedAttendanceTable from './VirtualizedAttendanceTable';
 import {
@@ -39,6 +31,112 @@ import {
 } from './AttendanceLoadingStates';
 import { useAccessibility } from '../hooks/useAccessibility';
 
+const cloneAttendanceData = (data = {}) =>
+  Object.fromEntries(
+    Object.entries(data).map(([studentId, sessionsById]) => [
+      studentId,
+      { ...(sessionsById || {}) },
+    ])
+  );
+
+const getDayStart = (date) => new Date(date.getFullYear(), date.getMonth(), date.getDate());
+
+const isSessionInDateRange = (session, filters) => {
+  const range = filters.dateRange || 'all';
+
+  if (range === 'all') return true;
+  if (!session.startsAt) return false;
+
+  const sessionDate = new Date(session.startsAt);
+  if (Number.isNaN(sessionDate.getTime())) return false;
+
+  const today = getDayStart(new Date());
+  const sessionDay = getDayStart(sessionDate);
+
+  if (range === 'today') {
+    return sessionDay.getTime() === today.getTime();
+  }
+
+  const dayOfWeek = today.getDay();
+  const weekOffset = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+  const thisWeekStart = new Date(today);
+  thisWeekStart.setDate(today.getDate() - weekOffset);
+
+  if (range === 'this_week') {
+    const nextWeekStart = new Date(thisWeekStart);
+    nextWeekStart.setDate(thisWeekStart.getDate() + 7);
+    return sessionDay >= thisWeekStart && sessionDay < nextWeekStart;
+  }
+
+  if (range === 'last_week') {
+    const lastWeekStart = new Date(thisWeekStart);
+    lastWeekStart.setDate(thisWeekStart.getDate() - 7);
+    return sessionDay >= lastWeekStart && sessionDay < thisWeekStart;
+  }
+
+  if (range === 'this_month') {
+    return (
+      sessionDay.getFullYear() === today.getFullYear() &&
+      sessionDay.getMonth() === today.getMonth()
+    );
+  }
+
+  if (range === 'custom') {
+    const startDate = filters.customStartDate ? getDayStart(new Date(filters.customStartDate)) : null;
+    const endDate = filters.customEndDate ? getDayStart(new Date(filters.customEndDate)) : null;
+
+    if (startDate && Number.isNaN(startDate.getTime())) return false;
+    if (endDate && Number.isNaN(endDate.getTime())) return false;
+
+    return (!startDate || sessionDay >= startDate) && (!endDate || sessionDay <= endDate);
+  }
+
+  return true;
+};
+
+const getStudentAttendanceRate = (studentId, sessions, attendanceData) => {
+  const stats = sessions.reduce(
+    (result, session) => {
+      const status = attendanceData[studentId]?.[session.id] || 'not_scheduled';
+
+      if (
+        status === SESSION_ATTENDANCE_STATUS.PRESENT ||
+        status === SESSION_ATTENDANCE_STATUS.LATE
+      ) {
+        result.attended += 1;
+        result.scheduled += 1;
+      } else if (
+        status === SESSION_ATTENDANCE_STATUS.ABSENT ||
+        status === SESSION_ATTENDANCE_STATUS.EXCUSED
+      ) {
+        result.scheduled += 1;
+      }
+
+      return result;
+    },
+    { attended: 0, scheduled: 0 }
+  );
+
+  return stats.scheduled > 0 ? (stats.attended / stats.scheduled) * 100 : 0;
+};
+
+const matchesAttendanceRateFilter = (rate, filter) => {
+  switch (filter || 'all') {
+    case 'perfect':
+      return rate === 100;
+    case 'excellent':
+      return rate >= 90 && rate <= 100;
+    case 'good':
+      return rate >= 75 && rate < 90;
+    case 'fair':
+      return rate >= 50 && rate < 75;
+    case 'poor':
+      return rate < 50;
+    default:
+      return true;
+  }
+};
+
 /**
  * Unified Attendance Table Component
  * Consolidates all attendance table functionality into a single, optimized component
@@ -47,7 +145,6 @@ import { useAccessibility } from '../hooks/useAccessibility';
  */
 const UnifiedAttendanceTable = ({
   groupId,
-  groupName = '',
   courseId = null,
   onAttendanceUpdate,
   className = '',
@@ -57,12 +154,13 @@ const UnifiedAttendanceTable = ({
   showSessionBreakdown = false,
 }) => {
   // State management
+  const [selectedViewMode, setSelectedViewMode] = useState(viewMode);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [students, setStudents] = useState([]);
   const [sessions, setSessions] = useState([]);
   const [attendanceData, setAttendanceData] = useState({});
-  const [selectedCells, setSelectedCells] = useState(new Set());
+  const [savedAttendanceData, setSavedAttendanceData] = useState({});
   const [updatingCells, setUpdatingCells] = useState(new Set());
   const [pendingChanges, setPendingChanges] = useState(new Map());
   const [popupCell, setPopupCell] = useState(null);
@@ -121,10 +219,13 @@ const UnifiedAttendanceTable = ({
           });
         });
 
-        setAttendanceData(consolidatedAttendance);
+        setAttendanceData(cloneAttendanceData(consolidatedAttendance));
+        setSavedAttendanceData(cloneAttendanceData(consolidatedAttendance));
       } else {
         setAttendanceData({});
+        setSavedAttendanceData({});
       }
+      setPendingChanges(new Map());
     } catch (loadError) {
       handleAttendanceError(loadError, 'Жүктөөдө ката кетти');
       setError(loadError);
@@ -137,9 +238,13 @@ const UnifiedAttendanceTable = ({
     loadData();
   }, [loadData]);
 
+  useEffect(() => {
+    setSelectedViewMode(viewMode);
+  }, [viewMode]);
+
   // Responsive view mode calculation
   const responsiveViewMode = useMemo(() => {
-    if (viewMode !== 'auto') return viewMode;
+    if (selectedViewMode !== 'auto') return selectedViewMode;
 
     const isMobile = typeof window !== 'undefined' ? window.innerWidth < 768 : false;
     const shouldUseVirtualization =
@@ -148,7 +253,7 @@ const UnifiedAttendanceTable = ({
     if (isMobile) return 'cards';
     if (shouldUseVirtualization) return 'virtualized';
     return 'table';
-  }, [viewMode, students.length]);
+  }, [selectedViewMode, students.length]);
 
   // Status change handler with optimistic updates
   const handleStatusChange = useCallback(
@@ -158,9 +263,9 @@ const UnifiedAttendanceTable = ({
       // Update pending changes
       setPendingChanges((prev) => {
         const newChanges = new Map(prev);
-        const currentStatus = attendanceData[studentId]?.[sessionId] || 'not_scheduled';
+        const savedStatus = savedAttendanceData[studentId]?.[sessionId] || 'not_scheduled';
 
-        if (status === currentStatus) {
+        if (status === savedStatus) {
           newChanges.delete(cellKey);
         } else {
           newChanges.set(cellKey, { studentId, sessionId, status });
@@ -172,25 +277,13 @@ const UnifiedAttendanceTable = ({
       // Optimistic update
       setAttendanceData((prev) => {
         const optimisticData = { ...prev };
-        if (!optimisticData[studentId]) {
-          optimisticData[studentId] = {};
-        }
+        optimisticData[studentId] = { ...(optimisticData[studentId] || {}) };
         optimisticData[studentId][sessionId] = status;
         return optimisticData;
       });
 
-      // Handle selection
-      setSelectedCells((prev) => {
-        const next = new Set(prev);
-        if (next.has(cellKey)) {
-          next.delete(cellKey);
-        } else {
-          next.add(cellKey);
-        }
-        return next;
-      });
     },
-    [attendanceData]
+    [savedAttendanceData]
   );
 
   // Popup cell click handler
@@ -219,7 +312,8 @@ const UnifiedAttendanceTable = ({
       // Update pending changes instead of immediately saving
       setPendingChanges((prev) => {
         const newChanges = new Map(prev);
-        if (status === attendanceData[studentId]?.[sessionId]) {
+        const savedStatus = savedAttendanceData[studentId]?.[sessionId] || 'not_scheduled';
+        if (status === savedStatus) {
           // If reverting to original value, remove from pending changes
           newChanges.delete(cellKey);
         } else {
@@ -231,24 +325,13 @@ const UnifiedAttendanceTable = ({
 
       // Update local display immediately for better UX
       const optimisticData = { ...attendanceData };
-      if (!optimisticData[studentId]) {
-        optimisticData[studentId] = {};
-      }
+      optimisticData[studentId] = { ...(optimisticData[studentId] || {}) };
       optimisticData[studentId][sessionId] = status;
       setAttendanceData(optimisticData);
 
-      // Handle selection
-      const newSelectedCells = new Set(selectedCells);
-      if (newSelectedCells.has(cellKey)) {
-        newSelectedCells.delete(cellKey);
-      } else {
-        newSelectedCells.add(cellKey);
-      }
-      setSelectedCells(newSelectedCells);
-
       setPopupCell(null);
     },
-    [attendanceData, selectedCells]
+    [attendanceData, savedAttendanceData]
   );
 
   // Bulk update handler
@@ -278,6 +361,15 @@ const UnifiedAttendanceTable = ({
 
         await Promise.all(promises);
 
+        setSavedAttendanceData((prev) => {
+          const next = { ...prev };
+          updates.forEach(({ studentId, sessionId, status }) => {
+            next[studentId] = { ...(next[studentId] || {}) };
+            next[studentId][sessionId] = status;
+          });
+          return next;
+        });
+
         // Clear pending changes
         setPendingChanges(new Map());
 
@@ -296,23 +388,59 @@ const UnifiedAttendanceTable = ({
     [courseId, onAttendanceUpdate]
   );
 
+  const unsavedUpdates = useMemo(() => {
+    const updates = [];
+    const validStatuses = new Set(Object.values(SESSION_ATTENDANCE_STATUS));
+
+    students.forEach((student) => {
+      sessions.forEach((session) => {
+        const studentId = student.id;
+        const sessionId = session.id;
+        const currentStatus = attendanceData[studentId]?.[sessionId] || 'not_scheduled';
+        const savedStatus = savedAttendanceData[studentId]?.[sessionId] || 'not_scheduled';
+
+        if (currentStatus !== savedStatus && validStatuses.has(currentStatus)) {
+          updates.push({ studentId, sessionId, status: currentStatus });
+        }
+      });
+    });
+
+    return updates;
+  }, [students, sessions, attendanceData, savedAttendanceData]);
+
+  const unsavedChangeCount = unsavedUpdates.length;
+
   // Save handler
   const handleSave = useCallback(async () => {
-    if (pendingChanges.size === 0) {
+    const updates = pendingChanges.size > 0
+      ? Array.from(pendingChanges.values())
+        .filter(({ status }) => Object.values(SESSION_ATTENDANCE_STATUS).includes(status))
+        .map(({ studentId, sessionId, status }) => ({
+          studentId: Number(studentId),
+          sessionId: Number(sessionId),
+          status,
+        }))
+      : unsavedUpdates.map(({ studentId, sessionId, status }) => ({
+        studentId: Number(studentId),
+        sessionId: Number(sessionId),
+        status,
+      }));
+
+    if (updates.length === 0) {
       toast('Сактоо үчүн өзгөртүүлөр жок');
       return;
     }
 
-    const updates = Array.from(pendingChanges.values()).map(
-      ({ studentId, sessionId, status }) => ({
-        studentId: Number(studentId),
-        sessionId: Number(sessionId),
-        status,
-      })
-    );
-
     await handleBulkUpdate(updates);
-  }, [pendingChanges, handleBulkUpdate]);
+  }, [pendingChanges, unsavedUpdates, handleBulkUpdate]);
+
+  const handleDiscardChanges = useCallback(() => {
+    if (unsavedChangeCount === 0 && pendingChanges.size === 0) return;
+
+    setAttendanceData(cloneAttendanceData(savedAttendanceData));
+    setPendingChanges(new Map());
+    setPopupCell(null);
+  }, [unsavedChangeCount, pendingChanges.size, savedAttendanceData]);
 
   // Accessibility setup
   const accessibility = useAccessibility({
@@ -320,9 +448,22 @@ const UnifiedAttendanceTable = ({
     sessions,
     attendanceData,
     onStatusChange: handleStatusChange,
-    onSelectionChange: setSelectedCells,
     onSave: handleSave,
   });
+
+  const filteredSessions = useMemo(() => {
+    return sessions.filter((session) => {
+      if (
+        filters.sessionFilter &&
+        filters.sessionFilter !== 'all' &&
+        String(session.id) !== String(filters.sessionFilter)
+      ) {
+        return false;
+      }
+
+      return isSessionInDateRange(session, filters);
+    });
+  }, [sessions, filters]);
 
   // Filtered students
   const filteredStudents = useMemo(() => {
@@ -344,7 +485,7 @@ const UnifiedAttendanceTable = ({
 
         // Status filter
         if (filters.statusFilter !== 'all') {
-          const studentStatuses = sessions.map(
+          const studentStatuses = filteredSessions.map(
             (session) => attendanceData[student.id]?.[session.id] || 'not_scheduled'
           );
           if (!studentStatuses.includes(filters.statusFilter)) {
@@ -352,10 +493,20 @@ const UnifiedAttendanceTable = ({
           }
         }
 
+        const attendanceRate = getStudentAttendanceRate(
+          student.id,
+          filteredSessions,
+          attendanceData
+        );
+
+        if (!matchesAttendanceRateFilter(attendanceRate, filters.attendanceRateFilter)) {
+          return false;
+        }
+
         return true;
       })
       .sort((a, b) => (a.fullName || a.name || '').localeCompare(b.fullName || b.name || ''));
-  }, [students, filters, sessions, attendanceData]);
+  }, [students, filters, filteredSessions, attendanceData]);
 
   // Status config for popup and cells
   const statusConfig = {
@@ -402,7 +553,7 @@ const UnifiedAttendanceTable = ({
       return responsiveViewMode === 'cards' ? (
         <AttendanceCardSkeleton cardCount={5} />
       ) : (
-        <AttendanceTableSkeleton rowCount={10} columnCount={sessions.length} />
+        <AttendanceTableSkeleton rowCount={10} columnCount={filteredSessions.length} />
       );
     }
 
@@ -432,11 +583,9 @@ const UnifiedAttendanceTable = ({
 
     const commonProps = {
       students: filteredStudents,
-      sessions,
+      sessions: filteredSessions,
       attendanceData,
-      selectedCells,
       onStatusChange: handleStatusChange,
-      onSelectionChange: setSelectedCells,
     };
 
     switch (responsiveViewMode) {
@@ -446,45 +595,24 @@ const UnifiedAttendanceTable = ({
       case 'virtualized':
         return <VirtualizedAttendanceTable {...commonProps} containerHeight={600} />;
 
-      default:
+      default: {
         // Table view with inline implementation for better performance
-        const minWidth = Math.max(800, 250 + (sessions.length * 120) + 100);
+        const minWidth = Math.max(800, 250 + (filteredSessions.length * 120) + 100);
 
         return (
-          <div className="attendance-table-container w-full overflow-x-auto rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900">
-            <div className="inline-block min-w-full align-middle">
-              <table className="attendance-table w-full border-collapse">
+          <div className="attendance-table-container w-full max-w-full min-w-0 overflow-x-auto rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900">
+            <div className="min-w-full align-middle">
+              <table
+                className="attendance-table w-full border-collapse"
+                style={{ minWidth: `${minWidth}px` }}
+              >
                 <thead>
                   <tr>
-                    <th className="sticky left-0 z-10 border-r border-gray-200 bg-gray-50 px-3 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-400 min-w-[200px] max-w-[300px]">
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="checkbox"
-                          checked={
-                            selectedCells.size === students.length * sessions.length &&
-                            students.length > 0 &&
-                            sessions.length > 0
-                          }
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              const allCells = new Set();
-                              students.forEach((student) => {
-                                sessions.forEach((session) => {
-                                  allCells.add(`${student.id}-${session.id}`);
-                                });
-                              });
-                              setSelectedCells(allCells);
-                            } else {
-                              setSelectedCells(new Set());
-                            }
-                          }}
-                          className="h-4 w-4 rounded border-gray-300 text-orange-600 focus:ring-orange-500 dark:border-gray-600 dark:bg-gray-800 dark:text-orange-500"
-                        />
-                        Студент
-                      </div>
+                    <th className="attendance-table-sticky-corner min-w-[200px] max-w-[300px] border-r border-gray-200 px-3 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:border-gray-700 dark:text-gray-400">
+                      Студент
                     </th>
 
-                    {sessions.map((session) => (
+                    {filteredSessions.map((session) => (
                       <th
                         key={session.id}
                         className="min-w-[70px] max-w-[100px] px-2 py-3 text-center text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400"
@@ -513,7 +641,7 @@ const UnifiedAttendanceTable = ({
 
                 <tbody>
                   {filteredStudents.map((student) => {
-                    const studentStats = sessions.reduce((stats, session) => {
+                    const studentStats = filteredSessions.reduce((stats, session) => {
                       const status =
                         attendanceData[student.id]?.[session.id] || 'not_scheduled';
                       stats[status] = (stats[status] || 0) + 1;
@@ -539,26 +667,6 @@ const UnifiedAttendanceTable = ({
                       >
                         <td className="sticky left-0 z-10 border-r border-gray-200 bg-white px-4 py-3 dark:border-gray-700 dark:bg-gray-900">
                           <div className="flex items-center gap-3">
-                            <input
-                              type="checkbox"
-                              checked={sessions.every((session) =>
-                                selectedCells.has(`${student.id}-${session.id}`)
-                              )}
-                              onChange={(e) => {
-                                const newSelectedCells = new Set(selectedCells);
-                                sessions.forEach((session) => {
-                                  const cellKey = `${student.id}-${session.id}`;
-                                  if (e.target.checked) {
-                                    newSelectedCells.add(cellKey);
-                                  } else {
-                                    newSelectedCells.delete(cellKey);
-                                  }
-                                });
-                                setSelectedCells(newSelectedCells);
-                              }}
-                              className="h-4 w-4 rounded border-gray-300 text-orange-600 focus:ring-orange-500 dark:border-gray-600 dark:bg-gray-800 dark:text-orange-500"
-                            />
-
                             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-200 text-xs font-medium text-gray-600 dark:bg-gray-700 dark:text-gray-300">
                               {(student.fullName || student.name || 'Unknown')
                                 .split(' ')
@@ -581,10 +689,9 @@ const UnifiedAttendanceTable = ({
                           </div>
                         </td>
 
-                        {sessions.map((session) => {
+                        {filteredSessions.map((session) => {
                           const status = attendanceData[student.id]?.[session.id] || 'not_scheduled';
                           const cellKey = `${student.id}-${session.id}`;
-                          const isSelected = selectedCells.has(cellKey);
                           const isUpdating = updatingCells.has(cellKey);
 
                           const config = statusConfig[status] || statusConfig.not_scheduled;
@@ -602,7 +709,7 @@ const UnifiedAttendanceTable = ({
                               className={`attendance-cell p-2 text-center transition-colors ${isSessionIncomplete
                                 ? 'cursor-not-allowed opacity-50'
                                 : 'cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800'
-                                } ${isSelected ? 'bg-orange-50 dark:bg-orange-900/20' : ''} ${isUpdating ? 'opacity-50' : ''
+                                } ${isUpdating ? 'opacity-50' : ''
                                 }`}
                               onClick={() =>
                                 !isUpdating &&
@@ -625,9 +732,6 @@ const UnifiedAttendanceTable = ({
                                 {status === 'not_scheduled' && '-'}
                               </div>
 
-                              {isSessionIncomplete && (
-                                <div className="mt-1 text-xs text-gray-400">Келечекте</div>
-                              )}
                             </td>
                           );
                         })}
@@ -702,11 +806,12 @@ const UnifiedAttendanceTable = ({
             )}
           </div>
         );
+      }
     }
   };
 
   return (
-    <div className={`space-y-6 ${className}`}>
+    <div className={`min-w-0 space-y-6 ${className}`}>
       {/* Summary Section */}
       <EnhancedAttendanceSummary
         students={students}
@@ -726,11 +831,16 @@ const UnifiedAttendanceTable = ({
       />
 
       {/* View Mode Selector */}
-      <div className="flex justify-end">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="text-sm text-gray-600 dark:text-gray-400">
+          {unsavedChangeCount > 0
+            ? `${unsavedChangeCount} өзгөртүү сакталган эмес`
+            : 'Өзгөртүү киргизилгенде сактоо баскычы активдүү болот'}
+        </div>
         <div className="inline-flex rounded-lg border border-gray-200 bg-white p-1 dark:border-gray-700 dark:bg-gray-900">
           <button
             type="button"
-            onClick={() => setViewMode('table')}
+            onClick={() => setSelectedViewMode('table')}
             className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${responsiveViewMode === 'table'
               ? 'bg-orange-500 text-white'
               : 'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white'
@@ -740,7 +850,7 @@ const UnifiedAttendanceTable = ({
           </button>
           <button
             type="button"
-            onClick={() => setViewMode('cards')}
+            onClick={() => setSelectedViewMode('cards')}
             className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${responsiveViewMode === 'cards'
               ? 'bg-orange-500 text-white'
               : 'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white'
@@ -751,7 +861,7 @@ const UnifiedAttendanceTable = ({
           {students.length > PERFORMANCE_THRESHOLDS.VIRTUAL_SCROLLING_THRESHOLD && (
             <button
               type="button"
-              onClick={() => setViewMode('virtualized')}
+              onClick={() => setSelectedViewMode('virtualized')}
               className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${responsiveViewMode === 'virtualized'
                 ? 'bg-orange-500 text-white'
                 : 'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white'
@@ -763,49 +873,43 @@ const UnifiedAttendanceTable = ({
         </div>
       </div>
 
-      {/* Save Button for Pending Changes */}
-      {(selectedCells.size > 0 || pendingChanges.size > 0) && (
-        <div className="sticky top-0 z-20 rounded-lg border border-gray-200 bg-white p-3 shadow-sm dark:border-gray-700 dark:bg-gray-900">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              {selectedCells.size > 0 && (
-                <>
-                  <div className="text-sm font-medium text-blue-900 dark:text-blue-100">
-                    {selectedCells.size} клетка тандалды
-                  </div>
-                  <div className="text-xs text-blue-700 dark:text-blue-300">
-                    {
-                      new Set(Array.from(selectedCells).map((cell) => cell.split('-')[0])).size
-                    }{' '}
-                    студент •{' '}
-                    {
-                      new Set(Array.from(selectedCells).map((cell) => cell.split('-')[1])).size
-                    }{' '}
-                    сессия
-                  </div>
-                </>
-              )}
-
-              {pendingChanges.size > 0 && (
-                <div className="text-sm font-medium text-orange-600 dark:text-orange-400">
-                  {pendingChanges.size} өзгөртүү сакталган эмес
-                </div>
-              )}
+      {/* Table Actions */}
+      <div className="sticky top-4 z-30 rounded-lg border border-gray-200 bg-white p-3 shadow-sm dark:border-gray-700 dark:bg-gray-900">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="text-sm text-gray-600 dark:text-gray-400">
+              Статусту өзгөртүү үчүн таблицадагы клетканы басыңыз.
             </div>
 
-            {pendingChanges.size > 0 && (
-              <button
-                type="button"
-                onClick={handleSave}
-                disabled={loading}
-                className="dashboard-button-primary px-4 py-2 text-sm disabled:opacity-50"
-              >
-                {loading ? 'Сакталууда...' : 'Сактоо'}
-              </button>
+            {unsavedChangeCount > 0 && (
+              <div className="text-sm font-medium text-orange-600 dark:text-orange-400">
+                {unsavedChangeCount} өзгөртүү сакталган эмес
+              </div>
             )}
           </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            {unsavedChangeCount > 0 && (
+              <button
+                type="button"
+                onClick={handleDiscardChanges}
+                disabled={loading}
+                className="dashboard-button-secondary px-4 py-2 text-sm disabled:opacity-50"
+              >
+                Жокко чыгаруу
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={loading || unsavedChangeCount === 0}
+              className="dashboard-button-primary px-4 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {loading ? 'Сакталууда...' : 'Сактоо'}
+            </button>
+          </div>
         </div>
-      )}
+      </div>
 
       {/* Main Content */}
       {renderContentView()}

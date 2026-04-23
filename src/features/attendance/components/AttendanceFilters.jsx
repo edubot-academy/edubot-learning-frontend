@@ -9,7 +9,6 @@ import { DashboardFilterBar } from '../../../components/ui/dashboard';
  * Provides comprehensive filtering and search capabilities
  */
 const AttendanceFilters = ({
-  students = [],
   sessions = [],
   filters = {},
   onFiltersChange,
@@ -24,19 +23,6 @@ const AttendanceFilters = ({
     { value: SESSION_ATTENDANCE_STATUS.EXCUSED, label: 'Себептүү', color: 'blue' },
     { value: 'not_scheduled', label: 'Пландалган эмес', color: 'gray' },
   ];
-
-  const sessionDateRanges = useMemo(() => {
-    if (sessions.length === 0) return [];
-
-    return [
-      { value: 'all', label: 'Бардык сессиялар' },
-      { value: 'today', label: 'Бүгүн' },
-      { value: 'this_week', label: 'Бул жума' },
-      { value: 'last_week', label: 'Өткөн жума' },
-      { value: 'this_month', label: 'Бул ай' },
-      { value: 'custom', label: 'Ыңгайлаштырылган' },
-    ];
-  }, [sessions]);
 
   const attendanceRateRanges = useMemo(() => {
     return [
@@ -121,17 +107,38 @@ const AttendanceFilters = ({
     });
   };
 
+  const quickFilterClasses = {
+    absent:
+      (filters.statusFilter || 'all') === SESSION_ATTENDANCE_STATUS.ABSENT
+        ? 'border-red-600 bg-red-50 text-red-700 shadow-edubot-soft dark:bg-red-900/30 dark:text-red-200'
+        : 'border-red-600 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20',
+    poor:
+      (filters.attendanceRateFilter || 'all') === 'poor'
+        ? 'border-amber-600 bg-amber-50 text-amber-700 shadow-edubot-soft dark:bg-amber-900/30 dark:text-amber-200'
+        : 'border-amber-600 text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/20',
+    thisWeek:
+      (filters.dateRange || 'all') === 'this_week'
+        ? 'border-blue-600 bg-blue-50 text-blue-700 shadow-edubot-soft dark:bg-blue-900/30 dark:text-blue-200'
+        : 'border-blue-600 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20',
+    present:
+      (filters.statusFilter || 'all') === SESSION_ATTENDANCE_STATUS.PRESENT
+        ? 'border-green-600 bg-green-50 text-green-700 shadow-edubot-soft dark:bg-green-900/30 dark:text-green-200'
+        : 'border-green-600 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20',
+  };
+
   return (
     <div className={`space-y-4 ${className}`}>
-      <DashboardFilterBar className="items-center">
-        <div className="relative min-w-0 w-full lg:w-64">
+      <DashboardFilterBar
+        gridClassName="items-center md:grid-cols-[minmax(16rem,1fr)_minmax(10rem,12rem)_minmax(10rem,12rem)_auto] xl:grid-cols-[minmax(18rem,1fr)_minmax(10rem,12rem)_minmax(10rem,12rem)_auto]"
+      >
+        <div className="relative min-w-0 w-full">
           <FiSearch className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
           <input
             type="text"
             value={filters.searchQuery || ''}
             onChange={(e) => handleFilterChange('searchQuery', e.target.value)}
             placeholder="Студент издөө..."
-            className="dashboard-field dashboard-field-icon h-10 w-full pl-10"
+            className="dashboard-field dashboard-field-icon min-h-12 w-full pl-10"
           />
           {filters.searchQuery && (
             <button
@@ -147,7 +154,7 @@ const AttendanceFilters = ({
         <select
           value={filters.statusFilter || 'all'}
           onChange={(e) => handleFilterChange('statusFilter', e.target.value)}
-          className="dashboard-select h-10 min-w-0 w-full lg:w-32"
+          className="dashboard-select min-h-12 min-w-0 w-full"
         >
           {statusOptions.map((option) => (
             <option key={option.value} value={option.value}>
@@ -159,7 +166,7 @@ const AttendanceFilters = ({
         <select
           value={filters.attendanceRateFilter || 'all'}
           onChange={(e) => handleFilterChange('attendanceRateFilter', e.target.value)}
-          className="dashboard-select h-10 min-w-0 w-full lg:w-36"
+          className="dashboard-select min-h-12 min-w-0 w-full"
         >
           {attendanceRateRanges.map((range) => (
             <option key={range.value} value={range.value}>
@@ -172,7 +179,7 @@ const AttendanceFilters = ({
           <button
             type="button"
             onClick={clearAllFilters}
-            className="dashboard-button-secondary flex items-center gap-2"
+            className="dashboard-button-secondary flex min-h-12 min-w-0 items-center justify-center gap-2 whitespace-nowrap"
           >
             <FiX />
             Тазалоо ({activeFilterCount})
@@ -243,7 +250,7 @@ const AttendanceFilters = ({
                 onClick={() =>
                   handleFilterChange('statusFilter', SESSION_ATTENDANCE_STATUS.ABSENT)
                 }
-                className="dashboard-button-secondary border-red-600 px-3 py-1 text-xs text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+                className={`dashboard-button-secondary px-3 py-1 text-xs ${quickFilterClasses.absent}`}
               >
                 Келген жокторду гана көрсөт
               </button>
@@ -251,7 +258,7 @@ const AttendanceFilters = ({
               <button
                 type="button"
                 onClick={() => handleFilterChange('attendanceRateFilter', 'poor')}
-                className="dashboard-button-secondary border-amber-600 px-3 py-1 text-xs text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/20"
+                className={`dashboard-button-secondary px-3 py-1 text-xs ${quickFilterClasses.poor}`}
               >
                 Төмөн катышуу %
               </button>
@@ -259,7 +266,7 @@ const AttendanceFilters = ({
               <button
                 type="button"
                 onClick={() => handleFilterChange('dateRange', 'this_week')}
-                className="dashboard-button-secondary border-blue-600 px-3 py-1 text-xs text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                className={`dashboard-button-secondary px-3 py-1 text-xs ${quickFilterClasses.thisWeek}`}
               >
                 Бул жумадагы
               </button>
@@ -269,7 +276,7 @@ const AttendanceFilters = ({
                 onClick={() =>
                   handleFilterChange('statusFilter', SESSION_ATTENDANCE_STATUS.PRESENT)
                 }
-                className="dashboard-button-secondary border-green-600 px-3 py-1 text-xs text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20"
+                className={`dashboard-button-secondary px-3 py-1 text-xs ${quickFilterClasses.present}`}
               >
                 Катышкандарды гана көрсөт
               </button>
@@ -282,13 +289,6 @@ const AttendanceFilters = ({
 };
 
 AttendanceFilters.propTypes = {
-  students: PropTypes.arrayOf(
-    PropTypes.shape({
-      id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
-      fullName: PropTypes.string.isRequired,
-      email: PropTypes.string,
-    })
-  ),
   sessions: PropTypes.arrayOf(
     PropTypes.shape({
       id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
@@ -312,7 +312,6 @@ AttendanceFilters.propTypes = {
 };
 
 AttendanceFilters.defaultProps = {
-  students: [],
   sessions: [],
   filters: {},
   className: '',

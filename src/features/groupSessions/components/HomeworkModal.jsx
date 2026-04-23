@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import { createPortal, useEffect, useState } from 'react';
+import { createPortal, useEffect, useMemo, useState } from 'react';
 import { FiCalendar, FiEdit3, FiFileText, FiPaperclip, FiX } from 'react-icons/fi';
 
 const HomeworkModal = ({
@@ -11,17 +11,15 @@ const HomeworkModal = ({
   loading,
   selectedSession,
 }) => {
-  if (!isOpen || typeof document === 'undefined') return null;
-
   const isEdit = mode === 'edit';
   const modalTitle = isEdit ? 'Үй тапшырманы өзгөртүү' : 'Жаңы үй тапшырма';
   const submitButtonText = isEdit ? 'Өзгөртүү' : 'Түзүү';
-  const defaultValues = {
+  const defaultValues = useMemo(() => ({
     title: homework?.title || '',
     description: homework?.description || '',
     deadline: homework?.deadline || '',
     isPublished: homework?.isPublished || false,
-  };
+  }), [homework?.title, homework?.description, homework?.deadline, homework?.isPublished]);
 
   const [formData, setFormData] = useState(defaultValues);
   const [errors, setErrors] = useState({});
@@ -30,7 +28,9 @@ const HomeworkModal = ({
   useEffect(() => {
     setFormData(defaultValues);
     setErrors({});
-  }, [homework, mode]);
+  }, [defaultValues, mode]);
+
+  if (!isOpen || typeof document === 'undefined') return null;
 
   const validateForm = () => {
     const newErrors = {};

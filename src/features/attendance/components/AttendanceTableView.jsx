@@ -17,7 +17,6 @@ import { fetchGroupRoster } from '../../courseGroups/roster';
 import { fetchCourseSessions } from '../../groupSessions/api';
 import { fetchSessionAttendance, markSessionAttendanceBulk } from '../api';
 import AttendanceFilters from './AttendanceFilters';
-import AttendanceBulkActions from './AttendanceBulkActions';
 import AttendanceSummary from './AttendanceSummary';
 
 const statusConfig = {
@@ -65,7 +64,6 @@ const statusConfig = {
 
 const AttendanceTableView = ({
   groupId,
-  groupName = '',
   courseId = null,
   onAttendanceUpdate,
   className = '',
@@ -76,7 +74,7 @@ const AttendanceTableView = ({
   const [sessions, setSessions] = useState([]);
   const [attendanceData, setAttendanceData] = useState({});
   const [selectedCells, setSelectedCells] = useState(new Set());
-  const [updatingCells, setUpdatingCells] = useState(new Set());
+  const [updatingCells] = useState(new Set());
   const [filters, setFilters] = useState({
     searchQuery: '',
     statusFilter: 'all',
@@ -209,48 +207,6 @@ const AttendanceTableView = ({
       setPopupCell(null);
     },
     [attendanceData, selectedCells]
-  );
-
-  const handleBulkUpdate = useCallback(
-    (status) => {
-      if (selectedCells.size === 0) return;
-
-      // Update pending changes for all selected cells
-      setPendingChanges(prev => {
-        const newChanges = new Map(prev);
-        selectedCells.forEach(cellKey => {
-          const [studentId, sessionId] = cellKey.split('-');
-          const currentStatus = attendanceData[studentId]?.[sessionId] || 'not_scheduled';
-
-          if (status !== currentStatus) {
-            newChanges.set(cellKey, {
-              studentId: Number(studentId),
-              sessionId: Number(sessionId),
-              status
-            });
-          } else {
-            // If reverting to original, remove from pending
-            newChanges.delete(cellKey);
-          }
-        });
-        return newChanges;
-      });
-
-      // Update display immediately
-      const newAttendanceData = { ...attendanceData };
-      selectedCells.forEach((cellKey) => {
-        const [studentId, sessionId] = cellKey.split('-');
-        if (!newAttendanceData[studentId]) {
-          newAttendanceData[studentId] = {};
-        }
-        newAttendanceData[studentId][sessionId] = status;
-      });
-      setAttendanceData(newAttendanceData);
-
-      setSelectedCells(new Set());
-      toast.success(`${selectedCells.size} катышуу даярдалды (сактоо үчүн 'Сактоо' баскычын басыңыз)`);
-    },
-    [selectedCells, attendanceData]
   );
 
   const handleSave = useCallback(async () => {
@@ -443,12 +399,15 @@ const AttendanceTableView = ({
         </div>
       </div>
 
-      <div className="attendance-table-container w-full overflow-x-auto rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900">
-        <div className="inline-block min-w-full align-middle">
-          <table className="attendance-table w-full border-collapse">
+      <div className="attendance-table-container w-full max-w-full min-w-0 overflow-x-auto rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900">
+        <div className="min-w-full align-middle">
+          <table
+            className="attendance-table w-full border-collapse"
+            style={{ minWidth: `${Math.max(800, 250 + (sessions.length * 120) + 100)}px` }}
+          >
             <thead>
               <tr>
-                <th className="sticky left-0 z-10 border-r border-gray-200 bg-gray-50 px-3 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-400 min-w-[200px] max-w-[300px]">
+                <th className="attendance-table-sticky-corner min-w-[200px] max-w-[300px] border-r border-gray-200 px-3 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:border-gray-700 dark:text-gray-400">
                   <div className="flex items-center gap-2">
                     <input
                       type="checkbox"
@@ -602,9 +561,6 @@ const AttendanceTableView = ({
                             <Icon className="h-4 w-4" />
                           </div>
 
-                          {isSessionIncomplete && (
-                            <div className="mt-1 text-xs text-gray-400">Келечекте</div>
-                          )}
                         </td>
                       );
                     })}

@@ -1,13 +1,7 @@
 import { useCallback, useMemo, useState } from 'react';
 import PropTypes from 'prop-types';
-import { FiChevronDown, FiChevronUp, FiSearch, FiFilter } from 'react-icons/fi';
-import { 
-  ATTENDANCE_STATUS_CONFIG, 
-  getNextStatus, 
-  getStatusColorClasses,
-  ATTENDANCE_DESIGN_SYSTEM,
-  ACCESSIBILITY 
-} from '../constants/attendanceConfig';
+import { FiChevronDown, FiChevronUp, FiSearch } from 'react-icons/fi';
+import { ATTENDANCE_STATUS_CONFIG } from '../constants/attendanceConfig';
 import AttendanceCell from './AttendanceCell';
 
 /**
@@ -18,9 +12,7 @@ const AttendanceCardView = ({
   students = [],
   sessions = [],
   attendanceData = {},
-  selectedCells = new Set(),
   onStatusChange,
-  onSelectionChange,
   loading = false,
   className = '',
 }) => {
@@ -89,22 +81,6 @@ const AttendanceCardView = ({
 
     return { ...stats, attendanceRate };
   }, [sessions, attendanceData]);
-
-  // Handle bulk selection for a student
-  const handleStudentBulkSelect = useCallback((studentId, isSelected) => {
-    const newSelectedCells = new Set(selectedCells);
-    
-    sessions.forEach(session => {
-      const cellKey = `${studentId}-${session.id}`;
-      if (isSelected) {
-        newSelectedCells.add(cellKey);
-      } else {
-        newSelectedCells.delete(cellKey);
-      }
-    });
-
-    onSelectionChange(newSelectedCells);
-  }, [selectedCells, sessions, onSelectionChange]);
 
   if (loading) {
     return (
@@ -175,9 +151,6 @@ const AttendanceCardView = ({
           filteredStudents.map(student => {
             const stats = getStudentStats(student);
             const isExpanded = expandedStudents.has(student.id);
-            const isAllSelected = sessions.every(session => 
-              selectedCells.has(`${student.id}-${session.id}`)
-            );
 
             return (
               <div
@@ -188,13 +161,6 @@ const AttendanceCardView = ({
                 <div className="p-4">
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-3">
-                      <input
-                        type="checkbox"
-                        checked={isAllSelected}
-                        onChange={(e) => handleStudentBulkSelect(student.id, e.target.checked)}
-                        className="h-4 w-4 rounded border-gray-300 text-orange-600 focus:ring-orange-500"
-                      />
-                      
                       <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-200 text-sm font-medium text-gray-600 dark:bg-gray-700 dark:text-gray-300">
                         {(student.fullName || 'Unknown')
                           .split(' ')
@@ -272,8 +238,6 @@ const AttendanceCardView = ({
                     <div className="space-y-3">
                       {sessions.map(session => {
                         const currentStatus = attendanceData[student.id]?.[session.id] || 'not_scheduled';
-                        const cellKey = `${student.id}-${session.id}`;
-                        const isSelected = selectedCells.has(cellKey);
 
                         return (
                           <div key={session.id} className="flex items-center justify-between">
@@ -292,21 +256,6 @@ const AttendanceCardView = ({
                             </div>
 
                             <div className="flex items-center gap-2">
-                              <input
-                                type="checkbox"
-                                checked={isSelected}
-                                onChange={() => {
-                                  const newSelectedCells = new Set(selectedCells);
-                                  if (isSelected) {
-                                    newSelectedCells.delete(cellKey);
-                                  } else {
-                                    newSelectedCells.add(cellKey);
-                                  }
-                                  onSelectionChange(newSelectedCells);
-                                }}
-                                className="h-4 w-4 rounded border-gray-300 text-orange-600 focus:ring-orange-500"
-                              />
-
                               <AttendanceCell
                                 studentId={student.id}
                                 studentName={student.fullName}
@@ -314,10 +263,9 @@ const AttendanceCardView = ({
                                 sessionTitle={session.title}
                                 sessionDate={session.startsAt}
                                 currentStatus={currentStatus}
-                                isSelected={isSelected}
+                                isSelected={false}
                                 size="compact"
                                 onStatusChange={onStatusChange}
-                                onSelectionChange={onSelectionChange}
                               />
                             </div>
                           </div>
@@ -356,9 +304,7 @@ AttendanceCardView.propTypes = {
       PropTypes.oneOf(['present', 'late', 'absent', 'not_scheduled', 'excused'])
     )
   ),
-  selectedCells: PropTypes.instanceOf(Set),
   onStatusChange: PropTypes.func,
-  onSelectionChange: PropTypes.func,
   loading: PropTypes.bool,
   className: PropTypes.string,
 };
@@ -367,9 +313,7 @@ AttendanceCardView.defaultProps = {
   students: [],
   sessions: [],
   attendanceData: {},
-  selectedCells: new Set(),
   onStatusChange: null,
-  onSelectionChange: null,
   loading: false,
   className: '',
 };

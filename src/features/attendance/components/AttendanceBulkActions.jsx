@@ -2,10 +2,9 @@ import { useCallback, useMemo } from 'react';
 import PropTypes from 'prop-types';
 import { FiDownload, FiMail } from 'react-icons/fi';
 import { toast } from 'react-hot-toast';
+import { SESSION_ATTENDANCE_STATUS } from '@shared/contracts';
 import {
   ATTENDANCE_STATUS_CONFIG,
-  ACCESSIBILITY,
-  ATTENDANCE_DESIGN_SYSTEM
 } from '../constants/attendanceConfig';
 
 /**
@@ -80,7 +79,7 @@ const AttendanceBulkActions = ({
     try {
       await onBulkUpdate(updates);
       toast.success(`${updates.length} катышуу жазылгасы "${status}" деп жаңыртылды`);
-    } catch (error) {
+    } catch {
       toast.error('Көп жаңыртуу мүмкүн болбоду');
     }
   }, [selectedCells, onBulkUpdate]);
@@ -104,7 +103,7 @@ const AttendanceBulkActions = ({
       });
 
       toast.success('Катышуу маалыматы экспорттолду');
-    } catch (error) {
+    } catch {
       toast.error('Экспорт мүмкүн болбоду');
     }
   }, [selectedStudents, selectedSessions, onExport]);
@@ -118,7 +117,7 @@ const AttendanceBulkActions = ({
 
     // Count absent/late students for notification
     const absentOrLateStudents = selectedStudents.filter(student => {
-      return selectedCells.some(cellKey => {
+      return Array.from(selectedCells).some(cellKey => {
         const [studentId, sessionId] = cellKey.split('-').map(Number);
         if (studentId !== student.id) return false;
 
@@ -140,7 +139,7 @@ const AttendanceBulkActions = ({
       });
 
       toast.success(`${absentOrLateStudents.length} ата-энеге билдирүү жөнөтүлдү`);
-    } catch (error) {
+    } catch {
       toast.error('Билдирүү жөнөтүү мүмкүн болбоду');
     }
   }, [selectedStudents, selectedSessions, selectedCells, attendanceData, onNotifyParents]);
@@ -187,7 +186,7 @@ const AttendanceBulkActions = ({
       color: 'green',
       show: selectedByStatus.absent > 0,
     },
-  ], [selectedByStatus.total, selectedByStatus.absent, selectedCells, attendanceData, onBulkUpdate]);
+  ], [selectedByStatus.total, selectedByStatus.absent, selectedCells, attendanceData, onBulkUpdate, handleBulkStatusUpdate]);
 
   if (selectedCells.size === 0) {
     return null;
