@@ -63,6 +63,29 @@ Version bumps are classified by delivery scale; see `VERSIONING.md`.
 
 ---
 
+## [1.6.3] - 2026-04-05
+
+### 🔧 STUCK LESSON RECOVERY SYSTEM
+- Added `forceTranscodeLessonHls` API function with `force=true` parameter for stuck lessons
+- Enhanced `TranscodingStatusBadge` component with `onForceRetry` and `playbackType` props
+- Smart detection of lessons stuck in 'starting' + 'hls' state with orange warning badges
+- Added "Force Retry" button for stuck lessons with proper accessibility labels
+- Updated `AdminCoursesTab` to pass `playbackType` and force retry handlers to status badge
+
+### 🚀 BULK TRANSCODING OPTIMIZATION
+- Modified bulk transcoding to send only untranscoded lesson IDs instead of empty array
+- Updated `AdminCoursesTab` to filter lessons before bulk API calls
+- Enhanced `pendingTranscodeAction` to include specific `lessonIds` array
+- Optimized API payload by filtering out already HLS transcoded lessons
+
+### 🎨 ENHANCED USER EXPERIENCE
+- Visual differentiation: orange badges for stuck lessons, yellow for normal processing
+- Clear user feedback distinguishing stuck vs normal starting states
+- Improved error handling and user feedback for transcoding operations
+- Better accessibility with proper ARIA labels for force retry actions
+
+---
+
 ## [1.6.2] - 2026-04-05
 
 ### 🚀 TRANSCODING OPTIMIZATION
