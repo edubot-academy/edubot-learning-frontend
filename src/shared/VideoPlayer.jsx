@@ -317,7 +317,7 @@ const VideoPlayerInner = ({
                 </div>
             )}
 
-            {!hasError && allowPlay && !isLoading && (
+            {!hasError && allowPlay && (
                 <VideoPlayerUI
                     videoRef={internalVideoRef}
                     containerRef={containerRef}
@@ -329,6 +329,7 @@ const VideoPlayerInner = ({
                     qualityOptions={qualityOptions}
                     currentQuality={currentQuality}
                     onQualityChange={handleQualityChange}
+                    isLoading={isLoading}
                 />
             )}
         </div>
