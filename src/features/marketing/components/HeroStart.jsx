@@ -90,7 +90,7 @@ const HeroStart = () => {
                                 </div>
 
                                 <div className="flex justify-center lg:justify-end relative lg:mt-10 mt-0">
-                                    <div className="absolute bg-gray-100 dark:bg-white/10 bg-[var(--Gray-Gray-50,#F3F4F6)] border border-[var(--Gray-Gray-50,#F3F4F6)] dark:border-white/20 left-[-105px] top-[180px] z-[0] w-[228px] h-[117px] rounded-[4.73px] py-[18.91px] px-[19.51px]">
+                                    <div className="absolute bg-gray-100 dark:bg-white/10 bg-[var(--Gray-Gray-50,#F3F4F6)] border border-[var(--Gray-Gray-50,#F3F4F6)] dark:border-white/20 sm:left-[-105px] left-[-40px] top-[180px] z-[0] sm:w-[228px] w-[170px] rounded-[4.73px] py-[18.91px] px-[19.51px]">
                                         <span className=" font-normal leading-[100%] tracking-[0%] text-[28px] text-[#141619] dark:text-white">
                                             200+
                                         </span>
@@ -99,7 +99,7 @@ const HeroStart = () => {
                                         </p>
                                     </div>
 
-                                    <div className="absolute bg-white/30 dark:bg-white/15 backdrop-blur-lg border border-[var(--Gray-Gray-50,#F3F4F6)] dark:border-white/25 left-[110px] top-[340px] z-[2] w-[205px] h-[129px] rounded-[5.23px] py-[20.9px] px-[21.56px]">
+                                    <div className="absolute bg-white/30 dark:bg-white/15 backdrop-blur-lg border border-[var(--Gray-Gray-50,#F3F4F6)] dark:border-white/25 left-[110px] sm:top-[340px] top-[320px] z-[2] w-[205px] h-[120px] rounded-[5.23px] py-[20.9px] px-[21.56px]">
                                         <span className=" font-[Suisse_Intl] leading-[100%] tracking-[0%] text-[28px] text-[#141619] dark:text-white">
                                             10k+
                                         </span>
