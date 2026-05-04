@@ -14,6 +14,7 @@ const VideoPlayerUI = ({
     qualityOptions = [],
     currentQuality,
     onQualityChange,
+    isLoading,
 }) => {
     const [isMuted, setIsMuted] = useState(false);
     const [volume, setVolume] = useState(1);
@@ -25,34 +26,32 @@ const VideoPlayerUI = ({
     const [showFeedback, setShowFeedback] = useState(true);
     const feedbackTimeoutRef = useRef(null);
 
-   const seek = useCallback(
-    (sec) => {
-        const v = videoRef.current;
-        if (!v || !v.duration) return;
+    // Добавляем refs для перетаскивания
+    const isDraggingRef = useRef(false);
+    const progressBarRef = useRef(null);
 
-        const newTime = Math.min(Math.max(v.currentTime + sec, 0), v.duration);
+    const seek = useCallback(
+        (sec) => {
+            const v = videoRef.current;
+            if (!v || !v.duration) return;
 
-        // Только обновляем время видео, НЕ вызываем onTimeUpdate
-        v.currentTime = newTime;
-        setCurrentTime(newTime);
-        // НЕ вызываем onTimeUpdate здесь - пусть обработчик timeupdate сделает это
-    },
-    [videoRef] // убрали onTimeUpdate из зависимостей
-);
+            const newTime = Math.min(Math.max(v.currentTime + sec, 0), v.duration);
+
+            v.currentTime = newTime;
+            setCurrentTime(newTime);
+        },
+        [videoRef]
+    );
 
     const showIndicator = useCallback(() => {
         setShowFeedback(true);
-
-        // Очищаем таймаут только если видео играет
         clearTimeout(feedbackTimeoutRef.current);
 
-        // Устанавливаем таймаут для скрытия только если видео играет
-        if (!videoRef.current?.paused) {
-            feedbackTimeoutRef.current = setTimeout(() => {
-                setShowFeedback(false);
-            }, 3000);
-        }
-    }, [videoRef]);
+        // Показываем индикатор всегда при взаимодействии
+        feedbackTimeoutRef.current = setTimeout(() => {
+            setShowFeedback(false);
+        }, 3000);
+    }, []);
 
     const togglePlay = useCallback(() => {
         const v = videoRef.current;
@@ -103,13 +102,70 @@ const VideoPlayerUI = ({
         return `${m}:${s}`;
     }, []);
 
+    // Функции для перетаскивания прогресс-бара
+    const handleProgressMouseDown = useCallback((e) => {
+        e.stopPropagation();
+        isDraggingRef.current = true;
+
+        const updateTimeFromMouse = (mouseEvent) => {
+            const v = videoRef.current;
+            if (!v || !v.duration || !progressBarRef.current) return;
+
+            const rect = progressBarRef.current.getBoundingClientRect();
+            const percent = Math.min(Math.max((mouseEvent.clientX - rect.left) / rect.width, 0), 1);
+            const newTime = percent * v.duration;
+
+            v.currentTime = newTime;
+            setCurrentTime(newTime);
+        };
+
+        updateTimeFromMouse(e);
+
+        const handleMouseMove = (moveEvent) => {
+            if (!isDraggingRef.current) return;
+            updateTimeFromMouse(moveEvent);
+        };
+
+        const handleMouseUp = () => {
+            isDraggingRef.current = false;
+            document.removeEventListener('mousemove', handleMouseMove);
+            document.removeEventListener('mouseup', handleMouseUp);
+        };
+
+        document.addEventListener('mousemove', handleMouseMove);
+        document.addEventListener('mouseup', handleMouseUp);
+    }, [videoRef]);
+
+    const handleProgressClick = useCallback(
+        (e) => {
+            e.stopPropagation();
+
+            // Если это клик (не перетаскивание), обрабатываем
+            if (!isDraggingRef.current) {
+                const v = videoRef.current;
+                if (!v || !v.duration || !progressBarRef.current) return;
+
+                const rect = progressBarRef.current.getBoundingClientRect();
+                const percent = Math.min(Math.max((e.clientX - rect.left) / rect.width, 0), 1);
+                const newTime = percent * v.duration;
+
+                v.currentTime = newTime;
+                setCurrentTime(newTime);
+            }
+        },
+        [videoRef]
+    );
+
     useEffect(() => {
         const v = videoRef.current;
         if (!v) return;
 
         const handleTimeUpdate = () => {
-            setCurrentTime(v.currentTime);
-            onTimeUpdate?.(v.currentTime);
+            // Обновляем currentTime только если не перетаскиваем
+            if (!isDraggingRef.current) {
+                setCurrentTime(v.currentTime);
+                onTimeUpdate?.(v.currentTime);
+            }
         };
 
         v.addEventListener('timeupdate', handleTimeUpdate);
@@ -184,36 +240,48 @@ const VideoPlayerUI = ({
         [onQualityChange]
     );
 
-    const handleProgressClick = useCallback(
-        (e) => {
-            e.stopPropagation();
+    // Слушаем событие play/pause для скрытия индикатора
+    useEffect(() => {
+        const v = videoRef.current;
+        if (!v) return;
 
-            const v = videoRef.current;
-            if (!v || !v.duration) return;
+        const handlePlay = () => {
+            // Скрываем индикатор через 3 секунды после начала воспроизведения
+            clearTimeout(feedbackTimeoutRef.current);
+            feedbackTimeoutRef.current = setTimeout(() => {
+                setShowFeedback(false);
+            }, 3000);
+        };
 
-            const rect = e.currentTarget.getBoundingClientRect();
-            const percent = Math.min(Math.max((e.clientX - rect.left) / rect.width, 0), 1);
+        const handlePause = () => {
+            // Показываем индикатор при паузе
+            setShowFeedback(true);
+            clearTimeout(feedbackTimeoutRef.current);
+        };
 
-            const newT = percent * v.duration;
+        v.addEventListener('play', handlePlay);
+        v.addEventListener('pause', handlePause);
 
-            v.currentTime = newT;
-            setCurrentTime(newT);
-        },
-        [videoRef]
-    );
+        return () => {
+            v.removeEventListener('play', handlePlay);
+            v.removeEventListener('pause', handlePause);
+            clearTimeout(feedbackTimeoutRef.current);
+        };
+    }, [videoRef]);
 
     const isPlaying = videoRef.current ? !videoRef.current.paused : false;
 
     return (
         <>
-            <div className="absolute inset-0 cursor-pointer " aria-hidden />
-            <PlayPauseIndicator
+            <div className="absolute inset-0 cursor-pointer" aria-hidden />
+            {!isLoading && <PlayPauseIndicator
                 showFeedback={showFeedback}
                 isPlaying={isPlaying}
-                onHideFeedback={() => setShowFeedback(false)} // Добавьте этот пропс
-            />
+                onHideFeedback={() => setShowFeedback(false)}
+            />}
+
             <div
-                className="absolute cursor-pointer bottom-0 left-0 w-full h-[50%]"
+                className="absolute cursor-pointer bottom-0 left-0 w-full h-[100%]"
                 onClick={togglePlay}
             />
 
@@ -222,17 +290,19 @@ const VideoPlayerUI = ({
                 onClick={(e) => e.stopPropagation()}
             >
                 <div
-                    className="w-full h-1.5 bg-gray-500/40 rounded-full cursor-pointer mb-3 relative z-10  group"
+                    ref={progressBarRef}
+                    className="w-full h-1.5 bg-gray-500/40 rounded-full cursor-pointer mb-3 relative z-10 group"
+                    onMouseDown={handleProgressMouseDown}
                     onClick={handleProgressClick}
                 >
                     <div
-                        className="relative h-full bg-orange-500 rounded-full"
+                        className="relative h-full bg-orange-500 rounded-full pointer-events-none"
                         style={{
                             width: `${duration ? (currentTime / duration) * 100 : 0}%`,
                         }}
                     >
                         <div
-                            className="absolute top-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full"
+                            className="absolute top-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
                             style={{ right: '-6px' }}
                         />
                     </div>
