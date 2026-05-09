@@ -8,12 +8,24 @@ import {
     listOfferingsForCourse,
     fetchInstructorStudentCourses,
     fetchCourseStudents,
+    fetchCourseCertificateSettings,
+    fetchCourseCertificates,
+    updateCourseCertificateSettings,
+    issueCourseCertificate,
+    approveCertificate,
+    rejectCertificate,
+    revokeCertificate,
+    regenerateCourseCertificates,
     createCourse,
     fetchCategories,
     fetchInstructorCourses,
     updateCourse,
 } from '@services/api';
 import { markCoursePending } from '@features/courses/api';
+import {
+    uploadCourseCertificateSecondaryLogo,
+    saveCourseCertificateSignatureAsset,
+} from '@features/courses/api';
 import toast from 'react-hot-toast';
 import Loader from '../shared/ui/Loader';
 import FloatingActionButton from '../components/ui/FloatingActionButton';
@@ -28,6 +40,7 @@ import {
     CoursesSection,
     GroupsSection,
     StudentsSection,
+    CertificatesSection,
     ProfileSection,
     AiSection,
     OfferingsSection,
@@ -70,6 +83,13 @@ const InstructorDashboard = () => {
     const [progressMin, setProgressMin] = useState('');
     const [progressMax, setProgressMax] = useState('');
     const [studentsError, setStudentsError] = useState('');
+    const [certificateSettings, setCertificateSettings] = useState(null);
+    const [courseCertificates, setCourseCertificates] = useState([]);
+    const [loadingCertificateWorkspace, setLoadingCertificateWorkspace] = useState(false);
+    const [savingCertificateSettings, setSavingCertificateSettings] = useState(false);
+    const [certificateActionStudentId, setCertificateActionStudentId] = useState(null);
+    const [regeneratingCertificates, setRegeneratingCertificates] = useState(false);
+    const [savingCertificateAssetKind, setSavingCertificateAssetKind] = useState(null);
 
     const [showDeliveryModal, setShowDeliveryModal] = useState(false);
     const [creatingDeliveryCourse, setCreatingDeliveryCourse] = useState(false);
@@ -128,6 +148,16 @@ const InstructorDashboard = () => {
     const approvedOfferings = useMemo(
         () => approvedCourses.flatMap((course) => offeringsByCourse[course.id] || []),
         [approvedCourses, offeringsByCourse]
+    );
+    const certificateCurrentUser = useMemo(
+        () =>
+            user
+                ? {
+                      ...user,
+                      title: profile?.title ?? user.title,
+                  }
+                : user,
+        [profile?.title, user]
     );
 
     const handleSwipeLeft = useCallback(() => {
@@ -401,7 +431,7 @@ const InstructorDashboard = () => {
     }, [courses, loadOfferingsForCourses]);
 
     useEffect(() => {
-        if (activeTab !== 'students') return;
+        if (!['students', 'certificates'].includes(activeTab)) return;
 
         if (selectedStudentCourseId) {
             loadCourseStudents(selectedStudentCourseId);
@@ -418,6 +448,170 @@ const InstructorDashboard = () => {
         progressMax,
         loadCourseStudents,
     ]);
+
+    useEffect(() => {
+        if (!['students', 'certificates'].includes(activeTab) || !selectedStudentCourseId) {
+            setCertificateSettings(null);
+            setCourseCertificates([]);
+            setLoadingCertificateWorkspace(false);
+            return;
+        }
+
+        const loadCertificateSettings = async () => {
+            setLoadingCertificateWorkspace(true);
+            try {
+                const [settingsData, certificatesData] = await Promise.all([
+                    fetchCourseCertificateSettings(selectedStudentCourseId),
+                    fetchCourseCertificates(selectedStudentCourseId),
+                ]);
+                setCertificateSettings(settingsData);
+                setCourseCertificates(Array.isArray(certificatesData) ? certificatesData : []);
+            } catch (error) {
+                console.error('Failed to load certificate settings', error);
+            } finally {
+                setLoadingCertificateWorkspace(false);
+            }
+        };
+
+        loadCertificateSettings();
+    }, [activeTab, selectedStudentCourseId]);
+
+    const handleToggleCertificateApproval = useCallback(
+        async (enabled) => {
+            if (!selectedStudentCourseId) return;
+            setSavingCertificateSettings(true);
+            try {
+                const updated = await updateCourseCertificateSettings(
+                    selectedStudentCourseId,
+                    {
+                        enabled: certificateSettings?.enabled ?? true,
+                        issueMode: certificateSettings?.issueMode ?? 'auto',
+                        approvalMode: enabled ? 'instructor' : 'none',
+                    }
+                );
+                setCertificateSettings(updated);
+                toast.success('Сертификат эрежеси жаңыртылды');
+            } catch (error) {
+                console.error('Failed to update certificate settings', error);
+                toast.error('Сертификат эрежесин жаңыртуу мүмкүн болбоду');
+            } finally {
+                setSavingCertificateSettings(false);
+            }
+        },
+        [selectedStudentCourseId, certificateSettings]
+    );
+
+    const handleSaveCertificateSettings = useCallback(
+        async (payload) => {
+            if (!selectedStudentCourseId) return false;
+            setSavingCertificateSettings(true);
+            try {
+                const updated = await updateCourseCertificateSettings(
+                    selectedStudentCourseId,
+                    payload
+                );
+                setCertificateSettings(updated);
+                toast.success('Сертификат шаблону сакталды');
+                return true;
+            } catch (error) {
+                console.error('Failed to save certificate settings', error);
+                toast.error('Сертификат шаблонун сактоо мүмкүн болбоду');
+                return false;
+            } finally {
+                setSavingCertificateSettings(false);
+            }
+        },
+        [selectedStudentCourseId]
+    );
+
+    const handleRegenerateCertificates = useCallback(
+        async () => {
+            if (!selectedStudentCourseId) return false;
+            setRegeneratingCertificates(true);
+            try {
+                const result = await regenerateCourseCertificates(selectedStudentCourseId);
+                await loadCourseStudents(selectedStudentCourseId);
+                const certificatesData = await fetchCourseCertificates(selectedStudentCourseId);
+                setCourseCertificates(Array.isArray(certificatesData) ? certificatesData : []);
+                toast.success(
+                    result?.regeneratedCount
+                        ? `${result.regeneratedCount} сертификат жаңыртылды`
+                        : 'Жаңыртууга сертификат табылган жок'
+                );
+                return true;
+            } catch (error) {
+                console.error('Failed to regenerate certificates', error);
+                toast.error('Сертификат PDF файлдарын жаңыртуу мүмкүн болбоду');
+                return false;
+            } finally {
+                setRegeneratingCertificates(false);
+            }
+        },
+        [selectedStudentCourseId, loadCourseStudents]
+    );
+
+    const handleSaveCertificateAsset = useCallback(
+        async (kind, file) => {
+            if (!selectedStudentCourseId || !file) return null;
+            setSavingCertificateAssetKind(kind);
+            try {
+                const updated =
+                    kind === 'signature'
+                        ? await saveCourseCertificateSignatureAsset(selectedStudentCourseId, file)
+                        : await uploadCourseCertificateSecondaryLogo(selectedStudentCourseId, file);
+                setCertificateSettings(updated);
+                toast.success(
+                    kind === 'signature'
+                        ? 'Кол коюу сакталды'
+                        : 'Экинчи бренд логотиби жүктөлдү'
+                );
+                return updated;
+            } catch (error) {
+                console.error('Failed to save certificate asset', error);
+                toast.error(
+                    kind === 'signature'
+                        ? 'Кол коюуну сактоо мүмкүн болбоду'
+                        : 'Сертификат активин жүктөө мүмкүн болбоду'
+                );
+                return null;
+            } finally {
+                setSavingCertificateAssetKind(null);
+            }
+        },
+        [selectedStudentCourseId]
+    );
+
+    const handleCertificateAction = useCallback(
+        async (kind, student, displayOverrides = {}) => {
+            if (!selectedStudentCourseId || !student) return;
+            setCertificateActionStudentId(student.id);
+            try {
+                if (kind === 'issue') {
+                    await issueCourseCertificate(selectedStudentCourseId, {
+                        studentId: student.id,
+                        ...displayOverrides,
+                    });
+                } else if (kind === 'approve' && student.certificateId) {
+                    await approveCertificate(student.certificateId, displayOverrides);
+                } else if (kind === 'reject' && student.certificateId) {
+                    await rejectCertificate(student.certificateId);
+                } else if (kind === 'revoke' && student.certificateId) {
+                    await revokeCertificate(student.certificateId);
+                }
+
+                await loadCourseStudents(selectedStudentCourseId);
+                const certificatesData = await fetchCourseCertificates(selectedStudentCourseId);
+                setCourseCertificates(Array.isArray(certificatesData) ? certificatesData : []);
+                toast.success('Сертификат жаңыртылды');
+            } catch (error) {
+                console.error('Failed to update certificate', error);
+                toast.error('Сертификат аракетин аткаруу мүмкүн болбоду');
+            } finally {
+                setCertificateActionStudentId(null);
+            }
+        },
+        [selectedStudentCourseId, loadCourseStudents]
+    );
 
     const handleSelectStudentCourse = useCallback((courseId) => {
         setStudentsPage(1);
@@ -663,6 +857,43 @@ const InstructorDashboard = () => {
                         onProgressMinChange={setProgressMin}
                         progressMax={progressMax}
                         onProgressMaxChange={setProgressMax}
+                    />
+                );
+            case 'certificates':
+                return (
+                    <CertificatesSection
+                        mode="instructor"
+                        total={studentCoursesTotal}
+                        courses={studentCourses}
+                        loadingCourses={loadingStudentCourses}
+                        selectedCourseId={selectedStudentCourseId}
+                        onSelectCourse={handleSelectStudentCourse}
+                        courseStudents={courseStudents}
+                        courseMeta={courseStudentsMeta}
+                        loadingStudents={loadingCourseStudents}
+                        error={studentsError}
+                        refreshCourses={loadStudentCourses}
+                        studentsPage={studentsPage}
+                        onChangePage={setStudentsPage}
+                        search={studentSearch}
+                        onSearchChange={setStudentSearch}
+                        progressMin={progressMin}
+                        onProgressMinChange={setProgressMin}
+                        progressMax={progressMax}
+                        onProgressMaxChange={setProgressMax}
+                        certificateSettings={certificateSettings}
+                        courseCertificates={courseCertificates}
+                        loadingCertificateWorkspace={loadingCertificateWorkspace}
+                        savingCertificateSettings={savingCertificateSettings}
+                        onToggleCertificateApproval={handleToggleCertificateApproval}
+                        onSaveCertificateSettings={handleSaveCertificateSettings}
+                        onRegenerateCertificates={handleRegenerateCertificates}
+                        regeneratingCertificates={regeneratingCertificates}
+                        savingCertificateAssetKind={savingCertificateAssetKind}
+                        onSaveCertificateAsset={handleSaveCertificateAsset}
+                        onCertificateAction={handleCertificateAction}
+                        certificateActionStudentId={certificateActionStudentId}
+                        currentUser={certificateCurrentUser}
                     />
                 );
             case 'groups':

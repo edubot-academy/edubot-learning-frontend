@@ -32,6 +32,8 @@ const Chat = lazy(() => import('../pages/ChatRedirect'));
 const LeaderboardPage = lazy(() => import('../pages/Leaderboard'));
 const InternalLeaderboardPage = lazy(() => import('../pages/InternalLeaderboard'));
 const LeaderboardSharePage = lazy(() => import('../pages/LeaderboardShare'));
+const CertificateDownloadPage = lazy(() => import('../pages/CertificateDownload'));
+const CertificateVerificationPage = lazy(() => import('../pages/CertificateVerification'));
 
 const AppRoutes = () => {
     return (
@@ -96,6 +98,11 @@ const AppRoutes = () => {
                     <Route path="/chat" element={<Chat />} />
                     <Route path="/leaderboard" element={<LeaderboardPage />} />
                     <Route path="/share/achievement/:token" element={<LeaderboardSharePage />} />
+                    <Route path="/certificates/:publicId/verify" element={<CertificateVerificationPage />} />
+
+                    <Route element={<PrivateRoute allowedRoles={['student', 'admin', 'instructor']} />}>
+                        <Route path="/certificates/:publicId/download" element={<CertificateDownloadPage />} />
+                    </Route>
 
                     <Route element={<PrivateRoute allowedRoles={['admin', 'instructor', 'assistant']} />}>
                         <Route path="/leaderboard/internal" element={<InternalLeaderboardPage />} />

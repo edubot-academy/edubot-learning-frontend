@@ -3,6 +3,7 @@ export { default as InstructorOverviewSection } from './components/InstructorOve
 export { default as CoursesSection } from './components/CoursesSection.jsx';
 export { default as GroupsSection } from './components/GroupsSection.jsx';
 export { default as StudentsSection } from './components/StudentsSection.jsx';
+export { default as CertificatesSection } from './components/CertificatesSection.jsx';
 export { default as ProfileSection } from './components/ProfileSection.jsx';
 export { default as AiSection } from './components/AiSection.jsx';
 export { default as OfferingsSection } from './components/OfferingsSection.jsx';

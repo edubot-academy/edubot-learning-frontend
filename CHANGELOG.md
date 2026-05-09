@@ -2,6 +2,54 @@
 
 Version bumps are classified by delivery scale; see `VERSIONING.md`.
 
+## [1.7.0] - 2026-05-10
+
+### 🎓 CERTIFICATE MANAGEMENT SYSTEM
+- **Admin Certificate Workspace**: Added comprehensive certificate management interface in AdminPanel with course selection, student filtering, and bulk certificate operations
+- **Instructor Certificate Section**: Created `CertificatesSection.jsx` component for instructors to manage student certificates with approval/rejection workflows
+- **Student Certificate Tab**: Added `CertificatesTab.jsx` for students to view their earned certificates and download PDFs
+- **Certificate Preview Art**: Implemented `CertificatePreviewArt.jsx` component for visual certificate rendering with customizable templates
+
+### 📄 CERTIFICATE ROUTES & PAGES
+- **Certificate Download Page**: Added `/certificates/:publicId/download` route for authenticated certificate PDF downloads
+- **Certificate Verification Page**: Added `/certificates/:publicId/verify` route for public certificate verification
+- **Enhanced Student Progress**: Updated `ProgressTab.jsx` to display certificate status badges and download functionality
+
+### 🔌 CERTIFICATE API INTEGRATION
+- **Certificate Settings**: Added `fetchCourseCertificateSettings` and `updateCourseCertificateSettings` for course-level certificate configuration
+- **Certificate Operations**: Implemented `issueCourseCertificate`, `approveCertificate`, `rejectCertificate`, and `revokeCertificate` functions
+- **Asset Management**: Added `saveCourseCertificateSignatureAsset` and `uploadCourseCertificateSecondaryLogo` for certificate customization
+- **Bulk Operations**: Added `regenerateCourseCertificates` for mass certificate regeneration
+
+### 🎨 UI/UX ENHANCEMENTS
+- **Certificate Status Badges**: Added visual indicators for certificate states (`issued`, `pending_approval`, `rejected`, `revoked`)
+- **Admin Dashboard Integration**: Extended AdminPanel with certificate management tab and workspace
+- **Instructor Dashboard**: Enhanced instructor dashboard with certificate management capabilities
+- **Student Dashboard**: Improved student progress view with certificate visibility and download options
+
+### 📁 NEW FILES
+- `src/features/instructor-dashboard/components/CertificatePreviewArt.jsx` - Certificate visual rendering component
+- `src/features/instructor-dashboard/components/CertificatesSection.jsx` - Instructor certificate management interface
+- `src/features/student-dashboard/components/tabs/CertificatesTab.jsx` - Student certificate viewing interface
+- `src/pages/CertificateDownload.jsx` - Certificate PDF download page
+- `src/pages/CertificateVerification.jsx` - Public certificate verification page
+
+### 🔧 ENHANCED FILES
+- `src/app/routes.jsx` - Added certificate download and verification routes
+- `src/features/admin/pages/AdminPanel.jsx` - Extended with certificate management workspace
+- `src/features/admin/utils/adminPanel.constants.js` - Added certificate-related constants
+- `src/features/courses/api.js` - Added comprehensive certificate API functions
+- `src/features/instructor-dashboard/components/StudentsSection.jsx` - Enhanced with certificate status display
+- `src/features/instructor-dashboard/index.js` - Added certificate section exports
+- `src/features/instructor-dashboard/utils/instructorDashboard.constants.js` - Added certificate constants
+- `src/features/student-dashboard/components/tabs/ProgressTab.jsx` - Added certificate badges and download functionality
+- `src/features/student-dashboard/utils/studentDashboard.constants.js` - Added certificate-related constants
+- `src/pages/InstructorDashboard.jsx` - Integrated certificate management
+- `src/pages/StudentDashboard.jsx` - Added certificate tab integration
+- `src/shared/ui/BasicModal.jsx` - Enhanced for certificate-related modals
+
+---
+
 ## [1.6.4] - 2026-04-23
 
 ### 🎯 ATTENDANCE FEATURE REFACTORING

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import PropTypes from 'prop-types';
 import { createPortal } from 'react-dom';
 
@@ -34,12 +34,12 @@ const BasicModal = ({
     animation = 'slideUp',
     children,
     className = '',
+    contentClassName = '',
 }) => {
     const [localIsOpen, setLocalIsOpen] = useState(isOpen);
     const [portalTarget, setPortalTarget] = useState(null);
     const modalRef = useRef(null);
     const previousFocusRef = useRef(null);
-    const focusableElementsRef = useRef([]);
 
     useEffect(() => {
         setLocalIsOpen(isOpen);
@@ -144,16 +144,6 @@ const BasicModal = ({
         if (onClose) onClose();
     };
 
-    const sizeClasses = {
-        xs: 'max-w-sm sm:max-w-xs',
-        sm: 'max-w-md sm:max-w-sm',
-        md: 'max-w-lg sm:max-w-md',
-        lg: 'max-w-2xl sm:max-w-lg',
-        xl: 'max-w-4xl sm:max-w-xl',
-        '2xl': 'max-w-6xl sm:max-w-2xl',
-        full: 'max-w-full mx-4 sm:mx-6',
-    };
-
     if (!localIsOpen || !portalTarget) return null;
 
     return createPortal(
@@ -169,7 +159,7 @@ const BasicModal = ({
             <div className="relative z-10 flex justify-center items-start min-h-screen">
                 <div
                     ref={modalRef}
-                    className={`w-full ${SIZE_CONFIGS[size] || SIZE_CONFIGS.md} rounded-2xl bg-white shadow-2xl focus:outline-none dark:bg-gray-800 transform transition-all duration-300 ${localIsOpen ? `${ANIMATION_VARIANTS[animation]} scale-100 translate-y-0 opacity-100` : 'scale-95 translate-y-4 opacity-0'
+                    className={`w-full ${SIZE_CONFIGS[size] || SIZE_CONFIGS.md} rounded-2xl bg-white shadow-2xl focus:outline-none dark:bg-gray-800 transform transition-all duration-300 ${className} ${localIsOpen ? `${ANIMATION_VARIANTS[animation]} scale-100 translate-y-0 opacity-100` : 'scale-95 translate-y-4 opacity-0'
                         }`}
                     role="dialog"
                     aria-modal="true"
@@ -221,7 +211,7 @@ const BasicModal = ({
                             </div>
                         )}
 
-                        <div className="max-h-[70vh] overflow-y-auto modal-content" id="modal-description">{children}</div>
+                        <div className={`max-h-[70vh] overflow-y-auto modal-content ${contentClassName}`} id="modal-description">{children}</div>
                     </div>
                 </div>
             </div>
@@ -244,6 +234,7 @@ BasicModal.propTypes = {
     animation: PropTypes.oneOf(['fade', 'slideUp', 'scale']),
     children: PropTypes.node,
     className: PropTypes.string,
+    contentClassName: PropTypes.string,
 };
 
 export default BasicModal;

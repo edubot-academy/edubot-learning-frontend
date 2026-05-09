@@ -1,4 +1,5 @@
 import {
+    FiAward,
     FiUsers,
     FiBookOpen,
     FiMail,
@@ -20,6 +21,7 @@ export const ADMIN_TABS = [
     'contacts',
     'pending',
     'companies',
+    'certificates',
     'skills',
     'ai-prompts',
     'notifications',
@@ -41,6 +43,7 @@ export const NAV_ITEMS = [
     { id: 'stats', label: 'Статистика', icon: FiBarChart2, category: 'primary', priority: 1 },
     { id: 'courses', label: 'Курстар & Категориялар', icon: FiBookOpen, category: 'primary', priority: 2 },
     { id: 'pending', label: 'Жаңы курстарды бекитүү', icon: FiCheckSquare, category: 'primary', priority: 3 },
+    { id: 'certificates', label: 'Сертификаттар', icon: FiAward, category: 'primary', priority: 4 },
 
     // Secondary Navigation - People & Access
     { id: 'users', label: 'Колдонуучулар', icon: FiUsers, category: 'secondary', priority: 1 },

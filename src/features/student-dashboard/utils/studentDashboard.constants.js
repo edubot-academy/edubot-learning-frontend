@@ -9,7 +9,7 @@ import {
     FiBell,
     FiMessageCircle,
     FiPlay,
-    FiTarget
+    FiAward,
 } from 'react-icons/fi';
 
 export const NAV_ITEMS = [
@@ -20,6 +20,7 @@ export const NAV_ITEMS = [
     { id: 'resources', label: 'Ресурстар', icon: FiFolder, category: 'primary', priority: 4 },
     { id: 'tasks', label: 'Тапшырмалар', icon: FiPlay, category: 'primary', priority: 5 },
     { id: 'progress', label: 'Прогресс', icon: FiBarChart2, category: 'primary', priority: 6 },
+    { id: 'certificates', label: 'Сертификаттар', icon: FiAward, category: 'primary', priority: 7 },
 
     // Secondary Navigation - Learning Management
     { id: 'chat', label: 'Чат', icon: FiMessageCircle, category: 'secondary', priority: 2 },

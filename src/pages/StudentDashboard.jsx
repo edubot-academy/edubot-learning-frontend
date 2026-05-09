@@ -42,6 +42,7 @@ import ScheduleTab from '@features/student-dashboard/components/tabs/ScheduleTab
 import ResourcesTab from '@features/student-dashboard/components/tabs/ResourcesTab.jsx';
 import TasksTab from '@features/student-dashboard/components/tabs/TasksTab.jsx';
 import ProgressTab from '@features/student-dashboard/components/tabs/ProgressTab.jsx';
+import CertificatesTab from '@features/student-dashboard/components/tabs/CertificatesTab.jsx';
 import ProfileTab from '@features/student-dashboard/components/tabs/ProfileTab.jsx';
 import ChatTab from '@features/student-dashboard/components/ChatTab.jsx';
 import LeaderboardHub from '@features/leaderboard/components/LeaderboardHub.jsx';
@@ -92,6 +93,7 @@ const StudentDashboard = () => {
         resources: false,
         tasks: false,
         progress: false,
+        certificates: false,
         leaderboard: true,
         notifications: true,
         profile: true,
@@ -256,6 +258,25 @@ const StudentDashboard = () => {
         }
     }, [studentId]);
 
+    const loadCertificates = useCallback(async () => {
+        if (!studentId) return;
+        setTabLoading('certificates');
+        try {
+            const certificatesRes = await fetchStudentCertificates(studentId);
+            setCertificates(
+                Array.isArray(certificatesRes?.items)
+                    ? certificatesRes.items
+                    : certificatesRes || []
+            );
+        } catch (error) {
+            console.error('Failed to load certificates', error);
+            toast.error('Сертификаттар жүктөлгөн жок');
+        } finally {
+            setTabLoading(null);
+            setLoadedTabs((prev) => ({ ...prev, certificates: true }));
+        }
+    }, [studentId]);
+
     const loadNotificationSettings = useCallback(async () => {
         if (!studentId) return;
         setNotificationLoading(true);
@@ -392,6 +413,8 @@ const StudentDashboard = () => {
             loadTasks();
         } else if (tab === 'progress') {
             loadProgress();
+        } else if (tab === 'certificates') {
+            loadCertificates();
         } else if (tab === 'profile') {
             if (!profileLoaded && !profileLoading) {
                 loadProfileData();
@@ -409,6 +432,7 @@ const StudentDashboard = () => {
         loadResources,
         loadTasks,
         loadProgress,
+        loadCertificates,
         loadProfileData,
         loadNotificationSettings,
         notificationsLoaded,
@@ -623,10 +647,18 @@ const StudentDashboard = () => {
                     ? item.lastViewedLesson
                     : flatOrderedLessons.find((lesson) => !lesson.completed) ||
                     flatOrderedLessons[0];
-            const hasCertificate =
-                item.certificate ??
-                certificates.some(
+            const certificate =
+                item.certificate ||
+                certificates.find(
                     (cert) => cert.courseId === item.courseId || cert.course === item.course
+                ) ||
+                null;
+            const hasCertificate =
+                certificate?.status === 'issued' ||
+                certificates.some(
+                    (cert) =>
+                        (cert.courseId === item.courseId || cert.course === item.course) &&
+                        cert.status === 'issued'
                 );
             return {
                 courseId: item.courseId,
@@ -643,6 +675,10 @@ const StudentDashboard = () => {
                 })),
                 resumeLesson,
                 hasCertificate,
+                certificateStatus: certificate?.status || null,
+                certificateIssuedAt: certificate?.issuedAt || null,
+                certificateDownloadUrl: certificate?.downloadUrl || null,
+                certificateVerificationUrl: certificate?.verificationUrl || null,
             };
         });
     }, [progress, certificates]);
@@ -909,14 +945,14 @@ const StudentDashboard = () => {
         tabLoading === resolvedTab ||
         (activeTab === 'profile' && (notificationLoading || profileLoading));
     const renderTab = () => {
-        const requiresActiveAccess = ['overview', 'my-courses', 'schedule', 'resources', 'tasks', 'progress', 'leaderboard'].includes(activeTab);
+        const requiresActiveAccess = ['overview', 'my-courses', 'schedule', 'resources', 'tasks', 'progress', 'certificates', 'leaderboard'].includes(activeTab);
         if (requiresActiveAccess && !hasActiveStudentAccess) {
             return <StudentEmptyState />;
         }
 
         if (!isTabDataLoaded || !isProfileReady) {
             if (activeTab === 'overview') return <LoadingState type="card" count={3} />;
-            if (['my-courses', 'schedule', 'resources', 'tasks'].includes(activeTab)) {
+            if (['my-courses', 'schedule', 'resources', 'tasks', 'certificates'].includes(activeTab)) {
                 return <LoadingState type="list" />;
             }
             return <LoadingState type="table" />;
@@ -973,6 +1009,8 @@ const StudentDashboard = () => {
                         courseId={filterCourseId || undefined}
                     />
                 );
+            case 'certificates':
+                return <CertificatesTab certificates={certificates} />;
             case 'leaderboard':
                 return <LeaderboardHub embedded initialTrack="all" />;
             case 'notifications':

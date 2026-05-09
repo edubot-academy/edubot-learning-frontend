@@ -20,6 +20,7 @@ import {
 import StudentHeroPill from '../shared/StudentHeroPill.jsx';
 import StudentMiniStat from '../shared/StudentMiniStat.jsx';
 import StudentPanelEmpty from '../shared/StudentPanelEmpty.jsx';
+import { downloadCourseCertificatePdf } from '../../../courses/api.js';
 import {
     courseTypeLabel,
     resolveCourseType,
@@ -45,6 +46,38 @@ const getProgressLabel = (value) => {
     if (value >= 80) return 'Финишке жакын';
     if (value >= 40) return 'Туруктуу жүрүүдө';
     return 'Көңүл буруу керек';
+};
+
+const getCertificateBadge = (status) => {
+    if (status === 'issued') {
+        return {
+            label: 'Сертификат даяр',
+            className:
+                'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300',
+        };
+    }
+    if (status === 'pending_approval') {
+        return {
+            label: 'Кароодо',
+            className:
+                'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300',
+        };
+    }
+    if (status === 'rejected') {
+        return {
+            label: 'Четке кагылды',
+            className:
+                'border-red-200 bg-red-50 text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300',
+        };
+    }
+    if (status === 'revoked') {
+        return {
+            label: 'Жокко чыгарылды',
+            className:
+                'border-slate-200 bg-slate-100 text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300',
+        };
+    }
+    return null;
 };
 
 const getLessonKindLabel = (kind) => {
@@ -190,6 +223,7 @@ const ProgressTab = ({
                         const isExpanded =
                             expandedCourseId === itemKey || (!expandedCourseId && index === 0);
                         const progressTone = getProgressTone(item.progressPercent);
+                        const certificateBadge = getCertificateBadge(item.certificateStatus);
                         const remainingLessons = Math.max(
                             0,
                             Number(item.lessonsTotal || 0) - Number(item.lessonsCompleted || 0)
@@ -259,35 +293,62 @@ const ProgressTab = ({
                                                         : 'Курс кыймылын улантуу үчүн кийинки сабакты тандаңыз.'
                                                 }
                                                 action={
-                                                    item.hasCertificate ? (
-                                                        <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300">
-                                                            Сертификат даяр
+                                                    certificateBadge ? (
+                                                        <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${certificateBadge.className}`}>
+                                                            {certificateBadge.label}
                                                         </span>
                                                     ) : null
                                                 }
                                             >
-                                                {item.resumeLesson ? (
-                                                    <Link
-                                                        to={
-                                                            item.courseId
-                                                                ? `/courses/${item.courseId}?resumeLessonId=${item.resumeLesson.lessonId || ''}${item.resumeLesson.lastVideoTime ? `&resumeTime=${Math.floor(item.resumeLesson.lastVideoTime)}` : ''}`
-                                                                : '#'
-                                                        }
-                                                        className="dashboard-button-primary w-full"
-                                                    >
-                                                        <FiPlay className="shrink-0" />
-                                                        <span className="truncate">
-                                                            Улантуу: {item.resumeLesson.lessonTitle}
-                                                            {item.resumeLesson.lastVideoTime
-                                                                ? ` (${formatTime(item.resumeLesson.lastVideoTime)})`
-                                                                : ''}
-                                                        </span>
-                                                    </Link>
-                                                ) : (
-                                                    <div className="text-sm text-edubot-muted dark:text-slate-400">
-                                                        Улантуучу сабак азырынча табылган жок.
-                                                    </div>
-                                                )}
+                                                <div className="space-y-2">
+                                                    {item.resumeLesson ? (
+                                                        <Link
+                                                            to={
+                                                                item.courseId
+                                                                    ? `/courses/${item.courseId}?resumeLessonId=${item.resumeLesson.lessonId || ''}${item.resumeLesson.lastVideoTime ? `&resumeTime=${Math.floor(item.resumeLesson.lastVideoTime)}` : ''}`
+                                                                    : '#'
+                                                            }
+                                                            className="dashboard-button-primary w-full"
+                                                        >
+                                                            <FiPlay className="shrink-0" />
+                                                            <span className="truncate">
+                                                                Улантуу: {item.resumeLesson.lessonTitle}
+                                                                {item.resumeLesson.lastVideoTime
+                                                                    ? ` (${formatTime(item.resumeLesson.lastVideoTime)})`
+                                                                    : ''}
+                                                            </span>
+                                                        </Link>
+                                                    ) : (
+                                                        <div className="rounded-2xl border border-dashed border-edubot-line/80 bg-slate-50 px-4 py-3 text-sm text-edubot-muted dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-400">
+                                                            Улантуучу сабак азырынча табылган жок.
+                                                        </div>
+                                                    )}
+                                                    {item.certificateStatus === 'issued' && item.certificateDownloadUrl ? (
+                                                        <div className="grid gap-2 sm:grid-cols-2">
+                                                            <button
+                                                                type="button"
+                                                                onClick={() =>
+                                                                    downloadCourseCertificatePdf(
+                                                                        item.certificateDownloadUrl,
+                                                                        `certificate-${item.courseId}.pdf`,
+                                                                    )
+                                                                }
+                                                                className="dashboard-button-secondary w-full justify-center"
+                                                            >
+                                                                <FiAward className="shrink-0" />
+                                                                PDF жүктөө
+                                                            </button>
+                                                            {item.certificateVerificationUrl ? (
+                                                                <a
+                                                                    href={item.certificateVerificationUrl}
+                                                                    className="dashboard-button-secondary w-full justify-center"
+                                                                >
+                                                                    Текшерүү
+                                                                </a>
+                                                            ) : null}
+                                                        </div>
+                                                    ) : null}
+                                                </div>
                                             </DashboardInsetPanel>
                                         </div>
                                     </div>
@@ -477,12 +538,22 @@ const ProgressTab = ({
                                     </div>
                                     <span
                                         className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                                            item.hasCertificate
+                                            item.certificateStatus === 'issued'
                                                 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300'
-                                                : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'
+                                                : item.certificateStatus === 'pending_approval'
+                                                    ? 'bg-amber-100 text-amber-700 dark:bg-amber-500/10 dark:text-amber-300'
+                                                    : item.certificateStatus === 'rejected'
+                                                        ? 'bg-red-100 text-red-700 dark:bg-red-500/10 dark:text-red-300'
+                                                        : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'
                                         }`}
                                     >
-                                        {item.hasCertificate ? 'Даяр' : 'Даяр эмес'}
+                                        {item.certificateStatus === 'issued'
+                                            ? 'Даяр'
+                                            : item.certificateStatus === 'pending_approval'
+                                                ? 'Кароодо'
+                                                : item.certificateStatus === 'rejected'
+                                                    ? 'Четке кагылды'
+                                                    : 'Даяр эмес'}
                                     </span>
                                 </div>
                             ))}

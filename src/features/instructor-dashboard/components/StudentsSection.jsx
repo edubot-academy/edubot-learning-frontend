@@ -5,7 +5,6 @@ import {
     FiCalendar,
     FiChevronLeft,
     FiChevronRight,
-    FiClock,
     FiLayers,
     FiMail,
     FiPhone,
@@ -20,6 +19,7 @@ import {
     DashboardTableSkeleton,
     EmptyState,
 } from '@components/ui/dashboard';
+import { downloadCourseCertificatePdf } from '@features/courses/api';
 
 const fallbackCover =
     'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&w=600&q=80';
@@ -86,7 +86,6 @@ const StudentsSection = ({
         : 0;
 
     const completedCount = sortedStudents.filter((student) => student.completed).length;
-
     return (
         <div className="space-y-5">
             <div className="dashboard-panel overflow-hidden">
@@ -362,6 +361,58 @@ const StudentsSection = ({
                                                 >
                                                     {student.completed ? 'Бүттү' : 'Уланууда'}
                                                 </span>
+                                            </div>
+
+                                            <div className="mt-4 flex flex-wrap items-center gap-2">
+                                                <span
+                                                    className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${
+                                                        student.certificateStatus === 'issued'
+                                                            ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300'
+                                                            : student.certificateStatus === 'pending_approval'
+                                                                ? 'bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300'
+                                                                : student.certificateStatus === 'rejected'
+                                                                    ? 'bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-300'
+                                                                    : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'
+                                                    }`}
+                                                >
+                                                    {student.certificateStatus === 'issued'
+                                                        ? 'Сертификат берилди'
+                                                        : student.certificateStatus === 'pending_approval'
+                                                            ? 'Сертификат кароодо'
+                                                            : student.certificateStatus === 'rejected'
+                                                                ? 'Сертификат четке кагылган'
+                                                                : student.certificateStatus === 'revoked'
+                                                                    ? 'Сертификат жокко чыгарылган'
+                                                                : 'Сертификат жок'}
+                                                </span>
+                                                {student.certificateStatus === 'issued' ? (
+                                                    <>
+                                                        {student.certificateDownloadUrl ? (
+                                                            <>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() =>
+                                                                        downloadCourseCertificatePdf(
+                                                                            student.certificateDownloadUrl,
+                                                                            `certificate-${student.certificatePublicId || student.id}.pdf`,
+                                                                        )
+                                                                    }
+                                                                    className="dashboard-button-secondary"
+                                                                >
+                                                                    PDF жүктөө
+                                                                </button>
+                                                                {student.certificateVerificationUrl ? (
+                                                                    <a
+                                                                        href={student.certificateVerificationUrl}
+                                                                        className="dashboard-button-secondary"
+                                                                    >
+                                                                        Текшерүү
+                                                                    </a>
+                                                                ) : null}
+                                                            </>
+                                                        ) : null}
+                                                    </>
+                                                ) : null}
                                             </div>
 
                                             <div className="mt-4 grid gap-3 sm:grid-cols-2">
