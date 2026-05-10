@@ -12,9 +12,11 @@ const roleLabelMap = {
     instructor: 'Окутуучу',
     assistant: 'Ассистент',
     admin: 'Admin',
+    superadmin: 'Super Admin',
 };
 
 const roleToneMap = {
+    superadmin: 'red',
     admin: 'red',
     instructor: 'blue',
     assistant: 'yellow',
@@ -38,9 +40,11 @@ const AdminUsersTab = ({
     handleDeleteUser,
     handleUsersPageChange,
     renderUserPageButtons,
+    currentUser,
 }) => {
     const instructors = users.filter((user) => user.role === 'instructor').length;
-    const admins = users.filter((user) => user.role === 'admin').length;
+    const admins = users.filter((user) => user.role === 'admin' || user.role === 'superadmin').length;
+    const canManageSuperadmin = currentUser?.role === 'superadmin';
 
     return (
         <div className="space-y-6">
@@ -98,6 +102,7 @@ const AdminUsersTab = ({
                         <option value="instructor">Окутуучу</option>
                         <option value="assistant">Ассистент</option>
                         <option value="admin">Admin</option>
+                        <option value="superadmin">Super Admin</option>
                     </select>
                     <input
                         type="date"
@@ -160,11 +165,15 @@ const AdminUsersTab = ({
                                                 value={user.role}
                                                 onChange={(e) => handleRoleChange(user.id, e.target.value)}
                                                 className="dashboard-select min-w-[180px]"
+                                                disabled={user.role === 'superadmin' && !canManageSuperadmin}
                                             >
                                                 <option value="student">Студент</option>
                                                 <option value="instructor">Окутуучу</option>
                                                 <option value="assistant">Ассистент</option>
                                                 <option value="admin">Admin</option>
+                                                {(canManageSuperadmin || user.role === 'superadmin') && (
+                                                    <option value="superadmin">Super Admin</option>
+                                                )}
                                             </select>
                                             <button
                                                 type="button"

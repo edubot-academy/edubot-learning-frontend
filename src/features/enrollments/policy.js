@@ -1,4 +1,5 @@
 import { COURSE_TYPE } from '@shared/contracts';
+import { isPlatformAdmin } from '@shared/utils/roles';
 
 const normalizeEnrollmentCourseType = (courseType) => {
     const normalized = String(courseType || '').trim().toLowerCase();
@@ -21,7 +22,7 @@ const getEnrollmentSourceMode = ({ role, courseType }) => {
         return canStudentSelfEnroll(courseType) ? 'lms_checkout' : 'crm_request';
     }
 
-    if (role === 'admin' || role === 'instructor' || role === 'assistant') {
+    if (isPlatformAdmin(role) || role === 'instructor' || role === 'assistant') {
         return 'lms_manual';
     }
 

@@ -16,6 +16,7 @@ import { fetchUnreadNotificationsCount, searchCourses } from '@services/api';
 import SideBar from '@shared-ui/SideBar';
 import SidebarOverlay from '@shared-ui/SidebarOverlay';
 import UserMenuDropdown from '@shared-ui/UserMenuDropdown';
+import { isPlatformAdmin } from '@shared/utils/roles';
 import { useFavourites } from '../context/FavouritesContext';
 import { useCart } from '../context/CartContext';
 
@@ -63,7 +64,7 @@ const NavLinks = ({ isMobile, user }) => {
                     Dashboard
                 </Link>
             )}
-            {user && user.role === 'admin' && (
+            {user && isPlatformAdmin(user) && (
                 <Link to="/admin" className={`${active('/admin')} ${linkClass}`}>
                     Dashboard
                 </Link>

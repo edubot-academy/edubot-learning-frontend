@@ -1300,6 +1300,7 @@ const AdminPanel = () => {
                         handleDeleteUser={handleDeleteUser}
                         handleUsersPageChange={handleUsersPageChange}
                         renderUserPageButtons={renderUserPageButtons}
+                        currentUser={user}
                     />
                 );
 

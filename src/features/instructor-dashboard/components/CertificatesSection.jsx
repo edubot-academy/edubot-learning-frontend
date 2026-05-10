@@ -31,6 +31,7 @@ import {
     PreviewOrnamentBand,
     PreviewTundukSeal,
 } from './CertificatePreviewArt';
+import { isPlatformAdmin } from '@shared/utils/roles';
 
 const formatDate = (value) => {
     if (!value) return '—';
@@ -883,7 +884,7 @@ const CertificatesSection = ({
         selectedCourse?.instructorName ||
         '';
     const defaultIssuerTitle =
-        (currentUser?.role === 'admin' ? 'Admin' : 'Instructor');
+        (isPlatformAdmin(currentUser) ? 'Admin' : 'Instructor');
 
     useEffect(() => {
         setSettingsForm({

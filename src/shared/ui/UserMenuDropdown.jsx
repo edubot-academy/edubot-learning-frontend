@@ -10,6 +10,7 @@ import ArrowRight from '@assets/icons/arrowRight.svg';
 import { LuLogOut } from 'react-icons/lu';
 import { AuthContext } from '../../context/AuthContext';
 import { IoChatbubblesOutline } from "react-icons/io5";
+import { isPlatformAdmin } from '@shared/utils/roles';
 
 function UserMenuDropdown({ user, onClose }) {
     const { logout } = useContext(AuthContext);
@@ -23,6 +24,7 @@ function UserMenuDropdown({ user, onClose }) {
             case 'instructor':
                 return '/instructor';
             case 'admin':
+            case 'superadmin':
                 return '/admin';
             case 'assistant':
                 return '/assistant';
@@ -38,7 +40,7 @@ function UserMenuDropdown({ user, onClose }) {
             ? '/student?tab=notifications'
             : user?.role === 'instructor'
                 ? '/instructor?tab=notifications'
-                : user?.role === 'admin'
+                : isPlatformAdmin(user)
                     ? '/admin?tab=notifications'
                     : '/dashboard?tab=notifications';
 
@@ -47,7 +49,7 @@ function UserMenuDropdown({ user, onClose }) {
             ? '/student?tab=my-courses'
             : user?.role === 'instructor'
                 ? '/instructor?tab=my-courses'
-                : user?.role === 'admin'
+                : isPlatformAdmin(user)
                     ? '/admin?tab=my-courses'
                     : '/dashboard?tab=my-courses';
 

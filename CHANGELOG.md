@@ -2,6 +2,31 @@
 
 Version bumps are classified by delivery scale; see `VERSIONING.md`.
 
+## [1.8.1] - 2026-05-10
+
+### 🔐 ROLE MANAGEMENT ENHANCEMENTS
+- **Platform Admin Roles**: Added support for both 'admin' and 'superadmin' roles with unified access controls
+- **Role Utility Functions**: Created `roles.js` utility with `isPlatformAdmin` and `hasAllowedRole` functions
+- **Access Control**: Enhanced role-based access across Header, PrivateRoute, and UserMenuDropdown components
+- **Superadmin Support**: Extended admin functionality to properly handle superadmin role permissions
+
+### 🛠️ TECHNICAL IMPROVEMENTS
+- **Role Validation**: Improved role checking logic to support multiple admin role types
+- **Navigation Updates**: Updated navigation links to use new role utility functions
+- **Route Protection**: Enhanced PrivateRoute component with better role validation
+- **User Menu**: Improved UserMenuDropdown to handle superadmin role correctly
+
+### 📁 NEW FILES
+- `src/shared/utils/roles.js` - Centralized role management utilities
+
+### 🔧 ENHANCED FILES
+- `src/shared/Header.jsx` - Updated admin navigation to use role utilities
+- `src/shared/PrivateRoute.jsx` - Enhanced route protection with role validation
+- `src/shared/ui/UserMenuDropdown.jsx` - Fixed navigation for superadmin role
+- Multiple admin and enrollment components with role consistency updates
+
+---
+
 ## [1.8.0] - 2026-05-10
 
 ### 📋 SESSION STATUS MANAGEMENT

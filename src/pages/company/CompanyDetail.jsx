@@ -7,6 +7,7 @@ import CompanySettings from './CompanySettings';
 import CompanyCourses from './CompanyCourses';
 import { AuthContext } from '../../context/AuthContext';
 import Loader from '@shared/ui/Loader';
+import { isPlatformAdmin } from '@shared/utils/roles';
 
 export default function CompanyDetail() {
     const { id } = useParams();
@@ -53,7 +54,7 @@ export default function CompanyDetail() {
             {tab === 'courses' && (
                 <CompanyCourses
                     companyId={companyId}
-                    canManage={company?.role === 'company_admin' || user?.role === 'admin'}
+                    canManage={company?.role === 'company_admin' || isPlatformAdmin(user)}
                 />
             )}
         </div>

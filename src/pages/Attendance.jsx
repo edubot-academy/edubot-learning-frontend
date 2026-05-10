@@ -32,6 +32,7 @@ import {
 } from '../components/ui/dashboard';
 import { AuthContext } from '../context/AuthContext';
 import { UnifiedAttendanceTable } from '../features/attendance';
+import { isPlatformAdmin } from '@shared/utils/roles';
 
 const statusOptions = [
     { value: SESSION_ATTENDANCE_STATUS.PRESENT, label: 'Катышты', icon: FiCheckCircle },
@@ -381,7 +382,7 @@ const AttendancePage = ({ embedded = false }) => {
         [sessions, selectedSessionId]
     );
 
-    const isAdminOverrideMode = user?.role === 'admin';
+    const isAdminOverrideMode = isPlatformAdmin(user);
     const students = useMemo(() => Object.values(rowsMap), [rowsMap]);
 
     const hasAttendanceChanges = useMemo(() => {

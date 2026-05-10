@@ -3,6 +3,7 @@ import { Link, Navigate, Outlet } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import Loader from '@shared/ui/Loader';
 import { fetchStudentAccessState } from '@features/student/api';
+import { hasAllowedRole } from '@shared/utils/roles';
 
 const StudentAccessFallback = ({ accessState }) => (
     <div className="min-h-screen flex items-center justify-center px-6">
@@ -81,7 +82,7 @@ const PrivateRoute = ({ allowedRoles, requireStudentAccess = false }) => {
         return <Navigate to="/login" replace />;
     }
 
-    if (allowedRoles && !allowedRoles.includes(user.role)) {
+    if (!hasAllowedRole(user, allowedRoles)) {
         return <Navigate to="/unauthorized" replace />;
     }
 

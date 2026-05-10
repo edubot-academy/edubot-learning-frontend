@@ -18,6 +18,7 @@ import {
     submitLessonChallenge,
 } from '@services/api';
 import { AuthContext } from '../context/AuthContext';
+import { isPlatformAdmin } from '@shared/utils/roles';
 import CourseVideoPlayer from '@features/courses/components/CourseVideoPlayer';
 import CardVideo from '@features/courses/components/CardVideo';
 import ArticleLessonViewer from '@features/courses/components/ArticleLessonViewer';
@@ -963,7 +964,7 @@ const CourseDetailsPage = () => {
         totalLessons > 0 ? Math.round((completedLessons.length / totalLessons) * 100) : 0;
 
     const isCourseInstructor = Boolean(user && course?.instructor?.id === user.id);
-    const isAdmin = user?.role === 'admin';
+    const isAdmin = isPlatformAdmin(user);
     const isAiAvailable = Boolean(
         course.aiAssistantEnabled && (enrolled || isCourseInstructor || isAdmin)
     );

@@ -4,6 +4,7 @@ import {
     fetchInstructorOverviewAnalytics,
 } from '@services/api';
 import { AuthContext } from '../context/AuthContext';
+import { isPlatformAdmin } from '@shared/utils/roles';
 import { toast } from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import { useSwipeNavigation } from '../hooks/useSwipeGestures';
@@ -60,7 +61,7 @@ const InstructorAnalyticsPage = ({ embedded = false }) => {
         () => ({
             from: filters.from || undefined,
             to: filters.to || undefined,
-            instructorId: user?.role === 'admin' ? undefined : user?.id,
+            instructorId: isPlatformAdmin(user) ? undefined : user?.id,
         }),
         [filters.from, filters.to, user?.role, user?.id] // Only depend on actual values
     );
