@@ -151,6 +151,30 @@ const statusMeta = {
     [ATTENDANCE_STATUS.ABSENT]: { label: 'Келген жок', className: 'bg-red-100 text-red-700' },
 };
 
+const SESSION_STATUS_OPTIONS = [
+    { value: COURSE_SESSION_STATUS.SCHEDULED, label: 'Пландалган' },
+    { value: COURSE_SESSION_STATUS.COMPLETED, label: 'Аяктады' },
+    { value: COURSE_SESSION_STATUS.CANCELLED, label: 'Жокко чыгарылды' },
+];
+
+const SESSION_STATUS_META = {
+    [COURSE_SESSION_STATUS.SCHEDULED]: {
+        label: 'Пландалган',
+        tone: 'default',
+    },
+    [COURSE_SESSION_STATUS.COMPLETED]: {
+        label: 'Аяктады',
+        tone: 'green',
+    },
+    [COURSE_SESSION_STATUS.CANCELLED]: {
+        label: 'Жокко чыгарылды',
+        tone: 'red',
+    },
+};
+
+const getCourseSessionStatusMeta = (status) =>
+    SESSION_STATUS_META[status] || SESSION_STATUS_META[COURSE_SESSION_STATUS.SCHEDULED];
+
 const sessionStatusMap = {
     [SESSION_ATTENDANCE_STATUS.PRESENT]: ATTENDANCE_STATUS.PRESENT,
     [SESSION_ATTENDANCE_STATUS.LATE]: ATTENDANCE_STATUS.LATE,
@@ -514,6 +538,7 @@ const SessionWorkspace = () => {
     const [editSession, setEditSession] = useState(EDIT_SESSION_DEFAULT);
     const [savingSession, setSavingSession] = useState(false);
     const [savingSessionUpdate, setSavingSessionUpdate] = useState(false);
+    const [savingSessionStatus, setSavingSessionStatus] = useState(false);
 
     const [courseResourceAssets, setCourseResourceAssets] = useState([]);
     const [loadingCourseResourceAssets, setLoadingCourseResourceAssets] = useState(false);
@@ -1795,6 +1820,49 @@ const SessionWorkspace = () => {
         return list;
     };
 
+    const updateSelectedSessionStatus = async (nextStatus) => {
+        if (!selectedSessionId) {
+            toast.error('Сессия тандаңыз.');
+            return false;
+        }
+
+        const normalizedStatus = SESSION_STATUS_OPTIONS.some((option) => option.value === nextStatus)
+            ? nextStatus
+            : COURSE_SESSION_STATUS.SCHEDULED;
+        if ((selectedSession?.status || COURSE_SESSION_STATUS.SCHEDULED) === normalizedStatus) {
+            return true;
+        }
+
+        setSavingSessionStatus(true);
+        try {
+            const updated = await updateCourseSession(Number(selectedSessionId), {
+                status: normalizedStatus,
+            });
+
+            if (selectedGroupId) {
+                await refreshSelectedGroupSessions();
+            } else if (updated?.id) {
+                setSessions((prev) =>
+                    prev.map((session) =>
+                        String(session.id) === String(updated.id) ? updated : session
+                    )
+                );
+            }
+            setEditSession((prev) => ({
+                ...prev,
+                status: normalizedStatus,
+            }));
+            await refreshSessionInsights();
+            toast.success('Сессия статусу жаңыртылды.');
+            return true;
+        } catch (error) {
+            toast.error(getWorkspaceErrorMessage(error, 'Сессия статусун жаңыртуу катасы'));
+            return false;
+        } finally {
+            setSavingSessionStatus(false);
+        }
+    };
+
     const createActivityItem = async (activity) => {
         if (!selectedSessionId) {
             toast.error('Сессия тандаңыз.');
@@ -2470,6 +2538,8 @@ const SessionWorkspace = () => {
                     <div className="sticky top-24 z-30 rounded-[1.75rem] border border-edubot-line bg-white p-4 shadow-[0_18px_50px_rgba(15,23,42,0.18)] dark:border-slate-700 dark:bg-slate-950">
                         <SessionHeaderContent
                             joinLiveSession={joinLiveSession}
+                            onSessionStatusChange={updateSelectedSessionStatus}
+                            savingSessionStatus={savingSessionStatus}
                             selectedCourse={selectedCourse}
                             selectedDeliveryType={selectedDeliveryType}
                             selectedGroup={selectedGroup}
@@ -2830,6 +2900,8 @@ const SessionWorkspace = () => {
 
 const SessionHeaderContent = ({
     joinLiveSession,
+    onSessionStatusChange,
+    savingSessionStatus,
     selectedCourse,
     selectedDeliveryType,
     selectedGroup,
@@ -2841,6 +2913,10 @@ const SessionHeaderContent = ({
 }) => {
     const SelectedModeIcon = selectedModeMeta.icon;
     const isOnlineLive = selectedDeliveryType === COURSE_TYPE.ONLINE_LIVE;
+    const officialStatus = selectedSession?.status || COURSE_SESSION_STATUS.SCHEDULED;
+    const officialStatusMeta = getCourseSessionStatusMeta(officialStatus);
+    const canMarkCompleted =
+        Boolean(selectedSession) && officialStatus !== COURSE_SESSION_STATUS.COMPLETED;
 
     return (
         <div className="flex flex-wrap items-start justify-between gap-4">
@@ -2853,6 +2929,11 @@ const SessionHeaderContent = ({
                         <StatusBadge tone={selectedModeMeta.tone || 'default'} className="gap-1">
                             <SelectedModeIcon className="h-3.5 w-3.5" />
                             {selectedModeMeta.label}
+                        </StatusBadge>
+                    ) : null}
+                    {selectedSession ? (
+                        <StatusBadge tone={officialStatusMeta.tone} className="gap-1">
+                            {officialStatusMeta.label}
                         </StatusBadge>
                     ) : null}
                 </div>
@@ -2880,7 +2961,33 @@ const SessionHeaderContent = ({
                 ) : null}
             </div>
 
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center justify-end gap-2">
+                <label className="min-w-[11rem] text-xs font-semibold text-edubot-muted dark:text-slate-400">
+                    Сессия статусу
+                    <select
+                        value={officialStatus}
+                        onChange={(event) => onSessionStatusChange(event.target.value)}
+                        disabled={!selectedSession || savingSessionStatus}
+                        className="dashboard-select mt-1 min-h-[2.75rem] w-full text-sm text-edubot-ink disabled:opacity-60 dark:text-white"
+                    >
+                        {SESSION_STATUS_OPTIONS.map((option) => (
+                            <option key={option.value} value={option.value}>
+                                {option.label}
+                            </option>
+                        ))}
+                    </select>
+                </label>
+                {canMarkCompleted ? (
+                    <button
+                        type="button"
+                        onClick={() => onSessionStatusChange(COURSE_SESSION_STATUS.COMPLETED)}
+                        disabled={savingSessionStatus}
+                        className="inline-flex min-h-[2.75rem] items-center gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-700 transition hover:border-emerald-300 disabled:cursor-not-allowed disabled:opacity-60 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300"
+                    >
+                        <FiCheckCircle className="h-4 w-4" />
+                        {savingSessionStatus ? 'Жаңыртылууда...' : 'Аяктады'}
+                    </button>
+                ) : null}
                 {isOnlineLive && (
                     <button
                         type="button"
@@ -2902,6 +3009,8 @@ const SessionHeaderContent = ({
 
 SessionHeaderContent.propTypes = {
     joinLiveSession: PropTypes.func.isRequired,
+    onSessionStatusChange: PropTypes.func.isRequired,
+    savingSessionStatus: PropTypes.bool.isRequired,
     selectedCourse: PropTypes.shape({
         title: PropTypes.string,
         name: PropTypes.string,
@@ -2923,6 +3032,7 @@ SessionHeaderContent.propTypes = {
         title: PropTypes.string,
         startsAt: PropTypes.string,
         endsAt: PropTypes.string,
+        status: PropTypes.string,
     }),
     selectedSessionJoinAllowed: PropTypes.bool.isRequired,
     selectedSessionJoinUrl: PropTypes.string,

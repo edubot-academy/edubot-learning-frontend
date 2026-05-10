@@ -2,6 +2,28 @@
 
 Version bumps are classified by delivery scale; see `VERSIONING.md`.
 
+## [1.8.0] - 2026-05-10
+
+### 📋 SESSION STATUS MANAGEMENT
+- **Session Status Control**: Added comprehensive session status management in SessionWorkspace with dropdown selection and quick actions
+- **Status Validation**: Implemented proper status normalization and validation to prevent invalid status transitions
+- **Real-time Updates**: Added automatic session list refresh and local state updates after status changes
+- **Visual Status Indicators**: Added status badges in session header with appropriate color coding (scheduled, completed, cancelled)
+
+### 🎨 SESSION WORKSPACE ENHANCEMENTS
+- **Status Dropdown**: Added session status selector with Kyrgyz labels ('Пландалган', 'Аяктады', 'Жокко чыгарылды')
+- **Quick Complete Button**: Added one-click "Аяктады" button for marking sessions as completed with loading state
+- **Status Persistence**: Enhanced session editing to maintain status changes across page reloads
+- **Improved Layout**: Reorganized session header to accommodate status controls with better spacing
+
+### 🔧 TECHNICAL IMPROVEMENTS
+- **State Management**: Added `savingSessionStatus` state and `updateSelectedSessionStatus` function
+- **API Integration**: Enhanced `updateCourseSession` API calls with proper error handling and success feedback
+- **Component Props**: Extended SessionHeaderContent with status management props and validation
+- **Error Handling**: Added comprehensive error handling for session status updates with user-friendly messages
+
+---
+
 ## [1.7.2] - 2026-05-10
 
 ### 🎨 CERTIFICATE UI ENHANCEMENTS
