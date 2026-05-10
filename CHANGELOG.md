@@ -2,6 +2,40 @@
 
 Version bumps are classified by delivery scale; see `VERSIONING.md`.
 
+## [1.9.1] - 2026-05-10
+
+### 🚩 TENANT FEATURE FLAGS SYSTEM
+- **Feature Flag Management**: Added comprehensive tenant feature flag system with `tenantFeatures.js` utility
+- **AI Assistant Controls**: Implemented tenant-based AI assistant availability and feature gating
+- **Certificate Feature Flags**: Added certificate functionality control per tenant/course
+- **Course Type Validation**: Enhanced course type availability checks based on tenant features
+
+### 🤖 AI ASSISTANT ENHANCEMENTS
+- **Feature-Based Availability**: AI assistant now respects tenant feature flags for proper access control
+- **Improved Messaging**: Enhanced AI assistant availability messages with tenant-specific context
+- **Course Integration**: Better AI assistant integration with course feature validation
+- **Instructor Dashboard**: Enhanced certificate tab with feature flag validation
+
+### 🛠️ TECHNICAL IMPROVEMENTS
+- **Tenant Feature Utils**: Created centralized feature flag utilities for consistent tenant management
+- **Course Feature Validation**: Added `isCourseFeatureEnabled` for granular feature control
+- **Certificate Filtering**: Enhanced instructor dashboard to filter courses by certificate feature availability
+- **Error Handling**: Improved error messages for disabled tenant features
+- **Code Cleanup**: Removed unused state and improved component efficiency
+
+### 🔧 ENHANCED FILES
+- `src/shared/utils/tenantFeatures.js` - NEW: Centralized tenant feature flag management
+- `src/pages/CourseDetails.jsx` - Enhanced with AI assistant feature validation
+- `src/pages/InstructorDashboard.jsx` - Added certificate feature flag validation
+- `src/features/admin/pages/PlatformTenantDetail.jsx` - Enhanced tenant management interface
+- `src/features/instructor-dashboard/components/CertificatesSection.jsx` - Improved feature validation
+- `src/pages/Attendance.jsx` - Enhanced with tenant feature checks
+- `src/pages/InstructorHomework.jsx` - Improved feature validation
+- `src/pages/company/CompanyCourses.jsx` - Enhanced company course management
+- `src/pages/company/CompanyDetail.jsx` - Improved company details
+
+---
+
 ## [1.9.0] - 2026-05-10
 
 ### 🏢 COMPANY MANAGEMENT SYSTEM

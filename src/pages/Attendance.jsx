@@ -33,6 +33,10 @@ import {
 import { AuthContext } from '../context/AuthContext';
 import { UnifiedAttendanceTable } from '../features/attendance';
 import { isPlatformAdmin } from '@shared/utils/roles';
+import {
+    isCourseFeatureEnabled,
+    TENANT_FEATURES,
+} from '@shared/utils/tenantFeatures';
 
 const statusOptions = [
     { value: SESSION_ATTENDANCE_STATUS.PRESENT, label: 'Катышты', icon: FiCheckCircle },
@@ -187,7 +191,11 @@ const AttendancePage = ({ embedded = false }) => {
 
                 if (cancelled) return;
 
-                const eligibleCourses = toCourseList(response).filter(isAttendanceCourseType);
+                const eligibleCourses = toCourseList(response).filter(
+                    (course) =>
+                        isAttendanceCourseType(course) &&
+                        isCourseFeatureEnabled(course, TENANT_FEATURES.ATTENDANCE)
+                );
                 setCourses(eligibleCourses);
 
                 setSelectedCourseId((prev) => {
@@ -383,6 +391,9 @@ const AttendancePage = ({ embedded = false }) => {
     );
 
     const isAdminOverrideMode = isPlatformAdmin(user);
+    const attendanceDisabled = selectedCourse
+        ? !isCourseFeatureEnabled(selectedCourse, TENANT_FEATURES.ATTENDANCE)
+        : false;
     const students = useMemo(() => Object.values(rowsMap), [rowsMap]);
 
     const hasAttendanceChanges = useMemo(() => {
@@ -452,6 +463,11 @@ const AttendancePage = ({ embedded = false }) => {
 
         if (isAdminOverrideMode && !adminEditMode) {
             toast('Адегенде өзгөртүү режимин ачыңыз.');
+            return;
+        }
+
+        if (attendanceDisabled) {
+            toast.error('Attendance is disabled for this tenant.');
             return;
         }
 
@@ -700,8 +716,10 @@ const AttendancePage = ({ embedded = false }) => {
                                         !selectedCourseId ||
                                         !selectedGroupId ||
                                         !selectedSessionId ||
+                                        attendanceDisabled ||
                                         (isAdminOverrideMode && !adminEditMode)
                                     }
+                                    title={attendanceDisabled ? 'Attendance is disabled for this tenant.' : undefined}
                                     className="dashboard-button-primary-lg w-full"
                                 >
                                     <FiCheckCircle className="h-4 w-4" />

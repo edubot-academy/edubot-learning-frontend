@@ -847,6 +847,8 @@ const CertificatesSection = ({
     certificateActionStudentId,
     certificateActionKind,
     currentUser,
+    disabledCourseCount = 0,
+    disabledReason = '',
 }) => {
     const isAdminMode = mode === 'admin';
     const [selectedStudentId, setSelectedStudentId] = useState('');
@@ -1171,6 +1173,12 @@ const CertificatesSection = ({
             {error ? (
                 <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300">
                     {error}
+                </div>
+            ) : null}
+
+            {disabledCourseCount > 0 ? (
+                <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200">
+                    {disabledReason || 'Certificates are disabled for some tenant courses.'}
                 </div>
             ) : null}
 

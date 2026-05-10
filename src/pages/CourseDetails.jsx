@@ -30,12 +30,14 @@ import AiAssistantPanel from '@features/assistant/components/AiAssistantPanel';
 import InstructorsInfo from '@features/courses/components/InstructorsInfo';
 import CourseReview from '@features/courses/components/CourseReview';
 import CourseContent from '@features/courses/components/CourseContent';
-import { FaSignalMessenger } from 'react-icons/fa6';
 import InstructorChat from '@features/instructorChat/InstructorChat';
-import CourseHeader from '@features/courses/components/CourseHeader';
 import { HiChatAlt2 } from 'react-icons/hi';
 import Loader from '@shared/ui/Loader';
 import { isForbiddenError, parseApiError } from '@shared/api/error';
+import {
+    isCourseFeatureEnabled,
+    TENANT_FEATURES,
+} from '@shared/utils/tenantFeatures';
 
 const CHALLENGE_STORAGE_PREFIX = 'lessonChallengeState';
 
@@ -70,10 +72,9 @@ const CourseDetailsPage = () => {
     const { user } = useContext(AuthContext);
     const [course, setCourse] = useState(null);
     const [sections, setSections] = useState([]);
-    const [activeSectionId, setActiveSectionId] = useState(null);
+    const [, setActiveSectionId] = useState(null);
     const [activeLesson, setActiveLesson] = useState(null);
     const activeLessonRef = useRef(null);
-    const [lastViewedLessonId, setLastViewedLessonId] = useState(null);
     const [completedLessons, setCompletedLessons] = useState([]);
     const [resumeVideoTime, setResumeVideoTime] = useState(0);
     const [loading, setLoading] = useState(true);
@@ -83,7 +84,7 @@ const CourseDetailsPage = () => {
     const videoRef = useRef(null);
     const hasPlayedRef = useRef(false);
     const markingCompleteRef = useRef(false);
-    const [shouldScrollToLesson, setShouldScrollToLesson] = useState(true);
+    const [shouldScrollToLesson] = useState(true);
     const [activeTab, setActiveTab] = useState('program'); // 'program' | 'assistant'
     const [lessonQuizData, setLessonQuizData] = useState({});
     const [lessonQuizAnswers, setLessonQuizAnswers] = useState({});
@@ -189,7 +190,6 @@ const CourseDetailsPage = () => {
         );
         if (!isEnrolled) {
             setResumeVideoTime(0);
-            setLastViewedLessonId(null);
             setActiveTab('program');
         }
     }, []);
@@ -345,23 +345,6 @@ const CourseDetailsPage = () => {
                 console.error('Failed to persist paused video time', err);
             });
         }
-    };
-
-    const toggleSection = (sectionId) => {
-        setShouldScrollToLesson(false);
-
-        const newId = activeSectionId === sectionId ? null : sectionId;
-        setActiveSectionId(newId);
-
-        if (newId) {
-            localStorage.setItem(`active_section_${id}`, String(newId));
-        } else {
-            localStorage.removeItem(`active_section_${id}`);
-        }
-
-        setTimeout(() => {
-            setShouldScrollToLesson(true);
-        }, 300);
     };
 
     const loadQuizForLesson = async (lesson) => {
@@ -564,8 +547,6 @@ const CourseDetailsPage = () => {
                 if (skippedQuestions.length > 0) {
                     const totalQuestions = quiz.questions.length;
                     const correctFromServer = result.correctAnswers || 0;
-                    const totalFromServer = result.totalQuestions || totalQuestions;
-
                     const totalCorrect = correctFromServer;
                     const actualTotal = totalQuestions;
                     const newScore = Math.round((totalCorrect / actualTotal) * 100);
@@ -848,7 +829,6 @@ const CourseDetailsPage = () => {
                     try {
                         const lastViewed = await getLastViewedLesson(id);
                         if (lastViewed?.lessonId) {
-                            setLastViewedLessonId(lastViewed.lessonId);
                             for (let sec of updatedSections) {
                                 for (let lesson of sec.lessons || []) {
                                     if (lesson.id === lastViewed.lessonId) {
@@ -957,18 +937,15 @@ const CourseDetailsPage = () => {
     if (!course) return <div>Курс табылган жок</div>;
 
     const { prev: prevLesson, next: nextLesson } = findPrevNextLessons();
-    const totalLessons =
-        course?.lessonCount ||
-        sections.reduce((count, sec) => count + (sec.lessons?.length || 0), 0);
-    const progress =
-        totalLessons > 0 ? Math.round((completedLessons.length / totalLessons) * 100) : 0;
-
     const isCourseInstructor = Boolean(user && course?.instructor?.id === user.id);
     const isAdmin = isPlatformAdmin(user);
+    const isAiFeatureEnabled = isCourseFeatureEnabled(course, TENANT_FEATURES.AI_ASSISTANT);
     const isAiAvailable = Boolean(
-        course.aiAssistantEnabled && (enrolled || isCourseInstructor || isAdmin)
+        isAiFeatureEnabled && course.aiAssistantEnabled && (enrolled || isCourseInstructor || isAdmin)
     );
-    const assistantAvailableMessage = course.aiAssistantEnabled
+    const assistantAvailableMessage = !isAiFeatureEnabled
+        ? 'EDU AI ассистенти бул tenant үчүн өчүрүлгөн.'
+        : course.aiAssistantEnabled
         ? 'Ассистентти колдонуу үчүн курска жазылуу керек.'
         : 'EDU AI ассистенти бул курста өчүрүлгөн.';
 

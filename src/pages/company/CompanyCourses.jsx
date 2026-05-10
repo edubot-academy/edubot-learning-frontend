@@ -11,8 +11,12 @@ import {
     // clearCourseCompany,           // ❌ no longer used here
 } from '@services/api';
 import { DashboardInsetPanel, EmptyState } from '@components/ui/dashboard';
+import {
+    getCourseTypeTenantDisabledMessage,
+    isCourseTypeAllowedForTenant,
+} from '@shared/utils/tenantFeatures';
 
-export default function CompanyCourses({ companyId, canManage = true }) {
+export default function CompanyCourses({ company, companyId, canManage = true }) {
     const [qInput, setQInput] = React.useState('');
     const [q, setQ] = React.useState('');
     const [page, setPage] = React.useState(1);
@@ -64,6 +68,12 @@ export default function CompanyCourses({ companyId, canManage = true }) {
 
     // Attach this company to a course (many-to-many)
     const onAttach = async (courseId) => {
+        const course = results.find((item) => item.id === courseId);
+        if (course && !isCourseTypeAllowedForTenant(company, course.courseType)) {
+            toast.error(getCourseTypeTenantDisabledMessage(course.courseType));
+            return;
+        }
+
         try {
             setAttachingId(courseId);
             await assignCourseToCompany(courseId, companyId); // ✅ assign endpoint
@@ -174,7 +184,8 @@ export default function CompanyCourses({ companyId, canManage = true }) {
                                 </thead>
                                 <tbody className="divide-y divide-edubot-line/70 bg-white dark:divide-slate-700 dark:bg-slate-950">
                             {results.map((c) => {
-                                const disabled = attachingId === c.id;
+                                const courseTypeDisabled = !isCourseTypeAllowedForTenant(company, c.courseType);
+                                const disabled = attachingId === c.id || courseTypeDisabled;
                                 return (
                                     <tr
                                         key={c.id}
@@ -186,9 +197,10 @@ export default function CompanyCourses({ companyId, canManage = true }) {
                                             <button
                                                 onClick={() => onAttach(c.id)}
                                                 disabled={disabled}
+                                                title={courseTypeDisabled ? getCourseTypeTenantDisabledMessage(c.courseType) : undefined}
                                                 className="dashboard-button-primary disabled:cursor-not-allowed disabled:opacity-60"
                                             >
-                                                {disabled ? '...' : 'Attach'}
+                                                {attachingId === c.id ? '...' : courseTypeDisabled ? 'Disabled' : 'Attach'}
                                             </button>
                                         </td>
                                     </tr>

@@ -54,6 +54,7 @@ export default function CompanyDetail() {
             {tab === 'members' && <CompanyMembers companyId={companyId} currentUser={user} />}
             {tab === 'courses' && (
                 <CompanyCourses
+                    company={company}
                     companyId={companyId}
                     canManage={['owner', 'admin', 'company_admin'].includes(company?.role) || isPlatformAdmin(user)}
                 />

@@ -10,6 +10,10 @@ import {
     EmptyState,
 } from '../components/ui/dashboard';
 import { AuthContext } from '../context/AuthContext';
+import {
+    isCourseFeatureEnabled,
+    TENANT_FEATURES,
+} from '@shared/utils/tenantFeatures';
 
 const toArray = (payload) => {
     if (Array.isArray(payload)) return payload;
@@ -245,7 +249,11 @@ const InstructorHomework = () => {
         if (!user?.id || user.role !== 'instructor') return;
         const loadCourses = async () => {
             const response = await fetchInstructorCourses({ status: 'all' });
-            setCourses(toArray(response?.courses || response));
+            setCourses(
+                toArray(response?.courses || response).filter((course) =>
+                    isCourseFeatureEnabled(course, TENANT_FEATURES.HOMEWORK)
+                )
+            );
         };
         loadCourses().catch((error) => {
             setCourses([]);
@@ -297,13 +305,25 @@ const InstructorHomework = () => {
         });
     }, [courseId, groupId, limit]);
 
+    const courseById = useMemo(
+        () => new Map(courses.map((course) => [String(course.id), course])),
+        [courses]
+    );
+
     const enrichedItems = useMemo(
         () =>
-            items.map((item) => ({
-                ...item,
-                stateMeta: getHomeworkStateMeta(item),
-            })),
-        [items]
+            items
+                .filter((item) => {
+                    const homeworkCourse =
+                        item.course ||
+                        courseById.get(String(item.courseId || item.session?.group?.course?.id || ''));
+                    return isCourseFeatureEnabled(homeworkCourse, TENANT_FEATURES.HOMEWORK);
+                })
+                .map((item) => ({
+                    ...item,
+                    stateMeta: getHomeworkStateMeta(item),
+                })),
+        [courseById, items]
     );
 
     const filteredItems = useMemo(() => {

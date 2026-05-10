@@ -43,6 +43,10 @@ import CompanyMembers from '../../../pages/company/CompanyMembers';
 import Loader from '@shared/ui/Loader';
 import { AuthContext } from '../../../context/AuthContext';
 import ConfirmationModal from '@shared/ui/ConfirmationModal';
+import {
+    getCourseTypeTenantDisabledMessage,
+    isCourseTypeAllowedForTenant,
+} from '@shared/utils/tenantFeatures';
 
 const TABS = [
     { id: 'overview', label: 'Overview', icon: FiBriefcase, category: 'primary', priority: 1 },
@@ -174,7 +178,7 @@ const buildFeatureFlagRows = (featureFlags) => {
     const flags = featureFlags && typeof featureFlags === 'object' ? featureFlags : {};
     const predefinedRows = FEATURE_FLAG_DEFINITIONS.map((flag) => ({
         ...flag,
-        value: Boolean(flags[flag.key]),
+        value: flags[flag.key] !== false,
         predefined: true,
     }));
     const customRows = Object.entries(flags)
@@ -185,7 +189,9 @@ const buildFeatureFlagRows = (featureFlags) => {
 
 const buildFeatureFlagsPayload = (rows) => rows.reduce((acc, row) => {
     const key = row.key.trim();
-    if (key) acc[key] = Boolean(row.value);
+    if (!key) return acc;
+    if (row.predefined && row.value === true) return acc;
+    acc[key] = Boolean(row.value);
     return acc;
 }, {});
 
@@ -547,6 +553,12 @@ export default function PlatformTenantDetail() {
     };
 
     const attachCourse = async (courseId) => {
+        const course = attachOptions.find((item) => item.id === courseId);
+        if (course && !isCourseTypeAllowedForTenant(company, course.courseType)) {
+            toast.error(getCourseTypeTenantDisabledMessage(course.courseType));
+            return;
+        }
+
         try {
             setAttachingCourseId(courseId);
             await assignCourseToCompany(courseId, tenantId);
@@ -997,22 +1009,27 @@ export default function PlatformTenantDetail() {
                                     <div className="absolute z-20 mt-1 max-h-80 w-full overflow-auto rounded-2xl border border-edubot-line bg-white shadow-edubot-card dark:border-slate-700 dark:bg-slate-900">
                                         {attachLoading ? (
                                             <div className="px-3 py-2 text-sm text-edubot-muted">Searching...</div>
-                                        ) : attachOptions.length ? attachOptions.map((course) => (
-                                            <button
-                                                type="button"
-                                                key={course.id}
-                                                onClick={() => attachCourse(course.id)}
-                                                disabled={attachingCourseId === course.id}
-                                                className="block w-full px-3 py-2 text-left hover:bg-edubot-surfaceAlt/70 disabled:cursor-not-allowed disabled:opacity-60 dark:hover:bg-slate-800"
-                                            >
-                                                <span className="block truncate text-sm font-medium text-edubot-ink dark:text-white">
-                                                    {attachingCourseId === course.id ? 'Attaching...' : (course.title || `Course #${course.id}`)}
-                                                </span>
-                                                <span className="block truncate text-xs text-edubot-muted dark:text-slate-400">
-                                                    {course.instructor?.fullName || course.instructor?.email || 'No instructor'} · {course.courseType || 'course'}
-                                                </span>
-                                            </button>
-                                        )) : (
+                                        ) : attachOptions.length ? attachOptions.map((course) => {
+                                            const courseTypeDisabled = !isCourseTypeAllowedForTenant(company, course.courseType);
+                                            return (
+                                                <button
+                                                    type="button"
+                                                    key={course.id}
+                                                    onClick={() => attachCourse(course.id)}
+                                                    disabled={attachingCourseId === course.id || courseTypeDisabled}
+                                                    title={courseTypeDisabled ? getCourseTypeTenantDisabledMessage(course.courseType) : undefined}
+                                                    className="block w-full px-3 py-2 text-left hover:bg-edubot-surfaceAlt/70 disabled:cursor-not-allowed disabled:opacity-60 dark:hover:bg-slate-800"
+                                                >
+                                                    <span className="block truncate text-sm font-medium text-edubot-ink dark:text-white">
+                                                        {attachingCourseId === course.id ? 'Attaching...' : (course.title || `Course #${course.id}`)}
+                                                    </span>
+                                                    <span className="block truncate text-xs text-edubot-muted dark:text-slate-400">
+                                                        {course.instructor?.fullName || course.instructor?.email || 'No instructor'} · {course.courseType || 'course'}
+                                                        {courseTypeDisabled ? ' · disabled by feature flags' : ''}
+                                                    </span>
+                                                </button>
+                                            );
+                                        }) : (
                                             <div className="px-3 py-2 text-sm text-edubot-muted">
                                                 No matching courses found.
                                             </div>
@@ -1299,7 +1316,7 @@ export default function PlatformTenantDetail() {
                                 <ReadField
                                     key={flag.key}
                                     label={flag.label}
-                                    value={Boolean(company.featureFlags?.[flag.key])}
+                                    value={company.featureFlags?.[flag.key] !== false}
                                 />
                             ))}
                             {Object.entries(company.featureFlags || {})

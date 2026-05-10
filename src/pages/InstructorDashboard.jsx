@@ -52,6 +52,10 @@ import {
     DashboardHeader,
     DashboardTabs,
 } from '../components/ui/dashboard';
+import {
+    isCourseFeatureEnabled,
+    TENANT_FEATURES,
+} from '@shared/utils/tenantFeatures';
 
 const InstructorDashboard = () => {
     const { user } = useContext(AuthContext);
@@ -114,7 +118,12 @@ const InstructorDashboard = () => {
     );
 
     const aiCourses = useMemo(
-        () => courses.filter((course) => course.aiAssistantEnabled),
+        () =>
+            courses.filter(
+                (course) =>
+                    course.aiAssistantEnabled &&
+                    isCourseFeatureEnabled(course, TENANT_FEATURES.AI_ASSISTANT)
+            ),
         [courses]
     );
 
@@ -160,6 +169,22 @@ const InstructorDashboard = () => {
                 : user,
         [profile?.title, user]
     );
+    const selectedStudentCourse = useMemo(
+        () =>
+            studentCourses.find((course) => String(course.id) === String(selectedStudentCourseId)) ||
+            null,
+        [selectedStudentCourseId, studentCourses]
+    );
+    const certificateCourses = useMemo(
+        () =>
+            studentCourses.filter((course) =>
+                isCourseFeatureEnabled(course, TENANT_FEATURES.CERTIFICATES)
+            ),
+        [studentCourses]
+    );
+    const certificatesFeatureEnabled = selectedStudentCourse
+        ? isCourseFeatureEnabled(selectedStudentCourse, TENANT_FEATURES.CERTIFICATES)
+        : true;
 
     const handleSwipeLeft = useCallback(() => {
         if (window.innerWidth < 768) setSidebarOpen(false);
@@ -211,7 +236,7 @@ const InstructorDashboard = () => {
         };
 
         loadCourses();
-    }, [user]);
+    }, [activeTab, user]);
 
     useEffect(() => {
         const handleGlobalKeyDown = (e) => {
@@ -326,6 +351,14 @@ const InstructorDashboard = () => {
 
             setSelectedStudentCourseId((prev) => {
                 if (!list.length) return null;
+                if (prev && !list.some((course) => course.id === prev)) return null;
+                if (activeTab === 'certificates') {
+                    const certificateList = list.filter((course) =>
+                        isCourseFeatureEnabled(course, TENANT_FEATURES.CERTIFICATES)
+                    );
+                    if (prev && certificateList.some((course) => course.id === prev)) return prev;
+                    return null;
+                }
                 return list.some((course) => course.id === prev) ? prev : null;
             });
 
@@ -451,7 +484,11 @@ const InstructorDashboard = () => {
     ]);
 
     useEffect(() => {
-        if (!['students', 'certificates'].includes(activeTab) || !selectedStudentCourseId) {
+        if (
+            !['students', 'certificates'].includes(activeTab) ||
+            !selectedStudentCourseId ||
+            !certificatesFeatureEnabled
+        ) {
             setCertificateSettings(null);
             setCourseCertificates([]);
             setLoadingCertificateWorkspace(false);
@@ -475,11 +512,15 @@ const InstructorDashboard = () => {
         };
 
         loadCertificateSettings();
-    }, [activeTab, selectedStudentCourseId]);
+    }, [activeTab, selectedStudentCourseId, certificatesFeatureEnabled]);
 
     const handleToggleCertificateApproval = useCallback(
         async (enabled) => {
             if (!selectedStudentCourseId) return;
+            if (!certificatesFeatureEnabled) {
+                toast.error('Certificates are disabled for this tenant.');
+                return;
+            }
             setSavingCertificateSettings(true);
             try {
                 const updated = await updateCourseCertificateSettings(
@@ -499,12 +540,16 @@ const InstructorDashboard = () => {
                 setSavingCertificateSettings(false);
             }
         },
-        [selectedStudentCourseId, certificateSettings]
+        [selectedStudentCourseId, certificateSettings, certificatesFeatureEnabled]
     );
 
     const handleSaveCertificateSettings = useCallback(
         async (payload) => {
             if (!selectedStudentCourseId) return false;
+            if (!certificatesFeatureEnabled) {
+                toast.error('Certificates are disabled for this tenant.');
+                return false;
+            }
             setSavingCertificateSettings(true);
             try {
                 const updated = await updateCourseCertificateSettings(
@@ -522,12 +567,16 @@ const InstructorDashboard = () => {
                 setSavingCertificateSettings(false);
             }
         },
-        [selectedStudentCourseId]
+        [selectedStudentCourseId, certificatesFeatureEnabled]
     );
 
     const handleRegenerateCertificates = useCallback(
         async () => {
             if (!selectedStudentCourseId) return false;
+            if (!certificatesFeatureEnabled) {
+                toast.error('Certificates are disabled for this tenant.');
+                return false;
+            }
             setRegeneratingCertificates(true);
             try {
                 const result = await regenerateCourseCertificates(selectedStudentCourseId);
@@ -548,12 +597,16 @@ const InstructorDashboard = () => {
                 setRegeneratingCertificates(false);
             }
         },
-        [selectedStudentCourseId, loadCourseStudents]
+        [selectedStudentCourseId, certificatesFeatureEnabled, loadCourseStudents]
     );
 
     const handleSaveCertificateAsset = useCallback(
         async (kind, file) => {
             if (!selectedStudentCourseId || !file) return null;
+            if (!certificatesFeatureEnabled) {
+                toast.error('Certificates are disabled for this tenant.');
+                return null;
+            }
             setSavingCertificateAssetKind(kind);
             try {
                 const updated =
@@ -579,12 +632,16 @@ const InstructorDashboard = () => {
                 setSavingCertificateAssetKind(null);
             }
         },
-        [selectedStudentCourseId]
+        [selectedStudentCourseId, certificatesFeatureEnabled]
     );
 
     const handleCertificateAction = useCallback(
         async (kind, student, displayOverrides = {}) => {
             if (!selectedStudentCourseId || !student) return;
+            if (!certificatesFeatureEnabled) {
+                toast.error('Certificates are disabled for this tenant.');
+                return;
+            }
             setCertificateActionStudentId(student.id);
             setCertificateActionKind(kind);
             try {
@@ -613,7 +670,7 @@ const InstructorDashboard = () => {
                 setCertificateActionKind(null);
             }
         },
-        [selectedStudentCourseId, loadCourseStudents]
+        [selectedStudentCourseId, certificatesFeatureEnabled, loadCourseStudents]
     );
 
     const handleSelectStudentCourse = useCallback((courseId) => {
@@ -866,11 +923,13 @@ const InstructorDashboard = () => {
                 return (
                     <CertificatesSection
                         mode="instructor"
-                        total={studentCoursesTotal}
-                        courses={studentCourses}
+                        total={certificateCourses.reduce((sum, course) => sum + (course.studentCount || 0), 0)}
+                        courses={certificateCourses}
                         loadingCourses={loadingStudentCourses}
                         selectedCourseId={selectedStudentCourseId}
                         onSelectCourse={handleSelectStudentCourse}
+                        disabledCourseCount={studentCourses.length - certificateCourses.length}
+                        disabledReason="Certificates are disabled for some tenant courses."
                         courseStudents={courseStudents}
                         courseMeta={courseStudentsMeta}
                         loadingStudents={loadingCourseStudents}
