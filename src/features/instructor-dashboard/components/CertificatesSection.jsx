@@ -229,7 +229,11 @@ const getCertificateBadge = (status) => {
 
 const getStudentCertificateState = (student) => {
     const progress = Math.max(0, Math.min(100, Number(student?.progressPercent || 0)));
-    const isComplete = Boolean(student?.completed) || progress >= 100;
+    const eligibility = student?.certificateEligibility;
+    const isComplete =
+        Boolean(student?.certificateEligible) ||
+        Boolean(student?.completed) ||
+        progress >= 100;
 
     if (student?.certificateStatus === 'issued') {
         return {
@@ -250,10 +254,26 @@ const getStudentCertificateState = (student) => {
     }
 
     if (!isComplete) {
+        const missing = Array.isArray(eligibility?.reasons) && eligibility.reasons.length
+            ? eligibility.reasons
+                  .map((reason) => {
+                      if (reason === 'sessions_missing') return 'сессиялар түзүлө элек';
+                      if (reason === 'sessions_incomplete') return 'сессиялар бүтө элек';
+                      if (reason === 'attendance_below_threshold') return 'катышуу жетишсиз';
+                      if (reason === 'homework_below_threshold') return 'үй тапшырма жетишсиз';
+                      if (reason === 'activities_below_threshold') return 'класс иштери жетишсиз';
+                      if (reason === 'lesson_progress_incomplete') return 'сабак прогресси толук эмес';
+                      return null;
+                  })
+                  .filter(Boolean)
+                  .join(', ')
+            : '';
         return {
             canIssue: true,
             buttonLabel: 'Берүү',
-            helperText: `Курс толук бүтө элек. Азыркы прогресс: ${progress}%. Кааласаңыз сертификатты азыр да бере аласыз.`,
+            helperText: missing
+                ? `Авто-берүү үчүн талаптар бүтө элек: ${missing}. Кол менен сертификат берсеңиз болот.`
+                : `Курс толук бүтө элек. Азыркы прогресс: ${progress}%. Кааласаңыз сертификатты азыр да бере аласыз.`,
             helperTone: 'text-amber-600 dark:text-amber-300',
         };
     }
@@ -459,6 +479,24 @@ const getTemplatePayload = (settingsForm, isAdminMode) => ({
     pageOrientation: isAdminMode ? settingsForm.pageOrientation : undefined,
     primaryColor: isAdminMode ? settingsForm.primaryColor : undefined,
     accentColor: isAdminMode ? settingsForm.accentColor : undefined,
+    eligibilityAttendanceRequired: isAdminMode
+        ? Boolean(settingsForm.eligibilityAttendanceRequired)
+        : undefined,
+    eligibilityAttendancePercent: isAdminMode
+        ? Number(settingsForm.eligibilityAttendancePercent || 0)
+        : undefined,
+    eligibilityHomeworkRequired: isAdminMode
+        ? Boolean(settingsForm.eligibilityHomeworkRequired)
+        : undefined,
+    eligibilityHomeworkPercent: isAdminMode
+        ? Number(settingsForm.eligibilityHomeworkPercent || 0)
+        : undefined,
+    eligibilityActivitiesRequired: isAdminMode
+        ? Boolean(settingsForm.eligibilityActivitiesRequired)
+        : undefined,
+    eligibilityActivitiesPercent: isAdminMode
+        ? Number(settingsForm.eligibilityActivitiesPercent || 0)
+        : undefined,
 });
 
 const CERTIFICATE_LANGUAGE_OPTIONS = [
@@ -806,6 +844,7 @@ const CertificatesSection = ({
     onSaveCertificateAsset,
     onCertificateAction,
     certificateActionStudentId,
+    certificateActionKind,
     currentUser,
 }) => {
     const isAdminMode = mode === 'admin';
@@ -830,6 +869,12 @@ const CertificatesSection = ({
         pageOrientation: 'landscape',
         primaryColor: '#122144',
         accentColor: '#F17E22',
+        eligibilityAttendanceRequired: true,
+        eligibilityAttendancePercent: 80,
+        eligibilityHomeworkRequired: false,
+        eligibilityHomeworkPercent: 100,
+        eligibilityActivitiesRequired: false,
+        eligibilityActivitiesPercent: 100,
     });
 
     const selectedCourse = courses.find((course) => course.id === selectedCourseId) || null;
@@ -852,6 +897,18 @@ const CertificatesSection = ({
             pageOrientation: certificateSettings?.pageOrientation || 'landscape',
             primaryColor: certificateSettings?.primaryColor || '#122144',
             accentColor: certificateSettings?.accentColor || '#F17E22',
+            eligibilityAttendanceRequired:
+                certificateSettings?.eligibilityAttendanceRequired ?? true,
+            eligibilityAttendancePercent:
+                certificateSettings?.eligibilityAttendancePercent ?? 80,
+            eligibilityHomeworkRequired:
+                certificateSettings?.eligibilityHomeworkRequired ?? false,
+            eligibilityHomeworkPercent:
+                certificateSettings?.eligibilityHomeworkPercent ?? 100,
+            eligibilityActivitiesRequired:
+                certificateSettings?.eligibilityActivitiesRequired ?? false,
+            eligibilityActivitiesPercent:
+                certificateSettings?.eligibilityActivitiesPercent ?? 100,
         });
     }, [certificateSettings, defaultIssuerDisplayName, defaultIssuerTitle]);
 
@@ -938,6 +995,18 @@ const CertificatesSection = ({
                 pageOrientation: certificateSettings?.pageOrientation || 'landscape',
                 primaryColor: certificateSettings?.primaryColor || '#122144',
                 accentColor: certificateSettings?.accentColor || '#F17E22',
+                eligibilityAttendanceRequired:
+                    certificateSettings?.eligibilityAttendanceRequired ?? true,
+                eligibilityAttendancePercent:
+                    certificateSettings?.eligibilityAttendancePercent ?? 80,
+                eligibilityHomeworkRequired:
+                    certificateSettings?.eligibilityHomeworkRequired ?? false,
+                eligibilityHomeworkPercent:
+                    certificateSettings?.eligibilityHomeworkPercent ?? 100,
+                eligibilityActivitiesRequired:
+                    certificateSettings?.eligibilityActivitiesRequired ?? false,
+                eligibilityActivitiesPercent:
+                    certificateSettings?.eligibilityActivitiesPercent ?? 100,
         },
         isAdminMode
     );
@@ -1334,6 +1403,103 @@ const CertificatesSection = ({
                                     {certificateSettings?.approvalMode === 'instructor'
                                         ? 'Дароо берүүгө өткөрүү'
                                         : 'Бекитүү режимин күйгүзүү'}
+                                </button>
+                            </div>
+                        </DashboardInsetPanel>
+                    ) : null}
+
+                    {isAdminMode ? (
+                        <DashboardInsetPanel
+                            title="Аяктоо талаптары"
+                            description="Video курстар сабак прогресси менен эсептелет. Offline жана live курстарда авто-сертификат ушул талаптар аткарылганда түзүлөт."
+                        >
+                            <div className="mt-4 grid gap-3 lg:grid-cols-3">
+                                {[
+                                    {
+                                        key: 'Attendance',
+                                        icon: FiUsers,
+                                        title: 'Катышуу',
+                                        description: 'Сессиялар completed болуп, катышуу пайызы жетиши керек.',
+                                        enabledKey: 'eligibilityAttendanceRequired',
+                                        percentKey: 'eligibilityAttendancePercent',
+                                    },
+                                    {
+                                        key: 'Homework',
+                                        icon: FiBookOpen,
+                                        title: 'Үй тапшырма',
+                                        description: 'Жарыяланган жана студентке дайындалган тапшырмалар approved болушу керек.',
+                                        enabledKey: 'eligibilityHomeworkRequired',
+                                        percentKey: 'eligibilityHomeworkPercent',
+                                    },
+                                    {
+                                        key: 'Activities',
+                                        icon: FiActivity,
+                                        title: 'Класс иштери',
+                                        description: 'Quiz passed, exercise/group work approved болгондо эсептелет.',
+                                        enabledKey: 'eligibilityActivitiesRequired',
+                                        percentKey: 'eligibilityActivitiesPercent',
+                                    },
+                                ].map((rule) => {
+                                    const Icon = rule.icon;
+                                    return (
+                                        <div
+                                            key={rule.key}
+                                            className="dashboard-panel rounded-2xl border border-edubot-line/70 p-4 dark:border-slate-700"
+                                        >
+                                            <div className="flex items-start gap-3">
+                                                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-edubot-orange/10 text-edubot-orange">
+                                                    <Icon className="h-5 w-5" />
+                                                </div>
+                                                <div className="min-w-0 flex-1">
+                                                    <label className="flex items-center justify-between gap-3 text-sm font-semibold text-edubot-ink dark:text-white">
+                                                        <span>{rule.title}</span>
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={Boolean(settingsForm[rule.enabledKey])}
+                                                            onChange={(e) =>
+                                                                setSettingsForm((prev) => ({
+                                                                    ...prev,
+                                                                    [rule.enabledKey]: e.target.checked,
+                                                                }))
+                                                            }
+                                                            className="h-4 w-4 rounded border-edubot-line text-edubot-orange focus:ring-edubot-orange"
+                                                        />
+                                                    </label>
+                                                    <p className="mt-2 text-xs leading-5 text-edubot-muted dark:text-slate-400">
+                                                        {rule.description}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <div className="mt-4">
+                                                <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.12em] text-edubot-muted dark:text-slate-400">
+                                                    Минимум %
+                                                </label>
+                                                <input
+                                                    type="number"
+                                                    min="0"
+                                                    max="100"
+                                                    value={settingsForm[rule.percentKey]}
+                                                    onChange={(e) =>
+                                                        setSettingsForm((prev) => ({
+                                                            ...prev,
+                                                            [rule.percentKey]: e.target.value,
+                                                        }))
+                                                    }
+                                                    className="dashboard-field w-28"
+                                                />
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                            <div className="mt-4 flex justify-end">
+                                <button
+                                    type="button"
+                                    onClick={handleSaveTemplateSettings}
+                                    disabled={savingCertificateSettings || !hasTemplateChanges}
+                                    className="dashboard-button-primary"
+                                >
+                                    Талаптарды сактоо
                                 </button>
                             </div>
                         </DashboardInsetPanel>
@@ -2166,10 +2332,17 @@ const CertificatesSection = ({
                                     const isBusy =
                                         certificateActionStudentId === student.id ||
                                         loadingCertificateWorkspace;
+                                    const activeActionKind =
+                                        certificateActionStudentId === student.id
+                                            ? certificateActionKind
+                                            : null;
+                                    const eligibility = student.certificateEligibility || null;
                                     return (
                                         <article
                                             key={student.id}
-                                            className="dashboard-panel-muted rounded-panel p-5 transition duration-300 hover:-translate-y-1 hover:shadow-edubot-card"
+                                            className={`dashboard-panel-muted rounded-panel p-5 transition duration-300 hover:-translate-y-1 hover:shadow-edubot-card ${
+                                                isBusy ? 'opacity-80' : ''
+                                            }`}
                                         >
                                             <div className="flex items-start justify-between gap-3">
                                                 <div className="min-w-0">
@@ -2222,7 +2395,9 @@ const CertificatesSection = ({
                                                             : 'dashboard-button-secondary'
                                                     }`}
                                                 >
-                                                    {issueState.buttonLabel}
+                                                    {activeActionKind === 'issue'
+                                                        ? 'Берилүүдө...'
+                                                        : issueState.buttonLabel}
                                                 </button>
                                                 {student.certificateStatus ===
                                                 'pending_approval' ? (
@@ -2241,7 +2416,9 @@ const CertificatesSection = ({
                                                             disabled={isBusy}
                                                             className="dashboard-button-secondary"
                                                         >
-                                                            Бекитүү
+                                                            {activeActionKind === 'approve'
+                                                                ? 'Бекитилүүдө...'
+                                                                : 'Бекитүү'}
                                                         </button>
                                                         <button
                                                             type="button"
@@ -2254,7 +2431,9 @@ const CertificatesSection = ({
                                                             disabled={isBusy}
                                                             className="dashboard-button-secondary"
                                                         >
-                                                            Четке кагуу
+                                                            {activeActionKind === 'reject'
+                                                                ? 'Жөнөтүлүүдө...'
+                                                                : 'Четке кагуу'}
                                                         </button>
                                                     </>
                                                 ) : null}
@@ -2301,7 +2480,9 @@ const CertificatesSection = ({
                                                             disabled={isBusy}
                                                             className="dashboard-button-secondary"
                                                         >
-                                                            Жокко чыгаруу
+                                                            {activeActionKind === 'revoke'
+                                                                ? 'Жокко чыгарылууда...'
+                                                                : 'Жокко чыгаруу'}
                                                         </button>
                                                     </>
                                                 ) : null}
@@ -2320,7 +2501,9 @@ const CertificatesSection = ({
                                                 </div>
                                                 <div className="dashboard-panel rounded-2xl border border-edubot-line/70 px-4 py-3 dark:border-slate-700">
                                                     <div className="text-xs font-semibold uppercase tracking-[0.12em] text-edubot-muted dark:text-slate-400">
-                                                        Прогресс
+                                                        {eligibility?.mode === 'delivery'
+                                                            ? 'Аяктоо'
+                                                            : 'Прогресс'}
                                                     </div>
                                                     <div className="mt-2 text-sm font-semibold text-edubot-ink dark:text-white">
                                                         {Math.max(
@@ -2334,6 +2517,28 @@ const CertificatesSection = ({
                                                     </div>
                                                 </div>
                                             </div>
+                                            {eligibility?.mode === 'delivery' ? (
+                                                <div className="mt-3 grid gap-2 text-xs text-edubot-muted dark:text-slate-400 sm:grid-cols-3">
+                                                    <div>
+                                                        Катышуу:{' '}
+                                                        <span className="font-semibold text-edubot-ink dark:text-white">
+                                                            {eligibility.attendance?.percent ?? 0}%
+                                                        </span>
+                                                    </div>
+                                                    <div>
+                                                        Үй тапшырма:{' '}
+                                                        <span className="font-semibold text-edubot-ink dark:text-white">
+                                                            {eligibility.homework?.percent ?? 0}%
+                                                        </span>
+                                                    </div>
+                                                    <div>
+                                                        Иштер:{' '}
+                                                        <span className="font-semibold text-edubot-ink dark:text-white">
+                                                            {eligibility.activities?.percent ?? 0}%
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            ) : null}
                                         </article>
                                     );
                                 })}

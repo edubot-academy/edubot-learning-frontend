@@ -88,6 +88,7 @@ const InstructorDashboard = () => {
     const [loadingCertificateWorkspace, setLoadingCertificateWorkspace] = useState(false);
     const [savingCertificateSettings, setSavingCertificateSettings] = useState(false);
     const [certificateActionStudentId, setCertificateActionStudentId] = useState(null);
+    const [certificateActionKind, setCertificateActionKind] = useState(null);
     const [regeneratingCertificates, setRegeneratingCertificates] = useState(false);
     const [savingCertificateAssetKind, setSavingCertificateAssetKind] = useState(null);
 
@@ -585,6 +586,7 @@ const InstructorDashboard = () => {
         async (kind, student, displayOverrides = {}) => {
             if (!selectedStudentCourseId || !student) return;
             setCertificateActionStudentId(student.id);
+            setCertificateActionKind(kind);
             try {
                 if (kind === 'issue') {
                     await issueCourseCertificate(selectedStudentCourseId, {
@@ -608,6 +610,7 @@ const InstructorDashboard = () => {
                 toast.error('Сертификат аракетин аткаруу мүмкүн болбоду');
             } finally {
                 setCertificateActionStudentId(null);
+                setCertificateActionKind(null);
             }
         },
         [selectedStudentCourseId, loadCourseStudents]
@@ -893,6 +896,7 @@ const InstructorDashboard = () => {
                         onSaveCertificateAsset={handleSaveCertificateAsset}
                         onCertificateAction={handleCertificateAction}
                         certificateActionStudentId={certificateActionStudentId}
+                        certificateActionKind={certificateActionKind}
                         currentUser={certificateCurrentUser}
                     />
                 );

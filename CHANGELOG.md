@@ -2,6 +2,22 @@
 
 Version bumps are classified by delivery scale; see `VERSIONING.md`.
 
+## [1.7.2] - 2026-05-10
+
+### 🎨 CERTIFICATE UI ENHANCEMENTS
+- **Loading States**: Added loading indicators for certificate action buttons (issue, approve, reject, revoke) with contextual Kyrgyz labels
+- **Smart Button Labels**: Dynamic button text that shows loading state during certificate operations
+- **Delivery Mode Progress**: Updated progress section to show "Аяктоо" (Completion) for delivery courses instead of "Прогресс"
+- **Eligibility Breakdown**: Added detailed attendance, homework, and activity percentage display for delivery course eligibility
+
+### 🔧 TECHNICAL IMPROVEMENTS
+- **Action Tracking**: Added `certificateActionKind` state to track active certificate operations
+- **State Management**: Enhanced certificate action handlers with proper loading state management
+- **UI Consistency**: Improved certificate action button states and visual feedback
+- **Data Display**: Better eligibility information presentation for delivery vs self-paced courses
+
+---
+
 ## [1.7.1] - 2026-05-10
 
 ### 🖼️ CERTIFICATE PREVIEW ENHANCEMENTS
