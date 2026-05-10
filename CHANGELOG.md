@@ -2,6 +2,22 @@
 
 Version bumps are classified by delivery scale; see `VERSIONING.md`.
 
+## [1.7.1] - 2026-05-10
+
+### 🖼️ CERTIFICATE PREVIEW ENHANCEMENTS
+- **Exact Preview Scaling**: Implemented intelligent certificate preview scaling that fits content perfectly within iframe boundaries
+- **Responsive Preview Frames**: Added dynamic height/width calculations for both inline and modal certificate previews
+- **Preview Cleanup**: Added proper cleanup handlers for preview frame resize observers and event listeners
+- **Visual Improvements**: Enhanced certificate preview styling with proper overflow handling and centering
+
+### 🔧 TECHNICAL IMPROVEMENTS
+- **Frame Management**: Added `fitExactPreviewFrame` function with automatic scaling and positioning
+- **Event Handling**: Implemented proper cleanup for resize observers and window resize events
+- **Performance**: Optimized preview rendering with requestAnimationFrame and debounced resize handling
+- **Error Handling**: Enhanced preview error boundaries and cleanup on component unmount
+
+---
+
 ## [1.7.0] - 2026-05-10
 
 ### 🎓 CERTIFICATE MANAGEMENT SYSTEM

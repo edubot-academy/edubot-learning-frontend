@@ -75,7 +75,15 @@ const normalizeExactPreviewHtml = (html) => {
         <script id="edubot-preview-fit-script">
             (function () {
                 function getRootNode() {
-                    return document.body ? document.body.firstElementChild : null;
+                    if (!document.body) return null;
+                    var children = document.body.children || [];
+                    for (var index = 0; index < children.length; index += 1) {
+                        var tagName = children[index].tagName;
+                        if (!/^(STYLE|SCRIPT|META|LINK)$/i.test(tagName)) {
+                            return children[index];
+                        }
+                    }
+                    return null;
                 }
 
                 function fitPreview() {
@@ -129,6 +137,78 @@ const normalizeExactPreviewHtml = (html) => {
     }
 
     return `${fitStyles}${fitScript}${withViewport}`;
+};
+
+const getPreviewRootNode = (doc) => {
+    if (!doc?.body) return null;
+    return Array.from(doc.body.children).find(
+        (child) => !['STYLE', 'SCRIPT', 'META', 'LINK'].includes(child.tagName)
+    );
+};
+
+const fitExactPreviewFrame = (iframe) => {
+    const fit = () => {
+        const doc = iframe?.contentDocument;
+        const root = getPreviewRootNode(doc);
+        if (!iframe || !doc || !root) return;
+
+        const availableWidth = Math.max(iframe.clientWidth - 24, 260);
+        const availableHeight = Math.max(iframe.clientHeight - 24, 260);
+
+        doc.documentElement.style.margin = '0';
+        doc.documentElement.style.padding = '0';
+        doc.documentElement.style.width = '100%';
+        doc.documentElement.style.overflow = 'hidden';
+        doc.body.style.margin = '0';
+        doc.body.style.padding = '0';
+        doc.body.style.width = '100%';
+        doc.body.style.overflow = 'hidden';
+        doc.body.style.background = '#ffffff';
+
+        root.style.transform = 'none';
+        root.style.transformOrigin = 'top left';
+        root.style.position = 'absolute';
+        root.style.left = '0';
+        root.style.top = '0';
+        root.style.margin = '0';
+        root.style.maxWidth = 'none';
+
+        const rect = root.getBoundingClientRect();
+        const baseWidth = Math.max(root.scrollWidth, root.offsetWidth, rect.width);
+        const baseHeight = Math.max(root.scrollHeight, root.offsetHeight, rect.height);
+        if (!baseWidth || !baseHeight) return;
+
+        const scale = Math.min(availableWidth / baseWidth, availableHeight / baseHeight, 1);
+        const scaledWidth = baseWidth * scale;
+        const scaledHeight = baseHeight * scale;
+        const leftOffset = Math.max((iframe.clientWidth - scaledWidth) / 2, 0);
+        const topOffset = Math.max((iframe.clientHeight - scaledHeight) / 2, 0);
+
+        root.style.left = `${leftOffset}px`;
+        root.style.top = `${topOffset}px`;
+        root.style.transform = `scale(${scale})`;
+        doc.documentElement.style.height = `${iframe.clientHeight}px`;
+        doc.body.style.height = `${iframe.clientHeight}px`;
+    };
+
+    const scheduleFit = () => window.requestAnimationFrame(fit);
+    const timeouts = [0, 80, 240].map((delay) => window.setTimeout(scheduleFit, delay));
+    const resizeObserver =
+        typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(scheduleFit);
+
+    resizeObserver?.observe(iframe);
+    if (iframe.parentElement) {
+        resizeObserver?.observe(iframe.parentElement);
+    }
+    window.addEventListener('resize', scheduleFit);
+    iframe.contentWindow?.addEventListener('resize', scheduleFit);
+
+    return () => {
+        timeouts.forEach((timeoutId) => window.clearTimeout(timeoutId));
+        resizeObserver?.disconnect();
+        window.removeEventListener('resize', scheduleFit);
+        iframe.contentWindow?.removeEventListener('resize', scheduleFit);
+    };
 };
 
 const getCertificateBadge = (status) => {
@@ -738,6 +818,7 @@ const CertificatesSection = ({
     const [exactPreviewError, setExactPreviewError] = useState('');
     const [downloadingCertificateKey, setDownloadingCertificateKey] = useState(null);
     const previewRequestIdRef = useRef(0);
+    const previewFrameCleanupRef = useRef({});
     const [settingsForm, setSettingsForm] = useState({
         certificateTitle: 'Certificate of Achievement',
         certificateLanguage: 'en',
@@ -872,6 +953,20 @@ const CertificatesSection = ({
         { label: 'Royal', primary: '#1E3A8A', accent: '#F59E0B' },
         { label: 'Graphite', primary: '#1F2937', accent: '#14B8A6' },
     ];
+
+    const handlePreviewFrameLoad = useCallback((surface) => {
+        return (event) => {
+            previewFrameCleanupRef.current[surface]?.();
+            previewFrameCleanupRef.current[surface] = fitExactPreviewFrame(event.currentTarget);
+        };
+    }, []);
+
+    useEffect(() => {
+        return () => {
+            Object.values(previewFrameCleanupRef.current).forEach((cleanup) => cleanup?.());
+            previewFrameCleanupRef.current = {};
+        };
+    }, []);
 
     const handleSaveTemplateSettings = useCallback(async () => {
         if (!isAdminMode) return false;
@@ -1844,10 +1939,11 @@ const CertificatesSection = ({
                                             title="Exact certificate preview inline"
                                             srcDoc={exactPreviewHtml}
                                             scrolling="no"
-                                            className={`w-full rounded-[24px] border border-edubot-line/70 bg-white ${
+                                            onLoad={handlePreviewFrameLoad('inline')}
+                                            className={`w-full overflow-hidden rounded-[24px] border border-edubot-line/70 bg-white ${
                                                 isPortraitPreview
-                                                    ? 'aspect-[210/297] max-h-[640px]'
-                                                    : 'aspect-[297/210] max-h-[440px]'
+                                                    ? 'h-[min(640px,80vw)] min-h-[360px]'
+                                                    : 'h-[min(440px,56vw)] min-h-[260px]'
                                             }`}
                                         />
                                     ) : (
@@ -2384,7 +2480,9 @@ const CertificatesSection = ({
                                 title="Exact certificate preview"
                                 srcDoc={exactPreviewHtml}
                                 data-preview-surface="modal"
-                                className="h-[86vh] w-full rounded-[24px] border border-slate-700 bg-white"
+                                scrolling="no"
+                                onLoad={handlePreviewFrameLoad('modal')}
+                                className="h-[86vh] w-full overflow-hidden rounded-[24px] border border-slate-700 bg-white"
                             />
                         </div>
                     ) : (
