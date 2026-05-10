@@ -85,6 +85,15 @@ import {
 import { ADMIN_TABS, NAV_ITEMS, USERS_QUERY_KEYS } from '../utils/adminPanel.constants';
 import { calculateVisiblePages } from '../utils/adminPanel.helpers';
 
+const cleanTenantPayload = (payload = {}) => Object.fromEntries(
+    Object.entries(payload)
+        .filter(([, value]) => {
+            if (typeof value === 'string') return value.trim() !== '';
+            return value !== undefined && value !== null;
+        })
+        .map(([key, value]) => [key, typeof value === 'string' ? value.trim() : value])
+);
+
 const AdminPanel = () => {
     const { user } = useContext(AuthContext);
     const [searchParams, setSearchParams] = useSearchParams();
@@ -105,7 +114,19 @@ const AdminPanel = () => {
     const [, setCompaniesTotalPages] = useState(1);
     const [companySearch, setCompanySearch] = useState('');
     const [companyPage] = useState(1);
-    const [newCompanyName, setNewCompanyName] = useState('');
+    const [newCompanyForm, setNewCompanyForm] = useState({
+        name: '',
+        subdomain: '',
+        customDomain: '',
+        status: 'active',
+        plan: '',
+        billingStatus: '',
+        crmTenantId: '',
+        crmTenantSlug: '',
+        crmPrimaryDomain: '',
+        timezone: 'Asia/Bishkek',
+        locale: 'ky',
+    });
 
     const [sidebarOpen, setSidebarOpen] = useState(true);
     const [aiPromptCourseId, setAiPromptCourseId] = useState(null);
@@ -440,7 +461,7 @@ const AdminPanel = () => {
             const res = await listCompanies({
                 page: companyPage,
                 limit: 10,
-                search: companySearch,
+                q: companySearch,
             });
             setCompanies(res?.items || []);
             setCompaniesTotalPages(res?.totalPages || 1);
@@ -716,28 +737,43 @@ const AdminPanel = () => {
     };
 
     // Company management handlers
-    const handleCreateCompany = async () => {
-        if (!newCompanyName.trim()) return;
+    const handleCreateCompany = async (payload) => {
+        const companyPayload = payload || newCompanyForm;
+        if (!companyPayload.name?.trim()) return;
         try {
-            const created = await createCompany({ name: newCompanyName.trim() });
+            const created = await createCompany(cleanTenantPayload(companyPayload));
             setCompanies((prev) => [...prev, created]);
-            setNewCompanyName('');
-            toast.success('Компания ийгиликтүү кошулду');
+            setNewCompanyForm({
+                name: '',
+                subdomain: '',
+                customDomain: '',
+                status: 'active',
+                plan: '',
+                billingStatus: '',
+                crmTenantId: '',
+                crmTenantSlug: '',
+                crmPrimaryDomain: '',
+                timezone: 'Asia/Bishkek',
+                locale: 'ky',
+            });
+            toast.success('Tenant ийгиликтүү кошулду');
+            return created;
         } catch {
-            toast.error('Компания кошууда ката кетти');
+            toast.error('Tenant кошууда ката кетти');
+            return null;
         }
     };
 
-    const handleUpdateCompany = async (companyId, newName) => {
-        if (!newName.trim()) return;
+    const handleUpdateCompany = async (companyId, patch) => {
+        if (!patch?.name?.trim()) return;
         try {
-            await updateCompany(companyId, { name: newName.trim() });
+            const updated = await updateCompany(companyId, cleanTenantPayload(patch));
             setCompanies((prev) => prev.map((company) =>
-                company.id === companyId ? { ...company, name: newName.trim() } : company
+                company.id === companyId ? { ...company, ...updated } : company
             ));
-            toast.success('Компания ийгиликтүү жаңыртылды');
+            toast.success('Tenant ийгиликтүү жаңыртылды');
         } catch {
-            toast.error('Компанияны жаңыртууда ката кетти');
+            toast.error('Tenant жаңыртууда ката кетти');
         }
     };
 
@@ -1344,8 +1380,8 @@ const AdminPanel = () => {
                         companies={companies}
                         companySearch={companySearch}
                         setCompanySearch={setCompanySearch}
-                        newCompanyName={newCompanyName}
-                        setNewCompanyName={setNewCompanyName}
+                        newCompanyForm={newCompanyForm}
+                        setNewCompanyForm={setNewCompanyForm}
                         courses={courses}
                         onCreateCompany={handleCreateCompany}
                         onUpdateCompany={handleUpdateCompany}

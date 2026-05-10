@@ -1,42 +1,88 @@
+/* eslint-disable react/prop-types */
 import React from 'react';
 import toast from 'react-hot-toast';
 import {
     listCompanyMembers,
     addCompanyMember,
+    addCompanyOwner,
     removeCompanyMember,
+    removeCompanyOwner,
     setCompanyMemberRole,
+    inviteCompanyMember,
     fetchUsers,
 } from '@services/api';
+import { isPlatformAdmin } from '@shared/utils/roles';
+import { DashboardInsetPanel } from '@components/ui/dashboard';
+import BasicModal from '@shared/ui/BasicModal';
 
-const ROLES = [
-    { value: 'company_admin', label: 'Админ' },
-    { value: 'instructor', label: 'Окутуучу' },
-    { value: 'assistant', label: 'Ассистент' },
+const MANAGEABLE_ROLES = [
+    { value: 'admin', label: 'Tenant admin' },
+    { value: 'company_admin', label: 'Company admin' },
+    { value: 'instructor', label: 'Instructor' },
+    { value: 'assistant', label: 'Assistant' },
+    { value: 'student', label: 'Student' },
 ];
 
-export default function CompanyMembers({ companyId }) {
+const PLATFORM_ROLES = [
+    { value: 'owner', label: 'Owner' },
+    ...MANAGEABLE_ROLES,
+];
+
+const ROLE_LABELS = PLATFORM_ROLES.reduce((acc, role) => ({ ...acc, [role.value]: role.label }), {});
+
+export default function CompanyMembers({
+    companyId,
+    currentUser,
+    title = 'Tenant members',
+    description = 'Manage tenant roles. Owner is platform-managed and only visible to platform admins.',
+    allowedRoles,
+}) {
     const [items, setItems] = React.useState([]);
     const [role, setRole] = React.useState('instructor');
+    const canManageOwner = isPlatformAdmin(currentUser);
+    const allowedRoleSet = React.useMemo(
+        () => (allowedRoles?.length ? new Set(allowedRoles) : null),
+        [allowedRoles],
+    );
+    const roleOptions = React.useMemo(() => {
+        const options = canManageOwner ? PLATFORM_ROLES : MANAGEABLE_ROLES;
+        return allowedRoleSet ? options.filter((option) => allowedRoleSet.has(option.value)) : options;
+    }, [allowedRoleSet, canManageOwner]);
+    const visibleItems = React.useMemo(
+        () => (allowedRoleSet ? items.filter((item) => allowedRoleSet.has(item.role)) : items),
+        [allowedRoleSet, items],
+    );
 
-    // search UI state
     const [q, setQ] = React.useState('');
     const [results, setResults] = React.useState([]);
     const [searching, setSearching] = React.useState(false);
-    const [activeIdx, setActiveIdx] = React.useState(-1); // keyboard highlight
-    const [selected, setSelected] = React.useState(null); // {id, fullName, email, avatarUrl?}
+    const [activeIdx, setActiveIdx] = React.useState(-1);
+    const [selected, setSelected] = React.useState(null);
+    const [addingMember, setAddingMember] = React.useState(false);
+    const [removingKey, setRemovingKey] = React.useState(null);
+    const [updatingRoleKey, setUpdatingRoleKey] = React.useState(null);
+    const [inviteOpen, setInviteOpen] = React.useState(false);
+    const [inviteSaving, setInviteSaving] = React.useState(false);
+    const [inviteResult, setInviteResult] = React.useState(null);
+    const [inviteForm, setInviteForm] = React.useState({
+        fullName: '',
+        email: '',
+        role: roleOptions[0]?.value || 'instructor',
+        sendEmail: false,
+    });
 
-    const load = async () => {
+    const load = React.useCallback(async () => {
         try {
             setItems(await listCompanyMembers(companyId));
         } catch {
             toast.error('Мүчөлөрдү жүктөөдө ката.');
         }
-    };
-    React.useEffect(() => {
-        load();
     }, [companyId]);
 
-    // Debounced user search via fetchUsers({ search })
+    React.useEffect(() => {
+        load();
+    }, [load]);
+
     React.useEffect(() => {
         if (selected) {
             setResults([]);
@@ -55,8 +101,7 @@ export default function CompanyMembers({ companyId }) {
             try {
                 const res = await fetchUsers({ page: 1, limit: 8, search: q.trim() });
                 const arr = Array.isArray(res) ? res : (res?.data ?? []);
-                // exclude existing members by userId
-                const memberIds = new Set(items.map((m) => m.userId));
+                const memberIds = new Set(items.filter((m) => m.role === role).map((m) => m.userId));
                 const cleaned = arr
                     .filter((u) => !memberIds.has(u.id))
                     .map((u) => ({
@@ -75,7 +120,7 @@ export default function CompanyMembers({ companyId }) {
             }
         }, 300);
         return () => clearTimeout(t);
-    }, [q, items, selected]);
+    }, [q, items, selected, role]);
 
     const onPick = (u) => {
         setSelected(u);
@@ -85,46 +130,123 @@ export default function CompanyMembers({ companyId }) {
         setActiveIdx(-1);
     };
 
+    const resetPicker = () => {
+        setSelected(null);
+        setQ('');
+        setRole(roleOptions[0]?.value || 'instructor');
+    };
+
+    React.useEffect(() => {
+        if (!roleOptions.some((option) => option.value === role)) {
+            setRole(roleOptions[0]?.value || 'instructor');
+        }
+    }, [role, roleOptions]);
+
+    React.useEffect(() => {
+        if (!roleOptions.some((option) => option.value === inviteForm.role)) {
+            setInviteForm((prev) => ({ ...prev, role: roleOptions[0]?.value || 'instructor' }));
+        }
+    }, [inviteForm.role, roleOptions]);
+
     const onAdd = async (e) => {
         e?.preventDefault?.();
         const userId = selected?.id;
         if (!userId) return toast.error('Колдонуучуну тандаңыз.');
         try {
-            await addCompanyMember(companyId, { userId, role });
+            setAddingMember(true);
+            if (role === 'owner') {
+                await addCompanyOwner(companyId, userId);
+            } else {
+                await addCompanyMember(companyId, { userId, role });
+            }
             toast.success('Мүчө кошулду.');
-            setSelected(null);
-            setQ('');
-            setRole('instructor');
+            resetPicker();
             await load();
         } catch {
             toast.error('Кошууда ката.');
+        } finally {
+            setAddingMember(false);
         }
     };
 
-    const onRemove = async (memberId) => {
+    const onRemove = async (member) => {
         if (!confirm('Өчүрүүгө ишенимдүүбү?')) return;
+        const key = member.id || `${member.userId}-${member.role}`;
         try {
-            await removeCompanyMember(companyId, memberId);
+            setRemovingKey(key);
+            if (member.role === 'owner') {
+                await removeCompanyOwner(companyId, member.userId);
+            } else {
+                await removeCompanyMember(companyId, member.userId, member.role);
+            }
             toast.success('Өчүрүлдү.');
             load();
         } catch {
             toast.error('Өчүрүү катасы.');
+        } finally {
+            setRemovingKey(null);
         }
     };
 
-    const onSetRole = async (memberId, newRole) => {
+    const onSetRole = async (member, newRole) => {
+        const key = member.id || `${member.userId}-${member.role}`;
         try {
-            await setCompanyMemberRole(companyId, memberId, newRole);
-            setItems((prev) =>
-                prev.map((m) => (m.userId === memberId ? { ...m, role: newRole } : m))
-            );
+            if (newRole === member.role) return;
+            setUpdatingRoleKey(key);
+            await setCompanyMemberRole(companyId, member.userId, newRole, 'replace', member.role);
+            await load();
             toast.success('Роль өзгөртүлдү.');
         } catch {
             toast.error('Роль өзгөртүү катасы.');
+        } finally {
+            setUpdatingRoleKey(null);
         }
     };
 
-    // Keyboard control for dropdown: ↑/↓ to move, Enter to pick, Esc to close
+    const closeInvite = () => {
+        if (inviteSaving) return;
+        setInviteOpen(false);
+        setInviteResult(null);
+        setInviteForm({
+            fullName: '',
+            email: '',
+            role: roleOptions[0]?.value || 'instructor',
+            sendEmail: false,
+        });
+    };
+
+    const onInvite = async (event) => {
+        event.preventDefault();
+        setInviteSaving(true);
+        setInviteResult(null);
+        try {
+            const result = await inviteCompanyMember(companyId, {
+                fullName: inviteForm.fullName.trim(),
+                email: inviteForm.email.trim(),
+                role: inviteForm.role,
+                sendEmail: inviteForm.sendEmail,
+            });
+            setInviteResult(result);
+            toast.success(result.created ? 'User created and added.' : 'User added to tenant.');
+            await load();
+        } catch (error) {
+            toast.error(error?.response?.data?.message || 'Invite/create failed.');
+        } finally {
+            setInviteSaving(false);
+        }
+    };
+
+    const copySetupLink = async () => {
+        const link = inviteResult?.onboarding?.setupLink;
+        if (!link) return;
+        try {
+            await navigator.clipboard.writeText(link);
+            toast.success('Setup link copied.');
+        } catch {
+            toast.error('Could not copy setup link.');
+        }
+    };
+
     const onKeyDown = (e) => {
         if (!results.length) {
             if (e.key === 'Escape') setResults([]);
@@ -147,14 +269,32 @@ export default function CompanyMembers({ companyId }) {
     };
 
     return (
-        <div className="bg-white dark:bg-[#141619] rounded shadow p-4 space-y-4">
-            {/* Add member */}
+        <DashboardInsetPanel
+            title={title}
+            description={description}
+        >
+        <div className="mt-4 space-y-4">
+            <div>
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <p className="text-sm text-edubot-muted dark:text-slate-400">
+                        Search an existing user and assign the role they should hold in this tenant.
+                    </p>
+                    <button
+                        type="button"
+                        className="dashboard-button-secondary"
+                        onClick={() => setInviteOpen(true)}
+                    >
+                        Invite/create member
+                    </button>
+                </div>
+            </div>
+
             <form onSubmit={onAdd} className="space-y-2">
                 <div className="grid md:grid-cols-3 gap-2">
                     <div className="relative">
                         <input
-                            className="border rounded px-3 py-2 w-full text-black dark:text-white bg-white dark:bg-[#222222]"
-                            placeholder="Аты же Email боюнча издөө…"
+                            className="dashboard-field w-full"
+                            placeholder="Search by name or email..."
                             value={q}
                             onChange={(e) => {
                                 setQ(e.target.value);
@@ -169,11 +309,11 @@ export default function CompanyMembers({ companyId }) {
                             }
                             autoComplete="off"
                         />
-                        {(results.length > 0 || searching) && (
-                            <div className="absolute z-10 mt-1 w-full bg-white border rounded shadow max-h-72 overflow-auto">
+                        {!selected && (results.length > 0 || searching || q.trim()) && (
+                            <div className="absolute z-10 mt-1 w-full overflow-auto rounded-2xl border border-edubot-line bg-white shadow-edubot-card max-h-72 dark:border-slate-700 dark:bg-slate-900">
                                 {searching && (
                                     <div className="px-3 py-2 text-sm text-gray-500">
-                                        Изделүүдө…
+                                        Изделүүдө...
                                     </div>
                                 )}
                                 {!searching &&
@@ -182,7 +322,7 @@ export default function CompanyMembers({ companyId }) {
                                             type="button"
                                             key={u.id}
                                             onClick={() => onPick(u)}
-                                            className={`w-full text-left px-3 py-2 flex items-center gap-2 hover:bg-gray-50 ${i === activeIdx ? 'bg-gray-50' : ''}`}
+                                            className={`w-full text-left px-3 py-2 flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-gray-800 ${i === activeIdx ? 'bg-gray-50 dark:bg-gray-800' : ''}`}
                                         >
                                             {u.avatarUrl ? (
                                                 <img
@@ -194,12 +334,8 @@ export default function CompanyMembers({ companyId }) {
                                                 <div className="h-6 w-6 rounded-full bg-gray-200" />
                                             )}
                                             <div className="flex-1">
-                                                <div className="text-sm">
-                                                    {u.fullName || `#${u.id}`}
-                                                </div>
-                                                <div className="text-xs text-gray-500">
-                                                    {u.email || '—'}
-                                                </div>
+                                                <div className="text-sm">{u.fullName || `#${u.id}`}</div>
+                                                <div className="text-xs text-gray-500">{u.email || '-'}</div>
                                             </div>
                                             <div className="text-xs text-gray-400">#{u.id}</div>
                                         </button>
@@ -214,82 +350,84 @@ export default function CompanyMembers({ companyId }) {
                     </div>
 
                     <select
-                        className="border rounded px-3 py-2 text-black dark:text-white bg-white dark:bg-[#222222]"
+                        className="dashboard-select"
                         value={role}
                         onChange={(e) => setRole(e.target.value)}
                     >
-                        {ROLES.map((r) => (
+                        {roleOptions.map((r) => (
                             <option key={r.value} value={r.value}>
                                 {r.label}
                             </option>
                         ))}
                     </select>
 
-                    <button
-                        className="bg-blue-600 text-white px-4 py-2 rounded disabled:opacity-50"
-                        disabled={!selected}
-                    >
-                        Кошуу
+                    <button className="dashboard-button-primary disabled:cursor-not-allowed disabled:opacity-50" disabled={!selected || addingMember}>
+                        {addingMember ? 'Adding...' : 'Add member'}
                     </button>
-                </div>
-
-                <div className="text-xs text-gray-500">
-                    Колдонуучуну тандап, ролду белгилеңиз. Enter басыңыз — биринчи натыйжа тандалат.
                 </div>
             </form>
 
-            {/* Members table */}
-            <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm">
-                    <thead>
-                        <tr className="border-b">
-                            <th className="p-2">Колдонуучу</th>
-                            <th className="p-2">Email</th>
-                            <th className="p-2">Роль</th>
-                            <th className="p-2">Аракеттер</th>
+            <div className="overflow-x-auto rounded-2xl border border-edubot-line/80 dark:border-slate-700">
+                <table className="min-w-[42rem] w-full text-left text-sm">
+                    <thead className="bg-edubot-surfaceAlt/70 text-xs uppercase tracking-wide text-edubot-muted dark:bg-slate-900 dark:text-slate-400">
+                        <tr>
+                            <th className="px-4 py-3 font-semibold">User</th>
+                            <th className="px-4 py-3 font-semibold">Email</th>
+                            <th className="px-4 py-3 font-semibold">Role</th>
+                            <th className="px-4 py-3 font-semibold">Actions</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        {items.map((m) => (
-                            <tr key={m.userId} className="border-b">
-                                <td className="p-2">
-                                    <div className="flex items-center gap-2">
-                                        {m.avatarUrl ? (
-                                            <img
-                                                src={m.avatarUrl}
-                                                className="h-6 w-6 rounded-full object-cover"
-                                            />
-                                        ) : (
-                                            <div className="h-6 w-6 rounded-full bg-gray-200" />
-                                        )}
-                                        <div>{m.fullName || `#${m.userId}`}</div>
-                                    </div>
-                                </td>
-                                <td className="p-2">{m.email || '—'}</td>
-                                <td className="p-2">
-                                    <select
-                                        className="border rounded px-2 py-1 text-black dark:text-white bg-white dark:bg-[#222222]"
-                                        value={m.role}
-                                        onChange={(e) => onSetRole(m.userId, e.target.value)}
-                                    >
-                                        {ROLES.map((r) => (
-                                            <option key={r.value} value={r.value}>
-                                                {r.label}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </td>
-                                <td className="p-2">
-                                    <button
-                                        onClick={() => onRemove(m.userId)}
-                                        className="text-red-600 hover:underline"
-                                    >
-                                        Өчүрүү
-                                    </button>
-                                </td>
-                            </tr>
-                        ))}
-                        {items.length === 0 && (
+                    <tbody className="divide-y divide-edubot-line/70 bg-white dark:divide-slate-700 dark:bg-slate-950">
+                        {visibleItems.map((m) => {
+                            const rowKey = m.id || `${m.userId}-${m.role}`;
+                            const canEditRole = m.role !== 'owner' || canManageOwner;
+                            const rowRoleOptions = canManageOwner || m.role !== 'owner'
+                                ? roleOptions
+                                : [{ value: 'owner', label: ROLE_LABELS.owner }];
+                            return (
+                                <tr key={m.id || `${m.userId}-${m.role}`} className="transition hover:bg-edubot-surfaceAlt/40 dark:hover:bg-slate-900">
+                                    <td className="px-4 py-3">
+                                        <div className="flex items-center gap-2">
+                                            {m.avatarUrl ? (
+                                                <img
+                                                    src={m.avatarUrl}
+                                                    alt=""
+                                                    className="h-6 w-6 rounded-full object-cover"
+                                                />
+                                            ) : (
+                                                <div className="h-6 w-6 rounded-full bg-gray-200" />
+                                            )}
+                                            <div>{m.fullName || `#${m.userId}`}</div>
+                                        </div>
+                                    </td>
+                                    <td className="px-4 py-3 text-edubot-muted dark:text-slate-400">{m.email || '-'}</td>
+                                    <td className="px-4 py-3">
+                                        <select
+                                            className="dashboard-select min-w-[11rem]"
+                                            value={m.role}
+                                            onChange={(e) => onSetRole(m, e.target.value)}
+                                            disabled={!canEditRole || updatingRoleKey === rowKey || removingKey === rowKey}
+                                        >
+                                            {rowRoleOptions.map((r) => (
+                                                <option key={r.value} value={r.value}>
+                                                    {r.label}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </td>
+                                    <td className="px-4 py-3">
+                                        <button
+                                            onClick={() => onRemove(m)}
+                                            className="dashboard-button-secondary text-red-600 disabled:opacity-50"
+                                            disabled={(m.role === 'owner' && !canManageOwner) || removingKey === rowKey || updatingRoleKey === rowKey}
+                                        >
+                                            {removingKey === rowKey ? 'Removing...' : 'Remove'}
+                                        </button>
+                                    </td>
+                                </tr>
+                            );
+                        })}
+                        {visibleItems.length === 0 && (
                             <tr>
                                 <td colSpan="4" className="p-4 text-center text-gray-500">
                                     Мүчөлөр табылган жок.
@@ -300,5 +438,89 @@ export default function CompanyMembers({ companyId }) {
                 </table>
             </div>
         </div>
+        <BasicModal
+            isOpen={inviteOpen}
+            onClose={closeInvite}
+            title="Invite/create member"
+            subtitle="Create a platform user if needed, then attach the tenant role."
+            size="md"
+        >
+            <form onSubmit={onInvite} className="space-y-4">
+                <label className="block space-y-1">
+                    <span className="text-xs font-semibold uppercase tracking-wide text-edubot-muted dark:text-slate-400">
+                        Full name
+                    </span>
+                    <input
+                        className="dashboard-field w-full"
+                        value={inviteForm.fullName}
+                        onChange={(event) => setInviteForm((prev) => ({ ...prev, fullName: event.target.value }))}
+                        required
+                        minLength={2}
+                    />
+                </label>
+                <label className="block space-y-1">
+                    <span className="text-xs font-semibold uppercase tracking-wide text-edubot-muted dark:text-slate-400">
+                        Email
+                    </span>
+                    <input
+                        className="dashboard-field w-full"
+                        type="email"
+                        value={inviteForm.email}
+                        onChange={(event) => setInviteForm((prev) => ({ ...prev, email: event.target.value }))}
+                        required
+                    />
+                </label>
+                <label className="block space-y-1">
+                    <span className="text-xs font-semibold uppercase tracking-wide text-edubot-muted dark:text-slate-400">
+                        Tenant role
+                    </span>
+                    <select
+                        className="dashboard-select w-full"
+                        value={inviteForm.role}
+                        onChange={(event) => setInviteForm((prev) => ({ ...prev, role: event.target.value }))}
+                    >
+                        {roleOptions.map((option) => (
+                            <option key={option.value} value={option.value}>
+                                {option.label}
+                            </option>
+                        ))}
+                    </select>
+                </label>
+                <label className="flex items-center gap-2 text-sm text-edubot-muted dark:text-slate-400">
+                    <input
+                        type="checkbox"
+                        checked={inviteForm.sendEmail}
+                        onChange={(event) => setInviteForm((prev) => ({ ...prev, sendEmail: event.target.checked }))}
+                    />
+                    Send setup email
+                </label>
+
+                {inviteResult?.onboarding?.setupLink && (
+                    <div className="rounded-xl border border-edubot-line bg-edubot-surfaceAlt/60 p-3 text-sm dark:border-slate-700 dark:bg-slate-900">
+                        <div className="font-semibold text-edubot-ink dark:text-white">Setup link</div>
+                        <div className="mt-1 break-all text-edubot-muted dark:text-slate-400">
+                            {inviteResult.onboarding.setupLink}
+                        </div>
+                        <button
+                            type="button"
+                            className="dashboard-button-secondary mt-3"
+                            onClick={copySetupLink}
+                        >
+                            Copy link
+                        </button>
+                    </div>
+                )}
+
+                <div className="flex justify-end gap-2">
+                    <button type="button" className="dashboard-button-secondary" onClick={closeInvite}>
+                        Close
+                    </button>
+                    <button className="dashboard-button-primary disabled:cursor-not-allowed disabled:opacity-50" disabled={inviteSaving}>
+                        {inviteSaving ? 'Saving...' : 'Create/invite'}
+                    </button>
+                </div>
+            </form>
+        </BasicModal>
+        </DashboardInsetPanel>
     );
 }

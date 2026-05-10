@@ -2,6 +2,46 @@
 
 Version bumps are classified by delivery scale; see `VERSIONING.md`.
 
+## [1.9.0] - 2026-05-10
+
+### 🏢 COMPANY MANAGEMENT SYSTEM
+- **Company Owner Management**: Added comprehensive company owner functionality with add/remove operations
+- **Company Invitations**: Implemented member invitation system for company onboarding
+- **Member Role Management**: Enhanced member role management with role transitions and mode support
+- **Company Activity Tracking**: Added activity logging and monitoring for company operations
+
+### 🛠️ ADMIN COMPANY ENHANCEMENTS
+- **Admin Companies Tab**: Major overhaul of AdminCompaniesTab with improved interface and functionality
+- **Platform Tenant Details**: Created dedicated PlatformTenantDetail component for tenant management
+- **Company Routes**: Added admin tenant detail routes for comprehensive company management
+- **Enhanced API Integration**: Improved company API with additional endpoints and error handling
+
+### 📊 COMPANY WORKFLOW IMPROVEMENTS
+- **Company Courses Management**: Enhanced course assignment and management for companies
+- **Member Management**: Improved company member interface with better role handling
+- **Company Details**: Enhanced company detail pages with more comprehensive information
+- **Navigation Updates**: Added proper routing and navigation for company management features
+
+### 🔧 TECHNICAL IMPROVEMENTS
+- **API Enhancements**: Fixed API endpoints (course/company vs course/companies)
+- **Route Protection**: Added proper access controls for company management routes
+- **Component Architecture**: Improved component structure for better maintainability
+- **Error Handling**: Enhanced error handling across company management features
+
+### 📁 NEW FILES
+- `src/features/admin/pages/PlatformTenantDetail.jsx` - Dedicated tenant management interface
+
+### 🔧 ENHANCED FILES
+- `src/app/routes.jsx` - Added platform tenant detail routes
+- `src/features/admin/components/AdminCompaniesTab.jsx` - Major interface overhaul
+- `src/features/admin/pages/AdminPanel.jsx` - Enhanced company management integration
+- `src/features/companies/api.js` - Added owner, invitation, and activity APIs
+- `src/pages/company/CompanyCourses.jsx` - Enhanced course management
+- `src/pages/company/CompanyDetail.jsx` - Improved company details
+- `src/pages/company/CompanyMembers.jsx` - Enhanced member management
+
+---
+
 ## [1.8.1] - 2026-05-10
 
 ### 🔐 ROLE MANAGEMENT ENHANCEMENTS

@@ -1,3 +1,4 @@
+/* eslint-disable react/prop-types */
 import React, { useContext } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { getCompany } from '@services/api';
@@ -50,11 +51,11 @@ export default function CompanyDetail() {
             </div>
 
             {tab === 'settings' && <CompanySettings company={company} onSaved={setCompany} />}
-            {tab === 'members' && <CompanyMembers companyId={companyId} />}
+            {tab === 'members' && <CompanyMembers companyId={companyId} currentUser={user} />}
             {tab === 'courses' && (
                 <CompanyCourses
                     companyId={companyId}
-                    canManage={company?.role === 'company_admin' || isPlatformAdmin(user)}
+                    canManage={['owner', 'admin', 'company_admin'].includes(company?.role) || isPlatformAdmin(user)}
                 />
             )}
         </div>

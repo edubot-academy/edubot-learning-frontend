@@ -1,3 +1,4 @@
+/* eslint-disable react/prop-types */
 import React from 'react';
 import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
@@ -9,6 +10,7 @@ import {
     unassignCourseFromCompany, // ✅ new
     // clearCourseCompany,           // ❌ no longer used here
 } from '@services/api';
+import { DashboardInsetPanel, EmptyState } from '@components/ui/dashboard';
 
 export default function CompanyCourses({ companyId, canManage = true }) {
     const [qInput, setQInput] = React.useState('');
@@ -22,6 +24,7 @@ export default function CompanyCourses({ companyId, canManage = true }) {
     const [searching, setSearching] = React.useState(false);
     const [results, setResults] = React.useState([]);
     const [attachingId, setAttachingId] = React.useState(null);
+    const [detachingId, setDetachingId] = React.useState(null);
 
     React.useEffect(() => {
         const t = setTimeout(() => setQ(qInput.trim()), 350);
@@ -48,11 +51,14 @@ export default function CompanyCourses({ companyId, canManage = true }) {
     const onDetach = async (courseId) => {
         if (!window.confirm('Бул курсту ушул компаниядан ажыратасызбы?')) return;
         try {
+            setDetachingId(courseId);
             await unassignCourseFromCompany(courseId, companyId); // ✅ pass both ids
             toast.success('Курс компаниядан ажыратылды.');
             await loadCompanyCourses();
         } catch {
             toast.error('Ажыратууда ката кетти.');
+        } finally {
+            setDetachingId(null);
         }
     };
 
@@ -106,16 +112,21 @@ export default function CompanyCourses({ companyId, canManage = true }) {
     }, [adding, searchQ, data]);
 
     return (
-        <div className="max-w-5xl mx-auto p-4 space-y-4">
-            {/* Header + Search */}
-            <div className="flex items-center justify-between">
-                <h1 className="text-2xl font-bold">Компания курстары</h1>
-                <div className="flex items-center gap-2">
+        <DashboardInsetPanel
+            title="Tenant courses"
+            description="Attach and detach courses that are available in this tenant workspace."
+        >
+        <div className="mt-4 space-y-4">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                <div className="text-sm text-edubot-muted dark:text-slate-400">
+                    Total linked courses: <b>{data.total}</b>
+                </div>
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
                     <input
                         value={qInput}
                         onChange={(e) => setQInput(e.target.value)}
-                        placeholder="Издөө… / Поиск…"
-                        className="border rounded px-3 py-1 text-black dark:text-white bg-white dark:bg-[#222222]"
+                        placeholder="Search courses"
+                        className="dashboard-field"
                     />
                     {canManage && (
                         <button
@@ -124,112 +135,126 @@ export default function CompanyCourses({ companyId, canManage = true }) {
                                 setSearchQ('');
                                 setResults([]);
                             }}
-                            className="bg-blue-600 text-white px-3 py-1 rounded"
+                            className="dashboard-button-primary"
                         >
-                            {adding ? 'Жабуу' : 'Курс кошуу'}
+                            {adding ? 'Close' : 'Add course'}
                         </button>
                     )}
                 </div>
             </div>
 
-            {/* Drawer for attaching */}
             {adding && canManage && (
-                <div className="border rounded p-3 space-y-3 bg-white">
-                    <div className="font-medium">Курс кошуу / Привязать курс к компании</div>
+                <div className="space-y-3 rounded-2xl border border-edubot-line/80 bg-edubot-surfaceAlt/40 p-4 dark:border-slate-700 dark:bg-slate-900/60">
+                    <div className="font-medium text-edubot-ink dark:text-white">Attach course</div>
                     <input
                         value={searchQ}
                         onChange={(e) => setSearchQ(e.target.value)}
-                        placeholder="Курс издө… (аты боюнча)"
-                        className="border rounded px-3 py-1 w-full"
+                        placeholder="Search by course title"
+                        className="dashboard-field w-full"
                     />
                     {searching ? (
-                        <div className="text-sm text-gray-500 dark:text-[#a6adba]">Изделүүдө…</div>
+                        <div className="text-sm text-edubot-muted dark:text-slate-400">Searching...</div>
                     ) : results.length === 0 ? (
-                        <div className="text-sm text-gray-500 dark:text-[#a6adba]">
-                            Көрсөтүү үчүн курс табылган жок.
-                        </div>
+                        searchQ.trim() ? (
+                            <EmptyState title="No courses found" subtitle="Try a different search term." />
+                        ) : (
+                            <p className="text-sm text-edubot-muted dark:text-slate-400">
+                                Search for a course title to attach it to this tenant.
+                            </p>
+                        )
                     ) : (
-                        <ul className="space-y-2">
+                        <div className="overflow-x-auto rounded-2xl border border-edubot-line/80 dark:border-slate-700">
+                            <table className="min-w-[42rem] w-full text-left text-sm">
+                                <thead className="bg-white/70 text-xs uppercase tracking-wide text-edubot-muted dark:bg-slate-950 dark:text-slate-400">
+                                    <tr>
+                                        <th className="px-4 py-3 font-semibold">Course</th>
+                                        <th className="px-4 py-3 font-semibold">Instructor</th>
+                                        <th className="px-4 py-3 font-semibold text-right">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-edubot-line/70 bg-white dark:divide-slate-700 dark:bg-slate-950">
                             {results.map((c) => {
                                 const disabled = attachingId === c.id;
                                 return (
-                                    <li
+                                    <tr
                                         key={c.id}
-                                        className="border rounded p-2 flex items-center justify-between"
+                                        className="transition hover:bg-edubot-surfaceAlt/40 dark:hover:bg-slate-900"
                                     >
-                                        <div>
-                                            <div className="font-medium">{c.title}</div>
-                                            <div className="text-xs text-gray-500 dark:text-[#a6adba]">
-                                                {c.instructor?.fullName || '—'}
-                                            </div>
-                                        </div>
-                                        <button
-                                            onClick={() => onAttach(c.id)}
-                                            disabled={disabled}
-                                            className={`px-3 py-1 rounded text-white ${
-                                                disabled
-                                                    ? 'bg-gray-400 cursor-not-allowed'
-                                                    : 'bg-green-600 hover:bg-green-700'
-                                            }`}
-                                        >
-                                            {disabled ? '...' : 'Байланыштыруу'}
-                                        </button>
-                                    </li>
+                                        <td className="px-4 py-3 font-medium text-edubot-ink dark:text-white">{c.title}</td>
+                                        <td className="px-4 py-3 text-edubot-muted dark:text-slate-400">{c.instructor?.fullName || '-'}</td>
+                                        <td className="px-4 py-3 text-right">
+                                            <button
+                                                onClick={() => onAttach(c.id)}
+                                                disabled={disabled}
+                                                className="dashboard-button-primary disabled:cursor-not-allowed disabled:opacity-60"
+                                            >
+                                                {disabled ? '...' : 'Attach'}
+                                            </button>
+                                        </td>
+                                    </tr>
                                 );
                             })}
-                        </ul>
+                                </tbody>
+                            </table>
+                        </div>
                     )}
                 </div>
             )}
 
-            {/* Company course list */}
             {loading ? (
                 <Loader fullScreen={false} />
             ) : (
                 <>
-                    <div className="text-sm text-gray-600 dark:text-[#a6adba]">
-                        Бардыгы: <b>{data.total}</b>
-                    </div>
+                    {(data.items || []).length ? (
+                        <div className="overflow-x-auto rounded-2xl border border-edubot-line/80 dark:border-slate-700">
+                            <table className="min-w-[42rem] w-full text-left text-sm">
+                                <thead className="bg-edubot-surfaceAlt/70 text-xs uppercase tracking-wide text-edubot-muted dark:bg-slate-900 dark:text-slate-400">
+                                    <tr>
+                                        <th className="px-4 py-3 font-semibold">Course</th>
+                                        <th className="px-4 py-3 font-semibold">Instructor</th>
+                                        <th className="px-4 py-3 font-semibold text-right">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-edubot-line/70 bg-white dark:divide-slate-700 dark:bg-slate-950">
+                                    {(data.items || []).map((c) => (
+                                        <tr key={c.id} className="transition hover:bg-edubot-surfaceAlt/40 dark:hover:bg-slate-900">
+                                            <td className="px-4 py-3 font-medium text-edubot-ink dark:text-white">{c.title}</td>
+                                            <td className="px-4 py-3 text-edubot-muted dark:text-slate-400">{c.instructor?.fullName || '-'}</td>
+                                            <td className="px-4 py-3">
+                                                <div className="flex items-center justify-end gap-2">
+                                                    <Link to={`/courses/${c.id}`} className="dashboard-button-secondary">
+                                                        View
+                                                    </Link>
+                                                    {canManage && (
+                                                <button
+                                                    onClick={() => onDetach(c.id)}
+                                                    disabled={detachingId === c.id}
+                                                    className="dashboard-button-secondary text-red-600 disabled:cursor-not-allowed disabled:opacity-60"
+                                                >
+                                                    {detachingId === c.id ? 'Detaching...' : 'Detach'}
+                                                </button>
+                                                    )}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    ) : (
+                        <EmptyState title="No linked courses" subtitle="Attach a course to make it available for this tenant." />
+                    )}
 
-                    <ul className="space-y-3">
-                        {(data.items || []).map((c) => (
-                            <li
-                                key={c.id}
-                                className="border rounded p-3 flex items-center justify-between"
-                            >
-                                <div>
-                                    <div className="font-medium">{c.title}</div>
-                                    <div className="text-sm text-gray-600 dark:text-[#a6adba]">
-                                        {c.instructor?.fullName || '—'}
-                                    </div>
-                                </div>
-                                <div className="flex items-center gap-3">
-                                    <Link
-                                        to={`/courses/${c.id}`}
-                                        className="text-blue-600 hover:underline"
-                                    >
-                                        Көрүү
-                                    </Link>
-                                    {canManage && (
-                                        <button
-                                            onClick={() => onDetach(c.id)}
-                                            className="text-red-600 hover:underline"
-                                        >
-                                            Ажыратуу
-                                        </button>
-                                    )}
-                                </div>
-                            </li>
-                        ))}
-                    </ul>
-
-                    {/* Pagination */}
                     <div className="flex gap-2 justify-center mt-4">
                         {Array.from({ length: data.totalPages || 1 }, (_, i) => i + 1).map((p) => (
                             <button
                                 key={p}
                                 onClick={() => setPage(p)}
-                                className={`px-3 py-1 border rounded ${p === page ? 'bg-blue-600 text-white' : ''}`}
+                                className={`rounded-xl border px-3 py-2 text-sm font-semibold transition ${
+                                    p === page
+                                        ? 'border-edubot-orange bg-edubot-orange text-white'
+                                        : 'border-edubot-line bg-white text-edubot-ink hover:bg-edubot-surfaceAlt dark:border-slate-700 dark:bg-slate-950 dark:text-white'
+                                }`}
                                 disabled={p === page}
                             >
                                 {p}
@@ -239,5 +264,6 @@ export default function CompanyCourses({ companyId, canManage = true }) {
                 </>
             )}
         </div>
+        </DashboardInsetPanel>
     );
 }

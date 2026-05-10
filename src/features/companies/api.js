@@ -41,7 +41,7 @@ export const unassignCourseFromCompany = async (courseId, companyId) => {
 };
 
 export const clearCourseCompany = async (courseId) => {
-    const { data } = await api.delete(`/courses/${courseId}/companies`);
+    const { data } = await api.delete(`/courses/${courseId}/company`);
     return data;
 };
 
@@ -68,6 +68,16 @@ export async function addCompanyMember(companyId, payload) {
     return data;
 }
 
+export async function addCompanyOwner(companyId, userId) {
+    const { data } = await api.post(`/companies/${companyId}/owners`, { userId });
+    return data;
+}
+
+export async function inviteCompanyMember(companyId, payload) {
+    const { data } = await api.post(`/companies/${companyId}/invitations`, payload);
+    return data;
+}
+
 export async function removeCompanyMember(companyId, userId, role) {
     const { data } = await api.delete(`/companies/${companyId}/members/${userId}`, {
         params: clean({ role }),
@@ -75,14 +85,30 @@ export async function removeCompanyMember(companyId, userId, role) {
     return data;
 }
 
-export async function setCompanyMemberRole(companyId, userId, role, mode = 'replace') {
-    const { data } = await api.patch(`/companies/${companyId}/members/${userId}`, { role, mode });
+export async function removeCompanyOwner(companyId, userId) {
+    const { data } = await api.delete(`/companies/${companyId}/owners/${userId}`);
+    return data;
+}
+
+export async function setCompanyMemberRole(companyId, userId, role, mode = 'replace', fromRole) {
+    const { data } = await api.patch(`/companies/${companyId}/members/${userId}`, {
+        role,
+        mode,
+        fromRole,
+    });
     return data;
 }
 
 export async function listCompanyCourses(companyId, { page = 1, limit = 20, q = '' } = {}) {
     const { data } = await api.get(`/companies/${companyId}/courses`, {
         params: clean({ page, limit, q }),
+    });
+    return data;
+}
+
+export async function listCompanyActivity(companyId, { page = 1, limit = 20 } = {}) {
+    const { data } = await api.get(`/companies/${companyId}/activity`, {
+        params: clean({ page, limit }),
     });
     return data;
 }
