@@ -228,7 +228,7 @@ const getCertificateBadge = (status) => {
     return 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300';
 };
 
-const getStudentCertificateState = (student) => {
+const getStudentCertificateState = (student, canIssueManually = true) => {
     const progress = Math.max(0, Math.min(100, Number(student?.progressPercent || 0)));
     const eligibility = student?.certificateEligibility;
     const isComplete =
@@ -270,38 +270,47 @@ const getStudentCertificateState = (student) => {
                   .join(', ')
             : '';
         return {
-            canIssue: true,
-            buttonLabel: 'Берүү',
-            helperText: missing
-                ? `Авто-берүү үчүн талаптар бүтө элек: ${missing}. Кол менен сертификат берсеңиз болот.`
-                : `Курс толук бүтө элек. Азыркы прогресс: ${progress}%. Кааласаңыз сертификатты азыр да бере аласыз.`,
+            canIssue: canIssueManually,
+            buttonLabel: canIssueManually ? 'Берүү' : 'Талаптар бүтө элек',
+            helperText: canIssueManually
+                ? missing
+                    ? `Авто-берүү үчүн талаптар бүтө элек: ${missing}. Кол менен сертификат берсеңиз болот.`
+                    : `Курс толук бүтө элек. Азыркы прогресс: ${progress}%. Кааласаңыз сертификатты азыр да бере аласыз.`
+                : missing
+                  ? `Сертификат үчүн талаптар бүтө элек: ${missing}.`
+                  : `Курс толук бүтө элек. Азыркы прогресс: ${progress}%.`,
             helperTone: 'text-amber-600 dark:text-amber-300',
         };
     }
 
     if (student?.certificateStatus === 'rejected') {
         return {
-            canIssue: true,
-            buttonLabel: 'Кайра берүү',
-            helperText: 'Мурдагы сертификат четке кагылган. Толук бүткөндүктөн кайра берсе болот.',
+            canIssue: canIssueManually,
+            buttonLabel: canIssueManually ? 'Кайра берүү' : 'Четке кагылган',
+            helperText: canIssueManually
+                ? 'Мурдагы сертификат четке кагылган. Толук бүткөндүктөн кайра берсе болот.'
+                : 'Мурдагы сертификат четке кагылган.',
             helperTone: 'text-red-600 dark:text-red-300',
         };
     }
 
     if (student?.certificateStatus === 'revoked') {
         return {
-            canIssue: true,
-            buttonLabel: 'Кайра берүү',
-            helperText:
-                'Мурдагы сертификат жокко чыгарылган. Кааласаңыз жаңысын кайра чыгара аласыз.',
+            canIssue: canIssueManually,
+            buttonLabel: canIssueManually ? 'Кайра берүү' : 'Жокко чыгарылган',
+            helperText: canIssueManually
+                ? 'Мурдагы сертификат жокко чыгарылган. Кааласаңыз жаңысын кайра чыгара аласыз.'
+                : 'Мурдагы сертификат жокко чыгарылган.',
             helperTone: 'text-slate-600 dark:text-slate-300',
         };
     }
 
     return {
-        canIssue: true,
-        buttonLabel: 'Берүү',
-        helperText: 'Студент курсту толук бүтүргөн. Сертификатты азыр чыгарса болот.',
+        canIssue: canIssueManually,
+        buttonLabel: canIssueManually ? 'Берүү' : 'Даяр',
+        helperText: canIssueManually
+            ? 'Студент курсту толук бүтүргөн. Сертификатты азыр чыгарса болот.'
+            : 'Студент курсту толук бүтүргөн. Сертификат автоматтык же админ эрежеси боюнча берилет.',
         helperTone: 'text-emerald-600 dark:text-emerald-300',
     };
 };
@@ -851,6 +860,10 @@ const CertificatesSection = ({
     disabledReason = '',
 }) => {
     const isAdminMode = mode === 'admin';
+    const canIssueCertificates = isAdminMode;
+    const canRevokeCertificates = isAdminMode;
+    const canApproveCertificates =
+        isAdminMode || certificateSettings?.approvalMode === 'instructor';
     const [selectedStudentId, setSelectedStudentId] = useState('');
     const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
     const [isSignatureModalOpen, setIsSignatureModalOpen] = useState(false);
@@ -1519,7 +1532,7 @@ const CertificatesSection = ({
                         description={
                             isAdminMode
                                 ? 'EduBot Learning негизги бренд бойдон калат. Бул жерде курс үчүн сакталуучу шаблон эрежелерин жөндөйсүз.'
-                                : 'EduBot Learning негизги бренд бойдон калат. Бул жерде сертификат тилин, кол коюучу маалыматты жана жеке кол сүрөтүңүздү жаңыртасыз.'
+                                : 'Курс сертификатынын көрүнүшүн жана берилген сертификаттарды ушул жерден көрөсүз.'
                         }
                     >
                         {isAdminMode ? (
@@ -1561,7 +1574,7 @@ const CertificatesSection = ({
                             </div>
                         ) : null}
                         <div className="mt-5 grid gap-5 xl:grid-cols-[minmax(0,1.04fr)_minmax(360px,0.96fr)]">
-                            <div className={isAdminMode ? 'space-y-4 xl:contents' : 'space-y-4'}>
+                            <div className={isAdminMode ? 'space-y-4 xl:contents' : 'hidden'}>
                                 {isAdminMode ? (
                                     <section className="rounded-[24px] border border-edubot-line/70 bg-white/55 p-5 shadow-edubot-soft dark:border-slate-700 dark:bg-slate-950/35">
                                         <div className="flex items-start justify-between gap-4">
@@ -1707,7 +1720,7 @@ const CertificatesSection = ({
                                 ) : null}
 
                                 <div
-                                    className={`grid gap-4 ${isAdminMode ? 'xl:col-span-2 xl:row-start-2 xl:grid-cols-2' : ''}`}
+                                    className={`grid gap-4 ${isAdminMode ? 'xl:col-span-2 xl:row-start-2 xl:grid-cols-2' : 'hidden'}`}
                                 >
                                     <section className="rounded-[24px] border border-edubot-line/70 bg-white/55 p-5 shadow-edubot-soft dark:border-slate-700 dark:bg-slate-950/35">
                                         <div>
@@ -2071,7 +2084,7 @@ const CertificatesSection = ({
                             </div>
 
                             <aside
-                                className={`rounded-[30px] border border-edubot-line/70 bg-slate-950 p-5 shadow-edubot-hover dark:border-slate-700 xl:sticky xl:top-6 xl:self-start ${isAdminMode ? 'xl:col-start-2 xl:row-start-1' : ''}`}
+                                className={`rounded-[30px] border border-edubot-line/70 bg-slate-950 p-5 shadow-edubot-hover dark:border-slate-700 xl:sticky xl:top-6 xl:self-start ${isAdminMode ? 'xl:col-start-2 xl:row-start-1' : 'xl:col-span-2'}`}
                             >
                                 <div className="space-y-4">
                                     <div className="flex flex-wrap items-center justify-between gap-4">
@@ -2134,18 +2147,21 @@ const CertificatesSection = ({
                                         />
                                     )}
                                 </div>
-                                <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-[20px] border border-slate-800 bg-slate-900/65 px-4 py-3">
-                                    <div className="text-sm text-slate-300">
-                                        <span>
-                                            {hasTemplateChanges
-                                                ? 'Өзгөртүүлөр сактала элек'
-                                                : 'Шаблон сакталган'}
-                                        </span>
+                                {isAdminMode ? (
+                                    <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-[20px] border border-slate-800 bg-slate-900/65 px-4 py-3">
+                                        <div className="text-sm text-slate-300">
+                                            <span>
+                                                {hasTemplateChanges
+                                                    ? 'Өзгөртүүлөр сактала элек'
+                                                    : 'Шаблон сакталган'}
+                                            </span>
+                                        </div>
                                     </div>
-                                </div>
+                                ) : null}
                             </aside>
                         </div>
 
+                        {isAdminMode ? (
                         <div className="mt-6 rounded-[24px] border border-edubot-line/70 bg-slate-50/85 px-5 py-4 dark:border-slate-700 dark:bg-slate-900/70">
                             <div className="flex flex-wrap items-start justify-between gap-5">
                                 <div className="space-y-1">
@@ -2225,6 +2241,7 @@ const CertificatesSection = ({
                                 </p>
                             </div>
                         </div>
+                        ) : null}
                     </DashboardInsetPanel>
 
                     <DashboardInsetPanel
@@ -2331,7 +2348,7 @@ const CertificatesSection = ({
                                 {visibleStudents.map((student) => {
                                     const issueState = getStudentCertificateState(
                                         student,
-                                        isAdminMode
+                                        canIssueCertificates
                                     );
                                     const downloadKey = `student-${
                                         student.certificatePublicId || student.id
@@ -2388,28 +2405,31 @@ const CertificatesSection = ({
                                                 </span>
                                             </div>
                                             <div className="mt-4 flex flex-wrap items-center gap-2">
-                                                <button
-                                                    type="button"
-                                                    onClick={() =>
-                                                        onCertificateAction(
-                                                            'issue',
-                                                            student,
-                                                            getCertificateDisplayPayload(student)
-                                                        )
-                                                    }
-                                                    disabled={!issueState.canIssue || isBusy}
-                                                    className={`${
-                                                        issueState.canIssue
-                                                            ? 'dashboard-button-primary'
-                                                            : 'dashboard-button-secondary'
-                                                    }`}
-                                                >
-                                                    {activeActionKind === 'issue'
-                                                        ? 'Берилүүдө...'
-                                                        : issueState.buttonLabel}
-                                                </button>
-                                                {student.certificateStatus ===
-                                                'pending_approval' ? (
+                                                {canIssueCertificates ? (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() =>
+                                                            onCertificateAction(
+                                                                'issue',
+                                                                student,
+                                                                getCertificateDisplayPayload(student)
+                                                            )
+                                                        }
+                                                        disabled={!issueState.canIssue || isBusy}
+                                                        className={`${
+                                                            issueState.canIssue
+                                                                ? 'dashboard-button-primary'
+                                                                : 'dashboard-button-secondary'
+                                                        }`}
+                                                    >
+                                                        {activeActionKind === 'issue'
+                                                            ? 'Берилүүдө...'
+                                                            : issueState.buttonLabel}
+                                                    </button>
+                                                ) : null}
+                                                {canApproveCertificates &&
+                                                student.certificateStatus ===
+                                                    'pending_approval' ? (
                                                     <>
                                                         <button
                                                             type="button"
@@ -2478,21 +2498,23 @@ const CertificatesSection = ({
                                                                 Текшерүү
                                                             </a>
                                                         ) : null}
-                                                        <button
-                                                            type="button"
-                                                            onClick={() =>
-                                                                onCertificateAction(
-                                                                    'revoke',
-                                                                    student
-                                                                )
-                                                            }
-                                                            disabled={isBusy}
-                                                            className="dashboard-button-secondary"
-                                                        >
-                                                            {activeActionKind === 'revoke'
-                                                                ? 'Жокко чыгарылууда...'
-                                                                : 'Жокко чыгаруу'}
-                                                        </button>
+                                                        {canRevokeCertificates ? (
+                                                            <button
+                                                                type="button"
+                                                                onClick={() =>
+                                                                    onCertificateAction(
+                                                                        'revoke',
+                                                                        student
+                                                                    )
+                                                                }
+                                                                disabled={isBusy}
+                                                                className="dashboard-button-secondary"
+                                                            >
+                                                                {activeActionKind === 'revoke'
+                                                                    ? 'Жокко чыгарылууда...'
+                                                                    : 'Жокко чыгаруу'}
+                                                            </button>
+                                                        ) : null}
                                                     </>
                                                 ) : null}
                                             </div>

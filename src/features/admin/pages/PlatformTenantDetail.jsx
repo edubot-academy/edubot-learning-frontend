@@ -83,6 +83,11 @@ const DEFAULT_SETTINGS = {
 const BLANK_FEATURE_FLAG = { key: '', value: true };
 const FEATURE_FLAG_DEFINITIONS = [
     {
+        key: 'courses.video.enabled',
+        label: 'Video course creation',
+        description: 'Allow this tenant to create private video courses.',
+    },
+    {
         key: 'courses.offline.enabled',
         label: 'Offline courses',
         description: 'Allow this tenant to run in-person course delivery.',

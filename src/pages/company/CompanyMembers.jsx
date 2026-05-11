@@ -9,6 +9,7 @@ import {
     removeCompanyOwner,
     setCompanyMemberRole,
     inviteCompanyMember,
+    resendCompanyInvitation,
     fetchUsers,
 } from '@services/api';
 import { isPlatformAdmin } from '@shared/utils/roles';
@@ -63,7 +64,9 @@ export default function CompanyMembers({
     const [updatingRoleKey, setUpdatingRoleKey] = React.useState(null);
     const [inviteOpen, setInviteOpen] = React.useState(false);
     const [inviteSaving, setInviteSaving] = React.useState(false);
+    const [resendingKey, setResendingKey] = React.useState(null);
     const [inviteResult, setInviteResult] = React.useState(null);
+    const [inviteLinkOpen, setInviteLinkOpen] = React.useState(false);
     const [inviteForm, setInviteForm] = React.useState({
         fullName: '',
         email: '',
@@ -247,6 +250,21 @@ export default function CompanyMembers({
         }
     };
 
+    const onResendInvite = async (member) => {
+        const rowKey = member.id || `${member.userId}-${member.role}`;
+        setResendingKey(rowKey);
+        try {
+            const result = await resendCompanyInvitation(companyId, member.userId, { sendEmail: true });
+            setInviteResult(result);
+            setInviteLinkOpen(true);
+            toast.success(result?.onboarding?.emailSent ? 'Invite resent.' : 'Invite link regenerated.');
+        } catch (error) {
+            toast.error(error?.response?.data?.message || 'Could not resend invite.');
+        } finally {
+            setResendingKey(null);
+        }
+    };
+
     const onKeyDown = (e) => {
         if (!results.length) {
             if (e.key === 'Escape') setResults([]);
@@ -381,6 +399,7 @@ export default function CompanyMembers({
                         {visibleItems.map((m) => {
                             const rowKey = m.id || `${m.userId}-${m.role}`;
                             const canEditRole = m.role !== 'owner' || canManageOwner;
+                            const canResendInvite = m.role === 'student';
                             const rowRoleOptions = canManageOwner || m.role !== 'owner'
                                 ? roleOptions
                                 : [{ value: 'owner', label: ROLE_LABELS.owner }];
@@ -416,13 +435,26 @@ export default function CompanyMembers({
                                         </select>
                                     </td>
                                     <td className="px-4 py-3">
-                                        <button
-                                            onClick={() => onRemove(m)}
-                                            className="dashboard-button-secondary text-red-600 disabled:opacity-50"
-                                            disabled={(m.role === 'owner' && !canManageOwner) || removingKey === rowKey || updatingRoleKey === rowKey}
-                                        >
-                                            {removingKey === rowKey ? 'Removing...' : 'Remove'}
-                                        </button>
+                                        <div className="flex flex-wrap gap-2">
+                                            {canResendInvite ? (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => onResendInvite(m)}
+                                                    className="dashboard-button-secondary disabled:opacity-50"
+                                                    disabled={resendingKey === rowKey || removingKey === rowKey || updatingRoleKey === rowKey}
+                                                >
+                                                    {resendingKey === rowKey ? 'Sending...' : 'Resend invite'}
+                                                </button>
+                                            ) : null}
+                                            <button
+                                                type="button"
+                                                onClick={() => onRemove(m)}
+                                                className="dashboard-button-secondary text-red-600 disabled:opacity-50"
+                                                disabled={(m.role === 'owner' && !canManageOwner) || removingKey === rowKey || updatingRoleKey === rowKey || resendingKey === rowKey}
+                                            >
+                                                {removingKey === rowKey ? 'Removing...' : 'Remove'}
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
                             );
@@ -520,6 +552,40 @@ export default function CompanyMembers({
                     </button>
                 </div>
             </form>
+        </BasicModal>
+        <BasicModal
+            isOpen={inviteLinkOpen}
+            onClose={() => setInviteLinkOpen(false)}
+            title="Invite setup link"
+            subtitle="Copy and share this link if the user did not receive the setup email."
+            size="md"
+        >
+            {inviteResult?.onboarding?.setupLink ? (
+                <div className="space-y-4">
+                    <div className="rounded-xl border border-edubot-line bg-edubot-surfaceAlt/60 p-3 text-sm dark:border-slate-700 dark:bg-slate-900">
+                        <div className="font-semibold text-edubot-ink dark:text-white">Setup link</div>
+                        <div className="mt-1 break-all text-edubot-muted dark:text-slate-400">
+                            {inviteResult.onboarding.setupLink}
+                        </div>
+                        <div className="mt-2 text-xs text-edubot-muted dark:text-slate-400">
+                            {inviteResult.onboarding.emailSent ? 'Email sent. ' : ''}
+                            Expires: {inviteResult.onboarding.expiresAt || 'soon'}.
+                        </div>
+                    </div>
+                    <div className="flex justify-end gap-2">
+                        <button type="button" className="dashboard-button-secondary" onClick={() => setInviteLinkOpen(false)}>
+                            Close
+                        </button>
+                        <button type="button" className="dashboard-button-primary" onClick={copySetupLink}>
+                            Copy link
+                        </button>
+                    </div>
+                </div>
+            ) : (
+                <div className="text-sm text-edubot-muted dark:text-slate-400">
+                    No setup link is available for this member. The account may already be active.
+                </div>
+            )}
         </BasicModal>
         </DashboardInsetPanel>
     );

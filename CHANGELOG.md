@@ -2,6 +2,31 @@
 
 Version bumps are classified by delivery scale; see `VERSIONING.md`.
 
+## [1.10.0] - 2026-05-12
+
+### 🏢 TENANT AND COMPANY MANAGEMENT
+- **Video Course Feature Flag**: Added `courses.video.enabled` to tenant feature flag definitions so platform admins can control private video course creation per tenant.
+- **Invitation Resend API**: Added frontend API support for regenerating tenant member setup links through the company invitation resend endpoint.
+- **Member Invitation UX**: Added a setup-link modal and copy flow for resent tenant student invitations.
+- **Invite Action Guarding**: Limited the resend invite action to student tenant rows to avoid offering onboarding-link actions for roles that cannot use student setup links.
+
+### 🎓 CERTIFICATE WORKFLOW REFINEMENTS
+- **Role-Aware Certificate Actions**: Restricted manual certificate issue and revoke controls to admin mode while preserving instructor approval/rejection when instructor approval mode is enabled.
+- **Instructor Certificate View**: Simplified the instructor certificate workspace to focus on previewing certificate appearance and issued certificates instead of exposing admin-only template controls.
+- **Certificate Helper Text**: Updated student certificate status messages to reflect whether manual certificate issue is available in the current mode.
+
+### 🧭 UX/UI AUDIT TRACKING
+- **Page-by-Page Audit Source**: Added `docs/shared/audits/PAGE_BY_PAGE_UX_UI_AUDIT.md` as the working source of truth for frontend UX/UI audit status, severity, roadmap priorities, and implementation tasks.
+
+### 🔧 ENHANCED FILES
+- `src/features/admin/pages/PlatformTenantDetail.jsx` - Added video course tenant feature flag definition.
+- `src/features/companies/api.js` - Added invitation resend API helper.
+- `src/pages/company/CompanyMembers.jsx` - Added resend invite setup-link flow for eligible student members.
+- `src/features/instructor-dashboard/components/CertificatesSection.jsx` - Refined certificate action permissions and instructor/admin rendering.
+- `docs/shared/audits/PAGE_BY_PAGE_UX_UI_AUDIT.md` - Added page-by-page UX/UI audit tracker.
+
+---
+
 ## [1.9.1] - 2026-05-10
 
 ### 🚩 TENANT FEATURE FLAGS SYSTEM

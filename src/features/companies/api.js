@@ -78,6 +78,11 @@ export async function inviteCompanyMember(companyId, payload) {
     return data;
 }
 
+export async function resendCompanyInvitation(companyId, userId, payload = {}) {
+    const { data } = await api.post(`/companies/${companyId}/invitations/${userId}/resend`, payload);
+    return data;
+}
+
 export async function removeCompanyMember(companyId, userId, role) {
     const { data } = await api.delete(`/companies/${companyId}/members/${userId}`, {
         params: clean({ role }),
