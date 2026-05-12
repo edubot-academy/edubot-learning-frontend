@@ -1,6 +1,7 @@
 import React from 'react';
 import toast from 'react-hot-toast';
 import { updateCompany, deleteCompany, uploadCompanyLogo } from '@services/api';
+import ConfirmationModal from '@shared/ui/ConfirmationModal';
 
 // ---- Stable defaults (do NOT inline arrays in props/defaults) ----
 const DEFAULT_KEYS = [
@@ -73,6 +74,7 @@ export default function CompanySettings({
     const [form, setForm] = React.useState(initial);
     const [saving, setSaving] = React.useState(false);
     const [deleting, setDeleting] = React.useState(false);
+    const [deleteConfirmOpen, setDeleteConfirmOpen] = React.useState(false);
     const [errors, setErrors] = React.useState({});
 
     // keep form in sync when company/keys change
@@ -136,9 +138,14 @@ export default function CompanySettings({
         setEdit(false);
     };
 
-    async function onDelete() {
+    function onDelete() {
         if (!allowDelete) return;
-        if (!window.confirm('Бул компанияны өчүрүүгө ишенимдүүсүзбү? / Удалить компанию?')) return;
+        setDeleteConfirmOpen(true);
+    }
+
+    async function confirmDelete() {
+        if (!allowDelete) return;
+
         try {
             setDeleting(true);
             await deleteCompany(company.id);
@@ -298,6 +305,7 @@ export default function CompanySettings({
 
     // ---------- UI ----------
     return (
+        <>
         <div className="bg-white dark:bg-[#141619] rounded shadow p-4 space-y-4">
             <div className="flex items-center justify-between">
                 <h2 className="text-lg font-semibold">Компания</h2>
@@ -463,5 +471,17 @@ export default function CompanySettings({
                 </form>
             )}
         </div>
+        <ConfirmationModal
+            isOpen={deleteConfirmOpen}
+            onClose={() => setDeleteConfirmOpen(false)}
+            onConfirm={confirmDelete}
+            title="Delete company"
+            message={`Бул компанияны өчүрүүгө ишенимдүүсүзбү? / Удалить компанию "${company?.name || ''}"?`}
+            confirmLabel="Delete company"
+            cancelLabel="Cancel"
+            confirmVariant="danger"
+            loading={deleting}
+        />
+        </>
     );
 }

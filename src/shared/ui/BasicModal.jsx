@@ -169,52 +169,50 @@ const BasicModal = ({
                     aria-describedby={descriptionId}
                     tabIndex={-1}
                 >
-                    <div className="p-6">
-                        {(title || subtitle || showCloseButton) && (
-                            <div className="mb-6 flex items-start justify-between gap-4 p-6 border-b border-gray-200 dark:border-gray-700">
-                                <div>
-                                    {title && (
-                                        <h2
-                                            id={titleId}
-                                            className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white"
-                                        >
-                                            {title}
-                                        </h2>
-                                    )}
-                                    {subtitle && (
-                                        <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
-                                            {subtitle}
-                                        </p>
-                                    )}
-                                </div>
-                                {showCloseButton && (
-                                    <button
-                                        type="button"
-                                        onClick={handleCloseClick}
-                                        className="rounded-full p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:text-gray-300 dark:hover:bg-gray-700 transition-all duration-200"
-                                        aria-label="Жабуу"
-                                        title="Жабуу (ESC)"
+                    {(title || subtitle || showCloseButton) && (
+                        <div className="flex items-start justify-between gap-4 border-b border-gray-200 px-6 py-5 dark:border-gray-700">
+                            <div className="min-w-0">
+                                {title && (
+                                    <h2
+                                        id={titleId}
+                                        className="text-xl font-bold text-gray-900 dark:text-white sm:text-2xl"
                                     >
-                                        <svg
-                                            className="w-5 h-5"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            viewBox="0 0 24 24"
-                                        >
-                                            <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth={2}
-                                                d="M6 18L18 6M6 6l12 12"
-                                            />
-                                        </svg>
-                                    </button>
+                                        {title}
+                                    </h2>
+                                )}
+                                {subtitle && (
+                                    <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                                        {subtitle}
+                                    </p>
                                 )}
                             </div>
-                        )}
+                            {showCloseButton && (
+                                <button
+                                    type="button"
+                                    onClick={handleCloseClick}
+                                    className="rounded-full p-2 text-gray-400 transition-colors duration-200 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300"
+                                    aria-label="Жабуу"
+                                    title="Жабуу (ESC)"
+                                >
+                                    <svg
+                                        className="h-5 w-5"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            strokeWidth={2}
+                                            d="M6 18L18 6M6 6l12 12"
+                                        />
+                                    </svg>
+                                </button>
+                            )}
+                        </div>
+                    )}
 
-                        <div className={`max-h-[70vh] overflow-y-auto modal-content ${contentClassName}`} id={descriptionId}>{children}</div>
-                    </div>
+                    <div className={`max-h-[70vh] overflow-y-auto px-6 py-6 modal-content ${contentClassName}`} id={descriptionId}>{children}</div>
                 </div>
             </div>
         </div>,

@@ -338,7 +338,7 @@ const StudentDashboard = () => {
                     }
                     case 'n': {
                         e.preventDefault();
-                        const navigation = document.querySelector('nav[role="navigation"]');
+                        const navigation = document.querySelector('[data-dashboard-navigation]');
                         if (navigation) {
                             navigation.focus();
                             navigation.scrollIntoView({ behavior: 'smooth' });
@@ -359,7 +359,7 @@ const StudentDashboard = () => {
 
             // Arrow key navigation for sidebar
             if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
-                const sidebarItems = document.querySelectorAll('[role="menuitem"]');
+                const sidebarItems = document.querySelectorAll('[data-dashboard-nav-item]');
                 const currentIndex = Array.from(sidebarItems).findIndex(item => item === document.activeElement);
 
                 if (currentIndex !== -1) {

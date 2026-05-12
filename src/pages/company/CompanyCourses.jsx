@@ -3,6 +3,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import Loader from '@shared/ui/Loader';
+import ConfirmationModal from '@shared/ui/ConfirmationModal';
 import {
     listCompanyCourses,
     fetchCourses,
@@ -29,6 +30,7 @@ export default function CompanyCourses({ company, companyId, canManage = true })
     const [results, setResults] = React.useState([]);
     const [attachingId, setAttachingId] = React.useState(null);
     const [detachingId, setDetachingId] = React.useState(null);
+    const [pendingDetachId, setPendingDetachId] = React.useState(null);
 
     React.useEffect(() => {
         const t = setTimeout(() => setQ(qInput.trim()), 350);
@@ -52,12 +54,18 @@ export default function CompanyCourses({ company, companyId, canManage = true })
     }, [loadCompanyCourses]);
 
     // ✅ Detach only THIS company from the course (many-to-many safe)
-    const onDetach = async (courseId) => {
-        if (!window.confirm('Бул курсту ушул компаниядан ажыратасызбы?')) return;
+    const onDetach = (courseId) => {
+        setPendingDetachId(courseId);
+    };
+
+    const confirmDetach = async () => {
+        if (!pendingDetachId) return;
+
         try {
-            setDetachingId(courseId);
-            await unassignCourseFromCompany(courseId, companyId); // ✅ pass both ids
+            setDetachingId(pendingDetachId);
+            await unassignCourseFromCompany(pendingDetachId, companyId); // ✅ pass both ids
             toast.success('Курс компаниядан ажыратылды.');
+            setPendingDetachId(null);
             await loadCompanyCourses();
         } catch {
             toast.error('Ажыратууда ката кетти.');
@@ -276,6 +284,17 @@ export default function CompanyCourses({ company, companyId, canManage = true })
                 </>
             )}
         </div>
+        <ConfirmationModal
+            isOpen={Boolean(pendingDetachId)}
+            onClose={() => setPendingDetachId(null)}
+            onConfirm={confirmDetach}
+            title="Detach course"
+            message="Бул курсту ушул компаниядан ажыратасызбы?"
+            confirmLabel="Detach"
+            cancelLabel="Cancel"
+            confirmVariant="danger"
+            loading={Boolean(detachingId)}
+        />
         </DashboardInsetPanel>
     );
 }

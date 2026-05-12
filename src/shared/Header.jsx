@@ -122,6 +122,10 @@ const Header = () => {
             if (searchContainerRef.current && !searchContainerRef.current.contains(e.target)) {
                 setShowDropdown(false);
             }
+
+            if (!e.target.closest?.('[data-user-menu]')) {
+                setUserMenuOpen(false);
+            }
         };
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
@@ -129,6 +133,10 @@ const Header = () => {
 
     useEffect(() => {
         setMenuOpen(false);
+        setPositionBar(false);
+        setSearchOpen(false);
+        setShowDropdown(false);
+        setUserMenuOpen(false);
     }, [location.pathname]);
 
     useEffect(() => {
@@ -139,6 +147,22 @@ const Header = () => {
         };
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            if (e.key !== 'Escape') return;
+
+            setMenuOpen(false);
+            setPositionBar(false);
+            setLangOpen(false);
+            setSearchOpen(false);
+            setShowDropdown(false);
+            setUserMenuOpen(false);
+        };
+
+        document.addEventListener('keydown', handleKeyDown);
+        return () => document.removeEventListener('keydown', handleKeyDown);
     }, []);
 
     useEffect(() => {
@@ -350,7 +374,7 @@ const Header = () => {
                                         )}
                                     </button>
                                 </div>
-                                <div className="relative group">
+                                <div className="relative group" data-user-menu>
                                     <button
                                         className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-300 ${activeIcon === 'user' || userMenuOpen
                                             ? 'bg-orange-500 border-orange-500'
@@ -491,7 +515,7 @@ const Header = () => {
                             </button>
 
                             {user && (
-                                <div className="relative hidden md:block">
+                                <div className="relative hidden md:block" data-user-menu>
                                     <button
                                         className={`w-9 h-9 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${userMenuOpen
                                             ? 'bg-orange-500 border-orange-500'

@@ -15,6 +15,7 @@ import {
 import { isPlatformAdmin } from '@shared/utils/roles';
 import { DashboardInsetPanel } from '@components/ui/dashboard';
 import BasicModal from '@shared/ui/BasicModal';
+import ConfirmationModal from '@shared/ui/ConfirmationModal';
 
 const MANAGEABLE_ROLES = [
     { value: 'admin', label: 'Tenant admin' },
@@ -61,6 +62,7 @@ export default function CompanyMembers({
     const [selected, setSelected] = React.useState(null);
     const [addingMember, setAddingMember] = React.useState(false);
     const [removingKey, setRemovingKey] = React.useState(null);
+    const [pendingRemoveMember, setPendingRemoveMember] = React.useState(null);
     const [updatingRoleKey, setUpdatingRoleKey] = React.useState(null);
     const [inviteOpen, setInviteOpen] = React.useState(false);
     const [inviteSaving, setInviteSaving] = React.useState(false);
@@ -172,8 +174,14 @@ export default function CompanyMembers({
         }
     };
 
-    const onRemove = async (member) => {
-        if (!confirm('Өчүрүүгө ишенимдүүбү?')) return;
+    const onRemove = (member) => {
+        setPendingRemoveMember(member);
+    };
+
+    const confirmRemove = async () => {
+        if (!pendingRemoveMember) return;
+
+        const member = pendingRemoveMember;
         const key = member.id || `${member.userId}-${member.role}`;
         try {
             setRemovingKey(key);
@@ -183,7 +191,8 @@ export default function CompanyMembers({
                 await removeCompanyMember(companyId, member.userId, member.role);
             }
             toast.success('Өчүрүлдү.');
-            load();
+            setPendingRemoveMember(null);
+            await load();
         } catch {
             toast.error('Өчүрүү катасы.');
         } finally {
@@ -587,6 +596,17 @@ export default function CompanyMembers({
                 </div>
             )}
         </BasicModal>
+        <ConfirmationModal
+            isOpen={Boolean(pendingRemoveMember)}
+            onClose={() => setPendingRemoveMember(null)}
+            onConfirm={confirmRemove}
+            title="Remove member"
+            message={`Remove ${pendingRemoveMember?.fullName || pendingRemoveMember?.email || 'this member'} from this tenant?`}
+            confirmLabel="Remove"
+            cancelLabel="Cancel"
+            confirmVariant="danger"
+            loading={Boolean(removingKey)}
+        />
         </DashboardInsetPanel>
     );
 }

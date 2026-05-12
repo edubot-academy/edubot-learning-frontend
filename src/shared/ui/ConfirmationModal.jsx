@@ -18,6 +18,7 @@ const ConfirmationModal = ({
         title={title}
         subtitle={message}
         size="sm"
+        loading={loading}
         variant={confirmVariant === 'danger' ? 'danger' : 'warning'}
         actions={[
             {
@@ -33,6 +34,7 @@ const ConfirmationModal = ({
                 onClick: onConfirm,
                 variant: confirmVariant,
                 loading,
+                disabled: loading,
             },
         ]}
     >

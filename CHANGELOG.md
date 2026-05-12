@@ -2,6 +2,61 @@
 
 Version bumps are classified by delivery scale; see `VERSIONING.md`.
 
+## [1.10.2] - 2026-05-12
+
+Patch release for the follow-up UX/UI audit fixes after `1.10.1`.
+
+### Added
+- Added accessible status semantics, hidden loading text, reusable labels, and class passthrough to the shared `Loader`.
+- Added broader shared `Button` support for `type`, `size`, `className`, loading state, icon nodes, and ARIA/data prop passthrough while preserving existing variants.
+- Added dashboard `EmptyState` variants for default, discovery, access, queue, and error contexts.
+- Added optional title, description, active-filter count, clear action, and action slot support to `DashboardFilterBar`.
+- Added a centralized role-aware navigation helper for dashboard, notification, course, cart, favourites, and chat destinations.
+- Added stable dashboard navigation data hooks for keyboard shortcuts and sidebar arrow navigation.
+
+### Changed
+- Improved header overlays so route changes, outside clicks, and `Escape` close menus/search predictably.
+- Standardized `BasicModal` header/body spacing to avoid oversized double padding.
+- Consolidated legacy `src/components/ui/Button.jsx` exports around the shared button primitive and removed duplicate animated button styling.
+- Reduced dashboard sidebar visual noise, removed hover scaling, and added an explicit collapse/expand control.
+- Updated dashboard keyboard shortcuts to target the current semantic navigation model instead of removed ARIA menu roles.
+- Simplified the authenticated user dropdown layout, removed rigid widths, and aligned menu labels.
+- Reused centralized user navigation paths in both the desktop user dropdown and mobile sidebar.
+- Migrated native destructive confirms to the shared `ConfirmationModal` for company course detach, tenant member removal, company deletion, and AI assistant chat deletion.
+
+### Fixed
+- Fixed dashboard sidebar layout after adding the collapse control by keeping the sidebar shell vertical even when parent layouts pass flex display classes.
+- Fixed role-aware user menu destinations so instructor/admin/assistant course links use valid tabs and unsupported assistant notification links are omitted.
+- Fixed destructive confirmation modals so confirm actions cannot be triggered repeatedly while the request is running.
+- Fixed assistant dashboard navigation helpers and URL tab syncing to support the assistant overview, courses, attendance, and enrollments tabs.
+
+### Audit Tracking
+- Updated `docs/shared/audits/PAGE_BY_PAGE_UX_UI_AUDIT.md` for the completed shared menu, sidebar, dashboard shell, button, loader, empty-state, filter-bar, public shell, route-consistency, and confirmation-system work.
+
+### Key Files
+- `src/shared/Header.jsx`
+- `src/shared/ui/Button.jsx`
+- `src/components/ui/Button.jsx`
+- `src/shared/ui/Loader.jsx`
+- `src/shared/ui/BasicModal.jsx`
+- `src/components/ui/dashboard/EmptyState.jsx`
+- `src/components/ui/dashboard/DashboardFilterBar.jsx`
+- `src/features/dashboard/components/DashboardSidebar.jsx`
+- `src/pages/StudentDashboard.jsx`
+- `src/pages/InstructorDashboard.jsx`
+- `src/features/assistant-dashboard/pages/AssistantDashboard.jsx`
+- `src/features/admin/pages/AdminPanel.jsx`
+- `src/shared/ui/UserMenuDropdown.jsx`
+- `src/shared/ui/SideBar.jsx`
+- `src/shared/utils/navigation.js`
+- `src/features/assistant/components/AiAssistantPanel.jsx`
+- `src/pages/company/CompanyMembers.jsx`
+- `src/pages/company/CompanyCourses.jsx`
+- `src/pages/company/CompanySettings.jsx`
+- `docs/shared/audits/PAGE_BY_PAGE_UX_UI_AUDIT.md`
+
+---
+
 ## [1.10.1] - 2026-05-12
 
 ### ♿ UX/UI ACCESSIBILITY FOUNDATION

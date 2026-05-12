@@ -3,53 +3,30 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { FaTimes } from 'react-icons/fa';
 import { AuthContext } from '@app/providers';
 import { isPublicVideoSignupEnabled } from '@shared/auth-config';
+import { getUserMenuItems, getUserNavigationPaths } from '@shared/utils/navigation';
 import Button from './Button';
 import Person from '@assets/icons/grayPerson.svg';
-import BlackHeart from '@assets/icons/baseHeart.svg';
-import BellIcon from '@assets/icons/bell.svg';
-import BasketIcon from '@assets/icons/baseBasket.svg';
-import SettingIcon from '@assets/icons/setting.svg';
-import { IoChatbubblesOutline, IoHeartOutline, IoSettingsOutline } from "react-icons/io5";
-import { FaRegBell } from "react-icons/fa";
-import { BsCart2 } from "react-icons/bs";
-import { FiBarChart2 } from 'react-icons/fi';
+import { IoChatbubblesOutline, IoHeartOutline } from 'react-icons/io5';
+import { FaRegBell } from 'react-icons/fa';
+import { BsCart2 } from 'react-icons/bs';
+import { FiBarChart2, FiBookOpen, FiCalendar } from 'react-icons/fi';
+
+const menuIcons = {
+    'my-courses': FiBookOpen,
+    courses: FiBookOpen,
+    attendance: FiCalendar,
+    notifications: FaRegBell,
+    cart: BsCart2,
+    favourites: IoHeartOutline,
+    chat: IoChatbubblesOutline,
+};
 
 const SideBar = ({ setMenuOpen, setPosition }) => {
     const { user, logout } = useContext(AuthContext);
     const location = useLocation();
     const navigate = useNavigate();
-
-    const getDashboardPath = () => {
-        if (!user) return '/dashboard';
-        switch (user.role) {
-            case 'student':
-                return '/student?tab=overview';
-            case 'instructor':
-                return '/instructor';
-            case 'admin':
-                return '/admin';
-            case 'assistant':
-                return '/assistant';
-            default:
-                return '/dashboard';
-        }
-    };
-
-    const getNotificationsPath = () => {
-        if (!user) return '/login';
-        switch (user.role) {
-            case 'student':
-                return '/student?tab=notifications';
-            case 'instructor':
-                return '/instructor?tab=notifications';
-            case 'admin':
-                return '/admin?tab=notifications';
-            case 'assistant':
-                return '/assistant';
-            default:
-                return '/dashboard';
-        }
-    };
+    const paths = getUserNavigationPaths(user);
+    const userMenuItems = getUserMenuItems(user);
 
     const closeMenus = () => {
         setMenuOpen(false);
@@ -63,7 +40,7 @@ const SideBar = ({ setMenuOpen, setPosition }) => {
 
     const handleProfileClick = () => {
         if (user) {
-            navigate(getDashboardPath());
+            navigate(paths.dashboardOverview);
             closeMenus();
         }
     };
@@ -120,30 +97,19 @@ const SideBar = ({ setMenuOpen, setPosition }) => {
                 {user ? (
                     <div className="">
                         <ul className="flex flex-col justify-between items-start">
-                            <Link to={getDashboardPath()} onClick={closeMenus} className={`${linkClass}`}>
+                            <Link to={paths.dashboardOverview} onClick={closeMenus} className={`${linkClass}`}>
                                 <FiBarChart2 className="w-6 h-6" />
                                 Дашборд
                             </Link>
-                            <Link to={getNotificationsPath()} onClick={closeMenus} className={`${linkClass}`}>
-                                <FaRegBell className='w-6 h-6' />
-                                Билдирүүлөр
-                            </Link>
-                            <Link to="/cart" onClick={closeMenus} className={`${linkClass}`}>
-                                <BsCart2 className='w-6 h-6' />
-                                Себет
-                            </Link>
-                            <Link to="/favourites" onClick={closeMenus} className={`${linkClass}`}>
-                                <IoHeartOutline className='w-6 h-6' />
-                                Избранные
-                            </Link>
-                            {/* <div className={`${linkClass}`}>
-                                <IoSettingsOutline className='w-6 h-6' />
-                                Настройка
-                            </div> */}
-                            <Link to="/chat" onClick={closeMenus} className={`${linkClass}`}>
-                                <IoChatbubblesOutline className="w-6 h-6 mb-1" />
-                                Чат
-                            </Link>
+                            {userMenuItems.map((item) => {
+                                const Icon = menuIcons[item.id] || FiBarChart2;
+                                return (
+                                    <Link key={item.id} to={item.path} onClick={closeMenus} className={`${linkClass}`}>
+                                        <Icon className="w-6 h-6" />
+                                        {item.label}
+                                    </Link>
+                                );
+                            })}
                         </ul>
                     </div>
                 ) : (

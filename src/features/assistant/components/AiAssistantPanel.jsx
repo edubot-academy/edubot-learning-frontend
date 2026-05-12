@@ -11,6 +11,7 @@ import {
 import toast from 'react-hot-toast';
 import { FiMoreHorizontal, FiPaperclip, FiMic } from 'react-icons/fi';
 import Loader from '@shared/ui/Loader';
+import ConfirmationModal from '@shared/ui/ConfirmationModal';
 
 const formatTime = (dateString) => {
     if (!dateString) return '';
@@ -53,6 +54,7 @@ const AiAssistantPanel = ({ courseId, languageCode = 'ru' }) => {
     const [loadingMessages, setLoadingMessages] = useState(false);
     const [sending, setSending] = useState(false);
     const [menuOpen, setMenuOpen] = useState(false);
+    const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
 
     const activeChat = useMemo(
         () => chats.find((chat) => chat.id === activeChatId),
@@ -131,9 +133,15 @@ const AiAssistantPanel = ({ courseId, languageCode = 'ru' }) => {
         loadChats();
     }, [loadChats]);
 
-    const handleDeleteChat = async () => {
+    const handleDeleteChat = () => {
         if (!activeChatId) return;
-        if (!window.confirm('Учурдагы чатты чын эле өчүргүңүз келеби?')) return;
+        setDeleteConfirmOpen(true);
+        setMenuOpen(false);
+    };
+
+    const confirmDeleteChat = async () => {
+        if (!activeChatId) return;
+
         try {
             await deleteAiChat(activeChatId);
             const remaining = chats.filter((chat) => chat.id !== activeChatId);
@@ -153,6 +161,7 @@ const AiAssistantPanel = ({ courseId, languageCode = 'ru' }) => {
             toast.error('Чатты өчүрүү мүмкүн болбоду');
         } finally {
             setMenuOpen(false);
+            setDeleteConfirmOpen(false);
         }
     };
 
@@ -224,6 +233,7 @@ const AiAssistantPanel = ({ courseId, languageCode = 'ru' }) => {
     };
 
     return (
+        <>
         <div className="bg-white border border-gray-200 rounded-[28px] shadow-sm p-6 md:p-8 relative overflow-hidden">
             <div className="absolute top-6 right-6 z-10">
                 <button
@@ -338,6 +348,17 @@ const AiAssistantPanel = ({ courseId, languageCode = 'ru' }) => {
                 </div>
             </div>
         </div>
+        <ConfirmationModal
+            isOpen={deleteConfirmOpen}
+            onClose={() => setDeleteConfirmOpen(false)}
+            onConfirm={confirmDeleteChat}
+            title="Баарлашууну өчүрүү"
+            message="Учурдагы чатты чын эле өчүргүңүз келеби?"
+            confirmLabel="Өчүрүү"
+            cancelLabel="Жокко чыгаруу"
+            confirmVariant="danger"
+        />
+        </>
     );
 };
 

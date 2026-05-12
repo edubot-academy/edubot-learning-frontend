@@ -1,4 +1,5 @@
 import { useContext, useState, useEffect, useCallback } from "react";
+import { useSearchParams } from "react-router-dom";
 import { AuthContext } from "../../../context/AuthContext";
 import FloatingActionButton from "../../../components/ui/FloatingActionButton";
 import AttendancePage from "../../../pages/Attendance";
@@ -16,9 +17,15 @@ import {
 } from "../../../components/ui/dashboard";
 import { NAV_ITEMS } from "../utils/assistantDashboard.constants";
 
+const ASSISTANT_TAB_IDS = NAV_ITEMS.map((item) => item.id);
+
 const AssistantDashboard = () => {
     const { user } = useContext(AuthContext);
-    const [activeTab, setActiveTab] = useState("overview");
+    const [searchParams, setSearchParams] = useSearchParams();
+    const initialTab = searchParams.get("tab");
+    const [activeTab, setActiveTab] = useState(
+        ASSISTANT_TAB_IDS.includes(initialTab) ? initialTab : "overview"
+    );
     const [sidebarOpen, setSidebarOpen] = useState(true);
 
     useEffect(() => {
@@ -37,7 +44,7 @@ const AssistantDashboard = () => {
                     }
                     case 'n': {
                         e.preventDefault();
-                        const navigation = document.querySelector('nav[role="navigation"]');
+                        const navigation = document.querySelector('[data-dashboard-navigation]');
                         if (navigation) {
                             navigation.focus();
                             navigation.scrollIntoView({ behavior: 'smooth' });
@@ -58,7 +65,7 @@ const AssistantDashboard = () => {
 
             // Arrow key navigation for sidebar
             if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
-                const sidebarItems = document.querySelectorAll('[role="menuitem"]');
+                const sidebarItems = document.querySelectorAll('[data-dashboard-nav-item]');
                 const currentIndex = Array.from(sidebarItems).findIndex(item => item === document.activeElement);
 
                 if (currentIndex !== -1) {
@@ -79,8 +86,33 @@ const AssistantDashboard = () => {
     }, []);
 
     const handleTabSelect = useCallback((tabId) => {
+        if (!ASSISTANT_TAB_IDS.includes(tabId)) return;
+
         setActiveTab(tabId);
-    }, []);
+        setSearchParams(
+            (prev) => {
+                const next = new URLSearchParams(prev);
+                if (tabId === "overview") {
+                    next.delete("tab");
+                } else {
+                    next.set("tab", tabId);
+                }
+                return next;
+            },
+            { replace: true }
+        );
+    }, [setSearchParams]);
+
+    useEffect(() => {
+        const tabFromQuery = searchParams.get("tab");
+        const resolvedTab = ASSISTANT_TAB_IDS.includes(tabFromQuery)
+            ? tabFromQuery
+            : "overview";
+
+        if (resolvedTab !== activeTab) {
+            setActiveTab(resolvedTab);
+        }
+    }, [searchParams, activeTab]);
 
     const {
         currentPage,

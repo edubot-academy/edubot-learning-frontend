@@ -1,190 +1,152 @@
-import React from 'react';
+import PropTypes from 'prop-types';
+import SharedButton from '@shared/ui/Button';
 
-const EnhancedButton = ({ 
-    children, 
-    variant = 'primary', 
-    size = 'md', 
-    disabled = false, 
-    loading = false,
-    icon,
-    onClick,
-    className = '',
-    ...props 
-}) => {
-    const baseClasses = "relative inline-flex items-center justify-center gap-2 font-medium rounded-xl transition-all duration-300 transform focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed";
-    
-    const sizes = {
-        sm: "px-4 py-2 text-sm",
-        md: "px-6 py-3 text-sm",
-        lg: "px-8 py-4 text-base",
-        xl: "px-10 py-5 text-lg"
-    };
-    
-    const variants = {
-        primary: `${baseClasses} ${sizes[size]} bg-gradient-to-r from-edubot-orange to-edubot-soft hover:from-edubot-soft hover:to-edubot-orange text-white shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 focus:ring-edubot-orange`,
-        secondary: `${baseClasses} ${sizes[size]} bg-gradient-to-r from-edubot-green to-emerald-600 hover:from-emerald-600 hover:to-edubot-green text-white shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 focus:ring-edubot-green`,
-        tertiary: `${baseClasses} ${sizes[size]} bg-gradient-to-r from-edubot-teal to-teal-600 hover:from-teal-600 hover:to-edubot-teal text-white shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 focus:ring-edubot-teal`,
-        outline: `${baseClasses} ${sizes[size]} border-2 border-edubot-orange text-edubot-orange bg-transparent hover:bg-edubot-orange hover:text-white shadow-md hover:shadow-lg hover:scale-105 active:scale-95 focus:ring-edubot-orange`,
-        ghost: `${baseClasses} ${sizes[size]} text-edubot-orange bg-transparent hover:bg-edubot-orange/10 hover:scale-105 active:scale-95 focus:ring-edubot-orange`,
-        danger: `${baseClasses} ${sizes[size]} bg-gradient-to-r from-red-500 to-red-400 hover:from-red-400 hover:to-red-500 text-white shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 focus:ring-red-500`
-    };
-    
-    return (
-        <button
-            className={`${variants[variant]} ${className}`}
-            disabled={disabled || loading}
-            onClick={onClick}
-            {...props}
-        >
-            {/* Button shine effect */}
-            <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 rounded-xl"></div>
-            
-            {/* Loading spinner */}
-            {loading && (
-                <svg
-                    className="animate-spin h-4 w-4"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                >
-                    <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                    />
-                    <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8v8H4z"
-                    />
-                </svg>
-            )}
-            
-            {/* Icon */}
-            {icon && !loading && (
-                <span className="transform group-hover:scale-110 transition-transform duration-200">
-                    {icon}
-                </span>
-            )}
-            
-            {/* Content */}
-            <span className="relative z-10">
-                {children}
-            </span>
-            
-            {/* Ripple effect on click */}
-            <div className="absolute inset-0 rounded-xl overflow-hidden">
-                <div className="ripple absolute inset-0 bg-white/30 scale-0 animate-ping"></div>
-            </div>
-        </button>
-    );
+const sizeMap = {
+    sm: 'sm',
+    md: 'md',
+    lg: 'lg',
+    xl: 'lg',
 };
 
-const FloatingActionButton = ({ 
-    children, 
+const variantMap = {
+    primary: 'primary',
+    secondary: 'secondary',
+    tertiary: 'secondary',
+    outline: 'secondary',
+    ghost: 'secondary',
+    danger: 'secondary',
+};
+
+const EnhancedButton = ({
+    variant = 'primary',
+    size = 'md',
+    icon,
+    children,
+    ...props
+}) => (
+    <SharedButton
+        variant={variantMap[variant] || 'primary'}
+        size={sizeMap[size] || 'md'}
+        icon={icon}
+        {...props}
+    >
+        {children}
+    </SharedButton>
+);
+
+const FloatingActionButton = ({
+    children,
     position = 'bottom-right',
     color = 'orange',
-    onClick,
     className = '',
-    ...props 
+    ...props
 }) => {
     const positions = {
         'bottom-right': 'bottom-6 right-6',
         'bottom-left': 'bottom-6 left-6',
         'top-right': 'top-6 right-6',
-        'top-left': 'top-6 left-6'
+        'top-left': 'top-6 left-6',
     };
-    
+
     const colors = {
-        orange: 'bg-gradient-to-r from-edubot-orange to-edubot-soft hover:from-edubot-soft hover:to-edubot-orange',
-        green: 'bg-gradient-to-r from-edubot-green to-emerald-600 hover:from-emerald-600 hover:to-edubot-green',
-        teal: 'bg-gradient-to-r from-edubot-teal to-teal-600 hover:from-teal-600 hover:to-edubot-teal'
+        orange: 'bg-edubot-orange hover:bg-edubot-soft focus:ring-edubot-orange/40',
+        green: 'bg-edubot-green hover:bg-emerald-600 focus:ring-edubot-green/40',
+        teal: 'bg-edubot-teal hover:bg-teal-600 focus:ring-edubot-teal/40',
     };
-    
+
     return (
         <button
-            className={`fixed ${positions[position]} w-14 h-14 ${colors[color]} text-white rounded-full shadow-lg hover:shadow-xl transform hover:scale-110 active:scale-95 transition-all duration-300 flex items-center justify-center z-50 ${className}`}
-            onClick={onClick}
+            type="button"
+            className={`fixed ${positions[position] || positions['bottom-right']} flex h-14 w-14 items-center justify-center rounded-full ${colors[color] || colors.orange} text-white shadow-lg transition-colors focus:outline-none focus:ring-2 ${className}`}
             {...props}
         >
-            <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 -translate-x-full hover:translate-x-full transition-transform duration-700 rounded-full"></div>
-            <span className="relative z-10 text-xl">
-                {children}
-            </span>
+            <span className="text-xl">{children}</span>
         </button>
     );
 };
 
-const IconButton = ({ 
-    children, 
+const IconButton = ({
+    children,
     variant = 'ghost',
     size = 'md',
     tooltip,
-    onClick,
     className = '',
-    ...props 
+    ...props
 }) => {
-    const baseClasses = "relative inline-flex items-center justify-center rounded-xl transition-all duration-300 transform focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed";
-    
     const sizes = {
-        sm: "w-8 h-8 text-sm",
-        md: "w-10 h-10 text-base",
-        lg: "w-12 h-12 text-lg"
+        sm: 'h-8 w-8 text-sm',
+        md: 'h-10 w-10 text-base',
+        lg: 'h-12 w-12 text-lg',
     };
-    
+
     const variants = {
-        ghost: `${baseClasses} ${sizes[size]} text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:scale-110 active:scale-95 focus:ring-slate-400`,
-        solid: `${baseClasses} ${sizes[size]} bg-edubot-orange text-white hover:bg-edubot-soft hover:scale-110 active:scale-95 focus:ring-edubot-orange shadow-md hover:shadow-lg`,
-        outline: `${baseClasses} ${sizes[size]} border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:scale-110 active:scale-95 focus:ring-slate-400`
+        ghost: 'text-slate-600 hover:bg-slate-100 focus:ring-slate-400 dark:text-slate-400 dark:hover:bg-slate-700',
+        solid: 'bg-edubot-orange text-white hover:bg-edubot-soft focus:ring-edubot-orange',
+        outline: 'border border-slate-300 text-slate-600 hover:bg-slate-100 focus:ring-slate-400 dark:border-slate-600 dark:text-slate-400 dark:hover:bg-slate-700',
     };
-    
+
     return (
         <button
-            className={`${variants[variant]} ${className}`}
-            onClick={onClick}
+            type="button"
+            className={`inline-flex items-center justify-center rounded-xl transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${sizes[size] || sizes.md} ${variants[variant] || variants.ghost} ${className}`}
             title={tooltip}
+            aria-label={props['aria-label'] || tooltip}
             {...props}
         >
-            <div className="absolute inset-0 rounded-xl overflow-hidden">
-                <div className="ripple absolute inset-0 bg-slate-200/50 scale-0"></div>
-            </div>
-            <span className="relative z-10">
-                {children}
-            </span>
+            {children}
         </button>
     );
 };
 
-const ToggleButton = ({ 
-    pressed = false, 
+const ToggleButton = ({
+    pressed = false,
     onPressedChange,
     children,
     className = '',
-    ...props 
-}) => {
-    return (
-        <button
-            className={`relative inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-xl transition-all duration-300 transform focus:outline-none focus:ring-2 focus:ring-offset-2 ${
-                pressed 
-                    ? 'bg-edubot-orange text-white shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 focus:ring-edubot-orange' 
-                    : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-600 hover:scale-105 active:scale-95 focus:ring-slate-400'
-            } ${className}`}
-            onClick={() => onPressedChange?.(!pressed)}
-            {...props}
-        >
-            <div className="absolute inset-0 rounded-xl overflow-hidden">
-                <div className={`absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 transition-transform duration-700 ${
-                    pressed ? 'translate-x-0' : '-translate-x-full'
-                }`}></div>
-            </div>
-            <span className="relative z-10">
-                {children}
-            </span>
-        </button>
-    );
+    ...props
+}) => (
+    <button
+        type="button"
+        aria-pressed={pressed}
+        className={`inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 ${
+            pressed
+                ? 'bg-edubot-orange text-white focus:ring-edubot-orange'
+                : 'bg-slate-100 text-slate-600 hover:bg-slate-200 focus:ring-slate-400 dark:bg-slate-700 dark:text-slate-400 dark:hover:bg-slate-600'
+        } ${className}`}
+        onClick={() => onPressedChange?.(!pressed)}
+        {...props}
+    >
+        {children}
+    </button>
+);
+
+EnhancedButton.propTypes = {
+    variant: PropTypes.oneOf(['primary', 'secondary', 'tertiary', 'outline', 'ghost', 'danger']),
+    size: PropTypes.oneOf(['sm', 'md', 'lg', 'xl']),
+    icon: PropTypes.node,
+    children: PropTypes.node.isRequired,
+};
+
+FloatingActionButton.propTypes = {
+    children: PropTypes.node.isRequired,
+    position: PropTypes.oneOf(['bottom-right', 'bottom-left', 'top-right', 'top-left']),
+    color: PropTypes.oneOf(['orange', 'green', 'teal']),
+    className: PropTypes.string,
+};
+
+IconButton.propTypes = {
+    children: PropTypes.node.isRequired,
+    variant: PropTypes.oneOf(['ghost', 'solid', 'outline']),
+    size: PropTypes.oneOf(['sm', 'md', 'lg']),
+    tooltip: PropTypes.string,
+    className: PropTypes.string,
+};
+
+ToggleButton.propTypes = {
+    pressed: PropTypes.bool,
+    onPressedChange: PropTypes.func,
+    children: PropTypes.node.isRequired,
+    className: PropTypes.string,
 };
 
 export { EnhancedButton, FloatingActionButton, IconButton, ToggleButton };
