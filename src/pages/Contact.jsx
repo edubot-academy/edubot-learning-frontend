@@ -8,6 +8,7 @@ import { PiTelegramLogo } from "react-icons/pi";
 import { FiMail } from "react-icons/fi";
 import { GoClock } from "react-icons/go";
 import { SlLocationPin } from "react-icons/sl";
+import { getMailToUrl, SUPPORT_CONTACT } from '@shared/config/support';
 
 const CONTACT_FIELDS = [
     {
@@ -34,30 +35,30 @@ const CONTACT_FIELDS = [
 const CONTACT_METHODS = [
     {
         label: 'Instagram',
-        value: '@edubot.company',
-        href: 'https://www.instagram.com/edubot.company/',
+        value: SUPPORT_CONTACT.instagramHandle,
+        href: SUPPORT_CONTACT.instagramUrl,
         icon: FaInstagram,
         description: 'Курстар, жаңылыктар жана коомчулуктагы билдирүүлөр.',
         external: true,
     },
     {
         label: 'Telegram',
-        value: '@edubot_learning',
-        href: 'https://t.me/edubot_learning',
+        value: SUPPORT_CONTACT.telegramHandle,
+        href: SUPPORT_CONTACT.telegramUrl,
         icon: PiTelegramLogo,
         description: 'Тез суроолор жана окуу боюнча кыска консультация.',
         external: true,
     },
     {
         label: 'Электрондук почта',
-        value: 'jardam.edubot_learning@outlook.com',
-        href: 'mailto:jardam.edubot_learning@outlook.com',
+        value: SUPPORT_CONTACT.email,
+        href: getMailToUrl(),
         icon: FiMail,
         description: 'Толук суроо-талаптар жана кызматташуу боюнча байланыш.',
     },
     {
         label: 'Иштөө убактысы',
-        value: 'Дүйшөмбү - Жума, 9:00 - 21:00',
+        value: SUPPORT_CONTACT.workingHours,
         icon: GoClock,
         description: 'Бишкек убактысы боюнча жооп беребиз.',
     },
@@ -325,7 +326,7 @@ const LocationSection = () => (
                     <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Дарек</h2>
                 </div>
                 <p className="mt-2 text-sm text-gray-600 dark:text-[#a6adba]">
-                    Ахунбаева 129B, Бишкек, Кыргызстан
+                    {SUPPORT_CONTACT.addressFull}
                 </p>
             </div>
             <a

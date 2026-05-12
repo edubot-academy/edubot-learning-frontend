@@ -2,6 +2,25 @@
 
 Version bumps are classified by delivery scale; see `VERSIONING.md`.
 
+## [1.11.2] - 2026-05-13
+
+### 🎨 UX/UI AND VERIFICATION IMPROVEMENTS
+- **Certificate Verification Tests**: Added page-level coverage for issued, revoked, missing-link, missing-id, and fetch-failure certificate verification states.
+- **Certificate Download Tests**: Added page-level coverage for auto-download success, StrictMode duplicate prevention, retry after failure, and missing-id fallback.
+- **Internal Leaderboard Tests**: Added role, track, course selector, failure-state, and empty student-of-week coverage for the internal leaderboard.
+- **Internal Leaderboard Hardening**: Empty student-of-week payloads now render the empty state instead of a placeholder student row.
+- **Home Apply Section**: Rebuilt the late-page CTA with fluid responsive layout, safer illustration placement, clearer conversion copy, and support/course actions.
+- **Home Benefits Section**: Strengthened benefit-card hierarchy, normalized Kyrgyz copy, and marked decorative icons explicitly for assistive technology.
+- **Home Top Courses Section**: Added richer marketing loading, empty, and error states plus stable catalog CTAs through an improved `SectionContainer` variant.
+- **Home Top Instructors Section**: Rebalanced instructor cards with controlled media ratio, clearer rating/student proof points, resilient field fallbacks, and consistent empty/error states.
+- **Support Contact Content**: Centralized public support phone, email, social links, website, QR, address, and working hours for FAQ, footer, sticky WhatsApp, and contact page consistency.
+
+### ✅ VERIFICATION
+- Page/component tests pass: `npm test -- --run`
+- Production build passes: `npm run build`
+
+---
+
 ## [1.11.1] - 2026-05-13
 
 ### 🏆 LEADERBOARD UX/UI IMPROVEMENTS

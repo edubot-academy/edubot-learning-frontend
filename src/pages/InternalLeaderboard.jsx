@@ -130,6 +130,11 @@ const normalizeCourseOptions = (payload) =>
         })
         .filter((item) => Number.isFinite(Number(item?.id)));
 
+const normalizeStudentOfWeek = (payload) => {
+    if (!payload || typeof payload !== 'object') return null;
+    return payload.fullName || payload.studentId || payload.id ? payload : null;
+};
+
 const InternalLeaderboard = () => {
     const { user } = useContext(AuthContext);
     const [track, setTrack] = useState('all');
@@ -199,7 +204,7 @@ const InternalLeaderboard = () => {
                 if (cancelled) return;
                 setWeekly(weeklyRes || { items: [], total: 0 });
                 setHomepage(homepageRes || { items: [] });
-                setStudentOfWeek(sowRes || null);
+                setStudentOfWeek(normalizeStudentOfWeek(sowRes));
             } catch {
                 if (!cancelled) {
                     setLeaderboardError('Ички рейтинг маалыматтарын жүктөө мүмкүн болгон жок.');

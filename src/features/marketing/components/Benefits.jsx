@@ -6,42 +6,65 @@ const features = [
     {
         icon: laptop,
         title: 'Интерактивдүү окуу',
-        description: 'программалоо боюнча практикалык тапшырмалар жана суроо-жооп тесттери',
+        description: 'Практикалык тапшырмалар, тесттер жана дароо кайтарым байланыш аркылуу теманы бекемдеңиз.',
     },
     {
         icon: circle,
-        title: '100+ Курстар',
-        description: 'Программалоо тилдеринин кеңири тандоосу',
+        title: '100+ курс',
+        description: 'Программалоо, санарип көндүмдөр жана карьералык өсүш үчүн тандалган окуу багыттары.',
     },
     {
         icon: account,
         title: 'Тажрыйбалуу окутуучулар',
-        description: 'Тармактын адистеринен үйрөнүңүз',
+        description: 'Сабактарды практикада иштеген адистерден үйрөнүп, түшүнүксүз жерлерди тактаңыз.',
     },
 ];
 
 export default function FeaturesSection() {
     return (
-        <section className="px-4 py-8 sm:px-6 lg:px-12 bg-[#f6f6f6] dark:bg-[#1A1A1A] text-center">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {features.map((feature, index) => (
-                    <div
-                        key={index}
-                        className="flex bg-white dark:bg-[#141619] text-[#141619] dark:text-[#E8ECF3] p-5 border border-gray-200 dark:border-[#2A2E35] rounded-lg flex-col items-center"
-                    >
-                        <div className="mb-4 flex justify-center items-center w-20 h-16">
-                            <img
-                                src={feature.icon}
-                                alt=""
-                                className="mx-auto w-[3rem] h-[4rem] object-contain"
-                            />
-                        </div>
-                        <h3 className="text-xl font-semibold mb-2">{feature.title}</h3>
-                        <p className="font-normal text-gray-700 dark:text-[#a6adba] max-w-[20rem]">
-                            {feature.description}
-                        </p>
-                    </div>
-                ))}
+        <section className="bg-[#f6f6f6] px-4 py-16 text-[#141619] dark:bg-[#1A1A1A] dark:text-[#E8ECF3] sm:px-6 lg:px-12">
+            <div className="mx-auto max-w-6xl">
+                <div className="mx-auto max-w-3xl text-center">
+                    <p className="text-sm font-semibold uppercase tracking-[0.18em] text-orange-600 dark:text-orange-300">
+                        Эмне үчүн EduBot
+                    </p>
+                    <h2 className="mt-3 text-2xl font-semibold leading-tight sm:text-3xl">
+                        Окуу процесси түшүнүктүү, практикалык жана өлчөнө турган болушу керек
+                    </h2>
+                    <p className="mt-4 text-sm leading-6 text-gray-600 dark:text-[#a6adba] sm:text-base">
+                        Курстарды тандоодон баштап прогрессти көзөмөлдөөгө чейин негизги окуу кадамдары бир жерде чогулат.
+                    </p>
+                </div>
+
+                <div className="mt-10 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                    {features.map((feature, index) => (
+                        <article
+                            key={feature.title}
+                            className="group flex min-h-[260px] flex-col rounded-[24px] border border-gray-200 bg-white p-6 text-left shadow-sm transition duration-300 hover:-translate-y-1 hover:border-orange-200 hover:shadow-[0_22px_60px_-42px_rgba(15,23,42,0.65)] dark:border-[#2A2E35] dark:bg-[#141619] dark:hover:border-orange-500/30"
+                        >
+                            <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-orange-100 bg-orange-50 transition duration-300 group-hover:scale-105 dark:border-orange-500/20 dark:bg-orange-500/10">
+                                <img
+                                    src={feature.icon}
+                                    alt=""
+                                    aria-hidden="true"
+                                    className="h-10 w-10 object-contain"
+                                />
+                            </div>
+                            <div className="mt-6 flex items-center gap-3">
+                                <span className="text-xs font-semibold uppercase tracking-[0.18em] text-orange-600 dark:text-orange-300">
+                                    0{index + 1}
+                                </span>
+                                <span className="h-px flex-1 bg-gray-200 dark:bg-[#2A2E35]" />
+                            </div>
+                            <h3 className="mt-4 text-xl font-semibold leading-tight text-[#141619] dark:text-[#E8ECF3]">
+                                {feature.title}
+                            </h3>
+                            <p className="mt-3 text-sm leading-6 text-gray-600 dark:text-[#a6adba]">
+                                {feature.description}
+                            </p>
+                        </article>
+                    ))}
+                </div>
             </div>
         </section>
     );

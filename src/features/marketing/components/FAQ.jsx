@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { SUPPORT_CONTACT } from '@shared/config/support';
 
 const FAQItem = ({ id, question, answer, isOpen, onClick }) => (
     <div className="border-b border-gray-200 dark:border-[#2A2E35]">
@@ -42,7 +43,7 @@ const FAQ = () => {
         },
         {
             q: 'Суроолорум болсо, колдоо алууга кандай кайрылсам болот?',
-            a: 'Сиз бизге электрондук почта аркылуу жазсаңыз болот: edubot@gmail.com же +996 (500) 000 000 номерине чалыңыз.',
+            a: `Сиз бизге ${SUPPORT_CONTACT.email} дарегине жазсаңыз же ${SUPPORT_CONTACT.phoneDisplay} номерине кайрылсаңыз болот.`,
         },
     ];
 

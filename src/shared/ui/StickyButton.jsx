@@ -1,13 +1,11 @@
 import whatsapp from '@assets/icons/whatsapp_icon.svg';
+import { getWhatsAppUrl, SUPPORT_CONTACT } from '@shared/config/support';
 
 const StickyButton = () => {
-    const phoneNumber = '996221004976';
-    const whatsappUrl = `https://wa.me/${phoneNumber}`;
-
     return (
         <div>
             <a
-                href={whatsappUrl}
+                href={getWhatsAppUrl()}
                 className="fixed top-1/2 right-6 transform -translate-y-1/2 w-16 h-16 rounded-full flex items-center justify-center z-50 hover:scale-110 transition-transform duration-300"
                 style={{
                     backgroundColor: '#FFC392',
@@ -16,6 +14,7 @@ const StickyButton = () => {
                 }}
                 target="_blank"
                 rel="noopener noreferrer"
+                aria-label={`WhatsApp аркылуу байланышуу: ${SUPPORT_CONTACT.phoneDisplay}`}
             >
                 <div
                     className="w-10 h-10 rounded-full flex items-center justify-center"

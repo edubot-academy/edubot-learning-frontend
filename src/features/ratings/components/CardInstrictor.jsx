@@ -3,14 +3,26 @@ import NoImage from '@assets/icons/noImage.svg';
 
 const CardInstructor = ({
     avatarUrl,
-    fullName,
+    fullName = 'Инструктор',
     title,
+    position,
+    specialty,
     totalStudents,
+    studentsCount,
     ratingAverage,
     ratingCount,
 }) => {
+    const instructorName = String(fullName || 'Инструктор');
     const safeRatingAverage = Math.max(0, Math.min(5, Number(ratingAverage) || 0));
-    const safeRatingCount = ratingCount ?? 0;
+    const safeRatingCount = Number(ratingCount) || 0;
+    const safeStudentCount = Number(totalStudents ?? studentsCount) || 0;
+    const displayTitle = title || position || specialty || 'Окутуучу';
+    const displaySpecialty = specialty && specialty !== displayTitle ? specialty : 'Практикалык сабактар';
+    const ratingLabel = safeRatingAverage ? `${safeRatingAverage.toFixed(1)} / 5` : 'Жаңы рейтинг';
+    const normalizedName = instructorName
+        .toLowerCase()
+        .replace(/[^a-z0-9а-яөүңё]+/gi, '-')
+        .replace(/^-|-$/g, '') || 'instructor';
 
     const getFillPercentage = (starIndex) => {
         if (safeRatingAverage >= starIndex) return 100;
@@ -20,7 +32,7 @@ const CardInstructor = ({
 
     const renderStar = (idx) => {
         const fill = getFillPercentage(idx);
-        const gradientId = `instructor-star-${idx}-${Math.round(safeRatingAverage * 10)}`;
+        const gradientId = `instructor-star-${normalizedName}-${idx}-${Math.round(safeRatingAverage * 10)}`;
         return (
             <svg
                 key={idx}
@@ -29,6 +41,8 @@ const CardInstructor = ({
                 fill="none"
                 stroke="#F59E0B"
                 strokeWidth="1.5"
+                aria-hidden="true"
+                focusable="false"
             >
                 <defs>
                     <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="0%">
@@ -45,26 +59,46 @@ const CardInstructor = ({
     };
 
     return (
-        <div className="bg-white text-[#141619] dark:bg-[#141619] dark:text-[#E8ECF3] rounded flex flex-col overflow-hidden p-3 border border-gray-200 dark:border-[#2A2E35]">
-            <img
-                src={avatarUrl || NoImage}
-                onError={(e) => {
-                    e.currentTarget.src = NoImage;
-                }}
-                alt={fullName}
-                className="w-full h-96 object-cover rounded"
-            />
-            <h3 className="text-lg font-semibold mt-4 mb-2">{fullName}</h3>
-            <p className="text-sm text-gray-500 dark:text-[#a6adba]">{title}</p>
-            <div className="flex mt-4 gap-2 items-center">
-                <div className="flex items-center gap-2">
+        <article className="flex h-full flex-col overflow-hidden rounded-[24px] border border-gray-200 bg-white p-3 text-[#141619] shadow-sm transition hover:-translate-y-1 hover:shadow-xl dark:border-[#2A2E35] dark:bg-[#141619] dark:text-[#E8ECF3]">
+            <div className="relative aspect-[4/3] overflow-hidden rounded-[18px] bg-gray-100 dark:bg-gray-900">
+                <img
+                    src={avatarUrl || NoImage}
+                    onError={(e) => {
+                        e.currentTarget.src = NoImage;
+                    }}
+                    alt={instructorName}
+                    className="h-full w-full object-cover"
+                />
+                <div className="absolute left-3 top-3 rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-gray-900 shadow-sm dark:bg-gray-950/85 dark:text-white">
+                    Топ окутуучу
+                </div>
+            </div>
+            <div className="flex flex-1 flex-col px-1 pb-2 pt-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-orange-600 dark:text-orange-300">
+                    {displaySpecialty}
+                </p>
+                <h3 className="mt-2 text-lg font-semibold leading-tight">{instructorName}</h3>
+                <p className="mt-2 text-sm leading-6 text-gray-600 dark:text-[#a6adba]">{displayTitle}</p>
+
+                <div className="mt-4 flex items-center gap-2" aria-label={`Рейтинг ${ratingLabel}`}>
                     <div className="flex items-center gap-1">
                         {[1, 2, 3, 4, 5].map(renderStar)}
                     </div>
+                    <span className="text-sm font-semibold text-gray-800 dark:text-gray-100">{ratingLabel}</span>
                 </div>
-                <span className="text-sm text-[#a6adba]">({safeRatingCount} студенттер)</span>
+
+                <div className="mt-4 grid grid-cols-2 gap-2 text-sm">
+                    <div className="rounded-2xl bg-gray-50 px-3 py-2 dark:bg-gray-900">
+                        <span className="block text-xs text-gray-500 dark:text-gray-400">Пикирлер</span>
+                        <strong className="mt-1 block text-gray-900 dark:text-white">{safeRatingCount}</strong>
+                    </div>
+                    <div className="rounded-2xl bg-gray-50 px-3 py-2 dark:bg-gray-900">
+                        <span className="block text-xs text-gray-500 dark:text-gray-400">Студенттер</span>
+                        <strong className="mt-1 block text-gray-900 dark:text-white">{safeStudentCount}</strong>
+                    </div>
+                </div>
             </div>
-        </div>
+        </article>
     );
 };
 
@@ -73,8 +107,11 @@ export default CardInstructor;
 CardInstructor.propTypes = {
     avatarUrl: PropTypes.string,
     fullName: PropTypes.string,
+    title: PropTypes.string,
     position: PropTypes.string,
+    specialty: PropTypes.string,
     totalStudents: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
-    ratingAverage: PropTypes.number,
-    ratingCount: PropTypes.number,
+    studentsCount: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
+    ratingAverage: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
+    ratingCount: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
 };
