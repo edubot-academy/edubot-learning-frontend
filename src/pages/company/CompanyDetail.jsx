@@ -56,7 +56,7 @@ export default function CompanyDetail() {
                 <CompanyCourses
                     company={company}
                     companyId={companyId}
-                    canManage={['owner', 'admin', 'company_admin'].includes(company?.role) || isPlatformAdmin(user)}
+                    canManage={['owner', 'company_admin'].includes(company?.role) || isPlatformAdmin(user)}
                 />
             )}
         </div>

@@ -18,8 +18,7 @@ import BasicModal from '@shared/ui/BasicModal';
 import ConfirmationModal from '@shared/ui/ConfirmationModal';
 
 const MANAGEABLE_ROLES = [
-    { value: 'admin', label: 'Tenant admin' },
-    { value: 'company_admin', label: 'Company admin' },
+    { value: 'company_admin', label: 'Tenant admin' },
     { value: 'instructor', label: 'Instructor' },
     { value: 'assistant', label: 'Assistant' },
     { value: 'student', label: 'Student' },

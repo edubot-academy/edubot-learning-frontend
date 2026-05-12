@@ -2,6 +2,20 @@
 
 Version bumps are classified by delivery scale; see `VERSIONING.md`.
 
+## [1.11.0] - 2026-05-12
+
+### 🏢 COMPANY MANAGEMENT REFINEMENTS
+- **Role Label Updates**: Updated company admin role label from "Company admin" to "Tenant admin" for consistency
+- **Platform Tenant Details**: Minor UI improvements to tenant management interface
+- **Company Details**: Enhanced company detail page with improved layout and functionality
+
+### 🛠️ TECHNICAL IMPROVEMENTS
+- **Role Consistency**: Standardized role labeling across company management components
+- **UI Polish**: Minor visual and interaction improvements in company management
+- **Code Cleanup**: Removed duplicate role definitions and improved maintainability
+
+---
+
 ## [1.10.3] - 2026-05-12
 
 Patch release for post-`1.10.2` UX/UI audit improvements.

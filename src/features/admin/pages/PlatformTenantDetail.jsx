@@ -672,7 +672,7 @@ export default function PlatformTenantDetail() {
     }
 
     const ownerCount = tenantMembers.filter((member) => member.role === 'owner').length;
-    const adminCount = tenantMembers.filter((member) => ['admin', 'company_admin'].includes(member.role)).length;
+    const adminCount = tenantMembers.filter((member) => member.role === 'company_admin').length;
     const studentCount = tenantMembers.filter((member) => member.role === 'student').length;
     const configuredFlagCount = Object.keys(company.featureFlags || {}).length;
 
@@ -978,7 +978,7 @@ export default function PlatformTenantDetail() {
                     currentUser={user}
                     title="Owners & Admins"
                     description="Manage only tenant owner and admin authority from the platform tenant detail view."
-                    allowedRoles={['owner', 'admin', 'company_admin']}
+                    allowedRoles={['owner', 'company_admin']}
                 />
             )}
 
