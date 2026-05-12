@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useId, useState, useEffect, useRef } from 'react';
 import PropTypes from 'prop-types';
 import { createPortal } from 'react-dom';
 
@@ -36,6 +36,8 @@ const BasicModal = ({
     className = '',
     contentClassName = '',
 }) => {
+    const titleId = useId();
+    const descriptionId = useId();
     const [localIsOpen, setLocalIsOpen] = useState(isOpen);
     const [portalTarget, setPortalTarget] = useState(null);
     const modalRef = useRef(null);
@@ -65,7 +67,7 @@ const BasicModal = ({
             if (e.key !== 'Tab') return;
 
             const focusableElements = modalRef.current?.querySelectorAll(
-                'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+                'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
             );
 
             if (!focusableElements || focusableElements.length === 0) return;
@@ -100,7 +102,7 @@ const BasicModal = ({
         if (initialFocus && modalRef.current) {
             const timeoutId = setTimeout(() => {
                 const focusableElements = modalRef.current?.querySelectorAll(
-                    'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+                    'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
                 );
                 if (focusableElements && focusableElements.length > 0) {
                     focusableElements[0].focus();
@@ -163,8 +165,8 @@ const BasicModal = ({
                         }`}
                     role="dialog"
                     aria-modal="true"
-                    aria-labelledby={title ? 'modal-title' : undefined}
-                    aria-describedby="modal-description"
+                    aria-labelledby={title ? titleId : undefined}
+                    aria-describedby={descriptionId}
                     tabIndex={-1}
                 >
                     <div className="p-6">
@@ -173,7 +175,7 @@ const BasicModal = ({
                                 <div>
                                     {title && (
                                         <h2
-                                            id="modal-title"
+                                            id={titleId}
                                             className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white"
                                         >
                                             {title}
@@ -211,7 +213,7 @@ const BasicModal = ({
                             </div>
                         )}
 
-                        <div className={`max-h-[70vh] overflow-y-auto modal-content ${contentClassName}`} id="modal-description">{children}</div>
+                        <div className={`max-h-[70vh] overflow-y-auto modal-content ${contentClassName}`} id={descriptionId}>{children}</div>
                     </div>
                 </div>
             </div>

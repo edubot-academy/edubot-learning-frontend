@@ -6,7 +6,9 @@ const MainLayout = ({ children }) => {
     return (
         <div className="flex flex-col min-h-screen">
             <Header />
-            <div className="flex-grow">{children}</div>
+            <main id="main-content" className="flex-grow" tabIndex={-1}>
+                {children}
+            </main>
             <Footer />
         </div>
     );

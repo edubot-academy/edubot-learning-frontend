@@ -1,5 +1,6 @@
 import { useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import PropTypes from 'prop-types';
+import { useNavigate } from 'react-router-dom';
 import { fetchStudentOverviewAnalytics } from '@services/api';
 import { AuthContext } from '../context/AuthContext';
 import { toast } from 'react-hot-toast';
@@ -37,6 +38,7 @@ const StudentAnalyticsPage = ({
     showFilters = true,
 }) => {
     const { user } = useContext(AuthContext);
+    const navigate = useNavigate();
     const [filters, setFilters] = useState({ from: '', to: '' });
     const [loading, setLoading] = useState(false);
     const [overview, setOverview] = useState(null);

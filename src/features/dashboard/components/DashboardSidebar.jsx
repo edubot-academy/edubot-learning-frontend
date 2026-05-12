@@ -26,10 +26,9 @@ const DashboardSidebar = ({
         <aside
             className={`rounded-2xl shadow-xl transition-all duration-500 ease-in-out bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:shadow-2xl transform hover:scale-[1.02] ${resolvedOpen ? 'w-64 p-6' : 'w-20 p-4'
                 } ${className}`}
-            role="navigation"
             aria-label="Dashboard navigation menu"
         >
-            <nav className="mt-6 space-y-1" id="dashboard-nav-menu" role="menubar" aria-orientation="vertical">
+            <nav className="mt-6 space-y-1" id="dashboard-nav-menu" aria-label="Dashboard sections">
                 {(() => {
                     const groupedItems = items.reduce((groups, item) => {
                         const category = item.category || 'other';
@@ -72,6 +71,7 @@ const DashboardSidebar = ({
                                         return (
                                             <button
                                                 key={item.id}
+                                                type="button"
                                                 onClick={() => onSelect(item.id)}
                                                 className={`w-full flex items-center ${resolvedOpen ? 'justify-start' : 'justify-center'
                                                     } px-3 py-2 rounded-xl transition-all duration-300 ease-out transform hover:scale-105 hover:-translate-y-0.5 ${isActive
@@ -92,7 +92,6 @@ const DashboardSidebar = ({
                                                                                     ? 'text-edubot-teal dark:text-edubot-green hover:bg-edubot-teal/10 dark:hover:bg-edubot-teal/20 hover:shadow-md hover:ring-2 hover:ring-edubot-teal/20'
                                                                                     : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:shadow-md hover:ring-2 hover:ring-gray-200/50'
                                                     }`}
-                                                role="menuitem"
                                                 aria-label={item.label}
                                                 aria-current={isActive ? 'page' : undefined}
                                             >

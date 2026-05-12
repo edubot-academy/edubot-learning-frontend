@@ -37,20 +37,35 @@ const Footer = () => {
                             </h3>
                             <ul className="space-y-1 text-gray-700 dark:text-[#a6adba] text-sm">
                                 <li>
-                                    <Link className="flex items-center gap-1" to={"https://www.instagram.com/edubot.company/"}>
+                                    <a
+                                        className="flex items-center gap-1"
+                                        href="https://www.instagram.com/edubot.company/"
+                                        target="_blank"
+                                        rel="noreferrer"
+                                    >
                                         {' '}
                                         <FaInstagram /> edubot_learning
-                                    </Link>
+                                    </a>
                                 </li>
                                 <li>
-                                    <Link className="flex items-center gap-1" to={'https://t.me/edubot_learning'}>
+                                    <a
+                                        className="flex items-center gap-1"
+                                        href="https://t.me/edubot_learning"
+                                        target="_blank"
+                                        rel="noreferrer"
+                                    >
                                         <FaTelegramPlane /> edubot_learning
-                                    </Link>
+                                    </a>
                                 </li>
                                 <li>
-                                    <Link className="flex items-center gap-1" to={"https://wa.me/996221004976"}>
+                                    <a
+                                        className="flex items-center gap-1"
+                                        href="https://wa.me/996221004976"
+                                        target="_blank"
+                                        rel="noreferrer"
+                                    >
                                         <IoIosCall /> +996 (221) 004 976
-                                    </Link>
+                                    </a>
                                 </li>
                             </ul>
                         </div>

@@ -135,6 +135,20 @@ const CardCourse = ({
         navigate('/cart');
     };
 
+    const navigateToCourse = () => {
+        navigate(`/courses/${id}`);
+    };
+
+    const handleCardClick = (e) => {
+        const interactiveTarget = e.target.closest(
+            'a, button, input, select, textarea, [role="button"], [data-card-action]'
+        );
+
+        if (interactiveTarget) return;
+
+        navigateToCourse();
+    };
+
     const handlePopupClick = (e) => e.stopPropagation();
 
     // Для отладки
@@ -143,8 +157,12 @@ const CardCourse = ({
 
     return (
         <>
-            <Link to={`/courses/${id}`} className="block relative">
-                <div className="max-w-md bg-white text-[#141619] border border-gray-200 dark:bg-[#141619] dark:text-[#E8ECF3] dark:border-[#2A2E35] rounded flex flex-col hover:shadow-lg transition-shadow duration-300 relative">
+            <article className="block relative">
+                <div
+                    className="max-w-md cursor-pointer bg-white text-[#141619] border border-gray-200 dark:bg-[#141619] dark:text-[#E8ECF3] dark:border-[#2A2E35] rounded flex flex-col hover:shadow-lg transition-shadow duration-300 relative"
+                    onClick={handleCardClick}
+                    aria-label={`${title} курсу тууралуу кененирээк көрүү`}
+                >
                     <button
                         type="button"
                         onClick={handleFavoriteClick}
@@ -169,16 +187,28 @@ const CardCourse = ({
                     </button>
 
                     <div className="p-3">
-                        <img
-                            src={coverImageUrl || NoImage}
-                            onError={(e) => {
-                                e.currentTarget.src = NoImage;
-                            }}
-                            alt={title}
-                            className="w-full h-48 object-cover rounded"
-                        />
+                        <Link
+                            to={`/courses/${id}`}
+                            className="block rounded focus:outline-none focus:ring-2 focus:ring-edubot-orange focus:ring-offset-2 dark:focus:ring-offset-[#141619]"
+                        >
+                            <img
+                                src={coverImageUrl || NoImage}
+                                onError={(e) => {
+                                    e.currentTarget.src = NoImage;
+                                }}
+                                alt={title}
+                                className="w-full h-48 object-cover rounded"
+                            />
+                        </Link>
                         <div className="flex flex-col flex-grow py-4">
-                            <h3 className="font-suisse font-medium text-lg">{title}</h3>
+                            <h3 className="font-suisse font-medium text-lg">
+                                <Link
+                                    to={`/courses/${id}`}
+                                    className="rounded transition-colors hover:text-edubot-orange focus:outline-none focus:ring-2 focus:ring-edubot-orange focus:ring-offset-2 dark:focus:ring-offset-[#141619]"
+                                >
+                                    {title}
+                                </Link>
+                            </h3>
                             <div className="flex flex-wrap gap-1 my-1">
                                 <span className="text-[11px] px-2 py-0.5 rounded-full bg-blue-50 text-blue-700">
                                     {courseTypeLabel(courseType)}
@@ -254,7 +284,7 @@ const CardCourse = ({
                         </div>
                     </div>
                 </div>
-            </Link>
+            </article>
 
             <UnauthModal
                 isOpen={showUnauthModal}

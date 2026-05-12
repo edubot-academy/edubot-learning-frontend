@@ -2,6 +2,41 @@
 
 Version bumps are classified by delivery scale; see `VERSIONING.md`.
 
+## [1.10.1] - 2026-05-12
+
+### ♿ UX/UI ACCESSIBILITY FOUNDATION
+- **Semantic Page Shell**: Added a stable `main#main-content` landmark to the app layout for better page structure and skip-target support.
+- **Public Navigation Semantics**: Converted primary header navigation to labeled semantic navigation and improved header icon button labels/state.
+- **Footer External Links**: Replaced router links for Instagram, Telegram, and WhatsApp with proper external anchors.
+- **Password Field Accessibility**: Converted password visibility toggles to semantic buttons with accessible names, pressed state, input labels, and error associations.
+- **Modal ARIA Wiring**: Added unique modal title/description IDs and tightened focusable-element handling in shared modal primitives.
+- **Dashboard Navigation Semantics**: Removed incorrect sidebar menu roles and aligned mobile dashboard navigation with a simpler nav/menu pattern.
+
+### 📚 PUBLIC COURSE CATALOG REFINEMENTS
+- **Video-Only Public Catalog**: Scoped `/courses` to public video courses and filtered out unpublished or non-public delivery course types.
+- **Catalog State Handling**: Added result summary, sort controls, loading skeletons, retryable error state, and public-video empty state.
+- **Course Card Interaction**: Removed invalid nested interactive card markup while preserving pointer-click navigation on non-action card areas and explicit image/title links.
+- **Courses Layout Cleanup**: Replaced the marketing section wrapper on `/courses` with a dedicated catalog container and fixed the header-to-page spacing seam.
+
+### 🔧 CORRECTNESS FIXES
+- **Student Analytics Navigation**: Added missing `useNavigate()` wiring for course action handlers in `StudentAnalytics.jsx`.
+
+### 🔧 ENHANCED FILES
+- `src/app/layouts/MainLayout.jsx` - Added semantic main landmark.
+- `src/shared/Header.jsx` - Improved navigation semantics and desktop user-menu click behavior.
+- `src/shared/Footer.jsx` - Fixed external link semantics.
+- `src/shared/ui/forms/LabelPassword.jsx` - Improved password-field accessibility.
+- `src/shared/ui/BasicModal.jsx` - Added unique ARIA IDs and focus filtering.
+- `src/shared/ui/AdvancedModal.jsx` - Added unique ARIA IDs and focus filtering.
+- `src/components/ui/dashboard/DashboardTabs.jsx` - Simplified mobile nav semantics.
+- `src/features/dashboard/components/DashboardSidebar.jsx` - Removed incorrect menu semantics.
+- `src/features/courses/components/CardCourse.jsx` - Fixed nested interactive markup while preserving card click behavior.
+- `src/pages/Courses.jsx` - Rebuilt public video catalog baseline states and layout.
+- `src/pages/StudentAnalytics.jsx` - Fixed missing navigation hook.
+- `docs/shared/audits/PAGE_BY_PAGE_UX_UI_AUDIT.md` - Marked completed UX/UI audit tasks and clarified public catalog scope.
+
+---
+
 ## [1.10.0] - 2026-05-12
 
 ### 🏢 TENANT AND COMPANY MANAGEMENT

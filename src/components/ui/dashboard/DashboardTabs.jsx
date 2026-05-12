@@ -48,27 +48,61 @@ const DashboardTabs = ({ items, activeId, onSelect, maxVisible = 4 }) => {
     return <span className="h-2.5 w-2.5 rounded-full bg-current" aria-hidden="true" />;
   };
 
+  const selectByOffset = (currentId, offset) => {
+    const currentIndex = items.findIndex((item) => item.id === currentId);
+    if (currentIndex === -1) return;
+
+    const nextIndex = (currentIndex + offset + items.length) % items.length;
+    onSelect(items[nextIndex].id);
+    setShowMore(false);
+  };
+
+  const handleTabKeyDown = (event, itemId) => {
+    if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
+      event.preventDefault();
+      selectByOffset(itemId, 1);
+    }
+
+    if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
+      event.preventDefault();
+      selectByOffset(itemId, -1);
+    }
+
+    if (event.key === 'Home') {
+      event.preventDefault();
+      onSelect(items[0].id);
+      setShowMore(false);
+    }
+
+    if (event.key === 'End') {
+      event.preventDefault();
+      onSelect(items[items.length - 1].id);
+      setShowMore(false);
+    }
+  };
+
   return (
     <div className="md:hidden">
       <div className="fixed inset-x-0 bottom-0 z-[60] px-3 pb-3 pt-2">
         <div className="mx-auto max-w-2xl rounded-[1.75rem] border border-edubot-line/80 bg-white/92 p-2 shadow-edubot-glow backdrop-blur-xl dark:border-slate-700 dark:bg-slate-900/92">
-          <div className="flex items-center justify-around gap-1">
+          <nav className="flex items-center justify-around gap-1" aria-label="Dashboard sections">
             {visibleItems.map((item) => {
               const isActive = item.id === activeId;
               return (
                 <button
                   key={item.id}
+                  id={`dashboard-tab-${item.id}`}
+                  type="button"
                   onClick={() => {
                     onSelect(item.id);
                     setShowMore(false);
                   }}
+                  onKeyDown={(event) => handleTabKeyDown(event, item.id)}
                   className={`flex min-h-[60px] min-w-0 flex-1 flex-col items-center justify-center rounded-2xl px-2 py-2.5 text-center transition-all duration-200 touch-manipulation active:scale-95 ${
                     isActive
                       ? 'bg-gradient-to-br from-edubot-orange to-edubot-soft text-white shadow-edubot-soft'
                       : 'text-edubot-muted hover:bg-edubot-surfaceAlt dark:text-slate-300 dark:hover:bg-slate-800'
                   }`}
-                  role="tab"
-                  aria-selected={isActive}
                   aria-current={isActive ? 'page' : undefined}
                 >
                   <span
@@ -91,11 +125,12 @@ const DashboardTabs = ({ items, activeId, onSelect, maxVisible = 4 }) => {
 
             {hiddenItems.length > 0 && (
               <button
+                type="button"
                 onClick={() => setShowMore(!showMore)}
                 className="flex min-h-[60px] min-w-[64px] flex-col items-center justify-center rounded-2xl px-2 py-2.5 text-edubot-muted transition-all duration-200 touch-manipulation active:scale-95 hover:bg-edubot-surfaceAlt dark:text-slate-300 dark:hover:bg-slate-800"
-                role="tab"
                 aria-expanded={showMore}
                 aria-controls="more-options-menu"
+                aria-haspopup="menu"
               >
                 <span
                   className={`mb-1 flex h-8 w-8 items-center justify-center rounded-full transition-transform duration-200 ${
@@ -109,7 +144,7 @@ const DashboardTabs = ({ items, activeId, onSelect, maxVisible = 4 }) => {
                 </span>
               </button>
             )}
-          </div>
+          </nav>
 
           {showMore && hiddenItems.length > 0 && (
             <div
@@ -123,6 +158,7 @@ const DashboardTabs = ({ items, activeId, onSelect, maxVisible = 4 }) => {
                   Көбүрөөк опциялар
                 </h3>
                 <button
+                  type="button"
                   onClick={() => setShowMore(false)}
                   className="rounded-xl p-2 text-edubot-muted transition hover:bg-edubot-surfaceAlt hover:text-edubot-ink dark:text-gray-400 dark:hover:bg-slate-800 dark:hover:text-gray-200 touch-manipulation active:scale-95"
                   aria-label="Жабуу"
@@ -139,16 +175,19 @@ const DashboardTabs = ({ items, activeId, onSelect, maxVisible = 4 }) => {
                   return (
                     <button
                       key={item.id}
+                      type="button"
                       onClick={() => {
                         onSelect(item.id);
                         setShowMore(false);
                       }}
+                      onKeyDown={(event) => handleTabKeyDown(event, item.id)}
                       className={`flex min-h-[46px] w-full items-center rounded-2xl px-3.5 py-2.5 text-left transition-all duration-200 touch-manipulation active:scale-95 ${
                         isActive
                           ? 'bg-gradient-to-r from-edubot-orange to-edubot-soft text-white shadow-edubot-soft'
                           : 'bg-white/80 text-slate-900 hover:bg-white dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700'
                       }`}
-                      role="menuitem"
+                      role="menuitemradio"
+                      aria-checked={isActive}
                     >
                       <span className={`mr-3 flex h-8 w-8 items-center justify-center rounded-full ${
                         isActive ? 'bg-white/18 text-white' : 'bg-black/5 text-slate-700 dark:bg-white/10 dark:text-slate-100'

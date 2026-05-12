@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import PropTypes from 'prop-types';
 import { MdVisibility, MdVisibilityOff } from 'react-icons/md';
 
 const LabelPassword = ({
@@ -26,6 +27,8 @@ const LabelPassword = ({
 
     const hasError = !!error;
     const isActive = focused || value !== '';
+    const inputId = name || `password-${label.replace(/\s+/g, '-').toLowerCase()}`;
+    const errorId = `${inputId}-error`;
 
     const handleFocus = () => {
         setFocused(true);
@@ -63,6 +66,7 @@ const LabelPassword = ({
           `}
                 >
                     <label
+                        htmlFor={inputId}
                         className={`absolute left-2 sm:left-3 transition-all duration-200 ease-in-out
               ${isActive
                                 ? '-top-2 sm:-top-3 text-xs sm:text-sm'
@@ -77,28 +81,51 @@ const LabelPassword = ({
                     </label>
 
                     <input
+                        id={inputId}
                         type={showPassword ? 'text' : 'password'}
                         name={name}
+                        required={required}
                         value={value} // ← Используем только локальное значение
                         onChange={handleChange}
                         onFocus={handleFocus}
                         onBlur={handleBlur}
                         placeholder={placeholder}
+                        aria-invalid={hasError}
+                        aria-describedby={hasError ? errorId : undefined}
                         className="w-full bg-transparent outline-none text-gray-900 dark:text-[#E8ECF3] text-sm sm:text-base flex items-center pr-10"
                     />
 
-                    <div
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-[#a6adba] cursor-pointer"
+                    <button
+                        type="button"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md p-1 text-gray-500 transition hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-amber-500 dark:text-[#a6adba] dark:hover:text-white"
                         onClick={togglePassword}
+                        aria-label={showPassword ? 'Сырсөздү жашыруу' : 'Сырсөздү көрсөтүү'}
+                        aria-pressed={showPassword}
                     >
                         {showPassword ? <MdVisibility size={24} /> : <MdVisibilityOff size={24} />}
-                    </div>
+                    </button>
                 </div>
 
-                {hasError && <p className="text-red-600 text-xs sm:text-sm">{error}</p>}
+                {hasError && (
+                    <p id={errorId} className="text-red-600 text-xs sm:text-sm">
+                        {error}
+                    </p>
+                )}
             </div>
         </div>
     );
+};
+
+LabelPassword.propTypes = {
+    label: PropTypes.string,
+    name: PropTypes.string,
+    required: PropTypes.bool,
+    error: PropTypes.string,
+    placeholder: PropTypes.string,
+    width: PropTypes.string,
+    value: PropTypes.string,
+    onChange: PropTypes.func,
+    className: PropTypes.string,
 };
 
 export default LabelPassword;

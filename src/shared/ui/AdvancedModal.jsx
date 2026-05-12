@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useId, useState, useEffect, useRef, useCallback } from 'react';
 import PropTypes from 'prop-types';
 import { createPortal } from 'react-dom';
 
@@ -41,6 +41,8 @@ const AdvancedModal = ({
     loading = false,
     className = '',
 }) => {
+    const titleId = useId();
+    const subtitleId = useId();
     const [localIsOpen, setLocalIsOpen] = useState(isOpen);
     const [portalTarget, setPortalTarget] = useState(null);
     const [isAnimating, setIsAnimating] = useState(false);
@@ -89,7 +91,7 @@ const AdvancedModal = ({
         if (!modalRef.current) return;
 
         const focusableElements = modalRef.current.querySelectorAll(
-            'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+            'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
         );
 
         if (focusableElements.length === 0) return;
@@ -256,8 +258,8 @@ const AdvancedModal = ({
                         } ${getVariantClasses()} ${animationClass} ${className}`}
                     role="dialog"
                     aria-modal="true"
-                    aria-labelledby={title ? 'modal-title' : undefined}
-                    aria-describedby={subtitle ? 'modal-subtitle' : undefined}
+                    aria-labelledby={title ? titleId : undefined}
+                    aria-describedby={subtitle ? subtitleId : undefined}
                     aria-busy={loading}
                     tabIndex={-1}
                 >
@@ -270,7 +272,7 @@ const AdvancedModal = ({
                             <div className="flex-1 min-w-0">
                                 {title && (
                                     <h2
-                                        id="modal-title"
+                                        id={titleId}
                                         className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white truncate"
                                     >
                                         {title}
@@ -278,7 +280,7 @@ const AdvancedModal = ({
                                 )}
                                 {subtitle && (
                                     <p
-                                        id="modal-subtitle"
+                                        id={subtitleId}
                                         className="text-sm text-gray-600 dark:text-gray-400 mt-1"
                                     >
                                         {subtitle}

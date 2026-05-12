@@ -32,7 +32,8 @@ const NavLinks = ({ isMobile, user }) => {
         'hover:after:left-0 hover:after:w-full';
 
     return (
-        <div
+        <nav
+            aria-label={isMobile ? 'Mobile primary navigation' : 'Primary navigation'}
             className={
                 isMobile
                     ? 'flex flex-col space-y-4 mt-4'
@@ -79,7 +80,7 @@ const NavLinks = ({ isMobile, user }) => {
                     Dashboard
                 </Link>
             )}
-        </div>
+        </nav>
     );
 };
 
@@ -332,6 +333,8 @@ const Header = () => {
                                         onClick={() =>
                                             handleIconClick('cart', () => navigate('/cart'))
                                         }
+                                        aria-label="Себет"
+                                        aria-current={location.pathname === '/cart' ? 'page' : undefined}
                                     >
                                         <BsCart2
                                             className={`w-5 h-5 transition-colors duration-300 ${activeIcon === 'cart' ||
@@ -357,6 +360,8 @@ const Header = () => {
                                             handleIconClick('user');
                                             setUserMenuOpen(!userMenuOpen);
                                         }}
+                                        aria-label="Колдонуучу менюсу"
+                                        aria-expanded={userMenuOpen}
                                     >
                                         {user.avatar ? (
                                             <img
@@ -378,10 +383,15 @@ const Header = () => {
                                         )}
                                     </button>
 
-                                    <div className="absolute top-full right-0 pt-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible lg:group-hover:opacity-100 lg:group-hover:visible transform translate-y-2 group-hover:translate-y-0 transition-all duration-300 ease-out z-60">
+                                    <div
+                                        className={`absolute top-full right-0 pt-2 transform transition-all duration-300 ease-out z-60 group-hover:visible group-hover:translate-y-0 group-hover:opacity-100 ${userMenuOpen
+                                            ? 'visible translate-y-0 opacity-100'
+                                            : 'invisible translate-y-2 opacity-0'
+                                        }`}
+                                    >
                                         <div className="relative">
                                             <div className="absolute -top-2 left-0 right-0 h-2 bg-transparent"></div>
-                                            <UserMenuDropdown user={user} onClose={() => { }} />
+                                            <UserMenuDropdown user={user} onClose={() => setUserMenuOpen(false)} />
                                         </div>
                                     </div>
                                 </div>
@@ -408,6 +418,8 @@ const Header = () => {
                                         onClick={() =>
                                             handleIconClick('cart', () => navigate('/cart'))
                                         }
+                                        aria-label="Себет"
+                                        aria-current={location.pathname === '/cart' ? 'page' : undefined}
                                     >
                                         <BsCart2
                                             className={`w-5 h-5 transition-colors duration-300 ${activeIcon === 'cart' ||
@@ -425,10 +437,11 @@ const Header = () => {
                                     </button>
                                 </div>
 
-                                <Link to="/login">
-                                    <button className="bg-orange-500 dark:bg-orange-600 text-white px-4 py-2 rounded hover:bg-orange-600 dark:hover:bg-orange-500 transition-colors">
-                                        Кирүү
-                                    </button>
+                                <Link
+                                    to="/login"
+                                    className="inline-flex items-center justify-center rounded bg-orange-500 px-4 py-2 text-white transition-colors hover:bg-orange-600 dark:bg-orange-600 dark:hover:bg-orange-500"
+                                >
+                                    Кирүү
                                 </Link>
                             </div>
                         )}
@@ -443,6 +456,8 @@ const Header = () => {
                                 setPositionBar(false);
                             }}
                             className="text-gray-700 dark:text-gray-300 text-2xl p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors"
+                            aria-label="Менюну ачуу"
+                            aria-expanded={menuOpen}
                         >
                             <FaBars />
                         </button>
@@ -469,6 +484,8 @@ const Header = () => {
                             <button
                                 onClick={() => setSearchOpen(!searchOpen)}
                                 className="text-gray-700 dark:text-gray-300 text-2xl p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors"
+                                aria-label="Издөөнү ачуу"
+                                aria-expanded={searchOpen}
                             >
                                 <IoSearch />
                             </button>
@@ -479,8 +496,10 @@ const Header = () => {
                                         className={`w-9 h-9 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${userMenuOpen
                                             ? 'bg-orange-500 border-orange-500'
                                             : 'border-black dark:border-gray-400 hover:border-gray-600 dark:hover:border-gray-300'
-                                            }`}
+                                        }`}
                                         onClick={() => setUserMenuOpen(!userMenuOpen)}
+                                        aria-label="Колдонуучу менюсу"
+                                        aria-expanded={userMenuOpen}
                                     >
                                         {user.avatar ? (
                                             <img
