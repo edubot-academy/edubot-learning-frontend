@@ -23,16 +23,9 @@ This release completes the current leaderboard redesign phase for the LMS fronte
 - Skill-focused deep links can open the relevant leaderboard skill context.
 
 ### Sharing
-- Achievement sharing now supports:
-  - Telegram
-  - WhatsApp
-  - X
-  - LinkedIn
-  - copy link
-  - PNG download
-  - native share fallback
-- Public share pages and branded share-card downloads are supported.
-- Share UI received stronger loading, feedback, and motion polish.
+- Achievement sharing was removed from the current frontend scope after this release phase.
+- Legacy `/share/achievement/:token` links should degrade to the public leaderboard instead of exposing the removed share page.
+- Reintroducing social sharing requires a separate product decision and contract update.
 
 ### Reliability
 - Mock leaderboard fallback content was removed from student/public experiences.

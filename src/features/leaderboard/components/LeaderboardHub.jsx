@@ -37,6 +37,7 @@ import {
 const tabs = [
     { id: 'overview', label: 'Кыскача' },
     { id: 'weekly', label: 'Апталык рейтинг' },
+    { id: 'skills', label: 'Көндүмдөр' },
 ];
 
 const publicTabs = [
@@ -47,8 +48,24 @@ const publicTabs = [
 const trackOptions = [
     { value: 'all', label: 'Бардыгы', helper: 'Жалпы рейтинг' },
     { value: 'video', label: 'Видео курстар', helper: 'Өз алдынча окуу' },
-    { value: 'live', label: 'Түз эфир жана офлайн', helper: 'Сессиялык окуу' },
+    { value: 'live', label: 'Жандуу жана офлайн', helper: 'Сессиялык окуу' },
 ];
+
+const publicTrustPoints = [
+    'Рейтинг сабак, тест, XP жана туруктуу катышуу сигналдары аркылуу түзүлөт.',
+    'Бул ачык бетте аптанын лидерлери, күчтүү өсүш жана окуудагы негизги жеңиштер көрүнөт.',
+    'Жеке орун жана жакынкы атаандаштар аккаунтка киргенден кийин көрсөтүлөт.',
+];
+
+const panelClassName = (embedded) =>
+    embedded
+        ? 'rounded-[24px] border border-gray-100 bg-white px-5 py-4 text-gray-700 shadow-sm dark:border-gray-800 dark:bg-[#222222] dark:text-gray-200'
+        : 'rounded-[24px] border border-slate-200 bg-white/90 px-5 py-4 text-slate-700 shadow-sm dark:border-slate-800 dark:bg-slate-900/70 dark:text-slate-200';
+
+const eyebrowClassName = (embedded) =>
+    embedded
+        ? 'text-sm font-semibold uppercase tracking-[0.18em] text-blue-600 dark:text-blue-300'
+        : 'text-sm font-semibold uppercase tracking-[0.18em] text-orange-500';
 
 const LeaderboardHub = ({ embedded = false, initialTrack = 'all', lockTrack = false, publicMode = false }) => {
     const { user } = useContext(AuthContext);
@@ -67,6 +84,8 @@ const LeaderboardHub = ({ embedded = false, initialTrack = 'all', lockTrack = fa
     const [skillBoards, setSkillBoards] = useState([]);
     const [loading, setLoading] = useState(true);
     const [skillBoardsLoading, setSkillBoardsLoading] = useState(true);
+    const [loadError, setLoadError] = useState('');
+    const [skillBoardsError, setSkillBoardsError] = useState('');
 
     const skillQuery = searchParams.get('skill') || '';
     const normalizedSkillQuery = useMemo(() => String(skillQuery || '').trim().toLowerCase(), [skillQuery]);
@@ -100,6 +119,7 @@ const LeaderboardHub = ({ embedded = false, initialTrack = 'all', lockTrack = fa
     }, []);
 
     const refreshSkillCatalog = useCallback(async () => {
+        setSkillBoardsError('');
         try {
             const catalog = await fetchSkills();
             const mapped = Array.isArray(catalog)
@@ -113,6 +133,7 @@ const LeaderboardHub = ({ embedded = false, initialTrack = 'all', lockTrack = fa
             setSkillBoards(mapped);
         } catch (error) {
             console.warn('Skills catalog refresh failed', error);
+            setSkillBoardsError('Көндүмдөр каталогу азыр жеткиликсиз.');
             setSkillBoards([]);
         }
     }, []);
@@ -121,6 +142,7 @@ const LeaderboardHub = ({ embedded = false, initialTrack = 'all', lockTrack = fa
         let cancelled = false;
         const load = async () => {
             setLoading(true);
+            setLoadError('');
             try {
                 const [weeklyRes, fastRes, sowRes, mySummaryRes, nearMeRes, achievementsRes, challengesRes, mySkillProgressRes] = await Promise.all([
                     fetchWeeklyLeaderboard({ page: 1, limit: 10, track }),
@@ -141,6 +163,11 @@ const LeaderboardHub = ({ embedded = false, initialTrack = 'all', lockTrack = fa
                 setBackendAchievements(achievementsRes || null);
                 setBackendChallenges(challengesRes || null);
                 setMySkillProgress(Array.isArray(mySkillProgressRes) ? mySkillProgressRes : []);
+            } catch (error) {
+                console.warn('Leaderboard refresh failed', error);
+                if (!cancelled) {
+                    setLoadError('Рейтинг маалыматтарын жүктөөдө ката кетти. Бир аздан кийин кайра аракет кылыңыз.');
+                }
             } finally {
                 if (!cancelled) setLoading(false);
             }
@@ -272,30 +299,18 @@ const LeaderboardHub = ({ embedded = false, initialTrack = 'all', lockTrack = fa
         }));
     }, [backendChallenges]);
 
-    const achievementShareMeta = useMemo(() => ({
-        displayName: user?.fullName || user?.name || 'EduBot студенти',
-        rank: snapshot.rank || null,
-        xp: currentXp || null,
-        streakDays: currentStreak || null,
-        trackLabel: trackMeta.label,
-    }), [user, snapshot.rank, currentXp, currentStreak, trackMeta.label]);
-
     const achievementItems = useMemo(() => {
         const items = Array.isArray(backendAchievements?.items) ? backendAchievements.items : [];
         const normalize = (item) => ({
             ...item,
             title: item.title || item.name,
             description: item.description || 'Бул жетишкендик сиздин өсүшүңүздү жана активдүүлүгүңүздү көрсөтөт.',
-            shareMeta: {
-                ...achievementShareMeta,
-                ...(item.shareMeta || {}),
-            },
         });
 
         if (!items.length) return fallbackAchievementItems.map(normalize);
 
         return items.map(normalize);
-    }, [backendAchievements, fallbackAchievementItems, achievementShareMeta]);
+    }, [backendAchievements, fallbackAchievementItems]);
 
     const publicHighlights = useMemo(() => {
         const leaders = weeklyItems.slice(0, 3);
@@ -303,14 +318,14 @@ const LeaderboardHub = ({ embedded = false, initialTrack = 'all', lockTrack = fa
         return [
             leaderNames.length ? `${leaderNames.join(', ')} бул жумада лидер болуп турат.` : null,
             studentOfWeek?.fullName ? `${studentOfWeek.fullName} туруктуу өсүш менен алдыга чыкты.` : null,
-            'Жеңиштерди карточкага айландырып, социалдык тармакка бөлүшсө болот.',
+            'Жетишкендиктер окуудагы прогрессти так жана түшүнүктүү көрсөтөт.',
         ].filter(Boolean);
     }, [weeklyItems, studentOfWeek]);
 
     const publicMetrics = useMemo(() => {
         const totalXp = weeklyItems.reduce((sum, item) => sum + Number(item?.xp || 0), 0);
         const totalLessons = weeklyItems.reduce((sum, item) => sum + Number(item?.lessonsCompleted || 0), 0);
-        const shareReady = achievementItems.slice(0, 3).length;
+        const visibleAchievements = achievementItems.slice(0, 3).length;
 
         return [
             {
@@ -324,12 +339,33 @@ const LeaderboardHub = ({ embedded = false, initialTrack = 'all', lockTrack = fa
                 helper: totalLessons ? `${totalLessons} сабак жабылды` : 'Өсүш эсептелүүдө',
             },
             {
-                label: 'Бөлүшүү',
-                value: `${shareReady}`,
-                helper: 'Даяр жеңиш учуру',
+                label: 'Жетишкендиктер',
+                value: `${visibleAchievements}`,
+                helper: 'Көрүнүктүү жеңиш',
             },
         ];
     }, [weekly, achievementItems]);
+
+    const heroMetrics = publicMode ? (
+        <>
+            {publicMetrics.map((metric, index) => (
+                <DashboardMetricCard
+                    key={`${metric.label}-${index}`}
+                    label={metric.label}
+                    value={metric.value}
+                    tone={index === 1 ? 'amber' : index === 2 ? 'blue' : undefined}
+                    valueClassName="text-base sm:text-lg break-words leading-snug"
+                />
+            ))}
+        </>
+    ) : (
+        <>
+            <DashboardMetricCard label="Менин ордум" value={rankValue} valueClassName="text-base sm:text-lg break-words leading-snug" />
+            <DashboardMetricCard label="Бул жумадагы XP" value={currentXp || 0} tone="amber" valueClassName="text-base sm:text-lg break-words leading-snug" />
+            <DashboardMetricCard label="Серия" value={currentStreak ? `${currentStreak} күн` : 'Жок'} tone="blue" valueClassName="text-base sm:text-lg break-words leading-snug" />
+            <DashboardMetricCard label="Кийинки максат" value={targetGapValue} tone="green" valueClassName="text-base sm:text-lg break-words leading-snug" />
+        </>
+    );
 
     const hasLeaderboardServiceIssue = Boolean(weekly?._fallback || fast?._fallback);
     const serviceIssueMessage = weekly?._fallbackMessage || fast?._fallbackMessage || 'Рейтинг сервиси убактылуу жеткиликсиз';
@@ -342,6 +378,7 @@ const LeaderboardHub = ({ embedded = false, initialTrack = 'all', lockTrack = fa
         if (lockTrack) return null;
         return (
             <div className="max-w-full overflow-hidden rounded-3xl border border-edubot-line bg-white p-2 dark:border-slate-700 dark:bg-slate-900">
+                <p id="leaderboard-track-label" className="sr-only">Рейтинг багытын тандаңыз</p>
                 <div className="flex flex-wrap gap-2 min-w-0">
                     {trackOptions.map((option) => {
                         const active = track === option.value;
@@ -350,6 +387,8 @@ const LeaderboardHub = ({ embedded = false, initialTrack = 'all', lockTrack = fa
                                 key={option.value}
                                 type="button"
                                 onClick={() => setTrack(option.value)}
+                                aria-pressed={active}
+                                aria-describedby="leaderboard-track-label"
                                 className={[
                                     'group min-w-0 flex-1 rounded-2xl px-4 py-3 text-left transition-all sm:min-w-[132px] sm:flex-none',
                                     active
@@ -435,6 +474,13 @@ const LeaderboardHub = ({ embedded = false, initialTrack = 'all', lockTrack = fa
                         </DashboardInsetPanel>
                     </div>
                 </DashboardWorkspaceHero>
+
+                {loadError ? (
+                    <div className={panelClassName(embedded)} role="alert">
+                        <p className={eyebrowClassName(embedded)}>Жүктөө катасы</p>
+                        <p className="mt-1 text-sm">{loadError}</p>
+                    </div>
+                ) : null}
 
                 {hasLeaderboardServiceIssue ? (
                     <div className="rounded-3xl border border-amber-200 bg-amber-50/90 px-5 py-4 text-amber-900 shadow-sm dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100 animate-fade-in">
@@ -535,25 +581,17 @@ const LeaderboardHub = ({ embedded = false, initialTrack = 'all', lockTrack = fa
         );
     }
 
-    const renderTab = () => {
-        return (
-            <SmoothTabTransition isLoading={loading} isDataLoaded={true}>
-                <div className="py-16 flex justify-center">
-                    {/* Content will be rendered here */}
-                </div>
-            </SmoothTabTransition>
-        );
-    };
-
-    const supportingSkillsSection = skillBoardCards.length ? (
+    const supportingSkillsSection = skillBoardCards.length || mySkillProgress.length ? (
         <div className="space-y-6">
             <MySkillProgressGrid items={mySkillProgress.slice(0, 6)} embedded={embedded} />
-            <SkillSpotlightGrid
-                boards={skillBoardCards.slice(0, 4)}
-                personalProgress={mySkillProgress}
-                featuredSlug={normalizedSkillQuery}
-                embedded={embedded}
-            />
+            {skillBoardCards.length ? (
+                <SkillSpotlightGrid
+                    boards={skillBoardCards.slice(0, 4)}
+                    personalProgress={mySkillProgress}
+                    featuredSlug={normalizedSkillQuery}
+                    embedded={embedded}
+                />
+            ) : null}
         </div>
     ) : null;
 
@@ -586,7 +624,7 @@ const LeaderboardHub = ({ embedded = false, initialTrack = 'all', lockTrack = fa
                                 <p className="text-sm font-semibold uppercase tracking-[0.18em] text-orange-500">Ачык рейтинг</p>
                                 <h3 className="mt-2 text-xl font-semibold text-slate-900 dark:text-white">Ачык таблица</h3>
                                 <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
-                                    Бул бетте өз алдынча окуу форматындагы курстардын активдүү студенттери көрсөтүлөт. Таблица кыска, түшүнүктүү жана бөлүшүүгө ыңгайлуу болуп түзүлгөн.
+                                    Бул бетте өз алдынча окуу форматындагы курстардын активдүү студенттери көрсөтүлөт. Таблица кыска, түшүнүктүү жана окуу темпин салыштырууга ыңгайлуу болуп түзүлгөн.
                                 </p>
                                 {studentOfWeek?.fullName ? (
                                     <div className="mt-4 rounded-[22px] border border-orange-200 bg-orange-50/80 p-4 dark:border-orange-500/30 dark:bg-orange-500/10">
@@ -611,6 +649,31 @@ const LeaderboardHub = ({ embedded = false, initialTrack = 'all', lockTrack = fa
                         )}
                     </div>
                 );
+            case 'skills':
+                return (
+                    <div className="space-y-6">
+                        {skillBoardsError ? (
+                            <div className={panelClassName(embedded)} role="status">
+                                <p className={eyebrowClassName(embedded)}>Көндүмдөр күтүлүүдө</p>
+                                <p className="mt-1 text-sm">{skillBoardsError}</p>
+                            </div>
+                        ) : null}
+                        {skillBoardsLoading ? (
+                            <div className="py-12 flex justify-center">
+                                <Loader fullScreen={false} />
+                            </div>
+                        ) : supportingSkillsSection ? (
+                            supportingSkillsSection
+                        ) : (
+                            <div className={panelClassName(embedded)}>
+                                <p className={eyebrowClassName(embedded)}>Көндүмдөр күтүлүүдө</p>
+                                <p className="mt-2 text-sm">
+                                    Азырынча бул бөлүктө көрсөтө турган кошумча көндүм маалыматы жок.
+                                </p>
+                            </div>
+                        )}
+                    </div>
+                );
             default:
                 return publicMode ? (
                     <div className="space-y-6">
@@ -625,8 +688,8 @@ const LeaderboardHub = ({ embedded = false, initialTrack = 'all', lockTrack = fa
                             />
                             <AchievementCloud
                                 items={achievementItems.slice(0, 3)}
-                                title="Бөлүшүүгө даяр учурлар"
-                                subtitle="Жетишкендиктерди карточкага айландырып, башкаларга көрсөтүңүз."
+                                title="Көрүнүктүү учурлар"
+                                subtitle="Жетишкендиктер окуудагы темпти жана туруктуулукту көрсөтөт."
                                 embedded={embedded}
                             />
                         </div>
@@ -668,12 +731,17 @@ const LeaderboardHub = ({ embedded = false, initialTrack = 'all', lockTrack = fa
                             <div className="py-12 flex justify-center">
                                 <Loader fullScreen={false} />
                             </div>
+                        ) : skillBoardsError ? (
+                            <div className={panelClassName(embedded)} role="status">
+                                <p className={eyebrowClassName(embedded)}>Көндүмдөр күтүлүүдө</p>
+                                <p className="mt-2 text-sm">{skillBoardsError}</p>
+                            </div>
                         ) : supportingSkillsSection ? (
                             supportingSkillsSection
                         ) : (
-                            <div className={embedded ? 'rounded-[28px] border border-gray-100 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-[#222222]' : 'rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_18px_60px_-42px_rgba(15,23,42,0.45)] dark:border-slate-800 dark:bg-[#161b22]'}>
-                                <p className={embedded ? 'text-sm font-semibold uppercase tracking-[0.18em] text-blue-600 dark:text-blue-300' : 'text-sm font-semibold uppercase tracking-[0.18em] text-orange-500'}>Көндүмдөр күтүлүүдө</p>
-                                <p className={embedded ? 'mt-2 text-sm text-gray-500 dark:text-gray-400' : 'mt-2 text-sm text-slate-500 dark:text-slate-300'}>
+                            <div className={panelClassName(embedded)}>
+                                <p className={eyebrowClassName(embedded)}>Көндүмдөр күтүлүүдө</p>
+                                <p className="mt-2 text-sm">
                                     Азырынча бул бөлүктө көрсөтө турган кошумча көндүм маалыматы жок.
                                 </p>
                             </div>
@@ -700,45 +768,53 @@ const LeaderboardHub = ({ embedded = false, initialTrack = 'all', lockTrack = fa
             <div className={embedded ? 'w-full max-w-full min-w-0 space-y-8' : 'mx-auto w-full max-w-7xl min-w-0 space-y-8'}>
                 <section className="dashboard-panel overflow-hidden">
                     <DashboardSectionHeader
-                        eyebrow="Student Ranking"
-                        title="Рейтинг"
-                        description="Бул жумадагы ордуңузду, сизге жакын студенттерди жана алдыга чыгуу үчүн канча калганыңызды ушул жерден көрүңүз."
-                        metrics={(
-                            <>
-                                <DashboardMetricCard label="Менин ордум" value={rankValue} />
-                                <DashboardMetricCard label="Бул жумадагы XP" value={currentXp || 0} tone="amber" />
-                                <DashboardMetricCard label="Серия" value={currentStreak ? `${currentStreak} күн` : 'Жок'} tone="blue" />
-                                <DashboardMetricCard label="Кийинки максат" value={targetGapValue} tone="green" />
-                            </>
-                        )}
+                        eyebrow={publicMode ? 'Public Ranking' : 'Student Ranking'}
+                        title={publicMode ? 'Ачык рейтинг' : 'Рейтинг'}
+                        description={publicMode
+                            ? 'Видео курстардагы жумалык активдүүлүк, лидерлер жана көрүнүктүү жетишкендиктер.'
+                            : 'Бул жумадагы ордуңузду, сизге жакын студенттерди жана алдыга чыгуу үчүн канча калганыңызды ушул жерден көрүңүз.'}
+                        metrics={heroMetrics}
                     />
 
                     <div className="grid gap-4 p-6 xl:grid-cols-[minmax(0,1.1fr),minmax(0,0.9fr)]">
                         <DashboardInsetPanel
-                            title="Бул жумадагы абал"
-                            description={`Тандалган багыт: ${trackMeta.label}. Бул бөлүк сиз кайсы орунда экениңизди жана кимге жакындап калганыңызды көрсөтөт.`}
+                            title={publicMode ? 'Рейтинг эмнени көрсөтөт' : 'Бул жумадагы абал'}
+                            description={publicMode
+                                ? `Тандалган багыт: ${trackMeta.label}. Бул ачык көрүнүш студенттердин жумалык окуу активдүүлүгүн түшүндүрөт.`
+                                : `Тандалган багыт: ${trackMeta.label}. Бул бөлүк сиз кайсы орунда экениңизди жана кимге жакындап калганыңызды көрсөтөт.`}
                         >
-                            <div className="grid gap-3 sm:grid-cols-3">
-                                <div className="rounded-2xl border border-edubot-line bg-white px-4 py-4 dark:border-slate-700 dark:bg-slate-900">
-                                    <div className="text-xs font-semibold uppercase tracking-[0.18em] text-edubot-muted">Жумалык такта</div>
-                                    <div className="mt-2 text-2xl font-semibold text-edubot-ink dark:text-white">{weeklyItems.length || 0}</div>
-                                    <div className="mt-1 text-sm text-edubot-muted dark:text-slate-400">активдүү студент</div>
+                            {publicMode ? (
+                                <div className="grid gap-3">
+                                    {publicTrustPoints.map((point, index) => (
+                                        <div key={point} className="rounded-2xl border border-edubot-line bg-white px-4 py-4 dark:border-slate-700 dark:bg-slate-900">
+                                            <div className="text-xs font-semibold uppercase tracking-[0.18em] text-edubot-muted">0{index + 1}</div>
+                                            <p className="mt-2 text-sm leading-6 text-edubot-ink dark:text-white">{point}</p>
+                                        </div>
+                                    ))}
                                 </div>
-                                <div className="rounded-2xl border border-edubot-line bg-white px-4 py-4 dark:border-slate-700 dark:bg-slate-900">
-                                    <div className="text-xs font-semibold uppercase tracking-[0.18em] text-edubot-muted">Аптанын студенти</div>
-                                    <div className="mt-2 text-sm font-semibold text-edubot-ink dark:text-white">
-                                        {studentOfWeek?.fullName || 'Азырынча жок'}
+                            ) : (
+                                <div className="grid gap-3 sm:grid-cols-3">
+                                    <div className="rounded-2xl border border-edubot-line bg-white px-4 py-4 dark:border-slate-700 dark:bg-slate-900">
+                                        <div className="text-xs font-semibold uppercase tracking-[0.18em] text-edubot-muted">Жумалык такта</div>
+                                        <div className="mt-2 text-2xl font-semibold text-edubot-ink dark:text-white">{weeklyItems.length || 0}</div>
+                                        <div className="mt-1 text-sm text-edubot-muted dark:text-slate-400">активдүү студент</div>
                                     </div>
-                                    <div className="mt-1 text-sm text-edubot-muted dark:text-slate-400">{studentOfWeek?.xp || 0} XP</div>
-                                </div>
-                                <div className="rounded-2xl border border-edubot-line bg-white px-4 py-4 dark:border-slate-700 dark:bg-slate-900">
-                                    <div className="text-xs font-semibold uppercase tracking-[0.18em] text-edubot-muted">Кийинки орун</div>
-                                    <div className="mt-2 text-sm font-semibold text-edubot-ink dark:text-white">
-                                        {snapshot.nextTargetEntry?.fullName || 'Күтүүдө'}
+                                    <div className="rounded-2xl border border-edubot-line bg-white px-4 py-4 dark:border-slate-700 dark:bg-slate-900">
+                                        <div className="text-xs font-semibold uppercase tracking-[0.18em] text-edubot-muted">Аптанын студенти</div>
+                                        <div className="mt-2 text-sm font-semibold text-edubot-ink dark:text-white">
+                                            {studentOfWeek?.fullName || 'Азырынча жок'}
+                                        </div>
+                                        <div className="mt-1 text-sm text-edubot-muted dark:text-slate-400">{studentOfWeek?.xp || 0} XP</div>
                                     </div>
-                                    <div className="mt-1 text-sm text-edubot-muted dark:text-slate-400">{targetGapValue}</div>
+                                    <div className="rounded-2xl border border-edubot-line bg-white px-4 py-4 dark:border-slate-700 dark:bg-slate-900">
+                                        <div className="text-xs font-semibold uppercase tracking-[0.18em] text-edubot-muted">Кийинки орун</div>
+                                        <div className="mt-2 text-sm font-semibold text-edubot-ink dark:text-white">
+                                            {snapshot.nextTargetEntry?.fullName || 'Күтүүдө'}
+                                        </div>
+                                        <div className="mt-1 text-sm text-edubot-muted dark:text-slate-400">{targetGapValue}</div>
+                                    </div>
                                 </div>
-                            </div>
+                            )}
                         </DashboardInsetPanel>
 
                         <DashboardInsetPanel
@@ -748,14 +824,31 @@ const LeaderboardHub = ({ embedded = false, initialTrack = 'all', lockTrack = fa
                             <div className="space-y-3 text-sm text-edubot-muted dark:text-slate-400">
                                 <p>Сабактарды бүтүргөн сайын жана туруктуу кайтып келген сайын позиция жогорулайт.</p>
                                 <p>Тандалган багытты алмаштырсаңыз, видео жана сессиялык окуунун рейтинги өзүнчө көрүнөт.</p>
-                                <p>Негизги максат: өзүңүзгө жакын студенттерден алдыга өтүү жана жеке темпти сактоо.</p>
+                                <p>{publicMode ? 'Жеке рейтингди, максатты жана жакынкы орундарды көрүү үчүн аккаунтка кириңиз.' : 'Негизги максат: өзүңүзгө жакын студенттерден алдыга өтүү жана жеке темпти сактоо.'}</p>
+                                {publicMode ? (
+                                    <div className="flex flex-wrap gap-3 pt-2">
+                                        <Link to="/courses" className="inline-flex rounded-2xl border border-edubot-line bg-white px-4 py-2 font-semibold text-edubot-ink transition hover:border-edubot-orange dark:border-slate-700 dark:bg-slate-900 dark:text-white">
+                                            Курстарды көрүү
+                                        </Link>
+                                        <Link to="/login" className="inline-flex rounded-2xl bg-edubot-orange px-4 py-2 font-semibold text-white transition hover:bg-edubot-orange/90">
+                                            Кирүү
+                                        </Link>
+                                    </div>
+                                ) : null}
                             </div>
                         </DashboardInsetPanel>
                     </div>
                 </section>
 
+                {loadError ? (
+                    <div className={panelClassName(embedded)} role="alert">
+                        <p className={eyebrowClassName(embedded)}>Жүктөө катасы</p>
+                        <p className="mt-1 text-sm">{loadError}</p>
+                    </div>
+                ) : null}
+
                 {hasLeaderboardServiceIssue ? (
-                    <div className={embedded ? 'rounded-[24px] border border-amber-200 bg-amber-50/90 px-5 py-4 text-amber-900 shadow-sm dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100' : 'rounded-[24px] border border-amber-200 bg-amber-50/90 px-5 py-4 text-amber-900 shadow-sm dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100'}>
+                    <div className="rounded-[24px] border border-amber-200 bg-amber-50/90 px-5 py-4 text-amber-900 shadow-sm dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100" role="status">
                         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                             <div>
                                 <p className="text-sm font-semibold uppercase tracking-[0.18em] text-amber-700 dark:text-amber-200">Рейтинг эскертүүсү</p>
@@ -769,8 +862,8 @@ const LeaderboardHub = ({ embedded = false, initialTrack = 'all', lockTrack = fa
                 ) : null}
 
                 {emptyWeeklyBoard ? (
-                    <div className={embedded ? 'rounded-[24px] border border-gray-100 bg-white px-5 py-4 text-gray-700 shadow-sm dark:border-gray-800 dark:bg-[#222222] dark:text-gray-200' : 'rounded-[24px] border border-slate-200 bg-white/90 px-5 py-4 text-slate-700 shadow-sm dark:border-slate-800 dark:bg-slate-900/70 dark:text-slate-200'}>
-                        <p className={embedded ? 'text-sm font-semibold uppercase tracking-[0.18em] text-blue-600 dark:text-blue-300' : 'text-sm font-semibold uppercase tracking-[0.18em] text-orange-500'}>Рейтинг жаңы толуп жатат</p>
+                    <div className={panelClassName(embedded)} role="status">
+                        <p className={eyebrowClassName(embedded)}>Рейтинг жаңы толуп жатат</p>
                         <p className="mt-1 text-sm">
                             Бул багыт боюнча азырынча рейтингке чыга турган жетиштүү активдүүлүк жок. Биринчи сабактарды аяктагандан кийин таблица толо баштайт.
                         </p>
@@ -793,12 +886,15 @@ const LeaderboardHub = ({ embedded = false, initialTrack = 'all', lockTrack = fa
                             </div>
                             {renderTrackSwitcher()}
                         </div>
-                        <div className="grid w-full max-w-full min-w-0 grid-cols-2 gap-2 rounded-3xl border border-edubot-line bg-white p-1 shadow-sm dark:border-slate-700 dark:bg-slate-900 sm:flex sm:flex-wrap xl:w-auto xl:rounded-full">
+                    <div className="grid w-full max-w-full min-w-0 grid-cols-2 gap-2 rounded-3xl border border-edubot-line bg-white p-1 shadow-sm dark:border-slate-700 dark:bg-slate-900 sm:flex sm:flex-wrap xl:w-auto xl:rounded-full" role="tablist" aria-label="Рейтинг көрүнүштөрү">
                         {visibleTabs.map((tab) => (
                             <button
                                 key={tab.id}
                                 type="button"
                                 onClick={() => setActiveTab(tab.id)}
+                                role="tab"
+                                aria-selected={activeTab === tab.id}
+                                aria-controls={`leaderboard-panel-${tab.id}`}
                                 className={[
                                     'min-w-0 rounded-full px-3 py-2 text-sm font-medium transition-colors sm:px-4',
                                     activeTab === tab.id
@@ -813,7 +909,9 @@ const LeaderboardHub = ({ embedded = false, initialTrack = 'all', lockTrack = fa
                 </div>
 
                 <SmoothTabTransition isLoading={loading} isDataLoaded={true}>
-                    {renderContent()}
+                    <div id={`leaderboard-panel-${activeTab}`} role="tabpanel">
+                        {renderContent()}
+                    </div>
                 </SmoothTabTransition>
             </div>
         </div>

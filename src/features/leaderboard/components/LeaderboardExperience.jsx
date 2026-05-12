@@ -1,29 +1,12 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import PropTypes from 'prop-types';
 import { Link } from 'react-router-dom';
-import toast from 'react-hot-toast';
-import ReactGA4 from 'react-ga4';
-import BasicModal from '@shared-ui/BasicModal';
-import { createLeaderboardShare } from '../api';
 import {
     FiArrowRight,
     FiAward,
     FiBarChart2,
-    FiCamera,
-    FiCopy,
-    FiDownload,
-    FiFilm,
-    FiGlobe,
-    FiLink,
-    FiLinkedin,
-    FiLoader,
-    FiMessageCircle,
-    FiMoreHorizontal,
-    FiSend,
-    FiShare2,
     FiTarget,
     FiTrendingUp,
-    FiTwitter,
     FiZap,
 } from 'react-icons/fi';
 
@@ -34,161 +17,11 @@ const accentSets = [
     'from-fuchsia-500/12 via-rose-400/8 to-transparent border-fuchsia-200/70 dark:border-fuchsia-500/20',
 ];
 
-const escapeSvg = (value = '') =>
-    String(value)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;');
-
-const wrapSvgText = (value = '', maxLineLength = 30, maxLines = 4) => {
-    const words = String(value || '').split(/\s+/).filter(Boolean);
-    const lines = [];
-    let current = '';
-
-    words.forEach((word) => {
-        const next = current ? `${current} ${word}` : word;
-        if (next.length > maxLineLength && current) {
-            lines.push(current);
-            current = word;
-        } else {
-            current = next;
-        }
-    });
-
-    if (current) lines.push(current);
-    return lines.slice(0, maxLines);
-};
-
-const rarityPalette = {
-    common: { badge: '#CBD5E1', accent: '#475569' },
-    rare: { badge: '#7DD3FC', accent: '#0F766E' },
-    epic: { badge: '#F9A8D4', accent: '#9D174D' },
-    legendary: { badge: '#FCD34D', accent: '#92400E' },
-};
-
 const rarityLabels = {
     common: 'Негизги',
     rare: 'Сейрек',
     epic: 'Өзгөчө',
     legendary: 'Легенда',
-};
-
-const createAchievementShareSvg = ({ title, text, rarity = 'rare', footer = 'edubot-learning.com' }) => {
-    const palette = rarityPalette[String(rarity || 'rare').toLowerCase()] || rarityPalette.rare;
-    const titleLines = wrapSvgText(title, 20, 2);
-    const textLines = wrapSvgText(text, 42, 4);
-    const titleMarkup = titleLines
-        .map((line, index) => `<tspan x="48" dy="${index === 0 ? 0 : 42}">${escapeSvg(line)}</tspan>`)
-        .join('');
-    const textMarkup = textLines
-        .map((line, index) => `<tspan x="48" dy="${index === 0 ? 0 : 28}">${escapeSvg(line)}</tspan>`)
-        .join('');
-
-    return `
-        <svg width="1200" height="630" viewBox="0 0 1200 630" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-                <linearGradient id="bg" x1="84" y1="44" x2="1080" y2="590" gradientUnits="userSpaceOnUse">
-                    <stop stop-color="#0F172A" />
-                    <stop offset="0.52" stop-color="#1E293B" />
-                    <stop offset="1" stop-color="#1D4ED8" />
-                </linearGradient>
-                <radialGradient id="glow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(1040 80) rotate(131.114) scale(446.611 355.448)">
-                    <stop stop-color="#FFFFFF" stop-opacity="0.35"/>
-                    <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
-                </radialGradient>
-            </defs>
-            <rect width="1200" height="630" rx="36" fill="url(#bg)"/>
-            <rect x="38" y="38" width="1124" height="554" rx="32" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.08)"/>
-            <circle cx="1034" cy="112" r="208" fill="url(#glow)"/>
-            <rect x="48" y="50" width="160" height="40" rx="20" fill="rgba(255,255,255,0.12)"/>
-            <text x="76" y="76" fill="#F8FAFC" font-size="18" font-family="Inter, Arial, sans-serif" font-weight="700" letter-spacing="0.18em">EDUBOT</text>
-            <rect x="48" y="112" width="164" height="34" rx="17" fill="${palette.badge}"/>
-            <text x="78" y="134" fill="${palette.accent}" font-size="16" font-family="Inter, Arial, sans-serif" font-weight="800" letter-spacing="0.16em">${escapeSvg(String(rarity).toUpperCase())}</text>
-            <text x="48" y="220" fill="#FFFFFF" font-size="54" font-family="Inter, Arial, sans-serif" font-weight="800">${titleMarkup}</text>
-            <text x="48" y="332" fill="#CBD5E1" font-size="28" font-family="Inter, Arial, sans-serif" font-weight="500">${textMarkup}</text>
-            <rect x="48" y="500" width="360" height="74" rx="24" fill="rgba(255,255,255,0.08)" stroke="rgba(255,255,255,0.12)"/>
-            <text x="80" y="532" fill="#F8FAFC" font-size="20" font-family="Inter, Arial, sans-serif" font-weight="700">Жетишкендик ачылды</text>
-            <text x="80" y="560" fill="#CBD5E1" font-size="18" font-family="Inter, Arial, sans-serif" font-weight="500">${escapeSvg(footer)}</text>
-            <text x="820" y="556" fill="#F8FAFC" font-size="26" font-family="Inter, Arial, sans-serif" font-weight="800">Окуй бериңиз. Өсө бериңиз.</text>
-        </svg>
-    `;
-};
-
-const slugifyFilename = (value = 'achievement') =>
-    String(value)
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/^-+|-+$/g, '') || 'achievement';
-
-const triggerDownload = (blob, filename) => {
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement('a');
-    anchor.href = url;
-    anchor.download = filename;
-    document.body.appendChild(anchor);
-    anchor.click();
-    anchor.remove();
-    URL.revokeObjectURL(url);
-};
-
-const svgToPngBlob = (svgMarkup, width = 1200, height = 630) =>
-    new Promise((resolve, reject) => {
-        try {
-            const blob = new Blob([svgMarkup], { type: 'image/svg+xml;charset=utf-8' });
-            const url = URL.createObjectURL(blob);
-            const image = new Image();
-
-            image.onload = () => {
-                const canvas = document.createElement('canvas');
-                canvas.width = width;
-                canvas.height = height;
-                const context = canvas.getContext('2d');
-
-                if (!context) {
-                    URL.revokeObjectURL(url);
-                    reject(new Error('Canvas context unavailable'));
-                    return;
-                }
-
-                context.drawImage(image, 0, 0, width, height);
-                canvas.toBlob((pngBlob) => {
-                    URL.revokeObjectURL(url);
-                    if (pngBlob) {
-                        resolve(pngBlob);
-                        return;
-                    }
-                    reject(new Error('PNG export failed'));
-                }, 'image/png');
-            };
-
-            image.onerror = () => {
-                URL.revokeObjectURL(url);
-                reject(new Error('SVG image load failed'));
-            };
-
-            image.src = url;
-        } catch (error) {
-            reject(error);
-        }
-    });
-
-const buildShareCardAsset = async (svgMarkup, filenameBase) => {
-    try {
-        const pngBlob = await svgToPngBlob(svgMarkup);
-        return { blob: pngBlob, mimeType: 'image/png', filename: `${filenameBase}.png` };
-    } catch (error) {
-        console.warn('PNG share card fallback to SVG', error);
-        const svgBlob = new Blob([svgMarkup], { type: 'image/svg+xml;charset=utf-8' });
-        return { blob: svgBlob, mimeType: 'image/svg+xml', filename: `${filenameBase}.svg` };
-    }
-};
-
-const downloadShareCard = async (svgMarkup, filenameBase) => {
-    const asset = await buildShareCardAsset(svgMarkup, filenameBase);
-    triggerDownload(asset.blob, asset.filename);
-    return asset;
 };
 
 const findUserRank = (items, user) => {
@@ -293,489 +126,6 @@ export const RankBadge = ({ rank, label = null }) => {
     );
 };
 
-const trackShareEvent = (action, label = '') => {
-    try {
-        ReactGA4.event({
-            category: 'leaderboard_share',
-            action,
-            label,
-        });
-    } catch (error) {
-        console.warn('Share analytics skipped', error);
-    }
-};
-
-const openShareWindow = (url) => {
-    if (typeof window === 'undefined') return;
-    const popup = window.open(url, '_blank', 'noopener,noreferrer');
-    if (!popup) {
-        window.location.assign(url);
-    }
-};
-
-const ShareOptionButton = ({ icon: Icon, title, description, onClick, disabled, accentClassName, badge }) => (
-    <button
-        type="button"
-        onClick={onClick}
-        disabled={disabled}
-        className={[
-            'group relative flex min-h-[108px] flex-col overflow-hidden rounded-[20px] border px-3.5 py-3.5 text-left transition duration-200 ease-out hover:-translate-y-0.5 hover:shadow-[0_18px_36px_-24px_rgba(15,23,42,0.45)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400 disabled:cursor-not-allowed disabled:opacity-60',
-            accentClassName,
-        ].join(' ')}
-    >
-        <span className="pointer-events-none absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-white/35 to-transparent opacity-70 transition group-hover:opacity-100 dark:from-white/8" />
-        <div className="relative flex items-start justify-between gap-3">
-            <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-white/85 text-slate-900 shadow-sm ring-1 ring-black/5 transition duration-200 group-hover:scale-105 group-hover:shadow-md dark:bg-slate-950/70 dark:text-white dark:ring-white/10">
-                <Icon className="text-lg" />
-            </span>
-            <div className="flex items-center gap-2">
-                {badge ? <span className="rounded-full bg-white/85 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-700 shadow-sm dark:bg-slate-950/70 dark:text-slate-100">{badge}</span> : null}
-                <FiArrowRight className="mt-0.5 shrink-0 text-slate-400 transition duration-200 group-hover:translate-x-0.5 group-hover:text-slate-700 dark:group-hover:text-slate-200" />
-            </div>
-        </div>
-        <span className="relative mt-3 text-sm font-semibold text-slate-900 dark:text-white">{title}</span>
-        <span className="relative mt-1 text-xs leading-5 text-slate-600 dark:text-slate-300">{description}</span>
-    </button>
-);
-
-const ShareDestinationModal = ({ isOpen, onClose, onAction, isBusy, canNativeShare, isAuthenticated, title }) => {
-    const primaryOptions = [
-        {
-            id: 'telegram',
-            icon: FiSend,
-            title: 'Telegram',
-            description: 'Тез жөнөтүү үчүн эң ыңгайлуу жол.',
-            badge: 'Тез',
-            accentClassName: 'border-sky-200 bg-sky-50 hover:border-sky-300 hover:bg-sky-100/80 dark:border-sky-500/20 dark:bg-sky-500/10 dark:hover:bg-sky-500/15',
-        },
-        {
-            id: 'whatsapp',
-            icon: FiMessageCircle,
-            title: 'WhatsApp',
-            description: 'Текст жана шилтеме менен дароо бөлүшүү.',
-            badge: 'Тез',
-            accentClassName: 'border-emerald-200 bg-emerald-50 hover:border-emerald-300 hover:bg-emerald-100/80 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:hover:bg-emerald-500/15',
-        },
-        {
-            id: 'x',
-            icon: FiTwitter,
-            title: 'X',
-            description: 'Даяр текст менен пост ачыңыз.',
-            badge: 'Пост',
-            accentClassName: 'border-slate-200 bg-slate-50 hover:border-slate-300 hover:bg-slate-100/80 dark:border-slate-500/20 dark:bg-slate-500/10 dark:hover:bg-slate-500/15',
-        },
-        {
-            id: 'linkedin',
-            icon: FiLinkedin,
-            title: 'LinkedIn',
-            description: 'Жетишкендикти кесиптик форматта бөлүшүү.',
-            badge: 'Профиль',
-            accentClassName: 'border-indigo-200 bg-indigo-50 hover:border-indigo-300 hover:bg-indigo-100/80 dark:border-indigo-500/20 dark:bg-indigo-500/10 dark:hover:bg-indigo-500/15',
-        },
-        {
-            id: 'facebook',
-            icon: FiGlobe,
-            title: 'Facebook',
-            description: 'Жаңы вкладкада бөлүшүү барагын ачат.',
-            badge: 'Пост',
-            accentClassName: 'border-blue-200 bg-blue-50 hover:border-blue-300 hover:bg-blue-100/80 dark:border-blue-500/20 dark:bg-blue-500/10 dark:hover:bg-blue-500/15',
-        },
-        {
-            id: 'instagram',
-            icon: FiCamera,
-            title: 'Instagram',
-            description: 'Колдонмо болсо түз бөлүшүү, болбосо story үчүн PNG.',
-            badge: 'Story',
-            accentClassName: 'border-pink-200 bg-pink-50 hover:border-pink-300 hover:bg-pink-100/80 dark:border-pink-500/20 dark:bg-pink-500/10 dark:hover:bg-pink-500/15',
-        },
-        {
-            id: 'tiktok',
-            icon: FiFilm,
-            title: 'TikTok',
-            description: 'Колдонмо болсо түз бөлүшүү, болбосо post үчүн PNG.',
-            badge: 'Видео',
-            accentClassName: 'border-violet-200 bg-violet-50 hover:border-violet-300 hover:bg-violet-100/80 dark:border-violet-500/20 dark:bg-violet-500/10 dark:hover:bg-violet-500/15',
-        },
-    ];
-    const utilityOptions = [
-        ...(isAuthenticated
-            ? [
-                {
-                    id: 'story',
-                    icon: FiCamera,
-                    title: 'Story’ге түз бөлүшүү',
-                    description: 'Телефондо бөлүшүү терезесин ачат, болбосо PNG жүктөйт.',
-                    badge: 'Story',
-                    accentClassName: 'border-rose-200 bg-rose-50 hover:border-rose-300 hover:bg-rose-100/80 dark:border-rose-500/20 dark:bg-rose-500/10 dark:hover:bg-rose-500/15',
-                },
-            ]
-            : []),
-        {
-            id: 'copy',
-            icon: FiLink,
-            title: isAuthenticated ? 'Шилтемени көчүрүү' : 'Барак шилтемесин көчүрүү',
-            description: isAuthenticated ? 'Шилтемени өзүңүз каалаган жерге коюңуз.' : 'Жалпы барак шилтемесин өзүңүз каалаган жерге коюңуз.',
-            badge: isAuthenticated ? 'Кол менен' : 'Public',
-            accentClassName: 'border-amber-200 bg-amber-50 hover:border-amber-300 hover:bg-amber-100/80 dark:border-amber-500/20 dark:bg-amber-500/10 dark:hover:bg-amber-500/15',
-        },
-        {
-            id: 'download',
-            icon: FiDownload,
-            title: isAuthenticated ? 'PNG жүктөп алуу' : 'Үлгү PNG жүктөп алуу',
-            description: isAuthenticated ? 'Сүрөттү сактап, кол менен тиркеңиз.' : 'Үлгү картаны сактап, кол менен колдонсоңуз болот.',
-            badge: isAuthenticated ? 'Файл' : 'Үлгү',
-            accentClassName: 'border-fuchsia-200 bg-fuchsia-50 hover:border-fuchsia-300 hover:bg-fuchsia-100/80 dark:border-fuchsia-500/20 dark:bg-fuchsia-500/10 dark:hover:bg-fuchsia-500/15',
-        },
-    ];
-
-    return (
-        <BasicModal isOpen={isOpen} onClose={isBusy ? () => { } : onClose} title="Кайда бөлүшөсүз?" size="lg">
-            <div className="space-y-6">
-                <div className="rounded-[28px] border border-slate-200 bg-[linear-gradient(135deg,_rgba(249,115,22,0.12),_rgba(255,255,255,0.96))] p-5 dark:border-slate-700 dark:bg-[linear-gradient(135deg,_rgba(249,115,22,0.18),_rgba(15,23,42,0.94))]">
-                    <div className="flex flex-wrap items-start justify-between gap-3">
-                        <div className="max-w-xl">
-                            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-orange-600">{isAuthenticated ? 'Жетишкендикти бөлүшүү' : 'Үлгү картаны колдонуу'}</p>
-                            <h3 className="mt-2 text-xl font-semibold text-slate-900 dark:text-white">{title}</h3>
-                            <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
-                                {isAuthenticated
-                                    ? 'Каналды тандаңыз. Ыкчам жөнөтүү үчүн Telegram/WhatsApp, ал эми сүрөт керек болсо PNG ылайыктуу.'
-                                    : 'Сиз кирген жоксуз. Азыр жеке жетишкендик эмес, үлгү карта же жалпы барак шилтемеси гана жеткиликтүү.'}
-                            </p>
-                        </div>
-                        <div className="rounded-2xl border border-white/60 bg-white/70 px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-orange-700 dark:border-slate-700 dark:bg-slate-900/60 dark:text-orange-200">
-                            {isAuthenticated ? 'Ыкчам бөлүшүү' : 'Public'}
-                        </div>
-                    </div>
-                </div>
-
-                {isAuthenticated ? (
-                    <section className="space-y-3">
-                        <div className="flex items-center justify-between gap-3">
-                            <div>
-                                <p className="text-sm font-semibold text-slate-900 dark:text-white">Негизги каналдар</p>
-                                <p className="text-xs text-slate-500 dark:text-slate-300">Эң тез жана табигый бөлүшүү жолдору.</p>
-                            </div>
-                            <span className="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-600 dark:bg-slate-800 dark:text-slate-200">Тез аракет</span>
-                        </div>
-                        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                            {primaryOptions.map((option) => (
-                                <ShareOptionButton
-                                    key={option.id}
-                                    icon={option.icon}
-                                    title={option.title}
-                                    description={option.description}
-                                    badge={option.badge}
-                                    accentClassName={option.accentClassName}
-                                    disabled={isBusy}
-                                    onClick={() => onAction(option.id)}
-                                />
-                            ))}
-                        </div>
-                    </section>
-                ) : null}
-
-                <section className="space-y-3">
-                    <div>
-                        <p className="text-sm font-semibold text-slate-900 dark:text-white">Кошумча аракеттер</p>
-                        <p className="text-xs text-slate-500 dark:text-slate-300">Шилтеме, файл же түзмөктөгү колдонмолор аркылуу иштетүү.</p>
-                    </div>
-                    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                        {utilityOptions.map((option) => (
-                            <ShareOptionButton
-                                key={option.id}
-                                icon={option.icon}
-                                title={option.title}
-                                description={option.description}
-                                badge={option.badge}
-                                accentClassName={option.accentClassName}
-                                disabled={isBusy}
-                                onClick={() => onAction(option.id)}
-                            />
-                        ))}
-                        {canNativeShare && isAuthenticated ? (
-                            <ShareOptionButton
-                                icon={FiMoreHorizontal}
-                                title="Башка колдонмолор"
-                                description="Түзмөк колдосо, жалпы бөлүшүү терезеси ачылат."
-                                badge="Түзмөк"
-                                accentClassName="border-cyan-200 bg-cyan-50 hover:border-cyan-300 hover:bg-cyan-100/80 dark:border-cyan-500/20 dark:bg-cyan-500/10 dark:hover:bg-cyan-500/15"
-                                disabled={isBusy}
-                                onClick={() => onAction('native')}
-                            />
-                        ) : null}
-                    </div>
-                </section>
-
-                <div className="flex flex-col gap-3 rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-4 dark:border-slate-700 dark:bg-slate-900/70 sm:flex-row sm:items-center sm:justify-between">
-                    <div>
-                        <p className="text-sm font-semibold text-slate-900 dark:text-white">Кеңеш</p>
-                        <p className="text-xs text-slate-600 dark:text-slate-300">
-                            {isAuthenticated
-                                ? 'Story үчүн эң ишенимдүү жол — native share же PNG жүктөп алып колдонмого кол менен жүктөө.'
-                                : 'Жеке жетишкендик шилтемеси жана социалдык бөлүшүү үчүн аккаунтка кирүү керек.'}
-                        </p>
-                    </div>
-                    {isBusy ? (
-                        <span className="inline-flex items-center gap-2 self-start rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-sm dark:bg-slate-800 dark:text-slate-100">
-                            <FiLoader className="animate-spin" />
-                            Даярдалууда...
-                        </span>
-                    ) : (
-                        <span className="inline-flex items-center gap-2 self-start rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-sm dark:bg-slate-800 dark:text-slate-100">
-                            <FiCopy />
-                            Шилтеме менен карта даяр
-                        </span>
-                    )}
-                </div>
-            </div>
-        </BasicModal>
-    );
-};
-
-export const ShareAchievementButton = ({
-    title,
-    text,
-    rarity = 'rare',
-    footer = 'edubot-learning.com/leaderboard',
-    variant = 'dark',
-    className = '',
-    meta = null,
-    label = 'Бөлүшүү картасы',
-    fullWidth = false,
-}) => {
-    const [isSharing, setIsSharing] = useState(false);
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [shareSession, setShareSession] = useState(null);
-    const canNativeShare = typeof navigator !== 'undefined' && typeof navigator.share === 'function';
-    const isAuthenticated = typeof window !== 'undefined' && Boolean(window.localStorage.getItem('user'));
-
-    const prepareShareSession = async () => {
-        if (shareSession?.shareUrl) return shareSession;
-
-        const filenameBase = `edubot-${slugifyFilename(title)}`;
-        const svgMarkup = createAchievementShareSvg({ title, text, rarity, footer });
-        const ownerName = meta?.displayName || meta?.fullName || '';
-        let shareUrl = typeof window !== 'undefined' ? window.location.href : footer;
-
-        if (isAuthenticated) {
-            try {
-                const data = await createLeaderboardShare({
-                    title,
-                    text,
-                    rarity,
-                    footer,
-                    ...(meta || {}),
-                });
-                if (data?.publicUrl) {
-                    shareUrl = data.publicUrl;
-                } else if (data?.token) {
-                    shareUrl = `${window.location.origin}/share/achievement/${data.token}`;
-                }
-            } catch (error) {
-                console.warn('Leaderboard share URL fallback used', error);
-            }
-        }
-
-        const session = {
-            title,
-            text,
-            rarity,
-            footer,
-            filenameBase,
-            svgMarkup,
-            shareUrl,
-            shareText: `${isAuthenticated ? (ownerName ? `${ownerName} жетишкендик ачты:` : 'Жетишкендик ачылды:') : 'Public үлгү карта:'}
-${title}
-${text}
-${shareUrl}`,
-            socialText: `${isAuthenticated ? (ownerName ? `${ownerName} жетишкендик ачты:` : 'Жетишкендик ачылды:') : 'Public үлгү карта:'}
-${title}
-${text}`,
-        };
-
-        setShareSession(session);
-        return session;
-    };
-
-    const ensureDownloadable = async (session) => {
-        if (session.asset?.blob) return session.asset;
-        const asset = await buildShareCardAsset(session.svgMarkup, session.filenameBase);
-        setShareSession((current) => (current ? { ...current, asset } : current));
-        return asset;
-    };
-
-    const copyLink = async (session) => {
-        try {
-            if (!navigator.clipboard?.writeText) {
-                toast.error('Бул браузерде шилтеме көчүрүү жеткиликтүү эмес.');
-                return;
-            }
-            await navigator.clipboard.writeText(session.shareUrl);
-            trackShareEvent('copy_link', title);
-            toast.success('Шилтеме көчүрүлдү');
-            setIsModalOpen(false);
-        } catch (error) {
-            console.error('Copy failed', error);
-            toast.error('Шилтемени көчүрүү мүмкүн болгон жок');
-        }
-    };
-
-    const downloadCard = async (session) => {
-        const asset = await ensureDownloadable(session);
-        triggerDownload(asset.blob, asset.filename);
-        trackShareEvent('download_card', title);
-        toast.success('PNG карта жүктөлдү');
-        setIsModalOpen(false);
-    };
-
-    const prepareStoryFallback = async (session, platformLabel) => {
-        const asset = await ensureDownloadable(session);
-        triggerDownload(asset.blob, asset.filename);
-        trackShareEvent(`prepare_${String(platformLabel || 'story').toLowerCase()}`, title);
-        try {
-            if (navigator.clipboard?.writeText) {
-                await navigator.clipboard.writeText(session.shareUrl);
-            }
-        } catch (error) {
-            console.error('Copy failed during story fallback', error);
-        }
-        toast.success(`${platformLabel} үчүн PNG жана шилтеме даяр`);
-        setIsModalOpen(false);
-    };
-
-    const runNativeShare = async (session) => {
-        if (!canNativeShare) {
-            await copyLink(session);
-            return;
-        }
-
-        const asset = await ensureDownloadable(session);
-        const shareFile =
-            typeof File !== 'undefined' && asset?.blob
-                ? new File([asset.blob], asset.filename, { type: asset.mimeType })
-                : null;
-
-        try {
-            if (shareFile && (!navigator.canShare || navigator.canShare({ files: [shareFile] }))) {
-                await navigator.share({
-                    title: session.title,
-                    text: session.text,
-                    url: session.shareUrl,
-                    files: [shareFile],
-                });
-            } else {
-                await navigator.share({
-                    title: session.title,
-                    text: session.text,
-                    url: session.shareUrl,
-                });
-            }
-            trackShareEvent('native_share', title);
-            toast.success('Бөлүшүү даяр');
-            setIsModalOpen(false);
-        } catch (error) {
-            if (error?.name === 'AbortError') {
-                return;
-            }
-            console.error('Түз бөлүшүү ачылбай калды', error);
-            toast.error('Түз бөлүшүү ачылбай калды');
-        }
-    };
-
-    const openPlatform = (session, platform) => {
-        const intents = {
-            telegram: `https://t.me/share/url?url=${encodeURIComponent(session.shareUrl)}&text=${encodeURIComponent(session.socialText)}`,
-            whatsapp: `https://wa.me/?text=${encodeURIComponent(session.shareText)}`,
-            x: `https://twitter.com/intent/tweet?text=${encodeURIComponent(session.socialText)}&url=${encodeURIComponent(session.shareUrl)}`,
-            linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(session.shareUrl)}`,
-            facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(session.shareUrl)}`,
-        };
-
-        const target = intents[platform];
-        if (!target) return;
-        openShareWindow(target);
-        trackShareEvent(`open_${platform}`, title);
-        toast.success(`${platform === 'x' ? 'X' : platform.charAt(0).toUpperCase() + platform.slice(1)} бөлүшүүсү ачылды`);
-        setIsModalOpen(false);
-    };
-
-    const handleAction = async (action) => {
-        if (isSharing) return;
-        setIsSharing(true);
-        trackShareEvent('action_start', action);
-        try {
-            const session = await prepareShareSession();
-            if (action === 'story') {
-                if (canNativeShare) {
-                    await runNativeShare(session);
-                } else {
-                    await prepareStoryFallback(session, 'Story');
-                }
-                return;
-            }
-            if (action === 'instagram' || action === 'tiktok') {
-                if (canNativeShare) {
-                    await runNativeShare(session);
-                } else {
-                    await prepareStoryFallback(session, action === 'instagram' ? 'Instagram' : 'TikTok');
-                }
-                return;
-            }
-            if (action === 'copy') {
-                await copyLink(session);
-                return;
-            }
-            if (action === 'download') {
-                await downloadCard(session);
-                return;
-            }
-            if (action === 'native') {
-                await runNativeShare(session);
-                return;
-            }
-            openPlatform(session, action);
-        } finally {
-            setIsSharing(false);
-        }
-    };
-
-    const variantClassName =
-        variant === 'light'
-            ? 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-100 dark:hover:bg-slate-800'
-            : 'border-white/30 bg-white/10 text-white hover:bg-white/16';
-
-    return (
-        <>
-            <button
-                type="button"
-                onClick={() => {
-                    setIsModalOpen(true);
-                    trackShareEvent('open_modal', title);
-                }}
-                disabled={isSharing}
-                className={[
-                    'inline-flex min-w-0 items-center justify-center gap-2 rounded-2xl px-4 py-2 text-center text-sm font-medium leading-tight backdrop-blur transition-colors disabled:cursor-not-allowed disabled:opacity-70 whitespace-normal',
-                    fullWidth ? 'w-full' : 'w-full sm:w-auto',
-                    variantClassName,
-                    className,
-                ].join(' ')}
-            >
-                {isSharing ? <FiLoader className="shrink-0 animate-spin" /> : <FiShare2 className="shrink-0" />}
-                <span className="min-w-0">{isSharing ? 'Даярдалууда...' : label}</span>
-            </button>
-            <ShareDestinationModal
-                isOpen={isModalOpen}
-                onClose={() => setIsModalOpen(false)}
-                onAction={handleAction}
-                isBusy={isSharing}
-                canNativeShare={canNativeShare}
-                isAuthenticated={isAuthenticated}
-                title={title}
-            />
-        </>
-    );
-};
-
 export const LeaderboardHero = ({
     userName,
     snapshot,
@@ -869,13 +219,6 @@ export const LeaderboardHero = ({
                         <p className={actionLabelClassName}>Эми эмне кылуу керек</p>
                         <p className={`mt-2 text-lg font-semibold leading-tight ${embedded ? 'text-gray-900 dark:text-[#E8ECF3]' : ''}`}>{nextActionTitle}</p>
                         <p className={actionHintClassName}>{nextActionHint}</p>
-                        <div className="mt-3 flex justify-end">
-                            <ShareAchievementButton
-                                title="Мен EduBot'то прогресс топтоп жатам"
-                                text={`Менин азыркы сериям ${streakDays} күн, ал эми балансым ${xp} XP.`}
-                                label="Прогрессти жарыялоо"
-                            />
-                        </div>
                     </div>
                 </div>
             </div>
@@ -1067,7 +410,7 @@ export const MySkillProgressGrid = ({ items = [], embedded = false }) => (
     </section>
 );
 
-export const AchievementCloud = ({ items = [], title = 'Жетишкендиктер', subtitle = 'Көрүнүп турган сыйлыктар', shareMeta = null, embedded = false }) => (
+export const AchievementCloud = ({ items = [], title = 'Жетишкендиктер', subtitle = 'Көрүнүп турган сыйлыктар', embedded = false }) => (
     <section className={embedded ? 'rounded-[28px] border border-gray-100 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-[#222222] sm:p-6' : 'rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_18px_60px_-42px_rgba(15,23,42,0.45)] dark:border-slate-800 dark:bg-[#161b22] sm:p-6'}>
         <div className="flex items-center gap-3">
             <div className={embedded ? 'flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-600 text-white dark:bg-blue-500' : 'flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-orange-500 to-amber-400 text-white shadow-lg shadow-orange-200/60 dark:shadow-none'}>
@@ -1082,8 +425,8 @@ export const AchievementCloud = ({ items = [], title = 'Жетишкендикт
             {(items.length ? items : [{ title: 'Алгачкы кадам' }, { title: 'Ылдам башталыш' }, { title: 'Тест жаркылыгы' }]).map((item, index) => {
                 const rarityKey = String(item.rarity || (index === 0 ? 'epic' : index < 3 ? 'rare' : 'common')).toLowerCase();
                 const rarityLabel = rarityLabels[rarityKey] || rarityKey.toUpperCase();
-                const shareTitle = item.title || item.name;
-                const shareDescription = item.description || 'Туруктуу өсүшүңүздү жана активдүүлүгүңүздү көрсөткөн өзгөчө учур.';
+                const achievementTitle = item.title || item.name;
+                const achievementDescription = item.description || 'Туруктуу өсүшүңүздү жана активдүүлүгүңүздү көрсөткөн өзгөчө учур.';
                 return (
                     <article
                         key={item.id || item.title || index}
@@ -1098,30 +441,20 @@ export const AchievementCloud = ({ items = [], title = 'Жетишкендикт
                             </span>
                         </div>
                         <div className="mt-5 min-w-0 space-y-2">
-                            <p className={embedded ? 'break-words text-xl font-semibold leading-tight text-gray-900 dark:text-[#E8ECF3]' : 'line-clamp-2 text-xl font-semibold leading-tight text-slate-900 dark:text-white'}>{shareTitle}</p>
+                            <p className={embedded ? 'break-words text-xl font-semibold leading-tight text-gray-900 dark:text-[#E8ECF3]' : 'line-clamp-2 text-xl font-semibold leading-tight text-slate-900 dark:text-white'}>{achievementTitle}</p>
                             <p className={embedded ? 'break-words text-sm leading-6 text-gray-500 dark:text-gray-400' : 'line-clamp-3 text-sm leading-6 text-slate-600 dark:text-slate-300'}>
-                                {shareDescription}
+                                {achievementDescription}
                             </p>
                         </div>
                         <div className="mt-auto pt-5">
                             <div className={embedded ? 'mb-4 space-y-2 border-t border-gray-200 pt-4 dark:border-gray-800' : 'mb-4 space-y-2 border-t border-white/70 pt-4 dark:border-slate-800/70'}>
                                 <p className={`text-[11px] font-semibold uppercase tracking-[0.16em] ${item.unlocked === false ? 'text-slate-500 dark:text-slate-400' : 'text-emerald-600 dark:text-emerald-300'}`}>
-                                    {item.unlocked === false ? 'Даярдалып жатат' : 'Жарыялоого даяр'}
+                                    {item.unlocked === false ? 'Даярдалып жатат' : 'Ачылды'}
                                 </p>
                                 <p className={embedded ? 'text-xs leading-5 text-gray-500 dark:text-gray-400' : 'text-xs leading-5 text-slate-500 dark:text-slate-400'}>
-                                    PNG карта жана ачык шилтеме даярдалат.
+                                    Бул жетишкендик окуудагы прогрессиңизди көрсөтөт.
                                 </p>
                             </div>
-                            <ShareAchievementButton
-                                title={shareTitle}
-                                text={shareDescription}
-                                rarity={rarityKey}
-                                variant="light"
-                                className="w-full"
-                                meta={item.shareMeta || shareMeta}
-                                label="Бөлүшүү"
-                                fullWidth
-                            />
                         </div>
                     </article>
                 );
@@ -1205,9 +538,9 @@ export const PublicSpotlightPanel = ({ studentOfWeek = null, highlights = [], me
             accent: 'border-orange-200 bg-orange-50/80 dark:border-orange-500/20 dark:bg-orange-500/10',
         },
         {
-            icon: FiShare2,
-            title: 'Жеңишти бөлүшө аласыз',
-            detail: 'Жетишкендикти карточкага айландырып, башкаларга көрсөтөсүз.',
+            icon: FiAward,
+            title: 'Жеңиштер көрүнүп турат',
+            detail: 'Жетишкендиктер окуудагы прогрессти так жана мотивациялуу көрсөтөт.',
             accent: 'border-fuchsia-200 bg-fuchsia-50/80 dark:border-fuchsia-500/20 dark:bg-fuchsia-500/10',
         },
     ];
@@ -1232,7 +565,7 @@ export const PublicSpotlightPanel = ({ studentOfWeek = null, highlights = [], me
                             ? metrics
                             : [
                                 { label: 'Бул жума', value: '10+', helper: 'Жигердүү студент' },
-                                { label: 'Жеңиштер', value: '3', helper: 'Бөлүшүүгө даяр учур' },
+                                { label: 'Жеңиштер', value: '3', helper: 'Ачылган учурлар' },
                                 { label: 'Өсүш', value: '120 XP', helper: 'Аптанын импульсу' },
                             ]
                         ).slice(0, 3).map((metric, index) => (
@@ -1266,7 +599,7 @@ export const PublicSpotlightPanel = ({ studentOfWeek = null, highlights = [], me
                         {(highlights.length ? highlights : [
                             'Бир жума ичинде туруктуу окуу',
                             'Тесттерден жогорку натыйжа',
-                            'Өсүштү бөлүшүүгө даяр карточка',
+                            'Өсүштү көрсөткөн жетишкендик',
                         ]).slice(0, 3).map((entry, index) => (
                             <div key={`${entry}-${index}`} className="rounded-[20px] border border-slate-200 bg-white/80 p-4 text-sm text-slate-700 dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-200">
                                 <span className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">0{index + 1}</span>
@@ -1508,40 +841,15 @@ export const SkillSpotlightGrid = ({ boards = [], personalProgress = [], feature
     );
 };
 
-ShareOptionButton.propTypes = {
-    icon: PropTypes.elementType.isRequired,
-    title: PropTypes.string.isRequired,
-    description: PropTypes.string.isRequired,
-    onClick: PropTypes.func.isRequired,
-    disabled: PropTypes.bool,
-    accentClassName: PropTypes.string,
-    badge: PropTypes.string,
-};
-
-ShareOptionButton.defaultProps = {
-    disabled: false,
-    accentClassName: '',
-    badge: '',
-};
-
-ShareDestinationModal.propTypes = {
-    isOpen: PropTypes.bool.isRequired,
-    onClose: PropTypes.func.isRequired,
-    onAction: PropTypes.func.isRequired,
-    isBusy: PropTypes.bool,
-    canNativeShare: PropTypes.bool,
-    title: PropTypes.string.isRequired,
-};
-
-ShareDestinationModal.defaultProps = {
-    isBusy: false,
-    canNativeShare: false,
-};
-
 HeroMetricCard.propTypes = {
     label: PropTypes.string.isRequired,
     value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
     helper: PropTypes.string.isRequired,
+    embedded: PropTypes.bool,
+};
+
+HeroMetricCard.defaultProps = {
+    embedded: false,
 };
 
 LeaderboardAvatar.propTypes = {
@@ -1564,28 +872,6 @@ RankBadge.propTypes = {
 RankBadge.defaultProps = {
     rank: null,
     label: null,
-};
-
-ShareAchievementButton.propTypes = {
-    title: PropTypes.string.isRequired,
-    text: PropTypes.string.isRequired,
-    rarity: PropTypes.string,
-    footer: PropTypes.string,
-    variant: PropTypes.oneOf(['dark', 'light']),
-    className: PropTypes.string,
-    meta: PropTypes.object,
-    label: PropTypes.string,
-    fullWidth: PropTypes.bool,
-};
-
-ShareAchievementButton.defaultProps = {
-    rarity: 'rare',
-    footer: 'edubot-learning.com/leaderboard',
-    variant: 'dark',
-    className: '',
-    meta: null,
-    label: 'Бөлүшүү картасы',
-    fullWidth: false,
 };
 
 LeaderboardHero.propTypes = {
@@ -1635,6 +921,7 @@ NearYouRail.propTypes = {
     items: PropTypes.arrayOf(PropTypes.object),
     currentUserId: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
     targetGap: PropTypes.number,
+    nextTargetName: PropTypes.string,
     embedded: PropTypes.bool,
 };
 
@@ -1642,6 +929,7 @@ NearYouRail.defaultProps = {
     items: [],
     currentUserId: null,
     targetGap: null,
+    nextTargetName: '',
     embedded: false,
 };
 
@@ -1659,7 +947,6 @@ AchievementCloud.propTypes = {
     items: PropTypes.arrayOf(PropTypes.object),
     title: PropTypes.string,
     subtitle: PropTypes.string,
-    shareMeta: PropTypes.object,
     embedded: PropTypes.bool,
 };
 
@@ -1667,7 +954,6 @@ AchievementCloud.defaultProps = {
     items: [],
     title: 'Жетишкендиктер',
     subtitle: 'Көрүнүктүү сыйлыктар',
-    shareMeta: null,
     embedded: false,
 };
 

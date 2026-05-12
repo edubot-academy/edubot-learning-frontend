@@ -1,6 +1,6 @@
-# Leaderboard, Skills, and Share Contract
+# Leaderboard and Skills Contract
 
-Last updated: 2026-03-21
+Last updated: 2026-05-13
 
 ## Purpose
 
@@ -9,14 +9,12 @@ This document defines the current contract between LMS frontend and LMS backend 
 - student leaderboard experience
 - internal leaderboard access
 - achievement/challenge cards
-- public achievement sharing
 - skill ranking vs personal skill progress
 
 This is the source of truth for product semantics. It exists to avoid drift between:
 
 - leaderboard ranking data
 - personal progress data
-- public share URLs
 - internal/admin-facing leaderboard access
 
 ## Core product rules
@@ -49,15 +47,9 @@ Frontend must not present these as if they are the same metric.
 
 Students must not use internal leaderboard routes.
 
-### 3. Public share links should use backend canonical preview URLs
+### 3. Achievement sharing is currently disabled in the frontend
 
-When frontend creates an achievement share, it should prefer backend `publicUrl` over building a raw SPA route manually.
-
-Reason:
-
-- backend `publicUrl` serves crawler-friendly HTML with OG/Twitter metadata
-- that URL can unfurl better in social apps
-- real users are redirected to the frontend achievement page
+The frontend no longer exposes achievement sharing buttons, achievement share pages, or `/leaderboard/share` calls. Legacy `/share/achievement/:token` URLs may redirect to `/leaderboard` so old links do not land on a dead route. Keep active sharing disabled unless product explicitly reintroduces it.
 
 ## Backend endpoints
 
@@ -243,9 +235,12 @@ Important semantic note:
 - `progressPercent` here is part of the ranking aggregate and tie-breaking context
 - it should not be presented as the same thing as personal mastery from `/skills/me/progress`
 
-## Share contract
+## Deprecated share contract
+
+The frontend does not currently call these endpoints. Keep this section only as historical backend context.
 
 ### `POST /leaderboard/share`
+Deprecated in frontend: yes
 Auth required: yes
 
 Request body:
@@ -270,20 +265,19 @@ Response:
 
 Frontend rule:
 
-- prefer `publicUrl` for social sharing
-- use `appUrl` only for direct app navigation when needed
+- do not call from current frontend scope
 
 ### `GET /leaderboard/share/:token`
 Purpose:
 
-- JSON payload for frontend share page
+- JSON payload for the removed frontend share page
 
 ### `GET /leaderboard/share/public/:token`
 Purpose:
 
 - backend-rendered HTML page with OG/Twitter metadata
 - crawler-friendly public share preview
-- redirects real users to frontend share page
+- previously redirected real users to the frontend share page
 
 ## Frontend mapping rules
 
@@ -316,9 +310,8 @@ This separation is intentional and should be preserved.
 
 Frontend should:
 
-- create share via `POST /leaderboard/share`
-- use `publicUrl` for Telegram/WhatsApp/X/LinkedIn/native sharing
-- keep downloaded PNG as attachment/fallback asset
+- not expose leaderboard achievement sharing in the current product scope
+- not create share records via `POST /leaderboard/share`
 
 ## Known limits
 

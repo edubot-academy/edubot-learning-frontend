@@ -71,7 +71,7 @@ describe('LeaderboardHub', () => {
         renderHub();
 
         await screen.findByText(/Рейтинг эскертүүсү/i);
-        await user.click(screen.getByRole('button', { name: /көндүмдөр/i }));
+        await user.click(screen.getByRole('tab', { name: /көндүмдөр/i }));
 
         expect(await screen.findByText(/Менин көндүм прогрессим/i)).toBeInTheDocument();
         expect(screen.getByText(/64% өздөштүрүү/i)).toBeInTheDocument();
@@ -90,9 +90,9 @@ describe('LeaderboardHub', () => {
             track: 'video',
         });
         expect(screen.queryByRole('button', { name: /бардыгы/i })).not.toBeInTheDocument();
-        expect(screen.getByText(/Бул ачык бетте аптанын лидерлери, күчтүү өсүш жана бөлүшүүгө татыктуу жеңиштер көрүнөт/i)).toBeInTheDocument();
+        expect(screen.getByText(/Бул ачык бетте аптанын лидерлери, күчтүү өсүш жана окуудагы негизги жеңиштер көрүнөт/i)).toBeInTheDocument();
 
-        await user.click(screen.getByRole('button', { name: /апталык рейтинг/i }));
+        await user.click(screen.getByRole('tab', { name: /апталык рейтинг/i }));
         expect(await screen.findByRole('heading', { name: /Аптанын лидерлери/i })).toBeInTheDocument();
     });
 

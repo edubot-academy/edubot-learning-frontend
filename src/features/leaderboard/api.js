@@ -126,13 +126,3 @@ export const fetchLeaderboardAchievements = async (params = {}) =>
 
 export const fetchLeaderboardChallenges = async (params = {}) =>
     requestOrNull(() => api.get('/leaderboard/challenges', { params: clean(params) }));
-
-export const createLeaderboardShare = async (payload) => {
-    const { data } = await api.post('/leaderboard/share', payload);
-    return data;
-};
-
-export const fetchLeaderboardSharePayload = async (token) => {
-    const { data } = await api.get(`/leaderboard/share/${token}`);
-    return data;
-};

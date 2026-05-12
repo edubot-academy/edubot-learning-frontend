@@ -2,6 +2,24 @@
 
 Version bumps are classified by delivery scale; see `VERSIONING.md`.
 
+## [1.11.1] - 2026-05-13
+
+### 🏆 LEADERBOARD UX/UI IMPROVEMENTS
+- **Public Leaderboard Framing**: Clarified `/leaderboard` as an open public ranking surface with guest-friendly explanation, trust points, and course/login actions.
+- **Leaderboard States & Semantics**: Added stronger degraded/error states, a dedicated skills tab, accessible tab semantics, and clearer track switcher state.
+- **Leaderboard Sharing Removed**: Removed achievement sharing buttons, the public achievement share page, and frontend share API calls so leaderboard surfaces no longer expose sharing; legacy share URLs now redirect to `/leaderboard`.
+- **Internal Leaderboard Clarity**: Added role-aware framing for students, instructors, and admins, clearer track context, explicit load failure states, and accessible course selection.
+
+### 🎓 CERTIFICATE TRUST SURFACES
+- **Certificate Download**: Replaced the auto-redirect loader with a durable status page that explains PDF preparation, supports retry, links directly to verification/home, and avoids duplicate auto-download attempts in StrictMode.
+- **Certificate Verification**: Improved external-verifier trust copy, status-specific guidance, Kyrgyz date formatting, optional-field fallbacks, semantic page structure, and copy-link feedback.
+
+### 🧪 VERIFICATION
+- Focused leaderboard tests pass: `npm test -- LeaderboardHub --run`
+- Production build passes: `npm run build`
+
+---
+
 ## [1.11.0] - 2026-05-12
 
 ### 🏢 COMPANY MANAGEMENT REFINEMENTS
