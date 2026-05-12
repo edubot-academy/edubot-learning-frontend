@@ -1,19 +1,12 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import PropTypes from 'prop-types';
 import BasicModal from '@shared/ui/BasicModal';
 import { fetchCoursePreview } from '../api';
 import { formatSecondsToTime } from '../../../utils/timeUtils';
 import VideoPlayer from '@shared/VideoPlayer';
 import { getPlayableVideoUrl } from '../../../utils/videoUtils';
-import {
-    FiShare2,
-    FiTwitter,
-    FiLinkedin,
-    FiGlobe,
-    FiCamera,
-    FiDownload,
-    FiCopy,
-} from 'react-icons/fi';
+import { FiAlertTriangle, FiPlayCircle } from 'react-icons/fi';
+import NoImage from '@assets/icons/noImage.svg';
 
 
 function ModalPreviewVideo({ isOpen, onClose, courseId, previewData: previewDataProp = null, initialVideo = null,
@@ -26,8 +19,9 @@ function ModalPreviewVideo({ isOpen, onClose, courseId, previewData: previewData
 }) {
     const [previewData, setPreviewData] = useState(previewDataProp || null);
     const [loading, setLoading] = useState(previewDataProp ? false : true);
+    const [error, setError] = useState('');
     const [activeVideo, setActiveVideo] = useState(initialVideo || previewDataProp?.previewVideos?.[0] || null);
-    const containerRef = React.useRef(null);
+    const containerRef = useRef(null);
     const activeVideoUrl = getPlayableVideoUrl(activeVideo);
 
     useEffect(() => {
@@ -35,6 +29,7 @@ function ModalPreviewVideo({ isOpen, onClose, courseId, previewData: previewData
             setPreviewData(previewDataProp || null);
             setActiveVideo(initialVideo || previewDataProp?.previewVideos?.[0] || null);
             setLoading(previewDataProp ? false : true);
+            setError('');
             return;
         }
 
@@ -42,12 +37,14 @@ function ModalPreviewVideo({ isOpen, onClose, courseId, previewData: previewData
             setPreviewData(previewDataProp);
             setActiveVideo(initialVideo || previewDataProp.previewVideos?.[0] || null);
             setLoading(false);
+            setError('');
             return;
         }
 
         if (!courseId) return;
 
         setLoading(true);
+        setError('');
         const loadPreview = async () => {
             try {
                 const data = await fetchCoursePreview(courseId);
@@ -55,6 +52,7 @@ function ModalPreviewVideo({ isOpen, onClose, courseId, previewData: previewData
                 setActiveVideo(initialVideo || data?.previewVideos?.[0] || null);
             } catch (e) {
                 console.error('Failed to load course preview:', e);
+                setError('Алдын ала көрүү видеосу азыр жеткиликсиз.');
             } finally {
                 setLoading(false);
             }
@@ -79,16 +77,28 @@ function ModalPreviewVideo({ isOpen, onClose, courseId, previewData: previewData
             size="lg"
         >
             {loading && (
-                <div className="flex items-center justify-center min-h-[300px]">
-                    <div className="w-12 h-12 border-4 border-gray-300 border-t-[#f17e22] rounded-full animate-spin" />
+                <div className="flex min-h-[300px] items-center justify-center" role="status">
+                    <div className="w-12 h-12 border-4 border-gray-300 border-t-[#f17e22] rounded-full animate-spin" aria-hidden="true" />
+                    <span className="sr-only">Видео жүктөлүүдө</span>
                 </div>
             )}
 
+            {!loading && error && (
+                <div className="rounded-2xl border border-orange-200 bg-orange-50 px-5 py-6 text-orange-900 dark:border-orange-900/40 dark:bg-orange-950/20 dark:text-orange-100" role="alert">
+                    <div className="flex gap-3">
+                        <FiAlertTriangle className="mt-1 shrink-0" aria-hidden="true" />
+                        <div>
+                            <h3 className="font-semibold">Видео ачылган жок</h3>
+                            <p className="mt-2 text-sm leading-6">{error}</p>
+                        </div>
+                    </div>
+                </div>
+            )}
 
-            {!loading && previewData && (
+            {!loading && !error && previewData && (
                 <div ref={containerRef} className="w-full videoFs pb-9 relative">
 
-                    {activeVideoUrl && (
+                    {activeVideoUrl ? (
                         <VideoPlayer
                             videoRef={videoRef}
                             videoUrl={activeVideoUrl}
@@ -102,12 +112,20 @@ function ModalPreviewVideo({ isOpen, onClose, courseId, previewData: previewData
                             autoPlay
                             className="w-full aspect-video rounded"
                         />
+                    ) : (
+                        <div className="flex aspect-video items-center justify-center rounded-2xl border border-dashed border-gray-300 bg-gray-50 text-gray-600 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300">
+                            <div className="text-center">
+                                <FiPlayCircle className="mx-auto mb-3 h-10 w-10 text-gray-400" aria-hidden="true" />
+                                <p className="text-sm font-medium">Бул сабак үчүн алдын ала видео жок</p>
+                            </div>
+                        </div>
                     )}
 
                     <div className="space-y-2 mt-4">
-                        {previewData.previewVideos?.map((lesson, index) => (
+                        {previewData.previewVideos?.length ? previewData.previewVideos.map((lesson, index) => (
                             <button
                                 key={lesson.id}
+                                type="button"
                                 onClick={() => setActiveVideo(lesson)}
                                 className={`w-full flex items-center gap-3 p-3 rounded border
                                     ${activeVideo?.id === lesson.id ||
@@ -118,9 +136,12 @@ function ModalPreviewVideo({ isOpen, onClose, courseId, previewData: previewData
                                 `}
                             >
                                 <img
-                                    src={previewData.coverImageUrl}
+                                    src={previewData.coverImageUrl || NoImage}
                                     alt={lesson.title}
                                     className="w-16 h-10 object-cover rounded"
+                                    onError={(e) => {
+                                        e.currentTarget.src = NoImage;
+                                    }}
                                 />
 
                                 <div className="flex-1 text-left">
@@ -133,12 +154,34 @@ function ModalPreviewVideo({ isOpen, onClose, courseId, previewData: previewData
                                     {formatSecondsToTime(lesson.duration)}
                                 </span>
                             </button>
-                        ))}
+                        )) : (
+                            <p className="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300">
+                                Азырынча алдын ала көрүү сабактары жок.
+                            </p>
+                        )}
                     </div>
                 </div>
             )}
         </BasicModal>
     );
 }
+
+ModalPreviewVideo.propTypes = {
+    isOpen: PropTypes.bool.isRequired,
+    onClose: PropTypes.func.isRequired,
+    courseId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    previewData: PropTypes.shape({
+        title: PropTypes.string,
+        coverImageUrl: PropTypes.string,
+        previewVideos: PropTypes.array,
+    }),
+    initialVideo: PropTypes.object,
+    resumeVideoTime: PropTypes.number,
+    handleVideoProgress: PropTypes.func,
+    handleTimeUpdate: PropTypes.func,
+    handlePause: PropTypes.func,
+    videoRef: PropTypes.shape({ current: PropTypes.any }),
+    onEnded: PropTypes.func,
+};
 
 export default ModalPreviewVideo;

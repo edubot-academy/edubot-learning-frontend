@@ -1,4 +1,4 @@
-import React, { useId, useState, useEffect, useRef, useCallback } from 'react';
+import { useId, useState, useEffect, useRef, useCallback } from 'react';
 import PropTypes from 'prop-types';
 import { createPortal } from 'react-dom';
 
@@ -45,7 +45,6 @@ const AdvancedModal = ({
     const subtitleId = useId();
     const [localIsOpen, setLocalIsOpen] = useState(isOpen);
     const [portalTarget, setPortalTarget] = useState(null);
-    const [isAnimating, setIsAnimating] = useState(false);
     const modalRef = useRef(null);
     const previousFocusRef = useRef(null);
     const animationTimeoutRef = useRef(null);
@@ -64,7 +63,6 @@ const AdvancedModal = ({
     // Handle animation
     useEffect(() => {
         if (localIsOpen) {
-            setIsAnimating(true);
             setAnimationClass(ANIMATION_VARIANTS[animation] || ANIMATION_VARIANTS.slideUp);
 
             // Clear any existing timeout
@@ -74,7 +72,6 @@ const AdvancedModal = ({
 
             // Remove animation class after animation completes
             animationTimeoutRef.current = setTimeout(() => {
-                setIsAnimating(false);
                 setAnimationClass('');
             }, 300);
         }
@@ -163,10 +160,6 @@ const AdvancedModal = ({
         // Enhanced initial focus
         if (initialFocus && modalRef.current) {
             const timeoutId = setTimeout(() => {
-                const focusableElements = modalRef.current.querySelectorAll(
-                    'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-                );
-
                 // Try to focus the first input, then first button, then modal itself
                 const firstInput = modalRef.current.querySelector('input:not([disabled]), textarea:not([disabled])');
                 const firstButton = modalRef.current.querySelector('button:not([disabled])');
@@ -204,7 +197,7 @@ const AdvancedModal = ({
                 previousFocusRef.current.focus();
             }
         };
-    }, [localIsOpen, onClose, closeOnEscape, initialFocus, preventClose, loading, trapFocus]);
+    }, [localIsOpen, onClose, closeOnEscape, initialFocus, preventClose, loading, trapFocus, actions]);
 
     const handleBackdropClick = useCallback((e) => {
         if (e.target === e.currentTarget && closeOnBackdropClick && onClose && !preventClose && !loading) {
@@ -250,7 +243,7 @@ const AdvancedModal = ({
 
             {/* Modal container with improved positioning */}
             <div
-                className={`fixed inset-0 z-[110] overflow-y-auto min-h-screen px-4 py-6 sm:py-8 flex items-start justify-center ${localIsOpen ? 'opacity-100 visible' : 'opacity-0 invisible'
+                className={`fixed inset-0 z-[110] flex min-h-screen items-start justify-center overflow-y-auto px-3 py-4 sm:px-4 sm:py-8 ${localIsOpen ? 'opacity-100 visible' : 'opacity-0 invisible'
                     } transition-all duration-300`}
             >
                 <div
@@ -317,11 +310,11 @@ const AdvancedModal = ({
                     )}
 
                     {/* Enhanced content area */}
-                    <div className="p-6 max-h-[70vh] overflow-y-auto">
+                    <div className="max-h-[calc(100vh-13rem)] overflow-y-auto p-4 sm:max-h-[70vh] sm:p-6">
                         <div className="modal-content">
                             {loading && (
-                                <div className="flex items-center justify-center py-8">
-                                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                                <div className="flex items-center justify-center py-8" role="status">
+                                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" aria-hidden="true"></div>
                                     <span className="ml-3 text-gray-600 dark:text-gray-400">Жүктөлүүдө...</span>
                                 </div>
                             )}
@@ -331,7 +324,7 @@ const AdvancedModal = ({
 
                     {/* Enhanced footer section */}
                     {(footer || actions) && (
-                        <div className={`flex items-center justify-between gap-4 p-6 border-t ${getVariantClasses().includes('border-')
+                        <div className={`flex flex-col gap-4 border-t p-4 sm:flex-row sm:items-center sm:justify-between sm:p-6 ${getVariantClasses().includes('border-')
                             ? getVariantClasses()
                             : 'border-gray-200 dark:border-gray-700'
                             }`}>
@@ -342,7 +335,7 @@ const AdvancedModal = ({
                             )}
 
                             {actions && (
-                                <div className="flex items-center gap-3 flex-wrap">
+                                <div className="flex w-full flex-col-reverse gap-3 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
                                     {actions.map((action, index) => (
                                         <button
                                             key={action.id || index}

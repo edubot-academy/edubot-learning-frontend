@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { BsTrash, BsCartX } from 'react-icons/bs';
@@ -9,6 +9,9 @@ import ContactCourseModal from '@features/courses/components/ContactCourseModal'
 import UnauthModal from '../shared/ui/UnauthModal';
 import Loader from '@shared/ui/Loader';
 import { getAuthAcquisitionPath, isPublicVideoSignupEnabled } from '@shared/auth-config';
+import EmptyState from '@components/ui/dashboard/EmptyState';
+
+const formatPrice = (price) => `${new Intl.NumberFormat('ru-RU').format(Number(price) || 0)} сом`;
 
 const Cart = () => {
     const { cartItems, loading, removeFromCart, getTotalPrice, clearCart, user } = useCart();
@@ -40,20 +43,15 @@ const Cart = () => {
 
     if (cartItems.length === 0) {
         return (
-            <div className="min-h-screen flex flex-col items-center justify-center p-4">
-                <BsCartX className="w-24 h-24 text-gray-300 dark:text-gray-600 mb-6" />
-                <h2 className="text-2xl font-bold mb-4 text-gray-900 dark:text-white">Себетиңиз бош</h2>
-                <p className="text-gray-600 dark:text-[#a6adba] mb-8 text-center max-w-md">
-                    Сиздин себетиңизде эч кандай курс жок. Биздин курстарды изилдеп, биринчисин
-                    кошуңуз!
-                </p>
-                <Button
-                    variant="primary"
-                    onClick={() => navigate('/courses')}
-                    className="px-8 py-3"
-                >
-                    Курстарды карап чыгуу
-                </Button>
+            <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4 dark:bg-gray-900">
+                <EmptyState
+                    title="Себетиңиз бош"
+                    subtitle="Өз алдынча окуй турган видео курстарды каталогдон тандап, себетке кошуңуз."
+                    variant="discovery"
+                    icon={<BsCartX className="h-14 w-14 text-edubot-orange" aria-hidden="true" />}
+                    action={{ label: 'Курстарды карап чыгуу', onClick: () => navigate('/courses') }}
+                    className="w-full max-w-xl rounded-[24px] border border-gray-200 bg-white px-6 dark:border-gray-800 dark:bg-gray-950"
+                />
             </div>
         );
     }
@@ -80,7 +78,7 @@ const Cart = () => {
                 <div className="space-y-4">
                     <div className="flex items-center space-x-3">
                         <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
-                            <FaShoppingCart className="w-5 h-5 text-orange-500" />
+                            <FaShoppingCart className="w-5 h-5 text-orange-500" aria-hidden="true" />
                         </div>
                         <div>
                             <h3 className="font-bold ">{isPublicVideoSignupEnabled ? 'Катталуу керек' : 'Кирүү керек'}</h3>
@@ -99,6 +97,7 @@ const Cart = () => {
                         </Button>
 
                         <button
+                            type="button"
                             onClick={() => setShowRegisterModal(false)}
                             className="w-full text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 py-2 text-sm text-center"
                         >
@@ -110,6 +109,8 @@ const Cart = () => {
             <ContactCourseModal
                 isOpen={showContactModal}
                 onClose={() => setShowContactModal(false)}
+                cartItems={cartItems}
+                totalPrice={totalPrice}
             />
             <div className="container mx-auto px-4">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
@@ -117,10 +118,11 @@ const Cart = () => {
 
                     <div className="flex items-center gap-3">
                         <button
+                            type="button"
                             onClick={clearCart}
                             className="flex items-center text-red-500 hover:text-red-700 text-sm font-medium px-3 py-2 border border-red-200 rounded-lg hover:bg-red-50 transition-colors"
                         >
-                            <BsTrash className="w-4 h-4 mr-2" />
+                            <BsTrash className="w-4 h-4 mr-2" aria-hidden="true" />
                             Бардыгын өчүрүү
                         </button>
                     </div>
@@ -133,9 +135,9 @@ const Cart = () => {
                                 key={item.cartItemId || item.id}
                                 className="rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow duration-300"
                             >
-                                <Link to={`/courses/${item.id}`} className="block">
-                                    <div className="flex flex-col sm:flex-row">
-                                        <div className="sm:w-40 h-48 sm:h-auto">
+                                <div className="flex flex-col sm:flex-row">
+                                    <Link to={`/courses/${item.id}`} className="block sm:w-40">
+                                        <div className="h-48 sm:h-full">
                                             {item.coverImageUrl ? (
                                                 <img
                                                     src={item.coverImageUrl}
@@ -148,10 +150,12 @@ const Cart = () => {
                                                 </div>
                                             )}
                                         </div>
+                                    </Link>
 
-                                        <div className="flex-1 p-4 sm:p-6">
-                                            <div className="flex flex-col sm:flex-row justify-between">
-                                                <div className="flex-1 mb-4 sm:mb-0">
+                                    <div className="flex-1 p-4 sm:p-6">
+                                        <div className="flex flex-col gap-4 sm:flex-row sm:justify-between">
+                                            <Link to={`/courses/${item.id}`} className="flex-1 rounded focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900">
+                                                <div>
                                                     <h3 className="text-lg font-semibold mb-2 hover:text-orange-500 transition-colors">
                                                         {item.title}
                                                     </h3>
@@ -172,27 +176,24 @@ const Cart = () => {
                                                         )}
                                                     </div>
                                                 </div>
+                                            </Link>
 
-                                                <div className="flex flex-col items-start sm:items-end justify-between">
-                                                    <p className="text-xl font-bold mb-3 sm:mb-0">
-                                                        {item.price} сом
-                                                    </p>
-                                                    <button
-                                                        onClick={(e) => {
-                                                            e.preventDefault();
-                                                            e.stopPropagation();
-                                                            removeFromCart(item.id);
-                                                        }}
-                                                        className="text-red-500 hover:text-red-700 text-sm font-medium flex items-center px-3 py-1 border border-red-200 rounded hover:bg-red-50 transition-colors"
-                                                    >
-                                                        <BsTrash className="w-3 h-3 mr-1" />
-                                                        Өчүрүү
-                                                    </button>
-                                                </div>
+                                            <div className="flex flex-col items-start justify-between sm:items-end">
+                                                <p className="text-xl font-bold mb-3 sm:mb-0">
+                                                    {formatPrice(item.price)}
+                                                </p>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => removeFromCart(item.id)}
+                                                    className="text-red-500 hover:text-red-700 text-sm font-medium flex items-center px-3 py-1 border border-red-200 rounded hover:bg-red-50 transition-colors"
+                                                >
+                                                    <BsTrash className="w-3 h-3 mr-1" aria-hidden="true" />
+                                                    Өчүрүү
+                                                </button>
                                             </div>
                                         </div>
                                     </div>
-                                </Link>
+                                </div>
                             </div>
                         ))}
                     </div>
@@ -214,7 +215,7 @@ const Cart = () => {
                                     <div className="flex justify-between items-center">
                                         <span className="text-lg font-semibold">Жалпы сумма:</span>
                                         <span className="text-2xl font-bold text-orange-500">
-                                            {totalPrice} сом
+                                            {formatPrice(totalPrice)}
                                         </span>
                                     </div>
                                 </div>

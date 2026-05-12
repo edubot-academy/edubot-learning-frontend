@@ -2,6 +2,36 @@
 
 Version bumps are classified by delivery scale; see `VERSIONING.md`.
 
+## [1.11.3] - 2026-05-13
+
+### Changed
+- Improved the public Courses catalog framing, loading/error/empty states, sort status, and assigned-course explanation.
+- Strengthened course cards with clearer instructor, rating, availability, price, and CTA semantics.
+- Clarified Course Details purchase/contact actions for self-serve video courses versus assigned live/offline courses.
+- Improved auth form button focus/loading states and public mobile sidebar semantics.
+- Tightened dashboard/sidebar scrolling, shared empty-state semantics, and modal mobile/footer behavior.
+- Reduced Course Details duplication for instructor/review/content blocks and improved chat button accessibility.
+- Improved course preview and course-contact modals with clearer unavailable/loading/error states, field ARIA wiring, and support-contact consistency.
+- Aligned Cart and Favourites empty/loading/error states with the shared empty-state system.
+- Added prop validation and cleaner ARIA/error behavior to shared form inputs.
+- Refined public Course Details content reuse while preventing duplicate public desktop review sections.
+- Reworked cart item links and unauthenticated favourite/sidebar actions to avoid nested interactive elements.
+- Expanded `LabelSearch` with stable `id`/`name` support, label/error wiring, and complete clear-change events.
+
+### Fixed
+- Submitted course and cart contact requests through the existing contact API instead of showing success without sending data.
+- Added cart context to checkout contact requests, including selected courses and total price in the contact payload.
+- Normalized contact modal phone handling so accepted formatting characters validate consistently.
+- Fixed course-card add-to-cart feedback so the success modal waits for a successful cart operation.
+- Fixed mobile sidebar account list semantics by wrapping list links in valid list items.
+
+### Verification
+- Focused ESLint passes with no new errors; existing `CourseDetails.jsx` hook warnings remain.
+- `npm test -- --run` passes.
+- `npm run build` passes with existing Vite chunk-size/dynamic-import warnings.
+
+---
+
 ## [1.11.2] - 2026-05-13
 
 ### 🎨 UX/UI AND VERIFICATION IMPROVEMENTS

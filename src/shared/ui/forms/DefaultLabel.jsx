@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import PropTypes from 'prop-types';
 
 const DefaultLabel = ({
     label = 'label',
@@ -92,6 +93,23 @@ const DefaultLabel = ({
             </div>
         </div>
     );
+};
+
+DefaultLabel.propTypes = {
+    label: PropTypes.string,
+    name: PropTypes.string,
+    id: PropTypes.string,
+    type: PropTypes.string,
+    required: PropTypes.bool,
+    error: PropTypes.string,
+    placeholder: PropTypes.string,
+    width: PropTypes.string,
+    value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    onChange: PropTypes.func,
+    className: PropTypes.string,
+    autoComplete: PropTypes.string,
+    onFocus: PropTypes.func,
+    onBlur: PropTypes.func,
 };
 
 export default DefaultLabel;

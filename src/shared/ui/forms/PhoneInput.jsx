@@ -1,4 +1,4 @@
-import React from 'react';
+import PropTypes from 'prop-types';
 
 const PhoneInput = ({
     id,
@@ -51,6 +51,21 @@ const PhoneInput = ({
             {...props}
         />
     );
+};
+
+PhoneInput.propTypes = {
+    id: PropTypes.string,
+    name: PropTypes.string,
+    value: PropTypes.string,
+    onChange: PropTypes.func.isRequired,
+    required: PropTypes.bool,
+    className: PropTypes.string,
+    placeholder: PropTypes.string,
+    autoComplete: PropTypes.string,
+    allowPlus: PropTypes.bool,
+    maxLength: PropTypes.number,
+    'aria-invalid': PropTypes.bool,
+    'aria-describedby': PropTypes.string,
 };
 
 export default PhoneInput;

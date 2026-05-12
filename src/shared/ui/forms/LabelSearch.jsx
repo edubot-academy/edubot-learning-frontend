@@ -1,9 +1,12 @@
 import { useState } from 'react';
+import PropTypes from 'prop-types';
 import { IoSearch } from 'react-icons/io5';
 import { MdOutlineClear } from 'react-icons/md';
 
 const LabelSearch = ({
     label = 'Label',
+    name = '',
+    id,
     required = false,
     error = '',
     placeholder = '',
@@ -17,6 +20,8 @@ const LabelSearch = ({
     const [showAsterisk, setShowAsterisk] = useState(false);
 
     const hasError = !!error;
+    const inputId = id || name || `search-${label.replace(/\s+/g, '-').toLowerCase()}`;
+    const errorId = `${inputId}-error`;
 
     // Объединяем контролируемый и локальный value
     const currentValue = propValue !== undefined ? propValue : value;
@@ -46,7 +51,7 @@ const LabelSearch = ({
     const clearInput = () => {
         setValue('');
         setShowAsterisk(false);
-        if (propOnChange) propOnChange({ target: { value: '' } });
+        if (propOnChange) propOnChange({ target: { name, value: '' } });
     };
 
     return (
@@ -62,6 +67,7 @@ const LabelSearch = ({
                 >
                     {/* Лейбл */}
                     <label
+                        htmlFor={inputId}
                         className={`absolute left-2 pl-5 sm:left-3 transition-all duration-200 ease-in-out
     ${isActive
                                 ? '-top-2 sm:-top-3 text-xs sm:text-sm'
@@ -76,34 +82,55 @@ const LabelSearch = ({
                     </label>
 
                     {/* Иконка поиска */}
-                    <IoSearch className={`absolute left-2 top-1/2 -translate-y-1/2 transition-colors duration-200 ${focused ? 'text-[#EA580C] dark:text-[#F97316]' : 'text-gray-400 dark:text-gray-500'}`} size={20} />
+                    <IoSearch className={`absolute left-2 top-1/2 -translate-y-1/2 transition-colors duration-200 ${focused ? 'text-[#EA580C] dark:text-[#F97316]' : 'text-gray-400 dark:text-gray-500'}`} size={20} aria-hidden="true" />
 
                     {/* Инпут */}
                     <input
+                        id={inputId}
                         type="text"
+                        name={name}
                         value={currentValue}
                         onChange={handleChange}
                         onFocus={handleFocus}
                         onBlur={handleBlur}
                         placeholder={placeholder}
+                        required={required}
+                        aria-invalid={hasError}
+                        aria-describedby={hasError ? errorId : undefined}
                         className="w-full pl-8 pr-8 bg-transparent outline-none text-gray-900 dark:text-white text-sm sm:text-base flex items-center focus:outline-none focus:ring-1 focus:ring-[#EA580C] dark:focus:ring-[#F97316]"
                     />
 
                     {/* Крестик для очистки */}
                     {currentValue && (
-                        <MdOutlineClear
+                        <button
+                            type="button"
                             onClick={clearInput}
-                            className="absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer "
-                            size={20}
-                        />
+                            className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-gray-500 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                            aria-label="Издөөнү тазалоо"
+                        >
+                            <MdOutlineClear size={20} aria-hidden="true" />
+                        </button>
                     )}
                 </div>
 
                 {/* Ошибка */}
-                {hasError && <p className="text-red-600 text-xs sm:text-sm">{error}</p>}
+                {hasError && <p id={errorId} className="text-red-600 text-xs sm:text-sm">{error}</p>}
             </div>
         </div>
     );
+};
+
+LabelSearch.propTypes = {
+    label: PropTypes.string,
+    name: PropTypes.string,
+    id: PropTypes.string,
+    required: PropTypes.bool,
+    error: PropTypes.string,
+    placeholder: PropTypes.string,
+    width: PropTypes.string,
+    value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    onChange: PropTypes.func,
+    className: PropTypes.string,
 };
 
 export default LabelSearch;

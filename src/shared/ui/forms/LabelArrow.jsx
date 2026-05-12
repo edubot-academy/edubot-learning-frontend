@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import PropTypes from 'prop-types';
 import { IoIosArrowDown } from 'react-icons/io';
 
 const LabelArrow = ({
@@ -57,7 +58,7 @@ const LabelArrow = ({
                       : 'top-2 sm:top-3 text-gray-500 text-sm sm:text-base'
               }
               ${hasError ? 'text-red-600' : focused ? 'text-amber-600' : 'text-gray-500'}
-              bg-white px-1 pointer-events-none  // ← ВОТ ЭТО ДОБАВЬ
+	              bg-white px-1 pointer-events-none
             `}
                     >
                         {label}
@@ -72,18 +73,32 @@ const LabelArrow = ({
                         onFocus={handleFocus}
                         onBlur={handleBlur}
                         placeholder={placeholder}
+                        required={required}
+                        aria-invalid={hasError}
+                        aria-describedby={hasError ? `${label}-error` : undefined}
                         className="w-full bg-transparent outline-none text-gray-900 text-sm sm:text-base flex items-center"
                     />
 
                     {/* Иконка стрелки */}
-                    <IoIosArrowDown className="absolute right-3 top-1/2 -translate-y-1/2" />
+                    <IoIosArrowDown className="absolute right-3 top-1/2 -translate-y-1/2" aria-hidden="true" />
                 </div>
 
                 {/* Ошибка */}
-                {hasError && <p className="text-red-600 text-xs sm:text-sm">{error}</p>}
+                {hasError && <p id={`${label}-error`} className="text-red-600 text-xs sm:text-sm">{error}</p>}
             </div>
         </div>
     );
+};
+
+LabelArrow.propTypes = {
+    label: PropTypes.string,
+    required: PropTypes.bool,
+    error: PropTypes.string,
+    placeholder: PropTypes.string,
+    width: PropTypes.string,
+    value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    onChange: PropTypes.func,
+    className: PropTypes.string,
 };
 
 export default LabelArrow;

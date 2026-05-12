@@ -49,16 +49,17 @@ const EmptyState = ({
   illustration,
   variant = 'default',
   className = '',
+  role = 'status',
 }) => {
   const config = variantConfig[variant] || variantConfig.default;
   const defaultIcon = (
-    <svg className={`w-16 h-16 ${config.iconClassName}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <svg className={`w-16 h-16 ${config.iconClassName}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
       {variantIcons[variant] || variantIcons.default}
     </svg>
   );
 
   return (
-    <div className={`text-center py-12 ${className}`}>
+    <div className={`text-center py-12 ${className}`} role={role}>
       <div className="flex flex-col items-center space-y-6">
         {/* Icon or Illustration */}
         <div className="relative">
@@ -105,6 +106,7 @@ EmptyState.propTypes = {
   illustration: PropTypes.node,
   variant: PropTypes.oneOf(['default', 'discovery', 'access', 'queue', 'error']),
   className: PropTypes.string,
+  role: PropTypes.string,
 };
 
 export default EmptyState;

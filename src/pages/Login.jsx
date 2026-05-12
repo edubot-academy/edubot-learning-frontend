@@ -1,4 +1,4 @@
-import React, { useState, useContext } from 'react';
+import { useState, useContext } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { loginUser } from '@services/api';
 import { AuthContext } from '../context/AuthContext';
@@ -109,7 +109,7 @@ const LoginPage = () => {
             <div className="hidden md:flex md:w-1/2 bg-[linear-gradient(151.1deg,#FFCBA5_3.26%,#E64D26_96.74%)] flex-col justify-center items-center text-white px-6">
                 <img
                     src={SignInImg}
-                    alt="Sign up"
+                    alt="EduBot Learning"
                     className="object-contain mb-6 w-[400px] h-[300px]"
                 />
                 <h2 className="font-bold text-center text-[50px]">
@@ -163,6 +163,7 @@ const LoginPage = () => {
                             type="button"
                             className="mx-auto mt-2 flex rounded-md px-2 py-1 text-sm text-blue-500 hover:underline focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
                             onClick={() => setForgotPassword(!forgotPassword)}
+                            aria-expanded={forgotPassword}
                         >
                             Сырсөздү унуттуңузбу?
                         </button>
@@ -171,7 +172,7 @@ const LoginPage = () => {
                             type="submit"
                             disabled={loading}
                             aria-busy={loading}
-                            className="w-full mt-4 shadow-[0px_5px_21.3px_0px_#E14219BF] bg-[linear-gradient(180deg,#FF8C6E_0%,#E14219_100%)] text-white py-3 rounded text-lg font-semibold hover:opacity-90 transition disabled:cursor-not-allowed disabled:opacity-75"
+                            className="mt-4 min-h-[52px] w-full rounded bg-[linear-gradient(180deg,#FF8C6E_0%,#E14219_100%)] py-3 text-lg font-semibold text-white shadow-[0px_5px_21.3px_0px_#E14219BF] transition hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-75"
                         >
                             {loading ? 'Кирүүдө...' : 'Кирүү'}
                         </button>

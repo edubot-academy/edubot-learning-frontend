@@ -1023,6 +1023,28 @@ const CourseDetailsPage = () => {
     const activeQuiz = activeLesson?.kind === 'quiz' ? lessonQuizData[activeLesson.id] : null;
     const activeChallenge =
         activeLesson?.kind === 'code' ? lessonChallengeData[activeLesson.id] : null;
+    const renderInstructorInfo = () => (
+        <InstructorsInfo
+            instructorData={course.instructor}
+            ratingAverage={course.ratingAverage}
+            ratingCount={course.ratingCount}
+        />
+    );
+    const renderCourseReview = () => (
+        <CourseReview
+            ratingAverage={course.ratingAverage}
+            ratingCount={course.ratingCount}
+            ratingBreakdown={course?.ratingBreakdown}
+        />
+    );
+    const renderPublicCourseInfo = ({ includeReview = true } = {}) => (
+        <>
+            <CourseDescription course={course} />
+            {renderInstructorInfo()}
+            <CourseContent courseId={id} sections={sections} />
+            {includeReview ? renderCourseReview() : null}
+        </>
+    );
 
     return (
         <div className="min-h-screen pt-10 bg-[#f8f9fb] dark:bg-[#1A1A1A]">
@@ -1032,13 +1054,16 @@ const CourseDetailsPage = () => {
                     {user?.role === 'student' && (
                         <div className="fixed top-20 right-4 z-50" ref={buttonRef}>
                             <button
+                                type="button"
                                 className={`instructor-chat-button mt-10 mr-4 flex items-center justify-center w-16 h-16 rounded-full border-2 transition-all shadow-lg hover:shadow-xl ${instructorChat
                                     ? 'border-[#FB923C] bg-[#FFF7ED]'
                                     : 'border-gray-300 bg-white hover:bg-gray-50 dark:bg-[#1A1A1A]'
                                     }`}
                                 onClick={() => setInstructorChat(!instructorChat)}
+                                aria-label={instructorChat ? 'Окутуучу менен чатты жабуу' : 'Окутуучу менен чатты ачуу'}
+                                aria-expanded={instructorChat}
                             >
-                                <HiChatAlt2 className="w-8 h-8 text-[#EA580C]" />
+                                <HiChatAlt2 className="w-8 h-8 text-[#EA580C]" aria-hidden="true" />
                             </button>
                         </div>
                     )}
@@ -1137,16 +1162,8 @@ const CourseDetailsPage = () => {
                                 lessonRefs={lessonRefs}
                                 handleCheckboxToggle={handleCheckboxToggle}
                             />
-                            <InstructorsInfo
-                                instructorData={course.instructor}
-                                ratingAverage={course.ratingAverage}
-                                ratingCount={course.ratingCount}
-                            />
-                            <CourseReview
-                                ratingAverage={course.ratingAverage}
-                                ratingCount={course.ratingCount}
-                                ratingBreakdown={course?.ratingBreakdown}
-                            />
+                            {renderInstructorInfo()}
+                            {renderCourseReview()}
                             <Comment courseId={id} />
                         </div>
                         ) : (
@@ -1165,18 +1182,7 @@ const CourseDetailsPage = () => {
                                 videoRef={videoRef}
                                 onEnded={handleEnded}
                             />
-                            <CourseDescription course={course} />
-                            <InstructorsInfo
-                                instructorData={course.instructor}
-                                ratingAverage={course.ratingAverage}
-                                ratingCount={course.ratingCount}
-                            />
-                            <CourseContent courseId={id} sections={sections} />
-                            <CourseReview
-                                ratingAverage={course.ratingAverage}
-                                ratingCount={course.ratingCount}
-                                ratingBreakdown={course?.ratingBreakdown}
-                            />
+                            {renderPublicCourseInfo()}
                         </div>
                         )
                     ) : null}
@@ -1257,11 +1263,7 @@ const CourseDetailsPage = () => {
                             </div>
                         ) : (
                             <div className="space-y-8">
-                                <CourseDescription course={course} />
-                                <InstructorsInfo
-                                    instructorData={course.instructor}
-                                />
-                                <CourseContent courseId={id} sections={sections} />
+                                {renderPublicCourseInfo({ includeReview: false })}
                             </div>
                         )}
                     </div>
@@ -1308,11 +1310,7 @@ const CourseDetailsPage = () => {
                                         lessonCount={lessonCount}
                                         coverImageUrl={course.coverImageUrl}
                                     />
-                                    <CourseReview
-                                        ratingAverage={course.ratingAverage}
-                                        ratingCount={course.ratingCount}
-                                        ratingBreakdown={course?.ratingBreakdown}
-                                    />
+                                    {renderCourseReview()}
                                 </>
                             )}
                         </div>
@@ -1322,18 +1320,10 @@ const CourseDetailsPage = () => {
                 {enrolled && (
                     <div className="space-y-8 lg:space-y-0 lg:grid lg:grid-cols-3 lg:gap-6">
                         <div className="lg:col-span-2">
-                            <InstructorsInfo
-                                instructorData={course.instructor}
-                                ratingAverage={course.ratingAverage}
-                                ratingCount={course.ratingCount}
-                            />
+                            {renderInstructorInfo()}
                         </div>
                         <div className="lg:col-span-1">
-                            <CourseReview
-                                ratingAverage={course.ratingAverage}
-                                ratingCount={course.ratingCount}
-                                ratingBreakdown={course?.ratingBreakdown}
-                            />
+                            {renderCourseReview()}
                         </div>
                     </div>
                 )}

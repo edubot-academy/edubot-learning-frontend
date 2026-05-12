@@ -1,6 +1,8 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { fetchCatalogCourses } from '@services/api';
 import CardCourse from '@features/courses/components/CardCourse';
+import EmptyState from '@components/ui/dashboard/EmptyState';
+import { FiAlertTriangle, FiBookOpen, FiRefreshCw, FiSliders } from 'react-icons/fi';
 
 const getCourseType = (course) => String(course?.courseType || course?.type || 'video').toLowerCase();
 
@@ -57,6 +59,13 @@ const CoursesPage = () => {
     const hasActiveSort = sortBy !== 'recommended';
     const visibleCourses = sortedCourses.slice(0, visibleCount);
     const canShowMore = visibleCount < sortedCourses.length;
+    const hiddenAssignedCount = courses.length - publicVideoCourses.length;
+    const sortLabels = {
+        recommended: 'Сунушталган',
+        rating: 'Рейтинг боюнча',
+        'price-low': 'Арзандан кымбатка',
+        'price-high': 'Кымбаттан арзанга',
+    };
 
     useEffect(() => {
         setVisibleCount(9);
@@ -67,20 +76,32 @@ const CoursesPage = () => {
             <div className="mx-auto max-w-7xl pt-5">
                 <div className="flex flex-col gap-5 border-b border-gray-200 pb-6 dark:border-gray-800 lg:flex-row lg:items-end lg:justify-between">
                     <div>
+                        <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-orange-100 bg-orange-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-orange-600 dark:border-orange-500/20 dark:bg-orange-500/10 dark:text-orange-300">
+                            <FiBookOpen aria-hidden="true" />
+                            Видео каталог
+                        </div>
                         <h1 className="text-4xl font-bold text-start mb-0 text-gray-900 dark:text-white">
                             Биздин курстар
                         </h1>
-                        <p className="font-inter text-sm md:text-base lg:text-lg text-gray-600 dark:text-gray-400">
-                            Сиз үчүн сунушталган курстар
+                        <p className="mt-2 max-w-2xl font-inter text-sm leading-6 text-gray-600 dark:text-gray-400 md:text-base">
+                            Коомдук каталогдо өз алдынча сатып алып окуй турган видео курстар гана көрсөтүлөт. Онлайн түз эфир жана оффлайн курстар компания же администратор аркылуу дайындалат.
                         </p>
-                        <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-                            {loading ? 'Курстар жүктөлүүдө...' : `${sortedCourses.length} видео курс табылды`}
-                        </p>
+                        <div className="mt-4 flex flex-wrap gap-2 text-sm">
+                            <span className="rounded-full bg-gray-100 px-3 py-1 text-gray-700 dark:bg-gray-800 dark:text-gray-300">
+                                {loading ? 'Курстар жүктөлүүдө...' : `${sortedCourses.length} видео курс`}
+                            </span>
+                            {!loading && hiddenAssignedCount > 0 && (
+                                <span className="rounded-full bg-blue-50 px-3 py-1 text-blue-700 dark:bg-blue-950/30 dark:text-blue-200">
+                                    {hiddenAssignedCount} дайындалуучу курс жашырылды
+                                </span>
+                            )}
+                        </div>
                     </div>
 
-                    <div className="w-full sm:max-w-xs">
+                    <div className="w-full rounded-2xl border border-gray-200 bg-gray-50 p-3 dark:border-gray-800 dark:bg-gray-950 sm:max-w-xs">
                         <label className="block">
-                            <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                            <span className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                                <FiSliders aria-hidden="true" />
                                 Иреттөө
                             </span>
                             <select
@@ -100,7 +121,7 @@ const CoursesPage = () => {
                 {hasActiveSort && (
                     <div className="mt-4 flex flex-wrap items-center gap-3">
                         <span className="text-sm text-gray-500 dark:text-gray-400">
-                            Иреттөө активдүү
+                            Иреттөө активдүү: {sortLabels[sortBy]}
                         </span>
                         <button
                             type="button"
@@ -115,21 +136,29 @@ const CoursesPage = () => {
                 )}
 
                 {error ? (
-                    <div className="mt-10 rounded-2xl border border-red-200 bg-red-50 px-5 py-6 text-red-800 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200">
-                        <h2 className="text-lg font-semibold">Курстар жүктөлгөн жок</h2>
-                        <p className="mt-2 text-sm">{error}</p>
-                        <button
-                            type="button"
-                            onClick={loadCourses}
-                            className="mt-4 rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-700"
-                        >
-                            Кайра аракет кылуу
-                        </button>
+                    <div className="mt-10 rounded-[24px] border border-red-200 bg-red-50 px-5 py-6 text-red-800 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200" role="alert">
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
+                            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white/80 text-red-600 dark:bg-red-500/10 dark:text-red-200">
+                                <FiAlertTriangle aria-hidden="true" />
+                            </div>
+                            <div>
+                                <h2 className="text-lg font-semibold">Курстар жүктөлгөн жок</h2>
+                                <p className="mt-2 text-sm leading-6">{error}</p>
+                                <button
+                                    type="button"
+                                    onClick={loadCourses}
+                                    className="mt-4 inline-flex items-center gap-2 rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                                >
+                                    <FiRefreshCw aria-hidden="true" />
+                                    Кайра аракет кылуу
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 ) : loading ? (
                     <div className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3" aria-label="Курстар жүктөлүүдө">
                         {Array.from({ length: 6 }).map((_, index) => (
-                            <div key={index} className="h-[28rem] animate-pulse rounded border border-gray-200 bg-gray-100 dark:border-gray-800 dark:bg-gray-800" />
+                            <div key={index} className="min-h-[28rem] animate-pulse rounded-[24px] border border-gray-200 bg-gray-100 dark:border-gray-800 dark:bg-gray-800" />
                         ))}
                     </div>
                 ) : sortedCourses.length ? (
@@ -152,12 +181,12 @@ const CoursesPage = () => {
                         )}
                     </>
                 ) : (
-                    <div className="mt-10 rounded-2xl border border-gray-200 bg-gray-50 px-5 py-8 text-gray-800 dark:border-gray-800 dark:bg-gray-950 dark:text-gray-200">
-                        <h2 className="text-lg font-semibold">Курс табылган жок</h2>
-                        <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                            Азырынча коомдук видео курстар жок.
-                        </p>
-                    </div>
+                    <EmptyState
+                        title="Курс табылган жок"
+                        subtitle="Азырынча коомдук видео курстар жок. Онлайн түз эфир жана оффлайн курстар администратор аркылуу дайындалышы мүмкүн."
+                        variant="discovery"
+                        className="mt-10 rounded-[24px] border border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-gray-950"
+                    />
                 )}
             </div>
         </div>

@@ -2,28 +2,14 @@ import { useFavourites } from '../context/FavouritesContext';
 import CardCourse from '../features/courses/components/CardCourse';
 import { AuthContext } from '../context/AuthContext';
 import { useContext } from 'react';
-import { Link } from 'react-router-dom';
-import Button from '@shared-ui/Button';
+import { Link, useNavigate } from 'react-router-dom';
 import { isPublicVideoSignupEnabled } from '@shared/auth-config';
-
-const formatPrice = (price, currency = 'KGS') => {
-    if (!price && price !== 0) return 'Цена не указана';
-
-    const formattedPrice = new Intl.NumberFormat('ru-RU').format(price);
-
-    switch (currency) {
-        case 'USD':
-            return `${formattedPrice}$`;
-        case 'KGS':
-            return `${formattedPrice} сом`;
-        default:
-            return `${formattedPrice} ${currency}`;
-    }
-};
+import EmptyState from '@components/ui/dashboard/EmptyState';
 
 const Favourite = () => {
     const { favourites, loading, error, refreshFavourites } = useFavourites();
     const { user } = useContext(AuthContext);
+    const navigate = useNavigate();
 
     if (!user) {
         return (
@@ -35,6 +21,7 @@ const Favourite = () => {
                         fill="none"
                         viewBox="0 0 24 24"
                         stroke="currentColor"
+                        aria-hidden="true"
                     >
                         <path
                             strokeLinecap="round"
@@ -53,21 +40,21 @@ const Favourite = () => {
                     </p>
                     <div className="space-y-3">
                         {isPublicVideoSignupEnabled ? (
-                            <Link to="/register" className="block">
-                                <Button variant="primary" className="w-full py-3">
-                                    Катталуу
-                                </Button>
+                            <Link
+                                to="/register"
+                                className="inline-flex w-full items-center justify-center rounded-lg bg-gradient-to-b from-[#FF8C6E] to-[#E14219] px-4 py-3 font-medium text-white orange__shadow transition hover:from-[#C2410C] hover:to-[#C2410C] focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
+                            >
+                                Катталуу
                             </Link>
                         ) : null}
-                        <Link to="/login" className="block">
-                            <Button variant="secondary" className="w-full py-3">
-                                Кирүү
-                            </Button>
+                        <Link
+                            to="/login"
+                            className="inline-flex w-full items-center justify-center rounded-lg border border-black px-4 py-3 font-medium text-black transition hover:border-[#EA580C] hover:bg-[#EA580C] hover:text-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 dark:border-white dark:text-white"
+                        >
+                            Кирүү
                         </Link>
-                        <Link to="/courses">
-                            <button className="text-blue-600 hover:text-blue-800 font-medium py-2">
-                                Курстарды карап чыгуу
-                            </button>
+                        <Link to="/courses" className="inline-flex py-2 font-medium text-blue-600 hover:text-blue-800">
+                            Курстарды карап чыгуу
                         </Link>
                     </div>
                 </div>
@@ -77,12 +64,14 @@ const Favourite = () => {
 
     if (loading) {
         return (
-            <div className="min-h-screen p-6 bg-gray-50 dark:bg-gray-900">
-                <div className="max-w-7xl mx-auto">
-                    <h2 className="text-3xl font-bold mb-3 text-gray-900 dark:text-white">
-                        Тандалгандар
-                    </h2>
-                    <p className="text-gray-600 dark:text-gray-300">Жүктөлуү...</p>
+            <div className="min-h-screen bg-gray-50 p-6 dark:bg-gray-900">
+                <div className="mx-auto max-w-7xl">
+                    <div className="mb-8 h-9 w-52 animate-pulse rounded bg-gray-200 dark:bg-gray-800" />
+                    <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3" aria-label="Тандалгандар жүктөлүүдө">
+                        {Array.from({ length: 3 }).map((_, index) => (
+                            <div key={index} className="min-h-[28rem] animate-pulse rounded-[24px] border border-gray-200 bg-gray-100 dark:border-gray-800 dark:bg-gray-800" />
+                        ))}
+                    </div>
                 </div>
             </div>
         );
@@ -93,10 +82,11 @@ const Favourite = () => {
             <div className="min-h-screen p-6 bg-gray-50 dark:bg-gray-900">
                 <div className="max-w-7xl mx-auto">
                     <h2 className="text-3xl font-bold mb-3 text-gray-900 dark:text-white">
-                        Избранное
+                        Тандалгандар
                     </h2>
-                    <p className="text-red-500 dark:text-red-400">{error}</p>
+                    <p className="text-red-500 dark:text-red-400" role="alert">{error}</p>
                     <button
+                        type="button"
                         onClick={refreshFavourites}
                         className="mt-4 px-4 py-2 bg-orange-500 text-white rounded hover:bg-orange-600 transition-colors"
                     >
@@ -121,32 +111,13 @@ const Favourite = () => {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {favourites.length === 0 ? (
-                        <div className="col-span-full text-center py-16 px-4">
-                            <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                className="h-24 w-24 mx-auto text-gray-300 dark:text-gray-600 mb-6"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
-                            >
-                                <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={1}
-                                    d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-                                />
-                            </svg>
-                            <p className="text-xl text-gray-500 dark:text-gray-400 mb-2">
-                                Азырынча курс тандалган эмес
-                            </p>
-                            <p className="text-gray-400 dark:text-gray-500">
-                                Курс картасындагы жүрөктү басуу менен курстарды тандалгандарга
-                                кошуңуз
-                            </p>
-                            <Link to="/courses" className="mt-6 inline-block">
-                                <Button variant="primary">Курстарды карап чыгуу</Button>
-                            </Link>
-                        </div>
+                        <EmptyState
+                            title="Азырынча курс тандалган эмес"
+                            subtitle="Курс картасындагы жүрөктү басуу менен видео курстарды тандалгандарга кошуңуз."
+                            variant="discovery"
+                            action={{ label: 'Курстарды карап чыгуу', onClick: () => navigate('/courses') }}
+                            className="col-span-full rounded-[24px] border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-950"
+                        />
                     ) : (
                         favourites.map((course) => (
                             <CardCourse

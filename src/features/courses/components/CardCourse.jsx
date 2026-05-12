@@ -1,4 +1,5 @@
 import { useState, useEffect, useContext } from 'react';
+import PropTypes from 'prop-types';
 import { useNavigate, Link } from 'react-router-dom';
 import CardIcon from '@assets/icons/cardvektor.svg';
 import Button from '../../../shared/ui/Button';
@@ -6,7 +7,7 @@ import { useCart } from '../../../context/CartContext';
 import { useFavourites } from '../../../context/FavouritesContext';
 import { AiFillStar, AiOutlineStar } from 'react-icons/ai';
 import { IoMdTime } from 'react-icons/io';
-import { FiBook } from 'react-icons/fi';
+import { FiBook, FiUser } from 'react-icons/fi';
 import NoImage from '@assets/icons/noImage.svg';
 import { AuthContext } from '../../../context/AuthContext';
 import UnauthModal from '../../../shared/ui/UnauthModal';
@@ -57,6 +58,10 @@ const CardCourse = ({
     const isCourseFavourite = isFavourite(id);
     const normalizedCourseType = String(courseType || 'video').toLowerCase();
     const isSelfServeVideoCourse = normalizedCourseType === 'video';
+    const safeTitle = title || 'Курс';
+    const safeDuration = Number(durationInHours) || 0;
+    const safeRatingAverage = Math.max(0, Math.min(5, Number(ratingAverage) || 0));
+    const safeRatingCount = Number(ratingCount) || 0;
     const availabilityText = isSelfServeVideoCourse
         ? 'Видеокурс: өз алдынча сатып алып окуй аласыз'
         : 'Компания же администратор аркылуу дайындалат';
@@ -107,12 +112,12 @@ const CardCourse = ({
         navigate('/favourites');
     };
 
-    const handleButtonClick = (e) => {
+    const handleButtonClick = async (e) => {
         e.stopPropagation();
         e.preventDefault();
 
-        const result = addToCart(courseData);
-        if (result?.alreadyInCart) {
+        const result = await addToCart(courseData);
+        if (result?.success) {
             setShowPopup(true);
         }
     };
@@ -145,7 +150,7 @@ const CardCourse = ({
                 <div
                     className="max-w-md cursor-pointer bg-white text-[#141619] border border-gray-200 dark:bg-[#141619] dark:text-[#E8ECF3] dark:border-[#2A2E35] rounded flex flex-col hover:shadow-lg transition-shadow duration-300 relative"
                     onClick={handleCardClick}
-                    aria-label={`${title} курсу тууралуу кененирээк көрүү`}
+                    aria-label={`${safeTitle} курсу тууралуу кененирээк көрүү`}
                 >
                     <button
                         type="button"
@@ -180,17 +185,17 @@ const CardCourse = ({
                                 onError={(e) => {
                                     e.currentTarget.src = NoImage;
                                 }}
-                                alt={title}
+                                alt={safeTitle}
                                 className="w-full h-48 object-cover rounded"
                             />
                         </Link>
                         <div className="flex flex-col flex-grow py-4">
-                            <h3 className="font-suisse font-medium text-lg">
+                            <h3 className="font-suisse text-lg font-semibold leading-snug">
                                 <Link
                                     to={`/courses/${id}`}
                                     className="rounded transition-colors hover:text-edubot-orange focus:outline-none focus:ring-2 focus:ring-edubot-orange focus:ring-offset-2 dark:focus:ring-offset-[#141619]"
                                 >
-                                    {title}
+                                    {safeTitle}
                                 </Link>
                             </h3>
                             <div className="flex flex-wrap gap-1.5 my-2">
@@ -208,26 +213,27 @@ const CardCourse = ({
                                     </span>
                                 ) : null}
                             </div>
-                            <p className="text-gray-500 dark:text-[#a6adba] text-sm my-1">
+                            <p className="my-1 flex items-center gap-1.5 text-sm text-gray-600 dark:text-[#a6adba]">
+                                <FiUser aria-hidden="true" />
                                 {instructor?.fullName || 'Белгисиз инструктор'}
                             </p>
                             <p className="mt-1 text-xs leading-5 text-gray-500 dark:text-[#a6adba]">
                                 {availabilityText}
                             </p>
-                            <div className="flex items-center gap-2 mb-3 mt-3">
-                                <div style={{ display: 'flex', gap: '5px' }}>
+                            <div className="mb-3 mt-3 flex items-center gap-2" aria-label={`Рейтинг ${safeRatingAverage.toFixed(1)} / 5`}>
+                                <div className="flex gap-1">
                                     {[1, 2, 3, 4, 5].map((star) => (
-                                        <span key={star}>
-                                            {star <= (ratingAverage || 0) ? (
-                                                <AiFillStar className="text-yellow-500" />
+                                        <span key={star} aria-hidden="true">
+                                            {star <= safeRatingAverage ? (
+                                                <AiFillStar className="text-yellow-500" aria-hidden="true" />
                                             ) : (
-                                                <AiOutlineStar className="text-gray-300 dark:text-gray-600" />
+                                                <AiOutlineStar className="text-gray-300 dark:text-gray-600" aria-hidden="true" />
                                             )}
                                         </span>
                                     ))}
                                 </div>
                                 <span className="text-gray-600 dark:text-[#a6adba] text-sm">
-                                    ({ratingCount || 0} рейтинг)
+                                    {safeRatingAverage.toFixed(1)} ({safeRatingCount} пикир)
                                 </span>
                             </div>
                             <div className="flex flex-wrap gap-2 mb-4">
@@ -236,7 +242,7 @@ const CardCourse = ({
                                 </span>
                                 <span className="text-xs bg-[#F0F0F0] text-[#141619] dark:bg-[#2A2E35] dark:text-[#E8ECF3] rounded px-2 py-1 flex items-center gap-1">
                                     <IoMdTime className="w-3 h-3" />
-                                    {formatMinutesToTime(durationInHours * 60)}
+                                    {formatMinutesToTime(safeDuration * 60)}
                                 </span>
                                 <span className="text-xs bg-[#F0F0F0] text-[#141619] dark:bg-[#2A2E35] dark:text-[#E8ECF3] rounded px-2 py-1 flex items-center gap-1">
                                     <FiBook className="w-3 h-3" />
@@ -256,12 +262,19 @@ const CardCourse = ({
                                     onClick={handleButtonClick}
                                     disabled={courseAlreadyInCart || !isSelfServeVideoCourse}
                                     className="w-full sm:w-auto"
+                                    aria-label={
+                                        !isSelfServeVideoCourse
+                                            ? `${safeTitle} курсу администратор аркылуу дайындалат`
+                                            : courseAlreadyInCart
+                                                ? `${safeTitle} себетте`
+                                                : `${safeTitle} себетке кошуу`
+                                    }
                                 >
                                     {!isSelfServeVideoCourse ? (
-                                        'Админ аркылуу'
+                                        'Дайындалат'
                                     ) : courseAlreadyInCart ? (
                                         <>
-                                            <img src={CardIcon} alt="cart" className="w-5 h-5 mr-2" />
+                                            <img src={CardIcon} alt="" aria-hidden="true" className="w-5 h-5 mr-2" />
                                             Себетте
                                         </>
                                     ) : (
@@ -308,7 +321,7 @@ const CardCourse = ({
                                 <button onClick={closePopup} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 text-2xl">×</button>
                             </div>
                             <p className="text-gray-600 dark:text-gray-300 mb-4">
-                                Курс "<span className="font-semibold">{title}</span>" себетке кошулду
+                                Курс <span className="font-semibold">{safeTitle}</span> себетке кошулду
                             </p>
                             <div className="mt-6 flex flex-col-reverse sm:flex-row justify-between gap-3">
                                 <Button variant="secondary" onClick={closePopup}>Сатып алууну улантыңыз</Button>
@@ -320,6 +333,25 @@ const CardCourse = ({
             )}
         </>
     );
+};
+
+CardCourse.propTypes = {
+    coverImageUrl: PropTypes.string,
+    title: PropTypes.string,
+    instructor: PropTypes.shape({
+        fullName: PropTypes.string,
+    }),
+    price: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
+    ratingCount: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
+    ratingAverage: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
+    id: PropTypes.oneOfType([PropTypes.number, PropTypes.string]).isRequired,
+    level: PropTypes.string,
+    durationInHours: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
+    lessonCount: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
+    isPublished: PropTypes.bool,
+    courseType: PropTypes.string,
+    location: PropTypes.string,
+    meetingUrl: PropTypes.string,
 };
 
 const FavoritePopupModal = ({ isOpen, onClose, onGoToFavourites, course }) => {
@@ -382,6 +414,19 @@ const FavoritePopupModal = ({ isOpen, onClose, onGoToFavourites, course }) => {
             </div>
         </div>
     );
+};
+
+FavoritePopupModal.propTypes = {
+    isOpen: PropTypes.bool.isRequired,
+    onClose: PropTypes.func.isRequired,
+    onGoToFavourites: PropTypes.func.isRequired,
+    course: PropTypes.shape({
+        title: PropTypes.string,
+        instructor: PropTypes.string,
+        price: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
+        coverImageUrl: PropTypes.string,
+        image: PropTypes.string,
+    }),
 };
 
 export default CardCourse;

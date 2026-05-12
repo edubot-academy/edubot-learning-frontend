@@ -24,7 +24,7 @@ const DashboardSidebar = ({
 
     return (
         <aside
-            className={`flex flex-col rounded-2xl border border-gray-200 bg-white shadow-edubot-soft transition-[width,padding] duration-300 dark:border-gray-700 dark:bg-gray-800 ${resolvedOpen ? 'w-64 p-5' : 'w-20 p-4'
+            className={`flex max-h-[calc(100vh-2rem)] max-w-full flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-edubot-soft transition-[width,padding] duration-300 dark:border-gray-700 dark:bg-gray-800 ${resolvedOpen ? 'w-64 p-5' : 'w-20 p-4'
                 } ${className}`}
             aria-label="Dashboard navigation menu"
         >
@@ -41,7 +41,7 @@ const DashboardSidebar = ({
             </div>
 
             <nav
-                className="space-y-1"
+                className="space-y-1 overflow-y-auto pr-1"
                 id="dashboard-nav-menu"
                 aria-label="Dashboard sections"
                 data-dashboard-navigation
@@ -104,6 +104,7 @@ const DashboardSidebar = ({
                                                 {Icon && (
                                                     <Icon
                                                         className={`text-lg ${resolvedOpen ? 'mr-3' : ''} ${isActive ? 'text-white' : 'text-edubot-orange dark:text-edubot-soft'}`}
+                                                        aria-hidden="true"
                                                     />
                                                 )}
                                                 {resolvedOpen && (
