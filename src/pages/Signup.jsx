@@ -1,15 +1,53 @@
-import { useState, useContext, useEffect } from 'react';
+import { useState, useContext } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { registerUser } from '@services/api';
 import PhoneInput from '@shared/ui/forms/PhoneInput';
 import SignUpImg from '../assets/images/edubot-signup.png';
-import toast from 'react-hot-toast';
 import DefaultLabel from '@shared-ui/forms/DefaultLabel';
 import LabelPassword from '@shared-ui/forms/LabelPassword';
 import { AuthContext } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import { useFavourites } from '../context/FavouritesContext';
 import Loader from '@shared/ui/Loader';
+import { executePendingAuthAction, getPostLoginPath } from '@features/auth/utils/postLogin';
+
+const getPasswordChecks = (password) => ({
+    length: password.length >= 8,
+    lowercase: /[a-z]/.test(password),
+    uppercase: /[A-Z]/.test(password),
+    number: /\d/.test(password),
+    specialChar: /[!@#$%^&*(),.?":{}|<>]/.test(password),
+});
+
+const PASSWORD_RULES = [
+    ['length', 'Кеминде 8 белги'],
+    ['lowercase', 'Кичине тамга'],
+    ['uppercase', 'Баш тамга'],
+    ['number', 'Сан'],
+    ['specialChar', 'Атайын белги'],
+];
+
+const validateSignupForm = (formData) => {
+    const errors = {};
+    const passwordChecks = getPasswordChecks(formData.password);
+
+    if (!formData.lastName.trim()) errors.lastName = 'Фамилияңызды жазыңыз.';
+    if (!formData.firstName.trim()) errors.firstName = 'Атыңызды жазыңыз.';
+    if (!/^[\w-.]+@([\w-]+\.)+[\w-]{2,}$/.test(formData.email.trim())) {
+        errors.email = 'Туура email дарегин жазыңыз.';
+    }
+    if (!Object.values(passwordChecks).every(Boolean)) {
+        errors.password = 'Сырсөз бардык талаптарга жооп бериши керек.';
+    }
+    if (formData.password !== formData.repeatPassword) {
+        errors.repeatPassword = 'Сырсөздөр дал келген жок.';
+    }
+    if (formData.phoneNumber && !/^\+\d{10,15}$/.test(formData.phoneNumber)) {
+        errors.phoneNumber = 'Телефон эл аралык форматта болсун. Мисалы: +996700123456.';
+    }
+
+    return errors;
+};
 
 const SignupPage = () => {
     const [formData, setFormData] = useState({
@@ -21,19 +59,10 @@ const SignupPage = () => {
         phoneNumber: '',
     });
 
-    const [passwordValidations, setPasswordValidations] = useState({
-        length: false,
-        lowercase: false,
-        uppercase: false,
-        number: false,
-        specialChar: false,
-    });
-
-    const [showTooltip, setShowTooltip] = useState(false);
-    const [showPassword, setShowPassword] = useState(false);
-    const [showRepeatPassword, setShowRepeatPassword] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
+    const [fieldErrors, setFieldErrors] = useState({});
+    const [showPasswordRules, setShowPasswordRules] = useState(false);
 
     const navigate = useNavigate();
     const location = useLocation();
@@ -41,102 +70,42 @@ const SignupPage = () => {
     const { addToCart } = useCart();
     const { toggleFavourite } = useFavourites();
 
-    const validatePassword = (password) => {
-        setPasswordValidations({
-            length: password.length >= 8,
-            lowercase: /[a-z]/.test(password),
-            uppercase: /[A-Z]/.test(password),
-            number: /\d/.test(password),
-            specialChar: /[!@#$%^&*(),.?":{}|<>]/.test(password),
-        });
-    };
+    const passwordValidations = getPasswordChecks(formData.password);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData({ ...formData, [name]: value });
-
-        if (name === 'password') {
-            validatePassword(value);
-        }
+        setFieldErrors((prev) => {
+            if (!prev[name]) return prev;
+            const next = { ...prev };
+            delete next[name];
+            return next;
+        });
     };
 
     const handlePhoneChange = (value) => {
         setFormData((prev) => ({ ...prev, phoneNumber: value }));
-    };
-
-    const executePendingAction = async () => {
-        const pendingActionStr = localStorage.getItem('pendingAction');
-        if (!pendingActionStr) return;
-
-        try {
-            const pendingAction = JSON.parse(pendingActionStr);
-
-            const now = Date.now();
-            const actionAge = now - pendingAction.timestamp;
-            const MAX_ACTION_AGE = 24 * 60 * 60 * 1000;
-
-            if (actionAge > MAX_ACTION_AGE) {
-                localStorage.removeItem('pendingAction');
-                return;
-            }
-
-            if (pendingAction.type === 'favourite') {
-                const courseData = {
-                    id: pendingAction.courseId,
-                    title: pendingAction.courseTitle || `Курс ${pendingAction.courseId}`,
-                };
-                const result = await toggleFavourite(courseData);
-                if (result.success) {
-                    toast.success('Курс добавлен в избранное!');
-                    navigate('/favourite');
-                }
-            } else if (pendingAction.type === 'cart') {
-                const courseData = {
-                    id: pendingAction.courseId,
-                    title: pendingAction.courseTitle,
-                };
-                const result = await addToCart(courseData);
-                if (result.success) {
-                    toast.success('Курс добавлен в корзину!');
-                    navigate('/cart');
-                }
-            }
-
-            localStorage.removeItem('pendingAction');
-        } catch (error) {
-            console.error('Failed to execute pending action:', error);
-            localStorage.removeItem('pendingAction');
-        }
+        setFieldErrors((prev) => {
+            if (!prev.phoneNumber) return prev;
+            const next = { ...prev };
+            delete next.phoneNumber;
+            return next;
+        });
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setLoading(true);
         setError(null);
+        const nextErrors = validateSignupForm(formData);
 
-        if (formData.password !== formData.repeatPassword) {
-            setError('Сырсөздөр дал келген жок.');
-            setLoading(false);
+        if (Object.keys(nextErrors).length > 0) {
+            setFieldErrors(nextErrors);
+            setError('Катталуу үчүн белгиленген талааларды оңдоңуз.');
             return;
         }
 
-        const phone = formData.phoneNumber;
-        if (phone) {
-            const digitsOnly = phone.replace(/\D/g, '');
-            if (digitsOnly.length < 10) {
-                toast.error('Телефон номери кеминде 10 цифра болушу керек.');
-                setLoading(false);
-                return;
-            }
-
-            if (!/^\+\d{10,15}$/.test(phone)) {
-                toast.error(
-                    'Телефон номери эл аралык форматта болсун. Мисалы: +996700123456 же +14155552671'
-                );
-                setLoading(false);
-                return;
-            }
-        }
+        setLoading(true);
+        setFieldErrors({});
 
         try {
             const response = await registerUser({
@@ -149,10 +118,14 @@ const SignupPage = () => {
             const { user } = response.data;
             login(user);
 
-            await executePendingAction();
+            const handledPendingAction = await executePendingAuthAction({
+                addToCart,
+                toggleFavourite,
+                navigate,
+            });
 
-            if (!localStorage.getItem('pendingAction')) {
-                navigate('/');
+            if (!handledPendingAction) {
+                navigate(getPostLoginPath(user, location), { replace: true });
             }
         } catch (err) {
             setError(err.response?.data?.message || 'Ката чыкты. Кайра аракет кылыңыз.');
@@ -177,8 +150,11 @@ const SignupPage = () => {
             <div className="flex-1 flex items-center justify-center px-6">
                 <div className="w-full max-w-md">
                     <h2 className="text-2xl font-bold text-black dark:text-white mb-6">Катталуу</h2>
+                    <p className="mb-5 text-sm leading-6 text-gray-600 dark:text-[#a6adba]">
+                        Өз алдынча видео курстарды сатып алып окуу үчүн аккаунт түзүңүз. Компаниялык же түз эфир курстары администратор аркылуу дайындалат.
+                    </p>
 
-                    {error && <p className="text-red-500 mb-4">{error}</p>}
+                    {error && <p className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700" role="alert">{error}</p>}
 
                     <form onSubmit={handleSubmit} className="space-y-2">
                         <DefaultLabel
@@ -188,6 +164,8 @@ const SignupPage = () => {
                             onChange={handleChange}
                             placeholder=""
                             required={true}
+                            error={fieldErrors.lastName}
+                            autoComplete="family-name"
                             width="w-full"
                             className="py-2"
                         />
@@ -199,6 +177,8 @@ const SignupPage = () => {
                             onChange={handleChange}
                             placeholder=""
                             required={true}
+                            error={fieldErrors.firstName}
+                            autoComplete="given-name"
                             width="w-full"
                             className="py-2"
                         />
@@ -206,19 +186,39 @@ const SignupPage = () => {
                         <DefaultLabel
                             label="Email почтаңызды жазыңыз"
                             name="email"
+                            type="email"
                             value={formData.email}
                             onChange={handleChange}
                             placeholder=""
                             required={true}
+                            error={fieldErrors.email}
+                            autoComplete="email"
                             width="w-full"
                             className="py-2"
                         />
 
                         <div className="py-2">
-                            <PhoneInput onChange={handlePhoneChange} value={formData.phoneNumber} />
+                            <label htmlFor="signup-phone" className="mb-1 block text-sm font-medium text-gray-700 dark:text-[#a6adba]">
+                                Телефон номери <span className="font-normal">(милдеттүү эмес)</span>
+                            </label>
+                            <PhoneInput
+                                id="signup-phone"
+                                name="phoneNumber"
+                                onChange={handlePhoneChange}
+                                value={formData.phoneNumber}
+                                aria-invalid={Boolean(fieldErrors.phoneNumber)}
+                                aria-describedby={fieldErrors.phoneNumber ? 'signup-phone-error' : 'signup-phone-help'}
+                                className={fieldErrors.phoneNumber ? 'border-red-500' : 'border-gray-300'}
+                            />
+                            <p id="signup-phone-help" className="mt-1 text-xs text-gray-500 dark:text-[#a6adba]">
+                                Эл аралык формат: +996700123456.
+                            </p>
+                            {fieldErrors.phoneNumber && (
+                                <p id="signup-phone-error" className="mt-1 text-xs text-red-600">{fieldErrors.phoneNumber}</p>
+                            )}
                         </div>
 
-                        <div className="py-2">
+                        <div className="relative py-2">
                             <LabelPassword
                                 label="Сырсөз ойлоп табыңыз"
                                 name="password"
@@ -226,60 +226,31 @@ const SignupPage = () => {
                                 onChange={handleChange}
                                 placeholder=""
                                 required={true}
+                                error={fieldErrors.password}
+                                autoComplete="new-password"
+                                describedBy={showPasswordRules ? 'signup-password-rules' : undefined}
+                                onFocus={() => setShowPasswordRules(true)}
+                                onBlur={() => setShowPasswordRules(false)}
                                 width="w-full"
-                                onFocus={() => setShowTooltip(true)}
-                                onBlur={() => setTimeout(() => setShowTooltip(false), 100)}
                             />
-                            <p className="text-xs text-gray-500 mt-1">Сырсөз кеминде 8 белгиден болуу керек</p>
-
-                            {showTooltip && (
-                                <ul className="absolute z-10 top-full left-0 mt-1 bg-white dark:bg-gray-800 text-black dark:text-white rounded shadow-lg text-xs w-full px-3 py-2 border border-gray-200 dark:border-gray-700">
-                                    <li
-                                        className={
-                                            passwordValidations.length
-                                                ? 'text-green-600'
-                                                : 'text-gray-400'
-                                        }
-                                    >
-                                        ✔ 8 белгиден турат
-                                    </li>
-                                    <li
-                                        className={
-                                            passwordValidations.lowercase
-                                                ? 'text-green-600'
-                                                : 'text-gray-400'
-                                        }
-                                    >
-                                        ✔ Кичине тамга
-                                    </li>
-                                    <li
-                                        className={
-                                            passwordValidations.uppercase
-                                                ? 'text-green-600'
-                                                : 'text-gray-400'
-                                        }
-                                    >
-                                        ✔ Баш тамга
-                                    </li>
-                                    <li
-                                        className={
-                                            passwordValidations.number
-                                                ? 'text-green-600'
-                                                : 'text-gray-400'
-                                        }
-                                    >
-                                        ✔ Сан түрүндө
-                                    </li>
-                                    <li
-                                        className={
-                                            passwordValidations.specialChar
-                                                ? 'text-green-600'
-                                                : 'text-gray-400'
-                                        }
-                                    >
-                                        ✔ Белги
-                                    </li>
-                                </ul>
+                            {showPasswordRules && (
+                                <div
+                                    id="signup-password-rules"
+                                    className="absolute left-0 right-0 top-full z-20 mt-1 rounded-lg border border-gray-200 bg-white p-3 shadow-lg dark:border-[#2A2E35] dark:bg-[#222222]"
+                                    role="status"
+                                    aria-label="Сырсөз талаптары"
+                                >
+                                    <ul className="grid grid-cols-1 gap-1 text-xs sm:grid-cols-2">
+                                        {PASSWORD_RULES.map(([key, label]) => (
+                                            <li
+                                                key={key}
+                                                className={passwordValidations[key] ? 'text-green-600' : 'text-gray-500 dark:text-[#a6adba]'}
+                                            >
+                                                {passwordValidations[key] ? '✓' : '•'} {label}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
                             )}
                         </div>
 
@@ -291,6 +262,8 @@ const SignupPage = () => {
                                 onChange={handleChange}
                                 placeholder=""
                                 required={true}
+                                error={fieldErrors.repeatPassword}
+                                autoComplete="new-password"
                                 width="w-full"
                             />
                         </div>
@@ -298,7 +271,8 @@ const SignupPage = () => {
                         <button
                             type="submit"
                             disabled={loading}
-                            className="w-full mt-4 shadow-[0px_5px_21.3px_0px_#E14219BF] bg-[linear-gradient(180deg,#FF8C6E_0%,#E14219_100%)] text-white py-3 rounded text-lg font-semibold hover:opacity-90 transition"
+                            aria-busy={loading}
+                            className="w-full mt-4 shadow-[0px_5px_21.3px_0px_#E14219BF] bg-[linear-gradient(180deg,#FF8C6E_0%,#E14219_100%)] text-white py-3 rounded text-lg font-semibold hover:opacity-90 transition disabled:cursor-not-allowed disabled:opacity-75"
                         >
                             {loading ? <Loader fullScreen={false} /> : 'Катталуу'}
                         </button>

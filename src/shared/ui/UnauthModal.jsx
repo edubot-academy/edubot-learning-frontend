@@ -10,19 +10,25 @@ const UnauthModal = ({
     actionType = 'favourite',
     courseId = null,
     courseTitle = '',
+    course = null,
 }) => {
     const navigate = useNavigate();
 
+    const storePendingAction = () => {
+        if (!courseId) return;
+
+        const pendingAction = {
+            type: actionType,
+            courseId,
+            courseTitle,
+            course,
+            timestamp: Date.now(),
+        };
+        localStorage.setItem('pendingAction', JSON.stringify(pendingAction));
+    };
+
     const handleRegister = () => {
-        if (courseId) {
-            const pendingAction = {
-                type: actionType,
-                courseId,
-                courseTitle,
-                timestamp: Date.now(),
-            };
-            localStorage.setItem('pendingAction', JSON.stringify(pendingAction));
-        }
+        storePendingAction();
 
         onClose();
         navigate(getAuthAcquisitionPath(), {
@@ -36,15 +42,7 @@ const UnauthModal = ({
     };
 
     const handleLogin = () => {
-        if (courseId) {
-            const pendingAction = {
-                type: actionType,
-                courseId,
-                courseTitle,
-                timestamp: Date.now(),
-            };
-            localStorage.setItem('pendingAction', JSON.stringify(pendingAction));
-        }
+        storePendingAction();
 
         onClose();
         navigate('/login', {

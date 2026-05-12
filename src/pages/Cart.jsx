@@ -68,6 +68,7 @@ const Cart = () => {
                 actionType="cart"
                 courseId={cartItems.length > 0 ? cartItems[0].id : null}
                 courseTitle={cartItems.length > 0 ? cartItems[0].title : ''}
+                course={cartItems.length > 0 ? cartItems[0] : null}
             />
 
             <Modal

@@ -2,6 +2,88 @@
 
 Version bumps are classified by delivery scale; see `VERSIONING.md`.
 
+## [1.10.3] - 2026-05-12
+
+Patch release for post-`1.10.2` UX/UI audit improvements.
+
+### Fixed
+- Tightened `AdvancedModal` action handling so loading or disabled actions cannot be triggered by click or keyboard shortcuts.
+- Improved the Contact form submission state and validation wiring so duplicate sends are blocked and field errors are associated with their inputs.
+- Improved Contact page support cues, phone guidance, contact-method cards, and map/address actions for clearer lead-generation flow.
+- Reworked the Contact page desktop composition so the supporting illustration becomes a useful next-step panel while the form remains primary.
+- Removed the redundant Contact page `Toaster` now that app-level toast handling is centralized.
+- Split the Contact page into smaller local presentational sections for the intro, form, support panel, contact methods, and location block.
+- Reused the shared `PhoneInput` on the Contact page and expanded it to support ids, names, ARIA/error wiring, custom classes, and stricter digit-only cases.
+- Improved Contact submission error handling so backend field errors can be displayed inline instead of only showing a generic toast.
+- Aligned Contact phone validation with the international format used by registration.
+- Aligned Contact email validation with auth forms so valid longer top-level domains are accepted.
+- Reworked the Unauthorized page into a clearer access-control state with role-aware recovery actions, support guidance, and focus handling.
+- Centralized `/chat` communication routing so student/instructor chat tabs, admin notifications, assistant dashboard fallback, and visible unsupported-role fallback use one shared rule.
+- Improved Login form validation, field accessibility, forgot-password trigger semantics, pending-action copy, and post-login routing back to the intended protected destination or role dashboard.
+- Removed duplicate global pending-action execution after login/register to prevent repeated cart or favourite actions.
+- Fixed post-login redirects from auth modals that pass string `from` paths so users return to the intended page instead of the role dashboard.
+- Extracted post-login pending cart/favourite recovery into a dedicated auth utility and redesigned forgot-password recovery with validation, dialog semantics, and clearer copy.
+- Preserved full course card data for deferred favourite/cart actions so post-login optimistic cards keep image, price, instructor, and metadata.
+- Fixed the course detail video card favourite action so authenticated users can add or remove favourites without being sent through the login modal.
+- Preserved guest cart storage on initial unauthenticated load while still clearing cart state after an authenticated logout.
+- Improved the Home hero carousel accessibility with labels, hidden inactive slides, labelled indicators, `aria-current`, and consistent primary/secondary CTA destinations.
+- Added visible loading, empty, and error states for Home top courses, top instructors, and feedback sections.
+- Replaced Feedback image arrows with semantic carousel buttons and added FAQ accordion ARIA relationships.
+- Added incremental loading to the public Courses catalog and clarified catalog/course-card availability language for video vs assigned live/offline courses.
+- Polished About metrics responsiveness, fixed the malformed metric color class, and gave the team image meaningful alt text.
+- Reworked the About page into a clearer brand narrative with consistent containers, tighter responsive typography, distinct proof/vision/principles sections, and removed orphaned About variants.
+- Added stronger `DefaultLabel` accessibility wiring and `LabelPassword` autocomplete support for auth forms.
+- Improved Register validation, field-level errors, focus-only password guidance, phone help text, and post-registration routing through the shared auth success helper.
+- Simplified shared auth inputs to behave as controlled components instead of mirroring local input state.
+- Debounced global course search and added loading, error, empty, Escape, and ARIA states for desktop and mobile search.
+- Guarded global course search against stale responses overriding newer query results.
+- Replaced the Footer runtime QR service with a verified local QR PNG and normalized footer contact/address/copyright copy.
+- Improved Course Details error/not-found states, fixed the read-only rating summary bug, localized course-content labels, and localized instructor proof labels.
+
+### Key Files
+- `src/shared/ui/AdvancedModal.jsx`
+- `src/shared/ui/forms/PhoneInput.jsx`
+- `src/pages/Contact.jsx`
+- `src/pages/Unauthorized.jsx`
+- `src/pages/ChatRedirect.jsx`
+- `src/pages/Login.jsx`
+- `src/app/App.jsx`
+- `src/features/auth/components/ForgotPassword.jsx`
+- `src/features/auth/utils/postLogin.js`
+- `src/shared/ui/UnauthModal.jsx`
+- `src/pages/Home.jsx`
+- `src/features/marketing/components/HeroStart.jsx`
+- `src/features/courses/components/TopCourses.jsx`
+- `src/features/ratings/components/TopInstructors.jsx`
+- `src/features/courses/components/FeedbackSection.jsx`
+- `src/features/courses/components/FeedbackSlider.jsx`
+- `src/features/marketing/components/FAQ.jsx`
+- `src/pages/Courses.jsx`
+- `src/features/courses/components/CardCourse.jsx`
+- `src/features/courses/components/CardVideo.jsx`
+- `src/context/CartContext.jsx`
+- `src/pages/Cart.jsx`
+- `src/pages/About.jsx`
+- `src/features/marketing/components/AboutHero.jsx`
+- `src/features/marketing/components/Metrics.jsx`
+- `src/features/marketing/components/Vision.jsx`
+- `src/features/marketing/components/InfoCards.jsx`
+- `src/pages/Signup.jsx`
+- `src/shared/Header.jsx`
+- `src/shared/Footer.jsx`
+- `public/edubot-learning-qr.png`
+- `src/pages/CourseDetails.jsx`
+- `src/features/courses/components/CourseReview.jsx`
+- `src/features/courses/components/CourseContent.jsx`
+- `src/features/courses/components/InstructorsInfo.jsx`
+- `src/shared/PrivateRoute.jsx`
+- `src/shared/ui/forms/DefaultLabel.jsx`
+- `src/shared/ui/forms/LabelPassword.jsx`
+- `src/shared/utils/navigation.js`
+- `docs/shared/audits/PAGE_BY_PAGE_UX_UI_AUDIT.md`
+
+---
+
 ## [1.10.2] - 2026-05-12
 
 Patch release for the follow-up UX/UI audit fixes after `1.10.1`.

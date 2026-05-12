@@ -1,4 +1,4 @@
-import React, { useState, useContext, useEffect } from 'react';
+import React, { useState, useContext } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { loginUser } from '@services/api';
 import { AuthContext } from '../context/AuthContext';
@@ -8,9 +8,25 @@ import SignInImg from '../assets/images/edubot-signup.png';
 import DefaultLabel from '@shared-ui/forms/DefaultLabel';
 import LabelPassword from '@shared-ui/forms/LabelPassword';
 import ForgotPassword from '@features/auth/components/ForgotPassword';
-import { toast } from 'react-hot-toast';
 import { getAuthAcquisitionPath, isPublicVideoSignupEnabled } from '@shared/auth-config';
-import { getAuthDebugInfo } from '@shared/utils/auth';
+import { executePendingAuthAction, getPostLoginPath } from '@features/auth/utils/postLogin';
+
+const validateLoginForm = ({ email, password }) => {
+    const errors = {};
+    const trimmedEmail = email.trim();
+
+    if (!trimmedEmail) {
+        errors.email = 'Email дарегиңизди жазыңыз.';
+    } else if (!/^[\w-.]+@([\w-]+\.)+[\w-]{2,}$/.test(trimmedEmail)) {
+        errors.email = 'Туура email дарегин жазыңыз.';
+    }
+
+    if (!password) {
+        errors.password = 'Сырсөздү жазыңыз.';
+    }
+
+    return errors;
+};
 
 const LoginPage = () => {
     const { login } = useContext(AuthContext);
@@ -21,66 +37,27 @@ const LoginPage = () => {
     const [forgotPassword, setForgotPassword] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
+    const [fieldErrors, setFieldErrors] = useState({});
     const navigate = useNavigate();
     const location = useLocation();
 
-    const executePendingAction = async () => {
-        const pendingActionStr = localStorage.getItem('pendingAction');
-        if (!pendingActionStr) return;
-
-        try {
-            const pendingAction = JSON.parse(pendingActionStr);
-
-            const now = Date.now();
-            const actionAge = now - pendingAction.timestamp;
-            const MAX_ACTION_AGE = 24 * 60 * 60 * 1000;
-
-            if (actionAge > MAX_ACTION_AGE) {
-                localStorage.removeItem('pendingAction');
-                return;
-            }
-
-            if (pendingAction.type === 'favourite') {
-                const courseData = {
-                    id: pendingAction.courseId,
-                    title: pendingAction.courseTitle || `Курс ${pendingAction.courseId}`,
-                };
-                const result = await toggleFavourite(courseData);
-                if (result.success) {
-                    toast.success('Курс добавлен в избранное!');
-                    navigate('/favourite');
-                }
-            } else if (pendingAction.type === 'cart') {
-                const courseData = {
-                    id: pendingAction.courseId,
-                    title: pendingAction.courseTitle,
-                };
-                const result = await addToCart(courseData);
-                if (result.success) {
-                    toast.success('Курс добавлен в корзину!');
-                    navigate('/cart');
-                }
-            }
-
-            localStorage.removeItem('pendingAction');
-
-        } catch (error) {
-            console.error('Failed to execute pending action:', error);
-            localStorage.removeItem('pendingAction');
-        }
-    };
-
     const handleLogin = async (e) => {
         e.preventDefault();
+        const nextFieldErrors = validateLoginForm({ email, password });
+
+        if (Object.keys(nextFieldErrors).length > 0) {
+            setFieldErrors(nextFieldErrors);
+            setError('Кирүү үчүн email жана сырсөздү туура толтуруңуз.');
+            return;
+        }
+
         setLoading(true);
         setError(null);
+        setFieldErrors({});
 
         try {
             const response = await loginUser({ email, password });
             const { user, access_token } = response.data;
-
-            // Debug logging for cross-domain development
-            const debugInfo = getAuthDebugInfo();
 
             login(user);
 
@@ -90,10 +67,14 @@ const LoginPage = () => {
                 localStorage.setItem('auth_token', access_token);
             }
 
-            await executePendingAction();
+            const handledPendingAction = await executePendingAuthAction({
+                addToCart,
+                toggleFavourite,
+                navigate,
+            });
 
-            if (!localStorage.getItem('pendingAction')) {
-                navigate('/');
+            if (!handledPendingAction) {
+                navigate(getPostLoginPath(user, location), { replace: true });
             }
         } catch (err) {
             console.error('Login error:', err);
@@ -105,10 +86,22 @@ const LoginPage = () => {
 
     const handleEmailChange = (e) => {
         setEmail(e.target.value);
+        setFieldErrors((prev) => {
+            if (!prev.email) return prev;
+            const next = { ...prev };
+            delete next.email;
+            return next;
+        });
     };
 
     const handlePasswordChange = (e) => {
         setPassword(e.target.value);
+        setFieldErrors((prev) => {
+            if (!prev.password) return prev;
+            const next = { ...prev };
+            delete next.password;
+            return next;
+        });
     };
 
     return (
@@ -128,16 +121,27 @@ const LoginPage = () => {
                 <div className="w-full max-w-md">
                     <h2 className="text-2xl font-bold text-black dark:text-white mb-6">Кирүү</h2>
 
-                    {error && <p className="text-red-500 mb-4">{error}</p>}
+                    <p className="mb-5 text-sm leading-6 text-gray-600 dark:text-[#a6adba]">
+                        Окуу панелиңизге, сатып алган курстарыңызга жана билдирүүлөрүңүзгө кирүү үчүн аккаунтуңуз менен кириңиз.
+                    </p>
+
+                    {error && (
+                        <p className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700" role="alert">
+                            {error}
+                        </p>
+                    )}
 
                     <form onSubmit={handleLogin} className="space-y-2">
                         <DefaultLabel
                             label="Email"
                             name="email"
+                            type="email"
                             value={email}
                             onChange={handleEmailChange}
                             placeholder=""
                             required={true}
+                            error={fieldErrors.email}
+                            autoComplete="email"
                             width="w-full"
                             className="py-2"
                         />
@@ -149,21 +153,25 @@ const LoginPage = () => {
                             onChange={handlePasswordChange}
                             placeholder=""
                             required={true}
+                            error={fieldErrors.password}
+                            autoComplete="current-password"
                             width="w-full"
                             className="py-2"
                         />
 
-                        <div
-                            className="flex justify-center text-sm text-blue-500 hover:underline cursor-pointer mt-2"
+                        <button
+                            type="button"
+                            className="mx-auto mt-2 flex rounded-md px-2 py-1 text-sm text-blue-500 hover:underline focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
                             onClick={() => setForgotPassword(!forgotPassword)}
                         >
                             Сырсөздү унуттуңузбу?
-                        </div>
+                        </button>
 
                         <button
                             type="submit"
                             disabled={loading}
-                            className="w-full mt-4 shadow-[0px_5px_21.3px_0px_#E14219BF] bg-[linear-gradient(180deg,#FF8C6E_0%,#E14219_100%)] text-white py-3 rounded text-lg font-semibold hover:opacity-90 transition"
+                            aria-busy={loading}
+                            className="w-full mt-4 shadow-[0px_5px_21.3px_0px_#E14219BF] bg-[linear-gradient(180deg,#FF8C6E_0%,#E14219_100%)] text-white py-3 rounded text-lg font-semibold hover:opacity-90 transition disabled:cursor-not-allowed disabled:opacity-75"
                         >
                             {loading ? 'Кирүүдө...' : 'Кирүү'}
                         </button>

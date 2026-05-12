@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useContext } from 'react';
-import { useParams, useSearchParams } from 'react-router-dom';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 import debounce from 'lodash.debounce';
 import toast from 'react-hot-toast';
 import {
@@ -933,8 +933,49 @@ const CourseDetailsPage = () => {
     /* eslint-enable react-hooks/exhaustive-deps */
 
     if (loading) return <Loader fullScreen />;
-    if (error) return <div>Ката: {error}</div>;
-    if (!course) return <div>Курс табылган жок</div>;
+    if (error) {
+        return (
+            <main className="min-h-screen bg-white px-4 py-16 dark:bg-[#222222]">
+                <div className="mx-auto max-w-xl rounded-2xl border border-red-200 bg-red-50 p-6 text-red-800 dark:border-red-900/40 dark:bg-red-950/20 dark:text-red-100">
+                    <h1 className="text-2xl font-bold">Курс жүктөлгөн жок</h1>
+                    <p className="mt-3 text-sm leading-6">{error}</p>
+                    <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+                        <button
+                            type="button"
+                            onClick={() => window.location.reload()}
+                            className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-700"
+                        >
+                            Кайра аракет кылуу
+                        </button>
+                        <Link
+                            to="/courses"
+                            className="rounded-lg border border-red-300 px-4 py-2 text-center text-sm font-semibold text-red-700 transition hover:bg-red-100 dark:text-red-100"
+                        >
+                            Курстарга кайтуу
+                        </Link>
+                    </div>
+                </div>
+            </main>
+        );
+    }
+    if (!course) {
+        return (
+            <main className="min-h-screen bg-white px-4 py-16 dark:bg-[#222222]">
+                <div className="mx-auto max-w-xl rounded-2xl border border-gray-200 bg-gray-50 p-6 text-gray-800 dark:border-gray-800 dark:bg-gray-950 dark:text-gray-100">
+                    <h1 className="text-2xl font-bold">Курс табылган жок</h1>
+                    <p className="mt-3 text-sm leading-6">
+                        Бул курс өчүрүлгөн, жашырылган же шилтемеси туура эмес болушу мүмкүн.
+                    </p>
+                    <Link
+                        to="/courses"
+                        className="mt-6 inline-flex rounded-lg bg-edubot-orange px-4 py-2 text-sm font-semibold text-white transition hover:bg-orange-600"
+                    >
+                        Курстарды көрүү
+                    </Link>
+                </div>
+            </main>
+        );
+    }
 
     const { prev: prevLesson, next: nextLesson } = findPrevNextLessons();
     const isCourseInstructor = Boolean(user && course?.instructor?.id === user.id);

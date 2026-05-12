@@ -1,8 +1,9 @@
 import useEmblaCarousel from 'embla-carousel-react';
-import { useEffect, useCallback, useState } from 'react';
+import { useEffect, useCallback } from 'react';
 import CardFeedback from '../../marketing/components/CardFeedback';
+import { FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 
-const FeedbackSlider = ({ arrows, data }) => {
+const FeedbackSlider = ({ data }) => {
     const [emblaRef, emblaApi] = useEmblaCarousel({
         align: 'start',
         dragFree: false,
@@ -10,13 +11,8 @@ const FeedbackSlider = ({ arrows, data }) => {
         containScroll: 'keepSnaps',
     });
 
-    const [, setCanPrev] = useState(false);
-    const [, setCanNext] = useState(true);
-
     const onSelect = useCallback(() => {
         if (!emblaApi) return;
-        setCanPrev(emblaApi.canScrollPrev());
-        setCanNext(emblaApi.canScrollNext());
     }, [emblaApi]);
 
     useEffect(() => {
@@ -25,18 +21,25 @@ const FeedbackSlider = ({ arrows, data }) => {
         emblaApi.on('select', onSelect);
     }, [emblaApi, onSelect]);
 
-    const handleArrowClick = (e) => {
-        const btn = e.target.closest('[data-arrow]');
-        if (!btn || !emblaApi) return;
-
-        if (btn.dataset.arrow === 'prev') emblaApi.scrollPrev();
-        if (btn.dataset.arrow === 'next') emblaApi.scrollNext();
-    };
-
     return (
-        <div>
-            <div className="absolute bottom-[86%] left-[77%] md:bottom-[80%] md:left-[88%]" onClick={handleArrowClick}>
-                {arrows}
+        <div className="relative">
+            <div className="mb-4 flex justify-end gap-2">
+                <button
+                    type="button"
+                    onClick={() => emblaApi?.scrollPrev()}
+                    className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-700 transition hover:border-orange-300 hover:text-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-500 dark:border-gray-700 dark:bg-[#222222] dark:text-white"
+                    aria-label="Мурунку пикир"
+                >
+                    <FiChevronLeft aria-hidden="true" />
+                </button>
+                <button
+                    type="button"
+                    onClick={() => emblaApi?.scrollNext()}
+                    className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-700 transition hover:border-orange-300 hover:text-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-500 dark:border-gray-700 dark:bg-[#222222] dark:text-white"
+                    aria-label="Кийинки пикир"
+                >
+                    <FiChevronRight aria-hidden="true" />
+                </button>
             </div>
 
             <div ref={emblaRef} className="overflow-hidden mt-6">

@@ -263,7 +263,7 @@ const CourseContent = ({
                                     </div>
                                     <div className="flex items-center gap-2 flex-shrink-0">
                                         <div className="w-3 h-3 rounded-full bg-gray-300 dark:bg-gray-600 flex-shrink-0"></div>
-                                        <span className="whitespace-nowrap">Кичинекей</span>
+                                        <span className="whitespace-nowrap">Жеткиликтүү лекция</span>
                                     </div>
                                 </div>
                             )}
@@ -486,7 +486,7 @@ const CourseContent = ({
                                                                                             }
                                                                                         />
                                                                                         <span className="text-[#1E72BE] dark:text-blue-400 font-semibold whitespace-nowrap">
-                                                                                            Preview
+                                                                                            Алдын ала көрүү
                                                                                         </span>
                                                                                     </>
                                                                                 )}

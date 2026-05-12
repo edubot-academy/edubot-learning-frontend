@@ -6,7 +6,7 @@ import { IoIosCall } from 'react-icons/io';
 const Footer = () => {
     return (
         <footer className="bg-white text-black dark:bg-[#141619] dark:text-[#E8ECF3] py-12 px-4 sm:px-6 lg:px-12 border-t border-gray-300 dark:border-[#2A2E35] p-5">
-            <div className=" mx-auto flex flex-col items-start space-y-12">
+            <div className="mx-auto flex max-w-7xl flex-col items-start space-y-12">
                 <h2 className="hidden md:block text-5xl font-normal text-center tracking-wide w-full">
                     <span className="font-extrabold text-[#EA580C]">EDUBOT </span>
                     LEARNING
@@ -20,7 +20,7 @@ const Footer = () => {
                             </h3>
                             <ul className="space-y-1 text-gray-700 dark:text-[#a6adba] text-sm">
                                 <li>
-                                    <Link to="/courses">Курстар жөнүндө</Link>
+                                    <Link to="/courses">Курстар</Link>
                                 </li>
                                 <li>
                                     <Link to="/about">Биз жөнүндө</Link>
@@ -44,7 +44,7 @@ const Footer = () => {
                                         rel="noreferrer"
                                     >
                                         {' '}
-                                        <FaInstagram /> edubot_learning
+                                        <FaInstagram /> edubot.company
                                     </a>
                                 </li>
                                 <li>
@@ -75,22 +75,30 @@ const Footer = () => {
                                 БИЗДИН ДАРЕК
                             </h3>
                             <p className="text-sm text-gray-700 dark:text-[#a6adba]">
-                                Бишкек ш,. Ахунбаев 109/1
+                                Бишкек ш., Ахунбаева 129B
                             </p>
                         </div>
                     </div>
 
                     <div>
-                        <img
-                            src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=https://learning.edubot.it.com"
-                            alt="EduBot Learning QR"
-                            className="w-[120px] h-[120px] object-contain"
-                        />
+                        <a
+                            href="https://learning.edubot.it.com"
+                            target="_blank"
+                            rel="noreferrer"
+                            className="block rounded-xl border border-gray-200 bg-white p-2 transition hover:border-[#EA580C] focus:outline-none focus:ring-2 focus:ring-[#EA580C] dark:border-gray-700"
+                            aria-label="EduBot Learning сайтын ачуу"
+                        >
+                            <img
+                                src="/edubot-learning-qr.png"
+                                alt="EduBot Learning сайты үчүн QR"
+                                className="h-[120px] w-[120px] object-contain"
+                            />
+                        </a>
                     </div>
                 </div>
 
                 <p className="w-full text-center text-xs text-gray-600 dark:text-[#a6adba] mt-16">
-                    © 2025 Edubot Learning. Баардык укуктар сакталган.
+                    © 2025 EduBot Learning. Бардык укуктар сакталган.
                 </p>
             </div>
         </footer>

@@ -101,11 +101,14 @@ const Header = () => {
     const [userMenuOpen, setUserMenuOpen] = useState(false);
     const [activeIcon, setActiveIcon] = useState(null);
     const [unreadNotifications, setUnreadNotifications] = useState(0);
+    const [searchLoading, setSearchLoading] = useState(false);
+    const [searchError, setSearchError] = useState('');
 
     const langRef = useRef(null);
     const [results, setResults] = useState([]);
     const [showDropdown, setShowDropdown] = useState(false);
     const searchContainerRef = useRef(null);
+    const searchRequestIdRef = useRef(0);
 
     useEffect(() => {
         if (location.pathname === '/cart') {
@@ -180,23 +183,44 @@ const Header = () => {
         loadUnreadNotifications();
     }, [user]);
 
-    const handleSearch = async (value) => {
+    useEffect(() => {
+        const query = search.trim();
+        const requestId = searchRequestIdRef.current + 1;
+        searchRequestIdRef.current = requestId;
+
+        if (query.length < 2) {
+            setResults([]);
+            setShowDropdown(false);
+            setSearchLoading(false);
+            setSearchError('');
+            return undefined;
+        }
+
+        setSearchLoading(true);
+        setSearchError('');
+        const timeoutId = setTimeout(async () => {
+            try {
+                const data = await searchCourses(query);
+                if (searchRequestIdRef.current !== requestId) return;
+                setResults(Array.isArray(data) ? data : []);
+                setShowDropdown(true);
+            } catch {
+                if (searchRequestIdRef.current !== requestId) return;
+                setResults([]);
+                setSearchError('Издөө азыр иштебей жатат.');
+                setShowDropdown(true);
+            } finally {
+                if (searchRequestIdRef.current === requestId) {
+                    setSearchLoading(false);
+                }
+            }
+        }, 300);
+
+        return () => clearTimeout(timeoutId);
+    }, [search]);
+
+    const handleSearch = (value) => {
         setSearch(value);
-
-        if (value.length < 2) {
-            setResults([]);
-            setShowDropdown(false);
-            return;
-        }
-
-        try {
-            const data = await searchCourses(value);
-            setResults(data);
-            setShowDropdown(true);
-        } catch {
-            setResults([]);
-            setShowDropdown(false);
-        }
     };
 
     const handleIconClick = (iconName, callback) => {
@@ -248,13 +272,29 @@ const Header = () => {
                                 value={search}
                                 onChange={(e) => handleSearch(e.target.value)}
                                 onFocus={() => search.length >= 2 && setShowDropdown(true)}
+                                onKeyDown={(event) => {
+                                    if (event.key === 'Escape') {
+                                        setShowDropdown(false);
+                                    }
+                                }}
+                                aria-label="Курстарды издөө"
+                                aria-expanded={showDropdown}
+                                aria-controls="desktop-course-search-results"
                                 className="px-3 py-2 focus:outline-none focus:ring-1 focus:ring-[#EA580C] dark:focus:ring-[#F97316] bg-transparent w-full text-base text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400"
                             />
 
                             {/* Search Dropdown */}
                             {showDropdown && (
-                                <div className="absolute top-full left-0 right-0 mt-2 max-w-xs w-full bg-white dark:bg-[#141619] border border-gray-200 dark:border-gray-700 shadow-xl dark:shadow-gray-900 z-50 max-h-64 overflow-y-auto">
-                                    {results.length > 0 ? (
+                                <div id="desktop-course-search-results" className="absolute top-full left-0 right-0 mt-2 max-w-xs w-full bg-white dark:bg-[#141619] border border-gray-200 dark:border-gray-700 shadow-xl dark:shadow-gray-900 z-50 max-h-64 overflow-y-auto">
+                                    {searchLoading ? (
+                                        <div className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
+                                            Изделүүдө...
+                                        </div>
+                                    ) : searchError ? (
+                                        <div className="px-4 py-3 text-sm text-red-600 dark:text-red-300">
+                                            {searchError}
+                                        </div>
+                                    ) : results.length > 0 ? (
                                         results.map((course) => (
                                             <button
                                                 key={course.id}
@@ -562,14 +602,30 @@ const Header = () => {
                                     value={search}
                                     onChange={(e) => handleSearch(e.target.value)}
                                     onFocus={() => search.length >= 2 && setShowDropdown(true)}
+                                    onKeyDown={(event) => {
+                                        if (event.key === 'Escape') {
+                                            setShowDropdown(false);
+                                        }
+                                    }}
+                                    aria-label="Курстарды издөө"
+                                    aria-expanded={showDropdown}
+                                    aria-controls="mobile-course-search-results"
                                     className="px-3 py-2 focus:outline-none focus:ring-1 focus:ring-[#EA580C] dark:focus:ring-[#F97316] bg-transparent w-full text-base text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400"
                                 />
                             </div>
 
                             {/* Mobile Search Dropdown */}
                             {showDropdown && (
-                                <div className="absolute left-0 right-0 mt-1 mx-4 z-50">
-                                    {results.length > 0 ? (
+                                <div id="mobile-course-search-results" className="absolute left-0 right-0 mt-1 mx-4 z-50">
+                                    {searchLoading ? (
+                                        <div className="bg-white dark:bg-gray-800 shadow-lg border border-gray-200 dark:border-gray-700 rounded p-4 text-sm text-gray-500 dark:text-gray-400">
+                                            Изделүүдө...
+                                        </div>
+                                    ) : searchError ? (
+                                        <div className="bg-white dark:bg-gray-800 shadow-lg border border-gray-200 dark:border-gray-700 rounded p-4 text-sm text-red-600 dark:text-red-300">
+                                            {searchError}
+                                        </div>
+                                    ) : results.length > 0 ? (
                                         <div className="bg-white dark:bg-gray-800 shadow-lg border border-gray-200 dark:border-gray-700 rounded max-h-64 overflow-y-auto">
                                             {results.map((course) => (
                                                 <button

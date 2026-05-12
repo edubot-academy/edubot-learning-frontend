@@ -1,16 +1,23 @@
 import React, { useState } from 'react';
 
-const FAQItem = ({ question, answer, isOpen, onClick }) => (
+const FAQItem = ({ id, question, answer, isOpen, onClick }) => (
     <div className="border-b border-gray-200 dark:border-[#2A2E35]">
         <button
+            type="button"
             onClick={onClick}
-            className="w-full flex justify-between items-center py-4 text-left focus:outline-none"
+            className="w-full flex justify-between items-center py-4 text-left focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 dark:focus:ring-offset-[#141619]"
+            aria-expanded={isOpen}
+            aria-controls={`${id}-panel`}
+            id={`${id}-button`}
         >
             <span className="font-semibold text-gray-900 dark:text-[#E8ECF3]">{question}</span>
-            <span className="text-xl text-gray-500 dark:text-gray-300">{isOpen ? '−' : '+'}</span>
+            <span className="text-xl text-gray-500 dark:text-gray-300" aria-hidden="true">{isOpen ? '−' : '+'}</span>
         </button>
 
         <div
+            id={`${id}-panel`}
+            role="region"
+            aria-labelledby={`${id}-button`}
             className={`overflow-hidden transition-all duration-500 ease-in-out ${isOpen ? 'max-h-40 opacity-100 mb-4' : 'max-h-0 opacity-0'
                 }`}
         >
@@ -50,7 +57,8 @@ const FAQ = () => {
             <div className="divide-y divide-gray-200 dark:divide-[#2A2E35]">
                 {faqData.map((item, index) => (
                     <FAQItem
-                        key={index}
+                        key={item.q}
+                        id={`home-faq-${index}`}
                         question={item.q}
                         answer={item.a}
                         isOpen={openIndex === index}

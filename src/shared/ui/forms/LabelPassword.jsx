@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import PropTypes from 'prop-types';
 import { MdVisibility, MdVisibilityOff } from 'react-icons/md';
 
@@ -12,27 +12,26 @@ const LabelPassword = ({
     value: propValue,
     onChange: propOnChange,
     className = '',
+    autoComplete,
+    describedBy,
+    onFocus,
+    onBlur,
 }) => {
-    const [value, setValue] = useState(propValue || '');
     const [focused, setFocused] = useState(false);
     const [showAsterisk, setShowAsterisk] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
 
-    // Синхронизация с пропсами
-    useEffect(() => {
-        if (propValue !== undefined) {
-            setValue(propValue);
-        }
-    }, [propValue]);
-
     const hasError = !!error;
+    const value = propValue ?? '';
     const isActive = focused || value !== '';
     const inputId = name || `password-${label.replace(/\s+/g, '-').toLowerCase()}`;
     const errorId = `${inputId}-error`;
+    const describedByIds = [hasError ? errorId : null, describedBy].filter(Boolean).join(' ') || undefined;
 
     const handleFocus = () => {
         setFocused(true);
         setShowAsterisk(false);
+        onFocus?.();
     };
 
     const handleBlur = () => {
@@ -42,6 +41,7 @@ const LabelPassword = ({
         } else {
             setShowAsterisk(false);
         }
+        onBlur?.();
     };
 
     const togglePassword = () => {
@@ -49,8 +49,6 @@ const LabelPassword = ({
     };
 
     const handleChange = (e) => {
-        const newValue = e.target.value;
-        setValue(newValue);
         if (propOnChange) propOnChange(e);
     };
 
@@ -90,8 +88,9 @@ const LabelPassword = ({
                         onFocus={handleFocus}
                         onBlur={handleBlur}
                         placeholder={placeholder}
+                        autoComplete={autoComplete}
                         aria-invalid={hasError}
-                        aria-describedby={hasError ? errorId : undefined}
+                        aria-describedby={describedByIds}
                         className="w-full bg-transparent outline-none text-gray-900 dark:text-[#E8ECF3] text-sm sm:text-base flex items-center pr-10"
                     />
 
@@ -126,6 +125,10 @@ LabelPassword.propTypes = {
     value: PropTypes.string,
     onChange: PropTypes.func,
     className: PropTypes.string,
+    autoComplete: PropTypes.string,
+    describedBy: PropTypes.string,
+    onFocus: PropTypes.func,
+    onBlur: PropTypes.func,
 };
 
 export default LabelPassword;

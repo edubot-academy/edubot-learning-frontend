@@ -12,14 +12,21 @@ import TopLearnersHome from '@features/leaderboard/components/TopLearnersHome';
 
 const HomePage = () => {
     const [coursesData, setCoursesData] = useState([]);
+    const [coursesLoading, setCoursesLoading] = useState(true);
+    const [coursesError, setCoursesError] = useState('');
 
     useEffect(() => {
         const loadTopCourses = async () => {
+            setCoursesLoading(true);
+            setCoursesError('');
             try {
                 const data = await fetchTopCourses();
-                setCoursesData(data.items);
+                setCoursesData(Array.isArray(data?.items) ? data.items : []);
             } catch (err) {
                 console.error('Failed to fetch courses', err);
+                setCoursesError('Топ курстарды жүктөй алган жокпуз.');
+            } finally {
+                setCoursesLoading(false);
             }
         };
         loadTopCourses();
@@ -30,7 +37,11 @@ const HomePage = () => {
             <HeroStart />
             <StickyButton />
             <Benefits />
-            <TopCourses coursesData={coursesData} />
+            <TopCourses
+                coursesData={coursesData}
+                loading={coursesLoading}
+                error={coursesError}
+            />
             <TopLearnersHome />
             <Instructor />
             <Apply />

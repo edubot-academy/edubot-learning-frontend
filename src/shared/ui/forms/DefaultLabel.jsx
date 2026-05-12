@@ -1,8 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 
 const DefaultLabel = ({
     label = 'label',
     name = '',
+    id,
+    type = 'text',
     required = false,
     error = '',
     placeholder = '',
@@ -10,24 +12,23 @@ const DefaultLabel = ({
     value: propValue,
     onChange: propOnChange,
     className = '',
+    autoComplete,
+    onFocus,
+    onBlur,
 }) => {
-    const [value, setValue] = useState(propValue || '');
     const [focused, setFocused] = useState(false);
     const [showAsterisk, setShowAsterisk] = useState(false);
 
-    // Синхронизация с пропсами
-    useEffect(() => {
-        if (propValue !== undefined) {
-            setValue(propValue);
-        }
-    }, [propValue]);
-
     const hasError = !!error;
+    const value = propValue ?? '';
     const isActive = focused || value !== '';
+    const inputId = id || name || `field-${label.replace(/\s+/g, '-').toLowerCase()}`;
+    const errorId = `${inputId}-error`;
 
     const handleFocus = () => {
         setFocused(true);
         setShowAsterisk(false);
+        onFocus?.();
     };
 
     const handleBlur = () => {
@@ -37,11 +38,10 @@ const DefaultLabel = ({
         } else {
             setShowAsterisk(false);
         }
+        onBlur?.();
     };
 
     const handleChange = (e) => {
-        const newValue = e.target.value;
-        setValue(newValue);
         if (propOnChange) propOnChange(e);
     };
 
@@ -57,6 +57,7 @@ const DefaultLabel = ({
           `}
                 >
                     <label
+                        htmlFor={inputId}
                         className={`absolute left-2 sm:left-3 transition-all duration-200 ease-in-out
               ${isActive
                                 ? '-top-2 sm:-top-3 text-xs sm:text-sm'
@@ -71,18 +72,23 @@ const DefaultLabel = ({
                     </label>
 
                     <input
-                        type="text"
+                        id={inputId}
+                        type={type}
                         name={name}
-                        value={value} // Всегда используем локальное значение
+                        value={value}
                         onChange={handleChange}
                         onFocus={handleFocus}
                         onBlur={handleBlur}
                         placeholder={placeholder}
+                        required={required}
+                        autoComplete={autoComplete}
+                        aria-invalid={hasError}
+                        aria-describedby={hasError ? errorId : undefined}
                         className="w-full bg-transparent outline-none text-gray-900 dark:text-[#E8ECF3] text-sm sm:text-base"
                     />
                 </div>
 
-                {hasError && <p className="text-red-600 text-xs sm:text-sm">{error}</p>}
+                {hasError && <p id={errorId} className="text-red-600 text-xs sm:text-sm">{error}</p>}
             </div>
         </div>
     );

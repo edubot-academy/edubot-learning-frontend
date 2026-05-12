@@ -1,10 +1,40 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { sendOtp, resetPassword } from '@services/api';
 import { IoClose } from 'react-icons/io5';
 
+const METHOD_OPTIONS = [
+    { value: 'email', label: 'Email', hint: 'Аккаунтка байланган email даректи жазыңыз.' },
+    { value: 'whatsapp', label: 'WhatsApp', hint: 'Өлкө коду менен телефон номерин жазыңыз.' },
+];
+
+const getApiError = (error, fallback) =>
+    error?.response?.data?.message || error?.message || fallback;
+
+const validateIdentifier = ({ method, identifier }) => {
+    const value = identifier.trim();
+
+    if (!method) return 'Калыбына келтирүү ыкмасын тандаңыз.';
+    if (!value) return 'Код жөнөтүлө турган маалыматты жазыңыз.';
+    if (method === 'email' && !/^[\w-.]+@([\w-]+\.)+[\w-]{2,}$/.test(value)) {
+        return 'Туура email дарегин жазыңыз.';
+    }
+    if (method === 'whatsapp' && !/^\+?\d{9,16}$/.test(value)) {
+        return 'WhatsApp номери 9-16 цифрадан турушу керек.';
+    }
+
+    return '';
+};
+
+const validatePasswordStep = ({ otp, newPassword, confirmPassword }) => {
+    if (!/^\d{4,8}$/.test(otp.trim())) return 'OTP код 4-8 цифрадан турушу керек.';
+    if (newPassword.length < 8) return 'Жаңы сырсөз кеминде 8 белгиден турушу керек.';
+    if (newPassword !== confirmPassword) return 'Сырсөздөр дал келген жок.';
+    return '';
+};
+
 const ForgotPassword = ({ onClose }) => {
     const [identifier, setIdentifier] = useState('');
-    const [method, setMethod] = useState('method');
+    const [method, setMethod] = useState('');
     const [otpSent, setOtpSent] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
@@ -12,130 +42,222 @@ const ForgotPassword = ({ onClose }) => {
     const [newPassword, setNewPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [passwordReset, setPasswordReset] = useState(false);
+    const closeButtonRef = useRef(null);
+
+    const selectedMethod = METHOD_OPTIONS.find((item) => item.value === method);
+
+    useEffect(() => {
+        closeButtonRef.current?.focus();
+
+        const handleKeyDown = (event) => {
+            if (event.key === 'Escape') onClose();
+        };
+
+        document.addEventListener('keydown', handleKeyDown);
+        return () => document.removeEventListener('keydown', handleKeyDown);
+    }, [onClose]);
 
     const handleSendOtp = async (e) => {
         e.preventDefault();
+        const validationError = validateIdentifier({ method, identifier });
+
+        if (validationError) {
+            setError(validationError);
+            return;
+        }
+
         setLoading(true);
         setError('');
 
         try {
-            await sendOtp({ identifier, method });
+            await sendOtp({ identifier: identifier.trim(), method });
             setOtpSent(true);
         } catch (err) {
-            setError(`${err.message}. ${err.response?.data?.message}`);
+            setError(getApiError(err, 'OTP жөнөтүлбөй калды. Маалыматты текшерип, кайра аракет кылыңыз.'));
+        } finally {
+            setLoading(false);
         }
-        setLoading(false);
     };
 
     const handleResetPassword = async (e) => {
         e.preventDefault();
-        setLoading(true);
-        setError('');
+        const validationError = validatePasswordStep({ otp, newPassword, confirmPassword });
 
-        if (newPassword !== confirmPassword) {
-            setError('Сырсөздөр дал келген жок.');
-            setLoading(false);
+        if (validationError) {
+            setError(validationError);
             return;
         }
 
+        setLoading(true);
+        setError('');
+
         try {
-            await resetPassword({ identifier, otp, newPassword, method });
+            await resetPassword({
+                identifier: identifier.trim(),
+                otp: otp.trim(),
+                newPassword,
+                method,
+            });
             setPasswordReset(true);
         } catch (err) {
-            setError(`${err.response?.data?.message}`);
+            setError(getApiError(err, 'Сырсөз жаңыртылган жок. Кодду текшерип, кайра аракет кылыңыз.'));
+        } finally {
+            setLoading(false);
         }
-        setLoading(false);
     };
 
     return (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
-            <div className="relative bg-white dark:bg-[#222222] rounded-lg shadow-lg w-[600px] p-[50px]">
-                {/* Кнопка закрытия */}
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4" role="presentation">
+            <div
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="forgot-password-title"
+                aria-describedby="forgot-password-description"
+                className="relative w-full max-w-xl rounded-2xl bg-white p-6 shadow-2xl dark:bg-[#222222] sm:p-8"
+            >
                 <button
+                    ref={closeButtonRef}
+                    type="button"
                     onClick={onClose}
-                    className="absolute top-4 right-4 text-gray-600 dark:text-[#a6adba] hover:text-black dark:hover:text-white"
+                    className="absolute right-4 top-4 rounded-lg p-1 text-gray-600 transition hover:bg-gray-100 hover:text-black focus:outline-none focus:ring-2 focus:ring-orange-500 dark:text-[#a6adba] dark:hover:bg-white/10 dark:hover:text-white"
+                    aria-label="Калыбына келтирүү терезесин жабуу"
                 >
-                    <IoClose size={28} />
+                    <IoClose size={26} aria-hidden="true" />
                 </button>
 
-                {/* Заголовок */}
-                <h2 className="text-2xl font-bold text-left mb-6 text-black dark:text-white">Сырсөздү унуттуңузбу?</h2>
+                <p className="text-sm font-semibold uppercase tracking-wide text-edubot-orange">
+                    Аккаунтка кирүү
+                </p>
+                <h2 id="forgot-password-title" className="mt-2 text-2xl font-bold text-black dark:text-white">
+                    Сырсөздү калыбына келтирүү
+                </h2>
+                <p id="forgot-password-description" className="mt-2 text-sm leading-6 text-gray-600 dark:text-[#a6adba]">
+                    Кодду email же WhatsApp аркылуу алып, жаңы сырсөз коюңуз.
+                </p>
 
-                {/* Шаг 1 */}
+                {error && (
+                    <p className="mt-5 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700" role="alert">
+                        {error}
+                    </p>
+                )}
+
                 {!otpSent ? (
-                    <form onSubmit={handleSendOtp} className="">
-                        <select
-                            value={method}
-                            onChange={(e) => setMethod(e.target.value)}
-                            className="w-full px-4 py-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 text-black dark:text-white bg-white dark:bg-[#222222]"
-                        >
-                            <option value="method">Методду тандаңыз</option>
-                            <option value="email">Email</option>
-                            <option value="whatsapp">WhatsApp</option>
-                        </select>
+                    <form onSubmit={handleSendOtp} className="mt-6 space-y-4">
+                        <label className="block">
+                            <span className="mb-1 block text-sm font-medium text-gray-800 dark:text-white">
+                                Код алуу ыкмасы
+                            </span>
+                            <select
+                                value={method}
+                                onChange={(e) => {
+                                    setMethod(e.target.value);
+                                    setError('');
+                                }}
+                                className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-black focus:outline-none focus:ring-2 focus:ring-orange-500 dark:border-gray-700 dark:bg-[#222222] dark:text-white"
+                                required
+                            >
+                                <option value="">Ыкманы тандаңыз</option>
+                                {METHOD_OPTIONS.map((item) => (
+                                    <option key={item.value} value={item.value}>{item.label}</option>
+                                ))}
+                            </select>
+                        </label>
 
-                        <input
-                            type="text"
-                            placeholder="Маалыматтарды киргизиңиз"
-                            value={identifier}
-                            onChange={(e) => setIdentifier(e.target.value)}
-                            className="w-full px-4 py-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 mb-[50px] mt-[10px] text-black dark:text-white bg-white dark:bg-[#222222]"
-                            required
-                        />
-
-                        {error && <p className="text-red-600 text-sm text-center">{error}</p>}
+                        <label className="block">
+                            <span className="mb-1 block text-sm font-medium text-gray-800 dark:text-white">
+                                {method === 'whatsapp' ? 'WhatsApp номери' : 'Email дареги'}
+                            </span>
+                            <input
+                                type={method === 'email' ? 'email' : 'text'}
+                                value={identifier}
+                                onChange={(e) => {
+                                    setIdentifier(e.target.value);
+                                    setError('');
+                                }}
+                                placeholder={method === 'whatsapp' ? '+996700123456' : 'name@example.com'}
+                                autoComplete={method === 'email' ? 'email' : 'tel'}
+                                className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-black focus:outline-none focus:ring-2 focus:ring-orange-500 dark:border-gray-700 dark:bg-[#222222] dark:text-white"
+                                required
+                            />
+                            {selectedMethod && (
+                                <span className="mt-1 block text-xs text-gray-500 dark:text-[#a6adba]">
+                                    {selectedMethod.hint}
+                                </span>
+                            )}
+                        </label>
 
                         <button
                             type="submit"
-                            className=" w-full shadow-[0px_5px_21.3px_0px_#E14219BF] bg-[linear-gradient(180deg,#FF8C6E_0%,#E14219_100%)] text-white font-semibold py-3 rounded-md hover:opacity-90 transition"
+                            className="w-full rounded-lg bg-gradient-to-b from-[#FF8C6E] to-[#E14219] py-3 font-semibold text-white shadow-[0px_5px_21.3px_0px_#E14219BF] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-75"
                             disabled={loading}
+                            aria-busy={loading}
                         >
                             {loading ? 'Жөнөтүлүүдө...' : 'OTP жөнөтүү'}
                         </button>
                     </form>
                 ) : !passwordReset ? (
-                    /* Шаг 2 */
-                    <form onSubmit={handleResetPassword} className="space-y-4">
+                    <form onSubmit={handleResetPassword} className="mt-6 space-y-4">
+                        <p className="rounded-lg bg-orange-50 px-3 py-2 text-sm text-orange-800">
+                            Код {selectedMethod?.label || 'тандалган канал'} аркылуу жөнөтүлдү.
+                        </p>
                         <input
                             type="text"
-                            placeholder="OTP кодду киргизиңиз"
+                            inputMode="numeric"
+                            placeholder="OTP код"
                             value={otp}
-                            onChange={(e) => setOtp(e.target.value)}
-                            className="w-full px-4 py-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
+                            onChange={(e) => {
+                                setOtp(e.target.value);
+                                setError('');
+                            }}
+                            className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-500 dark:border-gray-700 dark:bg-[#222222] dark:text-white"
                             required
                         />
                         <input
                             type="password"
                             placeholder="Жаңы сырсөз"
                             value={newPassword}
-                            onChange={(e) => setNewPassword(e.target.value)}
-                            className="w-full px-4 py-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
+                            onChange={(e) => {
+                                setNewPassword(e.target.value);
+                                setError('');
+                            }}
+                            autoComplete="new-password"
+                            className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-500 dark:border-gray-700 dark:bg-[#222222] dark:text-white"
                             required
                         />
                         <input
                             type="password"
                             placeholder="Сырсөздү кайталаңыз"
                             value={confirmPassword}
-                            onChange={(e) => setConfirmPassword(e.target.value)}
-                            className="w-full px-4 py-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
+                            onChange={(e) => {
+                                setConfirmPassword(e.target.value);
+                                setError('');
+                            }}
+                            autoComplete="new-password"
+                            className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-500 dark:border-gray-700 dark:bg-[#222222] dark:text-white"
                             required
                         />
 
-                        {error && <p className="text-red-600 text-sm text-center">{error}</p>}
-
                         <button
                             type="submit"
-                            className="w-full shadow-[0px_5px_21.3px_0px_#E14219BF] bg-[linear-gradient(180deg,#FF8C6E_0%,#E14219_100%)] text-white font-semibold py-3 rounded-md hover:opacity-90 transition"
+                            className="w-full rounded-lg bg-gradient-to-b from-[#FF8C6E] to-[#E14219] py-3 font-semibold text-white shadow-[0px_5px_21.3px_0px_#E14219BF] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-75"
                             disabled={loading}
+                            aria-busy={loading}
                         >
-                            {loading ? 'Кайра орнотууда...' : 'Сырсөздү кайра орнотуу'}
+                            {loading ? 'Кайра орнотууда...' : 'Сырсөздү жаңыртуу'}
                         </button>
                     </form>
                 ) : (
-                    /* Шаг 3 */
-                    <p className="text-green-600 text-center">
-                        Сырсөз ийгиликтүү жаңыртылды! Эми логин кылыңыз.
-                    </p>
+                    <div className="mt-6 rounded-xl border border-green-200 bg-green-50 p-4 text-green-800">
+                        <p className="font-semibold">Сырсөз ийгиликтүү жаңыртылды.</p>
+                        <p className="mt-1 text-sm">Эми жаңы сырсөз менен кирсеңиз болот.</p>
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            className="mt-4 rounded-lg bg-green-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-green-800 focus:outline-none focus:ring-2 focus:ring-green-600 focus:ring-offset-2"
+                        >
+                            Кирүүгө кайтуу
+                        </button>
+                    </div>
                 )}
             </div>
         </div>

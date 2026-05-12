@@ -1,4 +1,4 @@
-import React, { createContext, useState, useContext, useCallback, useMemo, useEffect } from 'react';
+import React, { createContext, useState, useContext, useCallback, useMemo, useEffect, useRef } from 'react';
 import { AuthContext } from './AuthContext';
 import { fetchCart as fetchCartApi, addCourseToCart, removeCourseFromCart } from '@services/api';
 
@@ -17,6 +17,7 @@ export const CartProvider = ({ children }) => {
     const [loading, setLoading] = useState(false);
     const [initialized, setInitialized] = useState(false);
     const { user } = useContext(AuthContext);
+    const previousUserRef = useRef(user);
 
     const normalizeCartItems = useCallback((data = []) => {
         const itemsArray = Array.isArray(data?.items)
@@ -119,10 +120,11 @@ export const CartProvider = ({ children }) => {
     }, [cartItems, initialized]);
 
     useEffect(() => {
-        if (!user) {
+        if (previousUserRef.current && !user) {
             setCartItems([]);
             localStorage.removeItem('cart');
         }
+        previousUserRef.current = user;
     }, [user]);
 
     const addToCart = useCallback(

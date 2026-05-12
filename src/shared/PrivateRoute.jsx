@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useState } from 'react';
-import { Link, Navigate, Outlet } from 'react-router-dom';
+import { Link, Navigate, Outlet, useLocation } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import Loader from '@shared/ui/Loader';
 import { fetchStudentAccessState } from '@features/student/api';
@@ -39,6 +39,7 @@ const StudentAccessFallback = ({ accessState }) => (
 
 const PrivateRoute = ({ allowedRoles, requireStudentAccess = false }) => {
     const { user } = useContext(AuthContext);
+    const location = useLocation();
     const [accessLoading, setAccessLoading] = useState(requireStudentAccess);
     const [accessState, setAccessState] = useState(null);
     const [accessDenied, setAccessDenied] = useState(false);
@@ -79,7 +80,7 @@ const PrivateRoute = ({ allowedRoles, requireStudentAccess = false }) => {
     }, [requireStudentAccess, user]);
 
     if (!user) {
-        return <Navigate to="/login" replace />;
+        return <Navigate to="/login" replace state={{ from: location }} />;
     }
 
     if (!hasAllowedRole(user, allowedRoles)) {

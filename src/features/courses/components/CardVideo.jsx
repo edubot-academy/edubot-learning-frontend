@@ -8,12 +8,37 @@ import ContactCourseModal from './ContactCourseModal';
 import ModalPreviewVideo from './ModalPreviewVideo';
 import UnauthModal from '@shared/ui/UnauthModal';
 import { formatMinutesToTime } from '../../../utils/timeUtils';
+import { AuthContext } from '../../../context/AuthContext';
+import { useFavourites } from '../../../context/FavouritesContext';
 
 const CardVideo = ({ coverImageUrl, course, lessonCount, activeLesson,
     resumeVideoTime, onEnded, handleVideoProgress, handleTimeUpdate, handlePause, videoRef }) => {
     const [isContactOpen, setIsContactOpen] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [showUnauthModal, setShowUnauthModal] = useState(false);
+    const { user } = useContext(AuthContext);
+    const { toggleFavourite, isFavourite } = useFavourites();
+
+    const courseData = {
+        ...course,
+        coverImageUrl,
+        image: coverImageUrl,
+        cover: coverImageUrl,
+        thumbnail: coverImageUrl,
+        lessonCount,
+    };
+    const isCourseFavourite = isFavourite(course.id);
+
+    const handleFavouriteClick = async (e) => {
+        e.stopPropagation();
+
+        if (!user) {
+            setShowUnauthModal(true);
+            return;
+        }
+
+        await toggleFavourite(courseData);
+    };
 
     return (
         <>
@@ -69,13 +94,11 @@ const CardVideo = ({ coverImageUrl, course, lessonCount, activeLesson,
                         </div>
                         <div>
                             <Button
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    setShowUnauthModal(true);
-                                }}
+                                onClick={handleFavouriteClick}
                                 variant="secondary"
+                                aria-pressed={isCourseFavourite}
                             >
-                                Тандалгандарга кошуу
+                                {isCourseFavourite ? 'Тандалгандардан өчүрүү' : 'Тандалгандарга кошуу'}
                             </Button>
                         </div>
                     </div>
@@ -106,6 +129,7 @@ const CardVideo = ({ coverImageUrl, course, lessonCount, activeLesson,
                 actionType="favourite"
                 courseId={course.id}
                 courseTitle={course.title}
+                course={courseData}
             />
         </>
     );

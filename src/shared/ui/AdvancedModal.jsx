@@ -137,7 +137,8 @@ const AdvancedModal = ({
                     case 'Enter':
                         if (actions && actions.length > 0 && !loading) {
                             e.preventDefault();
-                            const primaryAction = actions.find(action => action.variant === 'primary') || actions[0];
+                            const enabledActions = actions.filter((action) => !action.disabled && !action.loading);
+                            const primaryAction = enabledActions.find(action => action.variant === 'primary') || enabledActions[0];
                             if (primaryAction && primaryAction.onClick) {
                                 primaryAction.onClick();
                             }
@@ -347,7 +348,7 @@ const AdvancedModal = ({
                                             key={action.id || index}
                                             type={action.type || 'button'}
                                             onClick={action.onClick}
-                                            disabled={action.disabled || loading}
+                                            disabled={action.disabled || action.loading || loading}
                                             className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none ${action.variant === 'primary'
                                                 ? 'bg-blue-600 hover:bg-blue-700 text-white focus:ring-blue-500'
                                                 : action.variant === 'danger'
@@ -357,6 +358,7 @@ const AdvancedModal = ({
                                                         : 'bg-gray-200 hover:bg-gray-300 text-gray-800 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-200 focus:ring-gray-500'
                                                 } ${action.className || ''}`}
                                             aria-label={action.ariaLabel}
+                                            aria-busy={action.loading || undefined}
                                         >
                                             {action.loading ? (
                                                 <div className="flex items-center">

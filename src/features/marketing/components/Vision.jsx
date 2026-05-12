@@ -3,16 +3,27 @@ import workplace from '@assets/images/workplace.png';
 
 function Vision() {
     return (
-        <div className="flex flex-col md:flex-row justify-left gap-36 items-center mb-28 lg:p-20">
-            <img src={workplace} alt="" className='w-[400px] h-[500px] object-cover dark:brightness-90 dark:contrast-110' />
-            <div className="flex flex-col gap-6 ">
-                <h2 className="font-medium text-6xl md:text-8xl pl-1 text-gray-900 dark:text-white">Биздин көз караш</h2>
-                <p className="md:text-lg text-base font-normal text-[#3E424A] dark:text-[#a6adba] max-w-2xl leading-5">
-                    Биздин максат — билимди жеткиликтүү, практикалык жана пайдалуу кылуу. EduBot Learning ар бир адамга жаңы кесипти өздөштүрүүгө же учурдагы билимин тереңдетүүгө мүмкүнчүлүк берет.
-                    Биз теория менен чектелбестен, реалдуу долбоорлор, практикалык тапшырмалар жана заманбап технологиялар аркылуу окутууга ишенебиз. Платформа окуучуларды өз алдынча ой жүгүртүүгө, маселелерди чечүүгө жана рынокко даяр адис болууга багыттайт.
+        <section className="grid items-center gap-8 py-12 md:grid-cols-[minmax(18rem,0.8fr)_minmax(0,1fr)] lg:gap-14">
+            <img
+                src={workplace}
+                alt="EduBot окуу жана иш чөйрөсү"
+                className="h-80 w-full rounded-2xl object-cover dark:brightness-90 dark:contrast-110 md:h-[28rem]"
+            />
+            <div>
+                <p className="text-sm font-semibold uppercase tracking-wide text-edubot-orange">
+                    Көз карашыбыз
+                </p>
+                <h2 className="mt-3 text-3xl font-bold leading-tight text-gray-900 dark:text-white sm:text-4xl">
+                    Окуу теориядан аракетке тез өтүшү керек
+                </h2>
+                <p className="mt-5 max-w-2xl text-base leading-7 text-[#3E424A] dark:text-[#a6adba]">
+                    EduBot Learning окуучуга жөн гана маалымат бербейт. Биз окуу жолун практика, тапшырма, кайтарым байланыш жана реалдуу долбоорлор менен байланыштырууга умтулабыз.
+                </p>
+                <p className="mt-4 max-w-2xl text-base leading-7 text-[#3E424A] dark:text-[#a6adba]">
+                    Ушундай мамиле окуучуга жаңы кесипти түшүнүүгө, көндүмүн бекемдөөгө жана рынокко даяр ишенимдүү портфолио түзүүгө жардам берет.
                 </p>
             </div>
-        </div>
+        </section>
     );
 }
 

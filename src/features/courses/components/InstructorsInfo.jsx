@@ -56,7 +56,7 @@ function InstructorsInfo({ instructorData }) {
         avatarUrl,
         fullName = 'Инструктор',
         title,
-        bio = 'Информация тууралуу маалымат жок',
+        bio = 'Инструктор тууралуу маалымат азырынча жок',
         expertiseTags = [],
         yearsOfExperience,
         coursesCount = 0,
@@ -96,7 +96,7 @@ function InstructorsInfo({ instructorData }) {
                     <div className="flex items-center gap-2 flex-wrap text-sm">
                         {isTopTutor && (
                             <span className="bg-green-100 text-green-600 px-2 py-0.5 text-xs font-semibold rounded-md dark:bg-green-900/30 dark:text-green-400">
-                                TOP tutor
+                                Топ инструктор
                             </span>
                         )}
                         <FaStar className="w-4 h-4 text-amber-400" />
@@ -131,18 +131,18 @@ function InstructorsInfo({ instructorData }) {
                         {yearsOfExperience !== undefined && yearsOfExperience !== null && (
                             <div className="flex items-center gap-2 text-gray-600 dark:text-gray-300">
                                 <FaBriefcase className="w-4 h-4 text-gray-500 dark:text-white" />
-                                <span>{yearsOfExperience}+ years experience</span>
+                                <span>{yearsOfExperience}+ жыл тажрыйба</span>
                             </div>
                         )}
 
                         <div className="flex items-center gap-2 text-gray-600 dark:text-gray-300">
                             <FaBookOpen className="w-4 h-4 text-gray-500 dark:text-white" />
-                            <span>{coursesCount} courses</span>
+                            <span>{coursesCount} курс</span>
                         </div>
 
                         <div className="flex items-center gap-2 text-gray-600 dark:text-gray-300">
                             <FaUsers className="w-4 h-4 text-gray-500 dark:text-white" />
-                            <span>{numberOfStudents}+ students</span>
+                            <span>{numberOfStudents}+ студент</span>
                         </div>
 
                         <div className="flex items-center gap-3 ml-auto">
@@ -158,6 +158,7 @@ function InstructorsInfo({ instructorData }) {
                                         href={url}
                                         target="_blank"
                                         rel="noopener noreferrer"
+                                        aria-label={`${platform} профилин ачуу`}
                                         className="flex items-center gap-2 text-gray-600 hover:text-blue-600 transition-colors dark:text-gray-400 dark:hover:text-blue-400"
                                     >
                                         <div className="w-5 h-5 flex items-center justify-center">

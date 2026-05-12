@@ -7,33 +7,43 @@ function InfoCards() {
     const infoCards = [
         {
             icon: notebook,
-            name: 'Биз жөнүндө',
-            title: 'EduBot Learning — бул ар бир адамга ылайыкталган онлайн билим берүү платформасы. Биздин максат – заманбап, жеткиликтүү жана сапаттуу билимди дүйнө жүзүндөгү бардык адамдарга жеткирүү.',
+            name: 'Практикалык мазмун',
+            title: 'Курстар теорияны кыска түшүндүрүп, негизги убакытты тапшырмаларга, мисалдарга жана көндүмдү бекемдөөгө багыттайт.',
         },
         {
             icon: security,
-            name: 'Көз карашыбыз',
-            title: 'Интерактивдүү жана практикалык окуу аркылуу адамдардын мүмкүнчүлүктөрүн кеңейтип, жаңы кесиптерди өздөштүрүүгө шарт түзүү.',
+            name: 'Ишенимдүү окуу жолу',
+            title: 'Окуучу кайсы темадан баштарын, кийинки кадам эмне экенин жана кандай натыйжага бара жатканын түшүнүп турушу керек.',
         },
         {
             icon: medal,
-            name: '🎯 Миссиябыз',
-            title: 'Адамдардын жаш курагына, кесибине же билимин деңгээлине карабастан, сапаттуу билимге жеткиликтүү болушун камсыздоо. Биз IT, жасалма интеллект, тил үйрөнүү, дизайн жана башка тармактар боюнча курстарды сунуштайбыз.',
+            name: 'Натыйжага багыт',
+            title: 'Максатыбыз - окуучуга жаңы көндүмдү иште, окууда же жеке долбоордо колдонууга жеткирген билим берүү.',
         },
     ];
     return (
-        <div className="flex flex-col md:flex-row items-center gap-5 mb-14">
-            {infoCards.map((x, index) => (
-                <div
-                    key={index}
-                    className="flex flex-col items-start gap-2 border border-[#C5C9D1] dark:border-gray-600 rounded p-3 h-64 bg-white dark:bg-gray-800"
-                >
-                    <img src={x.icon} alt="" className="dark:brightness-90 dark:contrast-110" />
-                    <h3 className="font-bold text-lg text-gray-900 dark:text-white">{x.name}</h3>
-                    <p className="font-normal text-[#3E424A] dark:text-[#a6adba] max-w-md ">{x.title}</p>
-                </div>
-            ))}
-        </div>
+        <section className="py-12" aria-labelledby="about-principles-title">
+            <div className="mb-6">
+                <h2 id="about-principles-title" className="text-2xl font-bold text-gray-900 dark:text-white">
+                    Биздин принциптер
+                </h2>
+                <p className="mt-2 max-w-2xl text-sm leading-6 text-gray-600 dark:text-[#a6adba]">
+                    Ар бир бөлүм окуучунун убактысын сыйлап, түшүнүктүү, коопсуз жана ишке жарактуу билим берүүгө кызмат кылат.
+                </p>
+            </div>
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                {infoCards.map((x) => (
+                    <article
+                        key={x.name}
+                        className="flex min-h-64 flex-col items-start gap-4 rounded-xl border border-[#C5C9D1] bg-white p-5 dark:border-gray-600 dark:bg-gray-800"
+                    >
+                        <img src={x.icon} alt="" aria-hidden="true" className="h-10 w-10 dark:brightness-90 dark:contrast-110" />
+                        <h3 className="text-lg font-bold text-gray-900 dark:text-white">{x.name}</h3>
+                        <p className="text-sm leading-6 text-[#3E424A] dark:text-[#a6adba]">{x.title}</p>
+                    </article>
+                ))}
+            </div>
+        </section>
     );
 }
 

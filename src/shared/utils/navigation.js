@@ -7,8 +7,8 @@ const DASHBOARD_PATHS = {
 };
 
 const SUPPORTED_ROLE_TABS = {
-    student: new Set(['overview', 'notifications', 'my-courses']),
-    instructor: new Set(['overview', 'notifications', 'courses']),
+    student: new Set(['overview', 'notifications', 'my-courses', 'chat']),
+    instructor: new Set(['overview', 'notifications', 'courses', 'chat']),
     admin: new Set(['stats', 'notifications', 'courses']),
     superadmin: new Set(['stats', 'notifications', 'courses']),
     assistant: new Set(['overview', 'enrollments', 'courses', 'attendance']),
@@ -31,6 +31,24 @@ export const getDashboardPath = (userOrRole, tab) => {
     return `${basePath}?tab=${encodeURIComponent(tab)}`;
 };
 
+export const getCommunicationPath = (userOrRole) => {
+    const role = getRole(userOrRole);
+
+    if (role === 'student' || role === 'instructor') {
+        return getDashboardPath(role, 'chat');
+    }
+
+    if (isPlatformAdmin(role)) {
+        return getDashboardPath(role, 'notifications');
+    }
+
+    if (role === 'assistant') {
+        return getDashboardPath(role);
+    }
+
+    return null;
+};
+
 export const getUserNavigationPaths = (userOrRole) => ({
     dashboard: getDashboardPath(userOrRole),
     dashboardOverview: getDashboardPath(userOrRole, 'overview'),
@@ -41,7 +59,7 @@ export const getUserNavigationPaths = (userOrRole) => ({
     notifications: getDashboardPath(userOrRole, 'notifications'),
     cart: '/cart',
     favourites: '/favourites',
-    chat: '/chat',
+    chat: getCommunicationPath(userOrRole) || '/chat',
 });
 
 export const getUserMenuItems = (userOrRole) => {

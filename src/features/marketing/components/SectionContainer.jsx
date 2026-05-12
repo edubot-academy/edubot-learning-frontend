@@ -10,6 +10,7 @@ const SectionContainer = ({
     cols = '3',
     loading = false,
     emptyText = 'Азырынча элементтер жок.',
+    emptyContent = null,
 }) => {
     const colClasses =
         cols === '4'
@@ -41,7 +42,7 @@ const SectionContainer = ({
             {loading ? (
                 <Loader fullScreen={false} />
             ) : !items?.length ? (
-                <p className="text-sm text-gray-500 dark:text-gray-400">{emptyText}</p>
+                emptyContent || <p className="text-sm text-gray-500 dark:text-gray-400">{emptyText}</p>
             ) : (
                 <div className={`grid ${colClasses} gap-6`}>
                     {items.map((item, idx) => (

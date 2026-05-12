@@ -50,6 +50,7 @@ const CourseReview = ({ ratingAverage = 0, ratingCount, ratingBreakdown = {}, on
                 fill="none"
                 stroke="#F59E0B"
                 strokeWidth="1.5"
+                aria-hidden="true"
             >
                 <defs>
                     <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="0%">
@@ -67,15 +68,17 @@ const CourseReview = ({ ratingAverage = 0, ratingCount, ratingBreakdown = {}, on
 
     return (
         <div className="w-full border border-gray-200 rounded-2xl p-6 sm:p-8 space-y-6">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-4">
                 <h2 className="text-3xl font-black text-gray-900 dark:text-[#E8ECF3]">({totalRatings || 0}) пикир</h2>
-                <button
-                    type="button"
-                    className="text-sm hover:text-[#7B818C]"
-                    onClick={onViewAll}
-                >
-                    баардыгын көрүү
-                </button>
+                {onViewAll && (
+                    <button
+                        type="button"
+                        className="rounded-md px-2 py-1 text-sm hover:text-[#7B818C] focus:outline-none focus:ring-2 focus:ring-orange-500"
+                        onClick={onViewAll}
+                    >
+                        Баардыгын көрүү
+                    </button>
+                )}
             </div>
 
             <div className="space-y-5">
@@ -97,6 +100,11 @@ const CourseReview = ({ ratingAverage = 0, ratingCount, ratingBreakdown = {}, on
                                     <div
                                         className="h-full bg-[#E65A00] rounded-full transition-all"
                                         style={{ width: `${percent}%` }}
+                                        role="progressbar"
+                                        aria-label={`${level} жылдызча рейтинги`}
+                                        aria-valuenow={Math.round(percent)}
+                                        aria-valuemin="0"
+                                        aria-valuemax="100"
                                     />
                                 </div>
                                 <span className="w-10 text-right font-semibold">
@@ -111,13 +119,12 @@ const CourseReview = ({ ratingAverage = 0, ratingCount, ratingBreakdown = {}, on
                     <p className="text-[48px] font-black text-[#C2410C] leading-none">
                         {ratingAverage ? ratingAverage.toFixed(1) : '0.0'}
                     </p>
-                    <div className="flex gap-3 text-[#FACC15]">
+                    <div className="flex gap-3 text-[#FACC15]" aria-label={`Орточо рейтинг ${ratingAverage ? ratingAverage.toFixed(1) : '0.0'} ичинен 5`}>
                         <div style={{ display: 'flex', gap: '5px' }}>   
                             {[1, 2, 3, 4, 5].map((star) => (
                                 <span
                                     key={star}
-                                    onClick={() => setRating(star)}
-                                    style={{ cursor: 'pointer' }}
+                                    aria-hidden="true"
                                 >
                                     {star <= ratingAverage ? (
                                         <AiFillStar color="#ffc107" size={25} />

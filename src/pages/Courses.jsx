@@ -14,6 +14,7 @@ const CoursesPage = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [sortBy, setSortBy] = useState('recommended');
+    const [visibleCount, setVisibleCount] = useState(9);
 
     const loadCourses = async () => {
         setLoading(true);
@@ -54,6 +55,12 @@ const CoursesPage = () => {
     }, [publicVideoCourses, sortBy]);
 
     const hasActiveSort = sortBy !== 'recommended';
+    const visibleCourses = sortedCourses.slice(0, visibleCount);
+    const canShowMore = visibleCount < sortedCourses.length;
+
+    useEffect(() => {
+        setVisibleCount(9);
+    }, [sortBy]);
 
     return (
         <div className="min-h-screen bg-white px-4 pb-12 pt-0 dark:bg-gray-900 sm:px-6 lg:px-12">
@@ -67,7 +74,7 @@ const CoursesPage = () => {
                             Сиз үчүн сунушталган курстар
                         </p>
                         <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-                            {loading ? 'Курстар жүктөлүүдө...' : `${sortedCourses.length} видео курс көрсөтүлүүдө`}
+                            {loading ? 'Курстар жүктөлүүдө...' : `${sortedCourses.length} видео курс табылды`}
                         </p>
                     </div>
 
@@ -126,11 +133,24 @@ const CoursesPage = () => {
                         ))}
                     </div>
                 ) : sortedCourses.length ? (
-                    <div className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                        {sortedCourses.map((course) => (
-                            <CardCourse key={course.id} {...course} />
-                        ))}
-                    </div>
+                    <>
+                        <div className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                            {visibleCourses.map((course) => (
+                                <CardCourse key={course.id} {...course} />
+                            ))}
+                        </div>
+                        {canShowMore && (
+                            <div className="mt-8 flex justify-center">
+                                <button
+                                    type="button"
+                                    onClick={() => setVisibleCount((count) => count + 9)}
+                                    className="rounded-xl border border-orange-500 px-5 py-3 text-sm font-semibold text-orange-600 transition hover:bg-orange-50 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 dark:text-orange-300 dark:hover:bg-orange-950/30"
+                                >
+                                    Дагы курстарды көрсөтүү
+                                </button>
+                            </div>
+                        )}
+                    </>
                 ) : (
                     <div className="mt-10 rounded-2xl border border-gray-200 bg-gray-50 px-5 py-8 text-gray-800 dark:border-gray-800 dark:bg-gray-950 dark:text-gray-200">
                         <h2 className="text-lg font-semibold">Курс табылган жок</h2>

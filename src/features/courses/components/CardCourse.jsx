@@ -55,7 +55,32 @@ const CardCourse = ({
 
     const courseAlreadyInCart = isInCart(id);
     const isCourseFavourite = isFavourite(id);
-    const isSelfServeVideoCourse = String(courseType || 'video').toLowerCase() === 'video';
+    const normalizedCourseType = String(courseType || 'video').toLowerCase();
+    const isSelfServeVideoCourse = normalizedCourseType === 'video';
+    const availabilityText = isSelfServeVideoCourse
+        ? 'Видеокурс: өз алдынча сатып алып окуй аласыз'
+        : 'Компания же администратор аркылуу дайындалат';
+
+    const courseData = {
+        id,
+        title,
+        image: coverImageUrl,
+        coverImageUrl,
+        cover: coverImageUrl,
+        thumbnail: coverImageUrl,
+        instructor,
+        price,
+        ratingCount,
+        ratingAverage,
+        level,
+        durationInHours,
+        duration: durationInHours,
+        lessonCount,
+        isPublished,
+        courseType,
+        location,
+        meetingUrl,
+    };
 
     const handleFavoriteClick = async (e) => {
         e.stopPropagation();
@@ -65,28 +90,6 @@ const CardCourse = ({
             setShowUnauthModal(true);
             return;
         }
-
-        // ВАЖНО: Передаем ВСЕ данные, включая фотографию ВО ВСЕХ ВАРИАНТАХ
-        const courseData = {
-            id,
-            title,
-            // ФОТОГРАФИЯ - передаем во всех возможных полях
-            image: coverImageUrl,           // Основное поле в контексте
-            coverImageUrl: coverImageUrl,   // Как в пропсах
-            cover: coverImageUrl,           // Альтернативное
-            thumbnail: coverImageUrl,       // Еще один вариант
-
-            instructor,
-            price,
-            ratingCount,
-            ratingAverage,
-            level,
-            durationInHours,
-            duration: durationInHours,      // Дублируем для надежности
-            lessonCount,
-            isPublished,
-        };
-
 
         const result = await toggleFavourite(courseData);
 
@@ -107,21 +110,6 @@ const CardCourse = ({
     const handleButtonClick = (e) => {
         e.stopPropagation();
         e.preventDefault();
-
-        const courseData = {
-            id,
-            title,
-            instructor,
-            price,
-            coverImageUrl,
-            ratingCount,
-            ratingAverage,
-            level,
-            durationInHours,
-            lessonCount,
-            isPublished,
-            courseType,
-        };
 
         const result = addToCart(courseData);
         if (result?.alreadyInCart) {
@@ -150,10 +138,6 @@ const CardCourse = ({
     };
 
     const handlePopupClick = (e) => e.stopPropagation();
-
-    // Для отладки
-    useEffect(() => {
-    }, [id, coverImageUrl]);
 
     return (
         <>
@@ -209,7 +193,7 @@ const CardCourse = ({
                                     {title}
                                 </Link>
                             </h3>
-                            <div className="flex flex-wrap gap-1 my-1">
+                            <div className="flex flex-wrap gap-1.5 my-2">
                                 <span className="text-[11px] px-2 py-0.5 rounded-full bg-blue-50 text-blue-700">
                                     {courseTypeLabel(courseType)}
                                 </span>
@@ -227,6 +211,9 @@ const CardCourse = ({
                             <p className="text-gray-500 dark:text-[#a6adba] text-sm my-1">
                                 {instructor?.fullName || 'Белгисиз инструктор'}
                             </p>
+                            <p className="mt-1 text-xs leading-5 text-gray-500 dark:text-[#a6adba]">
+                                {availabilityText}
+                            </p>
                             <div className="flex items-center gap-2 mb-3 mt-3">
                                 <div style={{ display: 'flex', gap: '5px' }}>
                                     {[1, 2, 3, 4, 5].map((star) => (
@@ -243,7 +230,7 @@ const CardCourse = ({
                                     ({ratingCount || 0} рейтинг)
                                 </span>
                             </div>
-                            <div className="flex gap-2 mb-4">
+                            <div className="flex flex-wrap gap-2 mb-4">
                                 <span className="text-xs bg-[#DFF5FF] text-[#006F9D] rounded px-2 py-1">
                                     {level || 'Көрсөтүлгөн эмес'}
                                 </span>
@@ -256,7 +243,7 @@ const CardCourse = ({
                                     {lessonCount || 0} сабак
                                 </span>
                             </div>
-                            <div className="flex justify-between items-center mt-auto pt-4 border-t">
+                            <div className="flex flex-col gap-3 mt-auto pt-4 border-t sm:flex-row sm:items-center sm:justify-between">
                                 <div className="flex flex-col gap-1">
                                     <p className="text-gray-500 dark:text-[#a6adba] text-xs">Баасы</p>
                                     <p className="text-base text-[#141619] dark:text-white font-bold">
@@ -268,9 +255,10 @@ const CardCourse = ({
                                     size="small"
                                     onClick={handleButtonClick}
                                     disabled={courseAlreadyInCart || !isSelfServeVideoCourse}
+                                    className="w-full sm:w-auto"
                                 >
                                     {!isSelfServeVideoCourse ? (
-                                        'LMSте сатып алынбайт'
+                                        'Админ аркылуу'
                                     ) : courseAlreadyInCart ? (
                                         <>
                                             <img src={CardIcon} alt="cart" className="w-5 h-5 mr-2" />
@@ -292,6 +280,7 @@ const CardCourse = ({
                 actionType="favourite"
                 courseId={id}
                 courseTitle={title}
+                course={courseData}
             />
 
             <FavoritePopupModal
