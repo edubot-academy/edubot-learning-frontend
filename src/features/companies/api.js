@@ -25,6 +25,16 @@ export async function updateCompany(id, patch) {
     return data;
 }
 
+export async function linkCompanyCrmTenant(id, payload) {
+    const { data } = await api.patch(`/companies/${id}/crm-link`, payload);
+    return data;
+}
+
+export async function unlinkCompanyCrmTenant(id) {
+    const { data } = await api.delete(`/companies/${id}/crm-link`);
+    return data;
+}
+
 export async function deleteCompany(id) {
     const { data } = await api.delete(`/companies/${id}`);
     return data;

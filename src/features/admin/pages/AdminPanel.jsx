@@ -20,6 +20,8 @@ import {
     listCompanies,
     createCompany,
     updateCompany,
+    linkCompanyCrmTenant,
+    unlinkCompanyCrmTenant,
     deleteCompany,
     assignCourseToCompany,
     unassignCourseFromCompany,
@@ -51,11 +53,7 @@ import AdminAnalyticsPage from '../../../pages/AdminAnalytics';
 import { isForbiddenError } from '@shared/api/error';
 
 // Import standardized dashboard components
-import {
-    DashboardLayout,
-    DashboardHeader,
-    DashboardTabs,
-} from '../../../components/ui/dashboard';
+import { DashboardLayout, DashboardHeader, DashboardTabs } from '../../../components/ui/dashboard';
 
 // Import extracted components
 import AdminStatsTab from '../components/AdminStatsTab';
@@ -85,14 +83,30 @@ import {
 import { ADMIN_TABS, NAV_ITEMS, USERS_QUERY_KEYS } from '../utils/adminPanel.constants';
 import { calculateVisiblePages } from '../utils/adminPanel.helpers';
 
-const cleanTenantPayload = (payload = {}) => Object.fromEntries(
-    Object.entries(payload)
-        .filter(([, value]) => {
-            if (typeof value === 'string') return value.trim() !== '';
-            return value !== undefined && value !== null;
-        })
-        .map(([key, value]) => [key, typeof value === 'string' ? value.trim() : value])
-);
+const cleanTenantPayload = (payload = {}) =>
+    Object.fromEntries(
+        Object.entries(payload)
+            .filter(([, value]) => {
+                if (typeof value === 'string') return value.trim() !== '';
+                return value !== undefined && value !== null;
+            })
+            .map(([key, value]) => [key, typeof value === 'string' ? value.trim() : value])
+    );
+
+const CRM_LINK_FIELDS = new Set(['crmTenantId', 'crmTenantSlug', 'crmPrimaryDomain']);
+
+const splitTenantPayload = (payload = {}) => {
+    const tenantPatch = {};
+    const crmPatch = {};
+    for (const [key, value] of Object.entries(payload)) {
+        if (CRM_LINK_FIELDS.has(key)) {
+            crmPatch[key] = value;
+        } else {
+            tenantPatch[key] = value;
+        }
+    }
+    return { tenantPatch, crmPatch };
+};
 
 const AdminPanel = () => {
     const { user } = useContext(AuthContext);
@@ -211,7 +225,9 @@ const AdminPanel = () => {
                     }
                     case 's': {
                         e.preventDefault();
-                        const searchInput = document.querySelector('input[placeholder*="издөө" i], input[type="search"]');
+                        const searchInput = document.querySelector(
+                            'input[placeholder*="издөө" i], input[type="search"]'
+                        );
                         if (searchInput) {
                             searchInput.focus();
                             searchInput.scrollIntoView({ behavior: 'smooth' });
@@ -224,7 +240,9 @@ const AdminPanel = () => {
             // Arrow key navigation for sidebar
             if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
                 const sidebarItems = document.querySelectorAll('[data-dashboard-nav-item]');
-                const currentIndex = Array.from(sidebarItems).findIndex(item => item === document.activeElement);
+                const currentIndex = Array.from(sidebarItems).findIndex(
+                    (item) => item === document.activeElement
+                );
 
                 if (currentIndex !== -1) {
                     e.preventDefault();
@@ -249,7 +267,8 @@ const AdminPanel = () => {
             setSearchParams((prev) => {
                 const updated = new URLSearchParams(prev);
                 Object.entries(params).forEach(([key, value]) => {
-                    if (value !== undefined && value !== null && value !== '') updated.set(key, value);
+                    if (value !== undefined && value !== null && value !== '')
+                        updated.set(key, value);
                     else updated.delete(key);
                 });
                 return updated;
@@ -301,48 +320,50 @@ const AdminPanel = () => {
     }, [search, roleFilter, dateFrom, dateTo, usersPage, updateSearchParams]);
 
     // Users page change handler
-    const handleUsersPageChange = useCallback(
-        (nextPage) => {
-            if (nextPage < 1) return;
-            setUsersPage(nextPage);
+    const handleUsersPageChange = useCallback((nextPage) => {
+        if (nextPage < 1) return;
+        setUsersPage(nextPage);
+    }, []);
+
+    const loadCertificateStudents = useCallback(
+        async (courseId) => {
+            if (!courseId) {
+                setCertificateStudents([]);
+                setCertificateCourseMeta(null);
+                return;
+            }
+
+            setLoadingCertificateStudents(true);
+            setCertificateError('');
+            try {
+                const data = await fetchCourseStudents(courseId, {
+                    page: certificateStudentsPage,
+                    limit: 20,
+                    q: certificateSearch || undefined,
+                    progressGte:
+                        certificateProgressMin === '' ? undefined : Number(certificateProgressMin),
+                    progressLte:
+                        certificateProgressMax === '' ? undefined : Number(certificateProgressMax),
+                });
+                setCertificateStudents(data?.students || []);
+                setCertificateCourseMeta({
+                    ...(data?.course || {}),
+                    page: data?.page,
+                    total: data?.total,
+                    totalPages: data?.totalPages,
+                    limit: data?.limit,
+                });
+            } catch (error) {
+                console.error('Failed to load admin certificate students', error);
+                setCertificateStudents([]);
+                setCertificateCourseMeta(null);
+                setCertificateError('Курс студенттерин жүктөө мүмкүн болбоду');
+            } finally {
+                setLoadingCertificateStudents(false);
+            }
         },
-        []
+        [certificateStudentsPage, certificateSearch, certificateProgressMin, certificateProgressMax]
     );
-
-    const loadCertificateStudents = useCallback(async (courseId) => {
-        if (!courseId) {
-            setCertificateStudents([]);
-            setCertificateCourseMeta(null);
-            return;
-        }
-
-        setLoadingCertificateStudents(true);
-        setCertificateError('');
-        try {
-            const data = await fetchCourseStudents(courseId, {
-                page: certificateStudentsPage,
-                limit: 20,
-                q: certificateSearch || undefined,
-                progressGte: certificateProgressMin === '' ? undefined : Number(certificateProgressMin),
-                progressLte: certificateProgressMax === '' ? undefined : Number(certificateProgressMax),
-            });
-            setCertificateStudents(data?.students || []);
-            setCertificateCourseMeta({
-                ...(data?.course || {}),
-                page: data?.page,
-                total: data?.total,
-                totalPages: data?.totalPages,
-                limit: data?.limit,
-            });
-        } catch (error) {
-            console.error('Failed to load admin certificate students', error);
-            setCertificateStudents([]);
-            setCertificateCourseMeta(null);
-            setCertificateError('Курс студенттерин жүктөө мүмкүн болбоду');
-        } finally {
-            setLoadingCertificateStudents(false);
-        }
-    }, [certificateStudentsPage, certificateSearch, certificateProgressMin, certificateProgressMax]);
 
     // Render pagination buttons
     const renderUserPageButtons = () => {
@@ -355,10 +376,11 @@ const AdminPanel = () => {
                 key={p}
                 type="button"
                 onClick={() => handleUsersPageChange(p)}
-                className={`w-9 h-9 rounded border text-sm font-medium transition-all duration-300 transform hover:scale-110 ${p === usersPage
-                    ? 'bg-edubot-orange text-white border-edubot-orange scale-110 ring-2 ring-edubot-orange/50'
-                    : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 hover:border-edubot-orange hover:text-edubot-orange hover:shadow-md'
-                    }`}
+                className={`w-9 h-9 rounded border text-sm font-medium transition-all duration-300 transform hover:scale-110 ${
+                    p === usersPage
+                        ? 'bg-edubot-orange text-white border-edubot-orange scale-110 ring-2 ring-edubot-orange/50'
+                        : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 hover:border-edubot-orange hover:text-edubot-orange hover:shadow-md'
+                }`}
             >
                 {p}
             </button>
@@ -414,10 +436,10 @@ const AdminPanel = () => {
                         const items = Array.isArray(response)
                             ? response
                             : Array.isArray(response?.items)
-                                ? response.items
-                                : Array.isArray(response?.data)
-                                    ? response.data
-                                    : [];
+                              ? response.items
+                              : Array.isArray(response?.data)
+                                ? response.data
+                                : [];
                         return [String(course.id), items];
                     } catch (error) {
                         console.error('Failed to load groups for admin course', course.id, error);
@@ -741,8 +763,22 @@ const AdminPanel = () => {
         const companyPayload = payload || newCompanyForm;
         if (!companyPayload.name?.trim()) return;
         try {
-            const created = await createCompany(cleanTenantPayload(companyPayload));
-            setCompanies((prev) => [...prev, created]);
+            const { tenantPatch, crmPatch } = splitTenantPayload(companyPayload);
+            const created = await createCompany(cleanTenantPayload(tenantPatch));
+            const crmTenantId =
+                typeof crmPatch.crmTenantId === 'string' ? crmPatch.crmTenantId.trim() : '';
+            const crmResult = crmTenantId
+                ? await linkCompanyCrmTenant(created.id, cleanTenantPayload(crmPatch))
+                : null;
+            const crmUpdate = crmResult?.crmLink
+                ? {
+                      crmTenantId: crmResult.crmLink.crmTenantId,
+                      crmTenantSlug: crmResult.crmLink.crmTenantSlug,
+                      crmPrimaryDomain: crmResult.crmLink.crmPrimaryDomain,
+                  }
+                : {};
+            const nextCompany = { ...created, ...crmUpdate };
+            setCompanies((prev) => [...prev, nextCompany]);
             setNewCompanyForm({
                 name: '',
                 subdomain: '',
@@ -767,10 +803,40 @@ const AdminPanel = () => {
     const handleUpdateCompany = async (companyId, patch) => {
         if (!patch?.name?.trim()) return;
         try {
-            const updated = await updateCompany(companyId, cleanTenantPayload(patch));
-            setCompanies((prev) => prev.map((company) =>
-                company.id === companyId ? { ...company, ...updated } : company
-            ));
+            const current = companies.find((company) => company.id === companyId) ?? {};
+            const { tenantPatch, crmPatch } = splitTenantPayload(patch);
+            const cleanedTenantPatch = cleanTenantPayload(tenantPatch);
+            const updated = Object.keys(cleanedTenantPatch).length
+                ? await updateCompany(companyId, cleanedTenantPatch)
+                : {};
+            const crmTenantId =
+                typeof crmPatch.crmTenantId === 'string' ? crmPatch.crmTenantId.trim() : '';
+            const hasCrmFields = Object.keys(crmPatch).length > 0;
+            const shouldUnlinkCrm = hasCrmFields && !crmTenantId && current.crmTenantId;
+            const crmResult =
+                hasCrmFields && crmTenantId
+                    ? await linkCompanyCrmTenant(companyId, cleanTenantPayload(crmPatch))
+                    : shouldUnlinkCrm
+                      ? await unlinkCompanyCrmTenant(companyId)
+                      : null;
+            const crmUpdate = crmResult?.crmLink
+                ? {
+                      crmTenantId: crmResult.crmLink.crmTenantId,
+                      crmTenantSlug: crmResult.crmLink.crmTenantSlug,
+                      crmPrimaryDomain: crmResult.crmLink.crmPrimaryDomain,
+                  }
+                : shouldUnlinkCrm
+                  ? {
+                        crmTenantId: '',
+                        crmTenantSlug: '',
+                        crmPrimaryDomain: '',
+                    }
+                  : {};
+            setCompanies((prev) =>
+                prev.map((company) =>
+                    company.id === companyId ? { ...company, ...updated, ...crmUpdate } : company
+                )
+            );
             toast.success('Tenant ийгиликтүү жаңыртылды');
         } catch {
             toast.error('Tenant жаңыртууда ката кетти');
@@ -868,9 +934,11 @@ const AdminPanel = () => {
         if (!newName.trim()) return;
         try {
             await updateSkill(skillId, { name: newName.trim() });
-            setSkills((prev) => prev.map((skill) =>
-                skill.id === skillId ? { ...skill, name: newName.trim() } : skill
-            ));
+            setSkills((prev) =>
+                prev.map((skill) =>
+                    skill.id === skillId ? { ...skill, name: newName.trim() } : skill
+                )
+            );
             toast.success('Скилл ийгиликтүү жаңыртылды');
         } catch {
             toast.error('Скиллди жаңыртууда ката кетти');
@@ -920,9 +988,9 @@ const AdminPanel = () => {
     const handleUpdatePrompt = async (promptId, updates) => {
         try {
             await updateCourseAiPrompt(promptId, updates);
-            setAiPrompts((prev) => prev.map((prompt) =>
-                prompt.id === promptId ? { ...prompt, ...updates } : prompt
-            ));
+            setAiPrompts((prev) =>
+                prev.map((prompt) => (prompt.id === promptId ? { ...prompt, ...updates } : prompt))
+            );
             toast.success('AI промпт ийгиликтүү жаңыртылды');
         } catch {
             toast.error('AI промптти жаңыртууда ката кетти');
@@ -994,7 +1062,7 @@ const AdminPanel = () => {
                 setSavingCertificateSettings(false);
             }
         },
-        [selectedCertificateCourseId, certificateSettings],
+        [selectedCertificateCourseId, certificateSettings]
     );
 
     const handleSaveCertificateSettings = useCallback(
@@ -1004,7 +1072,7 @@ const AdminPanel = () => {
             try {
                 const updated = await updateCourseCertificateSettings(
                     selectedCertificateCourseId,
-                    payload,
+                    payload
                 );
                 setCertificateSettings(updated);
                 toast.success('Сертификат шаблону сакталды');
@@ -1017,7 +1085,7 @@ const AdminPanel = () => {
                 setSavingCertificateSettings(false);
             }
         },
-        [selectedCertificateCourseId],
+        [selectedCertificateCourseId]
     );
 
     const handleRegenerateCertificates = useCallback(async () => {
@@ -1031,7 +1099,7 @@ const AdminPanel = () => {
             toast.success(
                 result?.regeneratedCount
                     ? `${result.regeneratedCount} сертификат жаңыртылды`
-                    : 'Жаңыртууга сертификат табылган жок',
+                    : 'Жаңыртууга сертификат табылган жок'
             );
             return true;
         } catch (error) {
@@ -1050,13 +1118,17 @@ const AdminPanel = () => {
             try {
                 const updated =
                     kind === 'signature'
-                        ? await saveCourseCertificateSignatureAsset(selectedCertificateCourseId, file)
-                        : await uploadCourseCertificateSecondaryLogo(selectedCertificateCourseId, file);
+                        ? await saveCourseCertificateSignatureAsset(
+                              selectedCertificateCourseId,
+                              file
+                          )
+                        : await uploadCourseCertificateSecondaryLogo(
+                              selectedCertificateCourseId,
+                              file
+                          );
                 setCertificateSettings(updated);
                 toast.success(
-                    kind === 'signature'
-                        ? 'Кол коюу сакталды'
-                        : 'Экинчи бренд логотиби жүктөлдү',
+                    kind === 'signature' ? 'Кол коюу сакталды' : 'Экинчи бренд логотиби жүктөлдү'
                 );
                 return updated;
             } catch (error) {
@@ -1064,14 +1136,14 @@ const AdminPanel = () => {
                 toast.error(
                     kind === 'signature'
                         ? 'Кол коюуну сактоо мүмкүн болбоду'
-                        : 'Сертификат активин жүктөө мүмкүн болбоду',
+                        : 'Сертификат активин жүктөө мүмкүн болбоду'
                 );
                 return null;
             } finally {
                 setSavingCertificateAssetKind(null);
             }
         },
-        [selectedCertificateCourseId],
+        [selectedCertificateCourseId]
     );
 
     const handleCertificateAction = useCallback(
@@ -1103,7 +1175,7 @@ const AdminPanel = () => {
                 setCertificateActionStudentId(null);
             }
         },
-        [selectedCertificateCourseId, loadCertificateStudents],
+        [selectedCertificateCourseId, loadCertificateStudents]
     );
 
     // Notification management handlers
@@ -1150,7 +1222,14 @@ const AdminPanel = () => {
         if (activeTab === 'courses') {
             loadUsersForEnrollment();
         }
-    }, [activeTab, loadCoursesAndCategories, loadContacts, loadPendingCourses, loadCompanies, loadUsersForEnrollment]);
+    }, [
+        activeTab,
+        loadCoursesAndCategories,
+        loadContacts,
+        loadPendingCourses,
+        loadCompanies,
+        loadUsersForEnrollment,
+    ]);
 
     useEffect(() => {
         if (activeTab === 'stats' && !adminStatsLoaded) {
@@ -1253,7 +1332,9 @@ const AdminPanel = () => {
 
             // Remove completed/failed transcodes from polling
             const stillProcessing = updates.filter(
-                (u) => u.status === 'processing' && !['COMPLETE', 'ERROR', 'CANCELED'].includes(u.jobStatus)
+                (u) =>
+                    u.status === 'processing' &&
+                    !['COMPLETE', 'ERROR', 'CANCELED'].includes(u.jobStatus)
             );
 
             // Show toast for completed/failed and refresh courses
@@ -1294,7 +1375,9 @@ const AdminPanel = () => {
                         <div className="bg-white dark:bg-gray-800 rounded-lg p-3 shadow-lg border border-gray-200 dark:border-gray-700">
                             <div className="flex items-center gap-3">
                                 <div className="animate-spin rounded-full border-2 border-gray-300 border-t-edubot-orange w-5 h-5"></div>
-                                <span className="text-sm text-gray-600 dark:text-gray-400">Жүктөлүүдө...</span>
+                                <span className="text-sm text-gray-600 dark:text-gray-400">
+                                    Жүктөлүүдө...
+                                </span>
                             </div>
                         </div>
                     </div>
@@ -1397,7 +1480,10 @@ const AdminPanel = () => {
                 return (
                     <CertificatesSection
                         mode="admin"
-                        total={courses.reduce((sum, course) => sum + Number(course.studentCount || 0), 0)}
+                        total={courses.reduce(
+                            (sum, course) => sum + Number(course.studentCount || 0),
+                            0
+                        )}
                         courses={courses}
                         loadingCourses={false}
                         selectedCourseId={selectedCertificateCourseId}
@@ -1544,11 +1630,7 @@ const AdminPanel = () => {
 
     // Mobile tabs
     const mobileTabs = (
-        <DashboardTabs
-            items={dashboardNavItems}
-            activeId={activeTab}
-            onSelect={handleTabSelect}
-        />
+        <DashboardTabs items={dashboardNavItems} activeId={activeTab} onSelect={handleTabSelect} />
     );
 
     return (

@@ -78,7 +78,7 @@ const statusTone = {
 
 const tenantDomain = (company) => {
     if (company.customDomain) return company.customDomain;
-    if (company.subdomain) return `${company.subdomain}.edubot.it.com`;
+    if (company.subdomain) return `${company.subdomain}.lms.edubot.it.com`;
     return '';
 };
 
