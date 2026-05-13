@@ -92,10 +92,12 @@ const AppRoutes = () => {
                     <Route element={<PrivateRoute allowedRoles={['assistant']} />}>
                         <Route path="/assistant" element={<AssistantDashboard />} />
                     </Route>
-                    <Route path="/companies/:id/courses" element={<CompanyCourses />} />
+                    <Route element={<PrivateRoute />}>
+                        <Route path="/companies/:id/courses" element={<CompanyCourses />} />
+                        <Route path="/companies" element={<CompanyList />} />
+                        <Route path="/companies/:id" element={<CompanyDetail />} />
+                    </Route>
                     <Route path="/catalog" element={<Catalog />} />
-                    <Route path="/companies" element={<CompanyList />} />
-                    <Route path="/companies/:id" element={<CompanyDetail />} />
                     <Route path="/chat" element={<Chat />} />
                     <Route path="/leaderboard" element={<LeaderboardPage />} />
                     <Route path="/share/achievement/:token" element={<Navigate to="/leaderboard" replace />} />

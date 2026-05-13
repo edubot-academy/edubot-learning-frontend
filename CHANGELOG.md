@@ -2,6 +2,35 @@
 
 Version bumps are classified by delivery scale; see `VERSIONING.md`.
 
+## [1.11.5] - 2026-05-13
+
+### Changed
+
+- Reworked company management routes into authenticated tenant workspace surfaces for company list, profile, members, settings, and course assignments.
+- Improved company list search, pagination, creation state, loading/error/empty states, and tenant metadata display.
+- Added company detail tab navigation for profile, members, and courses with clearer management/read-only access state.
+- Refined company settings sections for brand, contacts, location, channels, legal details, validation, and delete confirmation.
+- Improved company member management with role guidance, accessible search/listbox behavior, invite/create flows, and clearer action states.
+- Strengthened company course assignment UI with assigned-course filtering, add mode, course metadata, pagination, tenant feature labels, and explicit search/load failure states.
+- Updated assistant and admin tenant surfaces with clearer company/CRM wording and tenant workspace navigation.
+
+### Fixed
+
+- Protected company management routes behind authentication instead of exposing tenant management screens publicly.
+- Prevented unauthorized standalone company course views from showing add/detach actions by requiring loaded tenant context and management permission.
+- Prevented disabled tenant course types from being attached when tenant details fail to load.
+- Prevented stale company list and company course requests from overwriting newer search/page results.
+- Fixed company list search so opening a paginated URL no longer resets back to page 1 unless the search term changes.
+
+### Verification
+
+- `npx eslint src/app/routes.jsx src/pages/company/CompanyCourses.jsx src/pages/company/CompanyList.jsx`
+- `git diff --check`
+- `npm test -- --run`
+- `npm run build` passes with existing Vite chunk-size/dynamic-import warnings.
+
+---
+
 ## [1.11.4] - 2026-05-13
 
 ### Changed

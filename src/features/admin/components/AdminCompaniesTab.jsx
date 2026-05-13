@@ -20,9 +20,7 @@ import {
     FiTrash2,
     FiX,
 } from 'react-icons/fi';
-import {
-    fetchUsers,
-} from '@services/api';
+import { fetchUsers } from '@services/api';
 
 const COMPANY_STATUSES = [
     { value: 'trial', label: 'Trial' },
@@ -71,9 +69,12 @@ const defaultTenantForm = {
 const statusTone = {
     trial: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/20 dark:text-amber-200 dark:border-amber-800',
     active: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-200 dark:border-emerald-800',
-    inactive: 'bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700',
-    suspended: 'bg-red-50 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-200 dark:border-red-800',
-    archived: 'bg-zinc-100 text-zinc-700 border-zinc-200 dark:bg-zinc-800 dark:text-zinc-200 dark:border-zinc-700',
+    inactive:
+        'bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700',
+    suspended:
+        'bg-red-50 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-200 dark:border-red-800',
+    archived:
+        'bg-zinc-100 text-zinc-700 border-zinc-200 dark:bg-zinc-800 dark:text-zinc-200 dark:border-zinc-700',
 };
 
 const tenantDomain = (company) => {
@@ -82,10 +83,14 @@ const tenantDomain = (company) => {
     return '';
 };
 
-const toTenantForm = (company = {}) => TENANT_FIELDS.reduce((form, key) => ({
-    ...form,
-    [key]: company[key] ?? defaultTenantForm[key] ?? '',
-}), {});
+const toTenantForm = (company = {}) =>
+    TENANT_FIELDS.reduce(
+        (form, key) => ({
+            ...form,
+            [key]: company[key] ?? defaultTenantForm[key] ?? '',
+        }),
+        {}
+    );
 
 const updateFormField = (setter, key, value) => {
     setter((prev) => ({ ...prev, [key]: value }));
@@ -129,8 +134,12 @@ const AdminCompaniesTab = ({
 
     const metrics = useMemo(() => {
         const activeTenants = companies.filter((company) => company.status === 'active').length;
-        const configuredDomains = companies.filter((company) => company.subdomain || company.customDomain).length;
-        const crmLinked = companies.filter((company) => company.crmTenantId || company.crmTenantSlug).length;
+        const configuredDomains = companies.filter(
+            (company) => company.subdomain || company.customDomain
+        ).length;
+        const crmLinked = companies.filter(
+            (company) => company.crmTenantId || company.crmTenantSlug
+        ).length;
         const linkedCourses = courses.filter((course) => Boolean(course.company?.id)).length;
 
         return {
@@ -184,10 +193,11 @@ const AdminCompaniesTab = ({
     const filteredCourseLinks = useMemo(() => {
         const term = courseLinkSearch.trim().toLowerCase();
         if (!term) return courses;
-        return courses.filter((course) => (
-            course.title?.toLowerCase().includes(term)
-            || course.company?.name?.toLowerCase().includes(term)
-        ));
+        return courses.filter(
+            (course) =>
+                course.title?.toLowerCase().includes(term) ||
+                course.company?.name?.toLowerCase().includes(term)
+        );
     }, [courseLinkSearch, courses]);
 
     const visibleCourseLinks = filteredCourseLinks.slice(0, courseLinksVisible);
@@ -218,12 +228,14 @@ const AdminCompaniesTab = ({
             try {
                 const res = await fetchUsers({ page: 1, limit: 8, search: ownerQuery.trim() });
                 const users = Array.isArray(res) ? res : (res?.data ?? []);
-                setOwnerResults(users.map((user) => ({
-                    id: user.id,
-                    fullName: user.fullName,
-                    email: user.email,
-                    avatarUrl: user.avatarUrl,
-                })));
+                setOwnerResults(
+                    users.map((user) => ({
+                        id: user.id,
+                        fullName: user.fullName,
+                        email: user.email,
+                        avatarUrl: user.avatarUrl,
+                    }))
+                );
             } catch {
                 setOwnerResults([]);
             } finally {
@@ -240,24 +252,43 @@ const AdminCompaniesTab = ({
                 eyebrow="Tenant workspace"
                 title="Platform tenants"
                 description="Manage LMS tenants, domains, plan state, and CRM links from one platform-admin surface."
-                action={(
-                    <button type="button" onClick={() => setCreateModalOpen(true)} className="dashboard-button-primary">
+                action={
+                    <button
+                        type="button"
+                        onClick={() => setCreateModalOpen(true)}
+                        className="dashboard-button-primary"
+                    >
                         <FiPlus className="h-4 w-4" />
                         Create tenant
                     </button>
-                )}
+                }
             />
 
             <div className="grid gap-4 md:grid-cols-4">
                 <DashboardMetricCard label="Tenants" value={metrics.companies} icon={FiBriefcase} />
-                <DashboardMetricCard label="Active" value={metrics.activeTenants} icon={FiSave} tone={metrics.activeTenants ? 'green' : 'default'} />
-                <DashboardMetricCard label="Domains" value={metrics.configuredDomains} icon={FiGlobe} tone={metrics.configuredDomains ? 'blue' : 'default'} />
-                <DashboardMetricCard label="CRM linked" value={metrics.crmLinked} icon={FiLink} tone={metrics.crmLinked ? 'amber' : 'default'} />
+                <DashboardMetricCard
+                    label="Active"
+                    value={metrics.activeTenants}
+                    icon={FiSave}
+                    tone={metrics.activeTenants ? 'green' : 'default'}
+                />
+                <DashboardMetricCard
+                    label="Domains"
+                    value={metrics.configuredDomains}
+                    icon={FiGlobe}
+                    tone={metrics.configuredDomains ? 'blue' : 'default'}
+                />
+                <DashboardMetricCard
+                    label="CRM linked"
+                    value={metrics.crmLinked}
+                    icon={FiLink}
+                    tone={metrics.crmLinked ? 'amber' : 'default'}
+                />
             </div>
 
             <DashboardInsetPanel
                 title="Tenant registry"
-                description="Search, update tenant configuration, upload logo, and keep CRM references aligned."
+                description="Use the registry for quick governance edits. Open tenant detail for deeper profile, CRM, member, and course workspace management."
             >
                 <div className="mt-4 space-y-4">
                     <input
@@ -272,7 +303,9 @@ const AdminCompaniesTab = ({
                             {companies.map((company) => {
                                 const isEditing = editingCompanyId === company.id;
                                 const domain = tenantDomain(company);
-                                const companyCourseCount = courses.filter((course) => course.company?.id === company.id).length;
+                                const companyCourseCount = courses.filter(
+                                    (course) => course.company?.id === company.id
+                                ).length;
                                 return (
                                     <article
                                         key={company.id}
@@ -285,7 +318,13 @@ const AdminCompaniesTab = ({
                                                         <FieldLabel>Tenant name</FieldLabel>
                                                         <input
                                                             value={editingCompanyForm.name}
-                                                            onChange={(e) => updateFormField(setEditingCompanyForm, 'name', e.target.value)}
+                                                            onChange={(e) =>
+                                                                updateFormField(
+                                                                    setEditingCompanyForm,
+                                                                    'name',
+                                                                    e.target.value
+                                                                )
+                                                            }
                                                             className="dashboard-field w-full"
                                                         />
                                                     </label>
@@ -293,11 +332,22 @@ const AdminCompaniesTab = ({
                                                         <FieldLabel>Status</FieldLabel>
                                                         <select
                                                             value={editingCompanyForm.status}
-                                                            onChange={(e) => updateFormField(setEditingCompanyForm, 'status', e.target.value)}
+                                                            onChange={(e) =>
+                                                                updateFormField(
+                                                                    setEditingCompanyForm,
+                                                                    'status',
+                                                                    e.target.value
+                                                                )
+                                                            }
                                                             className="dashboard-select w-full"
                                                         >
                                                             {COMPANY_STATUSES.map((status) => (
-                                                                <option key={status.value} value={status.value}>{status.label}</option>
+                                                                <option
+                                                                    key={status.value}
+                                                                    value={status.value}
+                                                                >
+                                                                    {status.label}
+                                                                </option>
                                                             ))}
                                                         </select>
                                                     </label>
@@ -305,7 +355,13 @@ const AdminCompaniesTab = ({
                                                         <FieldLabel>Plan</FieldLabel>
                                                         <input
                                                             value={editingCompanyForm.plan}
-                                                            onChange={(e) => updateFormField(setEditingCompanyForm, 'plan', e.target.value)}
+                                                            onChange={(e) =>
+                                                                updateFormField(
+                                                                    setEditingCompanyForm,
+                                                                    'plan',
+                                                                    e.target.value
+                                                                )
+                                                            }
                                                             className="dashboard-field w-full"
                                                         />
                                                     </label>
@@ -313,7 +369,13 @@ const AdminCompaniesTab = ({
                                                         <FieldLabel>Subdomain</FieldLabel>
                                                         <input
                                                             value={editingCompanyForm.subdomain}
-                                                            onChange={(e) => updateFormField(setEditingCompanyForm, 'subdomain', e.target.value.toLowerCase())}
+                                                            onChange={(e) =>
+                                                                updateFormField(
+                                                                    setEditingCompanyForm,
+                                                                    'subdomain',
+                                                                    e.target.value.toLowerCase()
+                                                                )
+                                                            }
                                                             className="dashboard-field w-full"
                                                         />
                                                     </label>
@@ -321,7 +383,13 @@ const AdminCompaniesTab = ({
                                                         <FieldLabel>Custom domain</FieldLabel>
                                                         <input
                                                             value={editingCompanyForm.customDomain}
-                                                            onChange={(e) => updateFormField(setEditingCompanyForm, 'customDomain', e.target.value.toLowerCase())}
+                                                            onChange={(e) =>
+                                                                updateFormField(
+                                                                    setEditingCompanyForm,
+                                                                    'customDomain',
+                                                                    e.target.value.toLowerCase()
+                                                                )
+                                                            }
                                                             className="dashboard-field w-full"
                                                         />
                                                     </label>
@@ -329,11 +397,22 @@ const AdminCompaniesTab = ({
                                                         <FieldLabel>Billing status</FieldLabel>
                                                         <select
                                                             value={editingCompanyForm.billingStatus}
-                                                            onChange={(e) => updateFormField(setEditingCompanyForm, 'billingStatus', e.target.value)}
+                                                            onChange={(e) =>
+                                                                updateFormField(
+                                                                    setEditingCompanyForm,
+                                                                    'billingStatus',
+                                                                    e.target.value
+                                                                )
+                                                            }
                                                             className="dashboard-select w-full"
                                                         >
                                                             {BILLING_STATUSES.map((status) => (
-                                                                <option key={status.value || 'empty'} value={status.value}>{status.label}</option>
+                                                                <option
+                                                                    key={status.value || 'empty'}
+                                                                    value={status.value}
+                                                                >
+                                                                    {status.label}
+                                                                </option>
                                                             ))}
                                                         </select>
                                                     </label>
@@ -341,7 +420,13 @@ const AdminCompaniesTab = ({
                                                         <FieldLabel>Timezone</FieldLabel>
                                                         <input
                                                             value={editingCompanyForm.timezone}
-                                                            onChange={(e) => updateFormField(setEditingCompanyForm, 'timezone', e.target.value)}
+                                                            onChange={(e) =>
+                                                                updateFormField(
+                                                                    setEditingCompanyForm,
+                                                                    'timezone',
+                                                                    e.target.value
+                                                                )
+                                                            }
                                                             className="dashboard-field w-full"
                                                         />
                                                     </label>
@@ -349,7 +434,13 @@ const AdminCompaniesTab = ({
                                                         <FieldLabel>CRM tenant ID</FieldLabel>
                                                         <input
                                                             value={editingCompanyForm.crmTenantId}
-                                                            onChange={(e) => updateFormField(setEditingCompanyForm, 'crmTenantId', e.target.value)}
+                                                            onChange={(e) =>
+                                                                updateFormField(
+                                                                    setEditingCompanyForm,
+                                                                    'crmTenantId',
+                                                                    e.target.value
+                                                                )
+                                                            }
                                                             className="dashboard-field w-full"
                                                         />
                                                     </label>
@@ -357,15 +448,29 @@ const AdminCompaniesTab = ({
                                                         <FieldLabel>CRM slug</FieldLabel>
                                                         <input
                                                             value={editingCompanyForm.crmTenantSlug}
-                                                            onChange={(e) => updateFormField(setEditingCompanyForm, 'crmTenantSlug', e.target.value)}
+                                                            onChange={(e) =>
+                                                                updateFormField(
+                                                                    setEditingCompanyForm,
+                                                                    'crmTenantSlug',
+                                                                    e.target.value
+                                                                )
+                                                            }
                                                             className="dashboard-field w-full"
                                                         />
                                                     </label>
                                                     <label className="space-y-1">
                                                         <FieldLabel>CRM primary domain</FieldLabel>
                                                         <input
-                                                            value={editingCompanyForm.crmPrimaryDomain}
-                                                            onChange={(e) => updateFormField(setEditingCompanyForm, 'crmPrimaryDomain', e.target.value.toLowerCase())}
+                                                            value={
+                                                                editingCompanyForm.crmPrimaryDomain
+                                                            }
+                                                            onChange={(e) =>
+                                                                updateFormField(
+                                                                    setEditingCompanyForm,
+                                                                    'crmPrimaryDomain',
+                                                                    e.target.value.toLowerCase()
+                                                                )
+                                                            }
                                                             className="dashboard-field w-full"
                                                         />
                                                     </label>
@@ -373,7 +478,13 @@ const AdminCompaniesTab = ({
                                                         <FieldLabel>Locale</FieldLabel>
                                                         <input
                                                             value={editingCompanyForm.locale}
-                                                            onChange={(e) => updateFormField(setEditingCompanyForm, 'locale', e.target.value)}
+                                                            onChange={(e) =>
+                                                                updateFormField(
+                                                                    setEditingCompanyForm,
+                                                                    'locale',
+                                                                    e.target.value
+                                                                )
+                                                            }
                                                             className="dashboard-field w-full"
                                                         />
                                                     </label>
@@ -388,7 +499,11 @@ const AdminCompaniesTab = ({
                                                         <FiSave className="h-4 w-4" />
                                                         {editingSubmitting ? 'Saving...' : 'Save'}
                                                     </button>
-                                                    <button type="button" onClick={stopEditing} className="dashboard-button-secondary">
+                                                    <button
+                                                        type="button"
+                                                        onClick={stopEditing}
+                                                        className="dashboard-button-secondary"
+                                                    >
                                                         <FiX className="h-4 w-4" />
                                                         Cancel
                                                     </button>
@@ -402,16 +517,29 @@ const AdminCompaniesTab = ({
                                                         <h3 className="text-lg font-semibold text-edubot-ink dark:text-white">
                                                             {company.name}
                                                         </h3>
-                                                        <span className={`rounded-full border px-2.5 py-1 text-xs font-semibold ${statusTone[company.status] || statusTone.inactive}`}>
+                                                        <span
+                                                            className={`rounded-full border px-2.5 py-1 text-xs font-semibold ${statusTone[company.status] || statusTone.inactive}`}
+                                                        >
                                                             {company.status || 'active'}
                                                         </span>
                                                     </div>
                                                     <div className="grid gap-2 text-sm text-edubot-muted dark:text-slate-400 md:grid-cols-2">
                                                         <p>Domain: {domain || 'Not configured'}</p>
                                                         <p>Plan: {company.plan || 'Not set'}</p>
-                                                        <p>Billing: {company.billingStatus || 'Not set'}</p>
-                                                        <p>CRM: {company.crmTenantSlug || company.crmTenantId || 'Not linked'}</p>
-                                                        <p>Timezone: {company.timezone || 'Asia/Bishkek'}</p>
+                                                        <p>
+                                                            Billing:{' '}
+                                                            {company.billingStatus || 'Not set'}
+                                                        </p>
+                                                        <p>
+                                                            CRM:{' '}
+                                                            {company.crmTenantSlug ||
+                                                                company.crmTenantId ||
+                                                                'Not linked'}
+                                                        </p>
+                                                        <p>
+                                                            Timezone:{' '}
+                                                            {company.timezone || 'Asia/Bishkek'}
+                                                        </p>
                                                         <p>Courses linked: {companyCourseCount}</p>
                                                     </div>
                                                 </div>
@@ -430,11 +558,15 @@ const AdminCompaniesTab = ({
                                                         className="dashboard-button-secondary"
                                                     >
                                                         <FiExternalLink className="h-4 w-4" />
-                                                        Detail
+                                                        Tenant workspace
                                                     </Link>
                                                     <button
                                                         type="button"
-                                                        onClick={() => fileInputRefs.current[company.id]?.click()}
+                                                        onClick={() =>
+                                                            fileInputRefs.current[
+                                                                company.id
+                                                            ]?.click()
+                                                        }
                                                         disabled={!!pendingAction}
                                                         className="dashboard-button-secondary disabled:cursor-not-allowed disabled:opacity-60"
                                                     >
@@ -443,26 +575,41 @@ const AdminCompaniesTab = ({
                                                     </button>
                                                     <input
                                                         ref={(node) => {
-                                                            fileInputRefs.current[company.id] = node;
+                                                            fileInputRefs.current[company.id] =
+                                                                node;
                                                         }}
                                                         type="file"
                                                         accept="image/*"
                                                         className="hidden"
                                                         onChange={(e) => {
                                                             if (e.target.files?.[0]) {
-                                                                runPendingAction(`logo-${company.id}`, () => onUploadCompanyLogo(company.id, e.target.files[0]));
+                                                                runPendingAction(
+                                                                    `logo-${company.id}`,
+                                                                    () =>
+                                                                        onUploadCompanyLogo(
+                                                                            company.id,
+                                                                            e.target.files[0]
+                                                                        )
+                                                                );
                                                                 e.target.value = '';
                                                             }
                                                         }}
                                                     />
                                                     <button
                                                         type="button"
-                                                        onClick={() => runPendingAction(`delete-${company.id}`, () => onDeleteCompany(company.id))}
+                                                        onClick={() =>
+                                                            runPendingAction(
+                                                                `delete-${company.id}`,
+                                                                () => onDeleteCompany(company.id)
+                                                            )
+                                                        }
                                                         disabled={!!pendingAction}
                                                         className="dashboard-button-secondary disabled:cursor-not-allowed disabled:opacity-60"
                                                     >
                                                         <FiTrash2 className="h-4 w-4" />
-                                                        {pendingAction === `delete-${company.id}` ? 'Deleting...' : 'Delete'}
+                                                        {pendingAction === `delete-${company.id}`
+                                                            ? 'Deleting...'
+                                                            : 'Delete'}
                                                     </button>
                                                 </div>
                                             </div>
@@ -472,7 +619,10 @@ const AdminCompaniesTab = ({
                             })}
                         </div>
                     ) : (
-                        <EmptyState title="No tenants found" subtitle="Create a tenant or adjust the search filter." />
+                        <EmptyState
+                            title="No tenants found"
+                            subtitle="Create a tenant or adjust the search filter."
+                        />
                     )}
                 </div>
             </DashboardInsetPanel>
@@ -491,60 +641,89 @@ const AdminCompaniesTab = ({
                                 placeholder="Search courses or tenant names"
                             />
                             <p className="text-sm text-edubot-muted dark:text-slate-400">
-                                Showing {visibleCourseLinks.length} of {filteredCourseLinks.length} courses
+                                Showing {visibleCourseLinks.length} of {filteredCourseLinks.length}{' '}
+                                courses
                             </p>
                         </div>
                         {visibleCourseLinks.length ? (
                             <div className="grid gap-4 md:grid-cols-2">
                                 {visibleCourseLinks.map((course) => (
-                            <div
-                                key={course.id}
-                                className="rounded-2xl border border-edubot-line/70 bg-edubot-surfaceAlt/40 p-4 dark:border-slate-700 dark:bg-slate-900/60"
-                            >
-                                <div className="flex flex-col gap-3">
-                                    <div>
-                                        <p className="font-medium text-edubot-ink dark:text-white">{course.title}</p>
-                                        <p className="mt-1 text-xs text-edubot-muted dark:text-slate-400">
-                                            Current tenant: {course.company?.name || 'Not selected'}
-                                        </p>
+                                    <div
+                                        key={course.id}
+                                        className="rounded-2xl border border-edubot-line/70 bg-edubot-surfaceAlt/40 p-4 dark:border-slate-700 dark:bg-slate-900/60"
+                                    >
+                                        <div className="flex flex-col gap-3">
+                                            <div>
+                                                <p className="font-medium text-edubot-ink dark:text-white">
+                                                    {course.title}
+                                                </p>
+                                                <p className="mt-1 text-xs text-edubot-muted dark:text-slate-400">
+                                                    Current tenant:{' '}
+                                                    {course.company?.name || 'Not selected'}
+                                                </p>
+                                            </div>
+                                            <div className="flex flex-wrap gap-2">
+                                                <select
+                                                    value={course.company?.id || ''}
+                                                    onChange={(e) => {
+                                                        if (e.target.value) {
+                                                            runPendingAction(
+                                                                `course-${course.id}`,
+                                                                () =>
+                                                                    onAssignCourseToCompany(
+                                                                        course.id,
+                                                                        e.target.value
+                                                                    )
+                                                            );
+                                                        } else {
+                                                            runPendingAction(
+                                                                `course-${course.id}`,
+                                                                () =>
+                                                                    onClearCourseCompany(course.id)
+                                                            );
+                                                        }
+                                                    }}
+                                                    disabled={!!pendingAction}
+                                                    className="dashboard-select min-w-[12rem] flex-1 disabled:cursor-not-allowed disabled:opacity-60"
+                                                >
+                                                    <option value="">Select tenant</option>
+                                                    {companies.map((company) => (
+                                                        <option key={company.id} value={company.id}>
+                                                            {company.name}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                                {course.company?.id ? (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() =>
+                                                            runPendingAction(
+                                                                `course-${course.id}`,
+                                                                () =>
+                                                                    onUnassignCourseFromCompany(
+                                                                        course.id,
+                                                                        course.company.id
+                                                                    )
+                                                            )
+                                                        }
+                                                        disabled={!!pendingAction}
+                                                        className="dashboard-button-secondary disabled:cursor-not-allowed disabled:opacity-60"
+                                                    >
+                                                        {pendingAction === `course-${course.id}`
+                                                            ? 'Removing...'
+                                                            : 'Remove'}
+                                                    </button>
+                                                ) : null}
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div className="flex flex-wrap gap-2">
-                                        <select
-                                            value={course.company?.id || ''}
-                                            onChange={(e) => {
-                                                if (e.target.value) {
-                                                    runPendingAction(`course-${course.id}`, () => onAssignCourseToCompany(course.id, e.target.value));
-                                                } else {
-                                                    runPendingAction(`course-${course.id}`, () => onClearCourseCompany(course.id));
-                                                }
-                                            }}
-                                            disabled={!!pendingAction}
-                                            className="dashboard-select min-w-[12rem] flex-1 disabled:cursor-not-allowed disabled:opacity-60"
-                                        >
-                                            <option value="">Select tenant</option>
-                                            {companies.map((company) => (
-                                                <option key={company.id} value={company.id}>
-                                                    {company.name}
-                                                </option>
-                                            ))}
-                                        </select>
-                                        {course.company?.id ? (
-                                            <button
-                                                type="button"
-                                                onClick={() => runPendingAction(`course-${course.id}`, () => onUnassignCourseFromCompany(course.id, course.company.id))}
-                                                disabled={!!pendingAction}
-                                                className="dashboard-button-secondary disabled:cursor-not-allowed disabled:opacity-60"
-                                            >
-                                                {pendingAction === `course-${course.id}` ? 'Removing...' : 'Remove'}
-                                            </button>
-                                        ) : null}
-                                    </div>
-                                </div>
-                            </div>
                                 ))}
                             </div>
                         ) : (
-                            <EmptyState title="No matching courses" subtitle="Try a different course or tenant search." />
+                            <EmptyState
+                                title="No matching courses"
+                                subtitle="Try a different course or tenant search."
+                            />
                         )}
                         {filteredCourseLinks.length > visibleCourseLinks.length ? (
                             <div className="flex justify-center">
@@ -560,7 +739,10 @@ const AdminCompaniesTab = ({
                     </div>
                 ) : (
                     <div className="mt-4">
-                        <EmptyState title="No courses found" subtitle="There are no courses available for tenant linking yet." />
+                        <EmptyState
+                            title="No courses found"
+                            subtitle="There are no courses available for tenant linking yet."
+                        />
                     </div>
                 )}
             </DashboardInsetPanel>
@@ -582,7 +764,9 @@ const AdminCompaniesTab = ({
                         <FieldLabel>Tenant name</FieldLabel>
                         <input
                             value={newCompanyForm.name}
-                            onChange={(e) => updateFormField(setNewCompanyForm, 'name', e.target.value)}
+                            onChange={(e) =>
+                                updateFormField(setNewCompanyForm, 'name', e.target.value)
+                            }
                             className="dashboard-field w-full"
                         />
                     </label>
@@ -590,7 +774,13 @@ const AdminCompaniesTab = ({
                         <FieldLabel>Subdomain</FieldLabel>
                         <input
                             value={newCompanyForm.subdomain}
-                            onChange={(e) => updateFormField(setNewCompanyForm, 'subdomain', e.target.value.toLowerCase())}
+                            onChange={(e) =>
+                                updateFormField(
+                                    setNewCompanyForm,
+                                    'subdomain',
+                                    e.target.value.toLowerCase()
+                                )
+                            }
                             className="dashboard-field w-full"
                         />
                     </label>
@@ -598,11 +788,15 @@ const AdminCompaniesTab = ({
                         <FieldLabel>Status</FieldLabel>
                         <select
                             value={newCompanyForm.status}
-                            onChange={(e) => updateFormField(setNewCompanyForm, 'status', e.target.value)}
+                            onChange={(e) =>
+                                updateFormField(setNewCompanyForm, 'status', e.target.value)
+                            }
                             className="dashboard-select w-full"
                         >
                             {COMPANY_STATUSES.map((status) => (
-                                <option key={status.value} value={status.value}>{status.label}</option>
+                                <option key={status.value} value={status.value}>
+                                    {status.label}
+                                </option>
                             ))}
                         </select>
                     </label>
@@ -610,7 +804,13 @@ const AdminCompaniesTab = ({
                         <FieldLabel>Custom domain</FieldLabel>
                         <input
                             value={newCompanyForm.customDomain}
-                            onChange={(e) => updateFormField(setNewCompanyForm, 'customDomain', e.target.value.toLowerCase())}
+                            onChange={(e) =>
+                                updateFormField(
+                                    setNewCompanyForm,
+                                    'customDomain',
+                                    e.target.value.toLowerCase()
+                                )
+                            }
                             className="dashboard-field w-full"
                         />
                     </label>
@@ -618,7 +818,9 @@ const AdminCompaniesTab = ({
                         <FieldLabel>Plan</FieldLabel>
                         <input
                             value={newCompanyForm.plan}
-                            onChange={(e) => updateFormField(setNewCompanyForm, 'plan', e.target.value)}
+                            onChange={(e) =>
+                                updateFormField(setNewCompanyForm, 'plan', e.target.value)
+                            }
                             className="dashboard-field w-full"
                         />
                     </label>
@@ -626,11 +828,15 @@ const AdminCompaniesTab = ({
                         <FieldLabel>Billing status</FieldLabel>
                         <select
                             value={newCompanyForm.billingStatus}
-                            onChange={(e) => updateFormField(setNewCompanyForm, 'billingStatus', e.target.value)}
+                            onChange={(e) =>
+                                updateFormField(setNewCompanyForm, 'billingStatus', e.target.value)
+                            }
                             className="dashboard-select w-full"
                         >
                             {BILLING_STATUSES.map((status) => (
-                                <option key={status.value || 'empty'} value={status.value}>{status.label}</option>
+                                <option key={status.value || 'empty'} value={status.value}>
+                                    {status.label}
+                                </option>
                             ))}
                         </select>
                     </label>
@@ -649,42 +855,55 @@ const AdminCompaniesTab = ({
                             className="dashboard-field w-full"
                             placeholder="Search existing user by name or email"
                         />
-                        {!selectedOwner && (ownerResults.length > 0 || ownerSearching || ownerQuery.trim()) && (
-                            <div className="absolute z-20 mt-1 max-h-72 w-full overflow-auto rounded-2xl border border-edubot-line bg-white shadow-edubot-card dark:border-slate-700 dark:bg-slate-900">
-                                {ownerSearching ? (
-                                    <div className="px-3 py-2 text-sm text-edubot-muted">Searching...</div>
-                                ) : ownerResults.length ? ownerResults.map((owner) => (
-                                    <button
-                                        type="button"
-                                        key={owner.id}
-                                        onClick={() => {
-                                            setSelectedOwner(owner);
-                                            setOwnerQuery(owner.fullName || owner.email || `#${owner.id}`);
-                                            setOwnerResults([]);
-                                        }}
-                                        className="flex w-full items-center gap-2 px-3 py-2 text-left hover:bg-edubot-surfaceAlt/70 dark:hover:bg-slate-800"
-                                    >
-                                        {owner.avatarUrl ? (
-                                            <img src={owner.avatarUrl} alt="" className="h-7 w-7 rounded-full object-cover" />
-                                        ) : (
-                                            <div className="h-7 w-7 rounded-full bg-edubot-surfaceAlt dark:bg-slate-700" />
-                                        )}
-                                        <span className="min-w-0">
-                                            <span className="block truncate text-sm font-medium text-edubot-ink dark:text-white">
-                                                {owner.fullName || `#${owner.id}`}
-                                            </span>
-                                            <span className="block truncate text-xs text-edubot-muted dark:text-slate-400">
-                                                {owner.email || '-'}
-                                            </span>
-                                        </span>
-                                    </button>
-                                )) : (
-                                    <div className="px-3 py-2 text-sm text-edubot-muted">
-                                        No matching users found.
-                                    </div>
-                                )}
-                            </div>
-                        )}
+                        {!selectedOwner &&
+                            (ownerResults.length > 0 || ownerSearching || ownerQuery.trim()) && (
+                                <div className="absolute z-20 mt-1 max-h-72 w-full overflow-auto rounded-2xl border border-edubot-line bg-white shadow-edubot-card dark:border-slate-700 dark:bg-slate-900">
+                                    {ownerSearching ? (
+                                        <div className="px-3 py-2 text-sm text-edubot-muted">
+                                            Searching...
+                                        </div>
+                                    ) : ownerResults.length ? (
+                                        ownerResults.map((owner) => (
+                                            <button
+                                                type="button"
+                                                key={owner.id}
+                                                onClick={() => {
+                                                    setSelectedOwner(owner);
+                                                    setOwnerQuery(
+                                                        owner.fullName ||
+                                                            owner.email ||
+                                                            `#${owner.id}`
+                                                    );
+                                                    setOwnerResults([]);
+                                                }}
+                                                className="flex w-full items-center gap-2 px-3 py-2 text-left hover:bg-edubot-surfaceAlt/70 dark:hover:bg-slate-800"
+                                            >
+                                                {owner.avatarUrl ? (
+                                                    <img
+                                                        src={owner.avatarUrl}
+                                                        alt=""
+                                                        className="h-7 w-7 rounded-full object-cover"
+                                                    />
+                                                ) : (
+                                                    <div className="h-7 w-7 rounded-full bg-edubot-surfaceAlt dark:bg-slate-700" />
+                                                )}
+                                                <span className="min-w-0">
+                                                    <span className="block truncate text-sm font-medium text-edubot-ink dark:text-white">
+                                                        {owner.fullName || `#${owner.id}`}
+                                                    </span>
+                                                    <span className="block truncate text-xs text-edubot-muted dark:text-slate-400">
+                                                        {owner.email || '-'}
+                                                    </span>
+                                                </span>
+                                            </button>
+                                        ))
+                                    ) : (
+                                        <div className="px-3 py-2 text-sm text-edubot-muted">
+                                            No matching users found.
+                                        </div>
+                                    )}
+                                </div>
+                            )}
                     </div>
                     {selectedOwner ? (
                         <button
