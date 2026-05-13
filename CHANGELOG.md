@@ -2,6 +2,31 @@
 
 Version bumps are classified by delivery scale; see `VERSIONING.md`.
 
+## [1.11.6] - 2026-05-13
+
+### Changed
+
+- Centralized CSRF handling in the shared API client for authenticated mutations.
+- Moved attendance mutations, attendance exports, and video lesson uploads onto the shared API client.
+- Preserved explicit multipart upload headers for the video lesson upload endpoint while keeping automatic FormData content-type handling for other uploads.
+- Updated auth bootstrap to recognize both the current access-token cookie and the legacy session cookie during session restore.
+
+### Fixed
+
+- Added CSRF refresh-and-retry behavior for stale or missing CSRF token responses.
+- Made CSRF cookie parsing resilient to malformed cookie values.
+- Fixed attendance mutation URLs to use the shared API client base path consistently.
+- Removed focused lint issues in touched auth, attendance, and video upload files.
+
+### Verification
+
+- `npx eslint src/context/AuthContext.jsx src/shared/api/client.js src/features/attendance/api/attendanceApi.js src/features/attendance/hooks/useAttendanceData.js src/features/courses/components/VideoUpload.jsx`
+- `git diff --check`
+- `npm test -- --run`
+- `npm run build` passes with existing Vite chunk-size/dynamic-import warnings.
+
+---
+
 ## [1.11.5] - 2026-05-13
 
 ### Changed

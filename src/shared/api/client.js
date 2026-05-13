@@ -30,11 +30,13 @@ const api = axios.create({
     withCredentials: true,
 });
 
+const CSRF_ERROR_TEXT = 'CSRF token missing or invalid';
+
 // Utility: only send defined params
 export const clean = (obj) =>
     Object.fromEntries(Object.entries(obj).filter(([, v]) => v !== undefined && v !== null));
 
-const getCookieValue = (name) => {
+export const getCookieValue = (name) => {
     if (typeof document === 'undefined') {
         return null;
     }
@@ -44,7 +46,13 @@ const getCookieValue = (name) => {
         .map((chunk) => chunk.trim())
         .find((chunk) => chunk.startsWith(`${name}=`));
 
-    return cookie ? decodeURIComponent(cookie.slice(name.length + 1)) : null;
+    if (!cookie) return null;
+
+    try {
+        return decodeURIComponent(cookie.slice(name.length + 1));
+    } catch {
+        return null;
+    }
 };
 
 api.interceptors.request.use(
@@ -66,8 +74,8 @@ api.interceptors.request.use(
             }
         }
 
-        // Don't set Content-Type for FormData
-        if (config.data instanceof FormData && config.headers) {
+        // Don't set Content-Type for FormData unless a specific endpoint opts in.
+        if (config.data instanceof FormData && config.headers && !config.preserveContentType) {
             delete config.headers['Content-Type'];
         }
         return config;
@@ -83,8 +91,27 @@ api.interceptors.response.use(
         }
         return response;
     },
-    (error) => {
+    async (error) => {
         const shouldSkipAuthRedirect = Boolean(error?.config?.skipAuthRedirect);
+        const message = error?.response?.data?.message;
+        const isCsrfError =
+            error?.response?.status === 403 &&
+            (Array.isArray(message)
+                ? message.includes(CSRF_ERROR_TEXT)
+                : String(message || '').includes(CSRF_ERROR_TEXT));
+
+        if (isCsrfError && error.config && !error.config.__csrfRetry) {
+            error.config.__csrfRetry = true;
+            try {
+                await api.get('/auth/profile', {
+                    skipAuthRedirect: true,
+                    __csrfRefresh: true,
+                });
+                return api(error.config);
+            } catch {
+                return Promise.reject(error);
+            }
+        }
 
         if (error?.response?.status === 401) {
             // Clear stored token on 401

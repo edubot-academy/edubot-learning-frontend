@@ -1,60 +1,23 @@
+import api from '@shared/api/client';
+
 /**
  * Attendance API Service
  * Handles all attendance-related API calls for both admin and instructor dashboards
  */
 
-// Base API configuration
-const API_BASE = import.meta.env?.VITE_API_BASE || '/api';
-
-/**
- * Helper function to handle API responses
- */
-const handleApiResponse = async (response) => {
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    const errorMessage = errorData.message || response.statusText || 'API request failed';
-
-    // Handle specific error codes
-    if (response.status === 401) {
-      throw new Error('Unauthorized - Please log in again');
-    }
-    if (response.status === 403) {
-      throw new Error('Permission denied - You do not have access to this resource');
-    }
-    if (response.status === 404) {
-      throw new Error('Resource not found');
-    }
-    if (response.status >= 500) {
-      throw new Error('Server error - Please try again later');
-    }
-
-    throw new Error(errorMessage);
-  }
-
-  return response.json();
-};
-
 /**
  * Helper function to make API requests with proper error handling
  */
 const apiRequest = async (endpoint, options = {}) => {
-  const defaultOptions = {
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  };
-
-  const config = { ...defaultOptions, ...options };
-
-  // Add auth token if available
-  const token = localStorage.getItem('auth_token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-
   try {
-    const response = await fetch(`${API_BASE}${endpoint}`, config);
-    return await handleApiResponse(response);
+    const { body, ...requestOptions } = options;
+    const response = await api.request({
+      url: endpoint,
+      method: requestOptions.method || 'GET',
+      data: body ? JSON.parse(body) : undefined,
+      ...requestOptions,
+    });
+    return response.data;
   } catch (error) {
     console.error(`API request failed: ${endpoint}`, error);
     throw error;
@@ -203,21 +166,11 @@ export const exportAttendanceData = async (groupId, options = {}) => {
     ...(options.studentIds && { studentIds: options.studentIds.join(',') }),
   });
 
-  const token = localStorage.getItem('auth_token');
-  const headers = {
-    Authorization: token ? `Bearer ${token}` : '',
-  };
-
   try {
-    const response = await fetch(`${API_BASE}/groups/${groupId}/attendance-export?${params}`, {
-      headers,
+    const response = await api.get(`/groups/${groupId}/attendance-export?${params}`, {
+      responseType: 'blob',
     });
-
-    if (!response.ok) {
-      throw new Error(`Export failed: ${response.statusText}`);
-    }
-
-    return response.blob();
+    return response.data;
   } catch (error) {
     console.error('Export failed:', error);
     throw error;
@@ -240,21 +193,11 @@ export const adminExportAttendanceData = async (options = {}) => {
     ...(options.studentIds && { studentIds: options.studentIds.join(',') }),
   });
 
-  const token = localStorage.getItem('auth_token');
-  const headers = {
-    Authorization: token ? `Bearer ${token}` : '',
-  };
-
   try {
-    const response = await fetch(`${API_BASE}/admin/attendance-export?${params}`, {
-      headers,
+    const response = await api.get(`/admin/attendance-export?${params}`, {
+      responseType: 'blob',
     });
-
-    if (!response.ok) {
-      throw new Error(`Export failed: ${response.statusText}`);
-    }
-
-    return response.blob();
+    return response.data;
   } catch (error) {
     console.error('Admin export failed:', error);
     throw error;

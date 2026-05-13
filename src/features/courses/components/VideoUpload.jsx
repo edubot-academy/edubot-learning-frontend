@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import axios from 'axios';
+/* eslint-disable react/prop-types */
+import { useState } from 'react';
+import api from '@shared/api/client';
 
 const VideoUpload = ({ courseId, sectionId, onUploadSuccess }) => {
     const [uploading, setUploading] = useState(false);
@@ -38,10 +39,11 @@ const VideoUpload = ({ courseId, sectionId, onUploadSuccess }) => {
         formData.append('title', file.name); // You might want to add a separate title input
 
         try {
-            const response = await axios.post(
-                `/api/courses/${courseId}/sections/${sectionId}/lessons`,
+            const response = await api.post(
+                `/courses/${courseId}/sections/${sectionId}/lessons`,
                 formData,
                 {
+                    preserveContentType: true,
                     headers: {
                         'Content-Type': 'multipart/form-data',
                     },

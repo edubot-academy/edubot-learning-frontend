@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { toast } from 'react-hot-toast';
+import api from '@shared/api/client';
 
 /**
  * Hook for managing attendance data fetching and state
@@ -35,6 +36,20 @@ export const useAttendanceData = ({
     }
     return `/api/groups/${groupId}/attendance-overview`;
   }, [groupId, adminMode]);
+
+  // Normalize attendance data from API response
+  const normalizeAttendanceData = useCallback((rawData) => {
+    const normalized = {};
+
+    Object.keys(rawData).forEach(studentId => {
+      normalized[studentId] = {};
+      Object.keys(rawData[studentId]).forEach(sessionId => {
+        normalized[studentId][sessionId] = rawData[studentId][sessionId];
+      });
+    });
+
+    return normalized;
+  }, []);
 
   // Fetch attendance data
   const fetchAttendanceData = useCallback(async (signal) => {
@@ -85,21 +100,7 @@ export const useAttendanceData = ({
         toast.error(errorMessage);
       }
     }
-  }, [groupId, adminMode, includeUnscheduled, filters.dateRange, getApiEndpoint]);
-
-  // Normalize attendance data from API response
-  const normalizeAttendanceData = useCallback((rawData) => {
-    const normalized = {};
-    
-    Object.keys(rawData).forEach(studentId => {
-      normalized[studentId] = {};
-      Object.keys(rawData[studentId]).forEach(sessionId => {
-        normalized[studentId][sessionId] = rawData[studentId][sessionId];
-      });
-    });
-    
-    return normalized;
-  }, []);
+  }, [groupId, includeUnscheduled, filters.dateRange, getApiEndpoint, normalizeAttendanceData]);
 
   // Update single attendance record
   const updateAttendanceRecord = useCallback((studentId, sessionId, status) => {
@@ -310,21 +311,10 @@ export const useAttendanceUpdates = ({ groupId, onSuccess, onError }) => {
       setUpdating(true);
       setPendingUpdates(prev => new Set(prev).add(updateKey));
 
-      const response = await fetch(`/api/groups/${groupId}/attendance`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          updates: [{ studentId, sessionId, status }],
-        }),
+      const response = await api.patch(`/groups/${groupId}/attendance`, {
+        updates: [{ studentId, sessionId, status }],
       });
-
-      if (!response.ok) {
-        throw new Error(`Failed to update attendance: ${response.statusText}`);
-      }
-
-      const result = await response.json();
+      const result = response.data;
       
       if (onSuccess) {
         onSuccess(result);
@@ -368,19 +358,8 @@ export const useAttendanceUpdates = ({ groupId, onSuccess, onError }) => {
         return newSet;
       });
 
-      const response = await fetch(`/api/groups/${groupId}/attendance`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ updates }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to update attendance: ${response.statusText}`);
-      }
-
-      const result = await response.json();
+      const response = await api.patch(`/groups/${groupId}/attendance`, { updates });
+      const result = response.data;
       
       if (onSuccess) {
         onSuccess(result);
