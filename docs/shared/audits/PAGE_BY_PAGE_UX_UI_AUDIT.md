@@ -959,7 +959,7 @@ The Login page is functional, but it still feels like a utilitarian auth screen 
 | ID         | Severity | Area           | Issue                                                                                                  | Task                                                                                | Owner | Status      |
 | ---------- | -------- | -------------- | ------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------- | ----- | ----------- |
 | LOGIN-C011 | P2       | Accessibility  | Floating-label input does not expose strong label/input/id/error relationships                         | Add explicit `id`, `htmlFor`, and `aria-describedby` support to the field primitive | Codex | Done        |
-| LOGIN-C012 | P2       | Field behavior | The component manages mirrored local state even when used as a controlled input, increasing complexity | Simplify the component so it behaves more predictably as a controlled form input    | TBD   | Not started |
+| LOGIN-C012 | P2       | Field behavior | The component manages mirrored local state even when used as a controlled input, increasing complexity | Simplify the component so it behaves more predictably as a controlled form input    | Codex | Done        |
 | LOGIN-C013 | P3       | UX             | Required-state signaling depends on focus/blur behavior rather than clear, consistent form conventions | Revisit required/error visual treatment for clearer behavior                        | TBD   | Not started |
 
 #### `LabelPassword.jsx`
@@ -967,7 +967,7 @@ The Login page is functional, but it still feels like a utilitarian auth screen 
 | ID         | Severity | Area             | Issue                                                                                        | Task                                                                            | Owner | Status      |
 | ---------- | -------- | ---------------- | -------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- | ----- | ----------- |
 | LOGIN-C014 | P2       | Accessibility    | Password visibility toggle is implemented as a clickable `div` rather than a semantic button | Codex                                                                           | Done  |
-| LOGIN-C015 | P2       | Form consistency | Password field repeats the same mirrored-local-state complexity as `DefaultLabel.jsx`        | Simplify the input contract and align behavior with the rest of the form system | TBD   | Not started |
+| LOGIN-C015 | P2       | Form consistency | Password field repeats the same mirrored-local-state complexity as `DefaultLabel.jsx`        | Simplify the input contract and align behavior with the rest of the form system | Codex | Done        |
 
 ### Implementation Order
 
@@ -1140,7 +1140,7 @@ The Student Dashboard is significantly more structured than the public pages, bu
 | ------------ | -------- | --------------- | ------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------ | ----- | ----------- |
 | STUDENT-C011 | P2       | Product framing | The tab mixes self-serve video courses and scheduled delivery courses in one card system, which weakens comparability    | Consider stronger mode separation or clearer visual differentiation between self-paced and cohort/schedule-based courses | TBD   | Not started |
 | STUDENT-C012 | P2       | Discovery UX    | Search/filter controls are useful, but the results area still depends on relatively dense cards with mixed action models | Refine card scanability and clarify the primary action for each course type                                              | TBD   | Not started |
-| STUDENT-C013 | P3       | Asset strategy  | The tab relies on a remote fallback cover image URL, which creates unnecessary external dependency in-app                | Replace with a local fallback asset or generated placeholder                                                             | TBD   | Not started |
+| STUDENT-C013 | P3       | Asset strategy  | The tab relies on a remote fallback cover image URL, which creates unnecessary external dependency in-app                | Replace with a local fallback asset or generated placeholder                                                             | Codex | Done        |
 
 #### `TasksTab.jsx`
 
@@ -1257,7 +1257,7 @@ The Instructor Dashboard is one of the richest product surfaces in the app, but 
 | --------------- | -------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ | ----- | ----------- |
 | INSTRUCTOR-C012 | P2       | Flow clarity   | The section starts with course selection and then becomes a student-management workspace, which is effective but context-switch heavy | Make the transition from “pick a course” to “manage students” more explicit and easier to reverse            | TBD   | Not started |
 | INSTRUCTOR-C013 | P2       | UX scalability | The section combines selection, stats, filters, and a student table in one flow that may become heavy as data grows                   | Review filter/table density and prioritize the most important student-management actions for faster scanning | TBD   | Not started |
-| INSTRUCTOR-C014 | P3       | Asset strategy | The section relies on a remote fallback course-cover URL                                                                              | Replace remote fallback imagery with local placeholders or generated fallbacks                               | TBD   | Not started |
+| INSTRUCTOR-C014 | P3       | Asset strategy | The section relies on a remote fallback course-cover URL                                                                              | Replace remote fallback imagery with local placeholders or generated fallbacks                               | Codex | Done        |
 
 #### `ProfileSection.jsx`
 
@@ -1332,7 +1332,7 @@ The Admin dashboard is the most operationally dense control surface in the produ
 
 | ID         | Severity | Area      | Issue                                                                                                         | Task                                                                      | Owner | Status      |
 | ---------- | -------- | --------- | ------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- | ----- | ----------- |
-| ADMIN-C001 | P3       | Structure | `src/pages/Admin.jsx` is now a thin forwarding wrapper, which is fine but should remain intentionally minimal | Keep this file as a stable route entry and avoid reintroducing logic here | TBD   | Not started |
+| ADMIN-C001 | P3       | Structure | `src/pages/Admin.jsx` is now a thin forwarding wrapper, which is fine but should remain intentionally minimal | Keep this file as a stable route entry and avoid reintroducing logic here | Codex | Done        |
 
 #### `AdminPanel.jsx`
 
@@ -1543,24 +1543,24 @@ The cart page is usable, but it still feels like a provisional conversion surfac
 
 | ID        | Severity | Area             | Issue                                                                                                                | Task                                                                                             | Owner | Status      |
 | --------- | -------- | ---------------- | -------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ | ----- | ----------- |
-| CART-C001 | P1       | Workflow clarity | The page contains both a register modal and an unauth modal, but only one actual unauth path is used from checkout   | Simplify auth-interruption logic and remove dead or redundant modal flows                        | TBD   | Not started |
+| CART-C001 | P1       | Workflow clarity | The page contains both a register modal and an unauth modal, but only one actual unauth path is used from checkout   | Simplify auth-interruption logic and remove dead or redundant modal flows                        | Codex | Done        |
 | CART-C002 | P2       | Density          | Cart cards are visually adequate, but the summary/sidebar does not strongly anchor the primary next action           | Rework layout hierarchy so the order summary and primary CTA read as one coherent purchase block | TBD   | Not started |
-| CART-C003 | P2       | Reliability      | `removeFromCart(item.id)` may be too loosely coupled if the cart source distinguishes product IDs from cart item IDs | Verify cart action identity handling and align removal with the actual cart-item data model      | TBD   | Not started |
+| CART-C003 | P2       | Reliability      | `removeFromCart(item.id)` may be too loosely coupled if the cart source distinguishes product IDs from cart item IDs | Verify cart action identity handling and align removal with the actual cart-item data model      | Codex | Done        |
 
 #### `ContactCourseModal.jsx`
 
 | ID        | Severity | Area          | Issue                                                                                                                          | Task                                                                                                               | Owner | Status      |
 | --------- | -------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------ | ----- | ----------- |
 | CART-C004 | P1       | Product fit   | The modal is course-specific, but the cart can represent multiple courses and the modal is not clearly adapted to that context | Redesign the contact modal or replace it for cart checkout so it reflects a multi-course purchase inquiry properly | TBD   | Not started |
-| CART-C005 | P2       | Trust UX      | The modal presents hardcoded course metadata patterns and shows price with `$`, which conflicts with the cart’s `сом` pricing  | Align currency, metadata, and copy with the actual commerce model used elsewhere                                   | TBD   | Not started |
-| CART-C006 | P2       | Accessibility | Field labels and validation messages are visible, but the form lacks stronger accessible error and focus management patterns   | Improve focus handling, error associations, and submit-result feedback inside the modal                            | TBD   | Not started |
+| CART-C005 | P2       | Trust UX      | The modal presents hardcoded course metadata patterns and shows price with `$`, which conflicts with the cart’s `сом` pricing  | Align currency, metadata, and copy with the actual commerce model used elsewhere                                   | Codex | Done        |
+| CART-C006 | P2       | Accessibility | Field labels and validation messages are visible, but the form lacks stronger accessible error and focus management patterns   | Improve focus handling, error associations, and submit-result feedback inside the modal                            | Codex | Done        |
 
 #### `UnauthModal.jsx`
 
 | ID        | Severity | Area                  | Issue                                                                                                                                | Task                                                                                             | Owner | Status      |
 | --------- | -------- | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------ | ----- | ----------- |
-| CART-C007 | P2       | Auth recovery         | The modal stores pending actions in `localStorage`, but the preservation and replay behavior is not clearly communicated to the user | Explain preserved intent more clearly and validate that pending-action recovery is reliable      | TBD   | Not started |
-| CART-C008 | P2       | Interaction hierarchy | “Register”, “login”, and “stay on page” actions compete visually in a compact footer row                                             | Rework action hierarchy so the primary and secondary auth choices are clearer and easier to scan | TBD   | Not started |
+| CART-C007 | P2       | Auth recovery         | The modal stores pending actions in `localStorage`, but the preservation and replay behavior is not clearly communicated to the user | Explain preserved intent more clearly and validate that pending-action recovery is reliable      | Codex | Done        |
+| CART-C008 | P2       | Interaction hierarchy | “Register”, “login”, and “stay on page” actions compete visually in a compact footer row                                             | Rework action hierarchy so the primary and secondary auth choices are clearer and easier to scan | Codex | Done        |
 
 ### Implementation Order
 
@@ -1610,7 +1610,7 @@ The favourites page works as a basic saved-courses grid, but it is still a thin 
 | -------- | -------- | ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- | ----- | ----------- |
 | FAV-C001 | P1       | State polish      | The guest, loading, error, empty, and populated states use different layout density and voice, making the page feel assembled rather than designed | Normalize state layouts, spacing, and language so the page feels coherent across all conditions | TBD   | Not started |
 | FAV-C002 | P2       | Localization      | The error-state heading uses `Избранное` while the rest of the page uses Kyrgyz copy                                                               | Clean up mixed-language strings and centralize favourites terminology                           | TBD   | Not started |
-| FAV-C003 | P2       | Data presentation | The page defines `formatPrice()` but never uses it, which suggests drift between intended and actual card rendering responsibility                 | Remove dead helpers or intentionally own price formatting where appropriate                     | TBD   | Not started |
+| FAV-C003 | P2       | Data presentation | The page defines `formatPrice()` but never uses it, which suggests drift between intended and actual card rendering responsibility                 | Remove dead helpers or intentionally own price formatting where appropriate                     | Codex | Done        |
 
 #### `CardCourse.jsx`
 
@@ -1746,7 +1746,7 @@ This page is currently the weakest of the instructor course-management surfaces.
 | ID                | Severity | Area               | Issue                                                                                                       | Task                                                                                               | Owner | Status      |
 | ----------------- | -------- | ------------------ | ----------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- | ----- | ----------- |
 | INSTRCOURSES-C001 | P1       | Data strategy      | The page fetches all courses globally and filters client-side by instructor ID                              | Move to a scoped instructor-courses API or at least a more intentional data contract for this view | Codex | Done        |
-| INSTRCOURSES-C002 | P2       | Resilience         | The page assumes `course.instructor.id` and `course.coverImageUrl` exist cleanly for every item             | Harden null-safety and design fallbacks for incomplete course data                                 | TBD   | Not started |
+| INSTRCOURSES-C002 | P2       | Resilience         | The page assumes `course.instructor.id` and `course.coverImageUrl` exist cleanly for every item             | Harden null-safety and design fallbacks for incomplete course data                                 | Codex | Done        |
 | INSTRCOURSES-C003 | P2       | Empty-state design | No-courses scenarios are currently silent and visually blank                                                | Add an empty state with a create-course CTA and guidance about the course lifecycle                | TBD   | Not started |
 | INSTRCOURSES-C004 | P3       | Visual hierarchy   | The card layout is serviceable but generic and does not surface the most important operational signal first | Reprioritize title, status, enrollment/quality metrics, and primary actions                        | TBD   | Not started |
 
@@ -1799,8 +1799,8 @@ The edit flow inherits most of the builder strengths and weaknesses from create,
 
 | ID              | Severity | Area              | Issue                                                                                                                                                        | Task                                                                                           | Owner | Status      |
 | --------------- | -------- | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------- | ----- | ----------- |
-| EDITCOURSE-C001 | P1       | Dead-path risk    | The component defines handlers like `handleSaveAll`, `handleCancel`, and `handleBack`, but they are not meaningfully integrated into the rendered experience | Remove dead logic or wire the actions into a coherent edit-flow UI                             | TBD   | Not started |
-| EDITCOURSE-C002 | P2       | Modal consistency | The unsaved-changes dialog is an inline overlay rather than a shared modal component                                                                         | Replace it with `BasicModal` or shared dialog infrastructure for consistency and accessibility | TBD   | Not started |
+| EDITCOURSE-C001 | P1       | Dead-path risk    | The component defines handlers like `handleSaveAll`, `handleCancel`, and `handleBack`, but they are not meaningfully integrated into the rendered experience | Remove dead logic or wire the actions into a coherent edit-flow UI                             | Codex | Done        |
+| EDITCOURSE-C002 | P2       | Modal consistency | The unsaved-changes dialog is an inline overlay rather than a shared modal component                                                                         | Replace it with `BasicModal` or shared dialog infrastructure for consistency and accessibility | Codex | Done        |
 | EDITCOURSE-C003 | P2       | Copy quality      | The confirmation text and labels have wording issues and minor typos that reduce trust in a high-stakes editing flow                                         | Clean up edit-flow microcopy and make the consequence language clearer                         | TBD   | Not started |
 
 #### Shared builder components
@@ -1975,14 +1975,21 @@ The assistant dashboard has a stronger shell than many other role-based surfaces
 
 The `/catalog` page is currently a very thin public listing surface. It works, but it is much more primitive than `/courses` and reads like a temporary or experimental implementation. The biggest issues are missing loading/error/empty states, a bare-bones search-and-pagination model, and a generic card layout that does not yet justify having a separate catalog route.
 
+### Route Ownership Decision
+
+- `/courses` is the canonical public discovery and conversion route for course browsing.
+- `/catalog` remains a lightweight query-driven listing route for searchable catalog links and legacy/simple catalog entry points.
+- New public discovery work should default to `/courses`; `/catalog` changes should stay focused on list/search resilience unless a consolidation release is planned.
+- Consolidating `/catalog` into `/courses` should be handled as a separate routing change with backlink, analytics, and redirect review.
+
 ### Detailed Tasks
 
 | ID          | Severity | Area               | Issue                                                                                                                                       | Task                                                                                                                       | Owner | Status      |
 | ----------- | -------- | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- | ----- | ----------- |
-| CATALOG-001 | P1       | Product definition | The purpose of `/catalog` versus `/courses` is unclear from the current UX and implementation                                               | Define the distinct role of this route or consolidate it if it is not meaningfully different from the main courses catalog | TBD   | Not started |
-| CATALOG-002 | P1       | Async-state UX     | The page has no explicit loading, error, or empty states                                                                                    | Add designed async states with retry behavior and intentional empty-state guidance                                         | TBD   | Not started |
+| CATALOG-001 | P1       | Product definition | The purpose of `/catalog` versus `/courses` is unclear from the current UX and implementation                                               | Define the distinct role of this route or consolidate it if it is not meaningfully different from the main courses catalog | Codex | Done        |
+| CATALOG-002 | P1       | Async-state UX     | The page has no explicit loading, error, or empty states                                                                                    | Add designed async states with retry behavior and intentional empty-state guidance                                         | Codex | Done        |
 | CATALOG-003 | P2       | Search UX          | Search is minimally debounced and updates query params, but the behavior is not explained and the input is too bare for a discovery surface | Improve search affordances, input semantics, and result-state communication                                                | TBD   | Not started |
-| CATALOG-004 | P2       | Pagination UX      | Rendering one button per page does not scale and provides weak navigation context                                                           | Replace the naive pagination control with a more scalable pattern                                                          | TBD   | Not started |
+| CATALOG-004 | P2       | Pagination UX      | Rendering one button per page does not scale and provides weak navigation context                                                           | Replace the naive pagination control with a more scalable pattern                                                          | Codex | Done        |
 | CATALOG-005 | P2       | Discovery design   | Catalog cards expose only image, title, and instructor, which is not enough for strong browsing decisions                                   | Add richer discovery metadata such as price, level, duration, and status signals if this route remains public-facing       | TBD   | Not started |
 
 ### Component Audit Breakdown
@@ -1994,7 +2001,7 @@ The `/catalog` page is currently a very thin public listing surface. It works, b
 | CATALOG-C001 | P1       | Resilience                  | The `publicCatalog()` effect has no error handling and no request-state management                                                                       | Add explicit request lifecycle handling and protect against failed fetches or rapid query changes | Codex | Done        |
 | CATALOG-C002 | P2       | Route-state synchronization | Search input state and URL query state are partially synchronized, but the effect model is fragile and can be hard to reason about                       | Refine query-state synchronization and reset behavior more intentionally                          | Codex | Done        |
 | CATALOG-C003 | P2       | Visual hierarchy            | The page uses a simple heading/input row and generic cards, which feels too sparse for a primary discovery route                                         | Build a more intentional catalog layout with better hierarchy and browsing affordances            | TBD   | Not started |
-| CATALOG-C004 | P3       | Accessibility               | Search, grid, and pagination are functional, but the page lacks richer semantics such as search landmarks, result counts, and current-page announcements | Add stronger accessible structure for search and result navigation                                | TBD   | Not started |
+| CATALOG-C004 | P3       | Accessibility               | Search, grid, and pagination are functional, but the page lacks richer semantics such as search landmarks, result counts, and current-page announcements | Add stronger accessible structure for search and result navigation                                | Codex | Done        |
 
 ### Implementation Order
 

@@ -15,6 +15,7 @@ export const usePublicCatalog = ({ page, q, limit = 20 }) => {
     const [data, setData] = useState(DEFAULT_CATALOG_DATA);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
+    const [refreshIndex, setRefreshIndex] = useState(0);
     const requestIdRef = useRef(0);
 
     useEffect(() => {
@@ -59,11 +60,12 @@ export const usePublicCatalog = ({ page, q, limit = 20 }) => {
         return () => {
             controller.abort();
         };
-    }, [limit, page, q]);
+    }, [limit, page, q, refreshIndex]);
 
     return {
         data,
         error,
         loading,
+        retry: () => setRefreshIndex((current) => current + 1),
     };
 };

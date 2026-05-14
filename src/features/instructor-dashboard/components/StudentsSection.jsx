@@ -22,9 +22,6 @@ import {
 } from '@components/ui/dashboard';
 import { downloadCourseCertificatePdf } from '@features/courses/api';
 
-const fallbackCover =
-    'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&w=600&q=80';
-
 const formatDate = (value) => {
     if (!value) return '—';
     const date = new Date(value);
@@ -155,11 +152,17 @@ const StudentsSection = ({
                                     className="group overflow-hidden rounded-panel border border-edubot-line/80 bg-white/90 text-left shadow-edubot-card transition-all duration-300 hover:-translate-y-1 hover:border-edubot-orange/60 hover:shadow-edubot-hover dark:border-slate-700 dark:bg-slate-900/80"
                                 >
                                     <div className="h-36 w-full overflow-hidden">
-                                        <img
-                                            src={course.coverImageUrl || fallbackCover}
-                                            alt={course.title}
-                                            className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
-                                        />
+                                        {course.coverImageUrl ? (
+                                            <img
+                                                src={course.coverImageUrl}
+                                                alt={course.title || 'Курс сүрөтү'}
+                                                className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                                            />
+                                        ) : (
+                                            <div className="flex h-full w-full items-center justify-center bg-edubot-surfaceAlt text-sm font-semibold text-edubot-muted dark:bg-slate-800 dark:text-slate-300">
+                                                Курс сүрөтү жок
+                                            </div>
+                                        )}
                                     </div>
 
                                     <div className="space-y-3 p-5">

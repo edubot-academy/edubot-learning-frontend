@@ -12,6 +12,7 @@ const UnauthModal = ({
     course = null,
 }) => {
     const navigate = useNavigate();
+    const returnPath = `${window.location.pathname}${window.location.search}${window.location.hash}`;
 
     const storePendingAction = () => {
         if (!courseId) return;
@@ -32,7 +33,7 @@ const UnauthModal = ({
         onClose();
         navigate(getAuthAcquisitionPath(), {
             state: {
-                from: window.location.pathname,
+                from: returnPath,
                 actionType,
                 courseId,
                 courseTitle,
@@ -46,7 +47,7 @@ const UnauthModal = ({
         onClose();
         navigate('/login', {
             state: {
-                from: window.location.pathname,
+                from: returnPath,
                 actionType,
                 courseId,
                 courseTitle,
@@ -59,7 +60,7 @@ const UnauthModal = ({
             case 'favourite':
                 return 'жактырылгандарга кошуу';
             case 'cart':
-                return 'сооданы улантуу';
+                return 'себеттеги сурамды улантуу';
             default:
                 return 'бул аракетти аткаруу';
         }
@@ -76,6 +77,7 @@ const UnauthModal = ({
                                 className="w-5 h-5 text-orange-500"
                                 viewBox="0 0 20 20"
                                 fill="currentColor"
+                                aria-hidden="true"
                             >
                                 <path
                                     fillRule="evenodd"
@@ -89,6 +91,7 @@ const UnauthModal = ({
                                 className="w-5 h-5 text-orange-500"
                                 viewBox="0 0 20 20"
                                 fill="currentColor"
+                                aria-hidden="true"
                             >
                                 <path
                                     fillRule="evenodd"
@@ -105,16 +108,15 @@ const UnauthModal = ({
                     </div>
                 </div>
 
-                <p className="text-gray-600">
+                <p className="text-gray-600 dark:text-gray-300">
                     {courseTitle && actionType === 'favourite' ? (
                         <>
                             Курсту тандалгандарга кошуу үчүн каттодон өтүү керек
                         </>
                     ) : courseTitle && actionType === 'cart' ? (
                         <>
-                            Курска заказ берүү үчүн &quot;
-                            <span className="font-semibold">{courseTitle}</span>&quot;
-                            каттоо талап кылынат.
+                            Себет боюнча сурамды улантуу үчүн кириңиз же катталыңыз.
+                            Себетиңиз жана бул аракет сакталат.
                         </>
                     ) : (
                         <>{getActionText()} үчүн каттоо талап кылынат.</>
@@ -122,21 +124,23 @@ const UnauthModal = ({
                 </p>
 
                 <div className="space-y-3 pt-2">
-                    <Button variant="primary" onClick={handleRegister} className="w-full py-3">
+                    <Button type="button" variant="primary" onClick={handleRegister} className="w-full py-3">
                         Катталуу
                     </Button>
 
-                    <div className="flex items-center justify-between">
+                    <div className="space-y-2">
                         <button
+                            type="button"
                             onClick={handleLogin}
-                            className="text-blue-600 hover:text-blue-800 font-medium py-2"
+                            className="w-full rounded-lg border border-blue-200 px-4 py-2 text-center font-medium text-blue-600 hover:bg-blue-50 hover:text-blue-800 dark:border-blue-900/50 dark:text-blue-300 dark:hover:bg-blue-950/30"
                         >
-                            Каттоо эсебиңиз барбы? Кирүү
+                            Кирүү
                         </button>
 
                         <button
+                            type="button"
                             onClick={onClose}
-                            className="text-gray-500 hover:text-gray-700 py-2 text-sm"
+                            className="w-full py-2 text-center text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
                         >
                             Баракчада калуу
                         </button>

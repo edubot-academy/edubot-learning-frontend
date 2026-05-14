@@ -46,8 +46,6 @@ const EditInstructorCourse = () => {
         setDragSectionIndex,
         dragLesson,
         setDragLesson,
-        showCancelConfirm,
-        setShowCancelConfirm,
         categories,
         skillOptions,
         skillsLoading,
@@ -139,14 +137,6 @@ const EditInstructorCourse = () => {
         setStep(newStep);
     };
 
-    const confirmCancel = () => {
-        navigate('/instructor/courses');
-    };
-
-    const cancelCancel = () => {
-        setShowCancelConfirm(false);
-    };
-
     // Show loading state
     if (loading) return <Loader fullScreen />;
 
@@ -227,32 +217,6 @@ const EditInstructorCourse = () => {
                     onBack={() => setStep(2)}
                     handleSubmitForApproval={handleSubmitForApproval}
                 />
-            )}
-
-            {/* Cancel Confirmation Modal */}
-            {showCancelConfirm && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white dark:bg-gray-800 p-6 rounded shadow max-w-sm w-full border border-gray-200 dark:border-gray-700">
-                        <h4 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Сактоо өчүрүлдү</h4>
-                        <p className="mb-6 text-gray-700 dark:text-gray-300">
-                            Сиз сактабай эле чыгып кетүүдөнсыз. Бардык өзгөрүүлөр жоголот.
-                        </p>
-                        <div className="flex justify-end gap-3">
-                            <button
-                                onClick={cancelCancel}
-                                className="px-4 py-2 border border-gray-300 rounded text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
-                            >
-                                Жокко
-                            </button>
-                            <button
-                                onClick={confirmCancel}
-                                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
-                            >
-                                Ооба, чыгып кетүү
-                            </button>
-                        </div>
-                    </div>
-                </div>
             )}
         </div>
     );

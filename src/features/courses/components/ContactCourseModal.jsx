@@ -7,7 +7,11 @@ import { submitContactMessage } from '@services/api';
 
 const formatPrice = (price) => {
     if (!price && price !== 0) return 'Баасы көрсөтүлгөн эмес';
-    return `${new Intl.NumberFormat('ru-RU').format(Number(price) || 0)} сом`;
+    const numericPrice = Number(price);
+
+    if (!Number.isFinite(numericPrice)) return 'Баасы көрсөтүлгөн эмес';
+
+    return `${new Intl.NumberFormat('ru-RU').format(numericPrice)} сом`;
 };
 
 const normalizePhone = (phone) => phone.replace(/[^\d+]/g, '');
@@ -79,6 +83,7 @@ const ContactCourseModal = ({ isOpen, onClose, course, lessonCount, cartItems = 
         message: '',
     });
     const [errors, setErrors] = useState({});
+    const [formError, setFormError] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const validate = () => {
@@ -109,6 +114,9 @@ const ContactCourseModal = ({ isOpen, onClose, course, lessonCount, cartItems = 
 
         if (errors[name]) {
             setErrors((prev) => ({ ...prev, [name]: '' }));
+        }
+        if (formError) {
+            setFormError('');
         }
     };
 
@@ -141,14 +149,18 @@ const ContactCourseModal = ({ isOpen, onClose, course, lessonCount, cartItems = 
             onClose?.();
             setFormData({ name: '', email: '', phone: '', message: '' });
             setErrors({});
+            setFormError('');
         } catch (error) {
             const apiFieldErrors = getApiFieldErrors(error);
+            const message = getApiErrorMessage(error);
 
             if (Object.keys(apiFieldErrors).length > 0) {
                 setErrors(apiFieldErrors);
+            } else {
+                setFormError(message);
             }
 
-            toast.error(getApiErrorMessage(error));
+            toast.error(message);
         } finally {
             setIsSubmitting(false);
         }
@@ -303,11 +315,34 @@ const ContactCourseModal = ({ isOpen, onClose, course, lessonCount, cartItems = 
                             rows="3"
                             disabled={isSubmitting}
                             className={`w-full border rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#EA580C] dark:focus:ring-orange-500 transition resize-none
+                                ${errors.message ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'}
                                 ${isSubmitting ? 'bg-gray-100 dark:bg-gray-700 cursor-not-allowed' : 'bg-white dark:bg-gray-800'}
-                                border-gray-300 dark:border-gray-600 dark:text-white dark:placeholder-gray-400`}
+                                dark:text-white dark:placeholder-gray-400`}
                             placeholder="Бул курс боюнча суроолоруңуз..."
+                            aria-invalid={Boolean(errors.message)}
+                            aria-describedby={errors.message ? 'course-contact-message-error' : 'course-contact-message-help'}
                         />
+                        <p id="course-contact-message-help" className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                            Кааласаңыз, командага кошумча суроо же убакыт боюнча талапты жазыңыз.
+                        </p>
+                        {errors.message && (
+                            <p id="course-contact-message-error" className="text-red-500 dark:text-red-400 text-xs mt-1">{errors.message}</p>
+                        )}
                     </div>
+
+                    {formError && (
+                        <div
+                            role="alert"
+                            className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/40 dark:bg-red-950/20 dark:text-red-200"
+                        >
+                            {formError}
+                        </div>
+                    )}
+                    {isSubmitting && (
+                        <p role="status" className="text-sm text-gray-600 dark:text-gray-300">
+                            Сурам жөнөтүлүүдө...
+                        </p>
+                    )}
 
                     {/* Кнопки */}
                     <div className="flex justify-end space-x-3 pt-4 border-t border-gray-100 dark:border-gray-700">

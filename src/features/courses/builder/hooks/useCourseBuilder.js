@@ -69,8 +69,6 @@ export const useCourseBuilder = ({ mode = 'create', courseId: initialCourseId = 
     const [originalSections, setOriginalSections] = useState([]);
     const [deletedLessons, setDeletedLessons] = useState([]);
     const [deletedSections, setDeletedSections] = useState([]);
-    const [showCancelConfirm, setShowCancelConfirm] = useState(false);
-
     // Data state
     const [categories, setCategories] = useState([]);
     const [skillOptions, setSkillOptions] = useState([{ value: '', label: 'Skill тандаңыз (опция)' }]);
@@ -111,8 +109,6 @@ export const useCourseBuilder = ({ mode = 'create', courseId: initialCourseId = 
         setDeletedLessons,
         deletedSections,
         setDeletedSections,
-        showCancelConfirm,
-        setShowCancelConfirm,
         categories,
         skillOptions,
         skillsLoading,
@@ -318,7 +314,6 @@ export const useCourseBuilder = ({ mode = 'create', courseId: initialCourseId = 
         originalCourse,
         originalSections,
         deletedLessons,
-        showCancelConfirm,
         categories,
         skillOptions,
         skillsLoading,

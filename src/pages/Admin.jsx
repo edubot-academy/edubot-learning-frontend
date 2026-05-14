@@ -1,8 +1,7 @@
 import { AdminPanel } from '@features/admin';
 
-// This file now serves as a redirect to the refactored AdminPanel
-// The actual implementation has been moved to:
-// src/features/admin/pages/AdminPanel.jsx
+// Route wrapper only. Keep admin state, data loading, and tab behavior in
+// src/features/admin/pages/AdminPanel.jsx or feature-level admin modules.
 
 const Admin = () => {
     return <AdminPanel />;

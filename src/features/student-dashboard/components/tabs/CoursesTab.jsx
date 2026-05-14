@@ -28,9 +28,6 @@ import {
 } from '../../utils/studentDashboard.helpers.js';
 import { getDashboardPath } from '@shared/utils/navigation';
 
-const fallbackCover =
-    'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&w=600&q=80';
-
 const getProgressTone = (value) => {
     if (value >= 80) return 'green';
     if (value >= 40) return 'blue';
@@ -52,8 +49,7 @@ const CoursesTab = ({ courses, offeringsByCourse }) => {
         () =>
             courses.map((course) => {
                 const courseId = String(course.id ?? course.courseId ?? '');
-                const cover =
-                    course.coverImageUrl || course.coverImage || course.cover || fallbackCover;
+                const cover = course.coverImageUrl || course.coverImage || course.cover || '';
                 const instructor = resolveInstructorName(course);
                 const progressValue = Math.max(
                     0,
@@ -216,11 +212,17 @@ const CoursesTab = ({ courses, offeringsByCourse }) => {
                                     className="dashboard-panel-muted overflow-hidden p-0"
                                 >
                                     <div className="relative h-44 overflow-hidden">
-                                        <img
-                                            src={item.cover}
-                                            alt={item.course.title}
-                                            className="h-full w-full object-cover"
-                                        />
+                                        {item.cover ? (
+                                            <img
+                                                src={item.cover}
+                                                alt={item.course.title}
+                                                className="h-full w-full object-cover"
+                                            />
+                                        ) : (
+                                            <div className="flex h-full w-full items-center justify-center bg-edubot-surfaceAlt text-sm font-semibold text-edubot-muted dark:bg-slate-800 dark:text-slate-300">
+                                                Курс сүрөтү жок
+                                            </div>
+                                        )}
                                         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
                                         <div className="absolute left-5 right-5 top-5 flex items-start justify-between gap-3">
                                             <span className="rounded-full border border-white/15 bg-black/25 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-white backdrop-blur-sm">

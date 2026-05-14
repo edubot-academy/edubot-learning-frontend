@@ -6,6 +6,32 @@ Version bumps are classified by delivery scale; see `VERSIONING.md`.
 
 ---
 
+## [1.11.13] - 2026-05-14
+
+### Changed
+
+- Hardened the standalone instructor courses page against incomplete course payloads with safer title, instructor, price, image, and edit-link fallbacks.
+- Replaced remote fallback course-cover images in student and instructor dashboard course surfaces with local placeholder states.
+- Removed unreachable edit-course cancel-confirm state and inline modal code.
+- Documented the admin route wrapper boundary so feature logic stays in the admin module.
+- Documented public route ownership between `/courses` and `/catalog` so future catalog work has a clear routing policy.
+- Aligned cart item removal with cart-item identities while preserving legacy saved-cart fallbacks.
+- Removed the redundant cart register modal path so unauthenticated checkout uses one auth-interruption flow.
+- Hardened cart contact price formatting so invalid prices fall back cleanly and cart currency remains in `сом`.
+- Improved cart contact form accessibility with message-field error wiring plus inline submit/error status.
+- Clarified unauthenticated cart recovery copy, preserved full return URLs, and separated register/login/stay actions.
+- Added public catalog retry support, clearer empty/error states, result announcements, search labeling, and pagination semantics.
+- Replaced public catalog all-pages pagination with a bounded page window plus previous/next controls.
+
+### Verification
+
+- `npm run lint`
+- `npm test -- --run`
+- `git diff --check`
+- `npm run build`
+
+---
+
 ## [1.11.12] - 2026-05-14
 
 ### Changed

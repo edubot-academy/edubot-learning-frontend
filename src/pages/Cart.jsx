@@ -2,22 +2,25 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { BsTrash, BsCartX } from 'react-icons/bs';
-import { FaShoppingCart } from 'react-icons/fa';
 import Button from '@shared-ui/Button';
-import Modal from '@shared-ui/BasicModal';
 import ContactCourseModal from '@features/courses/components/ContactCourseModal';
 import UnauthModal from '../shared/ui/UnauthModal';
 import Loader from '@shared/ui/Loader';
-import { getAuthAcquisitionPath, isPublicVideoSignupEnabled } from '@shared/auth-config';
 import EmptyState from '@components/ui/dashboard/EmptyState';
 
-const formatPrice = (price) => `${new Intl.NumberFormat('ru-RU').format(Number(price) || 0)} сом`;
+const formatPrice = (price) => {
+    if (price === null || price === undefined || price === '') return 'Баасы көрсөтүлгөн эмес';
+    const numericPrice = Number(price);
+
+    if (!Number.isFinite(numericPrice)) return 'Баасы көрсөтүлгөн эмес';
+
+    return `${new Intl.NumberFormat('ru-RU').format(numericPrice)} сом`;
+};
 
 const Cart = () => {
-    const { cartItems, loading, removeFromCart, getTotalPrice, clearCart, user } = useCart();
+    const { cartItems, loading, removeCartItem, getTotalPrice, clearCart, user } = useCart();
 
     const navigate = useNavigate();
-    const [showRegisterModal, setShowRegisterModal] = useState(false);
     const [showContactModal, setShowContactModal] = useState(false);
     const [showUnauthModal, setShowUnauthModal] = useState(false);
 
@@ -28,11 +31,6 @@ const Cart = () => {
         }
 
         setShowContactModal(true);
-    };
-
-    const handleRegister = () => {
-        setShowRegisterModal(false);
-        navigate(getAuthAcquisitionPath(), { state: { from: '/cart' } });
     };
 
     if (loading) {
@@ -68,44 +66,6 @@ const Cart = () => {
                 courseTitle={cartItems.length > 0 ? cartItems[0].title : ''}
                 course={cartItems.length > 0 ? cartItems[0] : null}
             />
-
-            <Modal
-                isOpen={showRegisterModal}
-                onClose={() => setShowRegisterModal(false)}
-                title="Себет"
-                size="md"
-            >
-                <div className="space-y-4">
-                    <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
-                            <FaShoppingCart className="w-5 h-5 text-orange-500" aria-hidden="true" />
-                        </div>
-                        <div>
-                            <h3 className="font-bold ">{isPublicVideoSignupEnabled ? 'Катталуу керек' : 'Кирүү керек'}</h3>
-                        </div>
-                    </div>
-
-                    <p className="text-gray-600 dark:text-gray-400">
-                        {isPublicVideoSignupEnabled
-                            ? 'Сатып алууну аяктоо үчүн аккаунт түзүшүңүз керек. Ал учурда сиздин себеттеги курстар сакталып калат.'
-                            : 'Сатып алууну аяктоо үчүн киришиңиз керек. Себеттеги курстарыңыз сакталат.'}
-                    </p>
-
-                    <div className="space-y-3 pt-2">
-                        <Button variant="primary" onClick={handleRegister} className="w-full py-3">
-                            {isPublicVideoSignupEnabled ? 'Аккаунт түзүү' : 'Кирүү'}
-                        </Button>
-
-                        <button
-                            type="button"
-                            onClick={() => setShowRegisterModal(false)}
-                            className="w-full text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 py-2 text-sm text-center"
-                        >
-                            Кийинчерээк
-                        </button>
-                    </div>
-                </div>
-            </Modal>
             <ContactCourseModal
                 isOpen={showContactModal}
                 onClose={() => setShowContactModal(false)}
@@ -184,7 +144,7 @@ const Cart = () => {
                                                 </p>
                                                 <button
                                                     type="button"
-                                                    onClick={() => removeFromCart(item.id)}
+                                                    onClick={() => removeCartItem(item.cartItemId || item.id)}
                                                     className="text-red-500 hover:text-red-700 text-sm font-medium flex items-center px-3 py-1 border border-red-200 rounded hover:bg-red-50 transition-colors"
                                                 >
                                                     <BsTrash className="w-3 h-3 mr-1" aria-hidden="true" />

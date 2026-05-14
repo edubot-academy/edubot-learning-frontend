@@ -10,6 +10,25 @@ const courseTypeLabel = (type) => {
     return 'Video';
 };
 
+const getCourseDisplayData = (course, user) => {
+    const courseId = course?.id ?? course?.courseId ?? '';
+    const rawTitle = typeof course?.title === 'string' ? course.title.trim() : '';
+    const title = rawTitle || (courseId ? `Курс ${courseId}` : 'Аталышы жок курс');
+    const instructorName = course?.instructor?.fullName || user?.fullName || 'Инструктор көрсөтүлгөн эмес';
+    const hasPrice = course?.price !== null && course?.price !== undefined && course?.price !== '';
+    const price = hasPrice ? Number(course.price) : Number.NaN;
+
+    return {
+        courseId,
+        coverImageUrl: typeof course?.coverImageUrl === 'string' ? course.coverImageUrl.trim() : '',
+        instructorName,
+        isPublished: Boolean(course?.isPublished),
+        priceLabel: Number.isFinite(price) ? `${price} с` : 'Баасы көрсөтүлгөн эмес',
+        title,
+        typeLabel: courseTypeLabel(course?.courseType || course?.type),
+    };
+};
+
 const InstructorCourses = () => {
     const { user } = useContext(AuthContext);
     const { courses, error, loading, refresh } = useInstructorCourseListPage(user);
@@ -35,42 +54,59 @@ const InstructorCourses = () => {
                 </div>
             )}
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {courses.map((course) => (
-                    <div key={course.id} className="bg-white dark:bg-[#141619] rounded shadow p-4 relative">
-                        {course.coverImageUrl && (
-                            <img
-                                src={course.coverImageUrl}
-                                alt={course.title}
-                                className="w-full h-48 object-cover mb-4"
-                                loading="lazy"
-                                decoding="async"
-                            />
-                        )}
-                        <h2 className="text-xl font-semibold mb-2">{course.title}</h2>
-                        <span className="inline-flex mb-2 text-xs px-2 py-1 rounded-full bg-blue-50 text-blue-700">
-                            {courseTypeLabel(course.courseType || course.type)}
-                        </span>
-                        <p className="text-gray-700 dark:text-[#a6adba] mb-2">
-                            {course.instructor?.fullName || user?.fullName || '—'}
-                        </p>
-                        <p className="text-sm text-gray-500 dark:text-[#a6adba] mb-2">Баасы: {course.price} с</p>
-                        <span
-                            className={`absolute top-2 right-2 px-2 py-1 text-xs rounded ${
-                                course.isPublished
-                                    ? 'bg-green-100 text-gray-700 dark:text-[#a6adba]'
-                                    : 'bg-yellow-100 text-yellow-700'
-                            }`}
+                {courses.map((course, index) => {
+                    const display = getCourseDisplayData(course, user);
+
+                    return (
+                        <div
+                            key={display.courseId || `course-${index}`}
+                            className="bg-white dark:bg-[#141619] rounded shadow p-4 relative"
                         >
-                            {course.isPublished ? 'Жарыяланды' : 'Каралууда'}
-                        </span>
-                        <Link
-                            to={`/instructor/courses/edit/${course.id}`}
-                            className="inline-block mt-4 px-4 py-2 bg-blue-600 text-white rounded transition duration-300 hover:bg-blue-500 hover:shadow-lg"
-                        >
-                            {course.isPublished ? 'Tастыктоо' : 'Өзгөртүү'}
-                        </Link>
-                    </div>
-                ))}
+                            {display.coverImageUrl ? (
+                                <img
+                                    src={display.coverImageUrl}
+                                    alt={display.title}
+                                    className="w-full h-48 object-cover mb-4"
+                                    loading="lazy"
+                                    decoding="async"
+                                />
+                            ) : (
+                                <div className="mb-4 flex h-48 w-full items-center justify-center rounded bg-gray-100 text-sm font-medium text-gray-500 dark:bg-gray-800 dark:text-gray-300">
+                                    Курс сүрөтү жок
+                                </div>
+                            )}
+                            <h2 className="text-xl font-semibold mb-2">{display.title}</h2>
+                            <span className="inline-flex mb-2 text-xs px-2 py-1 rounded-full bg-blue-50 text-blue-700">
+                                {display.typeLabel}
+                            </span>
+                            <p className="text-gray-700 dark:text-[#a6adba] mb-2">
+                                {display.instructorName}
+                            </p>
+                            <p className="text-sm text-gray-500 dark:text-[#a6adba] mb-2">Баасы: {display.priceLabel}</p>
+                            <span
+                                className={`absolute top-2 right-2 px-2 py-1 text-xs rounded ${
+                                    display.isPublished
+                                        ? 'bg-green-100 text-gray-700 dark:text-[#a6adba]'
+                                        : 'bg-yellow-100 text-yellow-700'
+                                }`}
+                            >
+                                {display.isPublished ? 'Жарыяланды' : 'Каралууда'}
+                            </span>
+                            {display.courseId ? (
+                                <Link
+                                    to={`/instructor/courses/edit/${display.courseId}`}
+                                    className="inline-block mt-4 px-4 py-2 bg-blue-600 text-white rounded transition duration-300 hover:bg-blue-500 hover:shadow-lg"
+                                >
+                                    {display.isPublished ? 'Tастыктоо' : 'Өзгөртүү'}
+                                </Link>
+                            ) : (
+                                <span className="inline-block mt-4 rounded bg-gray-200 px-4 py-2 text-gray-500 dark:bg-gray-800 dark:text-gray-300">
+                                    Өзгөртүү жеткиликсиз
+                                </span>
+                            )}
+                        </div>
+                    );
+                })}
             </div>
             {!loading && !error && !courses.length && (
                 <div className="rounded border border-gray-200 p-6 text-center text-gray-600 dark:border-gray-800 dark:text-gray-300">

@@ -30,7 +30,15 @@ export const CartProvider = ({ children }) => {
     const parseSavedCart = useCallback(() => {
         try {
             const saved = localStorage.getItem('cart');
-            return saved ? JSON.parse(saved) : [];
+            const parsed = saved ? JSON.parse(saved) : [];
+            if (!Array.isArray(parsed)) return [];
+
+            return parsed
+                .filter((item) => item && typeof item === 'object')
+                .map((item) => ({
+                    ...item,
+                    cartItemId: item.cartItemId || item.id,
+                }));
         } catch (error) {
             console.error('Failed to parse saved cart', error);
             return [];
