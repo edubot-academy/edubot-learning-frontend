@@ -1,9 +1,10 @@
-import api from '../../shared/api/client';
+import api, { clean } from '../../shared/api/client';
 
 export async function publicCatalog(params = {}) {
-    const { page = 1, limit = 20, q = '', language } = params;
+    const { page = 1, limit = 20, q = '', language, signal } = params;
     const { data } = await api.get('/courses/catalog', {
-        params: { page, limit, q, language },
+        params: clean({ page, limit, q: q || undefined, language }),
+        signal,
     });
     return data;
 }

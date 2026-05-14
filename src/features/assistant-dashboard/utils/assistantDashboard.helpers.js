@@ -23,7 +23,10 @@ export const buildCourseCounts = (courseIds, enrollmentsMap) => {
         counts[courseId] = 0;
 
         Object.values(enrollmentsMap).forEach((studentCourseIds) => {
-            if (Array.isArray(studentCourseIds) && studentCourseIds.includes(courseId)) {
+            if (
+                Array.isArray(studentCourseIds) &&
+                studentCourseIds.some((studentCourseId) => Number(studentCourseId) === Number(courseId))
+            ) {
                 counts[courseId] += 1;
             }
         });

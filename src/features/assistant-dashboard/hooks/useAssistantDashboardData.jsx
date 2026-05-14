@@ -2,22 +2,21 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import {
     fetchUsers,
     fetchCourses,
-    enrollUserInCourse,
     checkEnrollments,
-    unenrollUserFromCourse,
     listCompanyCourses,
     myCompanies,
 } from "@services/api";
 import toast from "react-hot-toast";
-import { normalizeEnrollmentCourseType } from "@features/enrollments/policy";
 import { 
     createCoursesById, 
     buildCourseCounts, 
     buildEnrolledStudentSet,
     filterPublishedCourses 
 } from "../utils/assistantDashboard.helpers";
+import { useAssistantEnrollmentActions } from "./useAssistantEnrollmentActions.jsx";
 
 const ITEMS_PER_PAGE = 10;
+const MIN_SEARCH_LENGTH = 3;
 
 export const useAssistantDashboardData = (user) => {
     const isAssistant = user?.role === "assistant";
@@ -38,6 +37,22 @@ export const useAssistantDashboardData = (user) => {
     const [activeCompanyId, setActiveCompanyId] = useState(null);
 
     const debounceRef = useRef(null);
+    const coursesRef = useRef([]);
+    const enrollmentsMapRef = useRef({});
+    const mutationContextRef = useRef('');
+    const studentsRef = useRef([]);
+
+    useEffect(() => {
+        coursesRef.current = courses;
+    }, [courses]);
+
+    useEffect(() => {
+        studentsRef.current = students;
+    }, [students]);
+
+    useEffect(() => {
+        enrollmentsMapRef.current = enrollmentsMap;
+    }, [enrollmentsMap]);
 
     // Computed values
     const assistantNoCompany = isAssistant && companies.length === 0;
@@ -52,6 +67,79 @@ export const useAssistantDashboardData = (user) => {
         return createCoursesById(courses);
     }, [courses]);
 
+    const isSearchTooShort = search.trim().length > 0 && search.trim().length < MIN_SEARCH_LENGTH;
+
+    const mutationContext = useMemo(() => {
+        const courseIds = courses.map((course) => course.id).join(',');
+        const studentIds = students.map((student) => student.id).join(',');
+
+        return [
+            activeCompanyId ?? '',
+            currentPage,
+            search.trim(),
+            courseIds,
+            studentIds,
+        ].join('|');
+    }, [activeCompanyId, courses, currentPage, search, students]);
+
+    useEffect(() => {
+        mutationContextRef.current = mutationContext;
+    }, [mutationContext]);
+
+    const getMutationContext = useCallback(() => mutationContextRef.current, []);
+
+    const isCurrentMutationContext = useCallback(
+        (mutationContextAtStart) => mutationContextAtStart === mutationContextRef.current,
+        []
+    );
+
+    const applyEnrollmentState = useCallback((createNextMap) => {
+        const nextMap = createNextMap(enrollmentsMapRef.current);
+        const courseIds = coursesRef.current.map((course) => course.id);
+        const enrolledSet = buildEnrolledStudentSet(nextMap);
+
+        enrollmentsMapRef.current = nextMap;
+        setEnrollmentsMap(nextMap);
+        setCourseCounts(buildCourseCounts(courseIds, nextMap));
+        setEnrolledStudents(studentsRef.current.filter((student) => enrolledSet.has(student.id)));
+    }, []);
+
+    const handleEnrollSuccess = useCallback((studentId, courseId, mutationContextAtStart) => {
+        if (!isCurrentMutationContext(mutationContextAtStart)) return;
+
+        setCourseSelections((prev) => ({
+            ...prev,
+            [studentId]: '',
+        }));
+
+        applyEnrollmentState((currentMap) => {
+            const mapKey = String(studentId);
+            const currentCourseIds = Array.isArray(currentMap[mapKey]) ? currentMap[mapKey] : [];
+            const nextCourseIds = currentCourseIds.some((currentCourseId) => Number(currentCourseId) === courseId)
+                ? currentCourseIds
+                : [...currentCourseIds, courseId];
+
+            return {
+                ...currentMap,
+                [mapKey]: nextCourseIds,
+            };
+        });
+    }, [applyEnrollmentState, isCurrentMutationContext]);
+
+    const handleUnenrollSuccess = useCallback((studentId, courseId, mutationContextAtStart) => {
+        if (!isCurrentMutationContext(mutationContextAtStart)) return;
+
+        applyEnrollmentState((currentMap) => {
+            const mapKey = String(studentId);
+            const currentCourseIds = Array.isArray(currentMap[mapKey]) ? currentMap[mapKey] : [];
+
+            return {
+                ...currentMap,
+                [mapKey]: currentCourseIds.filter((id) => Number(id) !== courseId),
+            };
+        });
+    }, [applyEnrollmentState, isCurrentMutationContext]);
+
     // Reset dashboard data
     const resetDashboardData = useCallback(() => {
         setStudents([]);
@@ -59,6 +147,7 @@ export const useAssistantDashboardData = (user) => {
         setEnrolledStudents([]);
         setCourses([]);
         setCourseCounts({});
+        enrollmentsMapRef.current = {};
         setEnrollmentsMap({});
         setCourseSelections({});
         setTotalPages(1);
@@ -139,13 +228,11 @@ export const useAssistantDashboardData = (user) => {
                     : {};
 
             const safeMap = enrollmentData || {};
-            setEnrollmentsMap(safeMap);
-
-            // Build course counts and enrolled students
-            const counts = buildCourseCounts(courseIds, safeMap);
             const enrolledSet = buildEnrolledStudentSet(safeMap);
 
-            setCourseCounts(counts);
+            enrollmentsMapRef.current = safeMap;
+            setEnrollmentsMap(safeMap);
+            setCourseCounts(buildCourseCounts(courseIds, safeMap));
             setEnrolledStudents(studentsData.filter((student) => enrolledSet.has(student.id)));
         } catch {
             toast.error("Маалыматтарды жүктөөдө ката кетти");
@@ -172,100 +259,22 @@ export const useAssistantDashboardData = (user) => {
         clearTimeout(debounceRef.current);
 
         debounceRef.current = setTimeout(() => {
-            if (search.length === 0 || search.length >= 3) {
+            if (!isSearchTooShort) {
                 loadStudentsAndCourses();
+            } else {
+                setLoading(false);
             }
         }, 500);
 
         return () => clearTimeout(debounceRef.current);
-    }, [search, currentPage, loadStudentsAndCourses]);
+    }, [isSearchTooShort, search, currentPage, loadStudentsAndCourses]);
 
-    // Confirm toast helper
-    const confirmToast = (message, onConfirm, confirmClass = "bg-blue-600 hover:bg-blue-700") => {
-        toast((t) => (
-            <div>
-                <div className="mb-2">{message}</div>
-                <div className="mt-2 flex justify-end gap-2">
-                    <button
-                        onClick={async () => {
-                            toast.dismiss(t.id);
-                            await onConfirm();
-                        }}
-                        className={`px-3 py-1 text-white rounded ${confirmClass}`}
-                    >
-                        Ооба
-                    </button>
-                    <button
-                        onClick={() => toast.dismiss(t.id)}
-                        className="px-3 py-1 border rounded hover:bg-gray-100"
-                    >
-                        Жок
-                    </button>
-                </div>
-            </div>
-        ));
-    };
-
-    // Enrollment handlers
-    const handleEnroll = async (student, selectedCourseId) => {
-        const courseTitle = coursesById[selectedCourseId]?.title ?? "курс";
-
-        confirmToast(
-            <>
-                <span className="font-bold">{student.fullName}</span> студентин{" "}
-                <span className="font-bold">{courseTitle}</span> курсуна каттоо — макулсузбу?
-            </>,
-            async () => {
-                try {
-                    await enrollUserInCourse(student.id, selectedCourseId, {
-                        courseType: normalizeEnrollmentCourseType(
-                            coursesById[selectedCourseId]?.courseType
-                        ),
-                    });
-
-                    toast.success(
-                        <span>
-                            <span className="font-bold">{student.fullName}</span> курска ийгиликтүү катталды
-                        </span>
-                    );
-
-                    setCourseSelections((prev) => ({
-                        ...prev,
-                        [student.id]: "",
-                    }));
-
-                    await loadStudentsAndCourses();
-                } catch {
-                    toast.error("Курска каттоодо ката кетти");
-                }
-            }
-        );
-    };
-
-    const handleUnenroll = (student, courseId) => {
-        const courseTitle = coursesById[courseId]?.title ?? "курс";
-
-        confirmToast(
-            <>
-                <span className="font-bold">{student.fullName}</span> студентин{" "}
-                <span className="font-bold">{courseTitle}</span> курсунан чыгаруу — макулсузбу?
-            </>,
-            async () => {
-                try {
-                    await unenrollUserFromCourse(student.id, courseId);
-                    toast.success(
-                        <span>
-                            <span className="font-bold">{student.fullName}</span> курстан ийгиликтүү чыгарылды
-                        </span>
-                    );
-                    await loadStudentsAndCourses();
-                } catch {
-                    toast.error("Курстан чыгарууда ката кетти");
-                }
-            },
-            "bg-red-600 hover:bg-red-700"
-        );
-    };
+    const { handleEnroll, handleUnenroll } = useAssistantEnrollmentActions({
+        coursesById,
+        getMutationContext,
+        onEnrollSuccess: handleEnrollSuccess,
+        onUnenrollSuccess: handleUnenrollSuccess,
+    });
 
     return {
         // State
@@ -286,6 +295,7 @@ export const useAssistantDashboardData = (user) => {
         coursesById,
         assistantNoCompany,
         assistantNeedsSelect,
+        isSearchTooShort,
         isAssistant,
 
         // Actions

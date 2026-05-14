@@ -29,6 +29,7 @@ const AssistantStudentTable = ({
     setCourseSelections,
     handleEnroll,
     handleUnenroll,
+    isSearchTooShort,
 }) => {
     return (
         <div className="space-y-6">
@@ -59,6 +60,11 @@ const AssistantStudentTable = ({
                             }}
                             disabled={loading}
                         />
+                        {isSearchTooShort && (
+                            <p className="mt-2 text-xs text-edubot-muted dark:text-slate-400">
+                                Издөө үчүн кеминде 3 белги киргизиңиз.
+                            </p>
+                        )}
                     </label>
                 </DashboardFilterBar>
             </DashboardWorkspaceHero>
@@ -88,7 +94,7 @@ const AssistantStudentTable = ({
                             const selectedCourseId = courseSelections[student.id] || '';
                             const enrolledCourseIds = enrollmentsMap[student.id] || [];
                             const availableCourses = courses.filter(
-                                (course) => !enrolledCourseIds.includes(course.id)
+                                (course) => !enrolledCourseIds.some((courseId) => Number(courseId) === Number(course.id))
                             );
                             const isDisabled = !selectedCourseId || availableCourses.length === 0;
 

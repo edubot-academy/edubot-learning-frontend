@@ -6,6 +6,29 @@ Version bumps are classified by delivery scale; see `VERSIONING.md`.
 
 ---
 
+## [1.11.11] - 2026-05-14
+
+### Changed
+
+- Added request lifecycle handling for the public catalog loader, including aborting stale requests and preserving explicit loading/error state.
+- Moved the standalone instructor courses page to the scoped instructor-courses API instead of global course fetch plus client-side instructor filtering.
+- Shared dashboard keyboard navigation with admin and assistant dashboards, and moved assistant tab URL state into a focused route-state hook.
+- Adopted admin tab/filter hooks in `AdminPanel` so URL synchronization is no longer duplicated in the page controller.
+- Moved assistant dashboard tab rendering and shell composition into a feature component so the page owns route and data orchestration only.
+- Split assistant enrollment action orchestration out of the assistant dashboard data-loading hook.
+- Updated assistant enrollment mutations to refresh the visible enrollment state locally instead of refetching all assistant dashboard data after every change.
+- Clarified assistant student search behavior for short search terms and stopped unnecessary reload attempts before the minimum search length.
+- Moved catalog search and pagination synchronization into a route-state hook so debounced search, browser navigation, and pagination share one URL contract.
+
+### Verification
+
+- `npm run lint`
+- `npm test -- --run`
+- `git diff --cached --check`
+- `npm run build`
+
+---
+
 ## [1.11.10] - 2026-05-14
 
 ### Changed

@@ -4,17 +4,8 @@ import { ADMIN_TABS } from '../utils/adminPanel.constants';
 import { isValidTab } from '../utils/adminPanel.helpers';
 
 export const useAdminTabState = () => {
-    const [searchParams] = useSearchParams();
+    const [searchParams, setSearchParams] = useSearchParams();
     const [activeTab, setActiveTab] = useState('stats');
-
-    const updateSearchParams = useCallback(
-        (params) => {
-            // This will be passed in from the parent component
-            // since setSearchParams is not available here
-            return params;
-        },
-        []
-    );
 
     // Initialize tab from URL
     useEffect(() => {
@@ -25,25 +16,26 @@ export const useAdminTabState = () => {
     }, [searchParams]);
 
     const handleTabSelect = useCallback(
-        (tabId, setSearchParams) => {
+        (tabId) => {
             if (!isValidTab(tabId, ADMIN_TABS)) return;
             
             setActiveTab(tabId);
             
             // Update URL search params
-            setSearchParams((prev) => {
-                const updated = new URLSearchParams(prev);
-                updated.set('tab', tabId);
-                return updated;
-            });
+            setSearchParams(
+                (prev) => {
+                    const updated = new URLSearchParams(prev);
+                    updated.set('tab', tabId);
+                    return updated;
+                },
+                { replace: true }
+            );
         },
-        []
+        [setSearchParams]
     );
 
     return {
         activeTab,
-        setActiveTab,
         handleTabSelect,
-        updateSearchParams,
     };
 };

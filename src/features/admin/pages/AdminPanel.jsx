@@ -1,5 +1,4 @@
-import { useEffect, useState, useCallback, useRef, useContext } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useEffect, useState, useCallback, useContext } from 'react';
 import FloatingActionButton from '../../../components/ui/FloatingActionButton';
 import { AuthContext } from '../../../context/AuthContext';
 import {
@@ -54,6 +53,7 @@ import { isForbiddenError } from '@shared/api/error';
 
 // Import standardized dashboard components
 import { DashboardLayout, DashboardHeader, DashboardTabs } from '../../../components/ui/dashboard';
+import { useDashboardKeyboardNavigation } from '../../../components/ui/dashboard/useDashboardKeyboardNavigation';
 
 // Import extracted components
 import AdminStatsTab from '../components/AdminStatsTab';
@@ -80,8 +80,10 @@ import {
 } from '@features/courses/api';
 
 // Import constants and helpers
-import { ADMIN_TABS, NAV_ITEMS, USERS_QUERY_KEYS } from '../utils/adminPanel.constants';
+import { NAV_ITEMS } from '../utils/adminPanel.constants';
 import { calculateVisiblePages } from '../utils/adminPanel.helpers';
+import { useAdminTabState } from '../hooks/useAdminTabState';
+import { useAdminUsersFilters } from '../hooks/useAdminUsersFilters';
 
 const cleanTenantPayload = (payload = {}) =>
     Object.fromEntries(
@@ -110,7 +112,6 @@ const splitTenantPayload = (payload = {}) => {
 
 const AdminPanel = () => {
     const { user } = useContext(AuthContext);
-    const [searchParams, setSearchParams] = useSearchParams();
 
     // State
     const [courses, setCourses] = useState([]);
@@ -183,147 +184,25 @@ const AdminPanel = () => {
     const [savingCertificateAssetKind, setSavingCertificateAssetKind] = useState(null);
 
     // Users pagination state
-    const [usersPage, setUsersPage] = useState(
-        Number(searchParams.get(USERS_QUERY_KEYS.page) || searchParams.get('page')) || 1
-    );
+    const {
+        dateFrom,
+        dateTo,
+        handleUsersPageChange,
+        roleFilter,
+        search,
+        setDateFrom,
+        setDateTo,
+        setRoleFilter,
+        setSearch,
+        usersPage,
+    } = useAdminUsersFilters();
     const [usersTotalPages, setUsersTotalPages] = useState(1);
     const [usersTotal, setUsersTotal] = useState(0);
 
-    // Users filters state
-    const [search, setSearch] = useState(searchParams.get(USERS_QUERY_KEYS.search) || '');
-    const [roleFilter, setRoleFilter] = useState(searchParams.get(USERS_QUERY_KEYS.role) || '');
-    const [dateFrom, setDateFrom] = useState(searchParams.get(USERS_QUERY_KEYS.dateFrom) || '');
-    const [dateTo, setDateTo] = useState(searchParams.get(USERS_QUERY_KEYS.dateTo) || '');
-
     // Tab state
-    const [activeTab, setActiveTab] = useState('stats');
+    const { activeTab, handleTabSelect } = useAdminTabState();
 
-    const debounceRef = useRef(null);
-
-    useEffect(() => {
-        const handleGlobalKeyDown = (e) => {
-            // Alt + shortcuts for navigation
-            if (e.altKey) {
-                switch (e.key.toLowerCase()) {
-                    case 'm': {
-                        e.preventDefault();
-                        const mainContent = document.getElementById('main-content');
-                        if (mainContent) {
-                            mainContent.focus();
-                            mainContent.scrollIntoView({ behavior: 'smooth' });
-                        }
-                        break;
-                    }
-                    case 'n': {
-                        e.preventDefault();
-                        const navigation = document.querySelector('[data-dashboard-navigation]');
-                        if (navigation) {
-                            navigation.focus();
-                            navigation.scrollIntoView({ behavior: 'smooth' });
-                        }
-                        break;
-                    }
-                    case 's': {
-                        e.preventDefault();
-                        const searchInput = document.querySelector(
-                            'input[placeholder*="издөө" i], input[type="search"]'
-                        );
-                        if (searchInput) {
-                            searchInput.focus();
-                            searchInput.scrollIntoView({ behavior: 'smooth' });
-                        }
-                        break;
-                    }
-                }
-            }
-
-            // Arrow key navigation for sidebar
-            if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
-                const sidebarItems = document.querySelectorAll('[data-dashboard-nav-item]');
-                const currentIndex = Array.from(sidebarItems).findIndex(
-                    (item) => item === document.activeElement
-                );
-
-                if (currentIndex !== -1) {
-                    e.preventDefault();
-                    let newIndex;
-                    if (e.key === 'ArrowLeft') {
-                        newIndex = currentIndex > 0 ? currentIndex - 1 : sidebarItems.length - 1;
-                    } else {
-                        newIndex = currentIndex < sidebarItems.length - 1 ? currentIndex + 1 : 0;
-                    }
-                    sidebarItems[newIndex].focus();
-                }
-            }
-        };
-
-        document.addEventListener('keydown', handleGlobalKeyDown);
-        return () => document.removeEventListener('keydown', handleGlobalKeyDown);
-    }, []);
-
-    // Update search params helper
-    const updateSearchParams = useCallback(
-        (params) => {
-            setSearchParams((prev) => {
-                const updated = new URLSearchParams(prev);
-                Object.entries(params).forEach(([key, value]) => {
-                    if (value !== undefined && value !== null && value !== '')
-                        updated.set(key, value);
-                    else updated.delete(key);
-                });
-                return updated;
-            });
-        },
-        [setSearchParams]
-    );
-
-    // Initialize tab from URL
-    useEffect(() => {
-        const tabFromUrl = searchParams.get('tab');
-        if (ADMIN_TABS.includes(tabFromUrl)) {
-            setActiveTab((prev) => (prev === tabFromUrl ? prev : tabFromUrl));
-        }
-    }, [searchParams]);
-
-    // Update URL when tab changes
-    useEffect(() => {
-        updateSearchParams({ tab: activeTab });
-    }, [activeTab, updateSearchParams]);
-
-    // Tab selection handler
-    const handleTabSelect = useCallback(
-        (tabId) => {
-            if (!ADMIN_TABS.includes(tabId)) return;
-            setActiveTab(tabId);
-            updateSearchParams({ tab: tabId });
-        },
-        [updateSearchParams]
-    );
-
-    // Users filters URL sync
-    useEffect(() => {
-        clearTimeout(debounceRef.current);
-
-        debounceRef.current = setTimeout(() => {
-            if (search.length === 0 || search.length >= 3) {
-                updateSearchParams({
-                    [USERS_QUERY_KEYS.search]: search,
-                    [USERS_QUERY_KEYS.role]: roleFilter,
-                    [USERS_QUERY_KEYS.dateFrom]: dateFrom,
-                    [USERS_QUERY_KEYS.dateTo]: dateTo,
-                    [USERS_QUERY_KEYS.page]: usersPage,
-                });
-            }
-        }, 500);
-
-        return () => clearTimeout(debounceRef.current);
-    }, [search, roleFilter, dateFrom, dateTo, usersPage, updateSearchParams]);
-
-    // Users page change handler
-    const handleUsersPageChange = useCallback((nextPage) => {
-        if (nextPage < 1) return;
-        setUsersPage(nextPage);
-    }, []);
+    useDashboardKeyboardNavigation();
 
     const loadCertificateStudents = useCallback(
         async (courseId) => {
