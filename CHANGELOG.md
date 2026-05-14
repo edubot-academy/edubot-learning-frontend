@@ -6,6 +6,20 @@ Version bumps are classified by delivery scale; see `VERSIONING.md`.
 
 ---
 
+## [1.11.23] - 2026-05-15
+
+### Fixed
+
+- Allowed the 2GIS Maps API script, map asset requests, and Google Maps fallback iframe in production CSP.
+
+### Verification
+
+- `npm run lint`
+- `git diff --check`
+- `npm run build`
+
+---
+
 ## [1.11.22] - 2026-05-15
 
 ### Changed
