@@ -132,6 +132,38 @@ export const useStudentDashboardViewModel = ({
         return false;
     }, [accessLoaded, accessState, accessStateError, summary, overviewStats.activeCourses]);
 
+    const accessStateDetails = useMemo(() => {
+        if (accessStateError) {
+            return {
+                state: 'unknown',
+                title: 'Окуу мүмкүнчүлүгүн текшерүү мүмкүн болбоду',
+                description: 'Курстар же сабактар көрүнбөй калса, баракты жаңыртып көрүңүз же колдоо кызматына кайрылыңыз.',
+            };
+        }
+
+        if (!accessLoaded) {
+            return {
+                state: 'unloaded',
+                title: 'Окуу мүмкүнчүлүгү текшерилип жатат',
+                description: 'Курстар, сабактар жана прогресс жүктөлгөндөн кийин жеткиликтүүлүк так көрсөтүлөт.',
+            };
+        }
+
+        if (!hasActiveStudentAccess) {
+            return {
+                state: 'gated',
+                title: 'Окуу мүмкүнчүлүгү азырынча активдүү эмес',
+                description: 'Сизде активдүү курс же пландагы сабак жок. Төлөм ырасталгандан же каттоо иштетилгенден кийин окуу материалдары ачылат.',
+            };
+        }
+
+        return {
+            state: 'active',
+            title: 'Окуу мүмкүнчүлүгү активдүү',
+            description: 'Активдүү курстарыңыз жана окуу материалдарыңыз жеткиликтүү.',
+        };
+    }, [accessLoaded, accessStateError, hasActiveStudentAccess]);
+
     const offeringsByCourse = useMemo(() => {
         const map = new Map();
         offerings.forEach((offering) => {
@@ -249,6 +281,7 @@ export const useStudentDashboardViewModel = ({
     return {
         attendanceEnabled,
         attendanceStats,
+        accessStateDetails,
         groupOptions,
         hasActiveStudentAccess,
         hasAttendanceEligibleCourses,

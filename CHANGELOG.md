@@ -6,6 +6,29 @@ Version bumps are classified by delivery scale; see `VERSIONING.md`.
 
 ---
 
+## [1.11.16] - 2026-05-14
+
+### Changed
+
+- Added explicit recovery states and support actions for setup-account links without a valid token.
+- Added confirmation context for admin user role changes and destructive user deletion.
+- Added assistant enrollment action pending state, selected-course context, and safer per-student action labels.
+- Added explicit student access-state messaging for gated, unloaded, and unknown access checks.
+- Separated student password updates from profile editing.
+- Added a student task focus filter for items that need action.
+- Added admin transcoding guardrail copy and recent action history.
+- Added confirmation context for admin course/category deletion and pending-course approve/reject decisions.
+- Aligned confirmation modal visual variants with primary, success, and danger confirmation actions.
+
+### Verification
+
+- `npm run lint`
+- `npm test -- --run --testTimeout=15000`
+- `git diff --check`
+- `npm run build`
+
+---
+
 ## [1.11.15] - 2026-05-14
 
 ### Changed

@@ -16,12 +16,13 @@ const SetupAccountPage = () => {
     const [confirmPassword, setConfirmPassword] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const hasToken = Boolean(token);
 
     const handleSubmit = async (event) => {
         event.preventDefault();
         setError('');
 
-        if (!token) {
+        if (!hasToken) {
             setError('Аккаунтту даярдоо шилтемеси табылган жок.');
             return;
         }
@@ -76,7 +77,39 @@ const SetupAccountPage = () => {
                         Бир жолу сырсөз коюңуз. Кийинки кирүүлөрдө email жана ушул сырсөз менен киресиз.
                     </p>
 
-                    {error && <p className="text-red-500 mb-4">{error}</p>}
+                    {!hasToken && (
+                        <div className="mb-5 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-700/60 dark:bg-amber-950/30 dark:text-amber-100">
+                            <p className="font-semibold">Аккаунт даярдоо шилтемеси жок.</p>
+                            <p className="mt-1">
+                                Бул барак бир жолку чакыруу шилтемеси менен иштейт. CRM менеджерден жаңы чакыруу сураңыз же кирүү барагына кайтыңыз.
+                            </p>
+                            <div className="mt-3 flex flex-wrap gap-2">
+                                <Link
+                                    to="/login"
+                                    className="rounded bg-amber-700 px-3 py-2 text-xs font-semibold text-white hover:bg-amber-800"
+                                >
+                                    Кирүү барагына өтүү
+                                </Link>
+                                <Link
+                                    to="/contact"
+                                    className="rounded border border-amber-300 px-3 py-2 text-xs font-semibold text-amber-900 hover:bg-amber-100 dark:border-amber-700 dark:text-amber-100 dark:hover:bg-amber-900/40"
+                                >
+                                    Жардам суроо
+                                </Link>
+                            </div>
+                        </div>
+                    )}
+
+                    {error && (
+                        <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-200" role="alert">
+                            <p>{error}</p>
+                            {hasToken && (
+                                <p className="mt-2">
+                                    Эгер шилтеменин мөөнөтү өтсө, CRM менеджерден жаңы чакыруу сураңыз.
+                                </p>
+                            )}
+                        </div>
+                    )}
 
                     <form onSubmit={handleSubmit} className="space-y-3">
                         <LabelPassword
@@ -101,7 +134,7 @@ const SetupAccountPage = () => {
 
                         <button
                             type="submit"
-                            disabled={loading || !token}
+                            disabled={loading || !hasToken}
                             className="w-full mt-4 shadow-[0px_5px_21.3px_0px_#E14219BF] bg-[linear-gradient(180deg,#FF8C6E_0%,#E14219_100%)] text-white py-3 rounded text-lg font-semibold hover:opacity-90 transition disabled:opacity-60"
                         >
                             {loading ? 'Даярдалууда...' : 'Аккаунтту иштетүү'}

@@ -55,10 +55,16 @@ export const useAdminUsersDomain = ({
     }, []);
 
     const handleDeleteUser = useCallback(
-        async (id) => {
+        async (targetUser) => {
+            const id = typeof targetUser === 'object' ? targetUser.id : targetUser;
+            const userLabel =
+                typeof targetUser === 'object'
+                    ? `${targetUser.fullName || 'Аты жок'} (${targetUser.email || 'email жок'})`
+                    : `ID ${id}`;
+
             requestConfirmation({
                 title: 'Колдонуучуну өчүрүү',
-                message: 'Бул колдонуучуну өчүрүүгө ишенимдүүсүзбү?',
+                message: `${userLabel} колдонуучусун өчүрүүгө ишенимдүүсүзбү? Бул аракет аккаунтка кирүүнү токтотот.`,
                 confirmLabel: 'Өчүрүү',
                 confirmVariant: 'danger',
                 onConfirm: async () => {
@@ -75,17 +81,38 @@ export const useAdminUsersDomain = ({
         [requestConfirmation]
     );
 
-    const handleRoleChange = useCallback(async (userId, newRole) => {
-        try {
-            await updateUserRole(userId, newRole);
-            setUsers((prev) =>
-                prev.map((user) => (user.id === userId ? { ...user, role: newRole } : user))
-            );
-            toast.success('Роль ийгиликтүү өзгөртүлдү');
-        } catch {
-            toast.error('Ролду өзгөртүүдө ката кетти');
-        }
-    }, []);
+    const handleRoleChange = useCallback(
+        async (targetUser, newRole) => {
+            const userId = typeof targetUser === 'object' ? targetUser.id : targetUser;
+            const currentRole = typeof targetUser === 'object' ? targetUser.role : null;
+
+            if (currentRole === newRole) return;
+
+            const userLabel =
+                typeof targetUser === 'object'
+                    ? `${targetUser.fullName || 'Аты жок'} (${targetUser.email || 'email жок'})`
+                    : `ID ${userId}`;
+
+            requestConfirmation({
+                title: 'Ролду өзгөртүү',
+                message: `${userLabel} колдонуучусунун ролун "${currentRole || 'белгисиз'}" → "${newRole}" кылып өзгөртөсүзбү? Бул кирүү укуктарына дароо таасир берет.`,
+                confirmLabel: 'Ролду өзгөртүү',
+                confirmVariant: ['admin', 'superadmin'].includes(newRole) ? 'danger' : 'primary',
+                onConfirm: async () => {
+                    try {
+                        await updateUserRole(userId, newRole);
+                        setUsers((prev) =>
+                            prev.map((user) => (user.id === userId ? { ...user, role: newRole } : user))
+                        );
+                        toast.success('Роль ийгиликтүү өзгөртүлдү');
+                    } catch {
+                        toast.error('Ролду өзгөртүүдө ката кетти');
+                    }
+                },
+            });
+        },
+        [requestConfirmation]
+    );
 
     const handleEnrollUser = useCallback(
         async (userId, courseId) => {

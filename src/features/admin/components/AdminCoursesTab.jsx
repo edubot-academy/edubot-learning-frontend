@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import {
     DashboardInsetPanel,
     DashboardMetricCard,
@@ -66,6 +66,19 @@ const AdminCoursesTab = ({
     const [transcodingContextSectionId, setTranscodingContextSectionId] = useState(null);
     const [pendingTranscodeAction, setPendingTranscodeAction] = useState(null);
     const [alreadyTranscodedMessage, setAlreadyTranscodedMessage] = useState('');
+    const [transcodeHistory, setTranscodeHistory] = useState([]);
+    const lastReadyRecordedRef = useRef(null);
+
+    const recordTranscodeEvent = useCallback((event) => {
+        setTranscodeHistory((prev) => [
+            {
+                id: `${Date.now()}-${prev.length}`,
+                createdAt: new Date().toISOString(),
+                ...event,
+            },
+            ...prev,
+        ].slice(0, 5));
+    }, []);
 
     // Handle transcode after state is set
     useEffect(() => {
@@ -83,6 +96,11 @@ const AdminCoursesTab = ({
                         });
                     } catch (err) {
                         console.error('[AdminCoursesTab] Transcode API error:', err);
+                        recordTranscodeEvent({
+                            type: 'error',
+                            label: 'Бир сабакты транскоддоо башталбай калды',
+                            detail: err?.message || 'Белгисиз ката',
+                        });
                     }
                 })();
             } else if (pendingTranscodeAction.type === 'bulk' && transcodingContextCourseId && transcodingContextSectionId) {
@@ -96,13 +114,18 @@ const AdminCoursesTab = ({
                         });
                     } catch (err) {
                         console.error('[AdminCoursesTab] Bulk transcode API error:', err);
+                        recordTranscodeEvent({
+                            type: 'error',
+                            label: 'Топтук транскоддоо башталбай калды',
+                            detail: err?.message || 'Белгисиз ката',
+                        });
                     }
                 })();
             }
 
             setPendingTranscodeAction(null);
         }
-    }, [pendingTranscodeAction, lastTranscodedLessonId, transcodingContextCourseId, transcodingContextSectionId]);
+    }, [pendingTranscodeAction, lastTranscodedLessonId, recordTranscodeEvent, transcodingContextCourseId, transcodingContextSectionId]);
 
     const publishedCourses = courses.filter((course) => course.isPublished).length;
     const deliveryCourses = courses.filter((course) => course.courseType !== 'video').length;
@@ -191,6 +214,15 @@ const AdminCoursesTab = ({
     // Handle successful transcode - reset after completion
     useEffect(() => {
         if (lastTranscodedLessonId && status === 'ready') {
+            if (lastReadyRecordedRef.current !== lastTranscodedLessonId) {
+                const lessonTitle = lessons.find(l => l.id === lastTranscodedLessonId)?.title || `Сабак #${lastTranscodedLessonId}`;
+                recordTranscodeEvent({
+                    type: 'success',
+                    label: 'Транскоддоо аяктады',
+                    detail: lessonTitle,
+                });
+                lastReadyRecordedRef.current = lastTranscodedLessonId;
+            }
             // Refresh lessons list to show updated status
             if (transcodingContextCourseId && transcodingContextSectionId) {
                 const loadLessons = async () => {
@@ -204,7 +236,7 @@ const AdminCoursesTab = ({
                 loadLessons();
             }
         }
-    }, [lastTranscodedLessonId, status, transcodingContextCourseId, transcodingContextSectionId]);
+    }, [lastTranscodedLessonId, lessons, recordTranscodeEvent, status, transcodingContextCourseId, transcodingContextSectionId]);
 
     // Get selected course, section, lesson names for display
     const selectedCourse = courses.find((c) => String(c.id) === String(transcodeCourseId));
@@ -301,7 +333,7 @@ const AdminCoursesTab = ({
                                                     )}
                                                     <button
                                                         type="button"
-                                                        onClick={() => handleDeleteCourse(course.id)}
+                                                        onClick={() => handleDeleteCourse(course)}
                                                         className="dashboard-button-secondary"
                                                     >
                                                         <FiTrash2 className="h-4 w-4" />
@@ -448,7 +480,7 @@ const AdminCoursesTab = ({
                                                 </button>
                                                 <button
                                                     type="button"
-                                                    onClick={() => handleDeleteCategory(category.id)}
+                                                    onClick={() => handleDeleteCategory(category)}
                                                     className="dashboard-button-secondary"
                                                 >
                                                     Өчүрүү
@@ -574,6 +606,11 @@ const AdminCoursesTab = ({
                                         if (selectedLesson?.playbackStatus === 'ready' && selectedLesson?.playbackType === 'hls') {
                                             // Already transcoded - show message
                                             setAlreadyTranscodedMessage(`"${selectedLesson.title || `Сабак #${selectedLesson.id}`}" альпача HLSке транскоддолгон.`);
+                                            recordTranscodeEvent({
+                                                type: 'skipped',
+                                                label: 'Транскоддоо өткөрүлдү',
+                                                detail: selectedLesson.title || `Сабак #${selectedLesson.id}`,
+                                            });
                                             return;
                                         }
 
@@ -593,6 +630,11 @@ const AdminCoursesTab = ({
                                         if (untranscodedLessons.length === 0) {
                                             // All lessons already transcoded - show message
                                             setAlreadyTranscodedMessage(`Бардык видео сабактар альпача HLSке транскоддолгон.`);
+                                            recordTranscodeEvent({
+                                                type: 'skipped',
+                                                label: 'Топтук транскоддоо өткөрүлдү',
+                                                detail: 'Бул секциядагы бардык видеолор даяр.',
+                                            });
                                             return;
                                         }
 
@@ -606,6 +648,11 @@ const AdminCoursesTab = ({
                                             type: 'bulk',
                                             lessonIds: untranscodedLessons.map(l => l.id)
                                         });
+                                        recordTranscodeEvent({
+                                            type: 'started',
+                                            label: 'Топтук транскоддоо башталды',
+                                            detail: `${untranscodedLessons.length} видео сабак`,
+                                        });
                                     }
                                 }}
                                 disabled={transcodeLoading || !transcodeCourseId || !transcodeSectionId}
@@ -615,7 +662,7 @@ const AdminCoursesTab = ({
                                 {transcodeLoading ? <Loader fullScreen={false} /> : transcodeLessonId ? 'Кайра транскоддоо' : 'Топтук транскоддоо'}
                             </button>
                             <p className="text-xs text-edubot-muted dark:text-slate-400">
-                                Курс жана секция милдеттүү. Бардык видео сабактарды же конкреттүү бирөөнү тандаңыз.
+                                Курс жана секция милдеттүү. Даяр HLS видеолор өткөрүлөт; транскоддоо бир нече мүнөт созулушу мүмкүн.
                             </p>
 
                             {/* Already Transcoded Message */}
@@ -748,6 +795,37 @@ const AdminCoursesTab = ({
                                 >
                                     Жабуу
                                 </button>
+                            </div>
+                        )}
+
+                        {transcodeHistory.length > 0 && (
+                            <div className="mt-6 border-t border-edubot-line/50 pt-4 dark:border-slate-700">
+                                <p className="text-sm font-semibold text-edubot-ink dark:text-white">
+                                    Акыркы транскоддоо аракеттери
+                                </p>
+                                <div className="mt-3 space-y-2">
+                                    {transcodeHistory.map((event) => (
+                                        <div
+                                            key={event.id}
+                                            className="rounded-lg border border-edubot-line/60 bg-white/70 px-3 py-2 text-xs dark:border-slate-700 dark:bg-slate-900/70"
+                                        >
+                                            <div className="flex flex-wrap items-center justify-between gap-2">
+                                                <span className="font-semibold text-edubot-ink dark:text-white">
+                                                    {event.label}
+                                                </span>
+                                                <span className="text-edubot-muted dark:text-slate-400">
+                                                    {new Date(event.createdAt).toLocaleTimeString('ru-RU', {
+                                                        hour: '2-digit',
+                                                        minute: '2-digit',
+                                                    })}
+                                                </span>
+                                            </div>
+                                            <p className="mt-1 text-edubot-muted dark:text-slate-400">
+                                                {event.detail}
+                                            </p>
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
                         )}
                     </DashboardInsetPanel>

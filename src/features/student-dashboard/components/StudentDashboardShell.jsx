@@ -33,6 +33,7 @@ const ACCESS_REQUIRED_TABS = [
 const LIST_LOADING_TABS = ['my-courses', 'schedule', 'resources', 'tasks', 'certificates'];
 
 const StudentDashboardShell = ({
+    accessStateDetails,
     activeTab,
     attendanceEnabled,
     attendanceStats,
@@ -142,7 +143,7 @@ const StudentDashboardShell = ({
 
     const renderTab = () => {
         if (ACCESS_REQUIRED_TABS.includes(activeTab) && !hasActiveStudentAccess) {
-            return <StudentEmptyState />;
+            return <StudentEmptyState accessState={accessStateDetails} />;
         }
 
         if (!isTabDataLoaded || !isProfileReady) {
@@ -218,6 +219,11 @@ const StudentDashboardShell = ({
 };
 
 StudentDashboardShell.propTypes = {
+    accessStateDetails: PropTypes.shape({
+        state: PropTypes.string,
+        title: PropTypes.string,
+        description: PropTypes.string,
+    }).isRequired,
     activeTab: PropTypes.string.isRequired,
     attendanceEnabled: PropTypes.bool.isRequired,
     attendanceStats: PropTypes.shape({}).isRequired,

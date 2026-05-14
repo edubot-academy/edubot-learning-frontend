@@ -49,7 +49,12 @@ export const useAssistantDashboardData = (user) => {
         loadCompanies();
     }, [loadCompanies]);
 
-    const { handleEnroll, handleUnenroll } = useAssistantEnrollmentActions({
+    const {
+        getActionKey,
+        handleEnroll,
+        handleUnenroll,
+        pendingEnrollmentAction,
+    } = useAssistantEnrollmentActions({
         coursesById,
         getMutationContext,
         onEnrollSuccess: handleEnrollSuccess,
@@ -86,6 +91,8 @@ export const useAssistantDashboardData = (user) => {
         setCourseSelections,
         handleEnroll,
         handleUnenroll,
+        getActionKey,
+        pendingEnrollmentAction,
         loadStudentsAndCourses,
     };
 };

@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import toast from 'react-hot-toast';
 import {
     enrollUserInCourse,
@@ -39,10 +39,16 @@ export const useAssistantEnrollmentActions = ({
     onEnrollSuccess,
     onUnenrollSuccess,
 }) => {
+    const [pendingEnrollmentAction, setPendingEnrollmentAction] = useState(null);
+
+    const getActionKey = useCallback((studentId, courseId, action) =>
+        `${action}:${studentId}:${courseId}`, []);
+
     const handleEnroll = useCallback(
         async (student, selectedCourseId) => {
             const courseTitle = coursesById[selectedCourseId]?.title ?? 'курс';
             const mutationContext = getMutationContext();
+            const actionKey = getActionKey(student.id, selectedCourseId, 'enroll');
 
             confirmToast(
                 <>
@@ -50,6 +56,7 @@ export const useAssistantEnrollmentActions = ({
                     <span className="font-bold">{courseTitle}</span> курсуна каттоо — макулсузбу?
                 </>,
                 async () => {
+                    setPendingEnrollmentAction(actionKey);
                     try {
                         await enrollUserInCourse(student.id, selectedCourseId, {
                             courseType: normalizeEnrollmentCourseType(
@@ -66,17 +73,20 @@ export const useAssistantEnrollmentActions = ({
                         onEnrollSuccess(student.id, Number(selectedCourseId), mutationContext);
                     } catch {
                         toast.error('Курска каттоодо ката кетти');
+                    } finally {
+                        setPendingEnrollmentAction(null);
                     }
                 }
             );
         },
-        [coursesById, getMutationContext, onEnrollSuccess]
+        [coursesById, getActionKey, getMutationContext, onEnrollSuccess]
     );
 
     const handleUnenroll = useCallback(
         (student, courseId) => {
             const courseTitle = coursesById[courseId]?.title ?? 'курс';
             const mutationContext = getMutationContext();
+            const actionKey = getActionKey(student.id, courseId, 'unenroll');
 
             confirmToast(
                 <>
@@ -84,6 +94,7 @@ export const useAssistantEnrollmentActions = ({
                     <span className="font-bold">{courseTitle}</span> курсунан чыгаруу — макулсузбу?
                 </>,
                 async () => {
+                    setPendingEnrollmentAction(actionKey);
                     try {
                         await unenrollUserFromCourse(student.id, courseId);
                         toast.success(
@@ -94,16 +105,20 @@ export const useAssistantEnrollmentActions = ({
                         onUnenrollSuccess(student.id, Number(courseId), mutationContext);
                     } catch {
                         toast.error('Курстан чыгарууда ката кетти');
+                    } finally {
+                        setPendingEnrollmentAction(null);
                     }
                 },
                 'bg-red-600 hover:bg-red-700'
             );
         },
-        [coursesById, getMutationContext, onUnenrollSuccess]
+        [coursesById, getActionKey, getMutationContext, onUnenrollSuccess]
     );
 
     return {
+        getActionKey,
         handleEnroll,
         handleUnenroll,
+        pendingEnrollmentAction,
     };
 };

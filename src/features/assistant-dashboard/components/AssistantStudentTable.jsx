@@ -20,6 +20,7 @@ const AssistantStudentTable = ({
     enrollmentsMap,
     courseSelections,
     coursesById,
+    getActionKey,
     currentPage,
     totalPages,
     loading,
@@ -30,6 +31,7 @@ const AssistantStudentTable = ({
     handleEnroll,
     handleUnenroll,
     isSearchTooShort,
+    pendingEnrollmentAction,
 }) => {
     return (
         <div className="space-y-6">
@@ -97,6 +99,11 @@ const AssistantStudentTable = ({
                                 (course) => !enrolledCourseIds.some((courseId) => Number(courseId) === Number(course.id))
                             );
                             const isDisabled = !selectedCourseId || availableCourses.length === 0;
+                            const selectedCourse = selectedCourseId ? coursesById[selectedCourseId] : null;
+                            const enrollActionKey = selectedCourseId
+                                ? getActionKey(student.id, selectedCourseId, 'enroll')
+                                : null;
+                            const isEnrolling = pendingEnrollmentAction === enrollActionKey;
 
                             return (
                                 <article
@@ -130,11 +137,16 @@ const AssistantStudentTable = ({
                                                                     {course.title}
                                                                 </span>
                                                                 <button
+                                                                    type="button"
                                                                     className="rounded-full bg-red-600 px-2 py-0.5 text-[11px] font-semibold text-white hover:bg-red-700"
+                                                                    disabled={pendingEnrollmentAction === getActionKey(student.id, courseId, 'unenroll')}
                                                                     onClick={() => handleUnenroll(student, courseId)}
+                                                                    aria-label={`${student.fullName} студентин ${course.title} курсунан чыгаруу`}
                                                                     title="Курстан чыгаруу"
                                                                 >
-                                                                    Чыгаруу
+                                                                    {pendingEnrollmentAction === getActionKey(student.id, courseId, 'unenroll')
+                                                                        ? 'Чыгарылууда...'
+                                                                        : 'Чыгаруу'}
                                                                 </button>
                                                             </div>
                                                         );
@@ -147,23 +159,34 @@ const AssistantStudentTable = ({
 
                                         <div className="w-full xl:w-[20rem] space-y-3">
                                             {availableCourses.length > 0 ? (
-                                                <select
-                                                    className="dashboard-select w-full"
-                                                    value={selectedCourseId}
-                                                    onChange={(e) =>
-                                                        setCourseSelections((prev) => ({
-                                                            ...prev,
-                                                            [student.id]: e.target.value ? Number(e.target.value) : '',
-                                                        }))
-                                                    }
-                                                >
-                                                    <option value="">-- Тандоо --</option>
-                                                    {availableCourses.map((course) => (
-                                                        <option key={course.id} value={course.id}>
-                                                            {course.title}
-                                                        </option>
-                                                    ))}
-                                                </select>
+                                                <div>
+                                                    <label htmlFor={`assistant-course-${student.id}`} className="mb-1 block text-xs font-semibold text-edubot-muted dark:text-slate-400">
+                                                        Каттай турган курс
+                                                    </label>
+                                                    <select
+                                                        id={`assistant-course-${student.id}`}
+                                                        className="dashboard-select w-full"
+                                                        value={selectedCourseId}
+                                                        onChange={(e) =>
+                                                            setCourseSelections((prev) => ({
+                                                                ...prev,
+                                                                [student.id]: e.target.value ? Number(e.target.value) : '',
+                                                            }))
+                                                        }
+                                                    >
+                                                        <option value="">-- Тандоо --</option>
+                                                        {availableCourses.map((course) => (
+                                                            <option key={course.id} value={course.id}>
+                                                                {course.title}
+                                                            </option>
+                                                        ))}
+                                                    </select>
+                                                    {selectedCourse && (
+                                                        <p className="mt-1 text-xs text-edubot-muted dark:text-slate-400">
+                                                            Тандалды: {selectedCourse.title}
+                                                        </p>
+                                                    )}
+                                                </div>
                                             ) : (
                                                 <div className="text-sm italic text-edubot-muted dark:text-slate-400">
                                                     Бардык курстарга катталган
@@ -171,14 +194,15 @@ const AssistantStudentTable = ({
                                             )}
 
                                             <button
+                                                type="button"
                                                 className="dashboard-button-primary w-full justify-center disabled:opacity-50"
-                                                disabled={isDisabled}
+                                                disabled={isDisabled || Boolean(pendingEnrollmentAction)}
                                                 onClick={() => {
                                                     if (isDisabled) return;
                                                     handleEnroll(student, selectedCourseId);
                                                 }}
                                             >
-                                                Каттоо
+                                                {isEnrolling ? 'Катталууда...' : 'Каттоо'}
                                             </button>
                                         </div>
                                     </div>

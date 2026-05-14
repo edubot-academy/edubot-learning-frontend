@@ -1,8 +1,9 @@
 import { Link } from 'react-router-dom';
+import PropTypes from 'prop-types';
 import { FiAlertCircle, FiBookOpen, FiUser } from 'react-icons/fi';
 import { getDashboardPath } from '@shared/utils/navigation';
 
-const StudentEmptyState = () => (
+const StudentEmptyState = ({ accessState }) => (
     <div className="dashboard-panel relative overflow-hidden px-8 py-12 text-center">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(241,126,34,0.12),transparent_42%)]" />
         <div className="relative mx-auto max-w-4xl space-y-6">
@@ -15,11 +16,10 @@ const StudentEmptyState = () => (
                     Student access
                 </p>
                 <h2 className="text-3xl font-semibold tracking-tight text-edubot-ink dark:text-white sm:text-4xl">
-                Окуу мүмкүнчүлүгү азырынча активдүү эмес
+                    {accessState.title}
                 </h2>
                 <p className="mx-auto max-w-3xl text-base leading-8 text-edubot-muted dark:text-slate-300 sm:text-lg">
-                    Сизде азырынча активдүү курс жок. Төлөм ырасталгандан же каттоо иштетилгенден кийин
-                    бул жерде курстарыңыз, сабактарыңыз жана прогрессиңиз көрүнөт.
+                    {accessState.description}
                 </p>
             </div>
 
@@ -42,5 +42,19 @@ const StudentEmptyState = () => (
         </div>
     </div>
 );
+
+StudentEmptyState.propTypes = {
+    accessState: PropTypes.shape({
+        title: PropTypes.string,
+        description: PropTypes.string,
+    }),
+};
+
+StudentEmptyState.defaultProps = {
+    accessState: {
+        title: 'Окуу мүмкүнчүлүгү азырынча активдүү эмес',
+        description: 'Сизде азырынча активдүү курс жок. Төлөм ырасталгандан же каттоо иштетилгенден кийин бул жерде курстарыңыз, сабактарыңыз жана прогрессиңиз көрүнөт.',
+    },
+};
 
 export default StudentEmptyState;

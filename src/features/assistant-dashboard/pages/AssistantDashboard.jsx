@@ -38,6 +38,8 @@ const AssistantDashboard = () => {
         setCourseSelections,
         handleEnroll,
         handleUnenroll,
+        getActionKey,
+        pendingEnrollmentAction,
     } = useAssistantDashboardData(user);
 
     return (
@@ -56,11 +58,13 @@ const AssistantDashboard = () => {
             enrolledStudents={enrolledStudents}
             enrollmentsMap={enrollmentsMap}
             handleEnroll={handleEnroll}
+            getActionKey={getActionKey}
             handleTabSelect={handleTabSelect}
             handleUnenroll={handleUnenroll}
             isAssistant={isAssistant}
             isSearchTooShort={isSearchTooShort}
             loading={loading}
+            pendingEnrollmentAction={pendingEnrollmentAction}
             search={search}
             setActiveCompanyId={setActiveCompanyId}
             setCourseSelections={setCourseSelections}

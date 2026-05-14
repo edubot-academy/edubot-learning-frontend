@@ -60,13 +60,23 @@ const ProfileTab = ({
             fullName: formData.fullName,
             phoneNumber: formData.phoneNumber,
             avatarFile: formData.avatar,
+        });
+        if (success) {
+            setFormData((prev) => ({ ...prev, avatar: null }));
+            setIsEditingProfile(false);
+        }
+    };
+
+    const handleSaveSecurityClick = async () => {
+        if (!onSaveProfile) return;
+        const success = await onSaveProfile({
+            fullName: formData.fullName,
+            phoneNumber: formData.phoneNumber,
             newPassword: passwordData.newPassword,
             confirmPassword: passwordData.confirmPassword,
         });
         if (success) {
             setPasswordData({ newPassword: '', confirmPassword: '' });
-            setFormData((prev) => ({ ...prev, avatar: null }));
-            setIsEditingProfile(false);
         }
     };
 
@@ -84,9 +94,10 @@ const ProfileTab = ({
     const hasProfileChanges =
         formData.fullName.trim() !== (student?.name || '').trim() ||
         formData.phoneNumber.trim() !== (student?.phone || '').trim() ||
-        Boolean(formData.avatar) ||
-        Boolean(passwordData.newPassword) ||
-        Boolean(passwordData.confirmPassword);
+        Boolean(formData.avatar);
+
+    const hasPasswordChanges =
+        Boolean(passwordData.newPassword) || Boolean(passwordData.confirmPassword);
 
     const notificationEntries = Object.entries(notificationSettings || {});
     return (
@@ -120,7 +131,7 @@ const ProfileTab = ({
             <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
                 <DashboardInsetPanel
                     title="Аккаунт маалыматы"
-                    description="Жеке маалымат жана коопсуздук параметрлери."
+                    description="Жеке маалымат жана байланыш маалыматтары."
                     action={
                         !isEditingProfile ? (
                             <button
@@ -208,43 +219,6 @@ const ProfileTab = ({
                                     </div>
                                 </div>
 
-                                <div className="grid gap-4 sm:grid-cols-2">
-                                    <div>
-                                        <label className="text-sm font-medium text-edubot-muted dark:text-slate-400">
-                                            Жаңы сырсөз
-                                        </label>
-                                        <input
-                                            type="password"
-                                            value={passwordData.newPassword}
-                                            onChange={(e) =>
-                                                setPasswordData((prev) => ({
-                                                    ...prev,
-                                                    newPassword: e.target.value,
-                                                }))
-                                            }
-                                            className="dashboard-field mt-1"
-                                            placeholder="Кеминде 6 белги"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="text-sm font-medium text-edubot-muted dark:text-slate-400">
-                                            Сырсөздү кайталоо
-                                        </label>
-                                        <input
-                                            type="password"
-                                            value={passwordData.confirmPassword}
-                                            onChange={(e) =>
-                                                setPasswordData((prev) => ({
-                                                    ...prev,
-                                                    confirmPassword: e.target.value,
-                                                }))
-                                            }
-                                            className="dashboard-field mt-1"
-                                            placeholder="Сырсөздү дагы бир жолу киргизиңиз"
-                                        />
-                                    </div>
-                                </div>
-
                                 <div className="flex flex-wrap gap-3">
                                     <button
                                         type="button"
@@ -317,6 +291,70 @@ const ProfileTab = ({
                                 </div>
                             </div>
                         )}
+                    </div>
+                </DashboardInsetPanel>
+
+                <DashboardInsetPanel
+                    title="Коопсуздук"
+                    description="Сырсөздү жеке маалыматтан бөлөк жаңыртыңыз."
+                >
+                    <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                        <div>
+                            <label htmlFor="student-security-password" className="text-sm font-medium text-edubot-muted dark:text-slate-400">
+                                Жаңы сырсөз
+                            </label>
+                            <input
+                                id="student-security-password"
+                                type="password"
+                                value={passwordData.newPassword}
+                                onChange={(e) =>
+                                    setPasswordData((prev) => ({
+                                        ...prev,
+                                        newPassword: e.target.value,
+                                    }))
+                                }
+                                className="dashboard-field mt-1"
+                                placeholder="Кеминде 6 белги"
+                            />
+                        </div>
+                        <div>
+                            <label htmlFor="student-security-password-confirm" className="text-sm font-medium text-edubot-muted dark:text-slate-400">
+                                Сырсөздү кайталоо
+                            </label>
+                            <input
+                                id="student-security-password-confirm"
+                                type="password"
+                                value={passwordData.confirmPassword}
+                                onChange={(e) =>
+                                    setPasswordData((prev) => ({
+                                        ...prev,
+                                        confirmPassword: e.target.value,
+                                    }))
+                                }
+                                className="dashboard-field mt-1"
+                                placeholder="Сырсөздү дагы бир жолу киргизиңиз"
+                            />
+                        </div>
+                    </div>
+
+                    <div className="mt-4 flex flex-wrap gap-3">
+                        <button
+                            type="button"
+                            onClick={handleSaveSecurityClick}
+                            disabled={!hasPasswordChanges || savingProfile}
+                            className="dashboard-button-primary"
+                        >
+                            <FiLock className="h-4 w-4" />
+                            {savingProfile ? 'Сакталууда...' : 'Сырсөздү жаңыртуу'}
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setPasswordData({ newPassword: '', confirmPassword: '' })}
+                            disabled={!hasPasswordChanges || savingProfile}
+                            className="dashboard-button-secondary"
+                        >
+                            Тазалоо
+                        </button>
                     </div>
                 </DashboardInsetPanel>
 

@@ -27,12 +27,14 @@ const AssistantDashboardShell = ({
     currentPage,
     enrolledStudents,
     enrollmentsMap,
+    getActionKey,
     handleEnroll,
     handleTabSelect,
     handleUnenroll,
     isAssistant,
     isSearchTooShort,
     loading,
+    pendingEnrollmentAction,
     search,
     setActiveCompanyId,
     setCourseSelections,
@@ -175,9 +177,11 @@ const AssistantDashboardShell = ({
                 setSearch={setSearch}
                 setCurrentPage={setCurrentPage}
                 setCourseSelections={setCourseSelections}
+                getActionKey={getActionKey}
                 handleEnroll={handleEnroll}
                 handleUnenroll={handleUnenroll}
                 isSearchTooShort={isSearchTooShort}
+                pendingEnrollmentAction={pendingEnrollmentAction}
             />
         );
     };

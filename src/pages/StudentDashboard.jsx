@@ -80,6 +80,7 @@ const StudentDashboard = () => {
     const {
         attendanceEnabled,
         attendanceStats,
+        accessStateDetails,
         groupOptions,
         hasActiveStudentAccess,
         mergedNotificationSettings,
@@ -164,6 +165,7 @@ const StudentDashboard = () => {
     return (
         <StudentDashboardShell
             activeTab={activeTab}
+            accessStateDetails={accessStateDetails}
             attendanceEnabled={attendanceEnabled}
             attendanceStats={attendanceStats}
             certificates={certificates}

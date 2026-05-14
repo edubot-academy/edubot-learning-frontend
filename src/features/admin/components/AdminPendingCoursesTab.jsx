@@ -127,7 +127,7 @@ const AdminPendingCoursesTab = ({ pendingCourses, onApprove, onReject }) => {
                                             )}
                                             <button
                                                 type="button"
-                                                onClick={() => onApprove(course.id)}
+                                                onClick={() => onApprove(course)}
                                                 className="dashboard-button-primary"
                                             >
                                                 <FiCheckCircle className="h-4 w-4" />
@@ -135,7 +135,7 @@ const AdminPendingCoursesTab = ({ pendingCourses, onApprove, onReject }) => {
                                             </button>
                                             <button
                                                 type="button"
-                                                onClick={() => onReject(course.id)}
+                                                onClick={() => onReject(course)}
                                                 className="dashboard-button-secondary"
                                             >
                                                 <FiXCircle className="h-4 w-4" />

@@ -378,9 +378,11 @@ const TasksTab = ({ tasks, onSubmitHomework, submittingTaskState }) => {
 
     const filteredTasks = useMemo(() => {
         const normalizedQuery = query.trim().toLowerCase();
+        const attentionStatuses = new Set(['pending', 'overdue', 'needs_revision', 'rejected']);
 
         return taskView.filter((item) => {
-            if (statusFilter !== 'all' && item.status !== statusFilter) return false;
+            if (statusFilter === 'attention' && !attentionStatuses.has(item.status)) return false;
+            if (!['all', 'attention'].includes(statusFilter) && item.status !== statusFilter) return false;
             if (courseFilter !== 'all' && item.course !== courseFilter) return false;
             if (!normalizedQuery) return true;
 
@@ -502,6 +504,7 @@ const TasksTab = ({ tasks, onSubmitHomework, submittingTaskState }) => {
                             onChange={(e) => setStatusFilter(e.target.value)}
                             className="dashboard-field dashboard-field-icon dashboard-select"
                         >
+                            <option value="attention">Иш-аракет керек</option>
                             <option value="all">Бардык статустар</option>
                             <option value="pending">Күтүүдө</option>
                             <option value="submitted">Жөнөтүлгөн</option>

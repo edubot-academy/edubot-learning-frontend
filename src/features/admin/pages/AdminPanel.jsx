@@ -230,7 +230,7 @@ const AdminPanel = () => {
         handleRejectPendingCourse,
         loadPendingCourses,
         pendingCourses,
-    } = useAdminPendingCoursesDomain();
+    } = useAdminPendingCoursesDomain({ requestConfirmation });
 
     const {
         adminStats,

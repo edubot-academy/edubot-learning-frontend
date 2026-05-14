@@ -163,9 +163,10 @@ const AdminUsersTab = ({
                                         <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
                                             <select
                                                 value={user.role}
-                                                onChange={(e) => handleRoleChange(user.id, e.target.value)}
+                                                onChange={(e) => handleRoleChange(user, e.target.value)}
                                                 className="dashboard-select min-w-[180px]"
                                                 disabled={user.role === 'superadmin' && !canManageSuperadmin}
+                                                aria-label={`${user.fullName || user.email || 'Колдонуучу'} ролун өзгөртүү`}
                                             >
                                                 <option value="student">Студент</option>
                                                 <option value="instructor">Окутуучу</option>
@@ -177,8 +178,10 @@ const AdminUsersTab = ({
                                             </select>
                                             <button
                                                 type="button"
-                                                onClick={() => handleDeleteUser(user.id)}
+                                                onClick={() => handleDeleteUser(user)}
                                                 className="dashboard-button-secondary"
+                                                disabled={currentUser?.id === user.id}
+                                                title={currentUser?.id === user.id ? 'Өз аккаунтуңузду өчүрүүгө болбойт' : undefined}
                                             >
                                                 <FiTrash2 className="h-4 w-4" />
                                                 Өчүрүү

@@ -1,6 +1,12 @@
 import PropTypes from 'prop-types';
 import AdvancedModal from './AdvancedModal';
 
+const MODAL_VARIANT_BY_CONFIRM_VARIANT = {
+    danger: 'danger',
+    primary: 'info',
+    success: 'success',
+};
+
 const ConfirmationModal = ({
     isOpen,
     onClose,
@@ -19,7 +25,7 @@ const ConfirmationModal = ({
         subtitle={message}
         size="sm"
         loading={loading}
-        variant={confirmVariant === 'danger' ? 'danger' : 'warning'}
+        variant={MODAL_VARIANT_BY_CONFIRM_VARIANT[confirmVariant] || 'warning'}
         actions={[
             {
                 id: 'cancel',

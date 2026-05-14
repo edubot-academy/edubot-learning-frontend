@@ -70,10 +70,16 @@ export const useAdminCoursesDomain = ({ requestConfirmation }) => {
     }, []);
 
     const handleDeleteCourse = useCallback(
-        async (id) => {
+        async (targetCourse) => {
+            const id = typeof targetCourse === 'object' ? targetCourse.id : targetCourse;
+            const courseLabel =
+                typeof targetCourse === 'object'
+                    ? targetCourse.title || `Курс #${id}`
+                    : `Курс #${id}`;
+
             requestConfirmation({
                 title: 'Курсту өчүрүү',
-                message: 'Бул курсту өчүрүүгө ишенимдүүсүзбү?',
+                message: `"${courseLabel}" курсун өчүрүүгө ишенимдүүсүзбү? Бул аракет каталогдон жана студенттердин окуу агымынан курсту алып салышы мүмкүн.`,
                 confirmLabel: 'Өчүрүү',
                 confirmVariant: 'danger',
                 onConfirm: async () => {
@@ -127,10 +133,16 @@ export const useAdminCoursesDomain = ({ requestConfirmation }) => {
     );
 
     const handleDeleteCategory = useCallback(
-        async (id) => {
+        async (targetCategory) => {
+            const id = typeof targetCategory === 'object' ? targetCategory.id : targetCategory;
+            const categoryLabel =
+                typeof targetCategory === 'object'
+                    ? targetCategory.name || `Категория #${id}`
+                    : `Категория #${id}`;
+
             requestConfirmation({
                 title: 'Категорияны өчүрүү',
-                message: 'Бул категорияны өчүрүүгө ишенимдүүсүзбү?',
+                message: `"${categoryLabel}" категориясын өчүрүүгө ишенимдүүсүзбү? Бул категорияга байланган курстарды кайра текшерүү керек болушу мүмкүн.`,
                 confirmLabel: 'Өчүрүү',
                 confirmVariant: 'danger',
                 onConfirm: async () => {
