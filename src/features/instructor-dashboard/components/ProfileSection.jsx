@@ -30,7 +30,7 @@ const createFormState = (profile) => ({
     }, {}),
 });
 
-const ProfileSection = ({ profile, onSaveProfile, savingProfile }) => {
+const ProfileSection = ({ profile, studentCount = 0, onSaveProfile, savingProfile }) => {
     const [isEditing, setIsEditing] = useState(false);
     const [form, setForm] = useState(createFormState(profile));
 
@@ -101,8 +101,8 @@ const ProfileSection = ({ profile, onSaveProfile, savingProfile }) => {
                 tone="blue"
             />
             <DashboardMetricCard
-                label="Студенттер"
-                value={profile?.numberOfStudents ?? '—'}
+                label="Катталуулар"
+                value={studentCount}
                 icon={FiUsers}
                 tone="green"
             />

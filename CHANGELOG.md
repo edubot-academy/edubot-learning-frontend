@@ -6,6 +6,22 @@ Version bumps are classified by delivery scale; see `VERSIONING.md`.
 
 ---
 
+## [1.11.19] - 2026-05-14
+
+### Changed
+
+- Added lightweight favourites search/sort management, stronger assistant course-load signals, and instructor dashboard shell/mobile parity cleanup.
+- Aligned instructor profile student counts with course-derived data instead of profile-only fields.
+
+### Verification
+
+- `npm run lint`
+- `git diff --check`
+- `npm test -- --run --testTimeout=15000`
+- `npm run build`
+
+---
+
 ## [1.11.18] - 2026-05-14
 
 ### Changed

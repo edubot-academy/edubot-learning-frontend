@@ -1233,14 +1233,14 @@ The Instructor Dashboard is one of the richest product surfaces in the app, but 
 
 | ID              | Severity | Area         | Issue                                                                                                              | Task                                                                                                     | Owner | Status      |
 | --------------- | -------- | ------------ | ------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------- | ----- | ----------- |
-| INSTRUCTOR-C006 | P3       | Shared shell | The layout is a net positive, but responsive branching and shared keyboard behavior still have room to consolidate | Continue maturing the dashboard shell as the canonical place for layout and accessibility infrastructure | TBD   | Not started |
+| INSTRUCTOR-C006 | P3       | Shared shell | The layout is a net positive, but responsive branching and shared keyboard behavior still have room to consolidate | Continue maturing the dashboard shell as the canonical place for layout and accessibility infrastructure | Codex | Done        |
 
 #### `InstructorOverviewSection.jsx`
 
 | ID              | Severity | Area             | Issue                                                                                                                                                  | Task                                                                                                                                   | Owner | Status      |
 | --------------- | -------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------- | ----- | ----------- |
 | INSTRUCTOR-C007 | P2       | Overview clarity | The overview is visually strong, but it leans heavily on navigation and high-level stats rather than surfacing concrete instructor risks or priorities | Add more operationally meaningful overview signals such as pending reviews, student risk, attendance gaps, or course approval blockers | TBD   | Not started |
-| INSTRUCTOR-C008 | P3       | Mobile parity    | Mobile overview delegates to a separate `MobileDashboardOverview` path, which may drift from the desktop overview model                                | Review mobile/desktop parity and ensure overview logic remains aligned across both surfaces                                            | TBD   | Not started |
+| INSTRUCTOR-C008 | P3       | Mobile parity    | Mobile overview delegates to a separate `MobileDashboardOverview` path, which may drift from the desktop overview model                                | Review mobile/desktop parity and ensure overview logic remains aligned across both surfaces                                            | Codex | Done        |
 
 #### `CoursesSection.jsx`
 
@@ -1484,7 +1484,7 @@ The standalone legacy profile page has been removed. Profile editing now lives i
 | PROFILE-C001 | P1       | Complexity             | The page owns account fetch, account update, avatar preview, password edits, instructor-profile fetch, and instructor-profile update logic in one component | Extract focused hooks or section controllers for account profile and instructor profile concerns                  | Codex | Removed |
 | PROFILE-C002 | P2       | Loading UX             | Instructor profile loading is represented by a small inline loader inside the header area                                                                   | Introduce stronger skeleton/loading states so the instructor section does not feel partially broken while loading | TBD   | Not started |
 | PROFILE-C003 | P2       | Public-profile framing | Instructor information is editable, but the page does not clearly show what students will actually see                                                      | Add stronger preview framing or “student-facing profile” context for trust-building fields                        | TBD   | Not started |
-| PROFILE-C004 | P3       | Data model clarity     | `numberOfStudents` is displayed in the view state even though it is not part of the normalized local profile state                                          | Align displayed fields with the actual normalized profile shape and clean up data-contract drift                  | TBD   | Not started |
+| PROFILE-C004 | P3       | Data model clarity     | `numberOfStudents` is displayed in the view state even though it is not part of the normalized local profile state                                          | Align displayed fields with the actual normalized profile shape and clean up data-contract drift                  | Codex | Done        |
 
 #### `PhoneInput.jsx`
 
@@ -1599,7 +1599,7 @@ The favourites page works as a basic saved-courses grid, but it is still a thin 
 | FAV-002 | P1       | Content consistency | The page mixes Kyrgyz, Russian, and generic auth terminology in key headings and messages                    | Standardize localization and naming across title, error, auth-gate, and empty-state copy           | TBD   | Not started |
 | FAV-003 | P2       | State design        | Loading, empty, error, guest, and populated states all exist but feel visually inconsistent with one another | Create a more cohesive state system so all page states feel like one designed surface              | TBD   | Not started |
 | FAV-004 | P2       | Conversion UX       | Saved courses do not have a strong next-step path into compare, cart, or enrollment                          | Add clearer next actions such as move to cart, compare, or continue browsing from favourites       | TBD   | Not started |
-| FAV-005 | P3       | Scalability         | As saved-course counts grow, the page offers no filtering, ordering, or grouping                             | Add lightweight management tools before the page becomes unwieldy for active users                 | TBD   | Not started |
+| FAV-005 | P3       | Scalability         | As saved-course counts grow, the page offers no filtering, ordering, or grouping                             | Add lightweight management tools before the page becomes unwieldy for active users                 | Codex | Done        |
 
 ### Component Audit Breakdown
 
@@ -1945,7 +1945,7 @@ The assistant dashboard has a stronger shell than many other role-based surfaces
 
 | ID             | Severity | Area           | Issue                                                                                                                         | Task                                                                                                    | Owner | Status      |
 | -------------- | -------- | -------------- | ----------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- | ----- | ----------- |
-| ASSISTANT-C012 | P3       | Signal quality | The course-load cards are clean, but they mostly show title plus student count and may not provide enough operational insight | Consider whether assistants need stronger signals such as session state, capacity, or next-action hints | TBD   | Not started |
+| ASSISTANT-C012 | P3       | Signal quality | The course-load cards are clean, but they mostly show title plus student count and may not provide enough operational insight | Consider whether assistants need stronger signals such as session state, capacity, or next-action hints | Codex | Done        |
 
 ### Implementation Order
 

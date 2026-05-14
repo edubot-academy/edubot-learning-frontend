@@ -19,7 +19,7 @@ import { applyWorkspaceGroups } from '@shared/utils/workspaceGroups';
 export const INSTRUCTOR_WORKSPACE_GROUPS = Object.freeze({
     OVERVIEW: Object.freeze({
         id: 'overview',
-        label: 'Overview',
+        label: 'Кыскача жана аналитика',
         tabs: Object.freeze([
             INSTRUCTOR_DASHBOARD_TABS.OVERVIEW,
             INSTRUCTOR_DASHBOARD_TABS.ANALYTICS,
@@ -28,7 +28,7 @@ export const INSTRUCTOR_WORKSPACE_GROUPS = Object.freeze({
     }),
     COURSE_MANAGEMENT: Object.freeze({
         id: 'course-management',
-        label: 'Course management',
+        label: 'Курс башкаруу',
         tabs: Object.freeze([
             INSTRUCTOR_DASHBOARD_TABS.COURSES,
             INSTRUCTOR_DASHBOARD_TABS.STUDENTS,
@@ -39,7 +39,7 @@ export const INSTRUCTOR_WORKSPACE_GROUPS = Object.freeze({
     }),
     DELIVERY_WORKBENCH: Object.freeze({
         id: 'delivery-workbench',
-        label: 'Delivery workbench',
+        label: 'Сабак өткөрүү',
         tabs: Object.freeze([
             INSTRUCTOR_DASHBOARD_TABS.SESSIONS,
             INSTRUCTOR_DASHBOARD_TABS.HOMEWORK,
@@ -49,7 +49,7 @@ export const INSTRUCTOR_WORKSPACE_GROUPS = Object.freeze({
     }),
     SETTINGS: Object.freeze({
         id: 'settings',
-        label: 'Settings',
+        label: 'Профиль жана орнотуулар',
         tabs: Object.freeze([
             INSTRUCTOR_DASHBOARD_TABS.PROFILE,
             INSTRUCTOR_DASHBOARD_TABS.AI,
@@ -57,6 +57,13 @@ export const INSTRUCTOR_WORKSPACE_GROUPS = Object.freeze({
         ]),
     }),
 });
+
+export const INSTRUCTOR_WORKSPACE_GROUP_BY_ID = Object.freeze(
+    Object.values(INSTRUCTOR_WORKSPACE_GROUPS).reduce((groups, group) => {
+        groups[group.id] = group;
+        return groups;
+    }, {})
+);
 
 const RAW_NAV_ITEMS = [
     // Primary Navigation - Core Daily Tasks

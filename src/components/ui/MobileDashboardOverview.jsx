@@ -2,7 +2,7 @@ import PropTypes from 'prop-types';
 import { useNavigate } from 'react-router-dom';
 import { getDashboardPath } from '@shared/utils/navigation';
 
-const MobileDashboardOverview = ({ user, profile, courses, publishedCount, pendingCount, aiEnabledCount, analyticsLink }) => {
+const MobileDashboardOverview = ({ user, profile, courses, studentCount, publishedCount, pendingCount, aiEnabledCount, analyticsLink }) => {
     const navigate = useNavigate();
     const quickStats = [
         {
@@ -25,6 +25,13 @@ const MobileDashboardOverview = ({ user, profile, courses, publishedCount, pendi
             icon: '🤖',
             color: 'text-blue-600 dark:text-blue-400',
             bgColor: 'bg-blue-100 dark:bg-blue-900/20',
+        },
+        {
+            label: 'Окуучулар',
+            value: studentCount,
+            icon: '👥',
+            color: 'text-purple-600 dark:text-purple-400',
+            bgColor: 'bg-purple-100 dark:bg-purple-900/20',
         },
     ];
 
@@ -68,7 +75,7 @@ const MobileDashboardOverview = ({ user, profile, courses, publishedCount, pendi
             </div>
 
             {/* Quick Stats */}
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 gap-3">
                 {quickStats.map((stat, index) => (
                     <div
                         key={index}
@@ -85,13 +92,13 @@ const MobileDashboardOverview = ({ user, profile, courses, publishedCount, pendi
             <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
                 <div className="flex items-center justify-between mb-4">
                     <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                        Акыркы курсуулар
+                        Акыркы курстар
                     </h2>
                     <button
                         onClick={() => navigate('/instructor/courses')}
                         className="text-edubot-orange hover:text-edubot-orange/80 font-medium text-sm touch-manipulation active:scale-95 min-h-[44px]"
                     >
-                        Бардыгырау →
+                        Бардыгы →
                     </button>
                 </div>
 
@@ -154,7 +161,7 @@ MobileDashboardOverview.propTypes = {
     }),
     courses: PropTypes.arrayOf(
         PropTypes.shape({
-            id: PropTypes.string.isRequired,
+            id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
             title: PropTypes.string,
             isPublished: PropTypes.bool,
             aiAssistantEnabled: PropTypes.bool,
@@ -162,10 +169,16 @@ MobileDashboardOverview.propTypes = {
             lessonsCount: PropTypes.number,
         })
     ),
+    studentCount: PropTypes.number,
     publishedCount: PropTypes.number.isRequired,
     pendingCount: PropTypes.number.isRequired,
     aiEnabledCount: PropTypes.number.isRequired,
     analyticsLink: PropTypes.string.isRequired,
+};
+
+MobileDashboardOverview.defaultProps = {
+    courses: [],
+    studentCount: 0,
 };
 
 export default MobileDashboardOverview;

@@ -33,7 +33,11 @@ export {
 } from './hooks';
 
 // Utils
-export { NAV_ITEMS, formatDateTimeForInput } from './utils/instructorDashboard.constants.js';
+export {
+    INSTRUCTOR_WORKSPACE_GROUP_BY_ID,
+    NAV_ITEMS,
+    formatDateTimeForInput,
+} from './utils/instructorDashboard.constants.js';
 
 // Types (for documentation and IDE support)
 export * as INSTRUCTOR_TYPES from './types/index.js';

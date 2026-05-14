@@ -9,6 +9,8 @@ import { getDashboardPath } from '@shared/utils/navigation';
 const InstructorOverviewSection = ({
     user,
     profile,
+    courses,
+    studentCount,
     publishedCount,
     pendingCount,
     aiEnabledCount,
@@ -34,8 +36,8 @@ const InstructorOverviewSection = ({
             tone: aiEnabledCount > 0 ? 'green' : 'default',
         },
         {
-            label: 'Студенттер',
-            value: profile?.numberOfStudents ?? '—',
+            label: 'Катталуулар',
+            value: studentCount,
             icon: FiUsers,
             tone: 'blue',
         },
@@ -79,7 +81,8 @@ const InstructorOverviewSection = ({
                 <MobileDashboardOverview
                     user={user}
                     profile={profile}
-                    courses={[]} // Pass actual courses if available
+                    courses={courses}
+                    studentCount={studentCount}
                     publishedCount={publishedCount}
                     pendingCount={pendingCount}
                     aiEnabledCount={aiEnabledCount}
@@ -225,8 +228,9 @@ InstructorOverviewSection.propTypes = {
     }),
     profile: PropTypes.shape({
         title: PropTypes.string,
-        numberOfStudents: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
     }),
+    courses: PropTypes.arrayOf(PropTypes.object),
+    studentCount: PropTypes.number,
     publishedCount: PropTypes.number,
     pendingCount: PropTypes.number,
     aiEnabledCount: PropTypes.number,
@@ -236,6 +240,8 @@ InstructorOverviewSection.propTypes = {
 InstructorOverviewSection.defaultProps = {
     user: {},
     profile: {},
+    courses: [],
+    studentCount: 0,
     publishedCount: 0,
     pendingCount: 0,
     aiEnabledCount: 0,

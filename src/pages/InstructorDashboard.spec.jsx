@@ -53,12 +53,16 @@ vi.mock('@features/instructor-dashboard', async () => {
         ProfileSection: makeSection('profile-tab'),
         AiSection: makeSection('ai-tab'),
         OfferingsSection: makeSection('offerings-tab'),
+        INSTRUCTOR_WORKSPACE_GROUP_BY_ID: {
+            overview: { id: 'overview', label: 'Overview', tabs: [INSTRUCTOR_DASHBOARD_TABS.OVERVIEW, INSTRUCTOR_DASHBOARD_TABS.ANALYTICS] },
+            courses: { id: 'courses', label: 'Courses', tabs: [INSTRUCTOR_DASHBOARD_TABS.STUDENTS, INSTRUCTOR_DASHBOARD_TABS.GROUPS] },
+        },
         NAV_ITEMS: [
-            { id: INSTRUCTOR_DASHBOARD_TABS.OVERVIEW, label: 'Overview' },
-            { id: INSTRUCTOR_DASHBOARD_TABS.STUDENTS, label: 'Students' },
-            { id: INSTRUCTOR_DASHBOARD_TABS.GROUPS, label: 'Groups' },
+            { id: INSTRUCTOR_DASHBOARD_TABS.OVERVIEW, label: 'Overview', workspaceGroup: 'overview' },
+            { id: INSTRUCTOR_DASHBOARD_TABS.STUDENTS, label: 'Students', workspaceGroup: 'courses' },
+            { id: INSTRUCTOR_DASHBOARD_TABS.GROUPS, label: 'Groups', workspaceGroup: 'courses' },
             { id: INSTRUCTOR_DASHBOARD_TABS.SESSIONS, label: 'Sessions' },
-            { id: INSTRUCTOR_DASHBOARD_TABS.ANALYTICS, label: 'Analytics' },
+            { id: INSTRUCTOR_DASHBOARD_TABS.ANALYTICS, label: 'Analytics', workspaceGroup: 'overview' },
             { id: INSTRUCTOR_DASHBOARD_TABS.HOMEWORK, label: 'Homework' },
         ],
     };

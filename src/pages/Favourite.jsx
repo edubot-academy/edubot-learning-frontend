@@ -1,7 +1,7 @@
 import { useFavourites } from '../context/FavouritesContext';
 import CardCourse from '../features/courses/components/CardCourse';
 import { AuthContext } from '../context/AuthContext';
-import { useContext } from 'react';
+import { useContext, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { isPublicVideoSignupEnabled } from '@shared/auth-config';
 import EmptyState from '@components/ui/dashboard/EmptyState';
@@ -10,6 +10,37 @@ const Favourite = () => {
     const { favourites, loading, error, refreshFavourites } = useFavourites();
     const { user } = useContext(AuthContext);
     const navigate = useNavigate();
+    const [search, setSearch] = useState('');
+    const [sortBy, setSortBy] = useState('recent');
+
+    const visibleFavourites = useMemo(() => {
+        const normalizedSearch = search.trim().toLowerCase();
+        const filtered = normalizedSearch
+            ? favourites.filter((course) => {
+                  const title = String(course.title || '').toLowerCase();
+                  const instructor = String(course.instructor?.fullName || '').toLowerCase();
+                  return title.includes(normalizedSearch) || instructor.includes(normalizedSearch);
+              })
+            : favourites;
+
+        return [...filtered].sort((a, b) => {
+            if (sortBy === 'title') {
+                return String(a.title || '').localeCompare(String(b.title || ''), 'ky');
+            }
+            if (sortBy === 'price') {
+                return Number(a.price || 0) - Number(b.price || 0);
+            }
+
+            const aAddedAt = new Date(a.addedAt || 0).getTime();
+            const bAddedAt = new Date(b.addedAt || 0).getTime();
+
+            if (Number.isFinite(aAddedAt) && Number.isFinite(bAddedAt) && aAddedAt !== bAddedAt) {
+                return bAddedAt - aAddedAt;
+            }
+
+            return Number(b.id || 0) - Number(a.id || 0);
+        });
+    }, [favourites, search, sortBy]);
 
     if (!user) {
         return (
@@ -109,6 +140,44 @@ const Favourite = () => {
                         : 'Азырынча тандалган курс жок'}
                 </p>
 
+                {favourites.length > 0 && (
+                    <div className="mb-6 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-950">
+                        <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_220px]">
+                            <div>
+                                <label htmlFor="favourites-search" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                                    Тандалгандардан издөө
+                                </label>
+                                <input
+                                    id="favourites-search"
+                                    type="search"
+                                    value={search}
+                                    onChange={(event) => setSearch(event.target.value)}
+                                    placeholder="Курс же инструктор аты"
+                                    className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+                                />
+                            </div>
+                            <div>
+                                <label htmlFor="favourites-sort" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                                    Иреттөө
+                                </label>
+                                <select
+                                    id="favourites-sort"
+                                    value={sortBy}
+                                    onChange={(event) => setSortBy(event.target.value)}
+                                    className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+                                >
+                                    <option value="recent">Жакында кошулган</option>
+                                    <option value="title">Аталышы боюнча</option>
+                                    <option value="price">Баасы боюнча</option>
+                                </select>
+                            </div>
+                        </div>
+                        <p className="mt-3 text-sm text-gray-600 dark:text-gray-400" aria-live="polite">
+                            {visibleFavourites.length} / {favourites.length} курс көрсөтүлүүдө
+                        </p>
+                    </div>
+                )}
+
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {favourites.length === 0 ? (
                         <EmptyState
@@ -118,8 +187,16 @@ const Favourite = () => {
                             action={{ label: 'Курстарды карап чыгуу', onClick: () => navigate('/courses') }}
                             className="col-span-full rounded-[24px] border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-950"
                         />
+                    ) : visibleFavourites.length === 0 ? (
+                        <EmptyState
+                            title="Бул издөө боюнча курс жок"
+                            subtitle="Издөөнү тазалап же башка сөз менен аракет кылыңыз."
+                            variant="discovery"
+                            action={{ label: 'Издөөнү тазалоо', onClick: () => setSearch('') }}
+                            className="col-span-full rounded-[24px] border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-950"
+                        />
                     ) : (
-                        favourites.map((course) => (
+                        visibleFavourites.map((course) => (
                             <CardCourse
                                 key={course.id}
                                 {...course}
