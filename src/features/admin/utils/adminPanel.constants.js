@@ -14,6 +14,7 @@ import {
     FiCheckSquare,
 } from 'react-icons/fi';
 import { ADMIN_DASHBOARD_TABS } from '@shared/constants/dashboardTabs';
+import { applyWorkspaceGroups } from '@shared/utils/workspaceGroups';
 
 export const ADMIN_TABS = [
     ADMIN_DASHBOARD_TABS.STATS,
@@ -79,7 +80,7 @@ export const ADMIN_COURSES_TAB_SECTIONS = Object.freeze({
     MEDIA_OPERATIONS: 'media-operations',
 });
 
-export const NAV_ITEMS = [
+const RAW_NAV_ITEMS = [
     // Primary Navigation - Core Admin Tasks
     { id: ADMIN_DASHBOARD_TABS.STATS, label: 'Статистика', icon: FiBarChart2, category: 'primary', priority: 1 },
     { id: ADMIN_DASHBOARD_TABS.COURSES, label: 'Курстар & Категориялар', icon: FiBookOpen, category: 'primary', priority: 2 },
@@ -101,6 +102,8 @@ export const NAV_ITEMS = [
     { id: ADMIN_DASHBOARD_TABS.INTEGRATION, label: 'Интеграциялар', icon: FiActivity, category: 'admin', priority: 4 },
     { id: ADMIN_DASHBOARD_TABS.ATTENDANCE, label: 'Катышуу', icon: FiCalendar, category: 'admin', priority: 5 },
 ];
+
+export const NAV_ITEMS = applyWorkspaceGroups(RAW_NAV_ITEMS, ADMIN_WORKSPACE_GROUPS);
 
 // Pagination helper constants
 export const DEFAULT_PAGE_SIZE = 10;

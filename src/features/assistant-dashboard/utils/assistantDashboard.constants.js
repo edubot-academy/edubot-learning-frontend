@@ -4,6 +4,7 @@ import {
     FiBookOpen,
     FiCalendar,
 } from 'react-icons/fi';
+import { applyWorkspaceGroups } from '@shared/utils/workspaceGroups';
 
 export const ASSISTANT_DASHBOARD_TABS = Object.freeze({
     OVERVIEW: 'overview',
@@ -31,7 +32,7 @@ export const ASSISTANT_WORKSPACE_GROUPS = Object.freeze({
     }),
 });
 
-export const NAV_ITEMS = [
+const RAW_NAV_ITEMS = [
     // Primary Navigation - Core Daily Tasks
     { id: ASSISTANT_DASHBOARD_TABS.OVERVIEW, label: 'Кыскача', icon: FiHome, category: 'primary', priority: 1 },
     { id: ASSISTANT_DASHBOARD_TABS.ENROLLMENTS, label: 'Студенттер', icon: FiUsers, category: 'primary', priority: 2 },
@@ -40,6 +41,8 @@ export const NAV_ITEMS = [
     { id: ASSISTANT_DASHBOARD_TABS.COURSES, label: 'Курстар', icon: FiBookOpen, category: 'secondary', priority: 1 },
     { id: ASSISTANT_DASHBOARD_TABS.ATTENDANCE, label: 'Катышуу', icon: FiCalendar, category: 'secondary', priority: 2 },
 ];
+
+export const NAV_ITEMS = applyWorkspaceGroups(RAW_NAV_ITEMS, ASSISTANT_WORKSPACE_GROUPS);
 
 export const ASSISTANT_ROLES = {
     ASSISTANT: 'assistant',

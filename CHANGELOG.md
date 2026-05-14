@@ -6,6 +6,31 @@ Version bumps are classified by delivery scale; see `VERSIONING.md`.
 
 ---
 
+## [1.11.15] - 2026-05-14
+
+### Changed
+
+- Attached dashboard workspace-group metadata to admin, instructor, and assistant navigation items so IA ownership is available to shared dashboard infrastructure.
+- Corrected course-builder step metadata so step completion is based on the actual step, course info, and curriculum state.
+- Blocked course approval submission while create/edit builder changes are still unsaved.
+- Added non-visual curriculum workspace markers for structure, lesson content, and validation/save ownership.
+- Centralized instructor course lifecycle state and primary-action metadata for the standalone instructor course list.
+- Added semantic step navigation metadata to the shared course-builder stepper.
+- Wired course-builder info fields with explicit labels, helper text, error associations, and ARIA invalid states.
+- Added semantic disclosure state to the course preview structure and explicit button types for preview actions.
+- Added workspace-section metadata forwarding on dashboard inset panels and tagged admin catalog/media-operation areas.
+- Added lifecycle filtering, search, status semantics, and a mounted create-course CTA to the standalone instructor course list.
+- Updated the UX/UI audit to reflect removed legacy profile work and completed password/builder accessibility tasks.
+
+### Verification
+
+- `npm run lint`
+- `npm test -- --run --testTimeout=15000`
+- `git diff --check`
+- `npm run build`
+
+---
+
 ## [1.11.14] - 2026-05-14
 
 ### Changed

@@ -283,7 +283,7 @@ export const useCourseBuilder = ({ mode = 'create', courseId: initialCourseId = 
     }, [courseInfo.coverImageUrl]);
 
     // Get step items
-    const stepItems = getStepItems(mode === 'create' ? courseId : Boolean(courseInfo?.id));
+    const stepItems = getStepItems(step, courseInfo, curriculum);
 
     // Curriculum statistics
     const curriculumStats = getCurriculumStats(curriculum);

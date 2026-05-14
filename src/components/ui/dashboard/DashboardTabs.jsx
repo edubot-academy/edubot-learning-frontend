@@ -216,6 +216,7 @@ DashboardTabs.propTypes = {
       label: PropTypes.string.isRequired,
       icon: PropTypes.oneOfType([PropTypes.element, PropTypes.func]),
       category: PropTypes.oneOf(['primary', 'secondary', 'progress', 'personal', 'content', 'users', 'analytics', 'admin', 'other']),
+      workspaceGroup: PropTypes.string,
       priority: PropTypes.number,
     })
   ).isRequired,

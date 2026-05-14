@@ -132,6 +132,7 @@ DashboardSidebar.propTypes = {
             label: PropTypes.string.isRequired,
             icon: PropTypes.elementType,
             category: PropTypes.oneOf(['primary', 'secondary', 'progress', 'personal', 'content', 'users', 'analytics', 'admin', 'other']),
+            workspaceGroup: PropTypes.string,
             priority: PropTypes.number,
         })
     ).isRequired,

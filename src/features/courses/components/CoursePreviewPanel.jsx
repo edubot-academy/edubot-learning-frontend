@@ -268,6 +268,7 @@ const CoursePreviewPanel = ({
                     {normalizedSections.map((section, sIdx) => {
                         const lessonList = section.lessons || [];
                         const isOpen = openSections[sIdx] ?? true;
+                        const sectionPanelId = `course-preview-section-${sIdx}`;
 
                         return (
                             <div
@@ -277,6 +278,8 @@ const CoursePreviewPanel = ({
                                 <button
                                     type="button"
                                     onClick={() => toggleSection(sIdx)}
+                                    aria-expanded={isOpen}
+                                    aria-controls={sectionPanelId}
                                     className="flex w-full items-center justify-between px-4 py-3 text-left"
                                 >
                                     <div>
@@ -293,7 +296,10 @@ const CoursePreviewPanel = ({
                                 </button>
 
                                 {isOpen && (
-                                    <div className="space-y-2 border-t border-slate-200 px-3 py-3 dark:border-slate-700">
+                                    <div
+                                        id={sectionPanelId}
+                                        className="space-y-2 border-t border-slate-200 px-3 py-3 dark:border-slate-700"
+                                    >
                                         {lessonList.map((lesson, lIdx) => {
                                             const kind = lesson.kind || 'video';
                                             const durationLabel = getLessonDurationLabel(lesson);
@@ -378,6 +384,7 @@ const CoursePreviewPanel = ({
 
             <div className="sticky bottom-4 z-10 flex flex-wrap gap-3 rounded-2xl border border-slate-200 bg-white/95 p-3 backdrop-blur dark:border-slate-700 dark:bg-[#111111]/95">
                 <button
+                    type="button"
                     onClick={onBack}
                     className="rounded-lg bg-slate-200 px-4 py-2 text-sm font-medium text-slate-800 hover:bg-slate-300 dark:bg-slate-700 dark:text-slate-100"
                 >
@@ -385,9 +392,12 @@ const CoursePreviewPanel = ({
                 </button>
                 {actions.map((action, idx) => (
                     <button
+                        type="button"
                         key={`${action.label}-${idx}`}
                         onClick={action.onClick}
+                        data-action-intent={action.intent}
                         disabled={action.disabled || (action.requiresClean && hasBlockingWarnings)}
+                        aria-disabled={action.disabled || (action.requiresClean && hasBlockingWarnings)}
                         title={
                             action.requiresClean && hasBlockingWarnings
                                 ? 'Алгач превьюдагы каталарды оңдоңуз'

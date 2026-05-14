@@ -14,6 +14,7 @@ import {
     FiGrid,
 } from 'react-icons/fi';
 import { INSTRUCTOR_DASHBOARD_TABS } from '@shared/constants/dashboardTabs';
+import { applyWorkspaceGroups } from '@shared/utils/workspaceGroups';
 
 export const INSTRUCTOR_WORKSPACE_GROUPS = Object.freeze({
     OVERVIEW: Object.freeze({
@@ -57,7 +58,7 @@ export const INSTRUCTOR_WORKSPACE_GROUPS = Object.freeze({
     }),
 });
 
-export const NAV_ITEMS = [
+const RAW_NAV_ITEMS = [
     // Primary Navigation - Core Daily Tasks
     { id: INSTRUCTOR_DASHBOARD_TABS.OVERVIEW, label: 'Кыскача', icon: FiHome, category: 'primary', priority: 1 },
     { id: INSTRUCTOR_DASHBOARD_TABS.COURSES, label: 'Курстарым', icon: FiBookOpen, category: 'primary', priority: 2 },
@@ -81,6 +82,8 @@ export const NAV_ITEMS = [
     { id: INSTRUCTOR_DASHBOARD_TABS.ATTENDANCE, label: 'Катышуу', icon: FiUsers, category: 'admin', priority: 3 },
     { id: INSTRUCTOR_DASHBOARD_TABS.NOTIFICATIONS, label: 'Билдирүүлөр', icon: FiBell, category: 'admin', priority: 4 },
 ];
+
+export const NAV_ITEMS = applyWorkspaceGroups(RAW_NAV_ITEMS, INSTRUCTOR_WORKSPACE_GROUPS);
 
 export const formatDateTimeForInput = (value) => {
     if (!value) return '';

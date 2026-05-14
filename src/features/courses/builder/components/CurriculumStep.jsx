@@ -9,6 +9,7 @@ import ArticleEditor from '../../components/ArticleEditor';
 import LessonCardHeader from '../../components/LessonCardHeader';
 import LessonMetaFields from '../../components/LessonMetaFields';
 import LessonAssetsPanel from '../../components/LessonAssetsPanel';
+import { CURRICULUM_WORKSPACE_SECTIONS } from '../constants';
 import { minutesInputToSeconds, secondsToMinutesInput } from '../../../../utils/timeUtils';
 
 /**
@@ -160,7 +161,10 @@ export const CurriculumStep = ({
     return (
         <div className="space-y-6">
             {/* Control Panel */}
-            <div className="sticky top-20 z-20 rounded-2xl border border-gray-200 bg-white/90 dark:border-gray-700 dark:bg-gray-800/90 backdrop-blur px-4 py-3 shadow-sm">
+            <div
+                className="sticky top-20 z-20 rounded-2xl border border-gray-200 bg-white/90 dark:border-gray-700 dark:bg-gray-800/90 backdrop-blur px-4 py-3 shadow-sm"
+                data-workspace-section={CURRICULUM_WORKSPACE_SECTIONS.VALIDATION_AND_SAVE.id}
+            >
                 <div className="flex flex-wrap items-center justify-between gap-3">
                     <div className="space-y-1">
                         <p className="text-xs uppercase tracking-wide text-gray-600 dark:text-gray-400">Курулуш режими</p>
@@ -275,6 +279,7 @@ export const CurriculumStep = ({
                     }}
                     className={`mb-5 overflow-hidden rounded-2xl border border-gray-200 bg-white/80 shadow-sm transition dark:border-gray-700 dark:bg-gray-800/80 ${dragSectionIndex === sIdx ? 'opacity-80 ring-2 ring-amber-300 dark:ring-amber-600' : ''
                         }`}
+                    data-workspace-section={CURRICULUM_WORKSPACE_SECTIONS.STRUCTURE.id}
                 >
                     <summary className="flex cursor-pointer list-none items-center justify-between gap-3 bg-gradient-to-r from-slate-50 to-white px-4 py-3 dark:from-slate-800 dark:to-slate-700">
                         <div>
@@ -397,6 +402,7 @@ export const CurriculumStep = ({
                                             ? 'ring-2 ring-sky-300 dark:ring-sky-700 opacity-80'
                                             : ''
                                         }`}
+                                    data-workspace-section={CURRICULUM_WORKSPACE_SECTIONS.LESSON_CONTENT.id}
                                 >
                                     <LessonCardHeader
                                         lessonIndex={lIdx}

@@ -74,6 +74,7 @@ const CreateCourse = () => {
         setSingleSectionFocus,
         jumpToNextInvalidLesson,
         loadSkillsList,
+        hasUnsavedChanges,
 
         courseId,
     } = useCourseBuilder({ mode: 'create' });
@@ -95,6 +96,11 @@ const CreateCourse = () => {
 
     // Handle submit for approval
     const handleSubmitForApproval = async () => {
+        if (hasUnsavedChanges) {
+            toast.error('Тастыктоого жөнөтүүдөн мурун өзгөрүүлөрдү сактаңыз.');
+            return;
+        }
+
         try {
             await markCoursePending(courseId);
             toast.success('Курс тастыктоого жөнөтүлдү');
@@ -222,6 +228,7 @@ const CreateCourse = () => {
                     onBack={() => setStep(2)}
                     handleSaveDraft={handleSaveDraft}
                     handleSubmitForApproval={handleSubmitForApproval}
+                    hasUnsavedChanges={hasUnsavedChanges}
                 />
             )}
         </div>

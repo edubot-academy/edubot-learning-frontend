@@ -26,6 +26,20 @@ export const CourseInfoStep = ({
     handleCourseSubmit,
     disabled = false,
 }) => {
+    const fieldIds = {
+        title: 'course-info-title',
+        subtitle: 'course-info-subtitle',
+        description: 'course-info-description',
+        categoryId: 'course-info-category',
+        price: 'course-info-price',
+        languageCode: 'course-info-language',
+        learningOutcomesText: 'course-info-learning-outcomes',
+        cover: 'course-info-cover',
+    };
+
+    const getError = (field) => (infoTouched[field] ? courseInfoErrors[field] : '');
+    const getDescribedBy = (...ids) => ids.filter(Boolean).join(' ') || undefined;
+
     return (
         <div className="space-y-5">
             {/* Basic Information */}
@@ -34,20 +48,23 @@ export const CourseInfoStep = ({
                 <div className="space-y-4">
                     {/* Title */}
                     <div>
-                        <label className="mb-1 block text-sm font-medium">Курс аталышы</label>
+                        <label htmlFor={fieldIds.title} className="mb-1 block text-sm font-medium">Курс аталышы</label>
                         <input
+                            id={fieldIds.title}
                             name="title"
                             value={courseInfo.title || ''}
                             onChange={handleCourseInfoChange}
                             placeholder="Курс аталышы"
                             disabled={disabled}
+                            aria-invalid={Boolean(getError('title'))}
+                            aria-describedby={getDescribedBy(`${fieldIds.title}-error`, `${fieldIds.title}-count`)}
                             className="w-full p-2 border rounded bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white disabled:opacity-50"
                         />
                         <div className="mt-1 flex items-center justify-between text-xs">
-                            <span className="text-rose-500">
-                                {infoTouched.title ? courseInfoErrors.title : ''}
+                            <span id={`${fieldIds.title}-error`} className="text-rose-500">
+                                {getError('title')}
                             </span>
-                            <span className="text-gray-600 dark:text-gray-400">
+                            <span id={`${fieldIds.title}-count`} className="text-gray-600 dark:text-gray-400">
                                 {(courseInfo.title || '').length}/200
                             </span>
                         </div>
@@ -55,20 +72,23 @@ export const CourseInfoStep = ({
 
                     {/* Subtitle */}
                     <div>
-                        <label className="mb-1 block text-sm font-medium">Подзаголовок</label>
+                        <label htmlFor={fieldIds.subtitle} className="mb-1 block text-sm font-medium">Подзаголовок</label>
                         <input
+                            id={fieldIds.subtitle}
                             name="subtitle"
                             value={courseInfo.subtitle || ''}
                             onChange={handleCourseInfoChange}
                             placeholder="Кыскача сүрөттөмө"
                             disabled={disabled}
+                            aria-invalid={Boolean(getError('subtitle'))}
+                            aria-describedby={getDescribedBy(`${fieldIds.subtitle}-error`, `${fieldIds.subtitle}-count`)}
                             className="w-full p-2 border rounded bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white disabled:opacity-50"
                         />
                         <div className="mt-1 flex items-center justify-between text-xs">
-                            <span className="text-rose-500">
-                                {infoTouched.subtitle ? courseInfoErrors.subtitle : ''}
+                            <span id={`${fieldIds.subtitle}-error`} className="text-rose-500">
+                                {getError('subtitle')}
                             </span>
-                            <span className="text-gray-600 dark:text-gray-400">
+                            <span id={`${fieldIds.subtitle}-count`} className="text-gray-600 dark:text-gray-400">
                                 {(courseInfo.subtitle || '').length}/255
                             </span>
                         </div>
@@ -76,28 +96,37 @@ export const CourseInfoStep = ({
 
                     {/* Description */}
                     <div>
-                        <label className="mb-1 block text-sm font-medium">Курс сүрөттөмөсү</label>
+                        <label htmlFor={fieldIds.description} className="mb-1 block text-sm font-medium">Курс сүрөттөмөсү</label>
                         <textarea
+                            id={fieldIds.description}
                             name="description"
                             value={courseInfo.description || ''}
                             onChange={handleCourseInfoChange}
                             placeholder="Курс сүрөттөмөсү"
                             disabled={disabled}
+                            aria-invalid={Boolean(getError('description'))}
+                            aria-describedby={`${fieldIds.description}-error`}
                             className="min-h-[120px] w-full p-2 border rounded bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white disabled:opacity-50"
                         />
-                        <p className="mt-1 text-xs text-rose-500">
-                            {infoTouched.description ? courseInfoErrors.description : ''}
+                        <p id={`${fieldIds.description}-error`} className="mt-1 text-xs text-rose-500">
+                            {getError('description')}
                         </p>
                     </div>
 
                     {/* Category */}
                     <div>
-                        <label className="mb-1 block text-sm font-medium">Категория</label>
+                        <label htmlFor={fieldIds.categoryId} className="mb-1 block text-sm font-medium">Категория</label>
                         <select
+                            id={fieldIds.categoryId}
                             name="categoryId"
                             value={courseInfo.categoryId || ''}
                             onChange={handleCourseInfoChange}
                             disabled={disabled || mode === 'edit'} // Category cannot be changed in edit mode
+                            aria-invalid={Boolean(getError('categoryId'))}
+                            aria-describedby={getDescribedBy(
+                                `${fieldIds.categoryId}-error`,
+                                mode === 'edit' ? `${fieldIds.categoryId}-helper` : null
+                            )}
                             className="w-full p-2 border rounded bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white disabled:opacity-50"
                         >
                             <option value="">Категорияны тандаңыз</option>
@@ -107,11 +136,11 @@ export const CourseInfoStep = ({
                                 </option>
                             ))}
                         </select>
-                        <p className="mt-1 text-xs text-rose-500">
-                            {infoTouched.categoryId ? courseInfoErrors.categoryId : ''}
+                        <p id={`${fieldIds.categoryId}-error`} className="mt-1 text-xs text-rose-500">
+                            {getError('categoryId')}
                         </p>
                         {mode === 'edit' && (
-                            <p className="mt-1 text-xs text-slate-500">
+                            <p id={`${fieldIds.categoryId}-helper`} className="mt-1 text-xs text-slate-500">
                                 Категорияны өзгөртүү азыркы backend update API&apos;де колдоого алынбайт.
                             </p>
                         )}
@@ -128,18 +157,21 @@ export const CourseInfoStep = ({
                     {/* Price */}
                     <div className="flex flex-col sm:flex-row gap-4">
                         <div className="flex-1">
-                            <label className="block text-sm mb-1 font-medium">Курс баасы (сом)</label>
+                            <label htmlFor={fieldIds.price} className="block text-sm mb-1 font-medium">Курс баасы (сом)</label>
                             <input
+                                id={fieldIds.price}
                                 name="price"
                                 type="number"
                                 value={courseInfo.isPaid ? (courseInfo.price || '') : '0'}
                                 onChange={handleCourseInfoChange}
                                 placeholder="Курс баасы"
                                 disabled={disabled || !courseInfo.isPaid}
+                                aria-invalid={Boolean(getError('price'))}
+                                aria-describedby={`${fieldIds.price}-error`}
                                 className="w-full p-2 border rounded bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white disabled:opacity-50"
                             />
-                            <p className="mt-1 text-xs text-rose-500">
-                                {infoTouched.price ? courseInfoErrors.price : ''}
+                            <p id={`${fieldIds.price}-error`} className="mt-1 text-xs text-rose-500">
+                                {getError('price')}
                             </p>
                         </div>
                         <div className="flex items-center gap-2 mt-2 sm:mt-7">
@@ -176,31 +208,35 @@ export const CourseInfoStep = ({
 
                     {/* Language */}
                     <div>
-                        <label className="block text-sm mb-1 font-medium">
+                        <label htmlFor={fieldIds.languageCode} className="block text-sm mb-1 font-medium">
                             Сабак тили {mode === 'edit' && '(Language)'}
                         </label>
                         <select
+                            id={fieldIds.languageCode}
                             name="languageCode"
                             value={courseInfo.languageCode || 'ky'}
                             onChange={handleCourseInfoChange}
                             disabled={disabled}
+                            aria-invalid={Boolean(getError('languageCode'))}
+                            aria-describedby={`${fieldIds.languageCode}-error`}
                             className="w-full p-2 border rounded bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white disabled:opacity-50"
                         >
                             <option value="ky">Кыргызча</option>
                             <option value="ru">Русский</option>
                             <option value="en">English</option>
                         </select>
-                        <p className="mt-1 text-xs text-rose-500">
-                            {infoTouched.languageCode ? courseInfoErrors.languageCode : ''}
+                        <p id={`${fieldIds.languageCode}-error`} className="mt-1 text-xs text-rose-500">
+                            {getError('languageCode')}
                         </p>
                     </div>
 
                     {/* Learning Outcomes */}
                     <div>
-                        <label className="block text-sm mb-1 font-medium">
+                        <label htmlFor={fieldIds.learningOutcomesText} className="block text-sm mb-1 font-medium">
                             Бул курстан эмнени үйрөнөсүз? (ар бир сапка бир пункт)
                         </label>
                         <textarea
+                            id={fieldIds.learningOutcomesText}
                             name="learningOutcomesText"
                             value={courseInfo.learningOutcomesText || ''}
                             onChange={handleCourseInfoChange}
@@ -224,20 +260,26 @@ export const CourseInfoStep = ({
                         className="mb-3 max-h-52 w-full max-w-lg rounded-lg object-cover"
                     />
                 )}
+                <label htmlFor={fieldIds.cover} className="sr-only">Cover сүрөт файлы</label>
                 <input
+                    id={fieldIds.cover}
                     type="file"
                     name="cover"
                     accept="image/*"
                     onChange={handleCourseInfoChange}
                     disabled={disabled}
+                    aria-describedby={getDescribedBy(
+                        `${fieldIds.cover}-helper`,
+                        !courseInfo.coverImageUrl && courseInfo.pendingCoverName ? `${fieldIds.cover}-pending` : null
+                    )}
                     className="w-full p-2 border rounded bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white disabled:opacity-50"
                 />
                 {!courseInfo.coverImageUrl && courseInfo.pendingCoverName && (
-                    <p className="mt-2 text-xs text-amber-600 dark:text-amber-300">
+                    <p id={`${fieldIds.cover}-pending`} className="mt-2 text-xs text-amber-600 dark:text-amber-300">
                         Тандалган cover сакталган эмес: {courseInfo.pendingCoverName}. Сураныч, файлды кайра тандаңыз.
                     </p>
                 )}
-                <p className="mt-1 text-xs text-slate-500">PNG/JPG, максимум 5MB</p>
+                <p id={`${fieldIds.cover}-helper`} className="mt-1 text-xs text-slate-500">PNG/JPG, максимум 5MB</p>
             </div>
 
             {/* Submit Button */}
@@ -253,6 +295,7 @@ export const CourseInfoStep = ({
                         </button>
                     )}
                     <button
+                        type="button"
                         onClick={() => {
                             handleCourseSubmit();
                         }}

@@ -1,7 +1,7 @@
 import PropTypes from 'prop-types';
 
-const DashboardInsetPanel = ({ title, description, action, className = '', children }) => (
-    <div className={`dashboard-panel-muted group p-4 ${className}`}>
+const DashboardInsetPanel = ({ title, description, action, className = '', children, ...panelProps }) => (
+    <div className={`dashboard-panel-muted group p-4 ${className}`} {...panelProps}>
         {(title || description || action) && (
             <div className="relative flex items-center justify-between gap-3">
                 <div>

@@ -205,7 +205,7 @@ export const getStepItems = (currentStep, courseInfo, curriculum) => {
         },
         {
             key: 'media',
-            label: 'Медиа жане баскаруу',
+            label: 'Медиа жана башкаруу',
             completed: currentStep > 2,
             enabled: true, // Always allow navigation
         },

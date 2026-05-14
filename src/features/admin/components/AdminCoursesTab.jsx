@@ -14,6 +14,7 @@ import { fetchSections, fetchLessons, getTranscodeStatus, retryTranscodeLessonHl
 import useTranscodingStatus from '@hooks/useTranscodingStatus';
 import TranscodingStatusBadge from '@features/courses/components/TranscodingStatusBadge';
 import RetryTranscodeButton from '@features/courses/components/RetryTranscodeButton';
+import { ADMIN_COURSES_TAB_SECTIONS } from '../utils/adminPanel.constants';
 
 const getCourseTypeLabel = (courseType) => {
     switch (courseType) {
@@ -239,6 +240,7 @@ const AdminCoursesTab = ({
                 <DashboardInsetPanel
                     title="Курстар"
                     description="Курс карталарын карап чыгып, алдын ала көрүп жана студент жаздырыңыз."
+                    data-workspace-section={ADMIN_COURSES_TAB_SECTIONS.CATALOG_GOVERNANCE}
                 >
                     {courses.length ? (
                         <div className="mt-4 space-y-3">
@@ -377,6 +379,7 @@ const AdminCoursesTab = ({
                     <DashboardInsetPanel
                         title="Категориялар"
                         description="Категорияларды кошуп, атын өзгөртүп жана тазалаңыз."
+                        data-workspace-section={ADMIN_COURSES_TAB_SECTIONS.CATALOG_GOVERNANCE}
                     >
                         <div className="mt-4 flex flex-col gap-3 sm:flex-row">
                             <input
@@ -461,6 +464,7 @@ const AdminCoursesTab = ({
                     <DashboardInsetPanel
                         title="HLS транс коддоо"
                         description="Видеолор азыр автоматтык түрдө HLSке транскоддолот. Бул жерде тек ката кеткен же эски видеолор үчүн колдонуңуз."
+                        data-workspace-section={ADMIN_COURSES_TAB_SECTIONS.MEDIA_OPERATIONS}
                     >
                         <div className="mt-4 rounded-lg bg-blue-50 dark:bg-blue-900/20 p-3 text-sm text-blue-700 dark:text-blue-300">
                             <p>Авто-транскоддоо иштейет: жаңы видеолор жүктөлгөндө автоматтык түрдө HLSке айланат.</p>
@@ -630,6 +634,7 @@ const AdminCoursesTab = ({
                                         Транскоддоо статусу: <span className="font-medium">{lessons.find(l => l.id === lastTranscodedLessonId)?.title || `Сабак #${lastTranscodedLessonId}`}</span>
                                     </div>
                                     <button
+                                        type="button"
                                         onClick={manualRefresh}
                                         disabled={isPolling}
                                         aria-label="Транскоддоо статусун кайра текшеңиз"
@@ -708,6 +713,7 @@ const AdminCoursesTab = ({
                                 )}
 
                                 <button
+                                    type="button"
                                     onClick={() => {
                                         setLastTranscodedLessonId(null);
                                         setTranscodingContextCourseId(null);
@@ -732,6 +738,7 @@ const AdminCoursesTab = ({
                                 </div>
 
                                 <button
+                                    type="button"
                                     onClick={() => {
                                         setIsBulkTranscoding(false);
                                         setTranscodingContextCourseId(null);

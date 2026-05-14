@@ -14,6 +14,7 @@ import CoursePreviewPanel from '@features/courses/components/CoursePreviewPanel'
  * @param {Function} props.onBack - Back button handler
  * @param {Function} props.handleSaveDraft - Save draft handler (create mode only)
  * @param {Function} props.handleSubmitForApproval - Submit for approval handler
+ * @param {boolean} props.hasUnsavedChanges - Whether saved state is behind local edits
  * @param {boolean} props.disabled - Whether form is disabled
  * @returns {JSX.Element} - Course preview interface
  */
@@ -24,6 +25,7 @@ export const PreviewStep = ({
     onBack,
     handleSaveDraft,
     handleSubmitForApproval,
+    hasUnsavedChanges = false,
 }) => {
     // Map curriculum to the format expected by CoursePreviewPanel
     const mappedSections = curriculum.map((section) => ({
@@ -53,7 +55,10 @@ export const PreviewStep = ({
         actions.push({
             label: mode === 'create' ? 'Тастыктоого жөнөтүү' : 'Тастыктоого жөнөтүү',
             onClick: handleSubmitForApproval,
+            disabled: hasUnsavedChanges,
+            title: hasUnsavedChanges ? 'Алгач өзгөрүүлөрдү сактаңыз' : undefined,
             requiresClean: true,
+            intent: 'submit-for-approval',
             className: 'rounded-lg bg-edubot-teal px-6 py-2 text-sm font-medium text-white',
         });
     }

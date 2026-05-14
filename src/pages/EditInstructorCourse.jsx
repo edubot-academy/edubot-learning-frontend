@@ -76,6 +76,7 @@ const EditInstructorCourse = () => {
         setSingleSectionFocus,
         jumpToNextInvalidLesson,
         loadSkillsList,
+        hasUnsavedChanges,
 
         courseId,
     } = useCourseBuilder({ mode: 'edit', courseId: id });
@@ -90,6 +91,11 @@ const EditInstructorCourse = () => {
 
     // Handle submit for approval
     const handleSubmitForApproval = async () => {
+        if (hasUnsavedChanges) {
+            toast.error('Тастыктоого жөнөтүүдөн мурун өзгөрүүлөрдү сактаңыз.');
+            return;
+        }
+
         try {
             await markCoursePending(courseId);
             toast.success('Курс тастыктоого жөнөтүлдү');
@@ -216,6 +222,7 @@ const EditInstructorCourse = () => {
                     mode="edit"
                     onBack={() => setStep(2)}
                     handleSubmitForApproval={handleSubmitForApproval}
+                    hasUnsavedChanges={hasUnsavedChanges}
                 />
             )}
         </div>
