@@ -1,4 +1,3 @@
-import React from 'react';
 import globus from '@assets/images/globus.png';
 
 function AboutHero() {

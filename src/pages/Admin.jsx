@@ -1,4 +1,3 @@
-import React from 'react';
 import { AdminPanel } from '@features/admin';
 
 // This file now serves as a redirect to the refactored AdminPanel

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { BsPauseFill, BsFillPlayFill } from 'react-icons/bs';
 
 const PlayPauseIndicator = ({ showFeedback, isPlaying, onHideFeedback }) => {
@@ -42,7 +42,7 @@ const PlayPauseIndicator = ({ showFeedback, isPlaying, onHideFeedback }) => {
     return () => {
       clearTimeout(timeoutRef.current);
     };
-  }, [showFeedback, isPlaying, onHideFeedback]);
+  }, [showFeedback, isPlaying, onHideFeedback, shouldRender]);
 
   if (!shouldRender) return null;
 

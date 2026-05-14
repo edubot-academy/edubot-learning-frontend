@@ -1,12 +1,14 @@
 import PropTypes from 'prop-types';
 import { useCallback, useMemo, useState } from 'react';
-import { FiChevronLeft, FiChevronRight, FiSearch, FiFilter } from 'react-icons/fi';
+import { FiChevronLeft, FiChevronRight, FiSearch } from 'react-icons/fi';
 import {
   DashboardInsetPanel,
   DashboardFilterBar,
   EmptyState,
   LoadingState
 } from '../../../components/ui/dashboard';
+
+const STATUS_CYCLE = ['present', 'late', 'absent', 'not_scheduled'];
 
 /**
  * Main Attendance Table Component
@@ -21,7 +23,6 @@ const AttendanceTable = ({
   error = null,
 
   // Configuration props
-  groupId = null,
   groupName = '',
   showStudentAvatars = true,
   showSessionDates = true,
@@ -30,25 +31,21 @@ const AttendanceTable = ({
   // Callback props
   onAttendanceChange,
   onBulkUpdate,
-  onFilterChange,
-
   // UI props
   className = '',
   emptyStateMessage = 'No attendance data available',
 
   // Admin-specific props
   adminMode = false,
-  multiGroupView = false,
 }) => {
   // State management
   const [selectedCells, setSelectedCells] = useState(new Set());
   const [filterQuery, setFilterQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(0);
-  const [sortConfig, setSortConfig] = useState({ key: 'name', direction: 'asc' });
+  const [sortConfig] = useState({ key: 'name', direction: 'asc' });
 
   // Attendance status cycle order
-  const statusCycle = ['present', 'late', 'absent', 'not_scheduled'];
   const statusIcons = {
     present: '✓',
     late: '◦',
@@ -128,8 +125,8 @@ const AttendanceTable = ({
   // Handle cell click - cycle through status
   const handleCellClick = useCallback((studentId, sessionId) => {
     const currentStatus = attendanceData[studentId]?.[sessionId] || 'not_scheduled';
-    const currentIndex = statusCycle.indexOf(currentStatus);
-    const nextStatus = statusCycle[(currentIndex + 1) % statusCycle.length];
+    const currentIndex = STATUS_CYCLE.indexOf(currentStatus);
+    const nextStatus = STATUS_CYCLE[(currentIndex + 1) % STATUS_CYCLE.length];
 
     // Create unique cell key
     const cellKey = `${studentId}-${sessionId}`;

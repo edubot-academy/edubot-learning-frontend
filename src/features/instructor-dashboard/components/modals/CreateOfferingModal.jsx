@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import AdvancedModal from '@shared/ui/AdvancedModal';
 import toast from 'react-hot-toast';
@@ -391,7 +391,7 @@ const CreateOfferingModal = ({
                             </div>
                         </div>
                         <div className="text-sm text-gray-600 dark:text-gray-400">
-                            Бардык маалыматты текшериңиз. Эгер бардык туура болсо, "{mode === 'edit' ? 'Өзгөртүү' : 'Түзүү'}" басыңыз.
+                            Бардык маалыматты текшериңиз. Эгер бардык туура болсо, &quot;{mode === 'edit' ? 'Өзгөртүү' : 'Түзүү'}&quot; басыңыз.
                         </div>
                     </div>
                 );

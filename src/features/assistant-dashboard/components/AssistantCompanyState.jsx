@@ -1,4 +1,4 @@
-/* eslint-disable react/prop-types */
+
 import { DashboardWorkspaceHero, EmptyState } from '@components/ui/dashboard';
 import { FiBookOpen, FiBriefcase, FiCheckCircle, FiUsers } from 'react-icons/fi';
 

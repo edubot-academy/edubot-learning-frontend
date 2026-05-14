@@ -95,7 +95,7 @@ const TopLearnersHome = () => {
                     fallback: Boolean(res?._fallback),
                     message: res?._fallbackMessage || '',
                 });
-            } catch (error) {
+            } catch {
                 setItems([]);
             } finally {
                 setLoading(false);

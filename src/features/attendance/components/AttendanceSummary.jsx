@@ -7,15 +7,8 @@ import {
   FiUsers,
   FiCalendar,
   FiPercent,
-  FiBarChart2,
-  FiPieChart,
 } from 'react-icons/fi';
 import { DashboardMetricCard } from '../../../components/ui/dashboard';
-import {
-  ATTENDANCE_STATUS_CONFIG,
-  getAttendanceRateColor,
-  getAttendanceRateBackground
-} from '../constants/attendanceConfig';
 
 /**
  * Attendance Summary Statistics Component

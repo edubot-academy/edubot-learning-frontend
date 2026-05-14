@@ -1,4 +1,3 @@
-import React from 'react';
 import InfoCards from '@features/marketing/components/InfoCards';
 import Vision from '@features/marketing/components/Vision';
 import AboutHero from '@features/marketing/components/AboutHero';

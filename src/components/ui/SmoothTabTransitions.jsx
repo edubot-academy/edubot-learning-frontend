@@ -1,19 +1,19 @@
-/* eslint-disable react/prop-types */
+
 import { useState, useEffect, useRef } from 'react';
 
 /**
  * SmoothTabTransition - Eliminates tab flickering by managing content transitions
- * 
+ *
  * This component wraps tab content and prevents the flickering effect by:
  * 1. Showing content immediately if data is already loaded
  * 2. Using overlay loaders instead of replacing content
  * 3. Implementing smooth transitions between tabs
  */
-const SmoothTabTransition = ({ 
-    children, 
-    isLoading = false, 
+const SmoothTabTransition = ({
+    children,
+    isLoading = false,
     isDataLoaded = false,
-    loadingDelay = 300 
+    loadingDelay = 300
 }) => {
     const [showContent, setShowContent] = useState(true);
     const [showLoader, setShowLoader] = useState(false);
@@ -53,7 +53,7 @@ const SmoothTabTransition = ({
     return (
         <div className="relative">
             {/* Main content */}
-            <div 
+            <div
                 className={`transition-opacity duration-300 ${
                     showContent && !showLoader ? 'opacity-100' : 'opacity-30'
                 }`}
@@ -79,11 +79,11 @@ const SmoothTabTransition = ({
 /**
  * TabContentWrapper - Wraps individual tab content with smooth transitions
  */
-const TabContentWrapper = ({ 
-    isActive, 
-    children, 
+const TabContentWrapper = ({
+    isActive,
+    children,
     isLoading = false,
-    className = '' 
+    className = ''
 }) => {
     const [isVisible, setIsVisible] = useState(false);
     const [shouldRender, setShouldRender] = useState(false);
@@ -107,8 +107,8 @@ const TabContentWrapper = ({
     return (
         <div
             className={`transition-all duration-300 ease-in-out ${
-                isVisible 
-                    ? 'opacity-100 translate-x-0' 
+                isVisible
+                    ? 'opacity-100 translate-x-0'
                     : 'opacity-0 translate-x-4'
             } ${className}`}
         >
@@ -122,10 +122,10 @@ const TabContentWrapper = ({
 /**
  * AntiFlickerWrapper - Prevents flickering during rapid tab switches
  */
-const AntiFlickerWrapper = ({ 
-    children, 
-    loadingStates = {}, 
-    activeTab = null 
+const AntiFlickerWrapper = ({
+    children,
+    loadingStates = {},
+    activeTab = null
 }) => {
     const isTransitioning = Boolean(activeTab && loadingStates[activeTab]);
 
@@ -146,17 +146,17 @@ const AntiFlickerWrapper = ({
 /**
  * TabSwitchGuard - Prevents rapid tab switching that causes flickering
  */
-const TabSwitchGuard = ({ 
-    children, 
-    onTabChange, 
-    debounceMs = 200 
+const TabSwitchGuard = ({
+    children,
+    onTabChange,
+    debounceMs = 200
 }) => {
     const [lastSwitchTime, setLastSwitchTime] = useState(0);
     const [pendingTab, setPendingTab] = useState(null);
 
     const handleTabChange = (tabId) => {
         const now = Date.now();
-        
+
         if (now - lastSwitchTime < debounceMs) {
             // Debounce rapid switches
             setPendingTab(tabId);

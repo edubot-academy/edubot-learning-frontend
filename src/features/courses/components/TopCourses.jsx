@@ -1,4 +1,3 @@
-import React from 'react';
 import SectionContainer from '@features/marketing/components/SectionContainer';
 import CardCourse from './CardCourse';
 import { Link } from 'react-router-dom';

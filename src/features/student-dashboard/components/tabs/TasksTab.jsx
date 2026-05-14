@@ -550,11 +550,6 @@ const TasksTab = ({ tasks, onSubmitHomework, submittingTaskState }) => {
                                 item.task.myAttempt?.createdAt;
                             const submissionAttachment = item.task.mySubmission?.attachmentUrl || '';
                             const submissionText = item.task.mySubmission?.answerText || '';
-                            const submissionThread = Array.isArray(item.task.mySubmission?.messages)
-                                ? item.task.mySubmission.messages
-                                : [];
-                            const latestStudentThreadMessage = item.task.mySubmission?.latestSubmissionMessage || null;
-                            const latestReviewThreadMessage = item.task.mySubmission?.latestReviewMessage || null;
                             const historyThread = Array.isArray(item.task.mySubmission?.historyMessages)
                                 ? item.task.mySubmission.historyMessages
                                 : [];

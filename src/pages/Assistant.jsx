@@ -1,4 +1,3 @@
-import React from "react";
 import { AssistantDashboard } from "@features/assistant-dashboard";
 
 // This file now serves as a redirect to the refactored AssistantDashboard

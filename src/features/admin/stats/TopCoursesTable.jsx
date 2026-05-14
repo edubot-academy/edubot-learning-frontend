@@ -1,6 +1,4 @@
-import React from 'react';
 import { SmoothTabTransition } from '@components/ui';
-import Loader from '@shared/ui/Loader';
 
 const TopCoursesTable = ({ courses, formatNumber, formatPercent, formatCurrency, loading }) => (
     <div className="group relative overflow-hidden rounded-3xl border border-edubot-line/80 bg-white/90 p-5 shadow-edubot-card transition-all duration-300 hover:-translate-y-1 hover:shadow-edubot-hover dark:border-slate-700 dark:bg-slate-950 space-y-3">

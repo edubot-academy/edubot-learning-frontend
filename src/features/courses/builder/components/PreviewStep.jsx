@@ -2,7 +2,6 @@
 // Shared between CreateCourse and EditInstructorCourse
 // Extracted from Step 3 JSX in both components
 
-import React from 'react';
 import CoursePreviewPanel from '@features/courses/components/CoursePreviewPanel';
 
 /**
@@ -25,7 +24,6 @@ export const PreviewStep = ({
     onBack,
     handleSaveDraft,
     handleSubmitForApproval,
-    disabled = false,
 }) => {
     // Map curriculum to the format expected by CoursePreviewPanel
     const mappedSections = curriculum.map((section) => ({

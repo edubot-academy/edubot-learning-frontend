@@ -1,4 +1,3 @@
-import React from 'react';
 import { AiOutlineLeftCircle, AiOutlineRightCircle } from 'react-icons/ai';
 
 const CoursesSection = ({ title, children }) => {

@@ -3,7 +3,7 @@ import AppRoutes from './routes';
 import { Toaster } from 'react-hot-toast';
 import ReactGA4 from 'react-ga4';
 import usePageTracking from '../hooks/usePageTracking';
-import { DarkModeProvider } from '../contexts/DarkModeContext';
+import { DarkModeProvider } from '../contexts/DarkModeProvider';
 
 ReactGA4.initialize('G-GFGKS2VM2D');
 

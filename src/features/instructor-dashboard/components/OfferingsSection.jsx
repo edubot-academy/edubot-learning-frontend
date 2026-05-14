@@ -1,4 +1,4 @@
-/* eslint-disable react/prop-types */
+
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import {
     FiActivity,

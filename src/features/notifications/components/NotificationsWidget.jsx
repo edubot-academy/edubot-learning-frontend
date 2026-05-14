@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
     fetchNotifications,
@@ -17,7 +17,7 @@ const NotificationsWidget = ({ title = 'Билдирүүлөр', limit = 5, link
     const [unreadCount, setUnreadCount] = useState(0);
     const [loading, setLoading] = useState(false);
 
-    const load = async () => {
+    const load = useCallback(async () => {
         setLoading(true);
         try {
             const [listRes, unreadRes] = await Promise.all([
@@ -31,11 +31,11 @@ const NotificationsWidget = ({ title = 'Билдирүүлөр', limit = 5, link
         } finally {
             setLoading(false);
         }
-    };
+    }, [limit]);
 
     useEffect(() => {
         load();
-    }, []);
+    }, [load]);
 
     const handleMarkAll = async () => {
         try {

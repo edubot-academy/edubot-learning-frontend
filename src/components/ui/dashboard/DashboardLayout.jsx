@@ -1,4 +1,4 @@
-/* eslint-disable react/prop-types */
+
 import { useEffect, useState } from 'react';
 import SkipNavigation from '../SkipNavigation';
 import DashboardSidebar from '@features/dashboard/components/DashboardSidebar';

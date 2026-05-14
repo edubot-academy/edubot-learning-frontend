@@ -80,7 +80,7 @@ function Comment({ courseId }) {
         try {
             setLoading(true);
             const payload = { value: rating, comment: comment.trim() };
-            const response = await rateCourse(courseId, payload);
+            await rateCourse(courseId, payload);
 
             toast.success('Сын-пикир ийгиликтүү жөнөтүлдү.');
 

@@ -54,12 +54,6 @@ const normalizeLegacyInstructorQuery = ({ from, to, courseId, groupId, instructo
         instructorId: ensurePositiveInt(instructorId, 'instructorId'),
     });
 
-const normalizeLegacyStudentQuery = ({ from, to, courseId, groupId, studentId } = {}) =>
-    clean({
-        ...normalizeLegacyAnalyticsFilters({ from, to, courseId, groupId }),
-        studentId: ensurePositiveInt(studentId, 'studentId'),
-    });
-
 // New simplified analytics endpoints
 export const fetchAdminOverviewAnalytics = async (filters = {}) => {
     const { data } = await api.get('/analytics/admin/overview', {

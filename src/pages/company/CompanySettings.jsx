@@ -1,4 +1,4 @@
-/* eslint-disable react/prop-types */
+
 import React from 'react';
 import toast from 'react-hot-toast';
 import { updateCompany, deleteCompany, uploadCompanyLogo } from '@services/api';

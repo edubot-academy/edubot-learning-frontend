@@ -1,15 +1,13 @@
 // Course info operations for useCourseBuilder hook
 // Extracted from CreateCourse.jsx and EditInstructorCourse.jsx
 
-import { useState, useCallback } from 'react';
+import { useCallback } from 'react';
 import toast from 'react-hot-toast';
-import { useNavigate } from 'react-router-dom';
 
 import { getCourseInfoErrors, getAllCourseInfoFieldsTouched } from '../validation';
 import { prepareCourseInfoForApi, validateCoverImage, createFilePreviewUrl } from '../utils';
 
 import { createCourse, updateCourse, uploadCourseImage } from '../../api';
-import { isForbiddenError, parseApiError } from '../../../../shared/api/error';
 
 /**
  * Course info operations hook
@@ -26,7 +24,6 @@ export const useCourseBuilderInfo = (courseBuilderState) => {
         setCourseId,
         mode,
         setStep,
-        navigate,
     } = courseBuilderState;
 
     // Handle course info form changes
@@ -78,7 +75,7 @@ export const useCourseBuilderInfo = (courseBuilderState) => {
 
     // Handle course submission (create or update)
     const handleCourseSubmit = useCallback(async () => {
-        const { isValid, errors } = validateCourseInfo();
+        const { isValid } = validateCourseInfo();
 
         if (!isValid) {
             setInfoTouched(getAllCourseInfoFieldsTouched());
@@ -116,7 +113,7 @@ export const useCourseBuilderInfo = (courseBuilderState) => {
             const errorMessage = mode === 'create' ? 'Курс түзүүдө ката кетти.' : 'Курс сактоодо ката кетти.';
             toast.error(errorMessage);
         }
-    }, [courseInfo, courseId, mode, setCourseInfo, setStep, validateCourseInfo, setInfoTouched]);
+    }, [courseInfo, courseId, mode, setCourseInfo, setStep, validateCourseInfo, setInfoTouched, setCourseId]);
 
     // Reset course info to defaults
     const resetCourseInfo = useCallback(() => {

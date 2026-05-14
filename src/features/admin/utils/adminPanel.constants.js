@@ -13,21 +13,22 @@ import {
     FiTrendingUp,
     FiCheckSquare,
 } from 'react-icons/fi';
+import { ADMIN_DASHBOARD_TABS } from '@shared/constants/dashboardTabs';
 
 export const ADMIN_TABS = [
-    'stats',
-    'users',
-    'courses',
-    'contacts',
-    'pending',
-    'companies',
-    'certificates',
-    'skills',
-    'ai-prompts',
-    'notifications',
-    'integration',
-    'attendance',
-    'analytics',
+    ADMIN_DASHBOARD_TABS.STATS,
+    ADMIN_DASHBOARD_TABS.USERS,
+    ADMIN_DASHBOARD_TABS.COURSES,
+    ADMIN_DASHBOARD_TABS.CONTACTS,
+    ADMIN_DASHBOARD_TABS.PENDING,
+    ADMIN_DASHBOARD_TABS.COMPANIES,
+    ADMIN_DASHBOARD_TABS.CERTIFICATES,
+    ADMIN_DASHBOARD_TABS.SKILLS,
+    ADMIN_DASHBOARD_TABS.AI_PROMPTS,
+    ADMIN_DASHBOARD_TABS.NOTIFICATIONS,
+    ADMIN_DASHBOARD_TABS.INTEGRATION,
+    ADMIN_DASHBOARD_TABS.ATTENDANCE,
+    ADMIN_DASHBOARD_TABS.ANALYTICS,
 ];
 
 export const USERS_QUERY_KEYS = Object.freeze({
@@ -40,25 +41,25 @@ export const USERS_QUERY_KEYS = Object.freeze({
 
 export const NAV_ITEMS = [
     // Primary Navigation - Core Admin Tasks
-    { id: 'stats', label: 'Статистика', icon: FiBarChart2, category: 'primary', priority: 1 },
-    { id: 'courses', label: 'Курстар & Категориялар', icon: FiBookOpen, category: 'primary', priority: 2 },
-    { id: 'pending', label: 'Жаңы курстарды бекитүү', icon: FiCheckSquare, category: 'primary', priority: 3 },
-    { id: 'certificates', label: 'Сертификаттар', icon: FiAward, category: 'primary', priority: 4 },
+    { id: ADMIN_DASHBOARD_TABS.STATS, label: 'Статистика', icon: FiBarChart2, category: 'primary', priority: 1 },
+    { id: ADMIN_DASHBOARD_TABS.COURSES, label: 'Курстар & Категориялар', icon: FiBookOpen, category: 'primary', priority: 2 },
+    { id: ADMIN_DASHBOARD_TABS.PENDING, label: 'Жаңы курстарды бекитүү', icon: FiCheckSquare, category: 'primary', priority: 3 },
+    { id: ADMIN_DASHBOARD_TABS.CERTIFICATES, label: 'Сертификаттар', icon: FiAward, category: 'primary', priority: 4 },
 
     // Secondary Navigation - People & Access
-    { id: 'users', label: 'Колдонуучулар', icon: FiUsers, category: 'secondary', priority: 1 },
-    { id: 'companies', label: 'Компаниялар', icon: FiBriefcase, category: 'secondary', priority: 2 },
-    { id: 'contacts', label: 'Байланыштар', icon: FiMail, category: 'secondary', priority: 3 },
+    { id: ADMIN_DASHBOARD_TABS.USERS, label: 'Колдонуучулар', icon: FiUsers, category: 'secondary', priority: 1 },
+    { id: ADMIN_DASHBOARD_TABS.COMPANIES, label: 'Компаниялар', icon: FiBriefcase, category: 'secondary', priority: 2 },
+    { id: ADMIN_DASHBOARD_TABS.CONTACTS, label: 'Байланыштар', icon: FiMail, category: 'secondary', priority: 3 },
 
     // Analytics & Insights
-    { id: 'analytics', label: 'Аналитика', icon: FiTrendingUp, category: 'analytics', priority: 1 },
+    { id: ADMIN_DASHBOARD_TABS.ANALYTICS, label: 'Аналитика', icon: FiTrendingUp, category: 'analytics', priority: 1 },
 
     // Administrative - Settings & Configuration
-    { id: 'ai-prompts', label: 'AI промпттар', icon: FiCpu, category: 'admin', priority: 1 },
-    { id: 'skills', label: 'Скиллдер', icon: FiTag, category: 'admin', priority: 2 },
-    { id: 'notifications', label: 'Билдирүүлөр', icon: FiBell, category: 'admin', priority: 3 },
-    { id: 'integration', label: 'Интеграциялар', icon: FiActivity, category: 'admin', priority: 4 },
-    { id: 'attendance', label: 'Катышуу', icon: FiCalendar, category: 'admin', priority: 5 },
+    { id: ADMIN_DASHBOARD_TABS.AI_PROMPTS, label: 'AI промпттар', icon: FiCpu, category: 'admin', priority: 1 },
+    { id: ADMIN_DASHBOARD_TABS.SKILLS, label: 'Скиллдер', icon: FiTag, category: 'admin', priority: 2 },
+    { id: ADMIN_DASHBOARD_TABS.NOTIFICATIONS, label: 'Билдирүүлөр', icon: FiBell, category: 'admin', priority: 3 },
+    { id: ADMIN_DASHBOARD_TABS.INTEGRATION, label: 'Интеграциялар', icon: FiActivity, category: 'admin', priority: 4 },
+    { id: ADMIN_DASHBOARD_TABS.ATTENDANCE, label: 'Катышуу', icon: FiCalendar, category: 'admin', priority: 5 },
 ];
 
 // Pagination helper constants

@@ -54,7 +54,7 @@ module.exports = {
     },
     plugins: [
         require('@tailwindcss/typography'),
-        function ({ addUtilities, addComponents, theme }) {
+        function ({ addComponents }) {
             // Define consistent dark mode utilities
             addComponents({
                 '.card': {

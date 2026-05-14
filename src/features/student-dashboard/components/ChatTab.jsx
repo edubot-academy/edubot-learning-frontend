@@ -1,4 +1,4 @@
-import { useState, useEffect, useContext, useMemo } from 'react';
+import { lazy, Suspense, useState, useEffect, useContext, useMemo } from 'react';
 import toast from 'react-hot-toast';
 import { FiClock, FiMessageCircle, FiPlus, FiSend } from 'react-icons/fi';
 import {
@@ -10,8 +10,9 @@ import {
     fetchCourseDetails,
 } from '@services/api';
 import Loader from '@shared/ui/Loader';
-import ChatWorkspace from '@components/ui/ChatWorkspace';
 import { AuthContext } from '../../../context/AuthContext';
+
+const ChatWorkspace = lazy(() => import('@components/ui/ChatWorkspace'));
 
 const ChatTab = () => {
     const { user } = useContext(AuthContext);
@@ -378,26 +379,27 @@ const ChatTab = () => {
 
     return (
         <>
-            <ChatWorkspace
-                sidebarTitle="Сүйлөшүүлөр"
-                sidebarDescription="Инструкторлор менен болгон активдүү чаттарыңызды ушул жерден башкарыңыз."
-                sidebarAction={
-                    <button
-                        type="button"
-                        onClick={handleNewChatOpen}
-                        className="dashboard-button-secondary !px-3"
-                    >
-                        <FiPlus className="h-4 w-4" />
-                        Жаңы чат
-                    </button>
-                }
-                stats={stats}
-                query={query}
-                onQueryChange={setQuery}
-                chatItems={chatItems}
-                activeChatId={activeChat?.id || null}
-                onSelectChat={(chatId) => setActiveChat(chats.find((item) => item.id === chatId) || null)}
-                noChatsTitle="Чат табылган жок"
+            <Suspense fallback={<Loader fullScreen={false} />}>
+                <ChatWorkspace
+                    sidebarTitle="Сүйлөшүүлөр"
+                    sidebarDescription="Инструкторлор менен болгон активдүү чаттарыңызды ушул жерден башкарыңыз."
+                    sidebarAction={
+                        <button
+                            type="button"
+                            onClick={handleNewChatOpen}
+                            className="dashboard-button-secondary !px-3"
+                        >
+                            <FiPlus className="h-4 w-4" />
+                            Жаңы чат
+                        </button>
+                    }
+                    stats={stats}
+                    query={query}
+                    onQueryChange={setQuery}
+                    chatItems={chatItems}
+                    activeChatId={activeChat?.id || null}
+                    onSelectChat={(chatId) => setActiveChat(chats.find((item) => item.id === chatId) || null)}
+                    noChatsTitle="Чат табылган жок"
                 noChatsSubtitle="Жаңы чат ачып көрүңүз же издөө суроосун өзгөртүңүз."
                 activeChatTitle={activeChatCompanion?.fullName || 'Инструктор'}
                 activeChatSubtitle={activeChat?.course?.title || 'Курс'}
@@ -419,6 +421,7 @@ const ChatTab = () => {
                 onAttach={sendFile}
                 composerPlaceholder="Баарлашууну баштаңыз"
             />
+            </Suspense>
 
             {newChatOpen ? (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 backdrop-blur-sm">

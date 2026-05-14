@@ -67,7 +67,8 @@ const TranscodingStatusBadge = ({
       className={`inline-flex items-center gap-2 px-3 py-2 rounded-md ${config.color}`}
       role="status"
       aria-live="polite"
-      aria-label={`Video transcoding status: ${config.label}`}
+      aria-label={`Video transcoding status: ${config.label}${error ? `. ${error}` : ''}`}
+      title={error || config.label}
     >
       <span className="text-base" aria-hidden="true">{config.icon}</span>
       <span className="font-medium text-sm">{config.label}</span>

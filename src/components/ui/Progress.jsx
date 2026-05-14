@@ -1,5 +1,3 @@
-import React from 'react';
-
 const ProgressIndicator = ({ value = 0, max = 100, size = 'sm', color = 'orange', showLabel = true }) => {
     const sizes = {
         sm: 'h-1',

@@ -1,4 +1,4 @@
-/* eslint-disable react/prop-types, react-refresh/only-export-components */
+/* eslint-disable react-refresh/only-export-components */
 import { createContext, useState, useEffect, useCallback } from 'react';
 import { fetchUserProfile, logoutUser } from '@services/api';
 

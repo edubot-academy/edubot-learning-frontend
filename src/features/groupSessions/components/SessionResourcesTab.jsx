@@ -76,10 +76,14 @@ const SessionResourcesTab = ({
     const [pendingDeleteIndex, setPendingDeleteIndex] = useState(null);
     const [courseAssetQuery, setCourseAssetQuery] = useState('');
     const [expandedSections, setExpandedSections] = useState({});
-    const existingMaterialKeys = new Set(
-        selectedSessionMaterials
-            .map((item) => item?.storageKey)
-            .filter((value) => typeof value === 'string' && value.trim())
+    const existingMaterialKeys = useMemo(
+        () =>
+            new Set(
+                selectedSessionMaterials
+                    .map((item) => item?.storageKey)
+                    .filter((value) => typeof value === 'string' && value.trim())
+            ),
+        [selectedSessionMaterials]
     );
 
     useEffect(() => {

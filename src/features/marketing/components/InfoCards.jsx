@@ -1,4 +1,3 @@
-import React from 'react';
 import notebook from '@assets/icons/notebook.svg';
 import security from '@assets/icons/security.svg';
 import medal from '@assets/icons/medal.svg';

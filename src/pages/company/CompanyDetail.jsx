@@ -1,4 +1,4 @@
-/* eslint-disable react/prop-types */
+
 import React, { useContext } from 'react';
 import { useParams, Link, useSearchParams } from 'react-router-dom';
 import { getCompany } from '@services/api';

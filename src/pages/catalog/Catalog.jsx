@@ -27,7 +27,7 @@ export default function Catalog() {
             400
         );
         return () => clearTimeout(t);
-    }, [q]);
+    }, [q, setSearchParams]);
 
     return (
         <div className="max-w-7xl mx-auto p-4">

@@ -2,8 +2,6 @@
 // Shared between CreateCourse and EditInstructorCourse
 // Extracted from Step 1 JSX in both components
 
-import React from 'react';
-
 /**
  * Course Info Step component
  * Renders the course information form (Step 1)
@@ -114,7 +112,7 @@ export const CourseInfoStep = ({
                         </p>
                         {mode === 'edit' && (
                             <p className="mt-1 text-xs text-slate-500">
-                                Категорияны өзгөртүү азыркы backend update API'де колдоого алынбайт.
+                                Категорияны өзгөртүү азыркы backend update API&apos;де колдоого алынбайт.
                             </p>
                         )}
                     </div>

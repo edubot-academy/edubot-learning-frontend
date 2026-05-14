@@ -1,4 +1,4 @@
-import { DEFAULT_PAGE_SIZE, MAX_VISIBLE_PAGES } from './adminPanel.constants';
+import { MAX_VISIBLE_PAGES } from './adminPanel.constants';
 
 /**
  * Calculates visible page numbers for pagination
@@ -82,8 +82,10 @@ export const formatDateForInput = (date) => {
  */
 export const debounce = (func, delay) => {
     let timeoutId;
-    return (...args) => {
+    const debounced = (...args) => {
         clearTimeout(timeoutId);
         timeoutId = setTimeout(() => func.apply(null, args), delay);
     };
+    debounced.cancel = () => clearTimeout(timeoutId);
+    return debounced;
 };

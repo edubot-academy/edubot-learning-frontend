@@ -1,4 +1,3 @@
-import React from 'react';
 import { SmoothTabTransition } from '@components/ui';
 import {
     DashboardFilterBar,
@@ -10,7 +9,6 @@ import TopCoursesTable from '../stats/TopCoursesTable';
 
 const AdminStatsTab = ({ stats, loading, onRefresh }) => {
     const totals = stats?.totals || {};
-    const growth = stats?.growth || {};
     const activity = stats?.activity || {};
     const revenue = stats?.revenue || {};
     const trends = stats?.trends || {};

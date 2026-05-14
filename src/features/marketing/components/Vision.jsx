@@ -1,4 +1,3 @@
-import React from 'react';
 import workplace from '@assets/images/workplace.png';
 
 function Vision() {

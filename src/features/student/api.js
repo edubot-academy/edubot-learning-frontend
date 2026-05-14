@@ -1,6 +1,7 @@
 import api, { clean } from '../../shared/api/client';
 
 export const fetchStudentCourses = async (studentId, params = {}) => {
+    void studentId;
     const { status } = params;
     const { data } = await api.get('/student/courses', {
         params: clean({ status }),
@@ -14,21 +15,25 @@ export const fetchStudentAccessState = async () => {
 };
 
 export const fetchStudentProgress = async (studentId) => {
+    void studentId;
     const { data } = await api.get('/student/progress');
     return data;
 };
 
 export const fetchStudentCertificates = async (studentId) => {
+    void studentId;
     const { data } = await api.get('/student/certificates');
     return data;
 };
 
 export const fetchStudentNotificationSettings = async (studentId) => {
+    void studentId;
     const { data } = await api.get('/student/notification-settings');
     return data;
 };
 
 export const updateStudentNotificationSettings = async (studentId, payload) => {
+    void studentId;
     const { data } = await api.patch('/student/notification-settings', payload);
     return data;
 };

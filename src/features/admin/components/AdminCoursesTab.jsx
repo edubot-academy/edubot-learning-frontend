@@ -1,4 +1,4 @@
-/* eslint-disable react/prop-types */
+
 import { useState, useEffect, useCallback } from 'react';
 import {
     DashboardInsetPanel,
@@ -53,8 +53,6 @@ const AdminCoursesTab = ({
     handleAddCategory,
     handleUpdateCategory,
     handleDeleteCategory,
-    handleTranscode,
-    handleBulkTranscode,
 }) => {
     const [detailCourse, setDetailCourse] = useState(null);
     const [sections, setSections] = useState([]);
@@ -131,7 +129,7 @@ const AdminCoursesTab = ({
         };
 
         loadSections();
-    }, [transcodeCourseId, setTranscodeSectionId]);
+    }, [transcodeCourseId, setTranscodeSectionId, setTranscodeLessonId]);
 
     // Fetch lessons when section is selected
     useEffect(() => {

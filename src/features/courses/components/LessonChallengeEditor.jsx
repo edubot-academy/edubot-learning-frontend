@@ -1,4 +1,3 @@
-import React from 'react';
 import { FiInfo } from 'react-icons/fi';
 import {
     createEmptyChallenge,

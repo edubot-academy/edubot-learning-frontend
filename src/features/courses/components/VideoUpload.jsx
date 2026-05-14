@@ -1,4 +1,4 @@
-/* eslint-disable react/prop-types */
+
 import { useState } from 'react';
 import api from '@shared/api/client';
 

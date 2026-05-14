@@ -8,7 +8,6 @@ import {
     AnalyticsSection,
     ProgressList,
     EmptyAnalyticsState,
-    AnalyticsLineChart,
     AnalyticsBarChart,
     AnalyticsDoughnutChart,
 } from '@components/analytics';
@@ -18,13 +17,6 @@ import {
     DashboardSectionHeader,
 } from '@components/ui/dashboard';
 import { FiAward, FiBookOpen, FiCalendar, FiTrendingUp, FiZap } from 'react-icons/fi';
-
-const toList = (payload) => {
-    if (Array.isArray(payload)) return payload;
-    if (Array.isArray(payload?.items)) return payload.items;
-    if (Array.isArray(payload?.data)) return payload.data;
-    return [];
-};
 
 const metricNumber = (value, fallback = 0) => {
     const num = Number(value);
@@ -69,7 +61,7 @@ const StudentAnalyticsPage = ({
 
     useEffect(() => {
         loadOverview();
-    }, [requestFilters.courseId, requestFilters.from, requestFilters.groupId, requestFilters.studentId, requestFilters.to]);
+    }, [loadOverview]);
 
     const kpis = useMemo(
         () => ({
@@ -325,7 +317,7 @@ const StudentAnalyticsPage = ({
                                 acc.push({ label: type, value: 1 });
                             }
                             return acc;
-                        }, []).map((item, index) => ({
+                        }, []).map((item) => ({
                             label: item.label.charAt(0).toUpperCase() + item.label.slice(1),
                             value: item.value,
                         }))}

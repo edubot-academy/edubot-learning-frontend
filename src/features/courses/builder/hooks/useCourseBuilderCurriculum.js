@@ -1,11 +1,10 @@
 // Curriculum operations for useCourseBuilder hook
 // Extracted from CreateCourse.jsx and EditInstructorCourse.jsx
 
-import { useState, useCallback, useRef } from 'react';
+import { useCallback, useRef } from 'react';
 import toast from 'react-hot-toast';
 
 import {
-    getLessonIssue,
     getFirstInvalidLessonTarget,
     getCurriculumStats,
     validateCurriculumStructure,
@@ -16,7 +15,6 @@ import {
     updateSectionSkill,
     removeSection,
     reorderSections,
-    addLessonToSection,
     updateLessonInSection,
     removeLessonFromSection,
     reorderLessonsInSection,
@@ -25,7 +23,6 @@ import {
     normalizeSkillValue,
     reorderExpandedMap,
     handleLessonKindChange,
-    buildLessonPayload,
     createEmptyLesson,
 } from '../utils';
 
@@ -54,20 +51,17 @@ export const useCourseBuilderCurriculum = (courseBuilderState) => {
     const {
         curriculum,
         setCurriculum,
-        expandedSections,
         setExpandedSections,
         singleSectionFocus,
         dragSectionIndex,
         setDragSectionIndex,
         dragLesson,
         setDragLesson,
-        originalSections,
         deletedLessons,
         setDeletedLessons,
         deletedSections,
         setDeletedSections,
         deleteSection,
-        saving,
         setSaving,
         mode,
         courseId,
@@ -239,7 +233,7 @@ export const useCourseBuilderCurriculum = (courseBuilderState) => {
             return next;
         });
         setDragSectionIndex(null);
-    }, [dragSectionIndex, setCurriculum, setExpandedSections, mode]);
+    }, [dragSectionIndex, setCurriculum, setExpandedSections, setDragSectionIndex, mode]);
 
     const handleLessonDrop = useCallback((sectionIdx, targetLessonIdx) => {
         if (!dragLesson || dragLesson.sectionIdx !== sectionIdx) return;
@@ -264,7 +258,7 @@ export const useCourseBuilderCurriculum = (courseBuilderState) => {
             return next;
         });
         setDragLesson(null);
-    }, [dragLesson, setCurriculum, mode]);
+    }, [dragLesson, setCurriculum, setDragLesson, mode]);
 
     // File upload operations
     const handleFileUpload = useCallback(async (courseId, sectionIndex, lessonIndex, type, file) => {
@@ -354,7 +348,7 @@ export const useCourseBuilderCurriculum = (courseBuilderState) => {
                 return updated;
             });
         }
-    }, [courseId, curriculum, setCurriculum, handleUpdateLesson]);
+    }, [curriculum, setCurriculum, handleUpdateLesson]);
 
     // UI operations
     const openSection = useCallback((sectionIdx) => {
@@ -409,7 +403,6 @@ export const useCourseBuilderCurriculum = (courseBuilderState) => {
     const handleCurriculumSubmit = useCallback(async () => {
         setSaving(true);
         try {
-            const { validateCurriculumStructure } = await import('../validation');
             const { errors, invalidSectionIndexes } = validateCurriculumStructure(curriculum);
 
             if (errors.length > 0) {
@@ -647,7 +640,21 @@ export const useCourseBuilderCurriculum = (courseBuilderState) => {
         } finally {
             setSaving(false);
         }
-    }, [curriculum, courseId, mode, navigate, setSaving, setCurriculum, setDeletedLessons, expandInvalidSections, openSection, getFirstInvalidLessonTarget]);
+    }, [
+        curriculum,
+        courseId,
+        mode,
+        navigate,
+        setSaving,
+        setCurriculum,
+        deletedLessons,
+        setDeletedLessons,
+        deletedSections,
+        setDeletedSections,
+        deleteSection,
+        expandInvalidSections,
+        openSection,
+    ]);
 
     // Validation
     const validateCurriculum = useCallback(() => {

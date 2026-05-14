@@ -55,7 +55,7 @@ const FormModalExample = () => {
             setLoading(false);
             setIsOpen(false);
             // Handle success
-        } catch (error) {
+        } catch {
             setLoading(false);
             // Handle error
         }

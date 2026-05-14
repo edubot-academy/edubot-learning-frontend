@@ -1,10 +1,9 @@
-import React, { useState, useRef, useMemo, useEffect } from 'react';
+import { useState, useRef, useMemo, useEffect } from 'react';
 import { IoIosArrowDown, IoIosArrowUp } from 'react-icons/io';
 import { RiPlayCircleFill } from 'react-icons/ri';
 import { TbLock } from 'react-icons/tb';
 import { FiBookOpen, FiCode } from 'react-icons/fi';
 import { MdQuiz, MdDownload } from 'react-icons/md';
-import { HiOutlineFolderOpen } from 'react-icons/hi2';
 import ReelsIcon from '@assets/icons/reelsIcon.svg';
 import { formatMinutesToTime, formatSecondsToTime } from '../../../utils/timeUtils';
 import { getPlayableVideoUrl } from '../../../utils/videoUtils';
@@ -83,7 +82,7 @@ const CourseContent = ({
                 }
             }, 350);
         }
-    }, [activeLesson, openIds]);
+    }, [activeLesson, openIds, lessonRefs]);
 
     const toggleOpen = (id) => {
         setOpenIds((prev) => {
@@ -273,7 +272,7 @@ const CourseContent = ({
 
                 {searchQuery && filteredSections.length === 0 && (
                     <div className="px-4 sm:px-6 py-8 text-center text-gray-500 dark:text-gray-400 flex-shrink-0">
-                        " {searchQuery} " сураныч менен табылган жок
+                        &quot;{searchQuery}&quot; сураныч менен табылган жок
                     </div>
                 )}
 
@@ -349,7 +348,6 @@ const CourseContent = ({
                                     >
                                         {section.lessons?.map((lesson) => {
                                             const locked = isLocked(lesson);
-                                            const active = isActive(lesson);
                                             const completed = isCompleted(lesson);
                                             const status = getLessonStatus(lesson);
                                             const statusColor = getStatusColor(status);

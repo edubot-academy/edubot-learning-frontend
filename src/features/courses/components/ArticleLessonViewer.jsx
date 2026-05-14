@@ -27,7 +27,6 @@ const sanitizeHtml = async (html = '') => {
 const ArticleLessonViewer = ({ lesson }) => {
     const [sanitizedContent, setSanitizedContent] = useState('');
     const contentRef = useRef(null);
-    const [hasScroll, setHasScroll] = useState(false);
     
     const resourceMeta =
         !lesson.locked && lesson.resourceUrl
@@ -52,35 +51,6 @@ const ArticleLessonViewer = ({ lesson }) => {
             cancelled = true;
         };
     }, [lesson?.content]);
-
-    const checkOverflow = () => {
-        if (contentRef.current) {
-            const hasOverflow = contentRef.current.scrollHeight > contentRef.current.clientHeight;
-            setHasScroll(hasOverflow);
-        }
-    };
-
-    useEffect(() => {
-        checkOverflow();
-        if (!contentRef.current) return undefined;
-
-        const imgs = contentRef.current.querySelectorAll('img');
-        imgs.forEach((img) => img.addEventListener('load', checkOverflow));
-
-        let ro;
-        if (typeof ResizeObserver !== 'undefined') {
-            ro = new ResizeObserver(checkOverflow);
-            ro.observe(contentRef.current);
-        } else {
-            window.addEventListener('resize', checkOverflow);
-        }
-
-        return () => {
-            if (ro) ro.disconnect();
-            else window.removeEventListener('resize', checkOverflow);
-            imgs.forEach((img) => img.removeEventListener('load', checkOverflow));
-        };
-    }, [sanitizedContent]);
 
     // Добавляем базовые стили для темного режима при монтировании
     useEffect(() => {

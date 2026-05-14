@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import DOMPurify from 'dompurify';
 import {
     FaBold,
@@ -197,7 +197,7 @@ const ArticleEditor = ({
         const handler = () => refreshActiveFormats();
         document.addEventListener('selectionchange', handler);
         return () => document.removeEventListener('selectionchange', handler);
-    }, [isNodeInsideEditor]);
+    }, [refreshActiveFormats]);
 
     const handleCommand = (command, commandValue) => {
         if (disabled || typeof document === 'undefined') return;
@@ -314,6 +314,8 @@ const ArticleEditor = ({
                     }
                 }
             }
+        } else {
+            document.execCommand(command, false, commandValue ?? null);
         }
 
         editorRef.current?.focus();

@@ -12,7 +12,7 @@ const SuccessPaymentModal = ({ open, onClose, receipt }) => (
                 ✓
             </div>
             <div className="text-gray-800 text-sm whitespace-pre-line leading-relaxed">
-                ОсОО "EduBot"
+                ОсОО &quot;EduBot&quot;
                 {'\n'}ИНН 030123456789
                 {'\n'}Төлөм шилтемеси: {receipt.reference}
                 {'\n'}Сумма: {receipt.amount} {receipt.currency}
@@ -37,12 +37,8 @@ const PaymentCourse = () => {
         currency: 'KGS',
     });
 
-    const { cartItems, getTotalPrice } = useCart();
+    const { getTotalPrice } = useCart();
     const totalPrice = useMemo(() => Math.round(getTotalPrice()), [getTotalPrice]);
-    const courseName = useMemo(
-        () => (cartItems?.length ? cartItems[0].title : 'Курс'),
-        [cartItems]
-    );
 
     const handlePay = async (e) => {
         e.preventDefault();

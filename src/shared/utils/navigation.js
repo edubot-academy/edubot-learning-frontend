@@ -1,4 +1,9 @@
 import { isPlatformAdmin } from './roles';
+import {
+    ADMIN_DASHBOARD_TABS,
+    INSTRUCTOR_DASHBOARD_TABS,
+    STUDENT_DASHBOARD_TABS,
+} from '@shared/constants/dashboardTabs';
 
 const DASHBOARD_PATHS = {
     student: '/student',
@@ -8,6 +13,31 @@ const DASHBOARD_PATHS = {
 
 const getRole = (userOrRole) =>
     typeof userOrRole === 'string' ? userOrRole : userOrRole?.role;
+
+const DASHBOARD_TAB_FALLBACKS = Object.freeze({
+    COURSES: 'courses',
+    ENROLLMENTS: 'enrollments',
+    ATTENDANCE: 'attendance',
+    NOTIFICATIONS: 'notifications',
+});
+
+const getDashboardTabForRole = (userOrRole, tabKey) => {
+    const role = getRole(userOrRole);
+
+    if (isPlatformAdmin(role)) {
+        return ADMIN_DASHBOARD_TABS[tabKey] || DASHBOARD_TAB_FALLBACKS[tabKey];
+    }
+
+    if (role === 'instructor') {
+        return INSTRUCTOR_DASHBOARD_TABS[tabKey] || DASHBOARD_TAB_FALLBACKS[tabKey];
+    }
+
+    if (role === 'student') {
+        return STUDENT_DASHBOARD_TABS[tabKey] || DASHBOARD_TAB_FALLBACKS[tabKey];
+    }
+
+    return DASHBOARD_TAB_FALLBACKS[tabKey];
+};
 
 const appendSearchParams = (path, params = {}) => {
     const entries = Object.entries(params).filter(([, value]) => value !== undefined && value !== null && value !== '');
@@ -41,11 +71,11 @@ export const getCommunicationPath = (userOrRole) => {
     const role = getRole(userOrRole);
 
     if (role === 'student' || role === 'instructor') {
-        return getDashboardPath(role, 'chat');
+        return getDashboardPath(role, role === 'student' ? STUDENT_DASHBOARD_TABS.CHAT : INSTRUCTOR_DASHBOARD_TABS.CHAT);
     }
 
     if (isPlatformAdmin(role)) {
-        return getDashboardPath(role, 'notifications');
+        return getDashboardPath(role, ADMIN_DASHBOARD_TABS.NOTIFICATIONS);
     }
 
     if (role === 'assistant') {
@@ -59,13 +89,13 @@ export const getUserNavigationPaths = (userOrRole) => ({
     dashboard: getDashboardPath(userOrRole),
     dashboardOverview: getDashboardPath(
         userOrRole,
-        isPlatformAdmin(getRole(userOrRole)) ? 'stats' : 'overview'
+        isPlatformAdmin(getRole(userOrRole)) ? ADMIN_DASHBOARD_TABS.STATS : STUDENT_DASHBOARD_TABS.OVERVIEW
     ),
-    myCourses: getDashboardPath(userOrRole, 'my-courses'),
-    courses: getDashboardPath(userOrRole, 'courses'),
-    enrollments: getDashboardPath(userOrRole, 'enrollments'),
-    attendance: getDashboardPath(userOrRole, 'attendance'),
-    notifications: getDashboardPath(userOrRole, 'notifications'),
+    myCourses: getDashboardPath(userOrRole, STUDENT_DASHBOARD_TABS.MY_COURSES),
+    courses: getDashboardPath(userOrRole, getDashboardTabForRole(userOrRole, 'COURSES')),
+    enrollments: getDashboardPath(userOrRole, getDashboardTabForRole(userOrRole, 'ENROLLMENTS')),
+    attendance: getDashboardPath(userOrRole, getDashboardTabForRole(userOrRole, 'ATTENDANCE')),
+    notifications: getDashboardPath(userOrRole, getDashboardTabForRole(userOrRole, 'NOTIFICATIONS')),
     cart: '/cart',
     favourites: '/favourites',
     chat: getCommunicationPath(userOrRole) || '/chat',

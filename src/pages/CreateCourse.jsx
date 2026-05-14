@@ -2,7 +2,6 @@
 // Uses the shared course builder architecture
 // Maintains identical functionality to original CreateCourse.jsx
 
-import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import Loader from '../shared/ui/Loader';
@@ -11,7 +10,7 @@ import Loader from '../shared/ui/Loader';
 import { useCourseBuilder } from '../features/courses/builder';
 import { CourseInfoStep, CurriculumStep, PreviewStep } from '../features/courses/builder/components';
 import CourseBuilderStepNav from '../features/courses/components/CourseBuilderStepNav';
-import { validateCurriculumStructure, getFirstInvalidLessonTarget } from '../features/courses/builder/validation';
+import { getFirstInvalidLessonTarget } from '../features/courses/builder/validation';
 
 // API imports (same as original)
 import { markCoursePending } from '../features/courses/api';
@@ -76,8 +75,6 @@ const CreateCourse = () => {
         jumpToNextInvalidLesson,
         loadSkillsList,
 
-        // Mode info
-        mode,
         courseId,
     } = useCourseBuilder({ mode: 'create' });
 

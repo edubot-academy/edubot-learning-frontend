@@ -1,5 +1,5 @@
 
-import { useContext, useEffect, useRef, useState, useCallback } from 'react';
+import { useContext, useEffect, useRef, useState } from 'react';
 import {
     fetchInstructorChats,
     fetchInstructorChatMessages,

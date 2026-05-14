@@ -22,7 +22,7 @@ export const buildCourseCounts = (courseIds, enrollmentsMap) => {
     courseIds.forEach((courseId) => {
         counts[courseId] = 0;
 
-        Object.entries(enrollmentsMap).forEach(([studentId, studentCourseIds]) => {
+        Object.values(enrollmentsMap).forEach((studentCourseIds) => {
             if (Array.isArray(studentCourseIds) && studentCourseIds.includes(courseId)) {
                 counts[courseId] += 1;
             }
@@ -42,7 +42,7 @@ export const buildEnrolledStudentSet = (enrollmentsMap) => {
 
     Object.values(enrollmentsMap).forEach((studentCourseIds) => {
         if (Array.isArray(studentCourseIds)) {
-            studentCourseIds.forEach((courseId) => {
+            studentCourseIds.forEach(() => {
                 // Note: This function needs studentId, but current implementation only has courseIds
                 // This is a limitation in the original code that we're preserving
             });

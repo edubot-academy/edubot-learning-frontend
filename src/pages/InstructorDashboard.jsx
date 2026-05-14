@@ -1,4 +1,4 @@
-import { useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { lazy, Suspense, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { Navigate, useSearchParams } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import useDashboardSwipeGestures from '../hooks/useDashboardSwipeGestures';
@@ -29,12 +29,6 @@ import {
 import toast from 'react-hot-toast';
 import Loader from '../shared/ui/Loader';
 import FloatingActionButton from '../components/ui/FloatingActionButton';
-import NotificationsTab from '@features/notifications/components/NotificationsTab';
-import AttendancePage from './Attendance';
-import SessionWorkspacePage from './SessionWorkspace';
-import InstructorAnalyticsPage from './InstructorAnalytics';
-import InternalLeaderboard from './InternalLeaderboard';
-import InstructorHomework from './InstructorHomework';
 import {
     InstructorOverviewSection,
     CoursesSection,
@@ -44,7 +38,6 @@ import {
     ProfileSection,
     AiSection,
     OfferingsSection,
-    ChatTab,
     NAV_ITEMS,
 } from '@features/instructor-dashboard';
 import {
@@ -57,6 +50,18 @@ import {
     TENANT_FEATURES,
 } from '@shared/utils/tenantFeatures';
 import { getDashboardPath } from '@shared/utils/navigation';
+
+const AttendancePage = lazy(() => import('./Attendance'));
+const SessionWorkspacePage = lazy(() => import('./SessionWorkspace'));
+const InstructorAnalyticsPage = lazy(() => import('./InstructorAnalytics'));
+const InternalLeaderboard = lazy(() => import('./InternalLeaderboard'));
+const InstructorHomework = lazy(() => import('./InstructorHomework'));
+const NotificationsTab = lazy(() => import('@features/notifications/components/NotificationsTab'));
+const ChatTab = lazy(() => import('@features/instructor-dashboard/components/ChatTab.jsx'));
+
+const TabSuspense = ({ children }) => (
+    <Suspense fallback={<Loader fullScreen={false} />}>{children}</Suspense>
+);
 
 const InstructorDashboard = () => {
     const { user } = useContext(AuthContext);
@@ -864,19 +869,47 @@ const InstructorDashboard = () => {
     const renderTabContent = () => {
         switch (activeTab) {
             case 'sessions':
-                return <SessionWorkspacePage />;
+                return (
+                    <TabSuspense>
+                        <SessionWorkspacePage />
+                    </TabSuspense>
+                );
             case 'attendance':
-                return <AttendancePage embedded />;
+                return (
+                    <TabSuspense>
+                        <AttendancePage embedded />
+                    </TabSuspense>
+                );
             case 'analytics':
-                return <InstructorAnalyticsPage embedded />;
+                return (
+                    <TabSuspense>
+                        <InstructorAnalyticsPage embedded />
+                    </TabSuspense>
+                );
             case 'leaderboard':
-                return <InternalLeaderboard />;
+                return (
+                    <TabSuspense>
+                        <InternalLeaderboard />
+                    </TabSuspense>
+                );
             case 'homework':
-                return <InstructorHomework />;
+                return (
+                    <TabSuspense>
+                        <InstructorHomework />
+                    </TabSuspense>
+                );
             case 'chat':
-                return <ChatTab />;
+                return (
+                    <TabSuspense>
+                        <ChatTab />
+                    </TabSuspense>
+                );
             case 'notifications':
-                return <NotificationsTab />;
+                return (
+                    <TabSuspense>
+                        <NotificationsTab />
+                    </TabSuspense>
+                );
             case 'courses':
                 return (
                     <CoursesSection

@@ -43,7 +43,7 @@ const parseJsonField = (value, fallback, label) => {
     if (!text) return JSON.parse(fallback);
     try {
         return JSON.parse(text);
-    } catch (err) {
+    } catch {
         throw new Error(`${label} валиддүү JSON болушу керек`);
     }
 };

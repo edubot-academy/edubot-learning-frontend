@@ -2,8 +2,6 @@ import { useState, useCallback, useMemo } from 'react';
 import { toast } from 'react-hot-toast';
 import {
     listOfferingsForCourse,
-    createOffering,
-    updateOffering,
 } from '@services/api';
 
 export const useOfferingsManagement = (courses) => {

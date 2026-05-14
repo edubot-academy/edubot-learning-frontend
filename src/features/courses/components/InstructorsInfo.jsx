@@ -1,4 +1,3 @@
-import React from 'react';
 import PropTypes from 'prop-types';
 import {
     FaStar,
@@ -12,8 +11,7 @@ import {
     FaGithub,
     FaYoutube,
     FaTwitter,
-    FaEnvelope,
-    FaUserCircle
+    FaEnvelope
 } from 'react-icons/fa';
 import { IoLogoFacebook } from 'react-icons/io5';
 import DefaultAvatar from '../../../assets/icons/personBlack.svg';

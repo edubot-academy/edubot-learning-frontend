@@ -116,7 +116,7 @@ export const handleAttendanceSuccess = (message, options = {}) => {
  * @param {string} expectedType - Expected data type ('array', 'object', 'items')
  * @returns {Array} Normalized array data
  */
-export const validateAndNormalizeResponse = (response, expectedType = 'array') => {
+export const validateAndNormalizeResponse = (response) => {
   if (!response) return [];
 
   // Handle different response structures

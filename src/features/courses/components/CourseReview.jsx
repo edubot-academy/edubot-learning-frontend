@@ -1,18 +1,18 @@
-import React, { useMemo } from 'react';
+import { useMemo } from 'react';
 import { AiFillStar, AiOutlineStar } from 'react-icons/ai';
+
+const RATING_LEVELS = [5, 4, 3, 2, 1];
 
 /**
  * Read-only course review summary that matches the provided design.
  * Shows total reviews, per-star counts with bars, and average rating with stars.
  */
 const CourseReview = ({ ratingAverage = 0, ratingCount, ratingBreakdown = {}, onViewAll }) => {
-    const levels = [5, 4, 3, 2, 1];
-
     const countsByLevel = useMemo(() => {
         const map = {};
         let hasData = false;
 
-        levels.forEach((lvl) => {
+        RATING_LEVELS.forEach((lvl) => {
             const val = Number(ratingBreakdown?.[lvl]) || 0;
             if (val > 0) hasData = true;
             map[lvl] = val;
@@ -28,43 +28,9 @@ const CourseReview = ({ ratingAverage = 0, ratingCount, ratingBreakdown = {}, on
     }, [ratingBreakdown, ratingCount, ratingAverage]);
 
     const totalRatings = useMemo(() => {
-        const sum = levels.reduce((acc, lvl) => acc + (countsByLevel[lvl] || 0), 0);
+        const sum = RATING_LEVELS.reduce((acc, lvl) => acc + (countsByLevel[lvl] || 0), 0);
         return sum || ratingCount || 0;
-    }, [countsByLevel, levels, ratingCount]);
-
-    const getFillPercentage = (starIndex) => {
-        const current = Math.max(0, Math.min(5, ratingAverage));
-        if (current >= starIndex) return 100;
-        if (current > starIndex - 1) return (current - (starIndex - 1)) * 100;
-        return 0;
-    };
-
-    const renderStar = (idx) => {
-        const fill = getFillPercentage(idx);
-        const gradientId = `star-${idx}-${Math.round(ratingAverage * 10)}`;
-        return (
-            <svg
-                key={idx}
-                className="w-5 h-5"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="#F59E0B"
-                strokeWidth="1.5"
-                aria-hidden="true"
-            >
-                <defs>
-                    <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="0%">
-                        <stop offset={`${fill}%`} stopColor="#F59E0B" />
-                        <stop offset={`${fill}%`} stopColor="white" />
-                    </linearGradient>
-                </defs>
-                <path
-                    d="M12 2l1.8 8.4 8.2.2-6.5 5 2.5 7.4-6-4.8-6 4.8 2.5-7.4-6.5-5 8.2-.2L12 2z"
-                    fill={`url(#${gradientId})`}
-                />
-            </svg>
-        );
-    };
+    }, [countsByLevel, ratingCount]);
 
     return (
         <div className="w-full border border-gray-200 rounded-2xl p-6 sm:p-8 space-y-6">
@@ -83,7 +49,7 @@ const CourseReview = ({ ratingAverage = 0, ratingCount, ratingBreakdown = {}, on
 
             <div className="space-y-5">
                 <div className="space-y-3">
-                    {levels.map((level) => {
+                    {RATING_LEVELS.map((level) => {
                         const count = countsByLevel[level] || 0;
                         const percent = totalRatings
                             ? Math.min(100, (count / totalRatings) * 100)

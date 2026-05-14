@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import StickyButton from '@shared/ui/StickyButton';
 import { fetchTopCourses } from '@services/api';
 import Benefits from '@features/marketing/components/Benefits';

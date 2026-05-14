@@ -1,4 +1,4 @@
-/* eslint-disable react/prop-types */
+
 import { useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';

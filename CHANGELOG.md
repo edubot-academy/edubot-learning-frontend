@@ -2,6 +2,34 @@
 
 Version bumps are classified by delivery scale; see `VERSIONING.md`.
 
+## [1.11.8] - 2026-05-14
+
+### Changed
+
+- Added shared dashboard tab constants for student, instructor, and admin dashboards so nav items, redirects, and helper links share tab IDs.
+- Documented dashboard routing conventions for shared dashboard tab constants and legacy redirects.
+- Lazy-loaded the light HLS runtime from the shared video player so non-HLS playback no longer downloads the HLS parser up front.
+- Lazy-loaded heavy instructor dashboard tab panels and shared chat workspace usage to reduce the initial instructor dashboard chunk.
+- Extracted pure session workspace helpers into a feature utility module as a no-behavior-change maintainability cleanup.
+- Split cart, favourites, and dark-mode providers from their context modules to satisfy fast-refresh boundaries.
+- Documented the current plain-JS `react/prop-types` lint policy in ESLint config instead of silently disabling it.
+
+### Fixed
+
+- Removed the course-builder mixed static/dynamic validation import that prevented predictable build chunking.
+- Replaced remaining shared navigation tab literals with role-aware dashboard tab constants and safe fallbacks.
+- Cleaned the remaining lint warnings across the frontend release surface.
+- Added navigation helper, dashboard tab constant, legacy redirect, and instructor dashboard tab smoke coverage.
+
+### Verification
+
+- `npm run lint`
+- `npm test -- src/shared/utils/navigation.spec.js src/app/routes.spec.jsx src/shared/constants/dashboardTabs.spec.js src/pages/InstructorDashboard.spec.jsx --run`
+- `git diff --check`
+- `npm run build` passes without Vite chunk-size or mixed static/dynamic import warnings.
+
+---
+
 ## [1.11.7] - 2026-05-14
 
 ### Changed

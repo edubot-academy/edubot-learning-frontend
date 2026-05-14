@@ -3,7 +3,6 @@ import PropTypes from 'prop-types';
 import VideoPlayerUI from './ui/Play.jsx';
 import VideoErrorBoundary from './VideoErrorBoundary.jsx';
 import toast from 'react-hot-toast';
-import Hls from 'hls.js';
 
 const MAX_HLS_NETWORK_RECOVERIES = 2;
 const MAX_HLS_MEDIA_RECOVERIES = 2;
@@ -117,70 +116,82 @@ const VideoPlayerInner = ({
 
         let hls = null;
 
-        if (isHlsSource && Hls.isSupported()) {
-            hls = new Hls({
-                xhrSetup: (xhr) => {
-                    xhr.withCredentials = true;
-                    const token = getStoredAuthToken();
-                    if (token) {
-                        xhr.setRequestHeader('Authorization', `Bearer ${token}`);
-                    }
-                },
-            });
-            hlsRef.current = hls;
-
-            // Error handler with cleanup on fatal errors
-            const handleError = (_, data) => {
-                if (signal.aborted) return;
-
-                if (data.fatal) {
-                    if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
-                        if (hlsRecoveryRef.current.network >= MAX_HLS_NETWORK_RECOVERIES) {
-                            failPlayback();
-                            return;
-                        }
-                        hlsRecoveryRef.current.network += 1;
-                        hls.startLoad();
-                        return;
-                    }
-
-                    if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
-                        if (hlsRecoveryRef.current.media >= MAX_HLS_MEDIA_RECOVERIES) {
-                            failPlayback();
-                            return;
-                        }
-                        hlsRecoveryRef.current.media += 1;
-                        hls.recoverMediaError();
-                        return;
-                    }
-
-                    failPlayback();
-                }
-            };
-
-            hls.on(Hls.Events.ERROR, handleError);
-
-            hls.on(Hls.Events.MANIFEST_PARSED, (_, data) => {
-                if (signal.aborted) return;
-                const levels = data.levels || [];
-                setQualityOptions([
-                    { id: 'auto', label: 'Auto' },
-                    ...levels.map((lvl, i) => ({ id: `${i}`, label: `${lvl.height}p` })),
-                ]);
-                tryAutoPlay();
-            });
-
-            hls.loadSource(videoUrl);
-            hls.attachMedia(videoEl);
-        } else if (isHlsSource && videoEl.canPlayType('application/vnd.apple.mpegurl')) {
+        if (isHlsSource && videoEl.canPlayType('application/vnd.apple.mpegurl')) {
             // Native HLS support (Safari, iOS) - use native player
             videoEl.src = videoUrl;
             videoEl.load();
             tryAutoPlay();
         } else if (isHlsSource) {
-            // HLS source but no HLS support - show error with fallback message
-            failPlayback();
-            toast.error('Браузер HLS форматын колдобойт. MP4 форматындагы видеону колдонууңузду суранабыз.');
+            const setupHlsPlayback = async () => {
+                const { default: Hls } = await import('hls.js/dist/hls.light.mjs');
+                if (signal.aborted) return;
+
+                if (!Hls.isSupported()) {
+                    failPlayback();
+                    toast.error('Браузер HLS форматын колдобойт. MP4 форматындагы видеону колдонууңузду суранабыз.');
+                    return;
+                }
+
+                hls = new Hls({
+                    xhrSetup: (xhr) => {
+                        xhr.withCredentials = true;
+                        const token = getStoredAuthToken();
+                        if (token) {
+                            xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+                        }
+                    },
+                });
+                hlsRef.current = hls;
+
+                // Error handler with cleanup on fatal errors
+                const handleError = (_, data) => {
+                    if (signal.aborted) return;
+
+                    if (data.fatal) {
+                        if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
+                            if (hlsRecoveryRef.current.network >= MAX_HLS_NETWORK_RECOVERIES) {
+                                failPlayback();
+                                return;
+                            }
+                            hlsRecoveryRef.current.network += 1;
+                            hls.startLoad();
+                            return;
+                        }
+
+                        if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
+                            if (hlsRecoveryRef.current.media >= MAX_HLS_MEDIA_RECOVERIES) {
+                                failPlayback();
+                                return;
+                            }
+                            hlsRecoveryRef.current.media += 1;
+                            hls.recoverMediaError();
+                            return;
+                        }
+
+                        failPlayback();
+                    }
+                };
+
+                hls.on(Hls.Events.ERROR, handleError);
+
+                hls.on(Hls.Events.MANIFEST_PARSED, (_, data) => {
+                    if (signal.aborted) return;
+                    const levels = data.levels || [];
+                    setQualityOptions([
+                        { id: 'auto', label: 'Auto' },
+                        ...levels.map((lvl, i) => ({ id: `${i}`, label: `${lvl.height}p` })),
+                    ]);
+                    tryAutoPlay();
+                });
+
+                hls.loadSource(videoUrl);
+                hls.attachMedia(videoEl);
+            };
+
+            setupHlsPlayback().catch((error) => {
+                console.error('Failed to initialize HLS playback', error);
+                failPlayback();
+            });
         } else {
             // MP4 or other native format
             videoEl.src = videoUrl;

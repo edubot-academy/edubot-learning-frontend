@@ -1,5 +1,4 @@
 // @shared-ui/AuthRequiredModal.js
-import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaShoppingCart, FaUserPlus, FaSignInAlt } from 'react-icons/fa';
 import { getAuthAcquisitionPath, isPublicVideoSignupEnabled } from '@shared/auth-config';

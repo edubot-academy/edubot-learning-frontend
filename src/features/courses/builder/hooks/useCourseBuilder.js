@@ -14,18 +14,10 @@ import {
 import { getStepItems } from '../utils';
 import {
     getCourseInfoErrors,
-    getLessonIssue,
-    getFirstInvalidLessonTarget,
     getCurriculumStats,
-    validateCurriculumStructure,
 } from '../validation';
 import {
-    normalizeSkillValue,
-    prepareCourseInfoForApi,
-    reorderExpandedMap,
-    generateSectionChips,
     isAnyLessonUploading,
-    safeClone,
 } from '../utils';
 
 // Import sub-hooks
@@ -34,20 +26,8 @@ import { useCourseBuilderCurriculum } from './useCourseBuilderCurriculum';
 
 // API imports (same as original components)
 import {
-    createCourse,
-    updateCourse,
     fetchCourseDetails,
-    uploadCourseImage,
-    markCoursePending,
-    createSection,
-    updateSection,
     deleteSection,
-    createLesson,
-    updateLesson,
-    deleteLesson as deleteLessonApi,
-    uploadLessonFile,
-    upsertLessonQuiz,
-    upsertLessonChallenge,
     fetchLessonQuiz,
     fetchLessonChallenge,
     fetchSections,
@@ -57,9 +37,8 @@ import { fetchCategories } from '../../../categories/api';
 import { fetchSkills } from '../../../skills/api';
 
 // Utils imports (same as original components)
-import { getVideoDuration } from '../../../../utils/videoUtils';
-import { createEmptyQuiz, ensureQuizShape, normalizeQuizForApi, mapQuizFromApi } from '../../../../utils/quizUtils';
-import { createEmptyChallenge, ensureChallengeShape, normalizeChallengeForApi, mapChallengeFromApi } from '../../../../utils/challengeUtils';
+import { createEmptyQuiz, mapQuizFromApi } from '../../../../utils/quizUtils';
+import { createEmptyChallenge, mapChallengeFromApi } from '../../../../utils/challengeUtils';
 import { isForbiddenError, parseApiError } from '../../../../shared/api/error';
 
 /**
@@ -164,9 +143,20 @@ export const useCourseBuilder = ({ mode = 'create', courseId: initialCourseId = 
         if (mode === 'create') {
             // Create mode - load categories and skills
             try {
-                const [categoriesData] = await Promise.all([fetchCategories()]);
+                const [categoriesData, skillsData] = await Promise.all([
+                    fetchCategories(),
+                    fetchSkills().catch(() => []),
+                ]);
                 setCategories(categoriesData);
-                loadSkillsList();
+                if (Array.isArray(skillsData) && skillsData.length) {
+                    const mapped = skillsData
+                        .filter((s) => s.slug || s.id)
+                        .map((s) => ({
+                            value: String(s.id ?? s.slug ?? ''),
+                            label: s.name || s.slug,
+                        }));
+                    setSkillOptions([{ value: '', label: 'Skill тандаңыз (опция)' }, ...mapped]);
+                }
 
                 // Load saved draft if exists
                 const saved = localStorage.getItem('draftCourse');
@@ -301,21 +291,6 @@ export const useCourseBuilder = ({ mode = 'create', courseId: initialCourseId = 
         }
     }, [mode, courseId, navigate]);
 
-    // Helper function for edit mode
-    const resolveSectionSkillValue = (sectionLike, options = []) => {
-        const optionSet = new Set(options.map((o) => o.value));
-        const candidates = [
-            sectionLike?.skillId,
-            sectionLike?.skill?.id,
-            sectionLike?.skillSlug,
-            sectionLike?.skill?.slug,
-        ]
-            .map((val) => (val === undefined || val === null ? '' : String(val)))
-            .filter(Boolean);
-        const match = candidates.find((val) => optionSet.has(val));
-        return match ?? (candidates[0] || '');
-    };
-
     // Helper function to hydrate course data from API
     const hydrateCourseInfo = (courseData) => {
         const learningOutcomesText = Array.isArray(courseData.learningOutcomes)
@@ -390,7 +365,7 @@ export const useCourseBuilder = ({ mode = 'create', courseId: initialCourseId = 
         if (mode === 'create') {
             saveDraft();
         }
-    }, [saveDraft]);
+    }, [mode, saveDraft]);
 
     useEffect(() => {
         const currentPreviewUrl = courseInfo.coverImageUrl;

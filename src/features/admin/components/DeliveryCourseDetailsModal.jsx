@@ -1,4 +1,4 @@
-/* eslint-disable react/prop-types */
+
 import AdvancedModal from '@shared/ui/AdvancedModal';
 import { FiBookOpen, FiClock, FiLayers, FiMapPin, FiUser } from 'react-icons/fi';
 

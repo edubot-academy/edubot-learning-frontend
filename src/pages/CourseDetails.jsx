@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback, useContext } from 'react';
+import { useState, useEffect, useRef, useCallback, useContext, useMemo } from 'react';
 import PropTypes from 'prop-types';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import debounce from 'lodash.debounce';
@@ -413,8 +413,8 @@ const useCourseVideoProgress = ({
     onLessonComplete,
     onPersistVideoTime,
 }) => {
-    const debouncedTimeUpdate = useCallback(
-        debounce((time) => {
+    const debouncedTimeUpdate = useMemo(
+        () => debounce((time) => {
             if (
                 user &&
                 enrolled &&

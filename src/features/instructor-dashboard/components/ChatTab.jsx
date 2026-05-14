@@ -1,4 +1,4 @@
-import { useState, useEffect, useContext, useMemo } from 'react';
+import { lazy, Suspense, useState, useEffect, useContext, useMemo } from 'react';
 import toast from 'react-hot-toast';
 import { FiClock, FiMessageCircle, FiSend } from 'react-icons/fi';
 import {
@@ -8,8 +8,9 @@ import {
     sendInstructorChatMessage,
 } from '@services/api';
 import Loader from '@shared/ui/Loader';
-import ChatWorkspace from '@components/ui/ChatWorkspace';
 import { AuthContext } from '../../../context/AuthContext';
+
+const ChatWorkspace = lazy(() => import('@components/ui/ChatWorkspace'));
 
 const ChatTab = () => {
     const { user } = useContext(AuthContext);
@@ -274,36 +275,38 @@ const ChatTab = () => {
     }
 
     return (
-        <ChatWorkspace
-            sidebarTitle="Сүйлөшүүлөр"
-            sidebarDescription="Курс жана студент боюнча активдүү чаттарды ушул жерден тандаңыз."
-            stats={stats}
-            query={query}
-            onQueryChange={setQuery}
-            chatItems={chatItems}
-            activeChatId={activeChat?.id || null}
-            onSelectChat={(chatId) => setActiveChat(chats.find((item) => item.id === chatId) || null)}
-            noChatsTitle="Чат табылган жок"
-            noChatsSubtitle="Издөө суроосун өзгөртүп көрүңүз же студент менен жаңы сүйлөшүүнү күтүңүз."
-            activeChatTitle={activeChatCompanion?.fullName || 'Студент'}
-            activeChatSubtitle={activeChat?.course?.title || 'Курс'}
-            activeStatusLabel={activeChat?.status || 'Белгисиз'}
-            activeStatusTone={activeChat?.status === 'active' ? 'active' : 'default'}
-            onBack={() => setActiveChat(null)}
-            emptySelectionTitle="Сүйлөшүү тандалган жок"
-            emptySelectionSubtitle="Сол жактагы тизмеден студентти тандасаңыз, баарлашуу ушул жерде ачылат."
-            messages={messages}
-            currentUserRole={user.role}
-            formatMessageTime={formatMessageTime}
-            message={message}
-            onMessageChange={setMessage}
-            onSendMessage={sendMessage}
-            onKeyDown={handleKeyDown}
-            sending={sending}
-            actionsOpen={actionsOpen}
-            onToggleActions={() => setActionsOpen((prev) => !prev)}
-            onAttach={sendFile}
-        />
+        <Suspense fallback={<Loader fullScreen={false} />}>
+            <ChatWorkspace
+                sidebarTitle="Сүйлөшүүлөр"
+                sidebarDescription="Курс жана студент боюнча активдүү чаттарды ушул жерден тандаңыз."
+                stats={stats}
+                query={query}
+                onQueryChange={setQuery}
+                chatItems={chatItems}
+                activeChatId={activeChat?.id || null}
+                onSelectChat={(chatId) => setActiveChat(chats.find((item) => item.id === chatId) || null)}
+                noChatsTitle="Чат табылган жок"
+                noChatsSubtitle="Издөө суроосун өзгөртүп көрүңүз же студент менен жаңы сүйлөшүүнү күтүңүз."
+                activeChatTitle={activeChatCompanion?.fullName || 'Студент'}
+                activeChatSubtitle={activeChat?.course?.title || 'Курс'}
+                activeStatusLabel={activeChat?.status || 'Белгисиз'}
+                activeStatusTone={activeChat?.status === 'active' ? 'active' : 'default'}
+                onBack={() => setActiveChat(null)}
+                emptySelectionTitle="Сүйлөшүү тандалган жок"
+                emptySelectionSubtitle="Сол жактагы тизмеден студентти тандасаңыз, баарлашуу ушул жерде ачылат."
+                messages={messages}
+                currentUserRole={user.role}
+                formatMessageTime={formatMessageTime}
+                message={message}
+                onMessageChange={setMessage}
+                onSendMessage={sendMessage}
+                onKeyDown={handleKeyDown}
+                sending={sending}
+                actionsOpen={actionsOpen}
+                onToggleActions={() => setActionsOpen((prev) => !prev)}
+                onAttach={sendFile}
+            />
+        </Suspense>
     );
 };
 

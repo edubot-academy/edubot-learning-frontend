@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { SUPPORT_CONTACT } from '@shared/config/support';
 
 const FAQItem = ({ id, question, answer, isOpen, onClick }) => (

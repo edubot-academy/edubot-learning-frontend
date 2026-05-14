@@ -1,4 +1,4 @@
-/* eslint-disable react/prop-types */
+
 
 /**
  * DashboardOverviewSkeleton - Skeleton loader for dashboard overview sections
@@ -13,13 +13,13 @@ const DashboardOverviewSkeleton = () => (
                     <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-6 shadow-sm">
                         {/* Icon skeleton */}
                         <div className="w-10 h-10 bg-slate-200 dark:bg-slate-700 rounded-xl mb-4"></div>
-                        
+
                         {/* Value skeleton */}
                         <div className="h-8 bg-slate-200 dark:bg-slate-700 rounded w-3/4 mb-2"></div>
-                        
+
                         {/* Label skeleton */}
                         <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-1/2"></div>
-                        
+
                         {/* Progress skeleton */}
                         <div className="mt-4 h-1 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
                             <div className="h-full bg-slate-300 dark:bg-slate-600 rounded-full w-2/3 animate-pulse"></div>
@@ -46,13 +46,13 @@ const DashboardOverviewSkeleton = () => (
                     <div key={i} className="flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-900 rounded-xl animate-pulse">
                         {/* Avatar skeleton */}
                         <div className="w-12 h-12 bg-slate-200 dark:bg-slate-700 rounded-full"></div>
-                        
+
                         {/* Content skeleton */}
                         <div className="flex-1">
                             <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-3/4 mb-2"></div>
                             <div className="h-3 bg-slate-200 dark:bg-slate-700 rounded w-1/2"></div>
                         </div>
-                        
+
                         {/* Time skeleton */}
                         <div className="h-3 bg-slate-200 dark:bg-slate-700 rounded w-16"></div>
                     </div>
@@ -78,7 +78,7 @@ const DashboardTableSkeleton = ({ rows = 5, columns = 4 }) => (
                         <div className="h-8 bg-slate-200 dark:bg-slate-700 rounded-lg w-24"></div>
                     </div>
                 </div>
-                
+
                 {/* Column headers skeleton */}
                 <div className="grid gap-4" style={{ gridTemplateColumns: `repeat(${columns}, 1fr)` }}>
                     {Array.from({ length: columns }).map((_, i) => (
@@ -130,16 +130,16 @@ const DashboardStatsSkeleton = () => (
                         <div className="w-12 h-12 bg-slate-200 dark:bg-slate-700 rounded-xl"></div>
                         <div className="h-6 bg-slate-200 dark:bg-slate-700 rounded-full w-20"></div>
                     </div>
-                    
+
                     {/* Value skeleton */}
                     <div className="h-10 bg-slate-200 dark:bg-slate-700 rounded w-2/3 mb-3"></div>
-                    
+
                     {/* Change indicator skeleton */}
                     <div className="flex items-center gap-2">
                         <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-16"></div>
                         <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-20"></div>
                     </div>
-                    
+
                     {/* Mini chart skeleton */}
                     <div className="mt-4 h-16 bg-slate-200 dark:bg-slate-700 rounded-lg"></div>
                 </div>
@@ -179,17 +179,17 @@ const DashboardListSkeleton = ({ items = 5 }) => (
                 <div className="flex items-start gap-4">
                     {/* Image/avatar skeleton */}
                     <div className="w-16 h-16 bg-slate-200 dark:bg-slate-700 rounded-xl flex-shrink-0"></div>
-                    
+
                     {/* Content skeleton */}
                     <div className="flex-1 space-y-3">
                         <div className="flex items-center justify-between">
                             <div className="h-5 bg-slate-200 dark:bg-slate-700 rounded w-3/4"></div>
                             <div className="h-6 bg-slate-200 dark:bg-slate-700 rounded-full w-20"></div>
                         </div>
-                        
+
                         <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-full"></div>
                         <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-5/6"></div>
-                        
+
                         {/* Tags/meta skeleton */}
                         <div className="flex items-center gap-2 pt-2">
                             <div className="h-6 bg-slate-200 dark:bg-slate-700 rounded-full w-16"></div>
@@ -197,7 +197,7 @@ const DashboardListSkeleton = ({ items = 5 }) => (
                             <div className="h-6 bg-slate-200 dark:bg-slate-700 rounded-full w-24"></div>
                         </div>
                     </div>
-                    
+
                     {/* Actions skeleton */}
                     <div className="flex flex-col gap-2">
                         <div className="h-8 bg-slate-200 dark:bg-slate-700 rounded-lg w-20"></div>
@@ -219,19 +219,19 @@ const DashboardCardSkeleton = ({ cards = 6 }) => (
             <div key={index} className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden animate-pulse">
                 {/* Card image skeleton */}
                 <div className="h-48 bg-slate-200 dark:bg-slate-700"></div>
-                
+
                 {/* Card content skeleton */}
                 <div className="p-6 space-y-4">
                     {/* Title skeleton */}
                     <div className="h-6 bg-slate-200 dark:bg-slate-700 rounded w-3/4"></div>
-                    
+
                     {/* Description skeleton */}
                     <div className="space-y-2">
                         <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-full"></div>
                         <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-5/6"></div>
                         <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-4/6"></div>
                     </div>
-                    
+
                     {/* Meta info skeleton */}
                     <div className="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700">
                         <div className="flex items-center gap-2">

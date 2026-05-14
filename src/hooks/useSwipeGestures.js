@@ -33,17 +33,6 @@ export const useSwipeGestures = ({
         startTime.current = Date.now();
     }, []);
 
-    const handleTouchEnd = useCallback((e) => {
-        touchEndX.current = e.changedTouches[0].screenX;
-        touchEndY.current = e.changedTouches[0].screenY;
-        
-        const elapsedTime = Date.now() - startTime.current;
-        
-        if (elapsedTime <= swipeTime) {
-            handleSwipeGesture();
-        }
-    }, [onSwipeLeft, onSwipeRight, onSwipeUp, onSwipeDown]);
-
     const handleSwipeGesture = useCallback(() => {
         const deltaX = touchEndX.current - touchStartX.current;
         const deltaY = touchEndY.current - touchStartY.current;
@@ -69,6 +58,17 @@ export const useSwipeGestures = ({
             }
         }
     }, [onSwipeLeft, onSwipeRight, onSwipeUp, onSwipeDown, threshold, restraint]);
+
+    const handleTouchEnd = useCallback((e) => {
+        touchEndX.current = e.changedTouches[0].screenX;
+        touchEndY.current = e.changedTouches[0].screenY;
+
+        const elapsedTime = Date.now() - startTime.current;
+
+        if (elapsedTime <= swipeTime) {
+            handleSwipeGesture();
+        }
+    }, [handleSwipeGesture, swipeTime]);
 
     useEffect(() => {
         const element = elementRef.current;

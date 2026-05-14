@@ -1,5 +1,3 @@
-import React from 'react';
-
 const TOKEN_REGEX = /(\*\*[^*]+\*\*|`[^`]+`)/g;
 
 const parseInlineRichText = (text = '') => {

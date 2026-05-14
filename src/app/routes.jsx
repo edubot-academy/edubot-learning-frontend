@@ -5,6 +5,11 @@ import PrivateRoute from '@shared/PrivateRoute';
 import MainLayout from './layouts/MainLayout';
 import Loader from '@shared/ui/Loader';
 import { isPublicVideoSignupEnabled } from '@shared/auth-config';
+import {
+    ADMIN_DASHBOARD_TABS,
+    INSTRUCTOR_DASHBOARD_TABS,
+    STUDENT_DASHBOARD_TABS,
+} from '@shared/constants/dashboardTabs';
 
 const HomePage = lazy(() => import('../pages/Home'));
 const LoginPage = lazy(() => import('../pages/Login'));
@@ -36,7 +41,7 @@ const InternalLeaderboardPage = lazy(() => import('../pages/InternalLeaderboard'
 const CertificateDownloadPage = lazy(() => import('../pages/CertificateDownload'));
 const CertificateVerificationPage = lazy(() => import('../pages/CertificateVerification'));
 
-const DashboardTabRedirect = ({ dashboardPath, tab }) => {
+export const DashboardTabRedirect = ({ dashboardPath, tab }) => {
     const { search } = useLocation();
     const params = new URLSearchParams(search);
     params.set('tab', tab);
@@ -71,15 +76,15 @@ const AppRoutes = () => {
                         <Route path="/instructor" element={<InstructorDashboard />} />
                         <Route
                             path="/instructor/sessions"
-                            element={<DashboardTabRedirect dashboardPath="/instructor" tab="sessions" />}
+                            element={<DashboardTabRedirect dashboardPath="/instructor" tab={INSTRUCTOR_DASHBOARD_TABS.SESSIONS} />}
                         />
                         <Route
                             path="/instructor/analytics"
-                            element={<DashboardTabRedirect dashboardPath="/instructor" tab="analytics" />}
+                            element={<DashboardTabRedirect dashboardPath="/instructor" tab={INSTRUCTOR_DASHBOARD_TABS.ANALYTICS} />}
                         />
                         <Route
                             path="/instructor/homework"
-                            element={<DashboardTabRedirect dashboardPath="/instructor" tab="homework" />}
+                            element={<DashboardTabRedirect dashboardPath="/instructor" tab={INSTRUCTOR_DASHBOARD_TABS.HOMEWORK} />}
                         />
                         <Route path="/instructor/course/create" element={<CreateCourse />} />
                         <Route path="/instructor/courses" element={<InstructorCourses />} />
@@ -93,7 +98,7 @@ const AppRoutes = () => {
                         <Route path="/student" element={<StudentDashboard />} />
                         <Route
                             path="/student/analytics"
-                            element={<DashboardTabRedirect dashboardPath="/student" tab="progress" />}
+                            element={<DashboardTabRedirect dashboardPath="/student" tab={STUDENT_DASHBOARD_TABS.PROGRESS} />}
                         />
                         <Route path="/dashboard" element={<StudentDashboard />} />
                     </Route>
@@ -105,7 +110,7 @@ const AppRoutes = () => {
                         <Route path="/admin/tenants/:id" element={<PlatformTenantDetail />} />
                         <Route
                             path="/admin/analytics"
-                            element={<DashboardTabRedirect dashboardPath="/admin" tab="analytics" />}
+                            element={<DashboardTabRedirect dashboardPath="/admin" tab={ADMIN_DASHBOARD_TABS.ANALYTICS} />}
                         />
                     </Route>
 

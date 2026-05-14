@@ -1,4 +1,4 @@
-/* eslint-disable react/prop-types */
+
 
 export const PreviewCornerOrnament = ({ className = '', color }) => (
     <div className={className}>

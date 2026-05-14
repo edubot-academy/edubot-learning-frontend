@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { USERS_QUERY_KEYS } from '../utils/adminPanel.constants';
 import { debounce } from '../utils/adminPanel.helpers';
@@ -32,8 +32,8 @@ export const useAdminUsersFilters = () => {
     );
 
     // Debounced search update
-    const debouncedSearchUpdate = useCallback(
-        debounce((searchValue) => {
+    const debouncedSearchUpdate = useMemo(
+        () => debounce((searchValue) => {
             updateSearchParams({
                 [USERS_QUERY_KEYS.search]: searchValue,
                 [USERS_QUERY_KEYS.page]: searchValue ? 1 : usersPage,

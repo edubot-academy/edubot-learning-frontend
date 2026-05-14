@@ -1,12 +1,12 @@
-/* eslint-disable react/prop-types */
+
 import { FiAlertCircle, FiWifiOff, FiLock, FiRefreshCw, FiHome, FiSettings } from 'react-icons/fi';
 
 /**
  * DashboardErrorState - General error state for dashboard sections
  * Used across all dashboards for various error scenarios
  */
-const DashboardErrorState = ({ 
-    title = 'Ката кетти', 
+const DashboardErrorState = ({
+    title = 'Ката кетти',
     message = 'Деректерди жүктөөдө ката кетти. Кайта аракет кылып көрүңүз.',
     onRetry = null,
     retryText = 'Кайта аракет кылуу',
@@ -38,7 +38,7 @@ const DashboardErrorState = ({
                     {retryText}
                 </button>
             )}
-            
+
             {showHomeButton && onHome && (
                 <button
                     onClick={onHome}
@@ -83,7 +83,7 @@ const NetworkErrorState = ({ onRetry = null }) => (
 /**
  * PermissionErrorState - Specific error state for access permission issues
  */
-const PermissionErrorState = ({ 
+const PermissionErrorState = ({
     requiredRole = null,
     contactAdmin = false,
     onContactAdmin = null
@@ -97,7 +97,7 @@ const PermissionErrorState = ({
             Кирүүгө тыюу салынган
         </h3>
         <p className="text-gray-500 dark:text-gray-400 mb-8 max-w-md mx-auto">
-            {requiredRole 
+            {requiredRole
                 ? `Бул бөлүккө кирүү үчүн "${requiredRole}" ролу керек.`
                 : 'Бул бөлүккө кирүү үчүн укуктар жетишсиз.'
             }
@@ -114,7 +114,7 @@ const PermissionErrorState = ({
                     Администраторго кайруу
                 </button>
             )}
-            
+
             <button
                 onClick={() => window.history.back()}
                 className="inline-flex items-center gap-2 px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white font-medium rounded-xl transition-all duration-200 transform hover:scale-105 hover:shadow-lg"
@@ -129,7 +129,7 @@ const PermissionErrorState = ({
 /**
  * NotFoundErrorState - Specific error state for 404/not found scenarios
  */
-const NotFoundErrorState = ({ 
+const NotFoundErrorState = ({
     resource = 'Маалымат',
     onBack = null,
     showSearch = false,
@@ -157,7 +157,7 @@ const NotFoundErrorState = ({
                     Издөө
                 </button>
             )}
-            
+
             {onBack && (
                 <button
                     onClick={onBack}
@@ -197,7 +197,7 @@ const ServerErrorState = ({ onRetry = null, reportError = false, onReport = null
                     Кайта аракет кылуу
                 </button>
             )}
-            
+
             {reportError && onReport && (
                 <button
                     onClick={onReport}
@@ -214,11 +214,11 @@ const ServerErrorState = ({ onRetry = null, reportError = false, onReport = null
 /**
  * LoadingErrorState - Combined loading and error state with retry logic
  */
-const LoadingErrorState = ({ 
-    isLoading = false, 
-    error = null, 
+const LoadingErrorState = ({
+    isLoading = false,
+    error = null,
     onRetry = null,
-    children 
+    children
 }) => {
     if (isLoading) {
         return (

@@ -1,4 +1,3 @@
-import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import Button from '@shared-ui/Button';
 import BasicModal from '@shared-ui/BasicModal';
@@ -113,8 +112,8 @@ const UnauthModal = ({
                         </>
                     ) : courseTitle && actionType === 'cart' ? (
                         <>
-                            Курска заказ берүү үчүн "
-                            <span className="font-semibold">{courseTitle}</span>"
+                            Курска заказ берүү үчүн &quot;
+                            <span className="font-semibold">{courseTitle}</span>&quot;
                             каттоо талап кылынат.
                         </>
                     ) : (

@@ -1,5 +1,4 @@
 import InlineRichText from '@shared/ui/InlineRichText';
-import React from 'react';
 import { createEmptyQuestion, createEmptyQuiz, cloneQuiz } from '@utils/quizUtils';
 
 const LessonQuizEditor = ({ quiz, onChange, disabled = false }) => {

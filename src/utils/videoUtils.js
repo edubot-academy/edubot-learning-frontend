@@ -8,7 +8,7 @@ export const getVideoDuration = (file) => {
             resolve(video.duration); // duration in seconds
         };
 
-        video.onerror = (err) => {
+        video.onerror = () => {
             reject(new Error('Failed to load video metadata'));
         };
 

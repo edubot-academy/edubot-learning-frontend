@@ -1,4 +1,4 @@
-/* eslint-disable react/prop-types */
+
 import React, { useState, useEffect } from 'react';
 import { DashboardOverviewSkeleton, DashboardTableSkeleton } from './DashboardSkeletons';
 
@@ -6,11 +6,11 @@ import { DashboardOverviewSkeleton, DashboardTableSkeleton } from './DashboardSk
  * ProgressiveDashboard - Implements progressive loading for dashboard sections
  * Staggers content loading for better perceived performance
  */
-const ProgressiveDashboard = ({ 
-    sections = [], 
-    loadingSections = [], 
+const ProgressiveDashboard = ({
+    sections = [],
+    loadingSections = [],
     staggerDelay = 200,
-    skeletonComponent = null 
+    skeletonComponent = null
 }) => {
     const [visibleSections, setVisibleSections] = useState(
         sections.map((_, index) => !loadingSections[index])
@@ -18,7 +18,7 @@ const ProgressiveDashboard = ({
 
     useEffect(() => {
         const timers = [];
-        
+
         loadingSections.forEach((isLoading, index) => {
             if (!isLoading) {
                 // Show section immediately if not loading
@@ -36,7 +36,7 @@ const ProgressiveDashboard = ({
                         element.classList.add('animate-pulse');
                     }
                 }, index * staggerDelay);
-                
+
                 timers.push(timer);
             }
         });
@@ -53,8 +53,8 @@ const ProgressiveDashboard = ({
                     key={index}
                     id={`progressive-section-${index}`}
                     className={`transition-all duration-700 ease-in-out ${
-                        visibleSections[index] 
-                            ? 'opacity-100 scale-100 translate-y-0' 
+                        visibleSections[index]
+                            ? 'opacity-100 scale-100 translate-y-0'
                             : 'opacity-30 scale-95 translate-y-2'
                     }`}
                 >
@@ -72,11 +72,11 @@ const ProgressiveDashboard = ({
 /**
  * StaggeredLoader - Shows loading indicators with staggered animation
  */
-const StaggeredLoader = ({ 
-    items = [], 
-    loading = false, 
+const StaggeredLoader = ({
+    items = [],
+    loading = false,
     renderItem = null,
-    skeletonItem = null 
+    skeletonItem = null
 }) => {
     const [visibleItems, setVisibleItems] = useState([]);
 
@@ -88,7 +88,7 @@ const StaggeredLoader = ({
         }
 
         // Stagger item appearance during loading
-        const timers = items.map((_, index) => 
+        const timers = items.map((_, index) =>
             setTimeout(() => {
                 setVisibleItems(prev => [...prev, index]);
             }, index * 100)
@@ -124,10 +124,10 @@ const StaggeredLoader = ({
 /**
  * ProgressiveContentLoader - Progressive loading for mixed content types
  */
-const ProgressiveContentLoader = ({ 
-    content = [], 
-    loadingStates = [], 
-    skeletonMap = {} 
+const ProgressiveContentLoader = ({
+    content = [],
+    loadingStates = [],
+    skeletonMap = {}
 }) => {
     return (
         <div className="space-y-6">
@@ -160,11 +160,11 @@ const ProgressiveContentLoader = ({
 /**
  * LazyLoadSection - Lazy loads dashboard sections when they come into view
  */
-const LazyLoadSection = ({ 
-    children, 
-    fallback = null, 
+const LazyLoadSection = ({
+    children,
+    fallback = null,
     rootMargin = '100px',
-    threshold = 0.1 
+    threshold = 0.1
 }) => {
     const [isVisible, setIsVisible] = useState(false);
     const [hasLoaded, setHasLoaded] = useState(false);
@@ -210,12 +210,12 @@ const LazyLoadSection = ({
 /**
  * ProgressiveTableLoader - Progressive loading for table data
  */
-const ProgressiveTableLoader = ({ 
-    data = [], 
-    loading = false, 
-    columns = [], 
+const ProgressiveTableLoader = ({
+    data = [],
+    loading = false,
+    columns = [],
     renderRow = null,
-    rowsPerPage = 10 
+    rowsPerPage = 10
 }) => {
     const [visibleRows, setVisibleRows] = useState([]);
     const [loadedRows, setLoadedRows] = useState(0);
@@ -260,7 +260,7 @@ const ProgressiveTableLoader = ({
                     )}
                 </div>
             ))}
-            
+
             {loadedRows < data.length && (
                 <div className="text-center py-4">
                     <div className="inline-flex items-center gap-2 text-sm text-gray-500">
@@ -276,12 +276,12 @@ const ProgressiveTableLoader = ({
 /**
  * ProgressiveImageLoader - Progressive loading for images in dashboards
  */
-const ProgressiveImageLoader = ({ 
-    src, 
-    alt = '', 
+const ProgressiveImageLoader = ({
+    src,
+    alt = '',
     fallback = null,
     className = '',
-    onLoad = null 
+    onLoad = null
 }) => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(false);
@@ -289,18 +289,18 @@ const ProgressiveImageLoader = ({
 
     useEffect(() => {
         const img = new Image();
-        
+
         img.onload = () => {
             setImageSrc(src);
             setLoading(false);
             onLoad?.();
         };
-        
+
         img.onerror = () => {
             setError(true);
             setLoading(false);
         };
-        
+
         img.src = src;
     }, [src, onLoad]);
 
@@ -332,9 +332,9 @@ const ProgressiveImageLoader = ({
     }
 
     return (
-        <img 
-            src={imageSrc} 
-            alt={alt} 
+        <img
+            src={imageSrc}
+            alt={alt}
             className={`transition-opacity duration-300 ${loading ? 'opacity-0' : 'opacity-100'} ${className}`}
         />
     );
@@ -343,13 +343,13 @@ const ProgressiveImageLoader = ({
 /**
  * DashboardProgressIndicator - Shows overall loading progress for dashboard
  */
-const DashboardProgressIndicator = ({ 
-    sections = [], 
-    completedSections = [], 
-    showPercentage = true 
+const DashboardProgressIndicator = ({
+    sections = [],
+    completedSections = [],
+    showPercentage = true
 }) => {
     const progress = sections.length > 0 ? (completedSections.length / sections.length) * 100 : 0;
-    
+
     return (
         <div className="space-y-2">
             {showPercentage && (
@@ -358,16 +358,16 @@ const DashboardProgressIndicator = ({
                     <span>{Math.round(progress)}%</span>
                 </div>
             )}
-            
+
             <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 overflow-hidden">
-                <div 
+                <div
                     className="h-full bg-gradient-to-r from-blue-500 to-blue-600 rounded-full transition-all duration-500 ease-out"
                     style={{ width: `${progress}%` }}
                 >
                     <div className="h-full bg-white/20 animate-pulse"></div>
                 </div>
             </div>
-            
+
             {sections.length > 0 && (
                 <div className="flex flex-wrap gap-2 mt-3">
                     {sections.map((section, index) => (

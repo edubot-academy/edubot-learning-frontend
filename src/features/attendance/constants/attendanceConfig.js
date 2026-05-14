@@ -4,7 +4,6 @@ import {
   FiClock,
   FiXCircle,
   FiAlertCircle,
-  FiMinus,
 } from 'react-icons/fi';
 
 /**

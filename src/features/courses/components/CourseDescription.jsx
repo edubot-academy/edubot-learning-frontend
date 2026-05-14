@@ -1,4 +1,3 @@
-import React from 'react';
 import { RiCheckboxCircleFill } from 'react-icons/ri';
 import { GrLanguage } from 'react-icons/gr';
 import { RiSpam2Line } from 'react-icons/ri';

@@ -2,7 +2,6 @@
 // Uses the shared course builder architecture
 // Maintains identical functionality to original EditInstructorCourse.jsx
 
-import React, { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import Loader from '../shared/ui/Loader';
@@ -11,7 +10,7 @@ import Loader from '../shared/ui/Loader';
 import { useCourseBuilder } from '../features/courses/builder';
 import { CourseInfoStep, CurriculumStep, PreviewStep } from '../features/courses/builder/components';
 import CourseBuilderStepNav from '../features/courses/components/CourseBuilderStepNav';
-import { validateCurriculumStructure, getFirstInvalidLessonTarget } from '../features/courses/builder/validation';
+import { getFirstInvalidLessonTarget } from '../features/courses/builder/validation';
 
 // API imports (same as original)
 import { markCoursePending } from '../features/courses/api';
@@ -47,9 +46,6 @@ const EditInstructorCourse = () => {
         setDragSectionIndex,
         dragLesson,
         setDragLesson,
-        originalCourse,
-        originalSections,
-        deletedLessons,
         showCancelConfirm,
         setShowCancelConfirm,
         categories,
@@ -83,8 +79,6 @@ const EditInstructorCourse = () => {
         jumpToNextInvalidLesson,
         loadSkillsList,
 
-        // Mode info
-        mode,
         courseId,
     } = useCourseBuilder({ mode: 'edit', courseId: id });
 
@@ -93,16 +87,6 @@ const EditInstructorCourse = () => {
         const success = await handleCurriculumSubmit();
         if (success) {
             setStep(3);
-        }
-    };
-
-    // Handle save all changes (edit mode specific)
-    const handleSaveAll = async () => {
-        // This would be implemented in the hook for edit mode
-        // For now, we'll use the existing curriculum submit
-        const success = await handleCurriculumSubmit();
-        if (success) {
-            toast.success('Бардык өзгөрүүлөр сакталды!');
         }
     };
 
@@ -155,22 +139,12 @@ const EditInstructorCourse = () => {
         setStep(newStep);
     };
 
-    // Handle cancel with unsaved changes
-    const handleCancel = () => {
-        setShowCancelConfirm(true);
-    };
-
     const confirmCancel = () => {
         navigate('/instructor/courses');
     };
 
     const cancelCancel = () => {
         setShowCancelConfirm(false);
-    };
-
-    // Handle back navigation
-    const handleBack = () => {
-        navigate('/instructor/courses');
     };
 
     // Show loading state

@@ -926,8 +926,6 @@ const SessionActivitiesTab = ({
                                                             reviewComment: row.reviewComment || '',
                                                             score: row.score ?? '',
                                                         };
-                                                        const latestStudentThreadMessage = row.latestSubmissionMessage || null;
-                                                        const latestReviewThreadMessage = row.latestReviewMessage || null;
                                                         const historyThread = Array.isArray(row.historyMessages) ? row.historyMessages : [];
                                                         const hasSavedReview =
                                                             row.status !== 'submitted' ||

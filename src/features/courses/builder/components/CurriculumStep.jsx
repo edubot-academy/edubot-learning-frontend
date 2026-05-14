@@ -2,12 +2,10 @@
 // Shared between CreateCourse and EditInstructorCourse
 // Extracted from Step 2 JSX in both components
 
-import React from 'react';
 import { LESSON_KIND_OPTIONS } from "../../../../constants/lessons";
 import LessonQuizEditor from '../../components/LessonQuizEditor';
 import LessonChallengeEditor from '../../components/LessonChallengeEditor';
 import ArticleEditor from '../../components/ArticleEditor';
-import CourseBuilderStepNav from '../../components/CourseBuilderStepNav';
 import LessonCardHeader from '../../components/LessonCardHeader';
 import LessonMetaFields from '../../components/LessonMetaFields';
 import LessonAssetsPanel from '../../components/LessonAssetsPanel';
@@ -70,10 +68,8 @@ export const CurriculumStep = ({
     handleAddSection,
     handleUpdateSectionTitle,
     handleUpdateSectionSkill,
-    handleDeleteSection,
     handleAddLesson,
     handleUpdateLesson,
-    handleDeleteLesson,
     handleQuizChange,
     handleChallengeChange,
     handleFileUpload,
@@ -134,16 +130,6 @@ export const CurriculumStep = ({
         });
     };
 
-    const reorderExpandedMap = (prevMap, count, fromIdx, toIdx) => {
-        const flags = Array.from({ length: count }, (_, idx) => Boolean(prevMap[idx] ?? idx === 0));
-        const [moved] = flags.splice(fromIdx, 1);
-        flags.splice(toIdx, 0, moved);
-        return flags.reduce((acc, flag, idx) => {
-            acc[idx] = flag;
-            return acc;
-        }, {});
-    };
-
     const generateSectionChips = (sections) => {
         return sections.map((section, sIdx) => {
             const hasIssues = getSectionIssueCount(section) > 0;
@@ -157,6 +143,19 @@ export const CurriculumStep = ({
     };
 
     const sectionChips = generateSectionChips(curriculum);
+
+    const handleDeleteAsset = (sectionIndex, lessonIndex, type) => {
+        if (type === 'video') {
+            handleUpdateLesson(sectionIndex, lessonIndex, 'videoKey', '');
+            handleUpdateLesson(sectionIndex, lessonIndex, 'videoUrl', '');
+            handleUpdateLesson(sectionIndex, lessonIndex, 'previewVideo', false);
+            return;
+        }
+
+        handleUpdateLesson(sectionIndex, lessonIndex, 'resourceKey', '');
+        handleUpdateLesson(sectionIndex, lessonIndex, 'resourceUrl', '');
+        handleUpdateLesson(sectionIndex, lessonIndex, 'resourceName', '');
+    };
 
     return (
         <div className="space-y-6">
@@ -539,11 +538,11 @@ export const CurriculumStep = ({
                         <p className="mb-6 text-gray-700 dark:text-gray-300">
                             {confirmDelete.type === 'section' ? (
                                 <span>
-                                    "{confirmDelete.title || `Бөлүм ${confirmDelete.sectionIndex + 1}`}" бөлүмүн жана андагы бардык сабактарды өчүрүүнү чын мен каалайсызбы? Бул кайтарылгыс.
+                                    &quot;{confirmDelete.title || `Бөлүм ${confirmDelete.sectionIndex + 1}`}&quot; бөлүмүн жана андагы бардык сабактарды өчүрүүнү чын мен каалайсызбы? Бул кайтарылгыс.
                                 </span>
                             ) : (
                                 <span>
-                                    "{confirmDelete.title || `Сабак ${confirmDelete.lessonIndex + 1}`}" сабагын өчүрүүнү чын мен каалайсызбы? Бул кайтарылгыс.
+                                    &quot;{confirmDelete.title || `Сабак ${confirmDelete.lessonIndex + 1}`}&quot; сабагын өчүрүүнү чын мен каалайсызбы? Бул кайтарылгыс.
                                 </span>
                             )}
                         </p>

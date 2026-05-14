@@ -1,4 +1,4 @@
-/* eslint-disable react/prop-types */
+
 import { useState, useContext, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { FaBars } from 'react-icons/fa';

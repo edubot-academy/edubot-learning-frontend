@@ -1,5 +1,3 @@
-import React from 'react';
-
 const SkeletonCard = () => (
     <div className="group relative">
         {/* Glass morphism background */}

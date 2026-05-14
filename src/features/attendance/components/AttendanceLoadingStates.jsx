@@ -1,6 +1,5 @@
 import { memo } from 'react';
 import PropTypes from 'prop-types';
-import { ATTENDANCE_DESIGN_SYSTEM } from '../constants/attendanceConfig';
 
 /**
  * Enhanced Loading States for Attendance Components

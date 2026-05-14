@@ -28,7 +28,6 @@ import { useAccessibility } from '../hooks/useAccessibility';
  */
 const RefactoredAttendanceTableView = ({
   groupId,
-  groupName = '',
   courseId = null,
   onAttendanceUpdate,
   className = '',
@@ -315,7 +314,7 @@ const RefactoredAttendanceTableView = ({
       case 'virtualized':
         return <VirtualizedAttendanceTable {...commonProps} containerHeight={600} />;
 
-      default:
+      default: {
         // Calculate minimum width based on content
         const minWidth = Math.max(800, 250 + (sessions.length * 120) + 100);
 
@@ -501,6 +500,7 @@ const RefactoredAttendanceTableView = ({
             </table>
           </div>
         );
+      }
     }
   };
 
