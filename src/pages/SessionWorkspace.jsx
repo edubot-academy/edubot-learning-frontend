@@ -291,6 +291,24 @@ const SessionWorkspace = () => {
         }
     }, [selectedSessionId]);
 
+    const selectedCourse = useMemo(
+        () => courses.find((course) => String(course.id) === String(selectedCourseId)) || null,
+        [courses, selectedCourseId]
+    );
+
+    const selectedGroup = useMemo(
+        () => groups.find((group) => String(group.id) === String(selectedGroupId)) || null,
+        [groups, selectedGroupId]
+    );
+    const selectedSession = useMemo(
+        () => sessions.find((session) => String(session.id) === String(selectedSessionId)) || null,
+        [sessions, selectedSessionId]
+    );
+    const selectedDeliveryType = useMemo(
+        () => normalizeCourseType(selectedCourse, selectedSession, selectedGroup),
+        [selectedCourse, selectedSession, selectedGroup]
+    );
+
     const {
         applyAttendanceStatus,
         attendanceFilter,
@@ -450,23 +468,6 @@ const SessionWorkspace = () => {
         };
     }, [selectedSessionId]);
 
-    const selectedCourse = useMemo(
-        () => courses.find((course) => String(course.id) === String(selectedCourseId)) || null,
-        [courses, selectedCourseId]
-    );
-
-    const selectedGroup = useMemo(
-        () => groups.find((group) => String(group.id) === String(selectedGroupId)) || null,
-        [groups, selectedGroupId]
-    );
-    const selectedSession = useMemo(
-        () => sessions.find((session) => String(session.id) === String(selectedSessionId)) || null,
-        [sessions, selectedSessionId]
-    );
-    const selectedDeliveryType = useMemo(
-        () => normalizeCourseType(selectedCourse, selectedSession, selectedGroup),
-        [selectedCourse, selectedSession, selectedGroup]
-    );
     const {
         addCourseAssetToSessionMaterials,
         canImportZoomAttendance,

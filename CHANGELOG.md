@@ -2,6 +2,38 @@
 
 Version bumps are classified by delivery scale; see `VERSIONING.md`.
 
+## Unreleased
+
+---
+
+## [1.11.10] - 2026-05-14
+
+### Changed
+
+- Extracted the remaining course-details page controller state into the course-details runtime hook so `CourseDetails.jsx` is closer to a render shell.
+- Extracted Course Details runtime/player/sidebar/mobile/desktop/support views into feature-level view modules so the route page is a thin shell.
+- Extracted student dashboard route/filter synchronization and task auto-refresh ownership into focused hooks.
+- Shared dashboard keyboard navigation between student and instructor dashboards instead of duplicating page-level listeners.
+- Extracted instructor dashboard tab route synchronization into a focused hook and stopped refetching instructor courses on every tab switch.
+- Moved instructor course loading and derived course metrics into the instructor course hook, with local course-list updates for create/update/approval mutations.
+- Extracted instructor profile, student/certificate workspace, and offerings loading into focused instructor dashboard hooks.
+- Extracted Student Dashboard derived view-model state and profile/notification settings behavior into focused hooks.
+- Extracted Student Dashboard tab data loading and task submission orchestration into focused hooks so the page shell owns less domain state.
+- Moved Student Dashboard render branching, header composition, and tab workspace layout into a dedicated feature shell component.
+
+### Fixed
+
+- Fixed a production-only `SessionWorkspace` initialization crash by deriving the selected course/group/session before passing them into extracted workspace hooks.
+
+### Verification
+
+- `npm run lint`
+- `npm test -- --run`
+- `git diff --cached --check`
+- `npm run build`
+
+---
+
 ## [1.11.9] - 2026-05-14
 
 ### Changed

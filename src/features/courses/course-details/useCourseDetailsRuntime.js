@@ -5,15 +5,20 @@ import {
     fetchCourseDetails,
     fetchSections,
     markLessonComplete,
+    updateLastViewedLesson,
     fetchUserProgress,
     getLastViewedLesson,
     getVideoTime,
+    updateVideoTime,
     fetchEnrollment,
     fetchLessonQuiz,
     submitLessonQuiz,
     fetchLessonChallenge,
     submitLessonChallenge,
 } from '@services/api';
+import { isForbiddenError, parseApiError } from '@shared/api/error';
+import { isPlatformAdmin } from '@shared/utils/roles';
+import { isCourseFeatureEnabled, TENANT_FEATURES } from '@shared/utils/tenantFeatures';
 import {
     addSkippedQuestionsToQuizResult,
     buildQuizAnswersPayload,
@@ -753,4 +758,379 @@ export const useCourseDetailsLayoutMetrics = (activeLesson) => {
     }, [activeLesson]);
 
     return { videoHeight, isDesktop, videoContainerRef };
+};
+
+export const useCourseDetailsController = ({ courseId, searchParams, user }) => {
+    const [course, setCourse] = useState(null);
+    const [sections, setSections] = useState([]);
+    const [, setActiveSectionId] = useState(null);
+    const [activeLesson, setActiveLesson] = useState(null);
+    const activeLessonRef = useRef(null);
+    const [completedLessons, setCompletedLessons] = useState([]);
+    const [resumeVideoTime, setResumeVideoTime] = useState(0);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [enrolled, setEnrolled] = useState(false);
+    const lessonRefs = useRef({});
+    const videoRef = useRef(null);
+    const hasPlayedRef = useRef(false);
+    const markingCompleteRef = useRef(false);
+    const shouldScrollToLesson = true;
+    const [activeTab, setActiveTab] = useState('program');
+    const { videoHeight, isDesktop, videoContainerRef } =
+        useCourseDetailsLayoutMetrics(activeLesson);
+
+    useEffect(() => {
+        hasPlayedRef.current = false;
+    }, [activeLesson]);
+
+    useEffect(() => {
+        activeLessonRef.current = activeLesson;
+    }, [activeLesson]);
+
+    const applyEnrollmentState = useCallback((isEnrolled) => {
+        setEnrolled(isEnrolled);
+        setSections((prevSections) =>
+            prevSections.map((section) => ({
+                ...section,
+                lessons: (section.lessons || []).map((lesson) => ({
+                    ...lesson,
+                    locked: !isEnrolled && !lesson.previewVideo,
+                })),
+            }))
+        );
+        setActiveLesson((prevLesson) =>
+            prevLesson
+                ? {
+                      ...prevLesson,
+                      locked: !isEnrolled && !prevLesson.previewVideo,
+                  }
+                : prevLesson
+        );
+        if (!isEnrolled) {
+            setResumeVideoTime(0);
+            setActiveTab('program');
+        }
+    }, []);
+
+    const handleEnrollmentAccessError = useCallback(
+        (err, fallbackMessage) => {
+            if (!isForbiddenError(err)) return false;
+            const { message } = parseApiError(err, fallbackMessage);
+            applyEnrollmentState(false);
+            toast.error(message || fallbackMessage);
+            return true;
+        },
+        [applyEnrollmentState]
+    );
+
+    const addCompletedLesson = useCallback((lessonId) => {
+        setCompletedLessons((prev) => [...new Set([...prev, lessonId])]);
+    }, []);
+
+    const removeCompletedLesson = useCallback((lessonId) => {
+        setCompletedLessons((prev) =>
+            prev.filter((completedLessonId) => completedLessonId !== lessonId)
+        );
+    }, []);
+
+    const {
+        activeQuiz,
+        lessonQuizAnswers,
+        lessonQuizResults,
+        quizLoading,
+        quizSubmitting,
+        loadQuizForLesson,
+        handleQuizAnswerChange,
+        handleQuizRetake,
+        handleQuizSubmit,
+    } = useLessonQuiz({
+        courseId,
+        activeLesson,
+        onEnrollmentAccessError: handleEnrollmentAccessError,
+        onLessonComplete: addCompletedLesson,
+    });
+
+    const {
+        activeChallenge,
+        lessonChallengeCode,
+        lessonChallengeResults,
+        challengeLoading,
+        challengeSubmitting,
+        loadChallengeForLesson,
+        handleChallengeCodeChange,
+        handleChallengeSubmit,
+    } = useLessonChallenge({
+        courseId,
+        activeLesson,
+        onEnrollmentAccessError: handleEnrollmentAccessError,
+        onLessonComplete: addCompletedLesson,
+    });
+
+    const persistVideoTime = useCallback(
+        async (lessonId, time, fallbackMessage, { rethrow = false } = {}) => {
+            try {
+                await updateVideoTime({
+                    courseId: Number(courseId),
+                    lessonId,
+                    time,
+                });
+                return true;
+            } catch (err) {
+                if (handleEnrollmentAccessError(err, fallbackMessage)) {
+                    return false;
+                }
+                console.error('Failed to persist video time', err);
+                if (rethrow) throw err;
+                return false;
+            }
+        },
+        [courseId, handleEnrollmentAccessError]
+    );
+
+    useArticleAutoComplete({
+        courseId,
+        activeLesson,
+        completedLessons,
+        enrolled,
+        onEnrollmentAccessError: handleEnrollmentAccessError,
+        onLessonComplete: addCompletedLesson,
+    });
+
+    const scrollToLesson = useCallback(
+        (lessonId) => {
+            if (!shouldScrollToLesson) return;
+
+            setTimeout(() => {
+                const el = lessonRefs.current[lessonId];
+                if (!el) return;
+
+                const rect = el.getBoundingClientRect();
+                const isVisible = rect.top >= 0 && rect.bottom <= window.innerHeight;
+
+                if (!isVisible) {
+                    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }, 100);
+        },
+        [shouldScrollToLesson]
+    );
+
+    useInitialCourseDetailsLoad({
+        courseId,
+        searchParams,
+        user,
+        applyEnrollmentState,
+        handleEnrollmentAccessError,
+        loadQuizForLesson,
+        loadChallengeForLesson,
+        scrollToLesson,
+        setCourse,
+        setSections,
+        setCompletedLessons,
+        setActiveLesson,
+        setActiveSectionId,
+        setResumeVideoTime,
+        setLoading,
+        setError,
+    });
+
+    const handleLessonClick = useCallback(
+        async (lesson) => {
+            const isQuiz = lesson.kind === 'quiz';
+            const isCode = lesson.kind === 'code';
+            const isRuntimeActivity = isRuntimeActivityLesson(lesson);
+            setActiveLesson(lesson);
+            saveActiveSectionId(courseId, lesson.sectionId);
+            setActiveSectionId(lesson.sectionId);
+            scrollToLesson(lesson.id);
+
+            if (isRuntimeActivity) {
+                setResumeVideoTime(0);
+            }
+
+            if (isQuiz) {
+                await loadQuizForLesson(lesson);
+            }
+
+            if (isCode) {
+                await loadChallengeForLesson(lesson);
+            }
+
+            if (user && enrolled && !lesson.locked) {
+                try {
+                    await updateLastViewedLesson({ courseId: Number(courseId), lessonId: lesson.id });
+                    if (!isRuntimeActivity) {
+                        const videoTime = await getVideoTime(courseId, lesson.id);
+
+                        if (shouldUseSavedVideoTime(videoTime, lesson, completedLessons)) {
+                            setResumeVideoTime(videoTime.time);
+                        } else {
+                            setResumeVideoTime(0);
+                        }
+                    } else {
+                        setResumeVideoTime(0);
+                    }
+                } catch (err) {
+                    if (
+                        handleEnrollmentAccessError(
+                            err,
+                            'Бул сабакты улантуу үчүн курска активдүү жеткиликтүүлүк керек.'
+                        )
+                    ) {
+                        return;
+                    }
+                    throw err;
+                }
+            } else {
+                setResumeVideoTime(0);
+            }
+        },
+        [
+            completedLessons,
+            courseId,
+            enrolled,
+            handleEnrollmentAccessError,
+            loadChallengeForLesson,
+            loadQuizForLesson,
+            scrollToLesson,
+            user,
+        ]
+    );
+
+    const { handleTimeUpdate, handlePause, handleEnded, handleVideoProgress } =
+        useCourseVideoProgress({
+            courseId,
+            user,
+            enrolled,
+            activeLesson,
+            activeLessonRef,
+            completedLessons,
+            hasPlayedRef,
+            markingCompleteRef,
+            sections,
+            videoRef,
+            onEnrollmentAccessError: handleEnrollmentAccessError,
+            onLessonClick: handleLessonClick,
+            onLessonComplete: addCompletedLesson,
+            onPersistVideoTime: persistVideoTime,
+        });
+
+    const handleCheckboxToggle = useCallback(
+        async (lesson) => {
+            if (!enrolled) return;
+            try {
+                const response = await markLessonComplete(courseId, lesson.sectionId, lesson.id);
+                if (response.completed) {
+                    addCompletedLesson(lesson.id);
+                } else {
+                    if (lesson.kind === 'video') {
+                        const didResetVideoTime = await persistVideoTime(
+                            lesson.id,
+                            0,
+                            'Видеонун жүрүшүн сактоо үчүн курска активдүү жеткиликтүүлүк керек.',
+                            { rethrow: true }
+                        );
+                        if (!didResetVideoTime) return;
+                    }
+                    if (activeLesson?.id === lesson.id) {
+                        setResumeVideoTime(0);
+                    }
+                    removeCompletedLesson(lesson.id);
+                }
+            } catch (err) {
+                if (
+                    handleEnrollmentAccessError(
+                        err,
+                        'Сабактын прогрессин өзгөртүү үчүн курска активдүү жеткиликтүүлүк керек.'
+                    )
+                ) {
+                    return;
+                }
+                throw err;
+            }
+        },
+        [
+            activeLesson,
+            addCompletedLesson,
+            courseId,
+            enrolled,
+            handleEnrollmentAccessError,
+            persistVideoTime,
+            removeCompletedLesson,
+        ]
+    );
+
+    const { prev: prevLesson, next: nextLesson } = findAdjacentLessons(sections, activeLesson?.id);
+    const isCourseInstructor = Boolean(user && course?.instructor?.id === user.id);
+    const isAdmin = isPlatformAdmin(user);
+    const isAiFeatureEnabled = isCourseFeatureEnabled(course, TENANT_FEATURES.AI_ASSISTANT);
+    const isAiAvailable = Boolean(
+        isAiFeatureEnabled &&
+        course?.aiAssistantEnabled &&
+        (enrolled || isCourseInstructor || isAdmin)
+    );
+    const assistantAvailableMessage = !isAiFeatureEnabled
+        ? 'EDU AI ассистенти бул tenant үчүн өчүрүлгөн.'
+        : course?.aiAssistantEnabled
+          ? 'Ассистентти колдонуу үчүн курска жазылуу керек.'
+          : 'EDU AI ассистенти бул курста өчүрүлгөн.';
+
+    const tabs = [
+        { id: 'program', label: 'Курстун программасы', disabled: false },
+        ...(isAiAvailable ? [{ id: 'assistant', label: 'Edu AI Assistent', disabled: false }] : []),
+    ];
+
+    const handleTabChange = useCallback((tab) => {
+        setActiveTab(tab.id);
+    }, []);
+
+    const lessonCount =
+        course?.lessonCount ??
+        sections.reduce((count, sec) => count + (sec.lessons?.length || 0), 0);
+
+    return {
+        activeChallenge,
+        activeLesson,
+        activeQuiz,
+        activeTab,
+        assistantAvailableMessage,
+        challengeLoading,
+        challengeSubmitting,
+        completedLessons,
+        course,
+        enrolled,
+        error,
+        handleChallengeCodeChange,
+        handleChallengeSubmit,
+        handleCheckboxToggle,
+        handleEnded,
+        handleLessonClick,
+        handlePause,
+        handleQuizAnswerChange,
+        handleQuizRetake,
+        handleQuizSubmit,
+        handleTabChange,
+        handleTimeUpdate,
+        handleVideoProgress,
+        isAiAvailable,
+        isDesktop,
+        lessonChallengeCode,
+        lessonChallengeResults,
+        lessonCount,
+        lessonQuizAnswers,
+        lessonQuizResults,
+        lessonRefs,
+        loading,
+        nextLesson,
+        prevLesson,
+        quizLoading,
+        quizSubmitting,
+        resumeVideoTime,
+        sections,
+        tabs,
+        videoContainerRef,
+        videoHeight,
+        videoRef,
+    };
 };

@@ -1,5 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
-import { toast } from 'react-hot-toast';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import {
     listOfferingsForCourse,
 } from '@services/api';
@@ -27,7 +26,11 @@ export const useOfferingsManagement = (courses) => {
                 courseArray.map(async (course) => {
                     try {
                         const data = await listOfferingsForCourse(course.id);
-                        offeringsMap[course.id] = data?.offerings || [];
+                        const list = Array.isArray(data) ? data : data?.offerings || [];
+                        offeringsMap[course.id] = list.map((offering) => ({
+                            ...offering,
+                            course,
+                        }));
                     } catch (error) {
                         console.error(`Failed to load offerings for course ${course.id}:`, error);
                         offeringsMap[course.id] = [];
@@ -36,13 +39,14 @@ export const useOfferingsManagement = (courses) => {
             );
 
             setOfferingsByCourse(offeringsMap);
-        } catch (error) {
-            console.error('Failed to load offerings', error);
-            toast.error('Offeringлерди жүктөөдө ката кетти');
         } finally {
             setLoadingOfferings(false);
         }
     }, []);
+
+    useEffect(() => {
+        loadOfferingsForCourses(courses);
+    }, [courses, loadOfferingsForCourses]);
 
     const handleRefreshOfferings = useCallback(() => {
         if (courses.length) {

@@ -1,31 +1,13 @@
 import { lazy, Suspense, useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import { Navigate, useSearchParams } from 'react-router-dom';
+import { Navigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import useDashboardSwipeGestures from '../hooks/useDashboardSwipeGestures';
 import {
-    fetchInstructorProfile,
-    updateInstructorProfile,
-    listOfferingsForCourse,
-    fetchInstructorStudentCourses,
-    fetchCourseStudents,
-    fetchCourseCertificateSettings,
-    fetchCourseCertificates,
-    updateCourseCertificateSettings,
-    issueCourseCertificate,
-    approveCertificate,
-    rejectCertificate,
-    revokeCertificate,
-    regenerateCourseCertificates,
     createCourse,
     fetchCategories,
-    fetchInstructorCourses,
     updateCourse,
 } from '@services/api';
 import { markCoursePending } from '@features/courses/api';
-import {
-    uploadCourseCertificateSecondaryLogo,
-    saveCourseCertificateSignatureAsset,
-} from '@features/courses/api';
 import toast from 'react-hot-toast';
 import Loader from '../shared/ui/Loader';
 import FloatingActionButton from '../components/ui/FloatingActionButton';
@@ -40,15 +22,17 @@ import {
     OfferingsSection,
     NAV_ITEMS,
 } from '@features/instructor-dashboard';
+import { useInstructorDashboardRouteState } from '@features/instructor-dashboard/hooks/useInstructorDashboardRouteState.js';
+import { useInstructorCourses } from '@features/instructor-dashboard/hooks/useInstructorCourses.js';
+import { useInstructorProfile } from '@features/instructor-dashboard/hooks/useInstructorProfile.js';
+import { useInstructorStudentWorkspace } from '@features/instructor-dashboard/hooks/useInstructorStudentWorkspace.js';
+import { useOfferingsManagement } from '@features/instructor-dashboard/hooks/useOfferingsManagement.js';
 import {
     DashboardLayout,
     DashboardHeader,
     DashboardTabs,
 } from '../components/ui/dashboard';
-import {
-    isCourseFeatureEnabled,
-    TENANT_FEATURES,
-} from '@shared/utils/tenantFeatures';
+import { useDashboardKeyboardNavigation } from '../components/ui/dashboard/useDashboardKeyboardNavigation';
 import { getDashboardPath } from '@shared/utils/navigation';
 
 const AttendancePage = lazy(() => import('./Attendance'));
@@ -66,41 +50,10 @@ const TabSuspense = ({ children }) => (
 const InstructorDashboard = () => {
     const { user } = useContext(AuthContext);
     const [sidebarOpen, setSidebarOpen] = useState(true);
-    const [searchParams, setSearchParams] = useSearchParams();
-
-    const initialTab = searchParams.get('tab') || 'overview';
-    const [activeTab, setActiveTab] = useState(
-        NAV_ITEMS.some((item) => item.id === initialTab) ? initialTab : 'overview'
-    );
-
-    const [profile, setProfile] = useState(null);
-    const [loadingProfile, setLoadingProfile] = useState(false);
-    const [savingProfile, setSavingProfile] = useState(false);
-    const [courseList, setCourseList] = useState([]);
-    const [offeringsByCourse, setOfferingsByCourse] = useState({});
-    const [loadingOfferings, setLoadingOfferings] = useState(false);
-    const [loadingCourses, setLoadingCourses] = useState(false);
-
-    const [studentCourses, setStudentCourses] = useState([]);
-    const [studentCoursesTotal, setStudentCoursesTotal] = useState(null);
-    const [loadingStudentCourses, setLoadingStudentCourses] = useState(false);
-    const [selectedStudentCourseId, setSelectedStudentCourseId] = useState(null);
-    const [courseStudents, setCourseStudents] = useState([]);
-    const [courseStudentsMeta, setCourseStudentsMeta] = useState(null);
-    const [loadingCourseStudents, setLoadingCourseStudents] = useState(false);
-    const [studentsPage, setStudentsPage] = useState(1);
-    const [studentSearch, setStudentSearch] = useState('');
-    const [progressMin, setProgressMin] = useState('');
-    const [progressMax, setProgressMax] = useState('');
-    const [studentsError, setStudentsError] = useState('');
-    const [certificateSettings, setCertificateSettings] = useState(null);
-    const [courseCertificates, setCourseCertificates] = useState([]);
-    const [loadingCertificateWorkspace, setLoadingCertificateWorkspace] = useState(false);
-    const [savingCertificateSettings, setSavingCertificateSettings] = useState(false);
-    const [certificateActionStudentId, setCertificateActionStudentId] = useState(null);
-    const [certificateActionKind, setCertificateActionKind] = useState(null);
-    const [regeneratingCertificates, setRegeneratingCertificates] = useState(false);
-    const [savingCertificateAssetKind, setSavingCertificateAssetKind] = useState(null);
+    const { activeTab, handleTabSelect } = useInstructorDashboardRouteState({
+        navItems: NAV_ITEMS,
+    });
+    useDashboardKeyboardNavigation();
 
     const [showDeliveryModal, setShowDeliveryModal] = useState(false);
     const [creatingDeliveryCourse, setCreatingDeliveryCourse] = useState(false);
@@ -119,53 +72,69 @@ const InstructorDashboard = () => {
         });
     }, []);
 
-    const courses = useMemo(
-        () => (courseList.length ? courseList : profile?.courses || []),
-        [courseList, profile]
-    );
+    const {
+        expertiseTags,
+        loadProfile,
+        loadingProfile,
+        profile,
+        saveProfile: handleSaveInstructorProfile,
+        savingProfile,
+        socialLinks,
+    } = useInstructorProfile(user);
 
-    const aiCourses = useMemo(
-        () =>
-            courses.filter(
-                (course) =>
-                    course.aiAssistantEnabled &&
-                    isCourseFeatureEnabled(course, TENANT_FEATURES.AI_ASSISTANT)
-            ),
-        [courses]
-    );
-
-    const approvedCourses = useMemo(
-        () => courses.filter((course) => course?.status === 'approved' && course?.isPublished),
-        [courses]
-    );
-
-    const publishedCount = useMemo(
-        () => courses.filter((course) => course.isPublished).length,
-        [courses]
-    );
-
-    const pendingCount = useMemo(
-        () => courses.filter((course) => !course.isPublished).length,
-        [courses]
-    );
+    const {
+        courses,
+        loadingCourses,
+        aiCourses,
+        approvedCourses,
+        publishedCount,
+        pendingCount,
+        loadCourses,
+        upsertCourse,
+        markCoursePendingLocally,
+    } = useInstructorCourses(user, profile);
+    const {
+        certificateActionKind,
+        certificateActionStudentId,
+        certificateCourses,
+        certificateSettings,
+        courseCertificates,
+        courseStudents,
+        courseStudentsMeta,
+        handleCertificateAction,
+        handleRegenerateCertificates,
+        handleSaveCertificateAsset,
+        handleSaveCertificateSettings,
+        handleSelectStudentCourse,
+        handleToggleCertificateApproval,
+        loadStudentCourses,
+        loadingCertificateWorkspace,
+        loadingCourseStudents,
+        loadingStudentCourses,
+        progressMax,
+        progressMin,
+        regeneratingCertificates,
+        savingCertificateAssetKind,
+        savingCertificateSettings,
+        selectedStudentCourseId,
+        setProgressMax,
+        setProgressMin,
+        setStudentSearch,
+        setStudentsPage,
+        studentCourses,
+        studentCoursesTotal,
+        studentSearch,
+        studentsError,
+        studentsPage,
+    } = useInstructorStudentWorkspace({ activeTab, user });
 
     const aiEnabledCount = aiCourses.length;
 
-    const expertiseTags = useMemo(
-        () => (Array.isArray(profile?.expertiseTags) ? profile.expertiseTags.filter(Boolean) : []),
-        [profile]
-    );
-
-    const socialLinks = useMemo(
-        () =>
-            Object.entries(profile?.socialLinks || {}).filter(([, value]) => Boolean(value?.trim?.() || value)),
-        [profile]
-    );
-
-    const approvedOfferings = useMemo(
-        () => approvedCourses.flatMap((course) => offeringsByCourse[course.id] || []),
-        [approvedCourses, offeringsByCourse]
-    );
+    const {
+        offerings: approvedOfferings,
+        loadingOfferings,
+        handleRefreshOfferings,
+    } = useOfferingsManagement(approvedCourses);
     const certificateCurrentUser = useMemo(
         () =>
             user
@@ -176,23 +145,6 @@ const InstructorDashboard = () => {
                 : user,
         [profile?.title, user]
     );
-    const selectedStudentCourse = useMemo(
-        () =>
-            studentCourses.find((course) => String(course.id) === String(selectedStudentCourseId)) ||
-            null,
-        [selectedStudentCourseId, studentCourses]
-    );
-    const certificateCourses = useMemo(
-        () =>
-            studentCourses.filter((course) =>
-                isCourseFeatureEnabled(course, TENANT_FEATURES.CERTIFICATES)
-            ),
-        [studentCourses]
-    );
-    const certificatesFeatureEnabled = selectedStudentCourse
-        ? isCourseFeatureEnabled(selectedStudentCourse, TENANT_FEATURES.CERTIFICATES)
-        : true;
-
     const handleSwipeLeft = useCallback(() => {
         if (window.innerWidth < 768) setSidebarOpen(false);
     }, []);
@@ -208,507 +160,8 @@ const InstructorDashboard = () => {
     });
 
     useEffect(() => {
-        if (!user?.id || user.role !== 'instructor') return;
-
-        const loadProfile = async () => {
-            setLoadingProfile(true);
-            try {
-                const data = await fetchInstructorProfile(user.id);
-                setProfile(data);
-            } catch (error) {
-                console.error('Failed to load instructor profile', error);
-                toast.error('Инструктор маалыматын жүктөө мүмкүн болбоду');
-            } finally {
-                setLoadingProfile(false);
-            }
-        };
-
         loadProfile();
-    }, [user]);
-
-    useEffect(() => {
-        if (!user?.id || user.role !== 'instructor') return;
-
-        const loadCourses = async () => {
-            setLoadingCourses(true);
-            try {
-                const data = await fetchInstructorCourses({ status: 'all' });
-                setCourseList(Array.isArray(data?.courses) ? data.courses : []);
-            } catch (error) {
-                console.error('Failed to load instructor courses', error);
-                toast.error('Инструктор курстарын жүктөө мүмкүн болбоду');
-            } finally {
-                setLoadingCourses(false);
-            }
-        };
-
-        loadCourses();
-    }, [activeTab, user]);
-
-    useEffect(() => {
-        const handleGlobalKeyDown = (e) => {
-            if (e.altKey) {
-                switch (e.key.toLowerCase()) {
-                    case 'm': {
-                        e.preventDefault();
-                        const mainContent = document.getElementById('main-content');
-                        if (mainContent) {
-                            mainContent.focus();
-                            mainContent.scrollIntoView({ behavior: 'smooth' });
-                        }
-                        break;
-                    }
-                    case 'n': {
-                        e.preventDefault();
-                        const navigation = document.querySelector('[data-dashboard-navigation]');
-                        if (navigation) {
-                            navigation.focus();
-                            navigation.scrollIntoView({ behavior: 'smooth' });
-                        }
-                        break;
-                    }
-                    case 's': {
-                        e.preventDefault();
-                        const searchInput = document.querySelector(
-                            'input[placeholder*="издөө" i], input[type="search"]'
-                        );
-                        if (searchInput) {
-                            searchInput.focus();
-                            searchInput.scrollIntoView({ behavior: 'smooth' });
-                        }
-                        break;
-                    }
-                    default:
-                        break;
-                }
-            }
-
-            if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
-                const sidebarItems = document.querySelectorAll('[data-dashboard-nav-item]');
-                const currentIndex = Array.from(sidebarItems).findIndex(
-                    (item) => item === document.activeElement
-                );
-
-                if (currentIndex !== -1) {
-                    e.preventDefault();
-                    const newIndex =
-                        e.key === 'ArrowLeft'
-                            ? currentIndex > 0
-                                ? currentIndex - 1
-                                : sidebarItems.length - 1
-                            : currentIndex < sidebarItems.length - 1
-                                ? currentIndex + 1
-                                : 0;
-
-                    sidebarItems[newIndex]?.focus();
-                }
-            }
-        };
-
-        document.addEventListener('keydown', handleGlobalKeyDown);
-        return () => document.removeEventListener('keydown', handleGlobalKeyDown);
-    }, []);
-
-    const handleTabSelect = useCallback(
-        (tabId) => {
-            if (!NAV_ITEMS.some((item) => item.id === tabId)) return;
-
-            setActiveTab(tabId);
-            setSearchParams(
-                (prev) => {
-                    const next = new URLSearchParams(prev);
-                    if (tabId === 'overview') next.delete('tab');
-                    else next.set('tab', tabId);
-                    return next;
-                },
-                { replace: true }
-            );
-        },
-        [setSearchParams]
-    );
-
-    useEffect(() => {
-        const tabFromQuery = searchParams.get('tab');
-        const resolvedTab =
-            tabFromQuery && NAV_ITEMS.some((item) => item.id === tabFromQuery)
-                ? tabFromQuery
-                : 'overview';
-
-        if (resolvedTab !== activeTab) {
-            setActiveTab(resolvedTab);
-        }
-    }, [searchParams, activeTab]);
-
-    const loadStudentCourses = useCallback(async () => {
-        if (!user?.id || user.role !== 'instructor') return;
-
-        setLoadingStudentCourses(true);
-        setStudentsError('');
-
-        try {
-            const data = await fetchInstructorStudentCourses();
-            const list = (data?.courses || []).filter(
-                (course) => course?.status === 'approved' && course?.isPublished
-            );
-
-            setStudentCourses(list);
-            setStudentCoursesTotal(
-                list.reduce((acc, course) => acc + (course.studentCount || 0), 0)
-            );
-
-            setSelectedStudentCourseId((prev) => {
-                if (!list.length) return null;
-                if (prev && !list.some((course) => course.id === prev)) return null;
-                if (activeTab === 'certificates') {
-                    const certificateList = list.filter((course) =>
-                        isCourseFeatureEnabled(course, TENANT_FEATURES.CERTIFICATES)
-                    );
-                    if (prev && certificateList.some((course) => course.id === prev)) return prev;
-                    return null;
-                }
-                return list.some((course) => course.id === prev) ? prev : null;
-            });
-
-            if (!list.length) {
-                setCourseStudents([]);
-                setCourseStudentsMeta(null);
-            }
-        } catch (error) {
-            console.error('Failed to load student courses', error);
-            if (error?.response?.status === 403) {
-                setStudentsError('Бул курс сизге бекитилген эмес');
-            } else {
-                toast.error('Студенттер тизмесин жүктөө мүмкүн болбоду');
-            }
-        } finally {
-            setLoadingStudentCourses(false);
-        }
-    }, [user, activeTab]);
-
-    const loadCourseStudents = useCallback(
-        async (courseId) => {
-            if (!courseId) {
-                setCourseStudents([]);
-                setCourseStudentsMeta(null);
-                return;
-            }
-
-            setLoadingCourseStudents(true);
-            setStudentsError('');
-
-            try {
-                const data = await fetchCourseStudents(courseId, {
-                    page: studentsPage,
-                    limit: 20,
-                    q: studentSearch || undefined,
-                    progressGte: progressMin === '' ? undefined : Number(progressMin),
-                    progressLte: progressMax === '' ? undefined : Number(progressMax),
-                });
-
-                setCourseStudents(data?.students || []);
-                setCourseStudentsMeta({
-                    ...(data?.course || {}),
-                    page: data?.page,
-                    total: data?.total,
-                    totalPages: data?.totalPages,
-                    limit: data?.limit,
-                });
-            } catch (error) {
-                console.error('Failed to load course students', error);
-                setCourseStudents([]);
-                setCourseStudentsMeta(null);
-
-                if (error?.response?.status === 403) {
-                    setStudentsError('Бул курс сизге бекитилген эмес');
-                } else {
-                    toast.error('Курс студенттерин жүктөө мүмкүн болбоду');
-                }
-            } finally {
-                setLoadingCourseStudents(false);
-            }
-        },
-        [studentsPage, studentSearch, progressMin, progressMax]
-    );
-
-    useEffect(() => {
-        if (!user?.id || user.role !== 'instructor') return;
-        loadStudentCourses();
-    }, [user, loadStudentCourses]);
-
-    const loadOfferingsForCourses = useCallback(async (courseArray) => {
-        if (!courseArray.length) {
-            setOfferingsByCourse({});
-            return;
-        }
-
-        setLoadingOfferings(true);
-        try {
-            const summaries = {};
-            await Promise.all(
-                courseArray.map(async (course) => {
-                    try {
-                        const data = await listOfferingsForCourse(course.id);
-                        summaries[course.id] = (data || []).map((offering) => ({
-                            ...offering,
-                            course,
-                        }));
-                    } catch (error) {
-                        console.error('Failed to load offerings for course', course.id, error);
-                    }
-                })
-            );
-            setOfferingsByCourse(summaries);
-        } finally {
-            setLoadingOfferings(false);
-        }
-    }, []);
-
-    useEffect(() => {
-        if (!courses.length) {
-            setOfferingsByCourse({});
-            return;
-        }
-        loadOfferingsForCourses(courses);
-    }, [courses, loadOfferingsForCourses]);
-
-    useEffect(() => {
-        if (!['students', 'certificates'].includes(activeTab)) return;
-
-        if (selectedStudentCourseId) {
-            loadCourseStudents(selectedStudentCourseId);
-        } else {
-            setCourseStudents([]);
-            setCourseStudentsMeta(null);
-        }
-    }, [
-        activeTab,
-        selectedStudentCourseId,
-        studentsPage,
-        studentSearch,
-        progressMin,
-        progressMax,
-        loadCourseStudents,
-    ]);
-
-    useEffect(() => {
-        if (
-            !['students', 'certificates'].includes(activeTab) ||
-            !selectedStudentCourseId ||
-            !certificatesFeatureEnabled
-        ) {
-            setCertificateSettings(null);
-            setCourseCertificates([]);
-            setLoadingCertificateWorkspace(false);
-            return;
-        }
-
-        const loadCertificateSettings = async () => {
-            setLoadingCertificateWorkspace(true);
-            try {
-                const [settingsData, certificatesData] = await Promise.all([
-                    fetchCourseCertificateSettings(selectedStudentCourseId),
-                    fetchCourseCertificates(selectedStudentCourseId),
-                ]);
-                setCertificateSettings(settingsData);
-                setCourseCertificates(Array.isArray(certificatesData) ? certificatesData : []);
-            } catch (error) {
-                console.error('Failed to load certificate settings', error);
-            } finally {
-                setLoadingCertificateWorkspace(false);
-            }
-        };
-
-        loadCertificateSettings();
-    }, [activeTab, selectedStudentCourseId, certificatesFeatureEnabled]);
-
-    const handleToggleCertificateApproval = useCallback(
-        async (enabled) => {
-            if (!selectedStudentCourseId) return;
-            if (!certificatesFeatureEnabled) {
-                toast.error('Certificates are disabled for this tenant.');
-                return;
-            }
-            setSavingCertificateSettings(true);
-            try {
-                const updated = await updateCourseCertificateSettings(
-                    selectedStudentCourseId,
-                    {
-                        enabled: certificateSettings?.enabled ?? true,
-                        issueMode: certificateSettings?.issueMode ?? 'auto',
-                        approvalMode: enabled ? 'instructor' : 'none',
-                    }
-                );
-                setCertificateSettings(updated);
-                toast.success('Сертификат эрежеси жаңыртылды');
-            } catch (error) {
-                console.error('Failed to update certificate settings', error);
-                toast.error('Сертификат эрежесин жаңыртуу мүмкүн болбоду');
-            } finally {
-                setSavingCertificateSettings(false);
-            }
-        },
-        [selectedStudentCourseId, certificateSettings, certificatesFeatureEnabled]
-    );
-
-    const handleSaveCertificateSettings = useCallback(
-        async (payload) => {
-            if (!selectedStudentCourseId) return false;
-            if (!certificatesFeatureEnabled) {
-                toast.error('Certificates are disabled for this tenant.');
-                return false;
-            }
-            setSavingCertificateSettings(true);
-            try {
-                const updated = await updateCourseCertificateSettings(
-                    selectedStudentCourseId,
-                    payload
-                );
-                setCertificateSettings(updated);
-                toast.success('Сертификат шаблону сакталды');
-                return true;
-            } catch (error) {
-                console.error('Failed to save certificate settings', error);
-                toast.error('Сертификат шаблонун сактоо мүмкүн болбоду');
-                return false;
-            } finally {
-                setSavingCertificateSettings(false);
-            }
-        },
-        [selectedStudentCourseId, certificatesFeatureEnabled]
-    );
-
-    const handleRegenerateCertificates = useCallback(
-        async () => {
-            if (!selectedStudentCourseId) return false;
-            if (!certificatesFeatureEnabled) {
-                toast.error('Certificates are disabled for this tenant.');
-                return false;
-            }
-            setRegeneratingCertificates(true);
-            try {
-                const result = await regenerateCourseCertificates(selectedStudentCourseId);
-                await loadCourseStudents(selectedStudentCourseId);
-                const certificatesData = await fetchCourseCertificates(selectedStudentCourseId);
-                setCourseCertificates(Array.isArray(certificatesData) ? certificatesData : []);
-                toast.success(
-                    result?.regeneratedCount
-                        ? `${result.regeneratedCount} сертификат жаңыртылды`
-                        : 'Жаңыртууга сертификат табылган жок'
-                );
-                return true;
-            } catch (error) {
-                console.error('Failed to regenerate certificates', error);
-                toast.error('Сертификат PDF файлдарын жаңыртуу мүмкүн болбоду');
-                return false;
-            } finally {
-                setRegeneratingCertificates(false);
-            }
-        },
-        [selectedStudentCourseId, certificatesFeatureEnabled, loadCourseStudents]
-    );
-
-    const handleSaveCertificateAsset = useCallback(
-        async (kind, file) => {
-            if (!selectedStudentCourseId || !file) return null;
-            if (!certificatesFeatureEnabled) {
-                toast.error('Certificates are disabled for this tenant.');
-                return null;
-            }
-            setSavingCertificateAssetKind(kind);
-            try {
-                const updated =
-                    kind === 'signature'
-                        ? await saveCourseCertificateSignatureAsset(selectedStudentCourseId, file)
-                        : await uploadCourseCertificateSecondaryLogo(selectedStudentCourseId, file);
-                setCertificateSettings(updated);
-                toast.success(
-                    kind === 'signature'
-                        ? 'Кол коюу сакталды'
-                        : 'Экинчи бренд логотиби жүктөлдү'
-                );
-                return updated;
-            } catch (error) {
-                console.error('Failed to save certificate asset', error);
-                toast.error(
-                    kind === 'signature'
-                        ? 'Кол коюуну сактоо мүмкүн болбоду'
-                        : 'Сертификат активин жүктөө мүмкүн болбоду'
-                );
-                return null;
-            } finally {
-                setSavingCertificateAssetKind(null);
-            }
-        },
-        [selectedStudentCourseId, certificatesFeatureEnabled]
-    );
-
-    const handleCertificateAction = useCallback(
-        async (kind, student, displayOverrides = {}) => {
-            if (!selectedStudentCourseId || !student) return;
-            if (!certificatesFeatureEnabled) {
-                toast.error('Certificates are disabled for this tenant.');
-                return;
-            }
-            setCertificateActionStudentId(student.id);
-            setCertificateActionKind(kind);
-            try {
-                if (kind === 'issue') {
-                    await issueCourseCertificate(selectedStudentCourseId, {
-                        studentId: student.id,
-                        ...displayOverrides,
-                    });
-                } else if (kind === 'approve' && student.certificateId) {
-                    await approveCertificate(student.certificateId, displayOverrides);
-                } else if (kind === 'reject' && student.certificateId) {
-                    await rejectCertificate(student.certificateId);
-                } else if (kind === 'revoke' && student.certificateId) {
-                    await revokeCertificate(student.certificateId);
-                }
-
-                await loadCourseStudents(selectedStudentCourseId);
-                const certificatesData = await fetchCourseCertificates(selectedStudentCourseId);
-                setCourseCertificates(Array.isArray(certificatesData) ? certificatesData : []);
-                toast.success('Сертификат жаңыртылды');
-            } catch (error) {
-                console.error('Failed to update certificate', error);
-                toast.error('Сертификат аракетин аткаруу мүмкүн болбоду');
-            } finally {
-                setCertificateActionStudentId(null);
-                setCertificateActionKind(null);
-            }
-        },
-        [selectedStudentCourseId, certificatesFeatureEnabled, loadCourseStudents]
-    );
-
-    const handleSelectStudentCourse = useCallback((courseId) => {
-        setStudentsPage(1);
-        setSelectedStudentCourseId(courseId);
-    }, []);
-
-    const handleSaveInstructorProfile = useCallback(
-        async (payload) => {
-            if (!user?.id) return false;
-
-            setSavingProfile(true);
-            try {
-                const updated = await updateInstructorProfile(user.id, payload);
-                setProfile(updated);
-                toast.success('Инструктор профили сакталды');
-                return true;
-            } catch (error) {
-                console.error('Failed to save instructor profile', error);
-                const message =
-                    error?.response?.data?.message ||
-                    error?.message ||
-                    'Инструктор профилин сактоо мүмкүн болбоду';
-                toast.error(Array.isArray(message) ? message.join(', ') : message);
-                return false;
-            } finally {
-                setSavingProfile(false);
-            }
-        },
-        [user?.id]
-    );
+    }, [loadProfile]);
 
     const closeDeliveryModal = () => {
         setShowDeliveryModal(false);
@@ -769,7 +222,7 @@ const InstructorDashboard = () => {
 
         setCreatingDeliveryCourse(true);
         try {
-            await createCourse({
+            const createdCourse = await createCourse({
                 title: payload.title,
                 description: payload.description,
                 categoryId: parseInt(payload.categoryId, 10),
@@ -781,10 +234,11 @@ const InstructorDashboard = () => {
 
             toast.success('Курс түзүлдү. Эми группа жана сессия түзө аласыз.');
             closeDeliveryModal();
-            setActiveTab('courses');
+            handleTabSelect('courses');
 
-            const data = await fetchInstructorCourses({ status: 'all' });
-            setCourseList(Array.isArray(data?.courses) ? data.courses : []);
+            if (!upsertCourse(createdCourse)) {
+                await loadCourses();
+            }
             return true;
         } catch (error) {
             console.error('Failed to create delivery course', error);
@@ -805,7 +259,7 @@ const InstructorDashboard = () => {
 
         setUpdatingDeliveryCourse(true);
         try {
-            await updateCourse(editingDeliveryCourse.id, {
+            const updatedCourse = await updateCourse(editingDeliveryCourse.id, {
                 title: payload.title,
                 description: payload.description,
                 categoryId: parseInt(payload.categoryId, 10),
@@ -818,12 +272,18 @@ const InstructorDashboard = () => {
             const requiresReview =
                 editingDeliveryCourse.status === 'approved' || editingDeliveryCourse.isPublished;
 
+            let reviewCourse = null;
             if (requiresReview) {
-                await markCoursePending(editingDeliveryCourse.id);
+                reviewCourse = await markCoursePending(editingDeliveryCourse.id);
             }
 
-            const data = await fetchInstructorCourses({ status: 'all' });
-            setCourseList(Array.isArray(data?.courses) ? data.courses : []);
+            const appliedCourseUpdate = upsertCourse(reviewCourse || updatedCourse);
+            if (requiresReview) {
+                if (!appliedCourseUpdate) upsertCourse(updatedCourse);
+                markCoursePendingLocally(editingDeliveryCourse.id);
+            } else if (!appliedCourseUpdate) {
+                await loadCourses();
+            }
             toast.success(
                 requiresReview
                     ? 'Delivery курс жаңыртылды жана кайра карап чыгууга жөнөтүлдү'
@@ -845,9 +305,10 @@ const InstructorDashboard = () => {
 
         setSubmittingCourseId(courseId);
         try {
-            await markCoursePending(courseId);
-            const data = await fetchInstructorCourses({ status: 'all' });
-            setCourseList(Array.isArray(data?.courses) ? data.courses : []);
+            const pendingCourse = await markCoursePending(courseId);
+            if (!upsertCourse(pendingCourse)) {
+                markCoursePendingLocally(courseId);
+            }
             toast.success('Курс тастыктоого жөнөтүлдү');
             return true;
         } catch (error) {
@@ -861,7 +322,7 @@ const InstructorDashboard = () => {
         } finally {
             setSubmittingCourseId(null);
         }
-    }, []);
+    }, [markCoursePendingLocally, upsertCourse]);
 
     const isTabLoading =
         loadingStudentCourses || loadingCourseStudents || loadingOfferings;
@@ -1014,9 +475,7 @@ const InstructorDashboard = () => {
                         courses={approvedCourses}
                         offerings={approvedOfferings}
                         loading={loadingOfferings}
-                        refreshOfferings={() => {
-                            if (approvedCourses.length) loadOfferingsForCourses(approvedCourses);
-                        }}
+                        refreshOfferings={handleRefreshOfferings}
                     />
                 );
             case 'overview':
