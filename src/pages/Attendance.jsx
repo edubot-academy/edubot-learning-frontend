@@ -1,6 +1,5 @@
-import { useContext, useEffect, useMemo, useState, useCallback } from 'react';
+import { useContext } from 'react';
 import PropTypes from 'prop-types';
-import { toast } from 'react-hot-toast';
 import {
     FiAlertCircle,
     FiBookOpen,
@@ -17,26 +16,16 @@ import {
 } from 'react-icons/fi';
 import { SESSION_ATTENDANCE_STATUS } from '@shared/contracts';
 import {
-    fetchSessionAttendance,
-    markSessionAttendanceBulk,
-} from '../features/attendance/api';
-import { fetchCourses, fetchInstructorCourses } from '../features/courses/api';
-import { fetchCourseGroups } from '../features/courseGroups/api';
-import { fetchGroupRoster } from '../features/courseGroups/roster';
-import { fetchCourseSessions } from '../features/groupSessions/api';
-import {
     DashboardFilterBar,
     DashboardMetricCard,
     DashboardWorkspaceHero,
     StatusBadge,
 } from '../components/ui/dashboard';
 import { AuthContext } from '../context/AuthContext';
-import { UnifiedAttendanceTable } from '../features/attendance';
-import { isPlatformAdmin } from '@shared/utils/roles';
 import {
-    isCourseFeatureEnabled,
-    TENANT_FEATURES,
-} from '@shared/utils/tenantFeatures';
+    UnifiedAttendanceTable,
+    useAttendanceWorkspace,
+} from '../features/attendance';
 
 const statusOptions = [
     { value: SESSION_ATTENDANCE_STATUS.PRESENT, label: 'Катышты', icon: FiCheckCircle },
@@ -72,66 +61,6 @@ const statusMeta = {
     },
 };
 
-const toCourseList = (payload) => {
-    if (Array.isArray(payload?.items)) return payload.items;
-    if (Array.isArray(payload?.courses)) return payload.courses;
-    if (Array.isArray(payload?.data)) return payload.data;
-    if (Array.isArray(payload)) return payload;
-    return [];
-};
-
-const toGroupList = (payload) => {
-    if (Array.isArray(payload?.items)) return payload.items;
-    if (Array.isArray(payload?.groups)) return payload.groups;
-    if (Array.isArray(payload?.data)) return payload.data;
-    if (Array.isArray(payload)) return payload;
-    return [];
-};
-
-const toSessionList = (payload) => {
-    if (Array.isArray(payload?.items)) return payload.items;
-    if (Array.isArray(payload?.sessions)) return payload.sessions;
-    if (Array.isArray(payload?.data)) return payload.data;
-    if (Array.isArray(payload)) return payload;
-    return [];
-};
-
-const toAttendanceItems = (payload) => {
-    if (Array.isArray(payload?.items)) return payload.items;
-    if (Array.isArray(payload?.rows)) return payload.rows;
-    if (Array.isArray(payload?.data)) return payload.data;
-    if (Array.isArray(payload)) return payload;
-    return [];
-};
-
-const toRosterList = (payload) => {
-    if (Array.isArray(payload?.items)) return payload.items;
-    if (Array.isArray(payload?.students)) return payload.students;
-    if (Array.isArray(payload?.data)) return payload.data;
-    if (Array.isArray(payload)) return payload;
-    return [];
-};
-
-const isAttendanceCourseType = (course = {}) => {
-    const type = String(course?.courseType || course?.type || '').toLowerCase();
-    return type === 'offline' || type === 'online_live';
-};
-
-const getAttendanceErrorMessage = (error) => {
-    const status = error?.response?.status;
-    if (status === 401) return 'Сессия мөөнөтү бүттү. Кайра кириңиз.';
-    if (status === 403) return 'Бул аракетке уруксатыңыз жок.';
-    if (status === 404) return 'Тандалган группа же сессия табылган жок.';
-    if (status === 400) {
-        const message = error?.response?.data?.message;
-        if (Array.isArray(message)) return message.join(', ');
-        return message || 'Текшерүү катасы болду.';
-    }
-
-    const fallback = error?.response?.data?.message || 'Сервер катасы болду.';
-    return Array.isArray(fallback) ? fallback.join(', ') : fallback;
-};
-
 const getStudentInitials = (fullName = '') =>
     fullName
         .split(' ')
@@ -152,359 +81,66 @@ const formatDateTime = (value) => {
     });
 };
 
-const cloneRowsMap = (map) =>
-    Object.fromEntries(
-        Object.entries(map || {}).map(([key, value]) => [key, { ...value }])
-    );
+const noticeClassNames = {
+    info: 'border-sky-200 bg-sky-50 text-sky-800 dark:border-sky-500/30 dark:bg-sky-500/10 dark:text-sky-200',
+    success: 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-200',
+    warning: 'border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200',
+    error: 'border-red-200 bg-red-50 text-red-800 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200',
+};
+
+const OperationalNotice = ({ tone = 'info', title, message, action }) => (
+    <div className={`rounded-2xl border px-4 py-3 text-sm ${noticeClassNames[tone] || noticeClassNames.info}`}>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+                <div className="font-semibold">{title}</div>
+                {message ? <p className="mt-1 opacity-90">{message}</p> : null}
+            </div>
+            {action}
+        </div>
+    </div>
+);
 
 const AttendancePage = ({ embedded = false }) => {
     const { user } = useContext(AuthContext);
-    const [courses, setCourses] = useState([]);
-    const [groups, setGroups] = useState([]);
-    const [sessions, setSessions] = useState([]);
-    const [selectedCourseId, setSelectedCourseId] = useState('');
-    const [selectedGroupId, setSelectedGroupId] = useState('');
-    const [selectedSessionId, setSelectedSessionId] = useState('');
-    const [rowsMap, setRowsMap] = useState({});
-    const [initialRowsMap, setInitialRowsMap] = useState({});
-    const [loadingCourses, setLoadingCourses] = useState(false);
-    const [loadingGroups, setLoadingGroups] = useState(false);
-    const [loadingSessions, setLoadingSessions] = useState(false);
-    const [loadingStudents, setLoadingStudents] = useState(false);
-    const [savingAttendance, setSavingAttendance] = useState(false);
-    const [reportFilter, setReportFilter] = useState('all');
-    const [adminEditMode, setAdminEditMode] = useState(false);
-    const [viewMode, setViewMode] = useState('table');
-
-    useEffect(() => {
-        if (!user?.id) return;
-
-        let cancelled = false;
-
-        const loadCourses = async () => {
-            setLoadingCourses(true);
-            try {
-                const response =
-                    user.role === 'instructor'
-                        ? await fetchInstructorCourses({ page: 1, limit: 200, status: 'approved' })
-                        : await fetchCourses({ limit: 200 });
-
-                if (cancelled) return;
-
-                const eligibleCourses = toCourseList(response).filter(
-                    (course) =>
-                        isAttendanceCourseType(course) &&
-                        isCourseFeatureEnabled(course, TENANT_FEATURES.ATTENDANCE)
-                );
-                setCourses(eligibleCourses);
-
-                setSelectedCourseId((prev) => {
-                    if (prev && eligibleCourses.some((course) => String(course.id) === String(prev))) {
-                        return prev;
-                    }
-                    return eligibleCourses[0]?.id ? String(eligibleCourses[0].id) : '';
-                });
-            } catch (error) {
-                console.error('Failed to load attendance courses', error);
-                toast.error('Катышуу үчүн курстар жүктөлгөн жок.');
-                if (!cancelled) {
-                    setCourses([]);
-                    setSelectedCourseId('');
-                }
-            } finally {
-                if (!cancelled) setLoadingCourses(false);
-            }
-        };
-
-        loadCourses();
-
-        return () => {
-            cancelled = true;
-        };
-    }, [user]);
-
-    useEffect(() => {
-        if (!selectedCourseId) {
-            setGroups([]);
-            setSelectedGroupId('');
-            return;
-        }
-
-        let cancelled = false;
-
-        const loadGroups = async () => {
-            setLoadingGroups(true);
-            try {
-                const response = await fetchCourseGroups({ courseId: Number(selectedCourseId) });
-                if (cancelled) return;
-
-                const items = toGroupList(response);
-                setGroups(items);
-
-                setSelectedGroupId((prev) => {
-                    if (prev && items.some((group) => String(group.id) === String(prev))) return prev;
-                    return items[0]?.id ? String(items[0].id) : '';
-                });
-            } catch (error) {
-                console.error('Failed to load attendance groups', error);
-                toast.error('Группалар жүктөлгөн жок.');
-                if (!cancelled) {
-                    setGroups([]);
-                    setSelectedGroupId('');
-                }
-            } finally {
-                if (!cancelled) setLoadingGroups(false);
-            }
-        };
-
-        loadGroups();
-
-        return () => {
-            cancelled = true;
-        };
-    }, [selectedCourseId]);
-
-    useEffect(() => {
-        if (!selectedGroupId) {
-            setSessions([]);
-            setSelectedSessionId('');
-            setRowsMap({});
-            setInitialRowsMap({});
-            return;
-        }
-
-        let cancelled = false;
-
-        const loadSessions = async () => {
-            setLoadingSessions(true);
-            try {
-                const response = await fetchCourseSessions({ groupId: Number(selectedGroupId) });
-                if (cancelled) return;
-
-                const items = toSessionList(response);
-                setSessions(items);
-
-                setSelectedSessionId((prev) => {
-                    if (prev && items.some((session) => String(session.id) === String(prev))) return prev;
-                    return items[0]?.id ? String(items[0].id) : '';
-                });
-            } catch (error) {
-                console.error('Failed to load attendance sessions', error);
-                toast.error('Сессиялар жүктөлгөн жок.');
-                if (!cancelled) {
-                    setSessions([]);
-                    setSelectedSessionId('');
-                }
-            } finally {
-                if (!cancelled) setLoadingSessions(false);
-            }
-        };
-
-        loadSessions();
-
-        return () => {
-            cancelled = true;
-        };
-    }, [selectedGroupId]);
-
-    const loadRosterAndAttendance = useCallback(async () => {
-        if (!selectedGroupId) {
-            setRowsMap({});
-            setInitialRowsMap({});
-            return;
-        }
-
-        setLoadingStudents(true);
-
-        try {
-            const [studentsRes, attendanceRes] = await Promise.all([
-                fetchGroupRoster({
-                    groupId: Number(selectedGroupId),
-                    page: 1,
-                    limit: 200,
-                }),
-                selectedSessionId
-                    ? fetchSessionAttendance(Number(selectedSessionId))
-                    : Promise.resolve([]),
-            ]);
-
-            const rosterItems = toRosterList(studentsRes);
-            const attendanceRows = toAttendanceItems(attendanceRes);
-
-            const attendanceByStudentId = new Map(
-                attendanceRows.map((item) => [
-                    Number(item.studentId || item.userId),
-                    {
-                        status: item.status,
-                        notes: item.notes || '',
-                        joinedAt: item.joinedAt || undefined,
-                        leftAt: item.leftAt || undefined,
-                    },
-                ])
-            );
-
-            const nextRows = {};
-            rosterItems.forEach((student) => {
-                const studentId = Number(student.userId || student.id);
-                if (!studentId) return;
-
-                const existing = attendanceByStudentId.get(studentId);
-                nextRows[studentId] = {
-                    studentId,
-                    fullName: student.fullName || student.user?.fullName || `#${studentId}`,
-                    status: existing?.status || SESSION_ATTENDANCE_STATUS.PRESENT,
-                    notes: existing?.notes || '',
-                    joinedAt: existing?.joinedAt,
-                    leftAt: existing?.leftAt,
-                };
-            });
-
-            setRowsMap(nextRows);
-            setInitialRowsMap(cloneRowsMap(nextRows));
-        } catch (error) {
-            console.error('Failed to load session attendance workspace', error);
-            toast.error(getAttendanceErrorMessage(error));
-            setRowsMap({});
-            setInitialRowsMap({});
-        } finally {
-            setLoadingStudents(false);
-        }
-    }, [selectedGroupId, selectedSessionId]);
-
-    useEffect(() => {
-        loadRosterAndAttendance();
-    }, [loadRosterAndAttendance]);
-
-    const selectedCourse = useMemo(
-        () => courses.find((course) => String(course.id) === String(selectedCourseId)) || null,
-        [courses, selectedCourseId]
-    );
-
-    const selectedGroup = useMemo(
-        () => groups.find((group) => String(group.id) === String(selectedGroupId)) || null,
-        [groups, selectedGroupId]
-    );
-
-    const selectedSession = useMemo(
-        () => sessions.find((session) => String(session.id) === String(selectedSessionId)) || null,
-        [sessions, selectedSessionId]
-    );
-
-    const isAdminOverrideMode = isPlatformAdmin(user);
-    const attendanceDisabled = selectedCourse
-        ? !isCourseFeatureEnabled(selectedCourse, TENANT_FEATURES.ATTENDANCE)
-        : false;
-    const students = useMemo(() => Object.values(rowsMap), [rowsMap]);
-
-    const hasAttendanceChanges = useMemo(() => {
-        const currentIds = Object.keys(rowsMap);
-        const initialIds = Object.keys(initialRowsMap);
-
-        if (currentIds.length !== initialIds.length) return currentIds.length > 0;
-
-        return currentIds.some((studentId) => {
-            const current = rowsMap[studentId];
-            const initial = initialRowsMap[studentId];
-            if (!current || !initial) return true;
-
-            return (
-                current.status !== initial.status ||
-                (current.notes || '').trim() !== (initial.notes || '').trim() ||
-                (current.joinedAt || '') !== (initial.joinedAt || '') ||
-                (current.leftAt || '') !== (initial.leftAt || '')
-            );
-        });
-    }, [rowsMap, initialRowsMap]);
-
-    const attendanceStats = useMemo(() => {
-        const present = students.filter(
-            (student) => student.status === SESSION_ATTENDANCE_STATUS.PRESENT
-        ).length;
-        const late = students.filter(
-            (student) => student.status === SESSION_ATTENDANCE_STATUS.LATE
-        ).length;
-        const absent = students.filter(
-            (student) => student.status === SESSION_ATTENDANCE_STATUS.ABSENT
-        ).length;
-        const excused = students.filter(
-            (student) => student.status === SESSION_ATTENDANCE_STATUS.EXCUSED
-        ).length;
-
-        const total = students.length;
-        const rate = total ? Math.round(((present + late + excused) / total) * 100) : 0;
-
-        return { present, late, absent, excused, total, rate };
-    }, [students]);
-
-    const filteredReportItems = useMemo(() => {
-        if (reportFilter === 'all') return students;
-        return students.filter((item) => String(item.status) === reportFilter);
-    }, [reportFilter, students]);
-
-    const handleStatusChange = (studentId, status) => {
-        setRowsMap((prev) => ({
-            ...prev,
-            [studentId]: { ...prev[studentId], status },
-        }));
-    };
-
-    const handleNotesChange = (studentId, notes) => {
-        setRowsMap((prev) => ({
-            ...prev,
-            [studentId]: { ...prev[studentId], notes },
-        }));
-    };
-
-    const handleSubmitAttendance = async () => {
-        if (!selectedCourseId || !selectedSessionId) {
-            toast.error('Курс, группа жана сессия тандаңыз.');
-            return;
-        }
-
-        if (isAdminOverrideMode && !adminEditMode) {
-            toast('Адегенде өзгөртүү режимин ачыңыз.');
-            return;
-        }
-
-        if (attendanceDisabled) {
-            toast.error('Attendance is disabled for this tenant.');
-            return;
-        }
-
-        if (!hasAttendanceChanges) {
-            toast('Өзгөртүү жок.');
-            return;
-        }
-
-        if (students.length === 0) {
-            toast.error('Бул группа үчүн студент табылган жок.');
-            return;
-        }
-
-        setSavingAttendance(true);
-        try {
-            const rows = students.map((student) => ({
-                studentId: student.studentId,
-                status: student.status,
-                joinedAt: student.joinedAt,
-                leftAt: student.leftAt,
-                notes: student.notes?.trim() || undefined,
-            }));
-
-            const response = await markSessionAttendanceBulk(Number(selectedSessionId), {
-                courseId: Number(selectedCourseId),
-                rows,
-            });
-
-            setInitialRowsMap(cloneRowsMap(rowsMap));
-            toast.success(response?.message || 'Катышуу ийгиликтүү сакталды.');
-        } catch (error) {
-            console.error('Failed to save session attendance', error);
-            toast.error(getAttendanceErrorMessage(error));
-        } finally {
-            setSavingAttendance(false);
-        }
-    };
+    const {
+        adminEditMode,
+        attendanceDisabled,
+        attendanceStats,
+        courses,
+        filteredReportItems,
+        groups,
+        handleNotesChange,
+        handleStatusChange,
+        handleSubmitAttendance,
+        hasAttendanceChanges,
+        initialRowsMap,
+        isAdminOverrideMode,
+        loadRosterAndAttendance,
+        loadingCourses,
+        loadingGroups,
+        loadingSessions,
+        loadingStage,
+        loadingStudents,
+        reportFilter,
+        savingAttendance,
+        selectedCourse,
+        selectedCourseId,
+        selectedGroup,
+        selectedGroupId,
+        selectedSession,
+        selectedSessionId,
+        sessions,
+        setAdminEditMode,
+        setReportFilter,
+        setRowsMap,
+        setSelectedCourseId,
+        setSelectedGroupId,
+        setSelectedSessionId,
+        setViewMode,
+        students,
+        viewMode,
+        workspaceNotice,
+    } = useAttendanceWorkspace(user);
 
     return (
         <div className={embedded ? 'min-w-0 space-y-6' : 'mx-auto max-w-7xl min-w-0 space-y-6 px-4 pb-12 pt-24'}>
@@ -733,6 +369,33 @@ const AttendancePage = ({ embedded = false }) => {
                         </DashboardFilterBar>
 
                         <div className="grid gap-4 pt-5">
+                            {loadingStage ? (
+                                <OperationalNotice
+                                    tone="info"
+                                    title="Жүктөө жүрүп жатат"
+                                    message={loadingStage}
+                                />
+                            ) : null}
+
+                            {workspaceNotice ? (
+                                <OperationalNotice
+                                    tone={workspaceNotice.tone}
+                                    title={workspaceNotice.title}
+                                    message={workspaceNotice.message}
+                                    action={
+                                        hasAttendanceChanges && !savingAttendance ? (
+                                            <button
+                                                type="button"
+                                                onClick={handleSubmitAttendance}
+                                                className="dashboard-button-secondary !min-h-0 !px-3 !py-2"
+                                            >
+                                                Сактоо
+                                            </button>
+                                        ) : null
+                                    }
+                                />
+                            ) : null}
+
                             {isAdminOverrideMode ? (
                                 <div className="dashboard-panel-muted flex flex-wrap items-start gap-3 p-4">
                                     <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white text-edubot-orange shadow-sm dark:bg-slate-900">
@@ -870,9 +533,6 @@ const AttendancePage = ({ embedded = false }) => {
                                                                         ))}
                                                                     </select>
                                                                 </div>
-                                                                <p className="mt-2 text-xs text-edubot-muted dark:text-slate-400">
-                                                                    Статус тизмеден тандалат, ошондуктан кокус басуу азаят.
-                                                                </p>
                                                             </div>
 
                                                             <label className="block">

@@ -208,22 +208,29 @@ const SessionHomeworkTab = ({
 
     const handleHomeworkSubmit = useCallback(async (formData) => {
         try {
+            let saved = false;
             if (homeworkModal.mode === 'create') {
-                await publishHomework({
+                saved = await publishHomework({
                     title: formData.title,
                     description: formData.description,
                     deadline: formData.deadline,
                     isPublished: formData.isPublished,
                 });
-                toast.success('Үй тапшырма ийгиликтүү түзүлдү');
             } else {
-                await updateHomework(homeworkModal.homework.id, {
+                saved = await updateHomework(homeworkModal.homework.id, {
                     title: formData.title,
                     description: formData.description,
                     deadline: formData.deadline,
                 });
-                toast.success('Үй тапшырма ийгиликтүү өзгөртүлдү');
             }
+
+            if (!saved) return;
+
+            toast.success(
+                homeworkModal.mode === 'create'
+                    ? 'Үй тапшырма ийгиликтүү түзүлдү'
+                    : 'Үй тапшырма ийгиликтүү өзгөртүлдү'
+            );
             closeHomeworkModal();
         } catch (error) {
             const message = error?.response?.data?.message || error?.message || 'Ката кетти';

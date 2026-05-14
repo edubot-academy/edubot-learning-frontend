@@ -6,9 +6,6 @@ import {
 import { AuthContext } from '../context/AuthContext';
 import { isPlatformAdmin } from '@shared/utils/roles';
 import { toast } from 'react-hot-toast';
-import { useNavigate } from 'react-router-dom';
-import { useSwipeNavigation } from '../hooks/useSwipeGestures';
-import { getDashboardPath } from '@shared/utils/navigation';
 import {
     AnalyticsSection,
     AnalyticsDataTable,
@@ -20,7 +17,7 @@ import {
     DashboardMetricCard,
     DashboardSectionHeader,
 } from '@components/ui/dashboard';
-import { FiActivity, FiBookOpen, FiTarget, FiUsers } from 'react-icons/fi';
+import { FiActivity, FiAlertCircle, FiBookOpen, FiCheckCircle, FiTarget, FiTrendingUp, FiUsers } from 'react-icons/fi';
 
 const metricNumber = (value, fallback = 0) => {
     const num = Number(value);
@@ -28,25 +25,10 @@ const metricNumber = (value, fallback = 0) => {
 };
 
 const InstructorAnalyticsPage = ({ embedded = false }) => {
-    const navigate = useNavigate();
     const { user } = useContext(AuthContext);
     const [filters, setFilters] = useState({ from: '', to: '', course: '' });
     const [loading, setLoading] = useState(false);
     const [overview, setOverview] = useState(null);
-
-    // Swipe navigation for mobile
-    const instructorAnalyticsPath = getDashboardPath('instructor', 'analytics');
-    const adminAnalyticsPath = getDashboardPath('admin', 'analytics');
-    const studentProgressPath = getDashboardPath('student', 'progress');
-    const analyticsPages = [instructorAnalyticsPath, adminAnalyticsPath, studentProgressPath];
-    const currentPageIndex = analyticsPages.indexOf(instructorAnalyticsPath);
-
-    const swipeRef = useSwipeNavigation({
-        goBack: () => navigate(adminAnalyticsPath),
-        goForward: () => navigate(studentProgressPath),
-        pages: analyticsPages,
-        currentIndex: currentPageIndex,
-    });
 
     const requestFilters = useMemo(
         () => ({
@@ -87,9 +69,50 @@ const InstructorAnalyticsPage = ({ embedded = false }) => {
         [overview]
     );
 
+    const teachingInsights = useMemo(() => {
+        const insights = [];
+
+        if (kpis.averageCompletionRate < 60) {
+            insights.push({
+                title: 'Аяктоо деңгээлин көтөрүү керек',
+                message: 'Аяктоо көрсөткүчү 60%дан төмөн. Узун сабактарды кыска бөлүктөргө бөлүп, ар бир бөлүктөн кийин текшерүү суроосун кошуңуз.',
+                toneClass: 'border-sky-200 bg-sky-50 text-sky-900 dark:border-sky-500/30 dark:bg-sky-500/10 dark:text-sky-100',
+                icon: FiTrendingUp,
+            });
+        }
+
+        if (kpis.atRiskStudents > 5) {
+            insights.push({
+                title: 'Эрте кийлигишүү керек',
+                message: `${kpis.atRiskStudents} окуучу тобокелдикте. Акыркы активдүүлүгү жок же прогресси төмөн окуучуларга жеке тапшырма же билдирүү жөнөтүңүз.`,
+                toneClass: 'border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100',
+                icon: FiAlertCircle,
+            });
+        }
+
+        if (kpis.totalStudents < 10) {
+            insights.push({
+                title: 'Аудиторияны кеңейтүү мүмкүнчүлүгү бар',
+                message: 'Окуучулар аз болгон курстарда кириш сабакты, курс сүрөттөмөсүн жана биринчи тапшырманы тактап чыгыңыз.',
+                toneClass: 'border-emerald-200 bg-emerald-50 text-emerald-900 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-100',
+                icon: FiUsers,
+            });
+        }
+
+        if (insights.length === 0) {
+            insights.push({
+                title: 'Курстар туруктуу темпте жүрүп жатат',
+                message: 'Аяктоо деңгээли жана тобокелдик көрсөткүчү нормалдуу. Эми эң начар сабактарды карап, мазмунду майда жакшыртуулар менен жаңыртыңыз.',
+                toneClass: 'border-emerald-200 bg-emerald-50 text-emerald-900 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-100',
+                icon: FiCheckCircle,
+            });
+        }
+
+        return insights;
+    }, [kpis]);
+
     return (
         <div
-            ref={swipeRef}
             className={
                 embedded
                     ? 'space-y-6'
@@ -210,8 +233,8 @@ const InstructorAnalyticsPage = ({ embedded = false }) => {
                 {/* Отуу Жетишкендиги */}
                 <div className="grid lg:grid-cols-2 gap-6">
                     <AnalyticsLineChart
-                        title="Отуу Жетишкендиги Тренддери"
-                        subtitle="Убакыттын ичиндеги негизги отуу метрикалары"
+                        title="Окуу натыйжаларынын тренди"
+                        subtitle="Тандалган мезгилдеги жалпы аткаруу баллы"
                         data={overview?.charts?.performanceTrend || []}
                         labelKey="period"
                         dataKey="score"
@@ -223,8 +246,8 @@ const InstructorAnalyticsPage = ({ embedded = false }) => {
                     />
 
                     <AnalyticsDoughnutChart
-                        title="Курстардын Жетишкендик Бөлүштөрү"
-                        subtitle="Сиздин курстардын кантип жетишкендиги"
+                        title="Курстар боюнча аяктоо үлүшү"
+                        subtitle="Ар бир курстун аяктоо деңгээлин салыштыруу"
                         data={overview?.charts?.coursePerformance?.map((item) => ({
                             label: item.title || `Курс #${item.courseId}`,
                             value: metricNumber(item.completionRate),
@@ -238,71 +261,23 @@ const InstructorAnalyticsPage = ({ embedded = false }) => {
 
                 {/* Teaching Insights */}
                 <div className="grid lg:grid-cols-2 gap-6">
-                    <AnalyticsSection title="Отуу Корутулары" subtitle="Жакшыртуу үчүн жеке сунуштар">
+                    <AnalyticsSection title="Окутуу боюнча сунуштар" subtitle="Метрикаларга негизделген кийинки аракеттер">
                         <div className="space-y-3">
-                            {kpis.averageCompletionRate < 60 && (
-                                <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-                                    <div className="flex items-start gap-3">
-                                        <svg className="w-5 h-5 text-blue-500 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                        </svg>
-                                        <div>
-                                            <h4 className="font-medium text-blue-900 dark:text-blue-100">Аяктоо Деңгэлин Жакшыртыңыз</h4>
-                                            <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
-                                                Татаал темаларды бөлүп, интерактивдүү элементтерди кошуңуз.
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
+                            {teachingInsights.map((insight) => {
+                                const InsightIcon = insight.icon;
 
-                            {kpis.atRiskStudents > 5 && (
-                                <div className="p-3 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg">
-                                    <div className="flex items-start gap-3">
-                                        <svg className="w-5 h-5 text-orange-500 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                                        </svg>
-                                        <div>
-                                            <h4 className="font-medium text-orange-900 dark:text-orange-100">Коркунучтуу Окуучуларга Жардам Берңиз</h4>
-                                            <p className="text-sm text-orange-700 dark:text-orange-300 mt-1">
-                                                Кыйынчылыга учураган окуучуларга эрте жардам бериңиз.
-                                            </p>
+                                return (
+                                    <div key={insight.title} className={`rounded-xl border p-3 ${insight.toneClass}`}>
+                                        <div className="flex items-start gap-3">
+                                            <InsightIcon className="mt-0.5 h-5 w-5 shrink-0" />
+                                            <div>
+                                                <h4 className="font-medium">{insight.title}</h4>
+                                                <p className="mt-1 text-sm opacity-85">{insight.message}</p>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                            )}
-
-                            {kpis.totalStudents < 10 && (
-                                <div className="p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
-                                    <div className="flex items-start gap-3">
-                                        <svg className="w-5 h-5 text-green-500 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                        </svg>
-                                        <div>
-                                            <h4 className="font-medium text-green-900 dark:text-green-100">Аудиторияны Кеңитңиз</h4>
-                                            <p className="text-sm text-green-700 dark:text-green-300 mt-1">
-                                                Курстарды жайылтып, катышууну көбөйтүңуз.
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-
-                            {kpis.averageCompletionRate >= 60 && kpis.atRiskStudents <= 5 && (
-                                <div className="p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
-                                    <div className="flex items-start gap-3">
-                                        <svg className="w-5 h-5 text-green-500 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                        </svg>
-                                        <div>
-                                            <h4 className="font-medium text-green-900 dark:text-green-100">Отуу Мыкты!</h4>
-                                            <p className="text-sm text-green-700 dark:text-green-300 mt-1">
-                                                Сиздин курстар жакшы натыйжаларды көрсөтүүдө. Улу иште!
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
+                                );
+                            })}
                         </div>
                     </AnalyticsSection>
                 </div>

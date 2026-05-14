@@ -1,42 +1,15 @@
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import PropTypes from 'prop-types';
 import { toast } from 'react-hot-toast';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import {
     COURSE_SESSION_STATUS,
     COURSE_TYPE,
-    MEETING_PROVIDER,
-    SESSION_ATTENDANCE_STATUS,
 } from '@shared/contracts';
 import {
-    createCourseSession,
-    createSessionActivity,
-    createSessionHomework,
-    createSessionMeeting,
-    deleteSessionActivity,
-    deleteSessionHomework,
-    deleteSessionMeeting,
-    fetchSessionActivityResponses,
-    fetchCourseAttendance,
-    fetchCourseGroups,
     fetchSessionInsights,
-    fetchSessionHomework,
-    fetchSessionHomeworkReviewRoster,
-    fetchSessionMeeting,
     fetchCourseSessions,
-    fetchInstructorCourses,
-    fetchSessionAttendance,
-    fetchSections,
-    importSessionAttendance,
-    markSessionAttendanceBulk,
-    syncSessionRecordings,
-    uploadSessionMaterial,
-    updateSessionActivity,
-    updateSessionHomework,
-    updateSessionMeeting,
     updateCourseSession,
-    reviewSessionActivitySubmission,
-    reviewSessionHomeworkSubmission,
 } from '@services/api';
 import {
     FiAlertCircle,
@@ -50,7 +23,6 @@ import {
     FiRadio,
     FiUsers,
 } from 'react-icons/fi';
-import { fetchGroupRoster } from '@features/courseGroups/roster';
 import SessionAttendanceTab from '@features/groupSessions/components/SessionAttendanceTab.jsx';
 import SessionActivitiesTab from '@features/groupSessions/components/SessionActivitiesTab.jsx';
 import SessionEngagementTab from '@features/groupSessions/components/SessionEngagementTab.jsx';
@@ -58,8 +30,15 @@ import SessionHomeworkTab from '@features/groupSessions/components/SessionHomewo
 import SessionNotesTab from '@features/groupSessions/components/SessionNotesTab.jsx';
 import SessionResourcesTab from '@features/groupSessions/components/SessionResourcesTab.jsx';
 import SessionSetupModal from '@features/groupSessions/components/SessionSetupModal.jsx';
+import { useSessionSetupModalState } from '@features/groupSessions/hooks/useSessionSetupModalState';
+import { useSessionWorkspaceActivities } from '@features/groupSessions/hooks/useSessionWorkspaceActivities';
+import { useSessionWorkspaceAttendance } from '@features/groupSessions/hooks/useSessionWorkspaceAttendance';
+import { useSessionWorkspaceEditor } from '@features/groupSessions/hooks/useSessionWorkspaceEditor';
+import { useSessionWorkspaceHomework } from '@features/groupSessions/hooks/useSessionWorkspaceHomework';
+import { useSessionWorkspaceResources } from '@features/groupSessions/hooks/useSessionWorkspaceResources';
+import { useSessionWorkspaceRouteState } from '@features/groupSessions/hooks/useSessionWorkspaceRouteState';
+import { useSessionWorkspaceSelections } from '@features/groupSessions/hooks/useSessionWorkspaceSelections';
 import {
-    EDIT_SESSION_DEFAULT,
     QUICK_SESSION_DEFAULT,
     SESSION_WORKSPACE_TABS,
     formatCountdown,
@@ -67,7 +46,6 @@ import {
     getAttachmentName,
     getCourseTypeLabel,
     getNextSessionDateTime,
-    getNextSessionIndex,
     getSubmissionAttachmentUrl,
     getSubmissionPreview,
     getWorkspaceErrorMessage,
@@ -76,7 +54,6 @@ import {
     resolveHomeworkDeadline,
     resolveSessionJoinUrl,
     toArray,
-    toInputDateTime,
     toLocalDateKey,
     toSessionTime,
 } from '@features/groupSessions/utils/sessionWorkspace.helpers';
@@ -141,7 +118,44 @@ const SESSION_STATUS_META = {
 const getCourseSessionStatusMeta = (status) =>
     SESSION_STATUS_META[status] || SESSION_STATUS_META[COURSE_SESSION_STATUS.SCHEDULED];
 
-const UNMARKED_ATTENDANCE_STATUS = '__unmarked__';
+const PRIMARY_WORKSPACE_TAB_IDS = new Set(['attendance', 'materials', 'homework']);
+const WORKSPACE_TAB_GROUPS = [
+    {
+        label: 'Негизги workflow',
+        description: 'Сессия учурунда эң көп колдонулган аракеттер.',
+        tabs: SESSION_WORKSPACE_TABS.filter((tab) => PRIMARY_WORKSPACE_TAB_IDS.has(tab.id)),
+    },
+    {
+        label: 'Кошумча workspace',
+        description: 'Рефлексия, activity жана engagement анализи.',
+        tabs: SESSION_WORKSPACE_TABS.filter((tab) => !PRIMARY_WORKSPACE_TAB_IDS.has(tab.id)),
+    },
+];
+const workspaceNoticeClassNames = {
+    info: 'border-sky-200 bg-sky-50 text-sky-800 dark:border-sky-500/30 dark:bg-sky-500/10 dark:text-sky-200',
+    success: 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-200',
+    warning: 'border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200',
+    error: 'border-red-200 bg-red-50 text-red-800 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200',
+};
+
+const WorkspaceNotice = ({ tone = 'info', title, message, action }) => (
+    <div className={`rounded-[1.25rem] border px-4 py-3 text-sm ${workspaceNoticeClassNames[tone] || workspaceNoticeClassNames.info}`}>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+                <div className="font-semibold">{title}</div>
+                {message ? <p className="mt-1 opacity-90">{message}</p> : null}
+            </div>
+            {action}
+        </div>
+    </div>
+);
+
+WorkspaceNotice.propTypes = {
+    tone: PropTypes.oneOf(['info', 'success', 'warning', 'error']),
+    title: PropTypes.string.isRequired,
+    message: PropTypes.string,
+    action: PropTypes.node,
+};
 
 const getSessionMode = (session, nowMs) => {
     const start = session?.startsAt ? new Date(session.startsAt).getTime() : null;
@@ -150,59 +164,6 @@ const getSessionMode = (session, nowMs) => {
     if (nowMs < start) return 'upcoming';
     if (nowMs >= start && nowMs <= end) return 'live';
     return 'completed';
-};
-
-const getHomeworkDeadlineMeta = (item, nowMs) => {
-    const raw = resolveHomeworkDeadline(item);
-    if (!raw) {
-        return {
-            label: 'Мөөнөт жок',
-            badgeClass:
-                'border-edubot-line bg-white text-edubot-muted dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300',
-            sortValue: Number.MAX_SAFE_INTEGER,
-            key: 'noDeadline',
-        };
-    }
-
-    const normalized = typeof raw === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(raw) ? `${raw}T23:59:59` : raw;
-    const deadlineMs = new Date(normalized).getTime();
-    if (Number.isNaN(deadlineMs)) {
-        return {
-            label: 'Мөөнөт белгисиз',
-            badgeClass:
-                'border-edubot-line bg-white text-edubot-muted dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300',
-            sortValue: Number.MAX_SAFE_INTEGER - 1,
-            key: 'unknown',
-        };
-    }
-
-    const daysLeft = Math.ceil((deadlineMs - nowMs) / (1000 * 60 * 60 * 24));
-    if (deadlineMs < nowMs) {
-        return {
-            label: 'Өтүп кеткен',
-            badgeClass:
-                'border-red-200 bg-red-50 text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300',
-            sortValue: deadlineMs,
-            key: 'overdue',
-        };
-    }
-    if (daysLeft <= 3) {
-        return {
-            label: 'Жакында бүтөт',
-            badgeClass:
-                'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300',
-            sortValue: deadlineMs,
-            key: 'dueSoon',
-        };
-    }
-
-    return {
-        label: 'Активдүү',
-        badgeClass:
-            'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300',
-        sortValue: deadlineMs,
-        key: 'active',
-    };
 };
 
 const getSubmissionStatusMeta = (status) => {
@@ -238,685 +199,57 @@ const getSubmissionStatusMeta = (status) => {
 const SessionWorkspace = () => {
     const navigate = useNavigate();
     const { user } = useContext(AuthContext);
-    const [searchParams, setSearchParams] = useSearchParams();
-    const initialWorkspaceTab = searchParams.get('workspaceTab') || 'attendance';
-    const initialHomeworkReviewFilter = searchParams.get('homeworkReviewFilter') || 'all';
-    const initialActivityResponseFilter = searchParams.get('activityResponseFilter') || 'all';
-    const pendingRouteSelectionRef = useRef({
-        courseId: searchParams.get('courseId') || '',
-        groupId: searchParams.get('groupId') || '',
-        sessionId: searchParams.get('sessionId') || '',
-        homeworkId: searchParams.get('homeworkId') || '',
+    const {
+        activeTab,
+        activityResponseFilter,
+        homeworkReviewFilter,
+        openWorkspaceTab,
+        pendingRouteSelectionRef,
+        setHomeworkReviewFilter,
+    } = useSessionWorkspaceRouteState();
+    const {
+        isSessionSetupOpen,
+        sessionSetupModalRef,
+        setIsSessionSetupOpen,
+        setWorkspaceMode,
+        workspaceMode,
+    } = useSessionSetupModalState();
+    const [workspaceNotice, setWorkspaceNotice] = useState(null);
+    const setWorkspaceFeedback = useCallback((notice) => {
+        setWorkspaceNotice(notice);
+    }, []);
+    const {
+        courses,
+        groups,
+        handleCourseChange: setWorkspaceCourse,
+        handleGroupChange: setWorkspaceGroup,
+        loadingCourses,
+        loadingGroups,
+        loadingSessions,
+        selectedCourseId,
+        selectedGroupId,
+        selectedSessionId,
+        sessions,
+        setSessions,
+        setSelectedSessionId,
+        sourceVideoCourses,
+    } = useSessionWorkspaceSelections({
+        user,
+        pendingRouteSelectionRef,
+        onNotice: setWorkspaceFeedback,
     });
-    const [activeTab, setActiveTab] = useState(
-        SESSION_WORKSPACE_TABS.some((tab) => tab.id === initialWorkspaceTab) ? initialWorkspaceTab : 'attendance'
-    );
-    const [workspaceMode, setWorkspaceMode] = useState('create');
-    const [isSessionSetupOpen, setIsSessionSetupOpen] = useState(false);
 
-    const [courses, setCourses] = useState([]);
-    const [sourceVideoCourses, setSourceVideoCourses] = useState([]);
-    const [groups, setGroups] = useState([]);
-    const [sessions, setSessions] = useState([]);
-
-    const [selectedCourseId, setSelectedCourseId] = useState('');
-    const [selectedGroupId, setSelectedGroupId] = useState('');
-    const [selectedSessionId, setSelectedSessionId] = useState('');
-
-    const [students, setStudents] = useState([]);
-    const [attendanceRows, setAttendanceRows] = useState({});
-    const [initialAttendanceRows, setInitialAttendanceRows] = useState({});
-    const [, setAttendanceHistory] = useState([]);
-    const [attendanceQuery, setAttendanceQuery] = useState('');
-    const [attendanceFilter, setAttendanceFilter] = useState('all');
-
-    const [loadingCourses, setLoadingCourses] = useState(false);
-    const [loadingGroups, setLoadingGroups] = useState(false);
-    const [loadingSessions, setLoadingSessions] = useState(false);
-    const [loadingStudents, setLoadingStudents] = useState(false);
-    const [savingAttendance, setSavingAttendance] = useState(false);
-
-    const [meetingProvider, setMeetingProvider] = useState(MEETING_PROVIDER.CUSTOM);
-    const [meetingJoinUrl, setMeetingJoinUrl] = useState('');
-    const [meetingId, setMeetingId] = useState('');
-    const [savingMeeting, setSavingMeeting] = useState(false);
-    const [loadingMeetingState, setLoadingMeetingState] = useState(false);
-    const [deletingMeeting, setDeletingMeeting] = useState(false);
-    const [importingAttendance, setImportingAttendance] = useState(false);
-    const [syncingRecordings, setSyncingRecordings] = useState(false);
-    const [savingMaterials, setSavingMaterials] = useState(false);
-    const [uploadingMaterialFile, setUploadingMaterialFile] = useState(false);
     const [sessionNotes, setSessionNotes] = useState('');
     const [savingSessionNotes, setSavingSessionNotes] = useState(false);
-    const [creatingSessionActivity, setCreatingSessionActivity] = useState(false);
-    const [savingSessionActivityId, setSavingSessionActivityId] = useState(null);
-    const [deletingSessionActivityId, setDeletingSessionActivityId] = useState(null);
-    const [loadingActivityResponsesId, setLoadingActivityResponsesId] = useState(null);
-    const [reviewingActivitySubmissionId, setReviewingActivitySubmissionId] = useState(null);
-    const [activityResponses, setActivityResponses] = useState({});
     const [sessionInsights, setSessionInsights] = useState(null);
     const [loadingSessionInsights, setLoadingSessionInsights] = useState(false);
-
-    const [quickSession, setQuickSession] = useState(QUICK_SESSION_DEFAULT);
-    const [editSession, setEditSession] = useState(EDIT_SESSION_DEFAULT);
-    const [savingSession, setSavingSession] = useState(false);
-    const [savingSessionUpdate, setSavingSessionUpdate] = useState(false);
-    const [savingSessionStatus, setSavingSessionStatus] = useState(false);
-
-    const [courseResourceAssets, setCourseResourceAssets] = useState([]);
-    const [loadingCourseResourceAssets, setLoadingCourseResourceAssets] = useState(false);
-    const [selectedSourceVideoCourseId, setSelectedSourceVideoCourseId] = useState('');
-
-    const [homeworkTitle, setHomeworkTitle] = useState('');
-    const [homeworkDescription, setHomeworkDescription] = useState('');
-    const [homeworkDeadline, setHomeworkDeadline] = useState('');
-    const [publishedHomework, setPublishedHomework] = useState([]);
-    const [homeworkLoadedSessionId, setHomeworkLoadedSessionId] = useState('');
-    const [loadingHomework, setLoadingHomework] = useState(false);
-    const [savingHomework, setSavingHomework] = useState(false);
-    const [selectedHomeworkId, setSelectedHomeworkId] = useState('');
-    const [homeworkSubmissions, setHomeworkSubmissions] = useState([]);
-    const [loadingHomeworkSubmissions, setLoadingHomeworkSubmissions] = useState(false);
-    const [reviewingSubmissionId, setReviewingSubmissionId] = useState('');
-    const [updatingHomework, setUpdatingHomework] = useState(false);
-    const [homeworkQuery, setHomeworkQuery] = useState('');
-    const [homeworkFilter, setHomeworkFilter] = useState('all');
-    const [homeworkReviewFilter, setHomeworkReviewFilterState] = useState(
-        ['all', 'needs_review', 'missing', 'needs_revision', 'late'].includes(
-            initialHomeworkReviewFilter
-        )
-            ? initialHomeworkReviewFilter
-            : 'all'
-    );
-    const [activityResponseFilter, setActivityResponseFilterState] = useState(
-        ['all', 'pending', 'reviewed', 'revision', 'passed', 'failed', 'not_started', 'missing_response'].includes(
-            initialActivityResponseFilter
-        )
-            ? initialActivityResponseFilter
-            : 'all'
-    );
     const [nowMs, setNowMs] = useState(Date.now());
-    const sessionSetupModalRef = useRef(null);
-    const previousModalFocusRef = useRef(null);
     const latestInsightsRequestRef = useRef(0);
     const selectedSessionIdRef = useRef('');
 
     useEffect(() => {
         selectedSessionIdRef.current = selectedSessionId;
     }, [selectedSessionId]);
-
-    useEffect(() => {
-        pendingRouteSelectionRef.current = {
-            courseId: searchParams.get('courseId') || '',
-            groupId: searchParams.get('groupId') || '',
-            sessionId: searchParams.get('sessionId') || '',
-            homeworkId: searchParams.get('homeworkId') || '',
-        };
-        const nextWorkspaceTab = searchParams.get('workspaceTab') || 'attendance';
-        if (SESSION_WORKSPACE_TABS.some((tab) => tab.id === nextWorkspaceTab)) {
-            setActiveTab(nextWorkspaceTab);
-        }
-        const nextHomeworkReviewFilter = searchParams.get('homeworkReviewFilter') || 'all';
-        setHomeworkReviewFilterState(
-            ['all', 'needs_review', 'missing', 'needs_revision', 'late'].includes(
-                nextHomeworkReviewFilter
-            )
-                ? nextHomeworkReviewFilter
-                : 'all'
-        );
-        const nextActivityResponseFilter = searchParams.get('activityResponseFilter') || 'all';
-        setActivityResponseFilterState(
-            ['all', 'pending', 'reviewed', 'revision', 'passed', 'failed', 'not_started', 'missing_response'].includes(
-                nextActivityResponseFilter
-            )
-                ? nextActivityResponseFilter
-                : 'all'
-        );
-    }, [searchParams]);
-
-    const setHomeworkReviewFilter = useCallback(
-        (nextFilter) => {
-            const normalized = ['all', 'needs_review', 'missing', 'needs_revision', 'late'].includes(
-                nextFilter
-            )
-                ? nextFilter
-                : 'all';
-            setHomeworkReviewFilterState(normalized);
-            setSearchParams(
-                (prev) => {
-                    const next = new URLSearchParams(prev);
-                    if (normalized === 'all') next.delete('homeworkReviewFilter');
-                    else next.set('homeworkReviewFilter', normalized);
-                    return next;
-                },
-                { replace: true }
-            );
-        },
-        [setSearchParams]
-    );
-
-    useEffect(() => {
-        const timer = setInterval(() => setNowMs(Date.now()), 1000);
-        return () => clearInterval(timer);
-    }, []);
-
-    useEffect(() => {
-        if (!isSessionSetupOpen || typeof document === 'undefined') return undefined;
-
-        const originalOverflow = document.body.style.overflow;
-        const originalPaddingRight = document.body.style.paddingRight;
-        const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
-
-        document.body.style.overflow = 'hidden';
-        document.body.style.paddingRight = `${scrollbarWidth}px`;
-
-        return () => {
-            document.body.style.overflow = originalOverflow;
-            document.body.style.paddingRight = originalPaddingRight;
-        };
-    }, [isSessionSetupOpen]);
-
-    useEffect(() => {
-        if (!isSessionSetupOpen || typeof document === 'undefined') return undefined;
-
-        previousModalFocusRef.current = document.activeElement;
-
-        const handleKeyDown = (event) => {
-            if (event.key === 'Escape') {
-                event.preventDefault();
-                setIsSessionSetupOpen(false);
-                return;
-            }
-
-            if (event.key !== 'Tab' || !sessionSetupModalRef.current) return;
-
-            const focusableElements = sessionSetupModalRef.current.querySelectorAll(
-                'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-            );
-
-            if (!focusableElements.length) return;
-
-            const firstElement = focusableElements[0];
-            const lastElement = focusableElements[focusableElements.length - 1];
-
-            if (event.shiftKey && document.activeElement === firstElement) {
-                event.preventDefault();
-                lastElement.focus();
-            } else if (!event.shiftKey && document.activeElement === lastElement) {
-                event.preventDefault();
-                firstElement.focus();
-            }
-        };
-
-        document.addEventListener('keydown', handleKeyDown);
-
-        const focusTimer = window.setTimeout(() => {
-            const firstFocusable = sessionSetupModalRef.current?.querySelector(
-                'input, select, textarea, button:not([disabled]), [tabindex]:not([tabindex="-1"])'
-            );
-            firstFocusable?.focus();
-        }, 0);
-
-        return () => {
-            window.clearTimeout(focusTimer);
-            document.removeEventListener('keydown', handleKeyDown);
-            previousModalFocusRef.current?.focus?.();
-        };
-    }, [isSessionSetupOpen]);
-
-    useEffect(() => {
-        if (!user?.id || user.role !== 'instructor') return;
-        let cancelled = false;
-        const loadCourses = async () => {
-            setLoadingCourses(true);
-            try {
-                const [deliveryData, sourceVideoData] = await Promise.all([
-                    fetchInstructorCourses({ status: 'approved', limit: 100 }),
-                    fetchInstructorCourses({
-                        status: 'all',
-                        courseType: COURSE_TYPE.VIDEO,
-                        limit: 100,
-                    }),
-                ]);
-                if (cancelled) return;
-
-                const allInstructorCourses = Array.isArray(deliveryData?.courses)
-                    ? deliveryData.courses
-                    : [];
-                const allSourceVideoCourses = Array.isArray(sourceVideoData?.courses)
-                    ? sourceVideoData.courses
-                    : [];
-                const teachingCourses = allInstructorCourses.filter(
-                    (course) => {
-                        const type = course?.courseType || course?.type;
-                        return type === COURSE_TYPE.OFFLINE || type === COURSE_TYPE.ONLINE_LIVE;
-                    }
-                );
-                const publishedVideos = allSourceVideoCourses.filter((course) => {
-                    const type = String(course?.courseType || course?.type || '').trim().toLowerCase();
-                    return type === COURSE_TYPE.VIDEO && Boolean(course?.isPublished);
-                });
-
-                setCourses(teachingCourses);
-                setSourceVideoCourses(publishedVideos);
-                setSelectedCourseId((prev) => {
-                    const pendingCourseId = pendingRouteSelectionRef.current.courseId;
-                    if (
-                        pendingCourseId &&
-                        teachingCourses.some((course) => String(course.id) === String(pendingCourseId))
-                    ) {
-                        pendingRouteSelectionRef.current.courseId = '';
-                        return String(pendingCourseId);
-                    }
-                    if (prev && teachingCourses.some((course) => String(course.id) === String(prev))) {
-                        return prev;
-                    }
-                    return teachingCourses.length > 0 ? String(teachingCourses[0].id) : '';
-                });
-            } catch (error) {
-                console.error(error);
-                toast.error(getWorkspaceErrorMessage(error, 'Курстар жүктөлгөн жок.'));
-                setSourceVideoCourses([]);
-            } finally {
-                if (!cancelled) setLoadingCourses(false);
-            }
-        };
-        loadCourses();
-        return () => {
-            cancelled = true;
-        };
-    }, [user]);
-
-    useEffect(() => {
-        if (!selectedCourseId) {
-            setGroups([]);
-            setSelectedGroupId('');
-            setSessions([]);
-            setSelectedSessionId('');
-            return;
-        }
-
-        let cancelled = false;
-        const loadGroups = async () => {
-            setLoadingGroups(true);
-            setGroups([]);
-            setSelectedGroupId('');
-            setSessions([]);
-            setSelectedSessionId('');
-            try {
-                const res = await fetchCourseGroups({ courseId: Number(selectedCourseId) });
-                if (cancelled) return;
-                const list = toArray(res);
-                setGroups(list);
-                setSelectedGroupId((prev) => {
-                    const pendingGroupId = pendingRouteSelectionRef.current.groupId;
-                    if (
-                        pendingGroupId &&
-                        list.some((group) => String(group.id) === String(pendingGroupId))
-                    ) {
-                        pendingRouteSelectionRef.current.groupId = '';
-                        return String(pendingGroupId);
-                    }
-                    if (prev && list.some((group) => String(group.id) === String(prev))) {
-                        return prev;
-                    }
-                    return list.length ? String(list[0].id) : '';
-                });
-            } catch (error) {
-                console.error(error);
-                toast.error(getWorkspaceErrorMessage(error, 'Группаларды жүктөө мүмкүн болгон жок.'));
-                setGroups([]);
-                setSelectedGroupId('');
-            } finally {
-                if (!cancelled) setLoadingGroups(false);
-            }
-        };
-        loadGroups();
-        return () => {
-            cancelled = true;
-        };
-    }, [selectedCourseId]);
-
-    useEffect(() => {
-        if (!selectedGroupId) {
-            setSessions([]);
-            setSelectedSessionId('');
-            return;
-        }
-
-        let cancelled = false;
-        const loadSessions = async () => {
-            setLoadingSessions(true);
-            setSessions([]);
-            setSelectedSessionId('');
-            try {
-                const res = await fetchCourseSessions({ groupId: Number(selectedGroupId) });
-                if (cancelled) return;
-                const list = toArray(res);
-                setSessions(list);
-                setSelectedSessionId((prev) => {
-                    const pendingSessionId = pendingRouteSelectionRef.current.sessionId;
-                    if (
-                        pendingSessionId &&
-                        list.some((session) => String(session.id) === String(pendingSessionId))
-                    ) {
-                        pendingRouteSelectionRef.current.sessionId = '';
-                        return String(pendingSessionId);
-                    }
-                    if (prev && list.some((session) => String(session.id) === String(prev))) {
-                        return prev;
-                    }
-                    return list[0]?.id ? String(list[0].id) : '';
-                });
-            } catch (error) {
-                console.error(error);
-                toast.error(getWorkspaceErrorMessage(error, 'Сессияларды жүктөө мүмкүн болгон жок.'));
-                setSessions([]);
-                setSelectedSessionId('');
-            } finally {
-                if (!cancelled) setLoadingSessions(false);
-            }
-        };
-
-        loadSessions();
-        return () => {
-            cancelled = true;
-        };
-    }, [selectedGroupId]);
-
-    useEffect(() => {
-        setQuickSession((prev) => ({
-            ...prev,
-            sessionIndex: prev.sessionIndex || getNextSessionIndex(sessions),
-        }));
-    }, [sessions]);
-
-    const buildBlankAttendanceRows = useCallback((roster) => {
-        const next = {};
-        roster.forEach((student) => {
-            next[student.id] = {
-                studentId: student.id,
-                status: UNMARKED_ATTENDANCE_STATUS,
-                notes: '',
-                joinedAt: undefined,
-                leftAt: undefined,
-            };
-        });
-        return next;
-    }, []);
-
-    useEffect(() => {
-        if (!selectedCourseId || !selectedGroupId) {
-            setStudents([]);
-            setAttendanceRows({});
-            setInitialAttendanceRows({});
-            return;
-        }
-
-        let cancelled = false;
-        const loadStudentsAndHistory = async () => {
-            setLoadingStudents(true);
-            try {
-                const [studentsRes, attendanceRes] = await Promise.all([
-                    fetchGroupRoster({
-                        groupId: Number(selectedGroupId),
-                        page: 1,
-                        limit: 200,
-                    }),
-                    fetchCourseAttendance({
-                        courseId: Number(selectedCourseId),
-                        groupId: Number(selectedGroupId),
-                    }),
-                ]);
-                if (cancelled) return;
-
-                const normalized = studentsRes.map((item) => ({
-                    id: Number(item.userId || item.id),
-                    fullName: item.fullName || item.user?.fullName || `#${item.userId || item.id}`,
-                }));
-                setStudents(normalized);
-
-                const rowState = buildBlankAttendanceRows(normalized);
-                setAttendanceRows(rowState);
-                setInitialAttendanceRows(rowState);
-                setAttendanceHistory(attendanceRes?.items || []);
-            } catch (error) {
-                console.error(error);
-                toast.error(getWorkspaceErrorMessage(error, 'Сессия маалыматтарын жүктөө катасы.'));
-                setStudents([]);
-                setAttendanceRows({});
-                setInitialAttendanceRows({});
-                setAttendanceHistory([]);
-            } finally {
-                if (!cancelled) setLoadingStudents(false);
-            }
-        };
-
-        loadStudentsAndHistory();
-        return () => {
-            cancelled = true;
-        };
-    }, [buildBlankAttendanceRows, selectedCourseId, selectedGroupId]);
-
-    useEffect(() => {
-        const blankRows = buildBlankAttendanceRows(students);
-        setAttendanceRows(blankRows);
-        setInitialAttendanceRows(blankRows);
-
-        if (!selectedSessionId) return;
-
-        let cancelled = false;
-        const hydrateSessionAttendance = async () => {
-            try {
-                const res = await fetchSessionAttendance(Number(selectedSessionId));
-                if (cancelled) return;
-                const items = toArray(res);
-                if (!items.length) return;
-
-                let hydratedRows = null;
-                setAttendanceRows((prev) => {
-                    const next = { ...prev };
-                    items.forEach((item) => {
-                        const studentId = Number(item.studentId || item.userId);
-                        if (!next[studentId]) return;
-                        next[studentId] = {
-                            ...next[studentId],
-                            status: item.status,
-                            notes: item.notes || '',
-                            joinedAt: item.joinedAt || undefined,
-                            leftAt: item.leftAt || undefined,
-                        };
-                    });
-                    hydratedRows = next;
-                    return next;
-                });
-                if (hydratedRows) setInitialAttendanceRows(hydratedRows);
-            } catch (error) {
-                console.error(error);
-            }
-        };
-
-        hydrateSessionAttendance();
-        return () => {
-            cancelled = true;
-        };
-    }, [buildBlankAttendanceRows, selectedSessionId, students]);
-
-    useEffect(() => {
-        setSelectedHomeworkId('');
-        setHomeworkSubmissions([]);
-        setPublishedHomework([]);
-        setHomeworkLoadedSessionId('');
-
-        if (!selectedSessionId) {
-            return;
-        }
-
-        let cancelled = false;
-        const loadSessionHomework = async () => {
-            setLoadingHomework(true);
-            try {
-                const response = await fetchSessionHomework(Number(selectedSessionId), { includeUnpublished: true });
-                if (cancelled) return;
-                const items = toArray(response);
-                setPublishedHomework(items);
-                setHomeworkLoadedSessionId(String(selectedSessionId));
-                setSelectedHomeworkId((prev) => {
-                    const pendingHomeworkId = pendingRouteSelectionRef.current.homeworkId;
-                    if (
-                        pendingHomeworkId &&
-                        items.some((item) => String(item.id) === String(pendingHomeworkId))
-                    ) {
-                        pendingRouteSelectionRef.current.homeworkId = '';
-                        return String(pendingHomeworkId);
-                    }
-                    if (prev && items.some((item) => String(item.id) === String(prev))) return prev;
-                    return items[0]?.id ? String(items[0].id) : '';
-                });
-            } catch (error) {
-                if (cancelled) return;
-                console.error(error);
-                toast.error(getWorkspaceErrorMessage(error, 'Үй тапшырмалар жүктөлгөн жок.'));
-                setPublishedHomework([]);
-                setHomeworkLoadedSessionId('');
-                setSelectedHomeworkId('');
-            } finally {
-                if (!cancelled) setLoadingHomework(false);
-            }
-        };
-
-        loadSessionHomework();
-        return () => {
-            cancelled = true;
-        };
-    }, [selectedSessionId]);
-
-    useEffect(() => {
-        const activeHomework = publishedHomework.find(
-            (item) => String(item.id) === String(selectedHomeworkId)
-        );
-
-        if (
-            !selectedSessionId ||
-            homeworkLoadedSessionId !== String(selectedSessionId) ||
-            !activeHomework
-        ) {
-            setHomeworkSubmissions([]);
-            return;
-        }
-
-        let cancelled = false;
-        const loadReviewRoster = async () => {
-            setLoadingHomeworkSubmissions(true);
-            try {
-                const response = await fetchSessionHomeworkReviewRoster(
-                    Number(selectedSessionId),
-                    Number(activeHomework.id)
-                );
-                if (cancelled) return;
-                setHomeworkSubmissions(toArray(response?.items));
-            } catch (error) {
-                if (cancelled) return;
-                console.error(error);
-                toast.error(getWorkspaceErrorMessage(error, 'Текшерүү тизмеси жүктөлгөн жок.'));
-                setHomeworkSubmissions([]);
-            } finally {
-                if (!cancelled) setLoadingHomeworkSubmissions(false);
-            }
-        };
-
-        loadReviewRoster();
-        return () => {
-            cancelled = true;
-        };
-    }, [homeworkLoadedSessionId, publishedHomework, selectedHomeworkId, selectedSessionId]);
-
-    useEffect(() => {
-        if (!selectedSessionId) {
-            setMeetingProvider(MEETING_PROVIDER.CUSTOM);
-            setMeetingJoinUrl('');
-            setMeetingId('');
-            return;
-        }
-
-        let cancelled = false;
-        const loadMeetingState = async () => {
-            setLoadingMeetingState(true);
-            try {
-                const res = await fetchSessionMeeting(Number(selectedSessionId));
-                if (cancelled) return;
-                setMeetingJoinUrl(res?.joinUrl || '');
-                setMeetingId(String(res?.meetingId || ''));
-                if (res?.provider) setMeetingProvider(res.provider);
-            } catch {
-                if (cancelled) return;
-                setMeetingProvider(MEETING_PROVIDER.CUSTOM);
-                setMeetingJoinUrl('');
-                setMeetingId('');
-            } finally {
-                if (!cancelled) setLoadingMeetingState(false);
-            }
-        };
-
-        loadMeetingState();
-        return () => {
-            cancelled = true;
-        };
-    }, [selectedSessionId]);
-
-    useEffect(() => {
-        if (!selectedSourceVideoCourseId) {
-            setCourseResourceAssets([]);
-            setLoadingCourseResourceAssets(false);
-            return;
-        }
-
-        let cancelled = false;
-        const loadCourseAssets = async () => {
-            setLoadingCourseResourceAssets(true);
-            try {
-                const sections = await fetchSections(Number(selectedSourceVideoCourseId));
-                if (cancelled) return;
-
-                const assets = (Array.isArray(sections) ? sections : []).flatMap((section) =>
-                    (Array.isArray(section.lessons) ? section.lessons : []).flatMap((lesson) => {
-                        const items = [];
-                        if (
-                            lesson.kind === 'video' &&
-                            lesson.videoUrl &&
-                            lesson.videoKey
-                        ) {
-                            items.push({
-                                id: `video-${lesson.id}`,
-                                lessonId: lesson.id,
-                                lessonTitle: lesson.title,
-                                sectionTitle: section.title,
-                                assetType: 'video',
-                                title: lesson.title || 'Сабак видеосу',
-                                url: lesson.videoUrl,
-                                storageKey: lesson.videoKey,
-                            });
-                        }
-                        return items;
-                    })
-                );
-
-                setCourseResourceAssets(assets);
-            } catch (error) {
-                if (!cancelled) {
-                    setCourseResourceAssets([]);
-                    toast.error(getWorkspaceErrorMessage(error, 'Курстун материалдарын жүктөө катасы'));
-                }
-            } finally {
-                if (!cancelled) setLoadingCourseResourceAssets(false);
-            }
-        };
-
-        loadCourseAssets();
-        return () => {
-            cancelled = true;
-        };
-    }, [selectedSourceVideoCourseId]);
 
     const refreshSessionInsights = useCallback(async () => {
         if (!selectedSessionId) {
@@ -957,6 +290,114 @@ const SessionWorkspace = () => {
             }
         }
     }, [selectedSessionId]);
+
+    const {
+        applyAttendanceStatus,
+        attendanceFilter,
+        attendanceQuery,
+        attendanceRows,
+        attendanceStats,
+        filteredStudents,
+        hasAttendanceChanges,
+        hydrateAttendanceRows,
+        loadingStudents,
+        saveAttendance,
+        savingAttendance,
+        setAttendanceFilter,
+        setAttendanceHistory,
+        setAttendanceQuery,
+        students,
+        updateNotes,
+        updateStatus,
+    } = useSessionWorkspaceAttendance({
+        selectedCourseId,
+        selectedGroupId,
+        selectedSessionId,
+        onNotice: setWorkspaceFeedback,
+        onRefreshInsights: refreshSessionInsights,
+    });
+    const {
+        deleteSessionHomework,
+        filteredHomework,
+        homeworkFilter,
+        homeworkQuery,
+        homeworkStats,
+        homeworkSubmissions,
+        loadingHomework,
+        loadingHomeworkSubmissions,
+        publishHomework,
+        publishedHomework,
+        reviewHomeworkSubmission,
+        reviewingSubmissionId,
+        savingHomework,
+        selectedHomework,
+        selectedHomeworkId,
+        selectedHomeworkMeta,
+        setHomeworkFilter,
+        setHomeworkQuery,
+        setSelectedHomeworkId,
+        submissionStats,
+        toggleHomeworkPublish,
+        updatingHomework,
+        updateHomework,
+    } = useSessionWorkspaceHomework({
+        nowMs,
+        pendingRouteSelectionRef,
+        selectedSessionId,
+        students,
+        onRefreshInsights: refreshSessionInsights,
+    });
+    const {
+        editSession,
+        isCreateWorkspace,
+        nextSessionIndex,
+        quickSession,
+        refreshSelectedGroupSessions,
+        savingSessionStatus,
+        setEditSession,
+        setQuickSession,
+        updateSelectedSessionStatus,
+        workspaceAction,
+        workspaceActionLabel,
+        workspaceDescription,
+        workspaceDisabled,
+        workspaceDisabledReason,
+        workspaceSaving,
+        workspaceTitle,
+    } = useSessionWorkspaceEditor({
+        selectedGroupId,
+        selectedSession,
+        selectedSessionId,
+        sessions,
+        setIsSessionSetupOpen,
+        setSessionNotes,
+        setSelectedSessionId,
+        setSessions,
+        setWorkspaceFeedback,
+        workspaceMode,
+        onRefreshInsights: refreshSessionInsights,
+    });
+    const {
+        activityResponses,
+        createActivityItem,
+        creatingSessionActivity,
+        deleteActivityItem,
+        deletingSessionActivityId,
+        loadActivityResponses,
+        loadingActivityResponsesId,
+        reviewActivitySubmissionItem,
+        reviewingActivitySubmissionId,
+        savingSessionActivityId,
+        updateActivityItem,
+    } = useSessionWorkspaceActivities({
+        selectedSessionId,
+        onRefreshInsights: refreshSessionInsights,
+        onRefreshSessions: refreshSelectedGroupSessions,
+    });
+    useEffect(() => {
+        const timer = setInterval(() => setNowMs(Date.now()), 1000);
+        return () => clearInterval(timer);
+    }, []);
 
     useEffect(() => {
         if (!selectedSessionId) {
@@ -1026,75 +467,53 @@ const SessionWorkspace = () => {
         () => normalizeCourseType(selectedCourse, selectedSession, selectedGroup),
         [selectedCourse, selectedSession, selectedGroup]
     );
-    const canReusePublishedCourseAssets = useMemo(
-        () =>
-            (selectedDeliveryType === COURSE_TYPE.OFFLINE ||
-                selectedDeliveryType === COURSE_TYPE.ONLINE_LIVE) &&
-            sourceVideoCourses.length > 0,
-        [selectedDeliveryType, sourceVideoCourses.length]
-    );
-    const canImportZoomAttendance = useMemo(
-        () =>
-            selectedDeliveryType === COURSE_TYPE.ONLINE_LIVE &&
-            meetingProvider === MEETING_PROVIDER.ZOOM &&
-            Boolean(meetingId),
-        [meetingId, meetingProvider, selectedDeliveryType]
-    );
-    const selectedHomework = useMemo(
-        () =>
-            publishedHomework.find((item) => String(item.id) === String(selectedHomeworkId)) || null,
-        [publishedHomework, selectedHomeworkId]
-    );
-
-    useEffect(() => {
-        if (!sourceVideoCourses.length) {
-            setSelectedSourceVideoCourseId('');
-            return;
-        }
-
-        setSelectedSourceVideoCourseId((prev) => {
-            if (
-                prev &&
-                sourceVideoCourses.some((course) => String(course.id) === String(prev))
-            ) {
-                return prev;
-            }
-            return String(sourceVideoCourses[0].id);
-        });
-    }, [sourceVideoCourses]);
-
-    useEffect(() => {
-        if (!selectedSession) {
-            setEditSession(EDIT_SESSION_DEFAULT);
-            setSessionNotes('');
-            return;
-        }
-
-        setEditSession({
-            sessionIndex: selectedSession.sessionIndex ? String(selectedSession.sessionIndex) : '',
-            title: selectedSession.title || '',
-            startsAt: toInputDateTime(selectedSession.startsAt),
-            endsAt: toInputDateTime(selectedSession.endsAt),
-            status: selectedSession.status || COURSE_SESSION_STATUS.SCHEDULED,
-            recordingUrl: selectedSession.recordingUrl || '',
-        });
-        setSessionNotes(selectedSession.notes || '');
-    }, [selectedSession]);
-
+    const {
+        addCourseAssetToSessionMaterials,
+        canImportZoomAttendance,
+        canReusePublishedCourseAssets,
+        courseResourceAssets,
+        deletingMeeting,
+        importZoomAttendanceToSession,
+        importingAttendance,
+        joinLiveSession,
+        loadingCourseResourceAssets,
+        loadingMeetingState,
+        meetingId,
+        meetingJoinUrl,
+        meetingProvider,
+        removeMeeting,
+        restoreMeetingState,
+        saveMeetingLink,
+        saveSessionMaterials,
+        savingMaterials,
+        savingMeeting,
+        selectedSessionJoinUrl,
+        selectedSessionMaterials,
+        selectedSessionRecordingUrl,
+        selectedSourceVideoCourseId,
+        setMeetingJoinUrl,
+        setMeetingProvider,
+        setSelectedSourceVideoCourseId,
+        syncZoomRecordingsToSession,
+        syncingRecordings,
+        uploadingMaterialFile,
+        uploadSessionMaterialFile,
+    } = useSessionWorkspaceResources({
+        hydrateAttendanceRows,
+        onRefreshInsights: refreshSessionInsights,
+        selectedCourseId,
+        selectedDeliveryType,
+        selectedGroupId,
+        selectedSession,
+        selectedSessionId,
+        setAttendanceHistory,
+        setSessions,
+        sourceVideoCourses,
+    });
     const selectedSessionMode = useMemo(
         () => getSessionMode(selectedSession, nowMs),
         [selectedSession, nowMs]
     );
-
-    const selectedSessionJoinUrl = useMemo(
-        () => resolveSessionJoinUrl(selectedSession),
-        [selectedSession]
-    );
-    const selectedSessionMaterials = useMemo(
-        () => (Array.isArray(selectedSession?.materials) ? selectedSession.materials : []),
-        [selectedSession]
-    );
-    const selectedSessionRecordingUrl = selectedSession?.recordingUrl || '';
     const hasSessionNotesChanges = useMemo(
         () => (sessionNotes || '').trim() !== String(selectedSession?.notes || '').trim(),
         [selectedSession?.notes, sessionNotes]
@@ -1133,182 +552,8 @@ const SessionWorkspace = () => {
             }));
     }, [sessions, selectedCourseId, selectedCourse, selectedGroup, nowMs]);
 
-    const attendanceStats = useMemo(() => {
-        const values = Object.values(attendanceRows);
-        const present = values.filter((r) => r.status === SESSION_ATTENDANCE_STATUS.PRESENT).length;
-        const late = values.filter((r) => r.status === SESSION_ATTENDANCE_STATUS.LATE).length;
-        const absent = values.filter((r) => r.status === SESSION_ATTENDANCE_STATUS.ABSENT).length;
-        const excused = values.filter((r) => r.status === SESSION_ATTENDANCE_STATUS.EXCUSED).length;
-        const marked = values.filter((r) => r.status && r.status !== UNMARKED_ATTENDANCE_STATUS).length;
-        const unmarked = Math.max(0, values.length - marked);
-        return {
-            total: values.length,
-            present,
-            late,
-            absent,
-            excused,
-            marked,
-            unmarked,
-            presentRate: marked ? Math.round((present / marked) * 100) : 0,
-        };
-    }, [attendanceRows]);
-
-    const hasAttendanceChanges = useMemo(() => {
-        const currentIds = Object.keys(attendanceRows);
-        const initialIds = Object.keys(initialAttendanceRows);
-        if (currentIds.length !== initialIds.length) return currentIds.length > 0;
-
-        return currentIds.some((studentId) => {
-            const current = attendanceRows[studentId];
-            const initial = initialAttendanceRows[studentId];
-            if (!current || !initial) return true;
-
-            return (
-                current.status !== initial.status ||
-                (current.notes || '').trim() !== (initial.notes || '').trim() ||
-                (current.joinedAt || '') !== (initial.joinedAt || '') ||
-                (current.leftAt || '') !== (initial.leftAt || '')
-            );
-        });
-    }, [attendanceRows, initialAttendanceRows]);
-
-    const filteredStudents = useMemo(() => {
-        const query = attendanceQuery.trim().toLowerCase();
-
-        return students.filter((student) => {
-            const row = attendanceRows[student.id];
-            const status = row?.status;
-            const initial = initialAttendanceRows[student.id];
-            const matchesQuery =
-                !query ||
-                [student.fullName, student.email, student.phone]
-                    .filter(Boolean)
-                    .some((value) => String(value).toLowerCase().includes(query));
-
-            if (!matchesQuery) return false;
-
-            if (attendanceFilter === 'all') return true;
-            if (attendanceFilter === 'unmarked') return !status || status === UNMARKED_ATTENDANCE_STATUS;
-            if (attendanceFilter === 'changed') {
-                return (
-                    status !== initial?.status ||
-                    (row?.notes || '').trim() !== (initial?.notes || '').trim()
-                );
-            }
-
-            return status === attendanceFilter;
-        });
-    }, [attendanceFilter, attendanceQuery, attendanceRows, initialAttendanceRows, students]);
-
-    const homeworkCards = useMemo(
-        () =>
-            publishedHomework
-                .map((item) => ({
-                    ...item,
-                    deadlineMeta: getHomeworkDeadlineMeta(item, nowMs),
-                }))
-                .sort((a, b) => a.deadlineMeta.sortValue - b.deadlineMeta.sortValue),
-        [publishedHomework, nowMs]
-    );
-
-    const filteredHomework = useMemo(() => {
-        const query = homeworkQuery.trim().toLowerCase();
-        return homeworkCards.filter((item) => {
-            const matchesQuery =
-                !query ||
-                [item.title, item.name, item.description]
-                    .filter(Boolean)
-                    .some((value) => String(value).toLowerCase().includes(query));
-            const matchesFilter = homeworkFilter === 'all' || item.deadlineMeta.key === homeworkFilter;
-            return matchesQuery && matchesFilter;
-        });
-    }, [homeworkCards, homeworkFilter, homeworkQuery]);
-
-    const homeworkStats = useMemo(() => {
-        const overdue = homeworkCards.filter((item) => item.deadlineMeta.key === 'overdue').length;
-        const dueSoon = homeworkCards.filter((item) => item.deadlineMeta.key === 'dueSoon').length;
-        const open = homeworkCards.filter((item) =>
-            ['active', 'dueSoon', 'noDeadline', 'unknown'].includes(item.deadlineMeta.key)
-        ).length;
-        return {
-            total: homeworkCards.length,
-            open,
-            dueSoon,
-            overdue,
-        };
-    }, [homeworkCards]);
-
-    const selectedHomeworkMeta = useMemo(
-        () => (selectedHomework ? getHomeworkDeadlineMeta(selectedHomework, nowMs) : null),
-        [selectedHomework, nowMs]
-    );
-
-    const submissionStats = useMemo(() => {
-        const approved = homeworkSubmissions.filter((item) => item.reviewState === 'approved').length;
-        const rejected = homeworkSubmissions.filter((item) => item.reviewState === 'rejected').length;
-        const needsRevision = homeworkSubmissions.filter(
-            (item) => item.reviewState === 'needs_revision'
-        ).length;
-        const missing = homeworkSubmissions.filter((item) => item.reviewState === 'missing').length;
-        const needsReview = homeworkSubmissions.filter(
-            (item) => item.reviewState === 'needs_review'
-        ).length;
-        const pendingSubmission = homeworkSubmissions.filter(
-            (item) => item.reviewState === 'pending_submission'
-        ).length;
-        const late = homeworkSubmissions.filter((item) => Boolean(item.isLate)).length;
-        return {
-            total: homeworkSubmissions.length,
-            approved,
-            rejected,
-            needsRevision,
-            missing,
-            needsReview,
-            pendingSubmission,
-            late,
-        };
-    }, [homeworkSubmissions]);
-
-    const updateStatus = (studentId, status) => {
-        setAttendanceRows((prev) => ({
-            ...prev,
-            [studentId]: {
-                ...prev[studentId],
-                status,
-            },
-        }));
-    };
-
-    const updateNotes = (studentId, notes) => {
-        setAttendanceRows((prev) => ({
-            ...prev,
-            [studentId]: {
-                ...prev[studentId],
-                notes,
-            },
-        }));
-    };
-
-    const applyAttendanceStatus = (studentIds, status) => {
-        setAttendanceRows((prev) => {
-            const next = { ...prev };
-            studentIds.forEach((studentId) => {
-                if (!next[studentId]) return;
-                next[studentId] = {
-                    ...next[studentId],
-                    status,
-                };
-            });
-            return next;
-        });
-    };
-
     const handleCourseChange = (courseId) => {
-        setSelectedCourseId(courseId);
-        setSelectedGroupId('');
-        setSelectedSessionId('');
-        setGroups([]);
-        setSessions([]);
+        setWorkspaceCourse(courseId);
         setQuickSession((prev) => ({
             ...QUICK_SESSION_DEFAULT,
             status: prev.status,
@@ -1316,9 +561,7 @@ const SessionWorkspace = () => {
     };
 
     const handleGroupChange = (groupId) => {
-        setSelectedGroupId(groupId);
-        setSelectedSessionId('');
-        setSessions([]);
+        setWorkspaceGroup(groupId);
         setQuickSession((prev) => ({
             ...QUICK_SESSION_DEFAULT,
             status: prev.status,
@@ -1327,223 +570,6 @@ const SessionWorkspace = () => {
 
     const handleSessionChange = (sessionId) => {
         setSelectedSessionId(sessionId);
-    };
-
-    const openWorkspaceTab = useCallback(
-        (target) => {
-            const tabId = typeof target === 'string' ? target : target?.tab;
-            if (!SESSION_WORKSPACE_TABS.some((tab) => tab.id === tabId)) return;
-            setActiveTab(tabId);
-            const nextHomeworkReviewFilter =
-                tabId === 'homework' && typeof target === 'object'
-                    ? target?.homeworkReviewFilter
-                    : undefined;
-            const nextActivityResponseFilter =
-                tabId === 'activities' && typeof target === 'object'
-                    ? target?.activityResponseFilter
-                    : undefined;
-            if (nextHomeworkReviewFilter) {
-                setHomeworkReviewFilterState(nextHomeworkReviewFilter);
-            } else {
-                setHomeworkReviewFilterState('all');
-            }
-            if (nextActivityResponseFilter) {
-                setActivityResponseFilterState(nextActivityResponseFilter);
-            } else {
-                setActivityResponseFilterState('all');
-            }
-            setSearchParams(
-                (prev) => {
-                    const next = new URLSearchParams(prev);
-                    next.set('workspaceTab', tabId);
-                    if (tabId === 'homework' && nextHomeworkReviewFilter && nextHomeworkReviewFilter !== 'all') {
-                        next.set('homeworkReviewFilter', nextHomeworkReviewFilter);
-                    } else if (tabId !== 'homework' || !nextHomeworkReviewFilter || nextHomeworkReviewFilter === 'all') {
-                        next.delete('homeworkReviewFilter');
-                    }
-                    if (tabId === 'activities' && nextActivityResponseFilter && nextActivityResponseFilter !== 'all') {
-                        next.set('activityResponseFilter', nextActivityResponseFilter);
-                    } else if (tabId !== 'activities' || !nextActivityResponseFilter || nextActivityResponseFilter === 'all') {
-                        next.delete('activityResponseFilter');
-                    }
-                    return next;
-                },
-                { replace: true }
-            );
-        },
-        [setSearchParams]
-    );
-
-    const saveAttendance = async () => {
-        if (!selectedSessionId) {
-            toast.error('Катышууну сактоо үчүн сессияны тандаңыз.');
-            return;
-        }
-
-        const unmarkedCount = Object.values(attendanceRows).filter(
-            (row) => !row.status || row.status === UNMARKED_ATTENDANCE_STATUS
-        ).length;
-        if (unmarkedCount > 0) {
-            toast.error(`Адегенде ${unmarkedCount} студент үчүн катышуу статусун тандаңыз.`);
-            return;
-        }
-
-        if (!hasAttendanceChanges) {
-            toast('Өзгөртүү жок.');
-            return;
-        }
-
-        const rows = Object.values(attendanceRows).map((row) => ({
-            studentId: row.studentId,
-            status: row.status,
-            notes: row.notes?.trim() || undefined,
-            joinedAt: row.joinedAt,
-            leftAt: row.leftAt,
-        }));
-
-        setSavingAttendance(true);
-        try {
-            await markSessionAttendanceBulk(Number(selectedSessionId), {
-                rows,
-            });
-            toast.success('Катышуу ушул сессия үчүн сакталды.');
-
-            const refreshed = await fetchCourseAttendance({
-                courseId: Number(selectedCourseId),
-                groupId: Number(selectedGroupId),
-            });
-            setAttendanceHistory(refreshed?.items || []);
-            setInitialAttendanceRows(attendanceRows);
-            await refreshSessionInsights();
-        } catch (error) {
-            toast.error(getWorkspaceErrorMessage(error, 'Катышууну сактоо катасы'));
-        } finally {
-            setSavingAttendance(false);
-        }
-    };
-
-    const createQuickSession = async () => {
-        if (!selectedGroupId) {
-            toast.error('Адегенде группаны тандаңыз.');
-            return;
-        }
-        if (
-            !quickSession.title.trim() ||
-            !quickSession.sessionIndex ||
-            !quickSession.startsAt ||
-            !quickSession.endsAt
-        ) {
-            toast.error('Сессия үчүн номер, аталыш, башталышы жана аягы милдеттүү.');
-            return;
-        }
-
-        setSavingSession(true);
-        try {
-            const materials =
-                quickSession.materialTitle.trim() && quickSession.materialUrl.trim()
-                    ? [
-                        {
-                            title: quickSession.materialTitle.trim(),
-                            url: quickSession.materialUrl.trim(),
-                        },
-                    ]
-                    : undefined;
-
-            const payload = {
-                groupId: Number(selectedGroupId),
-                sessionIndex: Number(quickSession.sessionIndex),
-                title: quickSession.title.trim(),
-                startsAt: new Date(quickSession.startsAt).toISOString(),
-                endsAt: new Date(quickSession.endsAt).toISOString(),
-                status: quickSession.status || undefined,
-                recordingUrl: quickSession.recordingUrl || undefined,
-                materials,
-            };
-
-            const created = await createCourseSession(payload);
-            toast.success('Session түзүлдү.');
-
-            const res = await fetchCourseSessions({ groupId: Number(selectedGroupId) });
-            const list = toArray(res);
-            setSessions(list);
-            if (created?.id) setSelectedSessionId(String(created.id));
-            setIsSessionSetupOpen(false);
-
-            setQuickSession((prev) => ({
-                ...QUICK_SESSION_DEFAULT,
-                sessionIndex: getNextSessionIndex(list),
-                status: prev.status,
-            }));
-        } catch (error) {
-            toast.error(getWorkspaceErrorMessage(error, 'Сессия түзүү катасы'));
-        } finally {
-            setSavingSession(false);
-        }
-    };
-
-    const updateSelectedSession = async () => {
-        if (!selectedSessionId) {
-            toast.error('Сессияны тандаңыз.');
-            return;
-        }
-        if (!editSession.title.trim() || !editSession.startsAt || !editSession.endsAt) {
-            toast.error('Сессия үчүн аталыш, башталышы жана аягы милдеттүү.');
-            return;
-        }
-
-        setSavingSessionUpdate(true);
-        try {
-            await updateCourseSession(Number(selectedSessionId), {
-                sessionIndex: editSession.sessionIndex
-                    ? Number(editSession.sessionIndex)
-                    : undefined,
-                title: editSession.title.trim(),
-                startsAt: new Date(editSession.startsAt).toISOString(),
-                endsAt: new Date(editSession.endsAt).toISOString(),
-                status: editSession.status || undefined,
-                recordingUrl: editSession.recordingUrl || undefined,
-            });
-
-            const res = await fetchCourseSessions({ groupId: Number(selectedGroupId) });
-            const list = toArray(res);
-            setSessions(list);
-            setIsSessionSetupOpen(false);
-            toast.success('Session жаңыртылды.');
-        } catch (error) {
-            toast.error(getWorkspaceErrorMessage(error, 'Сессияны жаңыртуу катасы'));
-        } finally {
-            setSavingSessionUpdate(false);
-        }
-    };
-
-    const saveSessionMaterials = async (
-        materials,
-        { successMessage = 'Материалдар жаңыртылды.', suppressSuccessToast = false } = {}
-    ) => {
-        if (!selectedSessionId) {
-            toast.error('Сессия тандаңыз.');
-            return false;
-        }
-
-        setSavingMaterials(true);
-        try {
-            await updateCourseSession(Number(selectedSessionId), {
-                materials,
-            });
-
-            const res = await fetchCourseSessions({ groupId: Number(selectedGroupId) });
-            const list = toArray(res);
-            setSessions(list);
-            if (!suppressSuccessToast) {
-                toast.success(successMessage);
-            }
-            return true;
-        } catch (error) {
-            toast.error(getWorkspaceErrorMessage(error, 'Материалдарды жаңыртуу катасы'));
-            return false;
-        } finally {
-            setSavingMaterials(false);
-        }
     };
 
     const saveSessionNotes = async () => {
@@ -1571,490 +597,40 @@ const SessionWorkspace = () => {
         }
     };
 
-    const refreshSelectedGroupSessions = async () => {
-        const res = await fetchCourseSessions({ groupId: Number(selectedGroupId) });
-        const list = toArray(res);
-        setSessions(list);
-        return list;
-    };
-
-    const updateSelectedSessionStatus = async (nextStatus) => {
-        if (!selectedSessionId) {
-            toast.error('Сессия тандаңыз.');
-            return false;
-        }
-
-        const normalizedStatus = SESSION_STATUS_OPTIONS.some((option) => option.value === nextStatus)
-            ? nextStatus
-            : COURSE_SESSION_STATUS.SCHEDULED;
-        if ((selectedSession?.status || COURSE_SESSION_STATUS.SCHEDULED) === normalizedStatus) {
-            return true;
-        }
-
-        setSavingSessionStatus(true);
-        try {
-            const updated = await updateCourseSession(Number(selectedSessionId), {
-                status: normalizedStatus,
-            });
-
-            if (selectedGroupId) {
-                await refreshSelectedGroupSessions();
-            } else if (updated?.id) {
-                setSessions((prev) =>
-                    prev.map((session) =>
-                        String(session.id) === String(updated.id) ? updated : session
-                    )
-                );
-            }
-            setEditSession((prev) => ({
-                ...prev,
-                status: normalizedStatus,
-            }));
-            await refreshSessionInsights();
-            toast.success('Сессия статусу жаңыртылды.');
-            return true;
-        } catch (error) {
-            toast.error(getWorkspaceErrorMessage(error, 'Сессия статусун жаңыртуу катасы'));
-            return false;
-        } finally {
-            setSavingSessionStatus(false);
-        }
-    };
-
-    const createActivityItem = async (activity) => {
-        if (!selectedSessionId) {
-            toast.error('Сессия тандаңыз.');
-            return false;
-        }
-
-        setCreatingSessionActivity(true);
-        try {
-            await createSessionActivity(Number(selectedSessionId), activity);
-            await refreshSelectedGroupSessions();
-            await refreshSessionInsights();
-            toast.success('Иш кошулду.');
-            return true;
-        } catch (error) {
-            toast.error(getWorkspaceErrorMessage(error, 'Ишти сактоо катасы'));
-            return false;
-        } finally {
-            setCreatingSessionActivity(false);
-        }
-    };
-
-    const updateActivityItem = async (activityId, activity) => {
-        if (!selectedSessionId) {
-            toast.error('Сессия тандаңыз.');
-            return false;
-        }
-
-        setSavingSessionActivityId(String(activityId));
-        try {
-            await updateSessionActivity(Number(selectedSessionId), Number(activityId), activity);
-            await refreshSelectedGroupSessions();
-            await refreshSessionInsights();
-            toast.success('Иш жаңыртылды.');
-            return true;
-        } catch (error) {
-            toast.error(getWorkspaceErrorMessage(error, 'Ишти жаңыртуу катасы'));
-            return false;
-        } finally {
-            setSavingSessionActivityId(null);
-        }
-    };
-
-    const deleteActivityItem = async (activityId) => {
-        if (!selectedSessionId) {
-            toast.error('Сессия тандаңыз.');
-            return false;
-        }
-
-        setDeletingSessionActivityId(String(activityId));
-        try {
-            await deleteSessionActivity(Number(selectedSessionId), Number(activityId));
-            await refreshSelectedGroupSessions();
-            await refreshSessionInsights();
-            toast.success('Иш өчүрүлдү.');
-            return true;
-        } catch (error) {
-            toast.error(getWorkspaceErrorMessage(error, 'Ишти өчүрүү катасы'));
-            return false;
-        } finally {
-            setDeletingSessionActivityId(null);
-        }
-    };
-
-    const loadActivityResponses = async (activityId) => {
-        if (!selectedSessionId) return null;
-
-        setLoadingActivityResponsesId(String(activityId));
-        try {
-            const payload = await fetchSessionActivityResponses(Number(selectedSessionId), Number(activityId));
-            setActivityResponses((prev) => ({ ...prev, [activityId]: payload }));
-            return payload;
-        } catch (error) {
-            toast.error(getWorkspaceErrorMessage(error, 'Иш жыйынтыгын жүктөө катасы'));
-            return null;
-        } finally {
-            setLoadingActivityResponsesId(null);
-        }
-    };
-
-    const reviewActivitySubmissionItem = async (activityId, submissionId, status, reviewComment = '', score = '') => {
-        if (!selectedSessionId) return false;
-
-        setReviewingActivitySubmissionId(String(submissionId));
-        try {
-            await reviewSessionActivitySubmission(Number(selectedSessionId), Number(activityId), Number(submissionId), {
-                status,
-                reviewComment,
-                score: score === '' ? undefined : Number(score),
-            });
-            await loadActivityResponses(activityId);
-            await refreshSelectedGroupSessions();
-            await refreshSessionInsights();
-            toast.success('Иш жообу жаңыртылды.');
-            return true;
-        } catch (error) {
-            toast.error(getWorkspaceErrorMessage(error, 'Иш жообун сактоо катасы'));
-            return false;
-        } finally {
-            setReviewingActivitySubmissionId(null);
-        }
-    };
-
-    const uploadSessionMaterialFile = async (file) => {
-        if (!selectedSessionId) {
-            toast.error('Сессия тандаңыз.');
-            return null;
-        }
-
-        setUploadingMaterialFile(true);
-        try {
-            const uploaded = await uploadSessionMaterial(Number(selectedSessionId), file);
-            const nextMaterials = [
-                ...selectedSessionMaterials,
-                {
-                    title: uploaded.title || file.name,
-                    url: uploaded.url || '',
-                    storageKey: uploaded.storageKey || undefined,
-                },
-            ];
-
-            const saved = await saveSessionMaterials(nextMaterials, {
-                successMessage: 'Файл материалдарга кошулду.',
-            });
-
-            return saved ? uploaded : null;
-        } catch (error) {
-            toast.error(getWorkspaceErrorMessage(error, 'Файлды жүктөө катасы'));
-            return null;
-        } finally {
-            setUploadingMaterialFile(false);
-        }
-    };
-
-    const addCourseAssetToSessionMaterials = async (asset) => {
-        const exists = selectedSessionMaterials.some(
-            (item) => item.storageKey && item.storageKey === asset.storageKey
-        );
-        if (exists) {
-            toast.error('Бул материал сессияга мурунтан кошулган.');
-            return false;
-        }
-
-        return saveSessionMaterials([
-            ...selectedSessionMaterials,
-            {
-                title: asset.title,
-                url: asset.url,
-                storageKey: asset.storageKey,
-            },
-        ]);
-    };
-
-    const saveMeetingLink = async () => {
-        if (!selectedSessionId) {
-            toast.error('Сессия тандаңыз.');
-            return;
-        }
-        setSavingMeeting(true);
-        try {
-            const payload = {
-                provider: meetingProvider,
-                customJoinUrl: meetingJoinUrl || undefined,
-            };
-            const res = meetingId
-                ? await updateSessionMeeting(Number(selectedSessionId), payload)
-                : await createSessionMeeting(Number(selectedSessionId), payload);
-            setMeetingJoinUrl(res?.joinUrl || '');
-            setMeetingId(String(res?.meetingId || meetingId || ''));
-            toast.success('Жолугушуу шилтемеси жаңыртылды.');
-        } catch (error) {
-            toast.error(getWorkspaceErrorMessage(error, 'Жолугушуу шилтемесин сактоо катасы'));
-        } finally {
-            setSavingMeeting(false);
-        }
-    };
-
-    const restoreMeetingState = async () => {
-        if (!selectedSessionId) {
-            toast.error('Сессия тандаңыз.');
-            return;
-        }
-
-        setLoadingMeetingState(true);
-        try {
-            const res = await fetchSessionMeeting(Number(selectedSessionId), {
-                provider: meetingProvider || undefined,
-            });
-            setMeetingJoinUrl(res?.joinUrl || '');
-            setMeetingId(String(res?.meetingId || ''));
-            if (res?.provider) setMeetingProvider(res.provider);
-            toast.success('Жолугушуунун абалы жаңыртылды.');
-        } catch (error) {
-            toast.error(getWorkspaceErrorMessage(error, 'Жолугушуу табылган жок'));
-        } finally {
-            setLoadingMeetingState(false);
-        }
-    };
-
-    const removeMeeting = async () => {
-        if (!selectedSessionId) {
-            toast.error('Сессия тандаңыз.');
-            return;
-        }
-
-        setDeletingMeeting(true);
-        try {
-            await deleteSessionMeeting(Number(selectedSessionId), {
-                provider: meetingProvider || undefined,
-            });
-            setMeetingJoinUrl('');
-            setMeetingId('');
-            toast.success('Жолугушуу өчүрүлдү.');
-        } catch (error) {
-            toast.error(getWorkspaceErrorMessage(error, 'Жолугушууну өчүрүү катасы'));
-        } finally {
-            setDeletingMeeting(false);
-        }
-    };
-
-    const importZoomAttendanceToSession = async () => {
-        if (!selectedSessionId) {
-            toast.error('Сессия тандаңыз.');
-            return;
-        }
-
-        setImportingAttendance(true);
-        try {
-            await importSessionAttendance(Number(selectedSessionId), {
-                presentMinPercent: 70,
-                lateGraceMinutes: 10,
-            });
-
-            if (selectedSessionId) {
-                const res = await fetchSessionAttendance(Number(selectedSessionId));
-                const list = toArray(res);
-                setAttendanceRows((prev) => {
-                    const next = { ...prev };
-                    list.forEach((item) => {
-                        const studentId = Number(item.studentId || item.userId);
-                        if (!next[studentId]) return;
-                        next[studentId] = {
-                            ...next[studentId],
-                            status: item.status,
-                            notes: item.notes || '',
-                            joinedAt: item.joinedAt || undefined,
-                            leftAt: item.leftAt || undefined,
-                        };
-                    });
-                    return next;
-                });
-            }
-            const refreshed = await fetchCourseAttendance({
-                courseId: Number(selectedCourseId),
-                groupId: Number(selectedGroupId),
-            });
-            setAttendanceHistory(refreshed?.items || []);
-            await refreshSessionInsights();
-
-            toast.success('Zoom attendance импорттолду.');
-        } catch (error) {
-            toast.error(getWorkspaceErrorMessage(error, 'Катышууну импорттоо катасы'));
-        } finally {
-            setImportingAttendance(false);
-        }
-    };
-
-    const syncZoomRecordingsToSession = async () => {
-        if (!selectedSessionId) {
-            toast.error('Сессия тандаңыз.');
-            return;
-        }
-
-        setSyncingRecordings(true);
-        try {
-            const res = await syncSessionRecordings(Number(selectedSessionId), {
-                setSessionRecordingUrl: true,
-            });
-            if (res?.recordingUrl) {
-                setSessions((prev) =>
-                    prev.map((session) =>
-                        String(session.id) === String(selectedSessionId)
-                            ? { ...session, recordingUrl: res.recordingUrl }
-                            : session
-                    )
-                );
-            }
-            toast.success('Zoom recordings синхрондолду.');
-        } catch (error) {
-            toast.error(getWorkspaceErrorMessage(error, 'Жазууларды синхрондоо катасы'));
-        } finally {
-            setSyncingRecordings(false);
-        }
-    };
-
-    const joinLiveSession = (joinUrl) => {
-        if (!joinUrl) {
-            toast.error('Кошулуу шилтемеси табылган жок.');
-            return;
-        }
-        window.open(joinUrl, '_blank', 'noopener,noreferrer');
-    };
-
-    const publishHomework = async () => {
-        if (!homeworkTitle.trim()) {
-            toast.error('Үй тапшырманын аталышын жазыңыз.');
-            return;
-        }
-        if (!selectedSessionId) {
-            toast.error('Алгач сессия тандаңыз.');
-            return;
-        }
-
-        const assignedStudentIds = students.map((student) => student.id);
-        setSavingHomework(true);
-        try {
-            await createSessionHomework(Number(selectedSessionId), {
-                title: homeworkTitle.trim(),
-                description: homeworkDescription.trim() || undefined,
-                deadline: homeworkDeadline || undefined,
-                isPublished: true,
-                assignedStudentIds,
-            });
-
-            const refreshed = await fetchSessionHomework(Number(selectedSessionId), { includeUnpublished: true });
-            const items = toArray(refreshed);
-            setPublishedHomework(items);
-            setSelectedHomeworkId((prev) => {
-                if (prev && items.some((item) => String(item.id) === String(prev))) return prev;
-                return items[0]?.id ? String(items[0].id) : '';
-            });
-            setHomeworkTitle('');
-            setHomeworkDescription('');
-            setHomeworkDeadline('');
-            await refreshSessionInsights();
-            toast.success('Үй тапшырма жарыяланды.');
-        } catch (error) {
-            console.error(error);
-            toast.error(getWorkspaceErrorMessage(error, 'Үй тапшырманы жарыялоо катасы'));
-        } finally {
-            setSavingHomework(false);
-        }
-    };
-
-    const updateHomework = async (homeworkId, updates) => {
-        if (!selectedSessionId) return;
-
-        setUpdatingHomework(true);
-        try {
-            await updateSessionHomework(Number(selectedSessionId), Number(homeworkId), updates);
-
-            const refreshed = await fetchSessionHomework(Number(selectedSessionId), { includeUnpublished: true });
-            const items = toArray(refreshed);
-            setPublishedHomework(items);
-            await refreshSessionInsights();
-        } catch (error) {
-            console.error(error);
-            toast.error(getWorkspaceErrorMessage(error, 'Үй тапшырманы жаңыртуу катасы'));
-            throw error; // Re-throw to let modal handle the error
-        } finally {
-            setUpdatingHomework(false);
-        }
-    };
-
-    const reviewHomeworkSubmission = async (submissionId, status, reviewComment = '') => {
-        if (!selectedSessionId || !selectedHomeworkId || !submissionId) return;
-        setReviewingSubmissionId(String(submissionId));
-        try {
-            await reviewSessionHomeworkSubmission(
-                Number(selectedSessionId),
-                Number(selectedHomeworkId),
-                Number(submissionId),
-                {
-                    status,
-                    reviewComment: String(reviewComment || '').trim() || undefined,
-                }
-            );
-            const refreshed = await fetchSessionHomeworkReviewRoster(
-                Number(selectedSessionId),
-                Number(selectedHomeworkId)
-            );
-            setHomeworkSubmissions(toArray(refreshed?.items));
-            await refreshSessionInsights();
-            toast.success('Тапшырма жооп статусу жаңыртылды.');
-            return true;
-        } catch (error) {
-            console.error(error);
-            toast.error(getWorkspaceErrorMessage(error, 'Тапшырма жоопун баалоо катасы'));
-            return false;
-        } finally {
-            setReviewingSubmissionId('');
-        }
-    };
-
-    const toggleHomeworkPublish = async (homeworkId, currentStatus) => {
-        if (!selectedSessionId || !homeworkId) return;
-
-        try {
-            await updateSessionHomework(Number(selectedSessionId), Number(homeworkId), {
-                isPublished: !currentStatus,
-            });
-
-            const refreshed = await fetchSessionHomework(Number(selectedSessionId), { includeUnpublished: true });
-            const items = toArray(refreshed);
-            setPublishedHomework(items);
-            await refreshSessionInsights();
-
-            toast.success(!currentStatus ? 'Үй тапшырма жарыяланды.' : 'Үй тапшырма жарыялоодон алынды.');
-        } catch (error) {
-            console.error(error);
-            toast.error(getWorkspaceErrorMessage(error, 'Үй тапшырма статусун өзгөртүү катасы'));
-        }
-    };
-
     const selectedModeMeta = SESSION_MODE_META[selectedSessionMode] || SESSION_MODE_META.scheduled;
     const SelectedModeIcon = selectedModeMeta.icon;
-    const nextSessionIndex = useMemo(() => getNextSessionIndex(sessions), [sessions]);
-    const isCreateWorkspace = workspaceMode === 'create';
-    const workspaceTitle = isCreateWorkspace ? 'Жаңы сессия' : 'Сессияны түзөтүү';
-    const workspaceDescription = isCreateWorkspace
-        ? 'Тандалган группа үчүн жаңы сессия түзүп, убактысын жана материалдарын бекитиңиз.'
-        : 'Тандалган сессиянын убактысын жана статусун жаңыртыңыз.';
-    const workspaceDisabled = isCreateWorkspace ? !selectedGroupId : !selectedSessionId;
-    const workspaceDisabledReason = isCreateWorkspace
-        ? 'Жаңы сессия түзүү үчүн группа тандаңыз.'
-        : 'Edit mode үчүн сессия тандаңыз.';
-    const workspaceActionLabel = isCreateWorkspace
-        ? savingSession
-            ? 'Түзүлүүдө...'
-            : 'Create Session'
-        : savingSessionUpdate
-            ? 'Жаңыртылууда...'
-            : 'Update Session';
-    const workspaceAction = isCreateWorkspace ? createQuickSession : updateSelectedSession;
-    const workspaceSaving = isCreateWorkspace ? savingSession : savingSessionUpdate;
+    const primaryWorkspaceTools = useMemo(
+        () => [
+            {
+                tab: 'attendance',
+                label: 'Катышууну белгилөө',
+                description: `${attendanceStats.total} студент, ${attendanceStats.presentRate}% катышуу`,
+                disabled: !selectedSessionId,
+            },
+            {
+                tab: 'materials',
+                label: 'Сабак ресурстары',
+                description: selectedDeliveryType === COURSE_TYPE.ONLINE_LIVE
+                    ? 'Live шилтеме, жаздыруу жана материалдар'
+                    : 'Материалдар жана жаздыруулар',
+                disabled: !selectedSessionId,
+            },
+            {
+                tab: 'homework',
+                label: 'Үй тапшырма',
+                description: `${homeworkStats.total} тапшырма, ${submissionStats.needsReview} жооп текшерүүдө`,
+                disabled: !selectedSessionId,
+            },
+        ],
+        [
+            attendanceStats.presentRate,
+            attendanceStats.total,
+            homeworkStats.total,
+            selectedDeliveryType,
+            selectedSessionId,
+            submissionStats.needsReview,
+        ]
+    );
 
     return (
         <div className="pt-24 pb-12 px-4 max-w-7xl mx-auto space-y-6">
@@ -2071,9 +647,9 @@ const SessionWorkspace = () => {
                 <div className="space-y-6">
                     <DashboardWorkspaceHero
                         className="dashboard-panel"
-                        eyebrow="Session Workspace"
-                        title="Instructor Session Workspace"
-                        description="Сессияларды, катышууну, үй тапшырманы жана жандуу сабак агымдарын бир жерден көзөмөлдөңүз. Группа lifecycle эми өзүнчө Groups tab аркылуу башкарылат."
+                        eyebrow="Instructor workbench"
+                        title="Сессия workspace"
+                        description="Instructor dashboard ичиндеги активдүү сессия борбору. Курс, группа жана сессия тандалгандан кийин катышуу, ресурстар жана үй тапшырма ошол контекстте иштейт."
                         metrics={(
                             <>
                                 <DashboardMetricCard
@@ -2109,7 +685,7 @@ const SessionWorkspace = () => {
                             <div className="flex flex-wrap items-start justify-between gap-3">
                                 <div className="max-w-2xl">
                                     <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-edubot-muted dark:text-slate-400">
-                                        Current Session
+                                        Активдүү контекст
                                     </div>
                                     <p className="mt-2 text-sm leading-6 text-edubot-muted dark:text-slate-300">
                                         Адегенде курс, группа жана сессияны так тандаңыз. Андан кийин катышуу, тапшырма жана ресурстар ошол активдүү сессиянын контекстинде иштейт.
@@ -2267,10 +843,10 @@ const SessionWorkspace = () => {
                             <div className="space-y-3">
                                 <div>
                                     <p className="text-sm font-semibold text-edubot-ink dark:text-white">
-                                        Session Setup
+                                        Сессия даярдоо
                                     </p>
                                     <p className="mt-1 max-w-2xl text-sm text-edubot-muted dark:text-slate-400">
-                                        Create жана edit аракеттерин модалдан аткарыңыз. Негизги canvas азыр активдүү сессияны иштетүүгө багытталган.
+                                        Түзүү жана түзөтүү аракеттери модалда калат. Негизги canvas активдүү сессияны жүргүзүүгө багытталган.
                                     </p>
                                 </div>
                                 <div className="flex flex-wrap gap-2">
@@ -2309,7 +885,7 @@ const SessionWorkspace = () => {
                                         onClick={() => navigate(getDashboardPath('instructor', 'groups'))}
                                         className="rounded-2xl border border-edubot-line bg-transparent px-4 py-3 text-sm font-semibold text-edubot-ink transition hover:border-edubot-orange/40 dark:border-slate-700 dark:text-slate-200"
                                     >
-                                        Groups tab ачуу
+                                        Groups workspace ачуу
                                     </button>
                                 </div>
                             </div>
@@ -2358,18 +934,71 @@ const SessionWorkspace = () => {
                             workspaceTitle={workspaceTitle}
                         />
 
-                        <div className="flex flex-wrap gap-2 rounded-[1.5rem] border border-edubot-line/70 bg-edubot-surfaceAlt/70 p-2 dark:border-slate-700 dark:bg-slate-900/70">
-                            {SESSION_WORKSPACE_TABS.map((tab) => (
+                        {workspaceNotice ? (
+                            <WorkspaceNotice
+                                tone={workspaceNotice.tone}
+                                title={workspaceNotice.title}
+                                message={workspaceNotice.message}
+                                action={
+                                    workspaceNotice.tone === 'success' ? (
+                                        <button
+                                            type="button"
+                                            onClick={() => setWorkspaceFeedback(null)}
+                                            className="rounded-full border border-current px-3 py-1 text-xs font-semibold opacity-80 transition hover:opacity-100"
+                                        >
+                                            Жабуу
+                                        </button>
+                                    ) : null
+                                }
+                            />
+                        ) : null}
+
+                        <div className="grid gap-3 lg:grid-cols-3">
+                            {primaryWorkspaceTools.map((tool) => (
                                 <button
-                                    key={tab.id}
-                                    onClick={() => setActiveTab(tab.id)}
-                                    className={`rounded-full border px-4 py-2 text-sm font-medium transition ${activeTab === tab.id
-                                        ? 'border-edubot-orange bg-gradient-to-r from-edubot-orange to-edubot-soft text-white shadow-edubot-soft'
-                                        : 'border-transparent bg-white text-edubot-ink hover:border-edubot-line dark:bg-slate-950 dark:text-[#E8ECF3]'
+                                    key={tool.tab}
+                                    type="button"
+                                    onClick={() => openWorkspaceTab(tool.tab)}
+                                    disabled={tool.disabled}
+                                    className={`rounded-[1.25rem] border p-4 text-left transition disabled:cursor-not-allowed disabled:opacity-60 ${activeTab === tool.tab
+                                        ? 'border-edubot-orange bg-edubot-orange/10 text-edubot-ink shadow-edubot-soft dark:bg-edubot-orange/15 dark:text-white'
+                                        : 'border-edubot-line bg-white text-edubot-ink hover:border-edubot-orange/50 dark:border-slate-700 dark:bg-slate-950 dark:text-white'
                                         }`}
                                 >
-                                    {tab.label}
+                                    <div className="text-sm font-semibold">{tool.label}</div>
+                                    <p className="mt-1 text-xs leading-5 text-edubot-muted dark:text-slate-400">
+                                        {tool.description}
+                                    </p>
                                 </button>
+                            ))}
+                        </div>
+
+                        <div className="grid gap-3 rounded-[1.5rem] border border-edubot-line/70 bg-edubot-surfaceAlt/70 p-3 dark:border-slate-700 dark:bg-slate-900/70 lg:grid-cols-[1.1fr,0.9fr]">
+                            {WORKSPACE_TAB_GROUPS.map((group) => (
+                                <div key={group.label} className="min-w-0 rounded-[1.25rem] bg-white/80 p-3 dark:bg-slate-950/80">
+                                    <div className="mb-3">
+                                        <div className="text-xs font-semibold uppercase tracking-[0.16em] text-edubot-muted dark:text-slate-400">
+                                            {group.label}
+                                        </div>
+                                        <p className="mt-1 text-xs leading-5 text-edubot-muted dark:text-slate-400">
+                                            {group.description}
+                                        </p>
+                                    </div>
+                                    <div className="flex flex-wrap gap-2">
+                                        {group.tabs.map((tab) => (
+                                            <button
+                                                key={tab.id}
+                                                onClick={() => openWorkspaceTab(tab.id)}
+                                                className={`rounded-full border px-4 py-2 text-sm font-medium transition ${activeTab === tab.id
+                                                    ? 'border-edubot-orange bg-gradient-to-r from-edubot-orange to-edubot-soft text-white shadow-edubot-soft'
+                                                    : 'border-transparent bg-white text-edubot-ink hover:border-edubot-line dark:bg-slate-900 dark:text-[#E8ECF3]'
+                                                    }`}
+                                            >
+                                                {tab.label}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
                             ))}
                         </div>
 

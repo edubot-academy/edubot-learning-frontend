@@ -223,6 +223,43 @@ const getQueuePriority = (item) => {
     return 4;
 };
 
+const getQueueAction = (item) => {
+    const queue = item?.queue || {};
+    if (Number(queue.needsReviewCount || 0) > 0) {
+        return {
+            label: 'Биринчи текшерүү керек',
+            description: `${queue.needsReviewCount} жооп мугалимдин баасын күтүп турат.`,
+            tone: 'amber',
+        };
+    }
+    if (Number(queue.missingCount || 0) > 0) {
+        return {
+            label: 'Жөнөтпөгөндөрдү көзөмөлдөө',
+            description: `${queue.missingCount} студент тапшырма жөнөткөн жок.`,
+            tone: 'red',
+        };
+    }
+    if (Number(queue.needsRevisionCount || 0) > 0) {
+        return {
+            label: 'Оңдотууларды кайра караңыз',
+            description: `${queue.needsRevisionCount} жооп оңдотуудан кийин кайра күтүп турат.`,
+            tone: 'amber',
+        };
+    }
+    if (Number(queue.lateCount || 0) > 0) {
+        return {
+            label: 'Кеч тапшырылган иштерди текшерүү',
+            description: `${queue.lateCount} жооп мөөнөттөн кийин келген.`,
+            tone: 'amber',
+        };
+    }
+    return {
+        label: 'Көзөмөлдөө',
+        description: 'Бул тапшырмада азыр шашылыш аракет жок.',
+        tone: 'default',
+    };
+};
+
 const matchesHomeworkQueueFilter = (item, filter) => {
     if (filter === 'all') return true;
     const queue = item?.queue || {};
@@ -246,6 +283,7 @@ const InstructorHomework = () => {
     const [summary, setSummary] = useState(null);
     const [items, setItems] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [loadError, setLoadError] = useState('');
 
     useEffect(() => {
         if (!user?.id || user.role !== 'instructor') return;
@@ -258,8 +296,10 @@ const InstructorHomework = () => {
             );
         };
         loadCourses().catch((error) => {
+            const message = getHomeworkErrorMessage(error, 'Курстар жүктөлгөн жок.');
             setCourses([]);
-            toast.error(getHomeworkErrorMessage(error, 'Курстар жүктөлгөн жок.'));
+            setLoadError(message);
+            toast.error(message);
         });
     }, [user]);
 
@@ -274,8 +314,10 @@ const InstructorHomework = () => {
             setGroups(toArray(response));
         };
         loadGroups().catch((error) => {
+            const message = getHomeworkErrorMessage(error, 'Группалар жүктөлгөн жок.');
             setGroups([]);
-            toast.error(getHomeworkErrorMessage(error, 'Группалар жүктөлгөн жок.'));
+            setLoadError(message);
+            toast.error(message);
         });
     }, [courseId]);
 
@@ -296,14 +338,17 @@ const InstructorHomework = () => {
                 ]);
                 setSummary(summaryRes || null);
                 setItems(toArray(homeworkRes));
+                setLoadError('');
             } finally {
                 setLoading(false);
             }
         };
         load().catch((error) => {
+            const message = getHomeworkErrorMessage(error, 'Үй тапшырмалар жүктөлгөн жок.');
             setSummary(null);
             setItems([]);
-            toast.error(getHomeworkErrorMessage(error, 'Үй тапшырмалар жүктөлгөн жок.'));
+            setLoadError(message);
+            toast.error(message);
         });
     }, [courseId, groupId, limit]);
 
@@ -366,6 +411,11 @@ const InstructorHomework = () => {
             overdue: summary?.overdue ?? enrichedItems.filter((item) => item.stateMeta.label === 'Өтүп кеткен').length,
         }),
         [summary, items.length, enrichedItems]
+    );
+
+    const nextActionItems = useMemo(
+        () => filteredItems.filter((item) => getQueuePriority(item) < 4).slice(0, 3),
+        [filteredItems]
     );
 
     const applyQueueFilter = (nextFilter) => {
@@ -443,8 +493,24 @@ const InstructorHomework = () => {
 
             <DashboardInsetPanel
                 title="Фильтрлер"
-                description="Кезекти курс, группа, абал жана издөө боюнча тарылтыңыз."
+                description="Кезекти курс, группа, абал жана издөө боюнча тарылтыңыз. Метрика карточкаларын бассаңыз, тиешелүү абал автоматтык тандалат."
             >
+                {loadError ? (
+                    <div className="mb-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200">
+                        <div className="font-semibold">Кезек жүктөлгөн жок</div>
+                        <p className="mt-1">{loadError}</p>
+                    </div>
+                ) : null}
+
+                <div className="mb-4 flex flex-wrap items-center gap-2 text-xs text-edubot-muted dark:text-slate-400">
+                    <span className="rounded-full border border-edubot-line bg-white px-3 py-1.5 dark:border-slate-700 dark:bg-slate-900">
+                        Абал: <span className="font-semibold text-edubot-ink dark:text-white">{statusFilter === 'all' ? 'Баары' : statusFilter}</span>
+                    </span>
+                    <span className="rounded-full border border-edubot-line bg-white px-3 py-1.5 dark:border-slate-700 dark:bg-slate-900">
+                        Жыйынтык: <span className="font-semibold text-edubot-ink dark:text-white">{filteredItems.length}</span>
+                    </span>
+                </div>
+
                 <div className="mt-4 grid gap-3 xl:grid-cols-[minmax(0,1fr),minmax(0,1fr),minmax(0,0.9fr),minmax(0,0.8fr),minmax(0,0.7fr)]">
                     <select
                         value={courseId}
@@ -514,6 +580,41 @@ const InstructorHomework = () => {
             </DashboardInsetPanel>
 
             {loading ? <Loader fullScreen={false} /> : null}
+
+            {!loading && nextActionItems.length > 0 ? (
+                <DashboardInsetPanel
+                    title="Кийинки аракеттер"
+                    description="Кезек шашылыштык боюнча сорттолду: текшерүү, жөнөтпөгөндөр, оңдотуулар жана кеч тапшыргандар биринчи чыгат."
+                    action={
+                        <span className="rounded-full border border-edubot-orange/30 bg-edubot-orange/10 px-3 py-1 text-xs font-semibold text-edubot-orange">
+                            {nextActionItems.length} приоритет
+                        </span>
+                    }
+                >
+                    <div className="mt-4 grid gap-3 lg:grid-cols-3">
+                        {nextActionItems.map((item) => {
+                            const action = getQueueAction(item);
+                            return (
+                                <Link
+                                    key={item.id || `${item.title}-${item.deadline || ''}-next`}
+                                    to={buildSessionHomeworkPath(item)}
+                                    className="rounded-2xl border border-edubot-line bg-white p-4 transition hover:border-edubot-orange hover:shadow-edubot-soft dark:border-slate-700 dark:bg-slate-900"
+                                >
+                                    <div className="text-xs font-semibold uppercase tracking-[0.16em] text-edubot-orange">
+                                        {action.label}
+                                    </div>
+                                    <div className="mt-2 font-semibold text-edubot-ink dark:text-white">
+                                        {item.title || item.name || 'Үй тапшырма'}
+                                    </div>
+                                    <p className="mt-2 text-sm leading-6 text-edubot-muted dark:text-slate-400">
+                                        {action.description}
+                                    </p>
+                                </Link>
+                            );
+                        })}
+                    </div>
+                </DashboardInsetPanel>
+            ) : null}
 
             {!loading && filteredItems.length === 0 ? (
                 <DashboardInsetPanel

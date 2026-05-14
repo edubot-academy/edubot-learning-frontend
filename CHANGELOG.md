@@ -2,6 +2,42 @@
 
 Version bumps are classified by delivery scale; see `VERSIONING.md`.
 
+## [1.11.9] - 2026-05-14
+
+### Changed
+
+- Extracted session workspace route/tab query state into a focused hook to continue reducing `SessionWorkspace.jsx` controller sprawl.
+- Extracted session workspace course/group/session selection loading and session setup modal shell behavior into focused hooks.
+- Extracted session workspace attendance roster loading, filtering, save-state, and bulk-edit behavior into a focused hook.
+- Extracted session workspace session editing/status behavior and resources/meeting orchestration into focused hooks.
+- Extracted session workspace activities and homework orchestration into focused hooks, including activity response review state and homework roster refresh behavior.
+- Extracted attendance workspace loading, selection, save-state, and inline feedback orchestration into a feature hook so `Attendance.jsx` can stay focused on rendering.
+- Extracted course details quiz, code challenge, article auto-complete, video progress, initial load, and layout metric logic into a dedicated runtime hooks module.
+- Added high-frequency action cards to the session workspace so attendance, resources, and homework are easier to scan before lower-frequency tools.
+- Grouped session workspace tabs into primary workflow and supporting workspace lanes while preserving the same tab targets.
+- Aligned session workspace labels and descriptions with the instructor workbench model.
+- Removed cross-role swipe navigation from analytics pages and hid mobile quick actions that only produced placeholder “coming later” messages.
+- Tightened instructor analytics chart labels and recommendation copy with data-driven insight cards.
+- Reframed student analytics as a deeper layer of the student dashboard workflow.
+- Reduced admin analytics scroll weight by converting secondary analytics blocks from repeated workspace heroes into compact inset panels.
+- Strengthened instructor homework queue hierarchy with a dedicated next-action lane and clearer active filter/result context.
+
+### Fixed
+
+- Added durable inline attendance workspace feedback for loading progress, unsaved bulk edits, save success, validation warnings, and save/load errors.
+- Added durable inline session workspace feedback for attendance save, session create/update validation, success, and failure states.
+- Fixed session homework modal creation so submitted form values are passed through the extracted homework hook and failed saves no longer close the modal.
+- Updated the UX/UI audit statuses for completed feedback tasks and ongoing embedded-surface architecture work.
+
+### Verification
+
+- `npm run lint`
+- `npm test -- src/shared/utils/navigation.spec.js src/app/routes.spec.jsx src/shared/constants/dashboardTabs.spec.js src/pages/InstructorDashboard.spec.jsx --run`
+- `git diff --check`
+- `npm run build`
+
+---
+
 ## [1.11.8] - 2026-05-14
 
 ### Changed

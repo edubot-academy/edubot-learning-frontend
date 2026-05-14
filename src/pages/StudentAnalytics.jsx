@@ -328,8 +328,8 @@ const StudentAnalyticsPage = ({
                 </div>
 
                 <DashboardInsetPanel
-                    title="Бул барак эмнеге керек"
-                    description="Бул жер мотивация баннерлеринен көрө, реалдуу окуу тарыхын жана прогрессти тереңирээк көрүү үчүн керек."
+                    title="Студент workspace менен байланыш"
+                    description="Бул аналитика негизги студент dashboard ичиндеги окуу багытын деталдайт: кайсы курста улантуу, кайсы мезгилде активдүүлүк төмөндөдү жана жалпы прогресс эмнеден турат."
                 >
                     <div className="grid gap-3 sm:grid-cols-3">
                         <div className="rounded-2xl border border-edubot-line/70 bg-white/80 px-4 py-3 dark:border-slate-700 dark:bg-slate-900">
@@ -338,7 +338,7 @@ const StudentAnalyticsPage = ({
                                 Курстар
                             </div>
                             <p className="mt-2 text-sm text-edubot-muted dark:text-slate-400">
-                                Кайсы курстарда прогресс токтоп калганын тез байкайсыз.
+                                Dashboard көрсөткөн жалпы прогресстин кайсы курстардан турганын бул жерде бөлүп көрөсүз.
                             </p>
                         </div>
                         <div className="rounded-2xl border border-edubot-line/70 bg-white/80 px-4 py-3 dark:border-slate-700 dark:bg-slate-900">
@@ -347,7 +347,7 @@ const StudentAnalyticsPage = ({
                                 Убакыт
                             </div>
                             <p className="mt-2 text-sm text-edubot-muted dark:text-slate-400">
-                                Белгилүү мезгил боюнча окуу активдүүлүгүн салыштыра аласыз.
+                                Акыркы аракеттер жана мезгил фильтри окуу темпи качан өзгөргөнүн көрсөтөт.
                             </p>
                         </div>
                         <div className="rounded-2xl border border-edubot-line/70 bg-white/80 px-4 py-3 dark:border-slate-700 dark:bg-slate-900">
@@ -356,7 +356,7 @@ const StudentAnalyticsPage = ({
                                 Прогресс
                             </div>
                             <p className="mt-2 text-sm text-edubot-muted dark:text-slate-400">
-                                Жалпы көрсөткүчтөн тереңирээк деталдарды ушул жерден көрөсүз.
+                                Орточо көрсөткүчтөн тышкары конкреттүү курс, сабак жана активдүүлүк деталдары ачылат.
                             </p>
                         </div>
                     </div>

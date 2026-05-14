@@ -60,7 +60,7 @@ const MobileQuickActions = ({
             onClick: onShare,
             color: 'bg-edubot-orange hover:bg-edubot-orange/90',
         },
-    ];
+    ].filter((action) => Boolean(action.onClick));
 
     const toggleMenu = () => setIsOpen(!isOpen);
 

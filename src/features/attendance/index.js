@@ -27,6 +27,7 @@ export {
   useAttendanceUpdates,
   useAttendanceFilters,
 } from './hooks/useAttendanceData';
+export { useAttendanceWorkspace } from './hooks/useAttendanceWorkspace';
 
 // Constants and configuration
 export {

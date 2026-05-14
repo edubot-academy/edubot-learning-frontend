@@ -1,13 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { fetchAdminOverviewAnalytics } from '@services/api';
 import { toast } from 'react-hot-toast';
-import { useNavigate } from 'react-router-dom';
 import { FiAlertCircle, FiBarChart2, FiBookOpen, FiCheckCircle, FiRefreshCw, FiTrendingUp, FiUsers } from 'react-icons/fi';
-import { useSwipeNavigation } from '../hooks/useSwipeGestures';
-import { getDashboardPath } from '@shared/utils/navigation';
 import { AnalyticsDataTable, AnalyticsLineChart } from '@components/analytics';
 import {
     DashboardFilterBar,
+    DashboardInsetPanel,
     DashboardMetricCard,
     DashboardWorkspaceHero,
 } from '@components/ui/dashboard';
@@ -19,23 +17,9 @@ const metricNumber = (value, fallback = 0) => {
 };
 
 const AdminAnalyticsPage = () => {
-    const navigate = useNavigate();
     const [filters, setFilters] = useState({ from: '', to: '' });
     const [loading, setLoading] = useState(false);
     const [overview, setOverview] = useState(null);
-
-    const adminAnalyticsPath = getDashboardPath('admin', 'analytics');
-    const instructorAnalyticsPath = getDashboardPath('instructor', 'analytics');
-    const studentProgressPath = getDashboardPath('student', 'progress');
-    const analyticsPages = [adminAnalyticsPath, instructorAnalyticsPath, studentProgressPath];
-    const currentPageIndex = analyticsPages.indexOf(adminAnalyticsPath);
-
-    const swipeRef = useSwipeNavigation({
-        goBack: () => navigate(instructorAnalyticsPath),
-        goForward: () => navigate(studentProgressPath),
-        pages: analyticsPages,
-        currentIndex: currentPageIndex,
-    });
 
     const requestFilters = useMemo(
         () => ({
@@ -64,17 +48,11 @@ const AdminAnalyticsPage = () => {
     }, [requestFilters.from, requestFilters.to, loadAnalytics]);
 
     return (
-        <div ref={swipeRef} className="min-h-screen bg-transparent px-4 pb-12 pt-24">
+        <div className="min-h-screen bg-transparent px-4 pb-12 pt-24">
             <MobileQuickActions
                 onRefresh={loadAnalytics}
-                onExport={() => {
-                    toast.success('Экспорт функциясы келечеки!');
-                }}
                 onFilter={() => {
-                    toast.success('Фильтр функциясы келечеки!');
-                }}
-                onShare={() => {
-                    toast.success('Бөлүшүү функциясы келечеки!');
+                    document.getElementById('admin-analytics-filters')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 }}
                 currentPage="admin-analytics"
                 loading={loading}
@@ -125,67 +103,65 @@ const AdminAnalyticsPage = () => {
                         </>
                     )}
                 >
-                    <DashboardFilterBar gridClassName="xl:grid-cols-[1fr_1fr_280px]">
-                        <div>
-                            <label className="mb-2 block text-sm font-medium text-edubot-ink dark:text-white">Күндөн</label>
-                            <input
-                                type="date"
-                                value={filters.from || ''}
-                                onChange={(e) => setFilters((prev) => ({ ...prev, from: e.target.value }))}
-                                className="dashboard-field w-full"
-                            />
-                        </div>
-                        <div>
-                            <label className="mb-2 block text-sm font-medium text-edubot-ink dark:text-white">Күнгө чейин</label>
-                            <input
-                                type="date"
-                                value={filters.to || ''}
-                                onChange={(e) => setFilters((prev) => ({ ...prev, to: e.target.value }))}
-                                className="dashboard-field w-full"
-                            />
-                        </div>
-                        <div className="flex items-end">
-                            <div className="w-full rounded-2xl border border-edubot-line/70 bg-white/80 px-4 py-3 dark:border-slate-700 dark:bg-slate-900/75">
-                                <div className="flex items-center gap-3">
-                                    <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-edubot-orange/10 text-edubot-orange dark:bg-edubot-soft/10 dark:text-edubot-soft">
-                                        <FiBarChart2 className="h-5 w-5" />
-                                    </div>
-                                    <div>
-                                        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-edubot-muted dark:text-slate-400">
-                                            Фильтр абалы
-                                        </p>
-                                        <p className="mt-1 text-sm text-edubot-ink dark:text-white">
-                                            {filters.from || filters.to ? 'Күн аралыгы тандалды' : 'Бардык убакыт'}
-                                        </p>
+                    <div id="admin-analytics-filters">
+                        <DashboardFilterBar gridClassName="xl:grid-cols-[1fr_1fr_280px]">
+                            <div>
+                                <label className="mb-2 block text-sm font-medium text-edubot-ink dark:text-white">Күндөн</label>
+                                <input
+                                    type="date"
+                                    value={filters.from || ''}
+                                    onChange={(e) => setFilters((prev) => ({ ...prev, from: e.target.value }))}
+                                    className="dashboard-field w-full"
+                                />
+                            </div>
+                            <div>
+                                <label className="mb-2 block text-sm font-medium text-edubot-ink dark:text-white">Күнгө чейин</label>
+                                <input
+                                    type="date"
+                                    value={filters.to || ''}
+                                    onChange={(e) => setFilters((prev) => ({ ...prev, to: e.target.value }))}
+                                    className="dashboard-field w-full"
+                                />
+                            </div>
+                            <div className="flex items-end">
+                                <div className="w-full rounded-2xl border border-edubot-line/70 bg-white/80 px-4 py-3 dark:border-slate-700 dark:bg-slate-900/75">
+                                    <div className="flex items-center gap-3">
+                                        <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-edubot-orange/10 text-edubot-orange dark:bg-edubot-soft/10 dark:text-edubot-soft">
+                                            <FiBarChart2 className="h-5 w-5" />
+                                        </div>
+                                        <div>
+                                            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-edubot-muted dark:text-slate-400">
+                                                Фильтр абалы
+                                            </p>
+                                            <p className="mt-1 text-sm text-edubot-ink dark:text-white">
+                                                {filters.from || filters.to ? 'Күн аралыгы тандалды' : 'Бардык убакыт'}
+                                            </p>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                    </DashboardFilterBar>
+                        </DashboardFilterBar>
+                    </div>
                 </DashboardWorkspaceHero>
 
-                <DashboardWorkspaceHero
-                    eyebrow="COURSE PERFORMANCE"
+                <DashboardInsetPanel
                     title="Курс аналитикасы"
-                    description="Эң күчтүү курстарды жана көңүл бурууну талап кылган курстарды салыштырыңыз."
-                    metrics={(
-                        <>
-                            <DashboardMetricCard
-                                label="Эң мыкты курс"
-                                value={overview?.charts?.topCourses?.length || 0}
-                                icon={FiTrendingUp}
-                                tone="green"
-                            />
-                            <DashboardMetricCard
-                                label="Тобокел курстар"
-                                value={overview?.charts?.lowPerformingCourses?.length || 0}
-                                icon={FiAlertCircle}
-                                tone="amber"
-                            />
-                        </>
-                    )}
-                    metricsClassName="grid grid-cols-2 gap-3"
+                    description="Эң күчтүү курстарды жана көңүл бурууну талап кылган курстарды бир компакттуу блокто салыштырыңыз."
                 >
+                    <div className="mb-4 grid gap-3 sm:grid-cols-2">
+                        <DashboardMetricCard
+                            label="Эң мыкты курс"
+                            value={overview?.charts?.topCourses?.length || 0}
+                            icon={FiTrendingUp}
+                            tone="green"
+                        />
+                        <DashboardMetricCard
+                            label="Тобокел курстар"
+                            value={overview?.charts?.lowPerformingCourses?.length || 0}
+                            icon={FiAlertCircle}
+                            tone="amber"
+                        />
+                    </div>
                     <div className="grid gap-6 lg:grid-cols-2">
                         <AnalyticsDataTable
                             title="Эң мыкты курстар"
@@ -213,30 +189,26 @@ const AdminAnalyticsPage = () => {
                             pageSize={5}
                         />
                     </div>
-                </DashboardWorkspaceHero>
+                </DashboardInsetPanel>
 
-                <DashboardWorkspaceHero
-                    eyebrow="TREND REPORT"
+                <DashboardInsetPanel
                     title="Тренд отчету"
                     description="Катышуу жана киреше динамикасын убакыт боюнча караңыз."
-                    metrics={(
-                        <>
-                            <DashboardMetricCard
-                                label="Катышуу чекити"
-                                value={overview?.charts?.enrollmentsTrend?.length || 0}
-                                icon={FiUsers}
-                                tone="blue"
-                            />
-                            <DashboardMetricCard
-                                label="Киреше чекити"
-                                value={overview?.charts?.revenueTrend?.length || 0}
-                                icon={FiTrendingUp}
-                                tone="green"
-                            />
-                        </>
-                    )}
-                    metricsClassName="grid grid-cols-2 gap-3"
                 >
+                    <div className="mb-4 grid gap-3 sm:grid-cols-2">
+                        <DashboardMetricCard
+                            label="Катышуу чекити"
+                            value={overview?.charts?.enrollmentsTrend?.length || 0}
+                            icon={FiUsers}
+                            tone="blue"
+                        />
+                        <DashboardMetricCard
+                            label="Киреше чекити"
+                            value={overview?.charts?.revenueTrend?.length || 0}
+                            icon={FiTrendingUp}
+                            tone="green"
+                        />
+                    </div>
                     <div className="grid gap-6 lg:grid-cols-2">
                         <AnalyticsLineChart
                             title="Катышуу тренддери"
@@ -264,7 +236,7 @@ const AdminAnalyticsPage = () => {
                             showLegend={false}
                         />
                     </div>
-                </DashboardWorkspaceHero>
+                </DashboardInsetPanel>
             </div>
         </div>
     );
