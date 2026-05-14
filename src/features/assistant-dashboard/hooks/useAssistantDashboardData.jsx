@@ -53,6 +53,7 @@ export const useAssistantDashboardData = (user) => {
         getActionKey,
         handleEnroll,
         handleUnenroll,
+        lastEnrollmentFeedback,
         pendingEnrollmentAction,
     } = useAssistantEnrollmentActions({
         coursesById,
@@ -92,6 +93,7 @@ export const useAssistantDashboardData = (user) => {
         handleEnroll,
         handleUnenroll,
         getActionKey,
+        lastEnrollmentFeedback,
         pendingEnrollmentAction,
         loadStudentsAndCourses,
     };

@@ -1,4 +1,4 @@
-import { useContext, useMemo, useState } from 'react';
+import { useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { completeAccountSetup } from '@services/api';
@@ -12,46 +12,84 @@ const SetupAccountPage = () => {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const token = useMemo(() => searchParams.get('token')?.trim() || '', [searchParams]);
-    const [password, setPassword] = useState('');
-    const [confirmPassword, setConfirmPassword] = useState('');
+    const [formData, setFormData] = useState({
+        password: '',
+        confirmPassword: '',
+    });
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState('');
+    const [status, setStatus] = useState({ type: '', message: '' });
+    const redirectTimerRef = useRef(null);
     const hasToken = Boolean(token);
+    const setupComplete = status.type === 'success';
+    const passwordRules = useMemo(() => [
+        {
+            id: 'length',
+            label: 'Кеминде 8 белги',
+            isMet: formData.password.length >= 8,
+        },
+        {
+            id: 'match',
+            label: 'Кайталоо сырсөз менен дал келет',
+            isMet: Boolean(formData.confirmPassword) && formData.password === formData.confirmPassword,
+        },
+    ], [formData.confirmPassword, formData.password]);
+    const hasPasswordMismatch =
+        Boolean(formData.confirmPassword) && formData.password !== formData.confirmPassword;
+
+    useEffect(() => () => {
+        if (redirectTimerRef.current) {
+            window.clearTimeout(redirectTimerRef.current);
+        }
+    }, []);
+
+    const updateField = (field) => (event) => {
+        setFormData((prev) => ({ ...prev, [field]: event.target.value }));
+        setStatus((prev) => (prev.type === 'error' ? { type: '', message: '' } : prev));
+    };
 
     const handleSubmit = async (event) => {
         event.preventDefault();
-        setError('');
+        setStatus({ type: '', message: '' });
 
         if (!hasToken) {
-            setError('Аккаунтту даярдоо шилтемеси табылган жок.');
+            setStatus({ type: 'error', message: 'Аккаунтту даярдоо шилтемеси табылган жок.' });
             return;
         }
 
-        if (password.length < 8) {
-            setError('Сырсөз кеминде 8 белгиден турушу керек.');
+        if (formData.password.length < 8) {
+            setStatus({ type: 'error', message: 'Сырсөз кеминде 8 белгиден турушу керек.' });
             return;
         }
 
-        if (password !== confirmPassword) {
-            setError('Сырсөздөр дал келген жок.');
+        if (formData.password !== formData.confirmPassword) {
+            setStatus({ type: 'error', message: 'Сырсөздөр дал келген жок.' });
             return;
         }
 
         setLoading(true);
         try {
-            const response = await completeAccountSetup({ token, newPassword: password });
+            const response = await completeAccountSetup({ token, newPassword: formData.password });
             const { user, access_token } = response.data;
 
             login(user);
             setStoredToken(access_token);
 
+            setStatus({
+                type: 'success',
+                message: 'Аккаунт даяр болду. LMSке өткөрүлүп жатасыз.',
+            });
             toast.success('Аккаунт даяр болду. Эми LMSке кире аласыз.');
-            navigate('/', { replace: true });
+            if (redirectTimerRef.current) {
+                window.clearTimeout(redirectTimerRef.current);
+            }
+            redirectTimerRef.current = window.setTimeout(() => navigate('/', { replace: true }), 900);
         } catch (setupError) {
-            setError(
-                setupError?.response?.data?.message ||
-                'Шилтеме жараксыз же мөөнөтү өтүп кеткен. Жаңы шилтеме сураныңыз.',
-            );
+            setStatus({
+                type: 'error',
+                message:
+                    setupError?.response?.data?.message ||
+                    'Шилтеме жараксыз же мөөнөтү өтүп кеткен. Жаңы шилтеме сураныңыз.',
+            });
         } finally {
             setLoading(false);
         }
@@ -100,10 +138,17 @@ const SetupAccountPage = () => {
                         </div>
                     )}
 
-                    {error && (
-                        <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-200" role="alert">
-                            <p>{error}</p>
-                            {hasToken && (
+                    {status.message && (
+                        <div
+                            className={`mb-4 rounded-lg border p-3 text-sm ${
+                                status.type === 'success'
+                                    ? 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/30 dark:text-emerald-200'
+                                    : 'border-red-200 bg-red-50 text-red-700 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-200'
+                            }`}
+                            role={status.type === 'error' ? 'alert' : 'status'}
+                        >
+                            <p>{status.message}</p>
+                            {hasToken && status.type === 'error' && (
                                 <p className="mt-2">
                                     Эгер шилтеменин мөөнөтү өтсө, CRM менеджерден жаңы чакыруу сураңыз.
                                 </p>
@@ -115,26 +160,45 @@ const SetupAccountPage = () => {
                         <LabelPassword
                             label="Жаңы сырсөз"
                             name="password"
-                            value={password}
-                            onChange={(event) => setPassword(event.target.value)}
+                            value={formData.password}
+                            onChange={updateField('password')}
                             required={true}
                             width="w-full"
                             className="py-2"
                         />
+
+                        <div className="rounded-lg border border-gray-200 bg-gray-50 p-3 text-xs text-gray-700 dark:border-gray-700 dark:bg-gray-900/60 dark:text-gray-300">
+                            <p className="font-semibold">Сырсөз эрежелери</p>
+                            <ul className="mt-2 space-y-1">
+                                {passwordRules.map((rule) => (
+                                    <li
+                                        key={rule.id}
+                                        className={rule.isMet ? 'text-emerald-700 dark:text-emerald-300' : ''}
+                                    >
+                                        {rule.isMet ? '✓' : '•'} {rule.label}
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
 
                         <LabelPassword
                             label="Сырсөздү кайталаңыз"
                             name="confirmPassword"
-                            value={confirmPassword}
-                            onChange={(event) => setConfirmPassword(event.target.value)}
+                            value={formData.confirmPassword}
+                            onChange={updateField('confirmPassword')}
                             required={true}
                             width="w-full"
                             className="py-2"
                         />
+                        {hasPasswordMismatch && (
+                            <p className="text-xs font-medium text-red-600 dark:text-red-300">
+                                Сырсөздөр азырынча дал келген жок.
+                            </p>
+                        )}
 
                         <button
                             type="submit"
-                            disabled={loading || !hasToken}
+                            disabled={loading || !hasToken || setupComplete}
                             className="w-full mt-4 shadow-[0px_5px_21.3px_0px_#E14219BF] bg-[linear-gradient(180deg,#FF8C6E_0%,#E14219_100%)] text-white py-3 rounded text-lg font-semibold hover:opacity-90 transition disabled:opacity-60"
                         >
                             {loading ? 'Даярдалууда...' : 'Аккаунтту иштетүү'}

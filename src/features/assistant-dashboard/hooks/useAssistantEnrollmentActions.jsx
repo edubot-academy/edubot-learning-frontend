@@ -40,6 +40,7 @@ export const useAssistantEnrollmentActions = ({
     onUnenrollSuccess,
 }) => {
     const [pendingEnrollmentAction, setPendingEnrollmentAction] = useState(null);
+    const [lastEnrollmentFeedback, setLastEnrollmentFeedback] = useState(null);
 
     const getActionKey = useCallback((studentId, courseId, action) =>
         `${action}:${studentId}:${courseId}`, []);
@@ -57,6 +58,13 @@ export const useAssistantEnrollmentActions = ({
                 </>,
                 async () => {
                     setPendingEnrollmentAction(actionKey);
+                    setLastEnrollmentFeedback({
+                        actionKey,
+                        studentId: student.id,
+                        courseId: Number(selectedCourseId),
+                        type: 'pending',
+                        message: `${student.fullName} студентин "${courseTitle}" курсуна каттоо жүрүп жатат.`,
+                    });
                     try {
                         await enrollUserInCourse(student.id, selectedCourseId, {
                             courseType: normalizeEnrollmentCourseType(
@@ -71,8 +79,22 @@ export const useAssistantEnrollmentActions = ({
                         );
 
                         onEnrollSuccess(student.id, Number(selectedCourseId), mutationContext);
+                        setLastEnrollmentFeedback({
+                            actionKey,
+                            studentId: student.id,
+                            courseId: Number(selectedCourseId),
+                            type: 'success',
+                            message: `${student.fullName} "${courseTitle}" курсуна катталды.`,
+                        });
                     } catch {
                         toast.error('Курска каттоодо ката кетти');
+                        setLastEnrollmentFeedback({
+                            actionKey,
+                            studentId: student.id,
+                            courseId: Number(selectedCourseId),
+                            type: 'error',
+                            message: `${student.fullName} студентин "${courseTitle}" курсуна каттоо ишке ашкан жок.`,
+                        });
                     } finally {
                         setPendingEnrollmentAction(null);
                     }
@@ -95,6 +117,13 @@ export const useAssistantEnrollmentActions = ({
                 </>,
                 async () => {
                     setPendingEnrollmentAction(actionKey);
+                    setLastEnrollmentFeedback({
+                        actionKey,
+                        studentId: student.id,
+                        courseId: Number(courseId),
+                        type: 'pending',
+                        message: `${student.fullName} студентин "${courseTitle}" курсунан чыгаруу жүрүп жатат.`,
+                    });
                     try {
                         await unenrollUserFromCourse(student.id, courseId);
                         toast.success(
@@ -103,8 +132,22 @@ export const useAssistantEnrollmentActions = ({
                             </span>
                         );
                         onUnenrollSuccess(student.id, Number(courseId), mutationContext);
+                        setLastEnrollmentFeedback({
+                            actionKey,
+                            studentId: student.id,
+                            courseId: Number(courseId),
+                            type: 'success',
+                            message: `${student.fullName} "${courseTitle}" курсунан чыгарылды.`,
+                        });
                     } catch {
                         toast.error('Курстан чыгарууда ката кетти');
+                        setLastEnrollmentFeedback({
+                            actionKey,
+                            studentId: student.id,
+                            courseId: Number(courseId),
+                            type: 'error',
+                            message: `${student.fullName} студентин "${courseTitle}" курсунан чыгаруу ишке ашкан жок.`,
+                        });
                     } finally {
                         setPendingEnrollmentAction(null);
                     }
@@ -119,6 +162,7 @@ export const useAssistantEnrollmentActions = ({
         getActionKey,
         handleEnroll,
         handleUnenroll,
+        lastEnrollmentFeedback,
         pendingEnrollmentAction,
     };
 };

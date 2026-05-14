@@ -1,4 +1,4 @@
-import { useContext, useMemo, useState } from 'react';
+import { useContext, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { useInstructorCourseListPage } from '@features/instructor-dashboard/hooks/useInstructorCourseListPage';
@@ -15,11 +15,22 @@ const COURSE_FILTERS = [
     { value: COURSE_LIFECYCLE_STATES.REJECTED, label: 'Оңдоо керек' },
 ];
 
+const COURSE_TYPE_FILTERS = [
+    { value: 'all', label: 'Бардык workflow' },
+    { value: 'video', label: 'Self-paced video' },
+    { value: 'delivery', label: 'Delivery / group' },
+];
+
 const courseTypeLabel = (type) => {
     const normalized = String(type || 'video').toLowerCase();
     if (normalized === 'offline') return 'Offline';
     if (normalized === 'online_live') return 'Online Live';
     return 'Video';
+};
+
+const getCourseWorkflow = (type) => {
+    const normalized = String(type || 'video').toLowerCase();
+    return normalized === 'offline' || normalized === 'online_live' ? 'delivery' : 'video';
 };
 
 const getCourseDisplayData = (course, user) => {
@@ -38,6 +49,7 @@ const getCourseDisplayData = (course, user) => {
         lifecycle,
         priceLabel: Number.isFinite(price) ? `${price} с` : 'Баасы көрсөтүлгөн эмес',
         title,
+        workflow: getCourseWorkflow(course?.courseType || course?.type),
         typeLabel: courseTypeLabel(course?.courseType || course?.type),
     };
 };
@@ -47,6 +59,14 @@ const InstructorCourses = () => {
     const { courses, error, loading, refresh } = useInstructorCourseListPage(user);
     const [query, setQuery] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
+    const [typeFilter, setTypeFilter] = useState('all');
+    const [lastLoadedAt, setLastLoadedAt] = useState(null);
+
+    useEffect(() => {
+        if (!loading && !error) {
+            setLastLoadedAt(new Date());
+        }
+    }, [error, loading, courses.length]);
 
     const courseDisplayItems = useMemo(
         () => courses.map((course) => ({
@@ -68,25 +88,86 @@ const InstructorCourses = () => {
         [courseDisplayItems]
     );
 
+    const workflowCounts = useMemo(
+        () =>
+            courseDisplayItems.reduce(
+                (acc, item) => ({
+                    ...acc,
+                    [item.display.workflow]: (acc[item.display.workflow] || 0) + 1,
+                }),
+                { video: 0, delivery: 0 }
+            ),
+        [courseDisplayItems]
+    );
+
     const filteredCourses = useMemo(() => {
         const normalizedQuery = query.trim().toLowerCase();
 
         return courseDisplayItems.filter(({ display }) => {
             const matchesStatus =
                 statusFilter === 'all' || display.lifecycle.state === statusFilter;
+            const matchesType =
+                typeFilter === 'all' || display.workflow === typeFilter;
             const matchesQuery =
                 !normalizedQuery ||
                 display.title.toLowerCase().includes(normalizedQuery) ||
                 display.instructorName.toLowerCase().includes(normalizedQuery) ||
                 display.typeLabel.toLowerCase().includes(normalizedQuery);
 
-            return matchesStatus && matchesQuery;
+            return matchesStatus && matchesType && matchesQuery;
         });
-    }, [courseDisplayItems, query, statusFilter]);
+    }, [courseDisplayItems, query, statusFilter, typeFilter]);
+
+    const lastLoadedLabel = lastLoadedAt
+        ? lastLoadedAt.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })
+        : '—';
 
     return (
         <div className="min-h-screen p-6 pt-24 max-w-6xl mx-auto">
             <h1 className="text-4xl font-bold mb-8 text-center">Менин курстарым</h1>
+            <section
+                aria-label="Курс workflow абалы"
+                className="mb-6 grid gap-3 md:grid-cols-3"
+            >
+                <div className="rounded border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-[#141619]">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                        Self-paced video
+                    </p>
+                    <p className="mt-2 text-2xl font-bold text-gray-900 dark:text-white">
+                        {workflowCounts.video}
+                    </p>
+                    <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">
+                        Мазмун, preview жана approval аркылуу башкарылат.
+                    </p>
+                </div>
+                <div className="rounded border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-[#141619]">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                        Delivery / group
+                    </p>
+                    <p className="mt-2 text-2xl font-bold text-gray-900 dark:text-white">
+                        {workflowCounts.delivery}
+                    </p>
+                    <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">
+                        Группа, schedule жана катышуу workflow менен иштейт.
+                    </p>
+                </div>
+                <div className="rounded border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-[#141619]">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                        Акыркы жаңыртуу
+                    </p>
+                    <p className="mt-2 text-2xl font-bold text-gray-900 dark:text-white">
+                        {loading ? 'Жүктөлүүдө...' : lastLoadedLabel}
+                    </p>
+                    <button
+                        type="button"
+                        onClick={refresh}
+                        disabled={loading}
+                        className="mt-2 rounded border border-gray-300 px-3 py-1 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
+                    >
+                        Жаңыртуу
+                    </button>
+                </div>
+            </section>
             {error && (
                 <div className="mb-6 rounded border border-red-200 bg-red-50 p-4 text-red-700 dark:border-red-900/40 dark:bg-red-950/20 dark:text-red-200">
                     <p className="font-semibold">Курстарды алуу ишке ашкан жок.</p>
@@ -109,7 +190,7 @@ const InstructorCourses = () => {
                 aria-label="Курс башкаруу чыпкалары"
                 className="mb-6 rounded border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-[#141619]"
             >
-                <div className="grid gap-3 md:grid-cols-[1fr_auto] md:items-end">
+                <div className="grid gap-3 md:grid-cols-[1fr_auto_auto] md:items-end">
                     <div>
                         <label htmlFor="instructor-course-search" className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200">
                             Курс издөө
@@ -140,6 +221,24 @@ const InstructorCourses = () => {
                                     {filter.value !== 'all' && lifecycleCounts[filter.value]
                                         ? ` (${lifecycleCounts[filter.value]})`
                                         : ''}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+
+                    <div>
+                        <label htmlFor="instructor-course-type" className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200">
+                            Workflow
+                        </label>
+                        <select
+                            id="instructor-course-type"
+                            value={typeFilter}
+                            onChange={(event) => setTypeFilter(event.target.value)}
+                            className="w-full rounded border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white md:min-w-48"
+                        >
+                            {COURSE_TYPE_FILTERS.map((filter) => (
+                                <option key={filter.value} value={filter.value}>
+                                    {filter.label}
                                 </option>
                             ))}
                         </select>

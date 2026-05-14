@@ -14,11 +14,32 @@ const isOnlineLiveOffering = (offering) => {
 };
 
 const isStudentJoinWindowOpen = (offering, nowMs) => {
-    const startMs = offering?.startAt ? new Date(offering.startAt).getTime() : null;
-    const endMs = offering?.endAt ? new Date(offering.endAt).getTime() : null;
+    const startRaw = offering?.startAt || offering?.startsAt;
+    const endRaw = offering?.endAt || offering?.endsAt;
+    const startMs = startRaw ? new Date(startRaw).getTime() : null;
+    const endMs = endRaw ? new Date(endRaw).getTime() : null;
     if (!startMs || Number.isNaN(startMs)) return true;
     if (!endMs || Number.isNaN(endMs)) return nowMs >= startMs - JOIN_WINDOW_MS;
     return nowMs >= startMs - JOIN_WINDOW_MS && nowMs <= endMs;
+};
+
+const getStudentLiveRefreshInterval = (offerings = [], nowMs = Date.now()) => {
+    const hasCriticalLiveWindow = offerings.some((offering) => {
+        if (!isOnlineLiveOffering(offering)) return false;
+
+        const startRaw = offering?.startAt || offering?.startsAt;
+        const endRaw = offering?.endAt || offering?.endsAt;
+        const startMs = startRaw ? new Date(startRaw).getTime() : null;
+        const endMs = endRaw ? new Date(endRaw).getTime() : null;
+        if (!startMs || Number.isNaN(startMs)) return false;
+        if (endMs && !Number.isNaN(endMs) && nowMs > endMs) return false;
+        if ((!endMs || Number.isNaN(endMs)) && nowMs > startMs) return false;
+
+        const msUntilJoinWindow = startMs - JOIN_WINDOW_MS - nowMs;
+        return msUntilJoinWindow <= 60 * 1000;
+    });
+
+    return hasCriticalLiveWindow ? 1000 : 60 * 1000;
 };
 
 const resolveCourseType = (item = {}) =>
@@ -126,6 +147,7 @@ export {
     formatNotificationLabel,
     isOnlineLiveOffering,
     isStudentJoinWindowOpen,
+    getStudentLiveRefreshInterval,
     resolveCourseType,
     isOfflineOrLiveCourse,
     courseTypeLabel,

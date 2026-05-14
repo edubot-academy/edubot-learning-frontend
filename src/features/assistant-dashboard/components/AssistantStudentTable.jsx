@@ -31,8 +31,34 @@ const AssistantStudentTable = ({
     handleEnroll,
     handleUnenroll,
     isSearchTooShort,
+    lastEnrollmentFeedback,
     pendingEnrollmentAction,
 }) => {
+    const emptyStateCopy = (() => {
+        if (isSearchTooShort) {
+            return {
+                title: 'Издөө үчүн маалымат жетишсиз',
+                subtitle: 'Натыйжаларды көрсөтүү үчүн кеминде 3 белги киргизиңиз.',
+            };
+        }
+        if (search.trim().length >= 3) {
+            return {
+                title: 'Издөөгө туура келген студент табылган жок',
+                subtitle: 'Атын, email дарегин же фильтр контекстин өзгөртүп көрүңүз.',
+            };
+        }
+        if (!courses.length) {
+            return {
+                title: 'Каттоо үчүн жарыяланган курс жок',
+                subtitle: 'Курстар жарыялангандан кийин ассистент студенттерди каттай алат.',
+            };
+        }
+        return {
+            title: 'Бекитилген студенттер жок',
+            subtitle: 'Компанияга бекитилген студенттер пайда болгондо бул жерде көрсөтүлөт.',
+        };
+    })();
+
     return (
         <div className="space-y-6">
             <DashboardWorkspaceHero
@@ -81,14 +107,29 @@ const AssistantStudentTable = ({
                 title="Студенттер тизмеси"
                 description="Ар бир студент үчүн активдүү курстарды көрүп, жаңы курс тандап каттоо аракетин аткарыңыз."
             >
+                {lastEnrollmentFeedback && (
+                    <div
+                        className={`mb-4 rounded-2xl border px-4 py-3 text-sm ${
+                            lastEnrollmentFeedback.type === 'error'
+                                ? 'border-red-200 bg-red-50 text-red-700 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-200'
+                                : lastEnrollmentFeedback.type === 'success'
+                                    ? 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/30 dark:text-emerald-200'
+                                    : 'border-blue-200 bg-blue-50 text-blue-800 dark:border-blue-900/60 dark:bg-blue-950/30 dark:text-blue-200'
+                        }`}
+                        role={lastEnrollmentFeedback.type === 'error' ? 'alert' : 'status'}
+                    >
+                        {lastEnrollmentFeedback.message}
+                    </div>
+                )}
+
                 {loading ? (
                     <div className="dashboard-panel-muted p-10 text-center text-sm text-edubot-muted dark:text-slate-400">
                         Жүктөлүүдө...
                     </div>
                 ) : students.length === 0 ? (
                     <EmptyState
-                        title="Бекитилген студенттер жок"
-                        subtitle="Ассистент катышуусу үчүн студенттер жок."
+                        title={emptyStateCopy.title}
+                        subtitle={emptyStateCopy.subtitle}
                     />
                 ) : (
                     <div className="grid gap-4">
@@ -104,6 +145,10 @@ const AssistantStudentTable = ({
                                 ? getActionKey(student.id, selectedCourseId, 'enroll')
                                 : null;
                             const isEnrolling = pendingEnrollmentAction === enrollActionKey;
+                            const rowFeedback =
+                                lastEnrollmentFeedback?.studentId === student.id
+                                    ? lastEnrollmentFeedback
+                                    : null;
 
                             return (
                                 <article
@@ -121,6 +166,20 @@ const AssistantStudentTable = ({
                                             <div className="text-sm text-edubot-muted dark:text-slate-400">
                                                 {student.phoneNumber || '—'}
                                             </div>
+                                            {rowFeedback && (
+                                                <div
+                                                    className={`mt-3 rounded-2xl border px-3 py-2 text-xs ${
+                                                        rowFeedback.type === 'error'
+                                                            ? 'border-red-200 bg-red-50 text-red-700 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-200'
+                                                            : rowFeedback.type === 'success'
+                                                                ? 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/30 dark:text-emerald-200'
+                                                                : 'border-blue-200 bg-blue-50 text-blue-800 dark:border-blue-900/60 dark:bg-blue-950/30 dark:text-blue-200'
+                                                    }`}
+                                                    role={rowFeedback.type === 'error' ? 'alert' : 'status'}
+                                                >
+                                                    {rowFeedback.message}
+                                                </div>
+                                            )}
 
                                             <div className="mt-4 flex flex-wrap gap-2">
                                                 {enrolledCourseIds.length ? (

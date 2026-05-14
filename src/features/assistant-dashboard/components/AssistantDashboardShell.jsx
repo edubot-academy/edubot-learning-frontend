@@ -8,7 +8,10 @@ import {
     DashboardTabs,
     DashboardWorkspaceHero,
 } from "../../../components/ui/dashboard";
-import { NAV_ITEMS } from "../utils/assistantDashboard.constants";
+import {
+    ASSISTANT_ATTENDANCE_WORKSPACE_DECISION,
+    NAV_ITEMS,
+} from "../utils/assistantDashboard.constants";
 import AssistantCompanyState from "./AssistantCompanyState";
 import AssistantCourseStats from "./AssistantCourseStats";
 import AssistantStudentTable from "./AssistantStudentTable";
@@ -34,6 +37,7 @@ const AssistantDashboardShell = ({
     isAssistant,
     isSearchTooShort,
     loading,
+    lastEnrollmentFeedback,
     pendingEnrollmentAction,
     search,
     setActiveCompanyId,
@@ -135,7 +139,19 @@ const AssistantDashboardShell = ({
         }
 
         if (activeTab === "attendance") {
-            return <AttendancePage embedded />;
+            return (
+                <div className="space-y-4">
+                    <DashboardInsetPanel
+                        title="Катышуу workspace"
+                        description="Катышуу shared attendance domain ичинде калат; ассистент табы ушул workflow үчүн контекст берет."
+                    >
+                        <div className="text-sm text-edubot-muted dark:text-slate-400">
+                            {ASSISTANT_ATTENDANCE_WORKSPACE_DECISION.reason}
+                        </div>
+                    </DashboardInsetPanel>
+                    <AttendancePage embedded />
+                </div>
+            );
         }
 
         if (activeTab === "courses") {
@@ -181,6 +197,7 @@ const AssistantDashboardShell = ({
                 handleEnroll={handleEnroll}
                 handleUnenroll={handleUnenroll}
                 isSearchTooShort={isSearchTooShort}
+                lastEnrollmentFeedback={lastEnrollmentFeedback}
                 pendingEnrollmentAction={pendingEnrollmentAction}
             />
         );

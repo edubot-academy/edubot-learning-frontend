@@ -9,6 +9,7 @@ import ArticleEditor from '../../components/ArticleEditor';
 import LessonCardHeader from '../../components/LessonCardHeader';
 import LessonMetaFields from '../../components/LessonMetaFields';
 import LessonAssetsPanel from '../../components/LessonAssetsPanel';
+import ConfirmationModal from '../../../../shared/ui/ConfirmationModal';
 import { CURRICULUM_WORKSPACE_SECTIONS } from '../constants';
 import { minutesInputToSeconds, secondsToMinutesInput } from '../../../../utils/timeUtils';
 
@@ -536,39 +537,19 @@ export const CurriculumStep = ({
                 </details>
             ))}
 
-            {/* Delete Confirmation Modal */}
-            {confirmDelete.type && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white dark:bg-gray-800 p-6 rounded shadow max-w-sm w-full border border-gray-200 dark:border-gray-700">
-                        <h4 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Ырастоо</h4>
-                        <p className="mb-6 text-gray-700 dark:text-gray-300">
-                            {confirmDelete.type === 'section' ? (
-                                <span>
-                                    &quot;{confirmDelete.title || `Бөлүм ${confirmDelete.sectionIndex + 1}`}&quot; бөлүмүн жана андагы бардык сабактарды өчүрүүнү чын мен каалайсызбы? Бул кайтарылгыс.
-                                </span>
-                            ) : (
-                                <span>
-                                    &quot;{confirmDelete.title || `Сабак ${confirmDelete.lessonIndex + 1}`}&quot; сабагын өчүрүүнү чын мен каалайсызбы? Бул кайтарылгыс.
-                                </span>
-                            )}
-                        </p>
-                        <div className="flex justify-end gap-3">
-                            <button
-                                onClick={() => setConfirmDelete({ type: null, sectionIndex: null, lessonIndex: null, title: '' })}
-                                className="px-4 py-2 border border-gray-300 rounded text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
-                            >
-                                Жокко
-                            </button>
-                            <button
-                                onClick={handleConfirmedDelete}
-                                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
-                            >
-                                Ооба, өчүрүү
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
+            <ConfirmationModal
+                isOpen={Boolean(confirmDelete.type)}
+                onClose={() => setConfirmDelete({ type: null, sectionIndex: null, lessonIndex: null, title: '' })}
+                onConfirm={handleConfirmedDelete}
+                title={confirmDelete.type === 'section' ? 'Бөлүмдү өчүрүү' : 'Сабакты өчүрүү'}
+                message={
+                    confirmDelete.type === 'section'
+                        ? `"${confirmDelete.title || `Бөлүм ${confirmDelete.sectionIndex + 1}`}" бөлүмүн жана андагы бардык сабактарды өчүрөсүзбү? Бул аракет кайтарылбайт.`
+                        : `"${confirmDelete.title || `Сабак ${confirmDelete.lessonIndex + 1}`}" сабагын өчүрөсүзбү? Бул аракет кайтарылбайт.`
+                }
+                confirmLabel="Ооба, өчүрүү"
+                confirmVariant="danger"
+            />
         </div>
     );
 };

@@ -539,6 +539,12 @@ const TasksTab = ({ tasks, onSubmitHomework, submittingTaskState }) => {
                                 file: null,
                                 quizAnswers: {},
                             };
+                            const hasTextDraft = Boolean((draft.text || '').trim());
+                            const hasLinkDraft = Boolean((draft.link || '').trim());
+                            const hasQuizDraft = Object.values(draft.quizAnswers || {}).some((value) =>
+                                Array.isArray(value) ? value.length > 0 : Boolean(value)
+                            );
+                            const hasDraftWork = hasTextDraft || hasLinkDraft || Boolean(draft.file) || hasQuizDraft;
                             const isSubmitting = submittingTaskState?.key === item.key;
                             const isUploading = isSubmitting && submittingTaskState?.phase === 'uploading';
                             const isExpanded = expandedTaskId === item.key;
@@ -912,10 +918,7 @@ const TasksTab = ({ tasks, onSubmitHomework, submittingTaskState }) => {
                                                                     <label className="flex cursor-pointer items-center justify-between gap-3 rounded-2xl border border-dashed border-edubot-line px-4 py-3 text-sm text-edubot-muted transition hover:border-edubot-orange hover:text-edubot-orange dark:border-slate-700 dark:text-slate-300">
                                                                         <span className="inline-flex items-center gap-2">
                                                                             <FiPaperclip className="h-4 w-4" />
-                                                                            {draft.file?.name ||
-                                                                                item.task.kind === 'activity'
-                                                                                    ? 'PDF же Word кошуу'
-                                                                                    : 'PDF же Word кошуу'}
+                                                                            {draft.file?.name || 'PDF же Word кошуу'}
                                                                         </span>
                                                                         <span className="text-xs font-semibold">
                                                                             {draft.file ? 'Алмаштыруу' : 'Файл тандоо'}
@@ -946,6 +949,24 @@ const TasksTab = ({ tasks, onSubmitHomework, submittingTaskState }) => {
                                                                     ) : null}
                                                                 </>
                                                             )}
+                                                            <div
+                                                                className={`rounded-2xl border px-3 py-2 text-xs ${
+                                                                    isSubmitting
+                                                                        ? 'border-blue-200 bg-blue-50 text-blue-800 dark:border-blue-900/60 dark:bg-blue-950/30 dark:text-blue-200'
+                                                                        : hasDraftWork
+                                                                            ? 'border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-200'
+                                                                            : 'border-edubot-line/70 bg-white/70 text-edubot-muted dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-400'
+                                                                }`}
+                                                                role={isSubmitting ? 'status' : undefined}
+                                                            >
+                                                                {isSubmitting
+                                                                    ? isUploading
+                                                                        ? 'Тиркеме жүктөлүп жатат. Баракты жаппаңыз.'
+                                                                        : 'Жооп жөнөтүлүп жатат. Натыйжа ушул тапшырманын жанында жаңыртылат.'
+                                                                    : hasDraftWork
+                                                                        ? 'Сакталбаган жооп бар. Жөнөтүү баскычы басылмайынча мугалимге көрүнбөйт.'
+                                                                        : 'Жооп даярдала элек. Текст, шилтеме, файл же квиз жообун кошуңуз.'}
+                                                            </div>
                                                             <div className="flex items-center justify-between gap-3">
                                                                 <div className="text-xs text-edubot-muted dark:text-slate-400">
                                                                     <p>

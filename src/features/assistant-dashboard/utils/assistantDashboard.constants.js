@@ -32,6 +32,12 @@ export const ASSISTANT_WORKSPACE_GROUPS = Object.freeze({
     }),
 });
 
+export const ASSISTANT_ATTENDANCE_WORKSPACE_DECISION = Object.freeze({
+    mode: 'embedded-route',
+    owner: 'attendance-domain',
+    reason: 'Ассистент катышуусу shared attendance workspace ичинде калат; ассистентке өзүнчө катышуу workflow керек болгондо гана бөлүнөт.',
+});
+
 const RAW_NAV_ITEMS = [
     // Primary Navigation - Core Daily Tasks
     { id: ASSISTANT_DASHBOARD_TABS.OVERVIEW, label: 'Кыскача', icon: FiHome, category: 'primary', priority: 1 },

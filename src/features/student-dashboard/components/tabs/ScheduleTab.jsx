@@ -26,6 +26,7 @@ import {
     courseTypeLabel,
     formatCountdown,
     formatSessionDate,
+    getStudentLiveRefreshInterval,
     resolveInstructorName,
     resolveRecordings,
 } from '../../utils/studentDashboard.helpers.js';
@@ -36,10 +37,15 @@ const ScheduleTab = ({ offerings, recordings }) => {
     const [query, setQuery] = useState('');
     const [typeFilter, setTypeFilter] = useState('all');
 
+    const liveRefreshInterval = useMemo(
+        () => getStudentLiveRefreshInterval(offerings, nowMs),
+        [offerings, nowMs]
+    );
+
     useEffect(() => {
-        const timer = setInterval(() => setNowMs(Date.now()), 1000);
+        const timer = setInterval(() => setNowMs(Date.now()), liveRefreshInterval);
         return () => clearInterval(timer);
-    }, []);
+    }, [liveRefreshInterval]);
 
     const scheduleItems = useMemo(
         () =>

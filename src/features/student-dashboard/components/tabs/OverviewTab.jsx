@@ -11,6 +11,7 @@ import {
     courseTypeLabel,
     formatCountdown,
     formatSessionDate,
+    getStudentLiveRefreshInterval,
     isOnlineLiveOffering,
     isStudentJoinWindowOpen,
     resolveCourseType,
@@ -47,10 +48,15 @@ const OverviewTab = ({
 }) => {
     const [nowMs, setNowMs] = useState(Date.now());
 
+    const liveRefreshInterval = useMemo(
+        () => getStudentLiveRefreshInterval(offerings, nowMs),
+        [offerings, nowMs]
+    );
+
     useEffect(() => {
-        const timer = setInterval(() => setNowMs(Date.now()), 1000);
+        const timer = setInterval(() => setNowMs(Date.now()), liveRefreshInterval);
         return () => clearInterval(timer);
-    }, []);
+    }, [liveRefreshInterval]);
 
     const upcoming = useMemo(
         () =>

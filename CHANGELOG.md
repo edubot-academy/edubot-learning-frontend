@@ -6,6 +6,29 @@ Version bumps are classified by delivery scale; see `VERSIONING.md`.
 
 ---
 
+## [1.11.17] - 2026-05-14
+
+### Changed
+
+- Limited student live countdown refreshes to join-window-critical periods instead of one-second updates across the full overview and schedule surfaces.
+- Added inline task draft, attachment, upload, and submission feedback near the active student task.
+- Added setup-account password rules, mismatch feedback, persistent success/error state, and a single controlled form state object.
+- Added context-aware assistant student empty states and visible section/row enrollment operation feedback.
+- Documented admin surface principles for tab ownership, density, action hierarchy, and safe operation feedback.
+- Clarified student notification ownership inside the profile workspace.
+- Documented assistant attendance as an embedded shared attendance workspace.
+- Added instructor course workflow segmentation, last-updated feedback, and delivery/video filtering.
+- Replaced the course-builder delete confirmation overlay with the shared confirmation modal.
+
+### Verification
+
+- `npm run lint`
+- `npm test -- --run --testTimeout=15000`
+- `git diff --check`
+- `npm run build`
+
+---
+
 ## [1.11.16] - 2026-05-14
 
 ### Changed

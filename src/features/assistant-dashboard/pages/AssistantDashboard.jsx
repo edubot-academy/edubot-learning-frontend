@@ -39,6 +39,7 @@ const AssistantDashboard = () => {
         handleEnroll,
         handleUnenroll,
         getActionKey,
+        lastEnrollmentFeedback,
         pendingEnrollmentAction,
     } = useAssistantDashboardData(user);
 
@@ -64,6 +65,7 @@ const AssistantDashboard = () => {
             isAssistant={isAssistant}
             isSearchTooShort={isSearchTooShort}
             loading={loading}
+            lastEnrollmentFeedback={lastEnrollmentFeedback}
             pendingEnrollmentAction={pendingEnrollmentAction}
             search={search}
             setActiveCompanyId={setActiveCompanyId}

@@ -360,7 +360,7 @@ const ProfileTab = ({
 
                 <DashboardInsetPanel
                     title="Эскертме жөндөөлөрү"
-                    description="Кайсы каналдар аркылуу жаңыртууларды алууну тандаңыз."
+                    description="Эскертмелер азырынча профиль ичинде калат; каналдар көбөйсө өз алдынча workspace болуп бөлүнөт."
                 >
                     <div className="mt-4 space-y-3">
                         {notificationEntries.length ? (
