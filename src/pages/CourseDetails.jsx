@@ -29,6 +29,7 @@ const CourseDetailsPage = () => {
         activeLesson,
         activeQuiz,
         activeTab,
+        autoPlayActiveLesson,
         assistantAvailableMessage,
         challengeLoading,
         challengeSubmitting,
@@ -91,6 +92,7 @@ const CourseDetailsPage = () => {
             videoRef={videoRef}
             nextLesson={nextLesson}
             prevLesson={prevLesson}
+            autoPlayActiveLesson={autoPlayActiveLesson}
             onQuizAnswerChange={handleQuizAnswerChange}
             onQuizSubmit={handleQuizSubmit}
             onQuizRetake={handleQuizRetake}

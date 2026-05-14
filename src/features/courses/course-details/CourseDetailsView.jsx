@@ -156,6 +156,7 @@ export const ActiveLessonRuntime = ({
     videoRef,
     nextLesson,
     prevLesson,
+    autoPlayActiveLesson,
     onQuizAnswerChange,
     onQuizSubmit,
     onQuizRetake,
@@ -227,6 +228,7 @@ export const ActiveLessonRuntime = ({
             prevLesson={prevLesson}
             onEnded={onEnded}
             handleLessonClick={onLessonClick}
+            autoPlay={autoPlayActiveLesson}
         />
     );
 };
@@ -256,6 +258,7 @@ ActiveLessonRuntime.propTypes = {
     }).isRequired,
     nextLesson: PropTypes.shape({}),
     prevLesson: PropTypes.shape({}),
+    autoPlayActiveLesson: PropTypes.bool.isRequired,
     onQuizAnswerChange: PropTypes.func.isRequired,
     onQuizSubmit: PropTypes.func.isRequired,
     onQuizRetake: PropTypes.func.isRequired,

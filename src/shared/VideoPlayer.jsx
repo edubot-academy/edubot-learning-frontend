@@ -7,6 +7,34 @@ import toast from 'react-hot-toast';
 const MAX_HLS_NETWORK_RECOVERIES = 2;
 const MAX_HLS_MEDIA_RECOVERIES = 2;
 
+const isHlsUrl = (url) => {
+    if (!url) return false;
+
+    try {
+        return new URL(url, window.location.href).pathname.toLowerCase().endsWith('.m3u8');
+    } catch {
+        return String(url).toLowerCase().split(/[?#]/)[0].endsWith('.m3u8');
+    }
+};
+
+const buildQualityOptions = (levels = []) => {
+    const seenLabels = new Map();
+
+    return [
+        { id: 'auto', label: 'Auto' },
+        ...levels.map((level, index) => {
+            const baseLabel = level.height ? `${level.height}p` : `Level ${index + 1}`;
+            const count = seenLabels.get(baseLabel) || 0;
+            seenLabels.set(baseLabel, count + 1);
+
+            return {
+                id: `${index}`,
+                label: count > 0 ? `${baseLabel} (${count + 1})` : baseLabel,
+            };
+        }),
+    ];
+};
+
 const getStoredAuthToken = () => {
     try {
         return localStorage.getItem('auth_token');
@@ -102,7 +130,7 @@ const VideoPlayerInner = ({
         hlsRecoveryRef.current = { network: 0, media: 0 };
         lastAppliedResumeTimeRef.current = null;
 
-        const isHlsSource = videoUrl.includes('.m3u8');
+        const isHlsSource = isHlsUrl(videoUrl);
         const tryAutoPlay = () => {
             if (!autoPlay || !allowPlay || signal.aborted) return;
             videoEl.play().catch(() => undefined);
@@ -116,17 +144,19 @@ const VideoPlayerInner = ({
 
         let hls = null;
 
-        if (isHlsSource && videoEl.canPlayType('application/vnd.apple.mpegurl')) {
-            // Native HLS support (Safari, iOS) - use native player
-            videoEl.src = videoUrl;
-            videoEl.load();
-            tryAutoPlay();
-        } else if (isHlsSource) {
+        if (isHlsSource) {
             const setupHlsPlayback = async () => {
                 const { default: Hls } = await import('hls.js/dist/hls.light.mjs');
                 if (signal.aborted) return;
 
                 if (!Hls.isSupported()) {
+                    if (videoEl.canPlayType('application/vnd.apple.mpegurl')) {
+                        videoEl.src = videoUrl;
+                        videoEl.load();
+                        tryAutoPlay();
+                        return;
+                    }
+
                     failPlayback();
                     toast.error('Браузер HLS форматын колдобойт. MP4 форматындагы видеону колдонууңузду суранабыз.');
                     return;
@@ -176,11 +206,7 @@ const VideoPlayerInner = ({
 
                 hls.on(Hls.Events.MANIFEST_PARSED, (_, data) => {
                     if (signal.aborted) return;
-                    const levels = data.levels || [];
-                    setQualityOptions([
-                        { id: 'auto', label: 'Auto' },
-                        ...levels.map((lvl, i) => ({ id: `${i}`, label: `${lvl.height}p` })),
-                    ]);
+                    setQualityOptions(buildQualityOptions(data.levels?.length ? data.levels : hls.levels));
                     tryAutoPlay();
                 });
 

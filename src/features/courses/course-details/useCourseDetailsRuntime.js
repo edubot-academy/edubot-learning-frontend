@@ -765,6 +765,7 @@ export const useCourseDetailsController = ({ courseId, searchParams, user }) => 
     const [sections, setSections] = useState([]);
     const [, setActiveSectionId] = useState(null);
     const [activeLesson, setActiveLesson] = useState(null);
+    const [autoPlayActiveLesson, setAutoPlayActiveLesson] = useState(false);
     const activeLessonRef = useRef(null);
     const [completedLessons, setCompletedLessons] = useState([]);
     const [resumeVideoTime, setResumeVideoTime] = useState(0);
@@ -940,6 +941,8 @@ export const useCourseDetailsController = ({ courseId, searchParams, user }) => 
             const isQuiz = lesson.kind === 'quiz';
             const isCode = lesson.kind === 'code';
             const isRuntimeActivity = isRuntimeActivityLesson(lesson);
+            const previousLessonId = activeLessonRef.current?.id;
+            setAutoPlayActiveLesson(lesson.kind === 'video' && lesson.id !== previousLessonId);
             setActiveLesson(lesson);
             saveActiveSectionId(courseId, lesson.sectionId);
             setActiveSectionId(lesson.sectionId);
@@ -987,6 +990,7 @@ export const useCourseDetailsController = ({ courseId, searchParams, user }) => 
             }
         },
         [
+            activeLessonRef,
             completedLessons,
             courseId,
             enrolled,
@@ -1094,6 +1098,7 @@ export const useCourseDetailsController = ({ courseId, searchParams, user }) => 
         activeLesson,
         activeQuiz,
         activeTab,
+        autoPlayActiveLesson,
         assistantAvailableMessage,
         challengeLoading,
         challengeSubmitting,

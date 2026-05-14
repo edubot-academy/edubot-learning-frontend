@@ -16,28 +16,27 @@ export const getVideoDuration = (file) => {
     });
 };
 
+const BLOCKED_PLAYBACK_STATUSES = new Set(['missing', 'uploaded', 'starting', 'processing', 'failed']);
+
+const hasPlayablePlaybackUrl = (item) =>
+    Boolean(
+        item?.playbackUrl &&
+        !BLOCKED_PLAYBACK_STATUSES.has(String(item.playbackStatus || '').toLowerCase())
+    );
+
 export const getPlayableVideoUrl = (item) => {
     if (!item) return null;
-    const playbackStatus = item.playbackStatus;
-    if (item.playbackUrl && (!playbackStatus || playbackStatus === 'ready')) {
+    if (hasPlayablePlaybackUrl(item)) {
         return item.playbackUrl;
     }
     if (item.videoUrl) return item.videoUrl;
     if (item.previewUrl) return item.previewUrl;
     if (item.previewVideo && typeof item.previewVideo === 'string') return item.previewVideo;
-    if (
-        item.previewVideo?.playbackUrl &&
-        (!item.previewVideo?.playbackStatus ||
-            item.previewVideo.playbackStatus === 'ready')
-    ) {
+    if (hasPlayablePlaybackUrl(item.previewVideo)) {
         return item.previewVideo.playbackUrl;
     }
     if (item.previewVideo?.videoUrl) return item.previewVideo.videoUrl;
-    if (
-        item.previewVideos?.[0]?.playbackUrl &&
-        (!item.previewVideos[0]?.playbackStatus ||
-            item.previewVideos[0].playbackStatus === 'ready')
-    ) {
+    if (hasPlayablePlaybackUrl(item.previewVideos?.[0])) {
         return item.previewVideos[0].playbackUrl;
     }
     if (item.previewVideos?.[0]?.videoUrl) return item.previewVideos[0].videoUrl;

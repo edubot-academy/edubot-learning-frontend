@@ -6,6 +6,28 @@ Version bumps are classified by delivery scale; see `VERSIONING.md`.
 
 ---
 
+## [1.11.22] - 2026-05-15
+
+### Changed
+
+- Replaced the contact-page 2GIS widget iframe with the 2GIS Maps API loader, marker rendering, stale-script recovery, and Google Maps fallback handling.
+- Improved HLS playback detection and quality option rendering so transcoded lesson streams expose available quality choices more reliably.
+- Preferred playable transcoded video URLs while falling back to original uploads for unavailable transcoding statuses.
+- Stopped course-detail videos from autoplaying on initial page open while preserving autoplay after switching video lessons.
+
+### Added
+
+- Added focused video URL selection tests for HLS playback readiness, fallback behavior, and query-string HLS URLs.
+
+### Verification
+
+- `npm run lint`
+- `npm test -- --run --testTimeout=15000`
+- `git diff --check`
+- `npm run build`
+
+---
+
 ## [1.11.21] - 2026-05-14
 
 ### Changed

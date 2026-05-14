@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { submitContactMessage } from '@services/api';
 import toast from 'react-hot-toast';
 import PhoneInput from '@shared/ui/forms/PhoneInput';
@@ -81,24 +81,78 @@ const CONTACT_FIELD_ERROR_KEYS = {
 
 const TWO_GIS_FIRM_ID = '70000001089058889';
 const TWO_GIS_MAP_URL = `https://2gis.kg/bishkek/firm/${TWO_GIS_FIRM_ID}`;
-const TWO_GIS_WIDGET_OPTIONS = {
-    pos: {
-        lat: 42.843841,
-        lon: 74.596821,
-        zoom: 17,
-    },
-    opt: {
-        city: 'bishkek',
-        locale: 'ru_RU',
-    },
-    locale: 'ru_RU',
-    org: [{ id: TWO_GIS_FIRM_ID }],
-};
-const TWO_GIS_WIDGET_URL = `https://widgets.2gis.com/widget?type=firmsonmap&options=${encodeURIComponent(JSON.stringify({
-    pos: TWO_GIS_WIDGET_OPTIONS.pos,
-    opt: TWO_GIS_WIDGET_OPTIONS.opt,
-    org: TWO_GIS_FIRM_ID,
-}))}`;
+const TWO_GIS_COORDINATES = [42.843841, 74.596821];
+const TWO_GIS_SCRIPT_SELECTOR = 'script[data-2gis-loader="true"]';
+const TWO_GIS_SCRIPT_SRC = 'https://maps.api.2gis.ru/2.0/loader.js?pkg=full';
+const TWO_GIS_SCRIPT_LOAD_TIMEOUT_MS = 10000;
+
+const isTwoGisApiReady = () => window.DG && typeof window.DG.then === 'function';
+
+const waitForTwoGisScript = (script) =>
+    new Promise((resolve, reject) => {
+        let timeoutId;
+
+        const cleanup = () => {
+            window.clearTimeout(timeoutId);
+            script.removeEventListener('load', handleLoad);
+            script.removeEventListener('error', handleError);
+        };
+
+        const handleLoad = () => {
+            script.dataset.twoGisLoadState = 'loaded';
+            cleanup();
+            resolve();
+        };
+
+        const handleError = () => {
+            script.dataset.twoGisLoadState = 'failed';
+            cleanup();
+            reject(new Error('2GIS script load error'));
+        };
+
+        timeoutId = window.setTimeout(() => {
+            script.dataset.twoGisLoadState = 'failed';
+            cleanup();
+            reject(new Error('2GIS script load timeout'));
+        }, TWO_GIS_SCRIPT_LOAD_TIMEOUT_MS);
+
+        script.addEventListener('load', handleLoad, { once: true });
+        script.addEventListener('error', handleError, { once: true });
+    });
+
+const loadTwoGisApi = () =>
+    new Promise((resolve, reject) => {
+        if (typeof window === 'undefined') {
+            reject(new Error('2GIS map can only load in the browser.'));
+            return;
+        }
+
+        if (isTwoGisApiReady()) {
+            resolve();
+            return;
+        }
+
+        const existingScript = document.querySelector(TWO_GIS_SCRIPT_SELECTOR);
+        if (existingScript) {
+            if (existingScript.dataset.twoGisLoadState === 'loading') {
+                waitForTwoGisScript(existingScript).then(resolve, reject);
+                return;
+            }
+
+            existingScript.remove();
+        }
+
+        const script = document.createElement('script');
+        script.src = TWO_GIS_SCRIPT_SRC;
+        script.async = true;
+        script.defer = true;
+        script.dataset['2gisLoader'] = 'true';
+        script.dataset.twoGisLoadState = 'loading';
+        script.setAttribute('data-2gis-loader', 'true');
+
+        document.head.appendChild(script);
+        waitForTwoGisScript(script).then(resolve, reject);
+    });
 
 const getApiErrorMessage = (error) => {
     const data = error?.response?.data;
@@ -339,36 +393,96 @@ const ContactMethodsSection = () => (
 );
 
 const TwoGisMapWidget = () => {
-    const [status, setStatus] = useState('loading');
+    const mapContainerRef = useRef(null);
+    const mapInstanceRef = useRef(null);
+    const markerRef = useRef(null);
+    const [failed, setFailed] = useState(false);
+
+    useEffect(() => {
+        let cancelled = false;
+
+        const initializeMap = async () => {
+            try {
+                setFailed(false);
+                await loadTwoGisApi();
+                if (cancelled) return;
+
+                window.DG.then(() => {
+                    try {
+                        if (cancelled || !mapContainerRef.current) return;
+
+                        if (mapInstanceRef.current) {
+                            try {
+                                mapInstanceRef.current.remove();
+                            } catch (error) {
+                                console.warn('Failed to remove 2GIS map:', error);
+                            }
+                            mapInstanceRef.current = null;
+                        }
+
+                        const map = window.DG.map(mapContainerRef.current, {
+                            center: TWO_GIS_COORDINATES,
+                            zoom: 19,
+                        });
+
+                        const marker = window.DG.marker(TWO_GIS_COORDINATES).addTo(map);
+                        marker.bindPopup(SUPPORT_CONTACT.addressFull);
+
+                        mapInstanceRef.current = map;
+                        markerRef.current = marker;
+                    } catch (error) {
+                        console.warn('2GIS map failed to initialize:', error);
+                        if (!cancelled) setFailed(true);
+                    }
+                });
+            } catch (error) {
+                console.warn('2GIS map failed to initialize:', error);
+                if (!cancelled) setFailed(true);
+            }
+        };
+
+        initializeMap();
+
+        return () => {
+            cancelled = true;
+
+            if (mapInstanceRef.current?.remove) {
+                try {
+                    mapInstanceRef.current.remove();
+                } catch (error) {
+                    console.warn('Failed to remove 2GIS map:', error);
+                }
+            }
+            mapInstanceRef.current = null;
+            markerRef.current = null;
+        };
+    }, []);
+
+    if (failed) {
+        return (
+            <div className="relative h-[400px] max-w-full overflow-hidden rounded-xl border border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-[#222222]">
+                <iframe
+                    title="Map fallback"
+                    src={`https://www.google.com/maps?q=${TWO_GIS_COORDINATES[0]},${TWO_GIS_COORDINATES[1]}&output=embed`}
+                    className="absolute inset-0 h-full w-full border-0"
+                    loading="lazy"
+                    referrerPolicy="no-referrer-when-downgrade"
+                    allowFullScreen
+                />
+                <div className="absolute left-4 top-4 rounded-xl bg-white/90 px-4 py-3 text-sm text-gray-700 shadow-lg dark:bg-[#222222]/90 dark:text-[#d1d5db]">
+                    2GIS карта жүктөлбөй калды. Google карта колдонулууда.
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="relative h-[400px] max-w-full overflow-hidden rounded-xl border border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-[#222222]">
-            <iframe
-                src={TWO_GIS_WIDGET_URL}
-                width="100%"
-                height="400"
-                title="EduBot 2GIS location"
-                loading="lazy"
-                onLoad={() => setStatus('ready')}
-                onError={() => setStatus('error')}
-                className="absolute inset-0 block h-full w-full border-0"
+            <div
+                ref={mapContainerRef}
+                className="absolute inset-0 h-full w-full"
+                aria-label="EduBot 2GIS location map"
             />
-            {status !== 'ready' && (
-                <div className="absolute inset-0 z-[1] flex flex-col items-center justify-center bg-gray-50 px-6 text-center dark:bg-[#222222]">
-                    <SlLocationPin className="h-10 w-10 text-[#EA580C] dark:text-orange-300" />
-                    <p className="mt-3 text-sm font-semibold text-gray-900 dark:text-white">
-                        {status === 'error' ? 'Карта жүктөлгөн жок.' : 'Карта жүктөлүүдө...'}
-                    </p>
-                    <a
-                        href={TWO_GIS_MAP_URL}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="mt-3 font-semibold text-[#EA580C] underline-offset-4 hover:underline dark:text-orange-300"
-                    >
-                        2GISтен ачуу
-                    </a>
-                </div>
-            )}
         </div>
     );
 };

@@ -13,6 +13,7 @@ const CourseVideoPlayer = ({
     prevLesson,
     handleLessonClick,
     onEnded,
+    autoPlay = false,
 }) => {
     const containerRef = React.useRef(null);
     const lessonVideoUrl = getPlayableVideoUrl(activeLesson);
@@ -29,7 +30,7 @@ const CourseVideoPlayer = ({
                 onProgress={(p) => handleVideoProgress(p, activeLesson)}
                 onTimeUpdate={handleTimeUpdate}
                 onPause={handlePause}
-                autoPlay
+                autoPlay={autoPlay}
             />
 
             <button
