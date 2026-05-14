@@ -61,3 +61,11 @@ export {
     isVideoFile,
     isImageFile,
 } from './fileUploadUtils';
+
+export {
+    DEFAULT_SKILL_OPTION,
+    hydrateCourseInfo,
+    loadCreateCourseBuilderData,
+    loadEditCourseBuilderData,
+    mapSkillsToOptions,
+} from './courseBuilderDataLoaders';

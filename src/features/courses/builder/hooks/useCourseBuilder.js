@@ -24,22 +24,14 @@ import {
 import { useCourseBuilderInfo } from './useCourseBuilderInfo';
 import { useCourseBuilderCurriculum } from './useCourseBuilderCurriculum';
 
-// API imports (same as original components)
-import {
-    fetchCourseDetails,
-    deleteSection,
-    fetchLessonQuiz,
-    fetchLessonChallenge,
-    fetchSections,
-    fetchLessons,
-} from '../../api';
-import { fetchCategories } from '../../../categories/api';
+import { deleteSection } from '../../api';
 import { fetchSkills } from '../../../skills/api';
-
-// Utils imports (same as original components)
-import { createEmptyQuiz, mapQuizFromApi } from '../../../../utils/quizUtils';
-import { createEmptyChallenge, mapChallengeFromApi } from '../../../../utils/challengeUtils';
 import { isForbiddenError, parseApiError } from '../../../../shared/api/error';
+import {
+    loadCreateCourseBuilderData,
+    loadEditCourseBuilderData,
+    mapSkillsToOptions,
+} from '../utils/courseBuilderDataLoaders';
 
 /**
  * Main course builder hook
@@ -50,7 +42,6 @@ import { isForbiddenError, parseApiError } from '../../../../shared/api/error';
  */
 export const useCourseBuilder = ({ mode = 'create', courseId: initialCourseId = null } = {}) => {
     const navigate = useNavigate();
-    const dataLoadedRef = useRef(false);
     const [courseId, setCourseId] = useState(initialCourseId);
     const lastCoverPreviewUrlRef = useRef('');
     const pendingCoverNameRef = useRef('');
@@ -143,20 +134,10 @@ export const useCourseBuilder = ({ mode = 'create', courseId: initialCourseId = 
         if (mode === 'create') {
             // Create mode - load categories and skills
             try {
-                const [categoriesData, skillsData] = await Promise.all([
-                    fetchCategories(),
-                    fetchSkills().catch(() => []),
-                ]);
+                const { categories: categoriesData, skillOptions: loadedSkillOptions } =
+                    await loadCreateCourseBuilderData();
                 setCategories(categoriesData);
-                if (Array.isArray(skillsData) && skillsData.length) {
-                    const mapped = skillsData
-                        .filter((s) => s.slug || s.id)
-                        .map((s) => ({
-                            value: String(s.id ?? s.slug ?? ''),
-                            label: s.name || s.slug,
-                        }));
-                    setSkillOptions([{ value: '', label: 'Skill тандаңыз (опция)' }, ...mapped]);
-                }
+                setSkillOptions(loadedSkillOptions);
 
                 // Load saved draft if exists
                 const saved = localStorage.getItem('draftCourse');
@@ -197,87 +178,27 @@ export const useCourseBuilder = ({ mode = 'create', courseId: initialCourseId = 
             // Edit mode must always hydrate from the API for the current course.
             // The previous localStorage gate could skip fetchSections entirely and leave
             // the builder rendering stale default state.
-            dataLoadedRef.current = true;
             try {
-                const [courseData, categoryData, sectionData, skillsData] = await Promise.all([
-                    fetchCourseDetails(courseId),
-                    fetchCategories(),
-                    fetchSections(courseId),
-                    fetchSkills().catch(() => []),
-                ]);
+                const {
+                    categories: categoriesData,
+                    courseInfo: loadedCourseInfo,
+                    curriculum: loadedCurriculum,
+                    lessonExtraWarnings,
+                    skillOptions: loadedSkillOptions,
+                } = await loadEditCourseBuilderData(courseId);
 
-                    // Process skills data
-                    const mappedSkillOptions = Array.isArray(skillsData) && skillsData.length
-                        ? skillsData
-                            .filter((s) => s.slug || s.id)
-                            .map((s) => ({
-                                value: String(s.id ?? s.slug ?? ''),
-                                label: s.name || s.slug,
-                            }))
-                        : [];
-                    const skillOptionsWithBlank = [
-                        { value: '', label: 'Skill тандаңыз (опция)' },
-                        ...mappedSkillOptions,
-                    ];
+                setCourseInfo(loadedCourseInfo);
+                setOriginalCourse(loadedCourseInfo);
+                setCategories(categoriesData);
+                setSkillOptions(loadedSkillOptions);
+                setCurriculum(loadedCurriculum);
+                setOriginalSections(JSON.parse(JSON.stringify(loadedCurriculum)));
 
-                    // Load lessons for each section
-                    const allSections = await Promise.all(
-                        sectionData.map(async (sec) => {
-                            const lessons = await fetchLessons(courseId, sec.id);
-                            const sortedLessons = lessons.sort((a, b) => a.order - b.order);
-                            const lessonsWithExtras = await Promise.all(
-                                sortedLessons.map(async (l) => {
-                                    const baseLesson = {
-                                        ...l,
-                                        kind: l.kind || 'video',
-                                        content: l.content || '',
-                                        resourceName: l.resourceName || '',
-                                        quiz: l.kind === 'quiz' ? createEmptyQuiz() : undefined,
-                                        challenge: l.kind === 'code' ? createEmptyChallenge() : undefined,
-                                        uploadProgress: { video: 0, resource: 0 },
-                                        uploading: { video: false, resource: false },
-                                    };
-
-                                    // Load quiz data if needed
-                                    if (baseLesson.kind === 'quiz') {
-                                        try {
-                                            const quizData = await fetchLessonQuiz(courseId, sec.id, l.id, true);
-                                            baseLesson.quiz = mapQuizFromApi(quizData, true);
-                                        } catch (error) {
-                                            console.error('Failed to load quiz', error);
-                                            toast.error('Квизди жүктөө мүмкүн болбоду');
-                                        }
-                                    }
-
-                                    // Load challenge data if needed
-                                    if (baseLesson.kind === 'code') {
-                                        try {
-                                            const challengeData = await fetchLessonChallenge(courseId, sec.id, l.id, true);
-                                            baseLesson.challenge = mapChallengeFromApi(challengeData, true);
-                                        } catch (error) {
-                                            console.error('Failed to load challenge', error);
-                                            toast.error('Код тапшырманы жүктөө мүмкүн болбоду');
-                                        }
-                                    }
-
-                                    return baseLesson;
-                                })
-                            );
-
-                            return {
-                                ...sec,
-                                lessons: lessonsWithExtras,
-                            };
-                        })
+                if (lessonExtraWarnings.length) {
+                    toast(
+                        `${lessonExtraWarnings.length} сабактын кошумча материалы жүктөлгөн жок. Курс ачылды, бирок ошол сабактарды текшериңиз.`
                     );
-
-                const hydratedCourse = hydrateCourseInfo(courseData);
-                setCourseInfo(hydratedCourse);
-                setOriginalCourse(hydratedCourse);
-                setCategories(categoryData);
-                setSkillOptions(skillOptionsWithBlank);
-                setCurriculum(allSections);
-                setOriginalSections(JSON.parse(JSON.stringify(allSections)));
+                }
             } catch (err) {
                 console.error(err);
                 if (isForbiddenError(err)) {
@@ -291,43 +212,13 @@ export const useCourseBuilder = ({ mode = 'create', courseId: initialCourseId = 
         }
     }, [mode, courseId, navigate]);
 
-    // Helper function to hydrate course data from API
-    const hydrateCourseInfo = (courseData) => {
-        const learningOutcomesText = Array.isArray(courseData.learningOutcomes)
-            ? courseData.learningOutcomes.map((lo) => lo.description || '').filter(Boolean).join('\n')
-            : courseData.learningOutcomesText || '';
-
-        return {
-            id: courseData.id,
-            title: courseData.title || '',
-            subtitle: courseData.subtitle || '',
-            description: courseData.description || '',
-            price: courseData.price || '',
-            cover: courseData.cover || null,
-            coverImageUrl: courseData.coverImageUrl || '',
-            languageCode: courseData.languageCode || 'ky',
-            isPaid: typeof courseData.isPaid === 'boolean'
-                ? courseData.isPaid
-                : Number(courseData.price) > 0,
-            learningOutcomesText,
-            aiAssistantEnabled: Boolean(courseData.aiAssistantEnabled),
-            categoryId: String(courseData.category?.id ?? courseData.categoryId ?? ''),
-        };
-    };
-
     // Load skills list
     const loadSkillsList = useCallback(async () => {
         setSkillsLoading(true);
         try {
             const skillsData = await fetchSkills().catch(() => []);
             if (Array.isArray(skillsData) && skillsData.length) {
-                const mapped = skillsData
-                    .filter((s) => s.slug || s.id)
-                    .map((s) => ({
-                        value: String(s.id ?? s.slug ?? ''),
-                        label: s.name || s.slug,
-                    }));
-                setSkillOptions([{ value: '', label: 'Skill тандаңыз (опция)' }, ...mapped]);
+                setSkillOptions(mapSkillsToOptions(skillsData));
             }
         } catch (error) {
             console.error('Skills load failed', error);

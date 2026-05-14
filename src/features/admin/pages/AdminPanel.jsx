@@ -1,55 +1,14 @@
 import { useEffect, useState, useCallback, useContext } from 'react';
 import FloatingActionButton from '../../../components/ui/FloatingActionButton';
 import { AuthContext } from '../../../context/AuthContext';
-import {
-    fetchCourses,
-    fetchCategories,
-    fetchUsers,
-    deleteCourse,
-    deleteCategory,
-    updateUserRole,
-    deleteUser,
-    enrollUserInCourse,
-    createCategory,
-    updateCategory,
-    fetchContactMessages,
-    getPendingCourses,
-    markCourseApproved,
-    markCourseRejected,
-    listCompanies,
-    createCompany,
-    updateCompany,
-    linkCompanyCrmTenant,
-    unlinkCompanyCrmTenant,
-    deleteCompany,
-    assignCourseToCompany,
-    unassignCourseFromCompany,
-    clearCourseCompany,
-    uploadCompanyLogo,
-    fetchCourseAiPrompts,
-    addCourseAiPrompt,
-    updateCourseAiPrompt,
-    deleteCourseAiPrompt,
-    transcodeLessonHls,
-    bulkTranscodeLessonHls,
-    getTranscodeStatus,
-    fetchAdminStats,
-    fetchSkills,
-    createSkill,
-    updateSkill,
-    deleteSkill,
-    markNotificationRead as markNotificationReadApi,
-    fetchCourseGroups,
-} from '@services/api';
+import { markNotificationRead as markNotificationReadApi } from '@services/api';
 import toast from 'react-hot-toast';
 import NotificationsWidget from '@features/notifications/components/NotificationsWidget';
 import NotificationsTab from '@features/notifications/components/NotificationsTab';
 import ConfirmationModal from '@shared/ui/ConfirmationModal';
 import IntegrationTab from '@features/integration/components/IntegrationTab';
-import { normalizeEnrollmentCourseType } from '@features/enrollments/policy';
 import AttendancePage from '../../../pages/Attendance';
 import AdminAnalyticsPage from '../../../pages/AdminAnalytics';
-import { isForbiddenError } from '@shared/api/error';
 
 // Import standardized dashboard components
 import { DashboardLayout, DashboardHeader, DashboardTabs } from '../../../components/ui/dashboard';
@@ -65,123 +24,29 @@ import AdminAiPromptsTab from '../components/AdminAiPromptsTab';
 import AdminContactsTab from '../components/AdminContactsTab';
 import AdminPendingCoursesTab from '../components/AdminPendingCoursesTab';
 import { CertificatesSection } from '@features/instructor-dashboard';
-import {
-    fetchCourseStudents,
-    fetchCourseCertificateSettings,
-    fetchCourseCertificates,
-    updateCourseCertificateSettings,
-    issueCourseCertificate,
-    approveCertificate,
-    rejectCertificate,
-    revokeCertificate,
-    regenerateCourseCertificates,
-    saveCourseCertificateSignatureAsset,
-    uploadCourseCertificateSecondaryLogo,
-} from '@features/courses/api';
 
 // Import constants and helpers
 import { NAV_ITEMS } from '../utils/adminPanel.constants';
 import { calculateVisiblePages } from '../utils/adminPanel.helpers';
 import { useAdminTabState } from '../hooks/useAdminTabState';
 import { useAdminUsersFilters } from '../hooks/useAdminUsersFilters';
-
-const cleanTenantPayload = (payload = {}) =>
-    Object.fromEntries(
-        Object.entries(payload)
-            .filter(([, value]) => {
-                if (typeof value === 'string') return value.trim() !== '';
-                return value !== undefined && value !== null;
-            })
-            .map(([key, value]) => [key, typeof value === 'string' ? value.trim() : value])
-    );
-
-const CRM_LINK_FIELDS = new Set(['crmTenantId', 'crmTenantSlug', 'crmPrimaryDomain']);
-
-const splitTenantPayload = (payload = {}) => {
-    const tenantPatch = {};
-    const crmPatch = {};
-    for (const [key, value] of Object.entries(payload)) {
-        if (CRM_LINK_FIELDS.has(key)) {
-            crmPatch[key] = value;
-        } else {
-            tenantPatch[key] = value;
-        }
-    }
-    return { tenantPatch, crmPatch };
-};
+import { useAdminUsersDomain } from '../hooks/useAdminUsersDomain';
+import { useAdminCompaniesDomain } from '../hooks/useAdminCompaniesDomain';
+import { useAdminSkillsDomain } from '../hooks/useAdminSkillsDomain';
+import { useAdminAiPromptsDomain } from '../hooks/useAdminAiPromptsDomain';
+import { useAdminContactsDomain } from '../hooks/useAdminContactsDomain';
+import { useAdminPendingCoursesDomain } from '../hooks/useAdminPendingCoursesDomain';
+import { useAdminStatsDomain } from '../hooks/useAdminStatsDomain';
+import { useAdminTranscodeDomain } from '../hooks/useAdminTranscodeDomain';
+import { useAdminCoursesDomain } from '../hooks/useAdminCoursesDomain';
+import { useAdminCertificatesDomain } from '../hooks/useAdminCertificatesDomain';
 
 const AdminPanel = () => {
     const { user } = useContext(AuthContext);
 
-    // State
-    const [courses, setCourses] = useState([]);
-    const [categories, setCategories] = useState([]);
-    const [users, setUsers] = useState([]);
-    const [contacts, setContacts] = useState([]);
-    const [newCategory, setNewCategory] = useState('');
-    const [editingCategoryId, setEditingCategoryId] = useState(null);
-    const [editingCategoryName, setEditingCategoryName] = useState('');
-    const [pendingCourses, setPendingCourses] = useState([]);
-    const [courseGroupsByCourseId, setCourseGroupsByCourseId] = useState({});
-    const [selectedEnrollmentGroupIds, setSelectedEnrollmentGroupIds] = useState({});
-
-    const [companies, setCompanies] = useState([]);
-    const [, setCompaniesTotalPages] = useState(1);
-    const [companySearch, setCompanySearch] = useState('');
-    const [companyPage] = useState(1);
-    const [newCompanyForm, setNewCompanyForm] = useState({
-        name: '',
-        subdomain: '',
-        customDomain: '',
-        status: 'active',
-        plan: '',
-        billingStatus: '',
-        crmTenantId: '',
-        crmTenantSlug: '',
-        crmPrimaryDomain: '',
-        timezone: 'Asia/Bishkek',
-        locale: 'ky',
-    });
-
     const [sidebarOpen, setSidebarOpen] = useState(true);
-    const [aiPromptCourseId, setAiPromptCourseId] = useState(null);
-    const [aiPrompts, setAiPrompts] = useState([]);
-    const [aiPromptsLoading, setAiPromptsLoading] = useState(false);
-    const [newPromptText, setNewPromptText] = useState('');
-    const [newPromptLanguage, setNewPromptLanguage] = useState('ky');
-    const [newPromptOrder, setNewPromptOrder] = useState(0);
-    const [newPromptIsActive, setNewPromptIsActive] = useState(true);
 
-    const [skills, setSkills] = useState([]);
-    const [newSkillName, setNewSkillName] = useState('');
-
-    const [transcodeCourseId, setTranscodeCourseId] = useState('');
-    const [transcodeSectionId, setTranscodeSectionId] = useState('');
-    const [transcodeLessonId, setTranscodeLessonId] = useState('');
-    const [transcodeLessonIds, setTranscodeLessonIds] = useState('');
-    const [transcodeLoading, setTranscodeLoading] = useState(false);
-    const [activeTranscodes, setActiveTranscodes] = useState([]); // [{courseId, sectionId, lessonId, status}]
-
-    const [adminStats, setAdminStats] = useState(null);
-    const [adminStatsLoading, setAdminStatsLoading] = useState(false);
-    const [adminStatsLoaded, setAdminStatsLoaded] = useState(false);
     const [confirmation, setConfirmation] = useState(null);
-    const [selectedCertificateCourseId, setSelectedCertificateCourseId] = useState(null);
-    const [certificateStudents, setCertificateStudents] = useState([]);
-    const [certificateCourseMeta, setCertificateCourseMeta] = useState(null);
-    const [loadingCertificateStudents, setLoadingCertificateStudents] = useState(false);
-    const [certificateStudentsPage, setCertificateStudentsPage] = useState(1);
-    const [certificateSearch, setCertificateSearch] = useState('');
-    const [certificateProgressMin, setCertificateProgressMin] = useState('');
-    const [certificateProgressMax, setCertificateProgressMax] = useState('');
-    const [certificateError, setCertificateError] = useState('');
-    const [certificateSettings, setCertificateSettings] = useState(null);
-    const [courseCertificates, setCourseCertificates] = useState([]);
-    const [loadingCertificateWorkspace, setLoadingCertificateWorkspace] = useState(false);
-    const [savingCertificateSettings, setSavingCertificateSettings] = useState(false);
-    const [certificateActionStudentId, setCertificateActionStudentId] = useState(null);
-    const [regeneratingCertificates, setRegeneratingCertificates] = useState(false);
-    const [savingCertificateAssetKind, setSavingCertificateAssetKind] = useState(null);
 
     // Users pagination state
     const {
@@ -196,53 +61,83 @@ const AdminPanel = () => {
         setSearch,
         usersPage,
     } = useAdminUsersFilters();
-    const [usersTotalPages, setUsersTotalPages] = useState(1);
-    const [usersTotal, setUsersTotal] = useState(0);
-
     // Tab state
     const { activeTab, handleTabSelect } = useAdminTabState();
 
     useDashboardKeyboardNavigation();
 
-    const loadCertificateStudents = useCallback(
-        async (courseId) => {
-            if (!courseId) {
-                setCertificateStudents([]);
-                setCertificateCourseMeta(null);
-                return;
-            }
+    // Event handlers
+    const requestConfirmation = useCallback((config) => {
+        setConfirmation(config);
+    }, []);
 
-            setLoadingCertificateStudents(true);
-            setCertificateError('');
-            try {
-                const data = await fetchCourseStudents(courseId, {
-                    page: certificateStudentsPage,
-                    limit: 20,
-                    q: certificateSearch || undefined,
-                    progressGte:
-                        certificateProgressMin === '' ? undefined : Number(certificateProgressMin),
-                    progressLte:
-                        certificateProgressMax === '' ? undefined : Number(certificateProgressMax),
-                });
-                setCertificateStudents(data?.students || []);
-                setCertificateCourseMeta({
-                    ...(data?.course || {}),
-                    page: data?.page,
-                    total: data?.total,
-                    totalPages: data?.totalPages,
-                    limit: data?.limit,
-                });
-            } catch (error) {
-                console.error('Failed to load admin certificate students', error);
-                setCertificateStudents([]);
-                setCertificateCourseMeta(null);
-                setCertificateError('Курс студенттерин жүктөө мүмкүн болбоду');
-            } finally {
-                setLoadingCertificateStudents(false);
-            }
-        },
-        [certificateStudentsPage, certificateSearch, certificateProgressMin, certificateProgressMax]
-    );
+    const {
+        categories,
+        courseGroupsByCourseId,
+        courses,
+        editingCategoryId,
+        editingCategoryName,
+        handleAddCategory,
+        handleDeleteCategory,
+        handleDeleteCourse,
+        handleUpdateCategory,
+        loadCoursesAndCategories,
+        newCategory,
+        selectedEnrollmentGroupIds,
+        setEditingCategoryId,
+        setEditingCategoryName,
+        setNewCategory,
+        setSelectedEnrollmentGroupIds,
+    } = useAdminCoursesDomain({ requestConfirmation });
+
+    const {
+        handleDeleteUser,
+        handleEnrollUser,
+        handleRoleChange,
+        loadUsers,
+        loadUsersForEnrollment,
+        users,
+        usersTotal,
+        usersTotalPages,
+    } = useAdminUsersDomain({
+        courses,
+        dateFrom,
+        dateTo,
+        requestConfirmation,
+        roleFilter,
+        search,
+        selectedEnrollmentGroupIds,
+        usersPage,
+    });
+
+    const {
+        certificateActionStudentId,
+        certificateCourseMeta,
+        certificateError,
+        certificateProgressMax,
+        certificateProgressMin,
+        certificateSearch,
+        certificateSettings,
+        certificateStudents,
+        certificateStudentsPage,
+        courseCertificates,
+        handleCertificateAction,
+        handleRegenerateCertificates,
+        handleSaveCertificateAsset,
+        handleSaveCertificateSettings,
+        handleSelectCertificateCourse,
+        handleToggleCertificateApproval,
+        loadingCertificateStudents,
+        loadingCertificateWorkspace,
+        regeneratingCertificates,
+        savingCertificateAssetKind,
+        savingCertificateSettings,
+        selectedCertificateCourseId,
+        setCertificateProgressMax,
+        setCertificateProgressMin,
+        setCertificateSearch,
+        setCertificateStudentsPage,
+    } = useAdminCertificatesDomain({ activeTab });
 
     // Render pagination buttons
     const renderUserPageButtons = () => {
@@ -266,168 +161,83 @@ const AdminPanel = () => {
         ));
     };
 
-    // API Functions (keeping existing logic)
-    const loadUsers = useCallback(async () => {
-        try {
-            const res = await fetchUsers({
-                page: usersPage,
-                limit: 10,
-                search,
-                role: roleFilter,
-                dateFrom,
-                dateTo,
-            });
-            setUsers(res?.data || []);
-            setUsersTotal(res?.total || 0);
-            setUsersTotalPages(res?.totalPages || 1);
-        } catch (error) {
-            if (!isForbiddenError(error)) {
-                toast.error('Колдонуучуларды жүктөөдө ката кетти');
-            }
-        }
-    }, [usersPage, search, roleFilter, dateFrom, dateTo]);
+    const {
+        companies,
+        companySearch,
+        handleAssignCourseToCompany,
+        handleClearCourseCompany,
+        handleCreateCompany,
+        handleDeleteCompany,
+        handleUnassignCourseFromCompany,
+        handleUpdateCompany,
+        handleUploadCompanyLogo,
+        loadCompanies,
+        newCompanyForm,
+        setCompanySearch,
+        setNewCompanyForm,
+    } = useAdminCompaniesDomain({
+        loadCoursesAndCategories,
+        requestConfirmation,
+    });
 
-    const loadCoursesAndCategories = useCallback(async () => {
-        try {
-            const [coursesRes, categoriesRes] = await Promise.all([
-                fetchCourses(),
-                fetchCategories(),
-            ]);
-            const loadedCourses = coursesRes?.courses || [];
-            setCourses(loadedCourses);
-            setCategories(categoriesRes || []);
+    const {
+        handleBulkTranscode,
+        handleTranscode,
+        setTranscodeCourseId,
+        setTranscodeLessonId,
+        setTranscodeLessonIds,
+        setTranscodeSectionId,
+        transcodeCourseId,
+        transcodeLessonId,
+        transcodeLessonIds,
+        transcodeLoading,
+        transcodeSectionId,
+    } = useAdminTranscodeDomain({ loadCoursesAndCategories });
 
-            const deliveryCourses = loadedCourses.filter((course) =>
-                ['offline', 'online_live'].includes(
-                    normalizeEnrollmentCourseType(course?.courseType || course?.type)
-                )
-            );
+    const {
+        handleCreateSkill,
+        handleDeleteSkill,
+        handleUpdateSkill,
+        loadSkillsList,
+        newSkillName,
+        setNewSkillName,
+        skills,
+    } = useAdminSkillsDomain({ requestConfirmation });
 
-            if (!deliveryCourses.length) {
-                setCourseGroupsByCourseId({});
-                return;
-            }
+    const {
+        aiPromptCourseId,
+        aiPrompts,
+        aiPromptsLoading,
+        handleCreatePrompt,
+        handleDeletePrompt,
+        handleUpdatePrompt,
+        loadPromptsForCourse,
+        newPromptIsActive,
+        newPromptLanguage,
+        newPromptOrder,
+        newPromptText,
+        setAiPromptCourseId,
+        setNewPromptIsActive,
+        setNewPromptLanguage,
+        setNewPromptOrder,
+        setNewPromptText,
+    } = useAdminAiPromptsDomain({ requestConfirmation });
 
-            const groupEntries = await Promise.all(
-                deliveryCourses.map(async (course) => {
-                    try {
-                        const response = await fetchCourseGroups({ courseId: Number(course.id) });
-                        const items = Array.isArray(response)
-                            ? response
-                            : Array.isArray(response?.items)
-                              ? response.items
-                              : Array.isArray(response?.data)
-                                ? response.data
-                                : [];
-                        return [String(course.id), items];
-                    } catch (error) {
-                        console.error('Failed to load groups for admin course', course.id, error);
-                        return [String(course.id), []];
-                    }
-                })
-            );
+    const { contacts, loadContacts, removeContact } = useAdminContactsDomain();
 
-            setCourseGroupsByCourseId(Object.fromEntries(groupEntries));
-        } catch (error) {
-            if (!isForbiddenError(error)) {
-                toast.error('Курстарды жана категорияларды жүктөөдө ката кетти');
-            }
-        }
-    }, []);
+    const {
+        handleApprovePendingCourse,
+        handleRejectPendingCourse,
+        loadPendingCourses,
+        pendingCourses,
+    } = useAdminPendingCoursesDomain();
 
-    const loadContacts = useCallback(async () => {
-        try {
-            const res = await fetchContactMessages();
-            setContacts(res || []);
-        } catch (error) {
-            if (!isForbiddenError(error)) {
-                toast.error('Байланыш каттарын жүктөөдө ката кетти');
-            }
-        }
-    }, []);
-
-    const loadPendingCourses = useCallback(async () => {
-        try {
-            const res = await getPendingCourses();
-            setPendingCourses(res || []);
-        } catch (error) {
-            if (!isForbiddenError(error)) {
-                toast.error('Каралуудагы курстарды жүктөөдө ката кетти');
-            }
-        }
-    }, []);
-
-    const loadCompanies = useCallback(async () => {
-        try {
-            const res = await listCompanies({
-                page: companyPage,
-                limit: 10,
-                q: companySearch,
-            });
-            setCompanies(res?.items || []);
-            setCompaniesTotalPages(res?.totalPages || 1);
-        } catch (error) {
-            if (!isForbiddenError(error)) {
-                toast.error('Компанияларды жүктөөдө ката кетти');
-            }
-        }
-    }, [companyPage, companySearch]);
-
-    const loadAdminStats = useCallback(async () => {
-        setAdminStatsLoading(true);
-        try {
-            const stats = await fetchAdminStats();
-            setAdminStats(stats);
-            setAdminStatsLoaded(true);
-        } catch (error) {
-            if (!isForbiddenError(error)) {
-                toast.error('Статистиканы жүктөөдө ката кетти');
-            }
-        } finally {
-            setAdminStatsLoading(false);
-        }
-    }, []);
-
-    const loadSkillsList = useCallback(async () => {
-        try {
-            const res = await fetchSkills();
-            setSkills(res || []);
-        } catch (error) {
-            if (!isForbiddenError(error)) {
-                toast.error('Скиллдерди жүктөөдө ката кетти');
-            }
-        }
-    }, []);
-
-    const loadPromptsForCourse = useCallback(async (courseId) => {
-        setAiPromptsLoading(true);
-        try {
-            const res = await fetchCourseAiPrompts(courseId);
-            setAiPrompts(res || []);
-        } catch (error) {
-            if (!isForbiddenError(error)) {
-                toast.error('AI промпттарды жүктөөдө ката кетти');
-            }
-        } finally {
-            setAiPromptsLoading(false);
-        }
-    }, []);
-
-    const loadUsersForEnrollment = useCallback(async () => {
-        try {
-            const res = await fetchUsers({ role: 'student', limit: 100 });
-            setUsers(res?.data || []);
-        } catch (error) {
-            if (!isForbiddenError(error)) {
-                toast.error('Студенттерди жүктөөдө ката кетти');
-            }
-        }
-    }, []);
-
-    // Event handlers
-    const requestConfirmation = useCallback((config) => {
-        setConfirmation(config);
-    }, []);
+    const {
+        adminStats,
+        adminStatsLoaded,
+        adminStatsLoading,
+        loadAdminStats,
+    } = useAdminStatsDomain();
 
     const closeConfirmation = useCallback(() => {
         setConfirmation(null);
@@ -443,619 +253,6 @@ const AdminPanel = () => {
             setConfirmation(null);
         }
     }, [confirmation]);
-
-    const handleDeleteUser = async (id) => {
-        requestConfirmation({
-            title: 'Колдонуучуну өчүрүү',
-            message: 'Бул колдонуучуну өчүрүүгө ишенимдүүсүзбү?',
-            confirmLabel: 'Өчүрүү',
-            confirmVariant: 'danger',
-            onConfirm: async () => {
-                try {
-                    await deleteUser(id);
-                    setUsers((prev) => prev.filter((u) => u.id !== id));
-                    toast.success('Колдонуучу ийгиликтүү өчүрүлдү');
-                } catch {
-                    toast.error('Колдонуучуну өчүрүүдө ката кетти');
-                }
-            },
-        });
-    };
-
-    const handleRoleChange = async (userId, newRole) => {
-        try {
-            await updateUserRole(userId, newRole);
-            setUsers((prev) => prev.map((u) => (u.id === userId ? { ...u, role: newRole } : u)));
-            toast.success('Роль ийгиликтүү өзгөртүлдү');
-        } catch {
-            toast.error('Ролду өзгөртүүдө ката кетти');
-        }
-    };
-
-    const handleDeleteCourse = async (id) => {
-        requestConfirmation({
-            title: 'Курсту өчүрүү',
-            message: 'Бул курсту өчүрүүгө ишенимдүүсүзбү?',
-            confirmLabel: 'Өчүрүү',
-            confirmVariant: 'danger',
-            onConfirm: async () => {
-                try {
-                    await deleteCourse(id);
-                    setCourses((prev) => prev.filter((c) => c.id !== id));
-                    toast.success('Курс ийгиликтүү өчүрүлдү');
-                } catch {
-                    toast.error('Курсту өчүрүүдө ката кетти');
-                }
-            },
-        });
-    };
-
-    const handleEnrollUser = async (userId, courseId) => {
-        if (!userId) return;
-        try {
-            const selectedCourse = courses.find((course) => Number(course.id) === Number(courseId));
-            const normalizedCourseType = normalizeEnrollmentCourseType(selectedCourse?.courseType);
-            const selectedGroupId = selectedEnrollmentGroupIds[String(courseId)];
-
-            if (
-                ['offline', 'online_live'].includes(normalizedCourseType) &&
-                (!selectedGroupId || Number.isNaN(Number(selectedGroupId)))
-            ) {
-                toast.error('Delivery курс үчүн адегенде группаны тандаңыз');
-                return;
-            }
-
-            await enrollUserInCourse(userId, courseId, {
-                courseType: normalizedCourseType,
-                groupId:
-                    ['offline', 'online_live'].includes(normalizedCourseType) && selectedGroupId
-                        ? Number(selectedGroupId)
-                        : undefined,
-            });
-            toast.success('Студент курска ийгиликтүү катталды');
-        } catch {
-            toast.error('Каттоодо ката кетти');
-        }
-    };
-
-    const handleAddCategory = async () => {
-        if (!newCategory.trim()) return;
-        try {
-            const created = await createCategory({ name: newCategory.trim() });
-            setCategories((prev) => [...prev, created]);
-            setNewCategory('');
-            toast.success('Категория ийгиликтүү кошулду');
-        } catch {
-            toast.error('Категория кошууда ката кетти');
-        }
-    };
-
-    const handleUpdateCategory = async (id) => {
-        if (!editingCategoryName.trim()) return;
-        try {
-            await updateCategory(id, { name: editingCategoryName.trim() });
-            setCategories((prev) =>
-                prev.map((c) => (c.id === id ? { ...c, name: editingCategoryName.trim() } : c))
-            );
-            setEditingCategoryId(null);
-            setEditingCategoryName('');
-            toast.success('Категория ийгиликтүү жаңыртылды');
-        } catch {
-            toast.error('Категорияны жаңыртууда ката кетти');
-        }
-    };
-
-    const handleDeleteCategory = async (id) => {
-        requestConfirmation({
-            title: 'Категорияны өчүрүү',
-            message: 'Бул категорияны өчүрүүгө ишенимдүүсүзбү?',
-            confirmLabel: 'Өчүрүү',
-            confirmVariant: 'danger',
-            onConfirm: async () => {
-                try {
-                    await deleteCategory(id);
-                    setCategories((prev) => prev.filter((c) => c.id !== id));
-                    toast.success('Категория ийгиликтүү өчүрүлдү');
-                } catch {
-                    toast.error('Категорияны өчүрүүдө ката кетти');
-                }
-            },
-        });
-    };
-
-    const handleTranscode = async () => {
-        if (!transcodeCourseId || !transcodeSectionId || !transcodeLessonId) {
-            toast.error('Бардык ID полярын толтуруңуз');
-            return;
-        }
-        setTranscodeLoading(true);
-        try {
-            const result = await transcodeLessonHls({
-                courseId: Number(transcodeCourseId),
-                sectionId: Number(transcodeSectionId),
-                lessonId: Number(transcodeLessonId),
-            });
-            toast.success('Транскоддоо ийгиликтүү башталды');
-            // Add to active transcodes for polling
-            setActiveTranscodes((prev) => [
-                ...prev,
-                {
-                    courseId: Number(transcodeCourseId),
-                    sectionId: Number(transcodeSectionId),
-                    lessonId: Number(transcodeLessonId),
-                    status: 'processing',
-                    jobId: result.jobId,
-                },
-            ]);
-            setTranscodeCourseId('');
-            setTranscodeSectionId('');
-            setTranscodeLessonId('');
-        } catch {
-            toast.error('Транскоддоодо ката кетти');
-        } finally {
-            setTranscodeLoading(false);
-        }
-    };
-
-    const handleBulkTranscode = async () => {
-        if (!transcodeCourseId || !transcodeSectionId) {
-            toast.error('Course жана Section ID толтуруңуз');
-            return;
-        }
-
-        const lessonIds = transcodeLessonIds
-            .split(',')
-            .map((value) => value.trim())
-            .filter(Boolean)
-            .map(Number)
-            .filter(Number.isFinite);
-
-        setTranscodeLoading(true);
-        try {
-            const result = await bulkTranscodeLessonHls({
-                courseId: Number(transcodeCourseId),
-                sectionId: Number(transcodeSectionId),
-                lessonIds: lessonIds.length ? lessonIds : undefined,
-            });
-            toast.success(`Топтук транскоддоо башталды: ${result.started}/${result.total}`);
-            // Add started lessons to active transcodes for polling
-            const startedLessons = result.results
-                .filter((r) => r.status === 'started')
-                .map((r) => ({
-                    courseId: Number(transcodeCourseId),
-                    sectionId: Number(transcodeSectionId),
-                    lessonId: r.lessonId,
-                    status: 'processing',
-                    jobId: r.jobId,
-                }));
-            setActiveTranscodes((prev) => [...prev, ...startedLessons]);
-            setTranscodeLessonIds('');
-        } catch {
-            toast.error('Топтук транскоддоодо ката кетти');
-        } finally {
-            setTranscodeLoading(false);
-        }
-    };
-
-    // Company management handlers
-    const handleCreateCompany = async (payload) => {
-        const companyPayload = payload || newCompanyForm;
-        if (!companyPayload.name?.trim()) return;
-        try {
-            const { tenantPatch, crmPatch } = splitTenantPayload(companyPayload);
-            const created = await createCompany(cleanTenantPayload(tenantPatch));
-            const crmTenantId =
-                typeof crmPatch.crmTenantId === 'string' ? crmPatch.crmTenantId.trim() : '';
-            const crmResult = crmTenantId
-                ? await linkCompanyCrmTenant(created.id, cleanTenantPayload(crmPatch))
-                : null;
-            const crmUpdate = crmResult?.crmLink
-                ? {
-                      crmTenantId: crmResult.crmLink.crmTenantId,
-                      crmTenantSlug: crmResult.crmLink.crmTenantSlug,
-                      crmPrimaryDomain: crmResult.crmLink.crmPrimaryDomain,
-                  }
-                : {};
-            const nextCompany = { ...created, ...crmUpdate };
-            setCompanies((prev) => [...prev, nextCompany]);
-            setNewCompanyForm({
-                name: '',
-                subdomain: '',
-                customDomain: '',
-                status: 'active',
-                plan: '',
-                billingStatus: '',
-                crmTenantId: '',
-                crmTenantSlug: '',
-                crmPrimaryDomain: '',
-                timezone: 'Asia/Bishkek',
-                locale: 'ky',
-            });
-            toast.success('Tenant ийгиликтүү кошулду');
-            return created;
-        } catch {
-            toast.error('Tenant кошууда ката кетти');
-            return null;
-        }
-    };
-
-    const handleUpdateCompany = async (companyId, patch) => {
-        if (!patch?.name?.trim()) return;
-        try {
-            const current = companies.find((company) => company.id === companyId) ?? {};
-            const { tenantPatch, crmPatch } = splitTenantPayload(patch);
-            const cleanedTenantPatch = cleanTenantPayload(tenantPatch);
-            const updated = Object.keys(cleanedTenantPatch).length
-                ? await updateCompany(companyId, cleanedTenantPatch)
-                : {};
-            const crmTenantId =
-                typeof crmPatch.crmTenantId === 'string' ? crmPatch.crmTenantId.trim() : '';
-            const hasCrmFields = Object.keys(crmPatch).length > 0;
-            const shouldUnlinkCrm = hasCrmFields && !crmTenantId && current.crmTenantId;
-            const crmResult =
-                hasCrmFields && crmTenantId
-                    ? await linkCompanyCrmTenant(companyId, cleanTenantPayload(crmPatch))
-                    : shouldUnlinkCrm
-                      ? await unlinkCompanyCrmTenant(companyId)
-                      : null;
-            const crmUpdate = crmResult?.crmLink
-                ? {
-                      crmTenantId: crmResult.crmLink.crmTenantId,
-                      crmTenantSlug: crmResult.crmLink.crmTenantSlug,
-                      crmPrimaryDomain: crmResult.crmLink.crmPrimaryDomain,
-                  }
-                : shouldUnlinkCrm
-                  ? {
-                        crmTenantId: '',
-                        crmTenantSlug: '',
-                        crmPrimaryDomain: '',
-                    }
-                  : {};
-            setCompanies((prev) =>
-                prev.map((company) =>
-                    company.id === companyId ? { ...company, ...updated, ...crmUpdate } : company
-                )
-            );
-            toast.success('Tenant ийгиликтүү жаңыртылды');
-        } catch {
-            toast.error('Tenant жаңыртууда ката кетти');
-        }
-    };
-
-    const handleDeleteCompany = async (companyId) => {
-        requestConfirmation({
-            title: 'Компанияны өчүрүү',
-            message: 'Бул компанияны өчүрүүгө ишенимдүүсүзбү?',
-            confirmLabel: 'Өчүрүү',
-            confirmVariant: 'danger',
-            onConfirm: async () => {
-                try {
-                    await deleteCompany(companyId);
-                    setCompanies((prev) => prev.filter((company) => company.id !== companyId));
-                    toast.success('Компания ийгиликтүү өчүрүлдү');
-                } catch {
-                    toast.error('Компанияны өчүрүүдө ката кетти');
-                }
-            },
-        });
-    };
-
-    // Advanced company management handlers
-    const handleAssignCourseToCompany = async (courseId, companyId) => {
-        try {
-            await assignCourseToCompany(courseId, companyId);
-            toast.success('Курс компанияга ийгиликтүү таанды');
-            // Reload courses to update company assignments
-            loadCoursesAndCategories();
-        } catch {
-            toast.error('Курс таандоодо ката кетти');
-        }
-    };
-
-    const handleUnassignCourseFromCompany = async (courseId, companyId) => {
-        try {
-            await unassignCourseFromCompany(courseId, companyId);
-            toast.success('Курс компаниядан ийгиликтүү алынды');
-            // Reload courses to update company assignments
-            loadCoursesAndCategories();
-        } catch {
-            toast.error('Курс алындоодо ката кетти');
-        }
-    };
-
-    const handleClearCourseCompany = async (courseId) => {
-        requestConfirmation({
-            title: 'Компания байланыштарын тазалоо',
-            message: 'Бул курстун бардык компания таандоолорун алырга ишенимдүүсүзбү?',
-            confirmLabel: 'Тазалоо',
-            confirmVariant: 'danger',
-            onConfirm: async () => {
-                try {
-                    await clearCourseCompany(courseId);
-                    toast.success('Курстун компания таандоолору тазаланды');
-                    loadCoursesAndCategories();
-                } catch {
-                    toast.error('Компания таандоолорду тазалоодо ката кетти');
-                }
-            },
-        });
-    };
-
-    const handleUploadCompanyLogo = async (companyId, file) => {
-        if (!file) {
-            toast.error('Файл тандаңыз');
-            return;
-        }
-        try {
-            await uploadCompanyLogo(companyId, file);
-            toast.success('Компания логотипи ийгиликтүү жүктөлдү');
-            // Reload companies to show updated logo
-            loadCompanies();
-        } catch {
-            toast.error('Логотип жүктөөдө ката кетти');
-        }
-    };
-
-    // Skill management handlers
-    const handleCreateSkill = async () => {
-        if (!newSkillName.trim()) return;
-        try {
-            const created = await createSkill({ name: newSkillName.trim() });
-            setSkills((prev) => [...prev, created]);
-            setNewSkillName('');
-            toast.success('Скилл ийгиликтүү кошулду');
-        } catch {
-            toast.error('Скилл кошууда ката кетти');
-        }
-    };
-
-    const handleUpdateSkill = async (skillId, newName) => {
-        if (!newName.trim()) return;
-        try {
-            await updateSkill(skillId, { name: newName.trim() });
-            setSkills((prev) =>
-                prev.map((skill) =>
-                    skill.id === skillId ? { ...skill, name: newName.trim() } : skill
-                )
-            );
-            toast.success('Скилл ийгиликтүү жаңыртылды');
-        } catch {
-            toast.error('Скиллди жаңыртууда ката кетти');
-        }
-    };
-
-    const handleDeleteSkill = async (skillId) => {
-        requestConfirmation({
-            title: 'Скиллди өчүрүү',
-            message: 'Бул скилди өчүрүүгө ишенимдүүсүзбү?',
-            confirmLabel: 'Өчүрүү',
-            confirmVariant: 'danger',
-            onConfirm: async () => {
-                try {
-                    await deleteSkill(skillId);
-                    setSkills((prev) => prev.filter((skill) => skill.id !== skillId));
-                    toast.success('Скилл ийгиликтүү өчүрүлдү');
-                } catch {
-                    toast.error('Скилди өчүрүүдө ката кетти');
-                }
-            },
-        });
-    };
-
-    // AI Prompt management handlers
-    const handleCreatePrompt = async () => {
-        if (!newPromptText.trim()) return;
-        try {
-            await addCourseAiPrompt(aiPromptCourseId, {
-                text: newPromptText.trim(),
-                language: newPromptLanguage,
-                order: Number(newPromptOrder),
-                isActive: newPromptIsActive,
-            });
-            setNewPromptText('');
-            setNewPromptLanguage('ky');
-            setNewPromptOrder(0);
-            setNewPromptIsActive(true);
-            toast.success('AI промпт ийгиликтүү кошулду');
-            // Reload prompts to show new one
-            loadPromptsForCourse(aiPromptCourseId);
-        } catch {
-            toast.error('AI промпт кошууда ката кетти');
-        }
-    };
-
-    const handleUpdatePrompt = async (promptId, updates) => {
-        try {
-            await updateCourseAiPrompt(promptId, updates);
-            setAiPrompts((prev) =>
-                prev.map((prompt) => (prompt.id === promptId ? { ...prompt, ...updates } : prompt))
-            );
-            toast.success('AI промпт ийгиликтүү жаңыртылды');
-        } catch {
-            toast.error('AI промптти жаңыртууда ката кетти');
-        }
-    };
-
-    const handleDeletePrompt = async (promptId) => {
-        requestConfirmation({
-            title: 'AI промптти өчүрүү',
-            message: 'Бул AI промптти өчүрүүгө ишенимдүүсүзбү?',
-            confirmLabel: 'Өчүрүү',
-            confirmVariant: 'danger',
-            onConfirm: async () => {
-                try {
-                    await deleteCourseAiPrompt(promptId);
-                    setAiPrompts((prev) => prev.filter((prompt) => prompt.id !== promptId));
-                    toast.success('AI промпт ийгиликтүү өчүрүлдү');
-                } catch {
-                    toast.error('AI промптти өчүрүүдө ката кетти');
-                }
-            },
-        });
-    };
-
-    const handleApprovePendingCourse = async (courseId) => {
-        try {
-            await markCourseApproved(courseId);
-            setPendingCourses((prev) => prev.filter((course) => course.id !== courseId));
-            toast.success('Курс ийгиликтүү бекитилди');
-        } catch {
-            toast.error('Курсту бекитүүдө ката кетти');
-        }
-    };
-
-    const handleRejectPendingCourse = async (courseId) => {
-        try {
-            await markCourseRejected(courseId);
-            setPendingCourses((prev) => prev.filter((course) => course.id !== courseId));
-            toast.success('Курс баш тартылган тизмеге жылдырылды');
-        } catch {
-            toast.error('Курстан баш тартууда ката кетти');
-        }
-    };
-
-    const handleSelectCertificateCourse = useCallback((courseId) => {
-        setSelectedCertificateCourseId(courseId);
-        setCertificateStudentsPage(1);
-        setCertificateSearch('');
-        setCertificateProgressMin('');
-        setCertificateProgressMax('');
-    }, []);
-
-    const handleToggleCertificateApproval = useCallback(
-        async (enabled) => {
-            if (!selectedCertificateCourseId) return;
-            setSavingCertificateSettings(true);
-            try {
-                const updated = await updateCourseCertificateSettings(selectedCertificateCourseId, {
-                    enabled: certificateSettings?.enabled ?? true,
-                    issueMode: certificateSettings?.issueMode ?? 'auto',
-                    approvalMode: enabled ? 'instructor' : 'none',
-                });
-                setCertificateSettings(updated);
-                toast.success('Сертификат эрежеси жаңыртылды');
-            } catch (error) {
-                console.error('Failed to update certificate settings', error);
-                toast.error('Сертификат эрежесин жаңыртуу мүмкүн болбоду');
-            } finally {
-                setSavingCertificateSettings(false);
-            }
-        },
-        [selectedCertificateCourseId, certificateSettings]
-    );
-
-    const handleSaveCertificateSettings = useCallback(
-        async (payload) => {
-            if (!selectedCertificateCourseId) return false;
-            setSavingCertificateSettings(true);
-            try {
-                const updated = await updateCourseCertificateSettings(
-                    selectedCertificateCourseId,
-                    payload
-                );
-                setCertificateSettings(updated);
-                toast.success('Сертификат шаблону сакталды');
-                return true;
-            } catch (error) {
-                console.error('Failed to save certificate settings', error);
-                toast.error('Сертификат шаблонун сактоо мүмкүн болбоду');
-                return false;
-            } finally {
-                setSavingCertificateSettings(false);
-            }
-        },
-        [selectedCertificateCourseId]
-    );
-
-    const handleRegenerateCertificates = useCallback(async () => {
-        if (!selectedCertificateCourseId) return false;
-        setRegeneratingCertificates(true);
-        try {
-            const result = await regenerateCourseCertificates(selectedCertificateCourseId);
-            await loadCertificateStudents(selectedCertificateCourseId);
-            const certificatesData = await fetchCourseCertificates(selectedCertificateCourseId);
-            setCourseCertificates(Array.isArray(certificatesData) ? certificatesData : []);
-            toast.success(
-                result?.regeneratedCount
-                    ? `${result.regeneratedCount} сертификат жаңыртылды`
-                    : 'Жаңыртууга сертификат табылган жок'
-            );
-            return true;
-        } catch (error) {
-            console.error('Failed to regenerate certificates', error);
-            toast.error('Сертификат PDF файлдарын жаңыртуу мүмкүн болбоду');
-            return false;
-        } finally {
-            setRegeneratingCertificates(false);
-        }
-    }, [selectedCertificateCourseId, loadCertificateStudents]);
-
-    const handleSaveCertificateAsset = useCallback(
-        async (kind, file) => {
-            if (!selectedCertificateCourseId || !file) return null;
-            setSavingCertificateAssetKind(kind);
-            try {
-                const updated =
-                    kind === 'signature'
-                        ? await saveCourseCertificateSignatureAsset(
-                              selectedCertificateCourseId,
-                              file
-                          )
-                        : await uploadCourseCertificateSecondaryLogo(
-                              selectedCertificateCourseId,
-                              file
-                          );
-                setCertificateSettings(updated);
-                toast.success(
-                    kind === 'signature' ? 'Кол коюу сакталды' : 'Экинчи бренд логотиби жүктөлдү'
-                );
-                return updated;
-            } catch (error) {
-                console.error('Failed to save certificate asset', error);
-                toast.error(
-                    kind === 'signature'
-                        ? 'Кол коюуну сактоо мүмкүн болбоду'
-                        : 'Сертификат активин жүктөө мүмкүн болбоду'
-                );
-                return null;
-            } finally {
-                setSavingCertificateAssetKind(null);
-            }
-        },
-        [selectedCertificateCourseId]
-    );
-
-    const handleCertificateAction = useCallback(
-        async (kind, student, displayOverrides = {}) => {
-            if (!selectedCertificateCourseId || !student) return;
-            setCertificateActionStudentId(student.id);
-            try {
-                if (kind === 'issue') {
-                    await issueCourseCertificate(selectedCertificateCourseId, {
-                        studentId: student.id,
-                        ...displayOverrides,
-                    });
-                } else if (kind === 'approve' && student.certificateId) {
-                    await approveCertificate(student.certificateId, displayOverrides);
-                } else if (kind === 'reject' && student.certificateId) {
-                    await rejectCertificate(student.certificateId);
-                } else if (kind === 'revoke' && student.certificateId) {
-                    await revokeCertificate(student.certificateId);
-                }
-
-                await loadCertificateStudents(selectedCertificateCourseId);
-                const certificatesData = await fetchCourseCertificates(selectedCertificateCourseId);
-                setCourseCertificates(Array.isArray(certificatesData) ? certificatesData : []);
-                toast.success('Сертификат жаңыртылды');
-            } catch (error) {
-                console.error('Failed to update certificate', error);
-                toast.error('Сертификат аракетин аткаруу мүмкүн болбоду');
-            } finally {
-                setCertificateActionStudentId(null);
-            }
-        },
-        [selectedCertificateCourseId, loadCertificateStudents]
-    );
 
     // Notification management handlers
     const markNotificationRead = async (notificationId) => {
@@ -1075,7 +272,7 @@ const AdminPanel = () => {
             confirmVariant: 'danger',
             onConfirm: async () => {
                 try {
-                    setContacts((prev) => prev.filter((contact) => contact.id !== notificationId));
+                    removeContact(notificationId);
                     toast.success('Билдирүү ийгиликтүү өчүрүлдү');
                 } catch {
                     toast.error('Билдирүүнү өчүрүүдө ката кетти');
@@ -1095,9 +292,6 @@ const AdminPanel = () => {
         if (activeTab === 'pending') {
             loadPendingCourses();
         }
-        if (activeTab === 'companies') {
-            loadCompanies();
-        }
         if (activeTab === 'courses') {
             loadUsersForEnrollment();
         }
@@ -1106,7 +300,6 @@ const AdminPanel = () => {
         loadCoursesAndCategories,
         loadContacts,
         loadPendingCourses,
-        loadCompanies,
         loadUsersForEnrollment,
     ]);
 
@@ -1129,7 +322,7 @@ const AdminPanel = () => {
         if (activeTab === 'ai-prompts' && courses.length && !aiPromptCourseId) {
             setAiPromptCourseId(courses[0].id);
         }
-    }, [activeTab, courses, aiPromptCourseId]);
+    }, [activeTab, courses, aiPromptCourseId, setAiPromptCourseId]);
 
     useEffect(() => {
         if (activeTab === 'ai-prompts' && aiPromptCourseId) {
@@ -1142,103 +335,6 @@ const AdminPanel = () => {
             loadCompanies();
         }
     }, [companySearch, activeTab, loadCompanies]);
-
-    useEffect(() => {
-        if (activeTab !== 'certificates') return;
-
-        if (selectedCertificateCourseId) {
-            loadCertificateStudents(selectedCertificateCourseId);
-        } else {
-            setCertificateStudents([]);
-            setCertificateCourseMeta(null);
-        }
-    }, [
-        activeTab,
-        selectedCertificateCourseId,
-        certificateStudentsPage,
-        certificateSearch,
-        certificateProgressMin,
-        certificateProgressMax,
-        loadCertificateStudents,
-    ]);
-
-    useEffect(() => {
-        if (activeTab !== 'certificates' || !selectedCertificateCourseId) {
-            setCertificateSettings(null);
-            setCourseCertificates([]);
-            setLoadingCertificateWorkspace(false);
-            return;
-        }
-
-        const loadCertificateWorkspace = async () => {
-            setLoadingCertificateWorkspace(true);
-            try {
-                const [settingsData, certificatesData] = await Promise.all([
-                    fetchCourseCertificateSettings(selectedCertificateCourseId),
-                    fetchCourseCertificates(selectedCertificateCourseId),
-                ]);
-                setCertificateSettings(settingsData);
-                setCourseCertificates(Array.isArray(certificatesData) ? certificatesData : []);
-            } catch (error) {
-                console.error('Failed to load admin certificate settings', error);
-            } finally {
-                setLoadingCertificateWorkspace(false);
-            }
-        };
-
-        loadCertificateWorkspace();
-    }, [activeTab, selectedCertificateCourseId]);
-
-    // Transcode status polling
-    useEffect(() => {
-        if (activeTranscodes.length === 0) return;
-
-        const interval = setInterval(async () => {
-            const updates = await Promise.all(
-                activeTranscodes.map(async (t) => {
-                    try {
-                        const status = await getTranscodeStatus({
-                            courseId: t.courseId,
-                            sectionId: t.sectionId,
-                            lessonId: t.lessonId,
-                        });
-                        return { ...t, status: status.playbackStatus, jobStatus: status.jobStatus };
-                    } catch {
-                        return t;
-                    }
-                })
-            );
-
-            // Remove completed/failed transcodes from polling
-            const stillProcessing = updates.filter(
-                (u) =>
-                    u.status === 'processing' &&
-                    !['COMPLETE', 'ERROR', 'CANCELED'].includes(u.jobStatus)
-            );
-
-            // Show toast for completed/failed and refresh courses
-            let shouldRefreshCourses = false;
-            updates.forEach((u) => {
-                if (u.status === 'ready' && !u.notified) {
-                    toast.success(`Lesson ${u.lessonId} transcode complete`);
-                    u.notified = true;
-                    shouldRefreshCourses = true;
-                } else if (u.status === 'failed' && !u.notified) {
-                    toast.error(`Lesson ${u.lessonId} transcode failed`);
-                    u.notified = true;
-                }
-            });
-
-            // Refresh courses to get updated playbackStatus for completed transcodes
-            if (shouldRefreshCourses) {
-                loadCoursesAndCategories();
-            }
-
-            setActiveTranscodes(stillProcessing);
-        }, 10000); // Poll every 10 seconds
-
-        return () => clearInterval(interval);
-    }, [activeTranscodes, loadCoursesAndCategories]);
 
     // Anti-flickering wrapper for tab content
     const renderTab = () => {

@@ -73,6 +73,11 @@ export {
     formatFileSize,
     isVideoFile,
     isImageFile,
+    DEFAULT_SKILL_OPTION,
+    hydrateCourseInfo,
+    loadCreateCourseBuilderData,
+    loadEditCourseBuilderData,
+    mapSkillsToOptions,
 } from './utils';
 
 // Constants

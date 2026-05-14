@@ -7,4 +7,6 @@ export { default as AssistantCourseStats } from "./components/AssistantCourseSta
 export { default as AssistantStudentTable } from "./components/AssistantStudentTable";
 export { default as AssistantPagination } from "./components/AssistantPagination";
 export { useAssistantDashboardData } from "./hooks/useAssistantDashboardData.jsx";
+export { useAssistantCompanyState } from "./hooks/useAssistantCompanyState.js";
+export { useAssistantWorkspaceData } from "./hooks/useAssistantWorkspaceData.js";
 export * from "./utils/assistantDashboard.helpers";

@@ -6,6 +6,24 @@ Version bumps are classified by delivery scale; see `VERSIONING.md`.
 
 ---
 
+## [1.11.12] - 2026-05-14
+
+### Changed
+
+- Extracted admin courses/categories, users, companies, skills, AI prompts, contacts, pending approvals, stats, certificates, and transcode operations into domain hooks so `AdminPanel` owns less API orchestration and mutation state.
+- Extracted assistant company-selection and workspace data ownership into focused dashboard hooks while keeping the assistant dashboard shell API stable.
+- Extracted course-builder create/edit hydration and lesson-extra loading into shared data-loader utilities so `useCourseBuilder` owns less API orchestration.
+- Consolidated edit-course lesson-extra hydration failures into one page-level warning instead of one toast per failed quiz or code challenge.
+
+### Verification
+
+- `npm run lint`
+- `npm test -- --run`
+- `git diff --cached --check`
+- `npm run build`
+
+---
+
 ## [1.11.11] - 2026-05-14
 
 ### Changed
