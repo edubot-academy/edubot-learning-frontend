@@ -2,7 +2,7 @@
 // Orchestrates all course builder functionality while maintaining identical behavior
 // to CreateCourse.jsx and EditInstructorCourse.jsx
 
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 
@@ -104,7 +104,9 @@ export const useCourseBuilder = ({ mode = 'create', courseId: initialCourseId = 
         dragLesson,
         setDragLesson,
         originalCourse,
+        setOriginalCourse,
         originalSections,
+        setOriginalSections,
         deletedLessons,
         setDeletedLessons,
         deletedSections,
@@ -289,6 +291,38 @@ export const useCourseBuilder = ({ mode = 'create', courseId: initialCourseId = 
 
     // Course info validation
     const courseInfoErrors = getCourseInfoErrors(courseInfo);
+    const hasCurriculumChanges = useMemo(() => {
+        const baseline =
+            mode === 'edit' || originalSections.length > 0
+                ? originalSections
+                : DEFAULT_CURRICULUM;
+
+        return JSON.stringify(curriculum) !== JSON.stringify(baseline);
+    }, [curriculum, mode, originalSections]);
+    const hasUnsavedChanges =
+        !loading &&
+        !saving &&
+        !isUploading &&
+        (
+            mode === 'create'
+                ? Object.keys(infoTouched).length > 0 || hasCurriculumChanges
+                : courseInfoOperations.hasCourseInfoChanges(originalCourse) ||
+                hasCurriculumChanges ||
+                deletedLessons.length > 0 ||
+                deletedSections.length > 0
+        );
+
+    useEffect(() => {
+        if (!hasUnsavedChanges) return undefined;
+
+        const handleBeforeUnload = (event) => {
+            event.preventDefault();
+            event.returnValue = '';
+        };
+
+        window.addEventListener('beforeunload', handleBeforeUnload);
+        return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+    }, [hasUnsavedChanges]);
 
     // Return all state and operations
     return {
@@ -325,6 +359,7 @@ export const useCourseBuilder = ({ mode = 'create', courseId: initialCourseId = 
         curriculumStats,
         isUploading,
         courseInfoErrors,
+        hasUnsavedChanges,
 
         // Operations from sub-hooks
         ...courseInfoOperations,

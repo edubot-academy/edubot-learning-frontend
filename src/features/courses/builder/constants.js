@@ -63,3 +63,26 @@ export const STEP_ITEMS = [
     { key: 'curriculum', label: 'Окуу мазмуну', completed: false },
     { key: 'media', label: 'Медиа жане баскаруу', completed: false },
 ];
+
+export const CURRICULUM_WORKSPACE_SECTIONS = Object.freeze({
+    STRUCTURE: Object.freeze({
+        id: 'structure',
+        label: 'Course structure',
+        owns: Object.freeze(['sections', 'ordering', 'skills']),
+    }),
+    LESSON_CONTENT: Object.freeze({
+        id: 'lesson-content',
+        label: 'Lesson content',
+        owns: Object.freeze(['lesson metadata', 'articles', 'quizzes', 'coding challenges']),
+    }),
+    MEDIA_ASSETS: Object.freeze({
+        id: 'media-assets',
+        label: 'Media assets',
+        owns: Object.freeze(['lesson video', 'lesson resources', 'upload progress']),
+    }),
+    VALIDATION_AND_SAVE: Object.freeze({
+        id: 'validation-and-save',
+        label: 'Validation and save',
+        owns: Object.freeze(['readiness checks', 'invalid lesson navigation', 'curriculum submit']),
+    }),
+});

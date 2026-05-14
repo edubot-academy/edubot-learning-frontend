@@ -91,12 +91,16 @@ const Cart = () => {
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     <div className="lg:col-span-2 space-y-4">
                         {cartItems.map((item) => (
-                            <div
+                            <article
                                 key={item.cartItemId || item.id}
                                 className="rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow duration-300"
                             >
                                 <div className="flex flex-col sm:flex-row">
-                                    <Link to={`/courses/${item.id}`} className="block sm:w-40">
+                                    <Link
+                                        to={`/courses/${item.id}`}
+                                        className="block sm:w-40"
+                                        aria-label={`${item.title} курсун ачуу`}
+                                    >
                                         <div className="h-48 sm:h-full">
                                             {item.coverImageUrl ? (
                                                 <img
@@ -114,7 +118,11 @@ const Cart = () => {
 
                                     <div className="flex-1 p-4 sm:p-6">
                                         <div className="flex flex-col gap-4 sm:flex-row sm:justify-between">
-                                            <Link to={`/courses/${item.id}`} className="flex-1 rounded focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900">
+                                            <Link
+                                                to={`/courses/${item.id}`}
+                                                className="flex-1 rounded focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900"
+                                                aria-label={`${item.title} курсунун деталдарын ачуу`}
+                                            >
                                                 <div>
                                                     <h3 className="text-lg font-semibold mb-2 hover:text-orange-500 transition-colors">
                                                         {item.title}
@@ -145,6 +153,7 @@ const Cart = () => {
                                                 <button
                                                     type="button"
                                                     onClick={() => removeCartItem(item.cartItemId || item.id)}
+                                                    aria-label={`${item.title} курсун себеттен өчүрүү`}
                                                     className="text-red-500 hover:text-red-700 text-sm font-medium flex items-center px-3 py-1 border border-red-200 rounded hover:bg-red-50 transition-colors"
                                                 >
                                                     <BsTrash className="w-3 h-3 mr-1" aria-hidden="true" />
@@ -154,7 +163,7 @@ const Cart = () => {
                                         </div>
                                     </div>
                                 </div>
-                            </div>
+                            </article>
                         ))}
                     </div>
 

@@ -1,10 +1,12 @@
-import { Suspense, lazy } from 'react';
+import { Suspense, lazy, useContext } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import PropTypes from 'prop-types';
+import { AuthContext } from '@app/providers';
 import PrivateRoute from '@shared/PrivateRoute';
 import MainLayout from './layouts/MainLayout';
 import Loader from '@shared/ui/Loader';
 import { isPublicVideoSignupEnabled } from '@shared/auth-config';
+import { getDashboardPath, getUserNavigationPaths } from '@shared/utils/navigation';
 import {
     ADMIN_DASHBOARD_TABS,
     INSTRUCTOR_DASHBOARD_TABS,
@@ -17,7 +19,6 @@ const SignupPage = lazy(() => import('../pages/Signup'));
 const SetupAccountPage = lazy(() => import('../pages/SetupAccount'));
 const CoursesPage = lazy(() => import('../pages/Courses'));
 const CourseDetailsPage = lazy(() => import('../pages/CourseDetails'));
-const ProfilePage = lazy(() => import('../pages/Profile'));
 const InstructorDashboard = lazy(() => import('../pages/InstructorDashboard'));
 const StudentDashboard = lazy(() => import('../pages/StudentDashboard'));
 const CreateCourse = lazy(() => import('../pages/CreateCourse'));
@@ -54,6 +55,20 @@ DashboardTabRedirect.propTypes = {
     tab: PropTypes.string.isRequired,
 };
 
+const LegacyProfileRedirect = () => {
+    const { user } = useContext(AuthContext);
+
+    if (user?.role === 'instructor') {
+        return <Navigate to={getDashboardPath(user, INSTRUCTOR_DASHBOARD_TABS.PROFILE)} replace />;
+    }
+
+    if (user?.role === 'student') {
+        return <Navigate to={getDashboardPath(user, STUDENT_DASHBOARD_TABS.PROFILE)} replace />;
+    }
+
+    return <Navigate to={getUserNavigationPaths(user).dashboardOverview} replace />;
+};
+
 const AppRoutes = () => {
     return (
         <MainLayout>
@@ -68,10 +83,12 @@ const AppRoutes = () => {
                         <Route path="/register" element={<Navigate to="/login" replace />} />
                     )}
                     <Route path="/courses" element={<CoursesPage />} />
-                    <Route path="/profile" element={<ProfilePage />} />
                     <Route path="/unauthorized" element={<Unauthorized />} />
                     <Route path="/favourites" element={<Favourite />} />
                     <Route path="/cart" element={<CartPage />} />
+                    <Route element={<PrivateRoute />}>
+                        <Route path="/profile" element={<LegacyProfileRedirect />} />
+                    </Route>
                     <Route element={<PrivateRoute allowedRoles={['instructor']} />}>
                         <Route path="/instructor" element={<InstructorDashboard />} />
                         <Route

@@ -20,6 +20,7 @@ export const useCourseBuilderInfo = (courseBuilderState) => {
         setCourseInfo,
         infoTouched,
         setInfoTouched,
+        setOriginalCourse,
         courseId,
         setCourseId,
         mode,
@@ -107,13 +108,15 @@ export const useCourseBuilderInfo = (courseBuilderState) => {
             const successMessage = mode === 'create' ? 'Курс ийгиликтүү түзүлдү!' : 'Курс ийгиликтүү сакталды!';
             toast.success(successMessage);
 
+            setOriginalCourse(savedCourse);
+            setInfoTouched({});
             setStep(2);
         } catch (err) {
             console.error(err);
             const errorMessage = mode === 'create' ? 'Курс түзүүдө ката кетти.' : 'Курс сактоодо ката кетти.';
             toast.error(errorMessage);
         }
-    }, [courseInfo, courseId, mode, setCourseInfo, setStep, validateCourseInfo, setInfoTouched, setCourseId]);
+    }, [courseInfo, courseId, mode, setCourseInfo, setOriginalCourse, setStep, validateCourseInfo, setInfoTouched, setCourseId]);
 
     // Reset course info to defaults
     const resetCourseInfo = useCallback(() => {
@@ -139,7 +142,9 @@ export const useCourseBuilderInfo = (courseBuilderState) => {
 
             if (field === 'learningOutcomesText') {
                 const currentArray = currentValue ? currentValue.split('\n').filter(Boolean) : [];
-                const originalArray = originalValue || [];
+                const originalArray = Array.isArray(originalValue)
+                    ? originalValue
+                    : String(originalValue || '').split('\n').filter(Boolean);
                 return JSON.stringify(currentArray) !== JSON.stringify(originalArray);
             }
 

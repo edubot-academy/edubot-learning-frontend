@@ -12,6 +12,7 @@ import CourseContent from '@features/courses/components/CourseContent';
 import InstructorChat from '@features/instructorChat/InstructorChat';
 import { HiChatAlt2 } from 'react-icons/hi';
 import Loader from '@shared/ui/Loader';
+import { COURSE_DETAILS_SUPPORT_PLACEMENT } from './courseDetailsPlacement';
 
 export const InstructorChatDock = ({ enrolled, userRole, course }) => {
     const [instructorChat, setInstructorChat] = useState(false);
@@ -307,7 +308,14 @@ export const CourseDetailsSidebar = ({
     );
 
     return (
-        <div className="hidden lg:block lg:col-span-1">
+        <div
+            className="hidden lg:block lg:col-span-1"
+            data-support-placement={
+                enrolled
+                    ? COURSE_DETAILS_SUPPORT_PLACEMENT.ENROLLED.desktop.join(' ')
+                    : COURSE_DETAILS_SUPPORT_PLACEMENT.PROSPECT.desktop.join(' ')
+            }
+        >
             <div className="space-y-6 sticky top-6">
                 {enrolled ? (
                     <div className="bg-white dark:bg-[#1A1A1A] p-5 rounded-xl shadow-sm dark:shadow-gray-900/50 border border-[#E6E8EC] dark:border-[#2A2E35]">
@@ -413,7 +421,10 @@ export const CourseDetailsMobileArea = ({
 
     if (enrolled) {
         return (
-            <div className="space-y-6">
+            <div
+                className="space-y-6"
+                data-support-placement={COURSE_DETAILS_SUPPORT_PLACEMENT.ENROLLED.mobile.join(' ')}
+            >
                 {activeLessonRuntime}
                 <CourseContent
                     courseId={courseId}
@@ -433,7 +444,10 @@ export const CourseDetailsMobileArea = ({
     }
 
     return (
-        <div className="space-y-6">
+        <div
+            className="space-y-6"
+            data-support-placement={COURSE_DETAILS_SUPPORT_PLACEMENT.PROSPECT.mobile.join(' ')}
+        >
             <CardVideo
                 key={courseId}
                 course={course}
@@ -519,12 +533,15 @@ export const EnrolledCourseSupport = ({ enrolled, instructorNode, reviewNode, co
 
     return (
         <>
-            <div className="space-y-8 lg:space-y-0 lg:grid lg:grid-cols-3 lg:gap-6">
+            <div
+                className="space-y-8 lg:space-y-0 lg:grid lg:grid-cols-3 lg:gap-6"
+                data-support-placement="below-runtime-instructor-review"
+            >
                 <div className="lg:col-span-2">{instructorNode}</div>
                 <div className="lg:col-span-1">{reviewNode}</div>
             </div>
 
-            <div className="pt-6">
+            <div className="pt-6" data-support-placement="below-runtime-discussion">
                 <Comment courseId={courseId} />
             </div>
         </>

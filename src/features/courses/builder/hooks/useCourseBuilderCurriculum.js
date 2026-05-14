@@ -51,6 +51,7 @@ export const useCourseBuilderCurriculum = (courseBuilderState) => {
     const {
         curriculum,
         setCurriculum,
+        setOriginalSections,
         setExpandedSections,
         singleSectionFocus,
         dragSectionIndex,
@@ -404,6 +405,7 @@ export const useCourseBuilderCurriculum = (courseBuilderState) => {
         setSaving(true);
         try {
             const { errors, invalidSectionIndexes } = validateCurriculumStructure(curriculum);
+            const savedCurriculum = JSON.parse(JSON.stringify(curriculum));
 
             if (errors.length > 0) {
                 expandInvalidSections(invalidSectionIndexes);
@@ -436,6 +438,7 @@ export const useCourseBuilderCurriculum = (courseBuilderState) => {
                     });
 
                     // Update the section with the new ID
+                    savedCurriculum[sIdx].id = sec.id;
                     setCurriculum((prev) => {
                         const updated = [...prev];
                         updated[sIdx].id = sec.id;
@@ -468,6 +471,7 @@ export const useCourseBuilderCurriculum = (courseBuilderState) => {
                         const createdLesson = await createLesson(courseId, sec.id, lessonPayload);
 
                         // Store the lesson ID
+                        savedCurriculum[sIdx].lessons[lIdx].id = createdLesson.id;
                         setCurriculum((prev) => {
                             const updated = [...prev];
                             updated[sIdx].lessons[lIdx].id = createdLesson.id;
@@ -517,6 +521,7 @@ export const useCourseBuilderCurriculum = (courseBuilderState) => {
                         });
 
                         // Update the section with the new ID
+                        savedCurriculum[sIdx].id = sec.id;
                         setCurriculum((prev) => {
                             const updated = [...prev];
                             updated[sIdx].id = sec.id;
@@ -560,6 +565,7 @@ export const useCourseBuilderCurriculum = (courseBuilderState) => {
                             updatedLesson = await createLesson(courseId, sec.id, lessonPayload);
 
                             // Store the lesson ID
+                            savedCurriculum[sIdx].lessons[lIdx].id = updatedLesson.id;
                             setCurriculum((prev) => {
                                 const updated = [...prev];
                                 updated[sIdx].lessons[lIdx].id = updatedLesson.id;
@@ -626,6 +632,7 @@ export const useCourseBuilderCurriculum = (courseBuilderState) => {
             // Clear dirty tracking refs after successful save
             dirtySectionIdsRef.current.clear();
             dirtyLessonIdsRef.current.clear();
+            setOriginalSections(savedCurriculum);
 
             toast.success(mode === 'create' ? 'Мазмун сакталды!' : 'Бардык өзгөрүүлөр сакталды!');
             return true; // Indicate success
@@ -647,6 +654,7 @@ export const useCourseBuilderCurriculum = (courseBuilderState) => {
         navigate,
         setSaving,
         setCurriculum,
+        setOriginalSections,
         deletedLessons,
         setDeletedLessons,
         deletedSections,

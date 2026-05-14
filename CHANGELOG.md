@@ -6,6 +6,26 @@ Version bumps are classified by delivery scale; see `VERSIONING.md`.
 
 ---
 
+## [1.11.14] - 2026-05-14
+
+### Changed
+
+- Added explicit IA ownership constants for admin, instructor, and assistant dashboards so governance, workbench, daily-action, and reference-view responsibilities do not drift.
+- Removed the standalone `Profile.jsx` surface and converted the unlinked legacy `/profile` URL into a role-aware dashboard redirect.
+- Added course-details support-placement rules for instructor, review, and discussion modules across prospect/enrolled and desktop/mobile states.
+- Added course-builder dirty-state tracking with browser leave protection and reset saved baselines after successful course-info and curriculum saves.
+- Documented shared UI primitive ownership, API, styling, and refactor standards.
+- Clarified cart item navigation and remove action semantics with separate landmarks and action labels.
+
+### Verification
+
+- `npm run lint`
+- `npm test -- --run --testTimeout=15000`
+- `git diff --check`
+- `npm run build`
+
+---
+
 ## [1.11.13] - 2026-05-14
 
 ### Changed

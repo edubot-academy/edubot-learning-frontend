@@ -5,14 +5,40 @@ import {
     FiCalendar,
 } from 'react-icons/fi';
 
+export const ASSISTANT_DASHBOARD_TABS = Object.freeze({
+    OVERVIEW: 'overview',
+    ENROLLMENTS: 'enrollments',
+    COURSES: 'courses',
+    ATTENDANCE: 'attendance',
+});
+
+export const ASSISTANT_WORKSPACE_GROUPS = Object.freeze({
+    DAILY_ACTIONS: Object.freeze({
+        id: 'daily-actions',
+        label: 'Daily actions',
+        tabs: Object.freeze([
+            ASSISTANT_DASHBOARD_TABS.OVERVIEW,
+            ASSISTANT_DASHBOARD_TABS.ENROLLMENTS,
+            ASSISTANT_DASHBOARD_TABS.ATTENDANCE,
+        ]),
+    }),
+    REFERENCE_VIEWS: Object.freeze({
+        id: 'reference-views',
+        label: 'Reference views',
+        tabs: Object.freeze([
+            ASSISTANT_DASHBOARD_TABS.COURSES,
+        ]),
+    }),
+});
+
 export const NAV_ITEMS = [
     // Primary Navigation - Core Daily Tasks
-    { id: 'overview', label: 'Кыскача', icon: FiHome, category: 'primary', priority: 1 },
-    { id: 'enrollments', label: 'Студенттер', icon: FiUsers, category: 'primary', priority: 2 },
+    { id: ASSISTANT_DASHBOARD_TABS.OVERVIEW, label: 'Кыскача', icon: FiHome, category: 'primary', priority: 1 },
+    { id: ASSISTANT_DASHBOARD_TABS.ENROLLMENTS, label: 'Студенттер', icon: FiUsers, category: 'primary', priority: 2 },
 
     // Secondary Navigation - Learning Management
-    { id: 'courses', label: 'Курстар', icon: FiBookOpen, category: 'secondary', priority: 1 },
-    { id: 'attendance', label: 'Катышуу', icon: FiCalendar, category: 'secondary', priority: 2 },
+    { id: ASSISTANT_DASHBOARD_TABS.COURSES, label: 'Курстар', icon: FiBookOpen, category: 'secondary', priority: 1 },
+    { id: ASSISTANT_DASHBOARD_TABS.ATTENDANCE, label: 'Катышуу', icon: FiCalendar, category: 'secondary', priority: 2 },
 ];
 
 export const ASSISTANT_ROLES = {

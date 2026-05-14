@@ -15,6 +15,48 @@ import {
 } from 'react-icons/fi';
 import { INSTRUCTOR_DASHBOARD_TABS } from '@shared/constants/dashboardTabs';
 
+export const INSTRUCTOR_WORKSPACE_GROUPS = Object.freeze({
+    OVERVIEW: Object.freeze({
+        id: 'overview',
+        label: 'Overview',
+        tabs: Object.freeze([
+            INSTRUCTOR_DASHBOARD_TABS.OVERVIEW,
+            INSTRUCTOR_DASHBOARD_TABS.ANALYTICS,
+            INSTRUCTOR_DASHBOARD_TABS.LEADERBOARD,
+        ]),
+    }),
+    COURSE_MANAGEMENT: Object.freeze({
+        id: 'course-management',
+        label: 'Course management',
+        tabs: Object.freeze([
+            INSTRUCTOR_DASHBOARD_TABS.COURSES,
+            INSTRUCTOR_DASHBOARD_TABS.STUDENTS,
+            INSTRUCTOR_DASHBOARD_TABS.CERTIFICATES,
+            INSTRUCTOR_DASHBOARD_TABS.GROUPS,
+            INSTRUCTOR_DASHBOARD_TABS.OFFERINGS,
+        ]),
+    }),
+    DELIVERY_WORKBENCH: Object.freeze({
+        id: 'delivery-workbench',
+        label: 'Delivery workbench',
+        tabs: Object.freeze([
+            INSTRUCTOR_DASHBOARD_TABS.SESSIONS,
+            INSTRUCTOR_DASHBOARD_TABS.HOMEWORK,
+            INSTRUCTOR_DASHBOARD_TABS.ATTENDANCE,
+            INSTRUCTOR_DASHBOARD_TABS.CHAT,
+        ]),
+    }),
+    SETTINGS: Object.freeze({
+        id: 'settings',
+        label: 'Settings',
+        tabs: Object.freeze([
+            INSTRUCTOR_DASHBOARD_TABS.PROFILE,
+            INSTRUCTOR_DASHBOARD_TABS.AI,
+            INSTRUCTOR_DASHBOARD_TABS.NOTIFICATIONS,
+        ]),
+    }),
+});
+
 export const NAV_ITEMS = [
     // Primary Navigation - Core Daily Tasks
     { id: INSTRUCTOR_DASHBOARD_TABS.OVERVIEW, label: 'Кыскача', icon: FiHome, category: 'primary', priority: 1 },

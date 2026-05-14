@@ -39,6 +39,46 @@ export const USERS_QUERY_KEYS = Object.freeze({
     page: 'u_page',
 });
 
+export const ADMIN_WORKSPACE_GROUPS = Object.freeze({
+    GOVERNANCE: Object.freeze({
+        id: 'governance',
+        label: 'Governance',
+        tabs: Object.freeze([
+            ADMIN_DASHBOARD_TABS.STATS,
+            ADMIN_DASHBOARD_TABS.USERS,
+            ADMIN_DASHBOARD_TABS.COMPANIES,
+            ADMIN_DASHBOARD_TABS.CONTACTS,
+            ADMIN_DASHBOARD_TABS.ANALYTICS,
+        ]),
+    }),
+    CONTENT_OPERATIONS: Object.freeze({
+        id: 'content-operations',
+        label: 'Content operations',
+        tabs: Object.freeze([
+            ADMIN_DASHBOARD_TABS.COURSES,
+            ADMIN_DASHBOARD_TABS.PENDING,
+            ADMIN_DASHBOARD_TABS.CERTIFICATES,
+        ]),
+    }),
+    TECHNICAL_OPERATIONS: Object.freeze({
+        id: 'technical-operations',
+        label: 'Technical operations',
+        tabs: Object.freeze([
+            ADMIN_DASHBOARD_TABS.SKILLS,
+            ADMIN_DASHBOARD_TABS.AI_PROMPTS,
+            ADMIN_DASHBOARD_TABS.NOTIFICATIONS,
+            ADMIN_DASHBOARD_TABS.INTEGRATION,
+            ADMIN_DASHBOARD_TABS.ATTENDANCE,
+        ]),
+    }),
+});
+
+export const ADMIN_COURSES_TAB_SECTIONS = Object.freeze({
+    CATALOG_GOVERNANCE: 'catalog-governance',
+    ENROLLMENT_OVERSIGHT: 'enrollment-oversight',
+    MEDIA_OPERATIONS: 'media-operations',
+});
+
 export const NAV_ITEMS = [
     // Primary Navigation - Core Admin Tasks
     { id: ADMIN_DASHBOARD_TABS.STATS, label: 'Статистика', icon: FiBarChart2, category: 'primary', priority: 1 },
