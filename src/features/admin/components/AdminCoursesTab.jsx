@@ -16,6 +16,24 @@ import TranscodingStatusBadge from '@features/courses/components/TranscodingStat
 import RetryTranscodeButton from '@features/courses/components/RetryTranscodeButton';
 import { ADMIN_COURSES_TAB_SECTIONS } from '../utils/adminPanel.constants';
 
+const COURSE_WORKFLOWS = Object.freeze([
+    {
+        id: 'catalog',
+        label: 'Каталог',
+        description: 'Курстарды жана категорияларды башкаруу.',
+    },
+    {
+        id: 'enrollment',
+        label: 'Жаздыруу',
+        description: 'Колдонуучуларды видео курстарга же оффлайн/live группаларга кошуу.',
+    },
+    {
+        id: 'media',
+        label: 'Медиа операциялар',
+        description: 'HLS транскоддоо жана техникалык видео аракеттери.',
+    },
+]);
+
 const getCourseTypeLabel = (courseType) => {
     switch (courseType) {
         case 'offline':
@@ -67,6 +85,7 @@ const AdminCoursesTab = ({
     const [pendingTranscodeAction, setPendingTranscodeAction] = useState(null);
     const [alreadyTranscodedMessage, setAlreadyTranscodedMessage] = useState('');
     const [transcodeHistory, setTranscodeHistory] = useState([]);
+    const [activeWorkflow, setActiveWorkflow] = useState('catalog');
     const lastReadyRecordedRef = useRef(null);
 
     const recordTranscodeEvent = useCallback((event) => {
@@ -242,6 +261,10 @@ const AdminCoursesTab = ({
     const selectedCourse = courses.find((c) => String(c.id) === String(transcodeCourseId));
     const selectedSection = sections.find((s) => String(s.id) === String(transcodeSectionId));
     const selectedLesson = lessons.find((l) => String(l.id) === String(transcodeLessonId));
+    const activeWorkflowMeta = COURSE_WORKFLOWS.find((workflow) => workflow.id === activeWorkflow);
+    const showCatalogWorkflow = activeWorkflow === 'catalog';
+    const showEnrollmentWorkflow = activeWorkflow === 'enrollment';
+    const showMediaWorkflow = activeWorkflow === 'media';
 
     return (
         <div className="space-y-6">
@@ -268,12 +291,50 @@ const AdminCoursesTab = ({
                 />
             </div>
 
+            <div className="rounded-2xl border border-edubot-line/80 bg-white/90 p-4 shadow-edubot-card dark:border-slate-700 dark:bg-slate-950">
+                <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                    <div>
+                        <p className="text-xs font-semibold uppercase tracking-wide text-edubot-muted dark:text-slate-400">
+                            Курс операциялары
+                        </p>
+                        <p className="mt-1 text-sm text-edubot-muted dark:text-slate-400">
+                            {activeWorkflowMeta?.description}
+                        </p>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                        {COURSE_WORKFLOWS.map((workflow) => (
+                            <button
+                                key={workflow.id}
+                                type="button"
+                                onClick={() => setActiveWorkflow(workflow.id)}
+                                className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
+                                    workflow.id === activeWorkflow
+                                        ? 'border-edubot-orange bg-edubot-orange text-white'
+                                        : 'border-edubot-line bg-white text-edubot-muted hover:border-edubot-orange hover:text-edubot-orange dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300'
+                                }`}
+                            >
+                                {workflow.label}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            </div>
+
             <div className="grid gap-6 xl:grid-cols-[1.35fr_0.95fr]">
-                <DashboardInsetPanel
-                    title="Курстар"
-                    description="Курс карталарын карап чыгып, алдын ала көрүп жана студент жаздырыңыз."
-                    data-workspace-section={ADMIN_COURSES_TAB_SECTIONS.CATALOG_GOVERNANCE}
-                >
+                {(showCatalogWorkflow || showEnrollmentWorkflow) && (
+                    <DashboardInsetPanel
+                        title={showEnrollmentWorkflow ? 'Курска жаздыруу' : 'Курстар'}
+                        description={
+                            showEnrollmentWorkflow
+                                ? 'Студенттерди туура курс же delivery группа контекстине кошуңуз.'
+                                : 'Курс карталарын карап чыгып, алдын ала көрүп жана каталогду тазалаңыз.'
+                        }
+                        data-workspace-section={
+                            showEnrollmentWorkflow
+                                ? ADMIN_COURSES_TAB_SECTIONS.ENROLLMENT_OVERSIGHT
+                                : ADMIN_COURSES_TAB_SECTIONS.CATALOG_GOVERNANCE
+                        }
+                    >
                     {courses.length ? (
                         <div className="mt-4 space-y-3">
                             {courses.map((course) => (
@@ -315,33 +376,36 @@ const AdminCoursesTab = ({
                                                     ) : null}
                                                 </div>
 
-                                                <div className="flex flex-wrap gap-2">
-                                                    {isDeliveryCourse ? (
+                                                {showCatalogWorkflow ? (
+                                                    <div className="flex flex-wrap gap-2">
+                                                        {isDeliveryCourse ? (
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => setDetailCourse(course)}
+                                                                className="dashboard-button-secondary"
+                                                            >
+                                                                <FiEye className="h-4 w-4" />
+                                                                Ички маалымат
+                                                            </button>
+                                                        ) : (
+                                                            <Link to={`/courses/${course.id}`} className="dashboard-button-secondary">
+                                                                <FiEye className="h-4 w-4" />
+                                                                Көрүү
+                                                            </Link>
+                                                        )}
                                                         <button
                                                             type="button"
-                                                            onClick={() => setDetailCourse(course)}
+                                                            onClick={() => handleDeleteCourse(course)}
                                                             className="dashboard-button-secondary"
                                                         >
-                                                            <FiEye className="h-4 w-4" />
-                                                            Ички маалымат
+                                                            <FiTrash2 className="h-4 w-4" />
+                                                            Өчүрүү
                                                         </button>
-                                                    ) : (
-                                                        <Link to={`/courses/${course.id}`} className="dashboard-button-secondary">
-                                                            <FiEye className="h-4 w-4" />
-                                                            Көрүү
-                                                        </Link>
-                                                    )}
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => handleDeleteCourse(course)}
-                                                        className="dashboard-button-secondary"
-                                                    >
-                                                        <FiTrash2 className="h-4 w-4" />
-                                                        Өчүрүү
-                                                    </button>
-                                                </div>
+                                                    </div>
+                                                ) : null}
                                             </div>
 
+                                            {showEnrollmentWorkflow ? (
                                             <div className="mt-4">
                                                 {isDeliveryCourse ? (
                                                     <div className="mb-3">
@@ -392,6 +456,7 @@ const AdminCoursesTab = ({
                                                     ))}
                                                 </select>
                                             </div>
+                                            ) : null}
                                         </article>
                                     );
                                 })()
@@ -405,9 +470,12 @@ const AdminCoursesTab = ({
                             />
                         </div>
                     )}
-                </DashboardInsetPanel>
+                    </DashboardInsetPanel>
+                )}
 
+                {(showCatalogWorkflow || showMediaWorkflow) && (
                 <div className="space-y-6">
+                    {showCatalogWorkflow && (
                     <DashboardInsetPanel
                         title="Категориялар"
                         description="Категорияларды кошуп, атын өзгөртүп жана тазалаңыз."
@@ -492,7 +560,9 @@ const AdminCoursesTab = ({
                             ))}
                         </div>
                     </DashboardInsetPanel>
+                    )}
 
+                    {showMediaWorkflow && (
                     <DashboardInsetPanel
                         title="HLS транс коддоо"
                         description="Видеолор азыр автоматтык түрдө HLSке транскоддолот. Бул жерде тек ката кеткен же эски видеолор үчүн колдонуңуз."
@@ -829,7 +899,9 @@ const AdminCoursesTab = ({
                             </div>
                         )}
                     </DashboardInsetPanel>
+                    )}
                 </div>
+                )}
             </div>
             <DeliveryCourseDetailsModal
                 course={detailCourse}

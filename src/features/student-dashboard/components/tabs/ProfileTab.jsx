@@ -205,17 +205,16 @@ const ProfileTab = ({
                                         </div>
                                     </div>
                                     <div>
-                                        <label className="text-sm font-medium text-edubot-muted dark:text-slate-400">
-                                            Телефон
-                                        </label>
-                                        <div className="mt-1">
-                                            <PhoneInput
-                                                value={formData.phoneNumber}
-                                                onChange={(value) =>
-                                                    setFormData((prev) => ({ ...prev, phoneNumber: value }))
-                                                }
-                                            />
-                                        </div>
+                                        <PhoneInput
+                                            id="student-profile-phone"
+                                            value={formData.phoneNumber}
+                                            onChange={(value) =>
+                                                setFormData((prev) => ({ ...prev, phoneNumber: value }))
+                                            }
+                                            label="Телефон"
+                                            helperText="Эл аралык форматта киргизсеңиз болот, мисалы +996..."
+                                            className="dashboard-field"
+                                        />
                                     </div>
                                 </div>
 

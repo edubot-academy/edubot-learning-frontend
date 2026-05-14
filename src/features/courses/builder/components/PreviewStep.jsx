@@ -65,6 +65,30 @@ export const PreviewStep = ({
 
     return (
         <div className="space-y-4">
+            <div className={`rounded-2xl border px-4 py-3 text-sm ${mode === 'edit'
+                ? 'border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-800/70 dark:bg-amber-950/30 dark:text-amber-100'
+                : 'border-blue-100 bg-blue-50 text-blue-900 dark:border-blue-900/60 dark:bg-blue-950/30 dark:text-blue-100'
+                }`}
+            >
+                <p className="font-semibold">
+                    {mode === 'edit' ? 'Оңдоо текшерүүсү' : 'Курс текшерүүсү'}
+                </p>
+                <p className="mt-1">
+                    {mode === 'edit'
+                        ? 'Тастыктоого жөнөтүүдөн мурун өзгөрүүлөр сакталганын текшериңиз. Карап чыгуу бүткөндөн кийин гана өзгөртүлгөн мазмун студенттерге таасир этиши керек.'
+                        : 'Жергиликтүү draft ушул браузерде гана сакталат. Серверге сактоо жана карап чыгууга жөнөтүү үчүн төмөнкү аракеттерди колдонуңуз.'}
+                </p>
+                <ul className="mt-3 grid gap-1 text-xs sm:grid-cols-3">
+                    <li>• Курс маалыматтары толтурулган</li>
+                    <li>• Сабактарда бөгөттөөчү ката жок</li>
+                    <li>• Сакталбаган өзгөрүү калбаган</li>
+                </ul>
+                {hasUnsavedChanges && (
+                    <p className="mt-2 font-medium">
+                        Сакталбаган өзгөрүүлөр бар, ошондуктан тастыктоого жөнөтүү азырынча жабык.
+                    </p>
+                )}
+            </div>
             <CoursePreviewPanel
                 course={courseInfo}
                 sections={mappedSections}

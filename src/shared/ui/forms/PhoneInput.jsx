@@ -5,8 +5,13 @@ const PhoneInput = ({
     name = 'phoneNumber',
     value,
     onChange,
+    label,
+    helperText,
+    error,
     required = false,
     className = '',
+    inputClassName = '',
+    wrapperClassName = '',
     placeholder = 'Телефон номер',
     autoComplete = 'tel',
     allowPlus = true,
@@ -16,6 +21,11 @@ const PhoneInput = ({
     ...props
 }) => {
     const allowedPattern = allowPlus ? /^[+\d]*$/ : /^\d*$/;
+    const needsGeneratedId = !id && Boolean(label || helperText || error);
+    const inputId = id || (needsGeneratedId ? name : undefined);
+    const helperId = helperText ? `${inputId}-help` : undefined;
+    const errorId = error ? `${inputId}-error` : undefined;
+    const describedBy = [ariaDescribedBy, helperId, errorId].filter(Boolean).join(' ') || undefined;
 
     const handleInput = (e) => {
         const raw = e.target.value;
@@ -33,9 +43,9 @@ const PhoneInput = ({
         }
     };
 
-    return (
+    const input = (
         <input
-            id={id}
+            id={inputId}
             type="tel"
             name={name}
             value={value}
@@ -44,12 +54,35 @@ const PhoneInput = ({
             placeholder={placeholder}
             autoComplete={autoComplete}
             inputMode="tel"
-            aria-invalid={ariaInvalid}
-            aria-describedby={ariaDescribedBy}
-            className={`w-full px-4 py-2 rounded text-black dark:text-white bg-white dark:bg-[#222222] focus:outline-none border ${className}`}
+            aria-invalid={ariaInvalid ?? Boolean(error)}
+            aria-describedby={describedBy}
+            className={`w-full px-4 py-2 rounded text-black dark:text-white bg-white dark:bg-[#222222] focus:outline-none border ${className} ${inputClassName}`}
             required={required}
             {...props}
         />
+    );
+
+    if (!label && !helperText && !error) return input;
+
+    return (
+        <div className={wrapperClassName}>
+            {label ? (
+                <label htmlFor={inputId} className="text-sm font-medium text-edubot-muted dark:text-slate-400">
+                    {label}
+                </label>
+            ) : null}
+            <div className={label ? 'mt-1' : undefined}>{input}</div>
+            {helperText ? (
+                <p id={helperId} className="mt-1 text-xs text-edubot-muted dark:text-slate-400">
+                    {helperText}
+                </p>
+            ) : null}
+            {error ? (
+                <p id={errorId} className="mt-1 text-xs font-medium text-red-600 dark:text-red-300">
+                    {error}
+                </p>
+            ) : null}
+        </div>
     );
 };
 
@@ -58,8 +91,13 @@ PhoneInput.propTypes = {
     name: PropTypes.string,
     value: PropTypes.string,
     onChange: PropTypes.func.isRequired,
+    label: PropTypes.string,
+    helperText: PropTypes.string,
+    error: PropTypes.string,
     required: PropTypes.bool,
     className: PropTypes.string,
+    inputClassName: PropTypes.string,
+    wrapperClassName: PropTypes.string,
     placeholder: PropTypes.string,
     autoComplete: PropTypes.string,
     allowPlus: PropTypes.bool,

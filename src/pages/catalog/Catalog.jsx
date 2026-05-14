@@ -17,6 +17,25 @@ const getVisibleCatalogPages = (currentPage, totalPages) => {
     return [...pages].sort((a, b) => a - b);
 };
 
+const formatCatalogPrice = (course) => {
+    if (course.price === 0 || course.isPaid === false) return 'Акысыз';
+    if (course.price) return `${course.price} сом`;
+    return 'Баасы көрсөтүлгөн эмес';
+};
+
+const getCourseTypeLabel = (course) => {
+    if (course.courseType === 'offline') return 'Оффлайн';
+    if (course.courseType === 'online_live') return 'Онлайн live';
+    return 'Видео курс';
+};
+
+const getDurationLabel = (course) => {
+    if (course.durationInHours) return `${course.durationInHours} саат`;
+    if (course.totalLessons) return `${course.totalLessons} сабак`;
+    if (course.lessonsCount) return `${course.lessonsCount} сабак`;
+    return 'Узактыгы көрсөтүлгөн эмес';
+};
+
 export default function Catalog() {
     const { catalogQuery, page, q, setPage, setQ } = useCatalogRouteState();
     const { data, error, loading, retry } = usePublicCatalog({ page, q: catalogQuery });
@@ -27,27 +46,38 @@ export default function Catalog() {
         : error
           ? 'Каталог жүктөлгөн жок.'
           : items.length
-            ? `${items.length} курс табылды`
+            ? catalogQuery
+                ? `"${catalogQuery}" боюнча ${items.length} курс табылды`
+                : `${items.length} курс көрсөтүлүүдө`
             : 'Курстар табылган жок';
     const currentCatalogPage = Math.min(Math.max(1, Number(page || 1)), totalPages);
     const visiblePages = getVisibleCatalogPages(currentCatalogPage, totalPages);
 
     return (
         <div className="max-w-7xl mx-auto p-4">
-            <div className="flex items-center justify-between mb-4">
-                <h1 className="text-3xl font-bold">Каталог</h1>
-                <div role="search">
-                    <label htmlFor="catalog-search" className="sr-only">
+            <div className="mb-4 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+                <div>
+                    <h1 className="text-3xl font-bold">Каталог</h1>
+                    <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">
+                        Курс аталышы, багыты же окутуучу боюнча издеңиз.
+                    </p>
+                </div>
+                <div role="search" className="w-full max-w-md">
+                    <label htmlFor="catalog-search" className="mb-1 block text-sm font-medium">
                         Курстарды издөө
                     </label>
                     <input
                         id="catalog-search"
+                        type="search"
                         value={q}
                         onChange={(e) => setQ(e.target.value)}
                         placeholder="Курстарды изде…"
-                        className="border rounded px-3 py-1 text-black dark:text-white bg-white dark:bg-[#222222]"
-                        aria-describedby="catalog-result-status"
+                        className="w-full rounded-lg border px-3 py-2 text-black bg-white dark:text-white dark:bg-[#222222]"
+                        aria-describedby="catalog-search-help catalog-result-status"
                     />
+                    <p id="catalog-search-help" className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                        Издөө дароо эмес, кыска тыныгуудан кийин жаңыланат.
+                    </p>
                 </div>
             </div>
 
@@ -80,7 +110,7 @@ export default function Catalog() {
                     <Link
                         to={`/courses/${c.id}`}
                         key={c.id}
-                        className="block border rounded shadow hover:shadow-md transition"
+                        className="block overflow-hidden rounded-lg border bg-white shadow transition hover:shadow-md dark:border-gray-800 dark:bg-[#1f1f1f]"
                     >
                         {c.coverImageUrl && (
                             <img
@@ -91,10 +121,20 @@ export default function Catalog() {
                         )}
                         <div className="p-3">
                             <div className="font-semibold line-clamp-2">{c.title}</div>
-                            <div className="text-sm text-gray-600">
+                            <div className="mt-1 text-sm text-gray-600 dark:text-gray-300">
                                 {c.instructor?.fullName || '—'}
                             </div>
-                            {/* Optional: durationInHours, price */}
+                            <div className="mt-3 flex flex-wrap gap-2 text-xs">
+                                <span className="rounded-full bg-emerald-50 px-2.5 py-1 font-semibold text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-200">
+                                    {formatCatalogPrice(c)}
+                                </span>
+                                <span className="rounded-full bg-slate-100 px-2.5 py-1 font-semibold text-slate-700 dark:bg-slate-800 dark:text-slate-200">
+                                    {getCourseTypeLabel(c)}
+                                </span>
+                                <span className="rounded-full bg-blue-50 px-2.5 py-1 font-semibold text-blue-700 dark:bg-blue-900/30 dark:text-blue-200">
+                                    {getDurationLabel(c)}
+                                </span>
+                            </div>
                         </div>
                     </Link>
                 ))}

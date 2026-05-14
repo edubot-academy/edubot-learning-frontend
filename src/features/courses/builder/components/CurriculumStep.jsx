@@ -38,7 +38,9 @@ import { minutesInputToSeconds, secondsToMinutesInput } from '../../../../utils/
  * @param {Function} props.handleChallengeChange - Challenge change handler
  * @param {Function} props.handleFileUpload - File upload handler
  * @param {Function} props.handleSectionDrop - Section drop handler
+ * @param {Function} props.handleMoveSection - Accessible section move handler
  * @param {Function} props.handleLessonDrop - Lesson drop handler
+ * @param {Function} props.handleMoveLesson - Accessible lesson move handler
  * @param {Function} props.openSection - Open section handler
  * @param {Function} props.expandAllSections - Expand all sections handler
  * @param {Function} props.collapseAllSections - Collapse all sections handler
@@ -76,7 +78,9 @@ export const CurriculumStep = ({
     handleChallengeChange,
     handleFileUpload,
     handleSectionDrop,
+    handleMoveSection,
     handleLessonDrop,
+    handleMoveLesson,
     openSection,
     expandAllSections,
     collapseAllSections,
@@ -123,12 +127,35 @@ export const CurriculumStep = ({
     const getSectionReadyCount = (section) =>
         section.lessons.reduce((count, lesson) => (getLessonIssue(lesson) ? count : count + 1), 0);
 
+    const validationIssues = curriculum.flatMap((section, sectionIndex) =>
+        (section.lessons || [])
+            .map((lesson, lessonIndex) => ({
+                id: `lesson-${sectionIndex}-${lessonIndex}`,
+                issue: getLessonIssue(lesson),
+                sectionIndex,
+                lessonIndex,
+            }))
+            .filter((item) => Boolean(item.issue))
+    );
+
     const scrollToSection = (sectionIdx) => {
         openSection(sectionIdx);
         requestAnimationFrame(() => {
             document
                 .getElementById(`section-${sectionIdx}`)
                 ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+    };
+
+    const scrollToLessonIssue = (event, item) => {
+        event.preventDefault();
+        openSection(item.sectionIndex);
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                document
+                    .getElementById(item.id)
+                    ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            });
         });
     };
 
@@ -166,7 +193,7 @@ export const CurriculumStep = ({
                 className="sticky top-20 z-20 rounded-2xl border border-gray-200 bg-white/90 dark:border-gray-700 dark:bg-gray-800/90 backdrop-blur px-4 py-3 shadow-sm"
                 data-workspace-section={CURRICULUM_WORKSPACE_SECTIONS.VALIDATION_AND_SAVE.id}
             >
-                <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="grid gap-4 lg:grid-cols-[1fr_auto] lg:items-center">
                     <div className="space-y-1">
                         <p className="text-xs uppercase tracking-wide text-gray-600 dark:text-gray-400">Курулуш режими</p>
                         <p className="text-sm font-semibold text-gray-900 dark:text-white">
@@ -176,7 +203,7 @@ export const CurriculumStep = ({
                             Даярдык: {curriculumStats.readyLessons}/{curriculumStats.totalLessons} ({curriculumStats.completionPercent}%)
                         </p>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2 lg:justify-end">
                         <button
                             onClick={() => expandAllSections(curriculum.length)}
                             disabled={disabled}
@@ -213,8 +240,15 @@ export const CurriculumStep = ({
                                 : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600'
                                 }`}
                         >
-                            {singleSectionFocus ? 'Single focus: ON' : 'Single focus: OFF'}
+                            {singleSectionFocus ? 'Бир бөлүм режими: күйүк' : 'Бир бөлүм режими: өчүк'}
                         </button>
+                    </div>
+                </div>
+                <div className="mt-3 flex flex-col gap-3 border-t border-slate-200 pt-3 dark:border-slate-700 sm:flex-row sm:items-center sm:justify-between">
+                    <p className="text-xs text-slate-600 dark:text-slate-400">
+                        Адегенде бөлүм жана сабактарды толтуруңуз, андан соң каталарды текшерип жалпы сактаңыз.
+                    </p>
+                    <div className="flex flex-wrap items-center gap-2 sm:justify-end">
                         <button
                             onClick={handleAddSection}
                             disabled={disabled}
@@ -234,7 +268,7 @@ export const CurriculumStep = ({
                             disabled={isUploading || saving || disabled}
                             className="rounded-lg bg-slate-900 px-5 py-2 text-sm font-medium text-white disabled:opacity-60 dark:bg-blue-950"
                         >
-                            {saving ? 'Сакталууда...' : 'Сактоо жане улантуу'}
+                            {saving ? 'Сакталууда...' : 'Сактоо жана улантуу'}
                         </button>
                     </div>
                 </div>
@@ -258,6 +292,23 @@ export const CurriculumStep = ({
 
             {/* Curriculum Sections */}
             <h3 className="text-xl font-semibold mb-4">Окуу мазмуну</h3>
+            {validationIssues.length > 0 && (
+                <div className="mb-5 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-700/60 dark:bg-amber-950/30 dark:text-amber-100">
+                    <p className="font-semibold">Preview кадамына өтүүдөн мурун оңдоого тийиш болгон сабактар</p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                        {validationIssues.slice(0, 6).map((item) => (
+                            <a
+                                key={item.id}
+                                href={`#${item.id}`}
+                                onClick={(event) => scrollToLessonIssue(event, item)}
+                                className="rounded-full border border-amber-300 bg-white/70 px-3 py-1.5 text-xs font-semibold text-amber-900 hover:bg-amber-100 dark:border-amber-700 dark:bg-amber-950/50 dark:text-amber-100"
+                            >
+                                Б{item.sectionIndex + 1} / С{item.lessonIndex + 1}: {item.issue}
+                            </a>
+                        ))}
+                    </div>
+                </div>
+            )}
             {curriculum.map((section, sIdx) => (
                 <details
                     id={`section-${sIdx}`}
@@ -285,7 +336,7 @@ export const CurriculumStep = ({
                     <summary className="flex cursor-pointer list-none items-center justify-between gap-3 bg-gradient-to-r from-slate-50 to-white px-4 py-3 dark:from-slate-800 dark:to-slate-700">
                         <div>
                             <p className="text-sm font-semibold text-gray-900 dark:text-white">
-                                {section.sectionTitle || section.title || `Section ${sIdx + 1}`}
+                                {section.sectionTitle || section.title || `Бөлүм ${sIdx + 1}`}
                             </p>
                             <p className="text-xs text-slate-500 dark:text-slate-400">
                                 {section.lessons.length} сабак · {getSectionReadyCount(section)}/{section.lessons.length} даяр
@@ -301,6 +352,32 @@ export const CurriculumStep = ({
                             </p>
                         </div>
                         <div className="flex items-center gap-2">
+                            <button
+                                type="button"
+                                onClick={(event) => {
+                                    event.preventDefault();
+                                    event.stopPropagation();
+                                    handleMoveSection?.(sIdx, 'up');
+                                }}
+                                disabled={disabled || sIdx === 0}
+                                className="rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-40 dark:border-slate-700 dark:bg-[#1f1f1f] dark:text-slate-300"
+                                aria-label={`${section.sectionTitle || section.title || `Бөлүм ${sIdx + 1}`} бөлүмүн өйдө жылдыруу`}
+                            >
+                                Өйдө
+                            </button>
+                            <button
+                                type="button"
+                                onClick={(event) => {
+                                    event.preventDefault();
+                                    event.stopPropagation();
+                                    handleMoveSection?.(sIdx, 'down');
+                                }}
+                                disabled={disabled || sIdx === curriculum.length - 1}
+                                className="rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-40 dark:border-slate-700 dark:bg-[#1f1f1f] dark:text-slate-300"
+                                aria-label={`${section.sectionTitle || section.title || `Бөлүм ${sIdx + 1}`} бөлүмүн ылдый жылдыруу`}
+                            >
+                                Ылдый
+                            </button>
                             <button
                                 type="button"
                                 draggable
@@ -369,7 +446,7 @@ export const CurriculumStep = ({
                                     </button>
                                 </div>
                                 <p className="text-xs text-gray-500 dark:text-gray-400">
-                                    Skill тандаңыз — ушул бөлүмгө байланышкан лидерборддордо прогресс эсептелет.
+                                    Көндүм тандаңыз — ушул бөлүмгө байланышкан прогресс жана рейтинг эсептелет.
                                 </p>
                             </div>
                             <div className="flex md:flex-col gap-2 md:items-end">
@@ -421,6 +498,29 @@ export const CurriculumStep = ({
                                         }
                                         disabled={disabled}
                                     />
+                                    <div className="mb-3 flex flex-wrap items-center gap-2">
+                                        <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                                            Сабак тартиби
+                                        </span>
+                                        <button
+                                            type="button"
+                                            onClick={() => handleMoveLesson?.(sIdx, lIdx, 'up')}
+                                            disabled={disabled || lIdx === 0}
+                                            className="rounded-lg border border-slate-300 bg-white px-2.5 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-40 dark:border-slate-700 dark:bg-[#1f1f1f] dark:text-slate-300"
+                                            aria-label={`${lesson.title || `Сабак ${lIdx + 1}`} сабагын өйдө жылдыруу`}
+                                        >
+                                            Өйдө
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => handleMoveLesson?.(sIdx, lIdx, 'down')}
+                                            disabled={disabled || lIdx === section.lessons.length - 1}
+                                            className="rounded-lg border border-slate-300 bg-white px-2.5 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-40 dark:border-slate-700 dark:bg-[#1f1f1f] dark:text-slate-300"
+                                            aria-label={`${lesson.title || `Сабак ${lIdx + 1}`} сабагын ылдый жылдыруу`}
+                                        >
+                                            Ылдый
+                                        </button>
+                                    </div>
                                     <LessonMetaFields
                                         title={lesson.title}
                                         kind={lesson.kind || 'video'}
@@ -513,7 +613,7 @@ export const CurriculumStep = ({
                         <div className="sticky bottom-4 mt-6 flex items-center justify-between gap-4 rounded-xl border border-slate-200 bg-white/95 px-4 py-3 backdrop-blur dark:border-slate-700 dark:bg-[#151515]/95">
                             <div className="flex-1">
                                 <p className="text-sm text-slate-600 dark:text-slate-300">
-                                    Бул бөлүмдө сабактарды толтуруп, анан жалпы сактоону басыңыз.
+                                    Даяр сабактар: {getSectionReadyCount(section)}/{section.lessons.length}. Өзгөрүүлөрдү сактап, анан улантыңыз.
                                 </p>
                             </div>
                             <div className="flex items-center gap-3">

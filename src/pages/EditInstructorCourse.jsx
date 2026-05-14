@@ -68,7 +68,9 @@ const EditInstructorCourse = () => {
         handleChallengeChange,
         handleFileUpload,
         handleSectionDrop,
+        handleMoveSection,
         handleLessonDrop,
+        handleMoveLesson,
         handleCurriculumSubmit,
         openSection,
         expandAllSections,
@@ -137,6 +139,8 @@ const EditInstructorCourse = () => {
                 toast.error(
                     `Жөнөтүүдөн мурун текшерүү керек: ${target.issue} (Бөлүм ${target.sIdx + 1}, Сабак ${target.lIdx + 1})`
                 );
+                openSection(target.sIdx);
+                setStep(2);
                 return;
             }
         }
@@ -154,6 +158,17 @@ const EditInstructorCourse = () => {
                 <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
                     Курсту үч кадам менен оңдоңуз: маалымат, мазмун жана финалдык текшерүү.
                 </p>
+                <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-800/70 dark:bg-amber-950/30 dark:text-amber-100">
+                    <p className="font-semibold">Оңдоолорду жарыялоодон мурун таасирин текшериңиз.</p>
+                    <p className="mt-1 text-amber-800 dark:text-amber-200">
+                        Сакталбаган өзгөрүүлөр preview жана тастыктоого жөнөтүү баскычтарын бөгөйт. Тастыктоого жөнөтүлгөн өзгөрүүлөр review процессинен кийин гана студенттерге көрүнүшү керек.
+                    </p>
+                    {hasUnsavedChanges && (
+                        <p className="mt-2 font-medium text-amber-950 dark:text-amber-50">
+                            Азырынча сакталбаган өзгөрүүлөр бар.
+                        </p>
+                    )}
+                </div>
             </div>
 
             {/* Step Navigation */}
@@ -199,7 +214,9 @@ const EditInstructorCourse = () => {
                     handleChallengeChange={handleChallengeChange}
                     handleFileUpload={handleFileUpload}
                     handleSectionDrop={handleSectionDrop}
+                    handleMoveSection={handleMoveSection}
                     handleLessonDrop={handleLessonDrop}
+                    handleMoveLesson={handleMoveLesson}
                     openSection={openSection}
                     expandAllSections={expandAllSections}
                     collapseAllSections={collapseAllSections}

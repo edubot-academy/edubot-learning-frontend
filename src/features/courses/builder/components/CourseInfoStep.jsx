@@ -42,6 +42,15 @@ export const CourseInfoStep = ({
 
     return (
         <div className="space-y-5">
+            {mode === 'edit' && (
+                <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-800/70 dark:bg-amber-950/30 dark:text-amber-100">
+                    <p className="font-semibold">Оңдоо режими</p>
+                    <p className="mt-1">
+                        Курс маалыматын өзгөрткөндөн кийин сактоо керек. Категория сыяктуу агымга таасир берген талаалар бул экранда бекитилген бойдон калат.
+                    </p>
+                </div>
+            )}
+
             {/* Basic Information */}
             <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800 p-5 shadow-sm">
                 <h3 className="mb-4 text-lg font-semibold">Негизги маалымат</h3>
@@ -72,7 +81,7 @@ export const CourseInfoStep = ({
 
                     {/* Subtitle */}
                     <div>
-                        <label htmlFor={fieldIds.subtitle} className="mb-1 block text-sm font-medium">Подзаголовок</label>
+                        <label htmlFor={fieldIds.subtitle} className="mb-1 block text-sm font-medium">Кыскача аталыш</label>
                         <input
                             id={fieldIds.subtitle}
                             name="subtitle"
@@ -141,7 +150,7 @@ export const CourseInfoStep = ({
                         </p>
                         {mode === 'edit' && (
                             <p id={`${fieldIds.categoryId}-helper`} className="mt-1 text-xs text-slate-500">
-                                Категорияны өзгөртүү азыркы backend update API&apos;де колдоого алынбайт.
+                                Категория жарыяланган курс агымына таасир берет, ошондуктан бул жерде өзгөртүлбөйт.
                             </p>
                         )}
                     </div>
@@ -151,7 +160,7 @@ export const CourseInfoStep = ({
             {/* Settings */}
             <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800 p-5 shadow-sm">
                 <h3 className="mb-4 text-lg font-semibold">
-                    {mode === 'create' ? 'Настройкалар' : 'Орнотуулар'}
+                    Орнотуулар
                 </h3>
                 <div className="space-y-4">
                     {/* Price */}
@@ -209,7 +218,7 @@ export const CourseInfoStep = ({
                     {/* Language */}
                     <div>
                         <label htmlFor={fieldIds.languageCode} className="block text-sm mb-1 font-medium">
-                            Сабак тили {mode === 'edit' && '(Language)'}
+                            Сабак тили
                         </label>
                         <select
                             id={fieldIds.languageCode}
@@ -252,7 +261,7 @@ export const CourseInfoStep = ({
 
             {/* Cover Image */}
             <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800 p-5 shadow-sm">
-                <h3 className="mb-3 text-lg font-semibold">Cover сүрөт</h3>
+                <h3 className="mb-3 text-lg font-semibold">Курс сүрөтү</h3>
                 {courseInfo.coverImageUrl && (
                     <img
                         src={courseInfo.coverImageUrl}
@@ -260,7 +269,7 @@ export const CourseInfoStep = ({
                         className="mb-3 max-h-52 w-full max-w-lg rounded-lg object-cover"
                     />
                 )}
-                <label htmlFor={fieldIds.cover} className="sr-only">Cover сүрөт файлы</label>
+                <label htmlFor={fieldIds.cover} className="sr-only">Курс сүрөт файлы</label>
                 <input
                     id={fieldIds.cover}
                     type="file"
@@ -276,7 +285,7 @@ export const CourseInfoStep = ({
                 />
                 {!courseInfo.coverImageUrl && courseInfo.pendingCoverName && (
                     <p id={`${fieldIds.cover}-pending`} className="mt-2 text-xs text-amber-600 dark:text-amber-300">
-                        Тандалган cover сакталган эмес: {courseInfo.pendingCoverName}. Сураныч, файлды кайра тандаңыз.
+                        Тандалган сүрөт браузерде сакталбайт: {courseInfo.pendingCoverName}. Сураныч, файлды кайра тандаңыз.
                     </p>
                 )}
                 <p id={`${fieldIds.cover}-helper`} className="mt-1 text-xs text-slate-500">PNG/JPG, максимум 5MB</p>
@@ -284,7 +293,13 @@ export const CourseInfoStep = ({
 
             {/* Submit Button */}
             {!disabled && (
-                <div className="sticky bottom-4 z-10 flex justify-end gap-3">
+                <div className="sticky bottom-4 z-10 flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white/95 p-3 shadow-sm backdrop-blur dark:border-slate-700 dark:bg-slate-900/95 sm:flex-row sm:items-center sm:justify-between">
+                    <p className="text-sm text-slate-600 dark:text-slate-300">
+                        {Object.keys(courseInfoErrors).length > 0
+                            ? 'Улантуу үчүн белгиленген маалымат талааларын оңдоңуз.'
+                            : 'Негизги маалымат даяр. Сактап, мазмун кадамына өтсөңүз болот.'}
+                    </p>
+                    <div className="flex justify-end gap-3">
                     {mode === 'edit' && (
                         <button
                             type="button"
@@ -304,6 +319,7 @@ export const CourseInfoStep = ({
                     >
                         Сактоо жана улантуу
                     </button>
+                    </div>
                 </div>
             )}
         </div>

@@ -236,6 +236,31 @@ export const useCourseBuilderCurriculum = (courseBuilderState) => {
         setDragSectionIndex(null);
     }, [dragSectionIndex, setCurriculum, setExpandedSections, setDragSectionIndex, mode]);
 
+    const handleMoveSection = useCallback((fromIdx, direction) => {
+        const targetIdx = direction === 'up' ? fromIdx - 1 : fromIdx + 1;
+        if (targetIdx < 0 || targetIdx >= curriculum.length) return;
+
+        setCurriculum((prev) => {
+            const next = reorderSections(prev, fromIdx, targetIdx);
+            setExpandedSections((prevExpanded) =>
+                reorderExpandedMap(prevExpanded, prev.length, fromIdx, targetIdx)
+            );
+
+            if (mode === 'edit') {
+                const minIndex = Math.min(fromIdx, targetIdx);
+                const maxIndex = Math.max(fromIdx, targetIdx);
+
+                for (let i = minIndex; i <= maxIndex; i++) {
+                    if (next[i]?.id) {
+                        dirtySectionIdsRef.current.add(next[i].id);
+                    }
+                }
+            }
+
+            return next;
+        });
+    }, [curriculum.length, mode, setCurriculum, setExpandedSections]);
+
     const handleLessonDrop = useCallback((sectionIdx, targetLessonIdx) => {
         if (!dragLesson || dragLesson.sectionIdx !== sectionIdx) return;
         if (dragLesson.lessonIdx === targetLessonIdx) return;
@@ -260,6 +285,30 @@ export const useCourseBuilderCurriculum = (courseBuilderState) => {
         });
         setDragLesson(null);
     }, [dragLesson, setCurriculum, setDragLesson, mode]);
+
+    const handleMoveLesson = useCallback((sectionIdx, lessonIdx, direction) => {
+        const section = curriculum[sectionIdx];
+        const targetLessonIdx = direction === 'up' ? lessonIdx - 1 : lessonIdx + 1;
+        if (!section || targetLessonIdx < 0 || targetLessonIdx >= section.lessons.length) return;
+
+        setCurriculum((prev) => {
+            const next = reorderLessonsInSection(prev, sectionIdx, lessonIdx, targetLessonIdx);
+
+            if (mode === 'edit') {
+                const minIndex = Math.min(lessonIdx, targetLessonIdx);
+                const maxIndex = Math.max(lessonIdx, targetLessonIdx);
+
+                for (let i = minIndex; i <= maxIndex; i++) {
+                    const lesson = next[sectionIdx].lessons[i];
+                    if (lesson?.id) {
+                        dirtyLessonIdsRef.current.add(lesson.id);
+                    }
+                }
+            }
+
+            return next;
+        });
+    }, [curriculum, mode, setCurriculum]);
 
     // File upload operations
     const handleFileUpload = useCallback(async (courseId, sectionIndex, lessonIndex, type, file) => {
@@ -698,7 +747,9 @@ export const useCourseBuilderCurriculum = (courseBuilderState) => {
 
         // Drag and drop
         handleSectionDrop,
+        handleMoveSection,
         handleLessonDrop,
+        handleMoveLesson,
 
         // UI operations
         openSection,

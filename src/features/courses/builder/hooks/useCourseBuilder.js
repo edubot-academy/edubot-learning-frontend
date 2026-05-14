@@ -73,6 +73,10 @@ export const useCourseBuilder = ({ mode = 'create', courseId: initialCourseId = 
     const [categories, setCategories] = useState([]);
     const [skillOptions, setSkillOptions] = useState([{ value: '', label: 'Skill тандаңыз (опция)' }]);
     const [skillsLoading, setSkillsLoading] = useState(false);
+    const [draftLoadedAt, setDraftLoadedAt] = useState('');
+    const [lastDraftSavedAt, setLastDraftSavedAt] = useState('');
+    const [draftHydrated, setDraftHydrated] = useState(mode !== 'create');
+    const draftDiscardedRef = useRef(false);
 
     // Confirmation state
     const [confirmDelete, setConfirmDelete] = useState({
@@ -140,29 +144,42 @@ export const useCourseBuilder = ({ mode = 'create', courseId: initialCourseId = 
                 // Load saved draft if exists
                 const saved = localStorage.getItem('draftCourse');
                 if (saved) {
-                    const parsed = JSON.parse(saved);
-                    const sanitizedDraftInfo = {
-                        ...(parsed.courseInfo || {}),
-                    };
+                    let parsed = null;
 
-                    if (typeof sanitizedDraftInfo.coverImageUrl === 'string' && sanitizedDraftInfo.coverImageUrl.startsWith('blob:')) {
-                        sanitizedDraftInfo.coverImageUrl = '';
+                    try {
+                        parsed = JSON.parse(saved);
+                    } catch (error) {
+                        console.warn('Invalid course draft ignored', error);
+                        localStorage.removeItem('draftCourse');
                     }
 
-                    if (sanitizedDraftInfo.cover && typeof sanitizedDraftInfo.cover === 'object') {
-                        sanitizedDraftInfo.cover = null;
+                    if (parsed) {
+                        const sanitizedDraftInfo = {
+                            ...(parsed.courseInfo || {}),
+                        };
+
+                        if (typeof sanitizedDraftInfo.coverImageUrl === 'string' && sanitizedDraftInfo.coverImageUrl.startsWith('blob:')) {
+                            sanitizedDraftInfo.coverImageUrl = '';
+                        }
+
+                        if (sanitizedDraftInfo.cover && typeof sanitizedDraftInfo.cover === 'object') {
+                            sanitizedDraftInfo.cover = null;
+                        }
+
+                        pendingCoverNameRef.current =
+                            typeof sanitizedDraftInfo.pendingCoverName === 'string'
+                                ? sanitizedDraftInfo.pendingCoverName
+                                : '';
+
+                        setCourseInfo((prev) => ({
+                            ...prev,
+                            ...sanitizedDraftInfo,
+                        }));
+                        setCourseId(parsed.courseId || null);
+                        setStep(parsed.step || 1);
+                        setDraftLoadedAt(parsed.savedAt || '');
+                        setLastDraftSavedAt(parsed.savedAt || '');
                     }
-
-                    pendingCoverNameRef.current =
-                        typeof sanitizedDraftInfo.pendingCoverName === 'string'
-                            ? sanitizedDraftInfo.pendingCoverName
-                            : '';
-
-                    setCourseInfo((prev) => ({
-                        ...prev,
-                        ...sanitizedDraftInfo,
-                    }));
-                    setStep(parsed.step || 1);
                 }
             } catch (error) {
                 console.error('Failed to load categories', error);
@@ -171,6 +188,8 @@ export const useCourseBuilder = ({ mode = 'create', courseId: initialCourseId = 
                     return;
                 }
                 toast.error(parseApiError(error, 'Маалымат жүктөлбөдү').message);
+            } finally {
+                setDraftHydrated(true);
             }
         } else {
             // Edit mode must always hydrate from the API for the current course.
@@ -228,6 +247,8 @@ export const useCourseBuilder = ({ mode = 'create', courseId: initialCourseId = 
 
     // Save draft for create mode
     const saveDraft = useCallback(() => {
+        if (draftDiscardedRef.current) return;
+
         if (mode === 'create') {
             const draftCourseInfo = {
                 ...courseInfo,
@@ -241,9 +262,34 @@ export const useCourseBuilder = ({ mode = 'create', courseId: initialCourseId = 
                         ? ''
                         : courseInfo.coverImageUrl,
             };
-            localStorage.setItem('draftCourse', JSON.stringify({ courseInfo: draftCourseInfo, courseId, step }));
+            const savedAt = new Date().toISOString();
+            localStorage.setItem('draftCourse', JSON.stringify({ courseInfo: draftCourseInfo, courseId, step, savedAt }));
+            setLastDraftSavedAt(savedAt);
         }
     }, [mode, courseInfo, courseId, step]);
+
+    const discardDraft = useCallback(() => {
+        if (mode !== 'create') return { cleared: false };
+
+        if (courseId) {
+            localStorage.removeItem('draftCourse');
+            setDraftLoadedAt('');
+            setLastDraftSavedAt('');
+            return { cleared: true, preservedServerDraft: true };
+        }
+
+        draftDiscardedRef.current = true;
+        localStorage.removeItem('draftCourse');
+        setCourseInfo(DEFAULT_COURSE_INFO);
+        setCurriculum(DEFAULT_CURRICULUM);
+        setStep(1);
+        setCourseId(null);
+        setInfoTouched({});
+        setExpandedSections({});
+        setDraftLoadedAt('');
+        setLastDraftSavedAt('');
+        return { cleared: true, preservedServerDraft: false };
+    }, [courseId, mode]);
 
     // Effects
     useEffect(() => {
@@ -251,10 +297,26 @@ export const useCourseBuilder = ({ mode = 'create', courseId: initialCourseId = 
     }, [loadInitialData]);
 
     useEffect(() => {
-        if (mode === 'create') {
+        if (mode === 'create' && draftHydrated) {
             saveDraft();
         }
-    }, [mode, saveDraft]);
+    }, [mode, draftHydrated, saveDraft]);
+
+    useEffect(() => {
+        if (mode !== 'create' || !draftDiscardedRef.current) return;
+
+        const hasUserInput =
+            Object.keys(infoTouched).length > 0 ||
+            JSON.stringify(courseInfo) !== JSON.stringify(DEFAULT_COURSE_INFO) ||
+            JSON.stringify(curriculum) !== JSON.stringify(DEFAULT_CURRICULUM) ||
+            step !== 1 ||
+            courseId !== null;
+
+        if (hasUserInput) {
+            draftDiscardedRef.current = false;
+            saveDraft();
+        }
+    }, [courseId, courseInfo, curriculum, infoTouched, mode, saveDraft, step]);
 
     useEffect(() => {
         const currentPreviewUrl = courseInfo.coverImageUrl;
@@ -353,6 +415,8 @@ export const useCourseBuilder = ({ mode = 'create', courseId: initialCourseId = 
         skillsLoading,
         confirmDelete,
         setConfirmDelete,
+        draftLoadedAt,
+        lastDraftSavedAt,
 
         // Computed values
         stepItems,
@@ -368,6 +432,7 @@ export const useCourseBuilder = ({ mode = 'create', courseId: initialCourseId = 
         // Basic operations
         loadSkillsList,
         saveDraft,
+        discardDraft,
 
         // Mode info
         mode,

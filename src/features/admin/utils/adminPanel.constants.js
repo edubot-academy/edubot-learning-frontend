@@ -43,7 +43,7 @@ export const USERS_QUERY_KEYS = Object.freeze({
 export const ADMIN_WORKSPACE_GROUPS = Object.freeze({
     GOVERNANCE: Object.freeze({
         id: 'governance',
-        label: 'Governance',
+        label: 'Платформа көзөмөлү',
         tabs: Object.freeze([
             ADMIN_DASHBOARD_TABS.STATS,
             ADMIN_DASHBOARD_TABS.USERS,
@@ -54,7 +54,7 @@ export const ADMIN_WORKSPACE_GROUPS = Object.freeze({
     }),
     CONTENT_OPERATIONS: Object.freeze({
         id: 'content-operations',
-        label: 'Content operations',
+        label: 'Контент операциялары',
         tabs: Object.freeze([
             ADMIN_DASHBOARD_TABS.COURSES,
             ADMIN_DASHBOARD_TABS.PENDING,
@@ -63,7 +63,7 @@ export const ADMIN_WORKSPACE_GROUPS = Object.freeze({
     }),
     TECHNICAL_OPERATIONS: Object.freeze({
         id: 'technical-operations',
-        label: 'Technical operations',
+        label: 'Техникалык операциялар',
         tabs: Object.freeze([
             ADMIN_DASHBOARD_TABS.SKILLS,
             ADMIN_DASHBOARD_TABS.AI_PROMPTS,
@@ -73,6 +73,13 @@ export const ADMIN_WORKSPACE_GROUPS = Object.freeze({
         ]),
     }),
 });
+
+export const ADMIN_WORKSPACE_GROUP_BY_ID = Object.freeze(
+    Object.values(ADMIN_WORKSPACE_GROUPS).reduce((groups, group) => {
+        groups[group.id] = group;
+        return groups;
+    }, {})
+);
 
 export const ADMIN_COURSES_TAB_SECTIONS = Object.freeze({
     CATALOG_GOVERNANCE: 'catalog-governance',

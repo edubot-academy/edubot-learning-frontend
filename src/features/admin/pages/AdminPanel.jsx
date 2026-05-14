@@ -26,7 +26,7 @@ import AdminPendingCoursesTab from '../components/AdminPendingCoursesTab';
 import { CertificatesSection } from '@features/instructor-dashboard';
 
 // Import constants and helpers
-import { NAV_ITEMS } from '../utils/adminPanel.constants';
+import { ADMIN_WORKSPACE_GROUP_BY_ID, NAV_ITEMS } from '../utils/adminPanel.constants';
 import { calculateVisiblePages } from '../utils/adminPanel.helpers';
 import { useAdminTabState } from '../hooks/useAdminTabState';
 import { useAdminUsersFilters } from '../hooks/useAdminUsersFilters';
@@ -578,6 +578,16 @@ const AdminPanel = () => {
         isActive: item.id === activeTab,
         onSelect: handleTabSelect,
     }));
+    const activeNavItem = dashboardNavItems.find((item) => item.id === activeTab);
+    const activeWorkspaceGroup = ADMIN_WORKSPACE_GROUP_BY_ID[activeNavItem?.workspaceGroup];
+    const relatedWorkspaceTabs = activeWorkspaceGroup
+        ? dashboardNavItems.filter((item) => activeWorkspaceGroup.tabs.includes(item.id))
+        : [];
+    const activeTabStatus = [
+        adminStatsLoading && 'Статистика жаңыланууда',
+        aiPromptsLoading && 'AI промпттар жүктөлүүдө',
+        transcodeLoading && 'Транскоддоо жүрүп жатат',
+    ].filter(Boolean);
 
     // Prepare header actions
     const headerActions = [
@@ -618,6 +628,39 @@ const AdminPanel = () => {
             mobileTabs={mobileTabs}
             headerContent={headerContent}
         >
+            {activeWorkspaceGroup ? (
+                <section className="rounded-2xl border border-edubot-line/80 bg-white/90 px-4 py-3 shadow-edubot-card dark:border-slate-700 dark:bg-slate-950">
+                    <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                        <div>
+                            <p className="text-xs font-semibold uppercase tracking-wide text-edubot-muted dark:text-slate-400">
+                                Админ бөлүмү
+                            </p>
+                            <h2 className="mt-1 text-base font-semibold text-edubot-ink dark:text-white">
+                                {activeWorkspaceGroup.label}
+                            </h2>
+                            <p className="mt-1 text-sm text-edubot-muted dark:text-slate-400">
+                                {activeTabStatus.length ? activeTabStatus.join(' · ') : `${activeNavItem?.label || 'Бөлүм'} ачылды`}
+                            </p>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                            {relatedWorkspaceTabs.map((item) => (
+                                <button
+                                    key={item.id}
+                                    type="button"
+                                    onClick={() => handleTabSelect(item.id)}
+                                    className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
+                                        item.id === activeTab
+                                            ? 'border-edubot-orange bg-edubot-orange text-white'
+                                            : 'border-edubot-line bg-white text-edubot-muted hover:border-edubot-orange hover:text-edubot-orange dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300'
+                                    }`}
+                                >
+                                    {item.label}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                </section>
+            ) : null}
             {renderTab()}
 
             {/* Floating Action Button */}

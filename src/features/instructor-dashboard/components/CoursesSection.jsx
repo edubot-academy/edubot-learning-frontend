@@ -9,7 +9,7 @@ import {
     DashboardSectionHeader,
 } from '@components/ui/dashboard';
 import { FiBookOpen, FiClock, FiEdit3, FiEye, FiLayers, FiPlus, FiSend, FiUsers } from 'react-icons/fi';
-import CreateDeliveryCourseModal from './modals/CreateDeliveryCourseModal.jsx';
+import DeliveryCourseModalController from './DeliveryCourseModalController.jsx';
 
 const isDeliveryCourse = (course) =>
     course?.courseType === 'offline' || course?.courseType === 'online_live';
@@ -266,28 +266,18 @@ const CoursesSection = ({
 const CoursesSectionWithModal = (props) => (
     <>
         <CoursesSection {...props} />
-        {props.showDeliveryModal && (
-            <CreateDeliveryCourseModal
-                isOpen={props.showDeliveryModal}
-                onClose={props.onCloseDeliveryModal}
-                onCreateDeliveryCourse={props.onCreateDeliveryCourse}
-                creatingDeliveryCourse={props.creatingDeliveryCourse}
-                deliveryCategories={props.deliveryCategories}
-            />
-        )}
-        {props.showEditDeliveryModal && (
-            <CreateDeliveryCourseModal
-                isOpen={props.showEditDeliveryModal}
-                onClose={props.onCloseEditDeliveryModal}
-                onCreateDeliveryCourse={props.onUpdateDeliveryCourse}
-                creatingDeliveryCourse={props.updatingDeliveryCourse}
-                deliveryCategories={props.deliveryCategories}
-                initialValues={props.editingDeliveryCourse}
-                title="Delivery курсту өзгөртүү"
-                subtitle="Оффлайн же онлайн түз эфир курсунун негизги маалыматын жаңыртыңыз."
-                submitLabel="Сактоо"
-            />
-        )}
+        <DeliveryCourseModalController
+            showDeliveryModal={props.showDeliveryModal}
+            onCloseDeliveryModal={props.onCloseDeliveryModal}
+            onCreateDeliveryCourse={props.onCreateDeliveryCourse}
+            creatingDeliveryCourse={props.creatingDeliveryCourse}
+            showEditDeliveryModal={props.showEditDeliveryModal}
+            onCloseEditDeliveryModal={props.onCloseEditDeliveryModal}
+            onUpdateDeliveryCourse={props.onUpdateDeliveryCourse}
+            updatingDeliveryCourse={props.updatingDeliveryCourse}
+            editingDeliveryCourse={props.editingDeliveryCourse}
+            deliveryCategories={props.deliveryCategories}
+        />
     </>
 );
 

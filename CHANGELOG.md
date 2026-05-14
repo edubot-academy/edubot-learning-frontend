@@ -6,6 +6,28 @@ Version bumps are classified by delivery scale; see `VERSIONING.md`.
 
 ---
 
+## [1.11.18] - 2026-05-14
+
+### Changed
+
+- Added course-builder draft timestamps, local draft recovery copy, and a discard action that preserves already-created backend draft course ids.
+- Added visible curriculum validation summaries and keyboard-accessible section/lesson reordering controls.
+- Added edit-course impact messaging in the edit shell and preview step so review/student-facing consequences are clearer.
+- Improved create/edit builder page guidance, localized mixed-language builder labels, and added readiness context to builder sticky actions and preview review.
+- Reduced curriculum toolbar density, added edit-mode field context, and improved catalog search/result communication with richer course metadata.
+- Grouped admin tabs by workspace, added inline active-workspace status, and split dense admin course operations into catalog, enrollment, and media workflows.
+- Expanded the shared phone input API with label/helper/error semantics and applied it to the student profile phone field.
+- Moved delivery-course modal rendering behind a dedicated modal controller for the instructor courses workspace.
+
+### Verification
+
+- `npm run lint`
+- `npm test -- --run --testTimeout=15000`
+- `git diff --check`
+- `npm run build`
+
+---
+
 ## [1.11.17] - 2026-05-14
 
 ### Changed
