@@ -20,6 +20,7 @@ import {
 } from '@components/ui/dashboard';
 import BasicModal from '@shared/ui/BasicModal';
 import { USERS_QUERY_KEYS } from '@features/admin/utils/adminPanel.constants';
+import { getDashboardPath } from '@shared/utils/navigation';
 
 const FILTER_KEYS = Object.freeze({
     severity: 'intSeverity',
@@ -38,20 +39,15 @@ const QUICK_VIEW = Object.freeze({
 });
 
 const buildAdminUsersLink = (studentId) => {
-    if (!studentId) return '/admin?tab=users';
-    const params = new URLSearchParams({
-        tab: 'users',
-        [USERS_QUERY_KEYS.search]: String(studentId),
+    return getDashboardPath('admin', 'users', {
+        [USERS_QUERY_KEYS.search]: studentId,
     });
-    return `/admin?${params.toString()}`;
 };
 
 const buildIntegrationQuickViewLink = (quickView) => {
-    const params = new URLSearchParams({ tab: 'integration' });
-    if (quickView && quickView !== QUICK_VIEW.ALL) {
-        params.set(FILTER_KEYS.quickView, quickView);
-    }
-    return `/admin?${params.toString()}`;
+    return getDashboardPath('admin', 'integration', {
+        [FILTER_KEYS.quickView]: quickView && quickView !== QUICK_VIEW.ALL ? quickView : undefined,
+    });
 };
 
 const copyText = async (value, label) => {

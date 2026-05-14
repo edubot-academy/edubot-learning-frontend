@@ -56,6 +56,7 @@ import {
     isCourseFeatureEnabled,
     TENANT_FEATURES,
 } from '@shared/utils/tenantFeatures';
+import { getDashboardPath } from '@shared/utils/navigation';
 
 const InstructorDashboard = () => {
     const { user } = useContext(AuthContext);
@@ -107,9 +108,10 @@ const InstructorDashboard = () => {
     const analyticsLink = useMemo(() => {
         const to = new Date();
         const from = new Date(to.getTime() - 30 * 24 * 60 * 60 * 1000);
-        return `/instructor/analytics?from=${from.toISOString().slice(0, 10)}&to=${to
-            .toISOString()
-            .slice(0, 10)}`;
+        return getDashboardPath('instructor', 'analytics', {
+            from: from.toISOString().slice(0, 10),
+            to: to.toISOString().slice(0, 10),
+        });
     }, []);
 
     const courses = useMemo(
@@ -376,7 +378,7 @@ const InstructorDashboard = () => {
         } finally {
             setLoadingStudentCourses(false);
         }
-    }, [user]);
+    }, [user, activeTab]);
 
     const loadCourseStudents = useCallback(
         async (courseId) => {

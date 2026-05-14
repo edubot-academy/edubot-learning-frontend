@@ -1,5 +1,6 @@
 /* eslint-disable react/prop-types */
 import { Link } from 'react-router-dom';
+import { getDashboardPath } from '@shared/utils/navigation';
 import {
     EmptyState,
     DashboardCardSkeleton,
@@ -130,7 +131,7 @@ const CoursesSection = ({
                                         const isSubmitting = submittingCourseId === course.id;
                                         const deliveryCourse = isDeliveryCourse(course);
                                         const viewTarget = deliveryCourse
-                                            ? `/instructor?tab=groups&courseId=${course.id}`
+                                            ? getDashboardPath('instructor', 'groups', { courseId: course.id })
                                             : `/courses/${course.id}`;
                                         const editTarget = `/instructor/courses/edit/${course.id}`;
 

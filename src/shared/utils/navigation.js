@@ -6,29 +6,35 @@ const DASHBOARD_PATHS = {
     assistant: '/assistant',
 };
 
-const SUPPORTED_ROLE_TABS = {
-    student: new Set(['overview', 'notifications', 'my-courses', 'chat']),
-    instructor: new Set(['overview', 'notifications', 'courses', 'chat']),
-    admin: new Set(['stats', 'notifications', 'courses']),
-    superadmin: new Set(['stats', 'notifications', 'courses']),
-    assistant: new Set(['overview', 'enrollments', 'courses', 'attendance']),
-};
-
 const getRole = (userOrRole) =>
     typeof userOrRole === 'string' ? userOrRole : userOrRole?.role;
 
-export const getDashboardPath = (userOrRole, tab) => {
+const appendSearchParams = (path, params = {}) => {
+    const entries = Object.entries(params).filter(([, value]) => value !== undefined && value !== null && value !== '');
+
+    if (!entries.length) {
+        return path;
+    }
+
+    const searchParams = new URLSearchParams();
+    entries.forEach(([key, value]) => {
+        searchParams.set(key, String(value));
+    });
+
+    return `${path}${path.includes('?') ? '&' : '?'}${searchParams.toString()}`;
+};
+
+export const getDashboardPath = (userOrRole, tab, params) => {
     const role = getRole(userOrRole);
     const basePath = isPlatformAdmin(role)
         ? '/admin'
         : DASHBOARD_PATHS[role] || '/dashboard';
-    const supportedTabs = SUPPORTED_ROLE_TABS[role];
 
-    if (!tab || !supportedTabs?.has(tab)) {
-        return basePath;
+    if (!tab) {
+        return appendSearchParams(basePath, params);
     }
 
-    return `${basePath}?tab=${encodeURIComponent(tab)}`;
+    return appendSearchParams(`${basePath}?tab=${encodeURIComponent(tab)}`, params);
 };
 
 export const getCommunicationPath = (userOrRole) => {
@@ -51,7 +57,10 @@ export const getCommunicationPath = (userOrRole) => {
 
 export const getUserNavigationPaths = (userOrRole) => ({
     dashboard: getDashboardPath(userOrRole),
-    dashboardOverview: getDashboardPath(userOrRole, 'overview'),
+    dashboardOverview: getDashboardPath(
+        userOrRole,
+        isPlatformAdmin(getRole(userOrRole)) ? 'stats' : 'overview'
+    ),
     myCourses: getDashboardPath(userOrRole, 'my-courses'),
     courses: getDashboardPath(userOrRole, 'courses'),
     enrollments: getDashboardPath(userOrRole, 'enrollments'),
@@ -78,7 +87,7 @@ export const getUserMenuItems = (userOrRole) => {
         items.push({ id: 'courses', label: 'Курстар', path: paths.courses });
     }
 
-    if (SUPPORTED_ROLE_TABS[role]?.has('notifications')) {
+    if (['student', 'instructor', 'admin', 'superadmin'].includes(role)) {
         items.push({ id: 'notifications', label: 'Билдирүүлөр', path: paths.notifications });
     }
 

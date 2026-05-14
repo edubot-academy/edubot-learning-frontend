@@ -1,8 +1,10 @@
 import { Link } from 'react-router-dom';
+import PropTypes from 'prop-types';
 import { FiActivity, FiBarChart2, FiBookOpen, FiCheckSquare, FiPlusCircle, FiUsers } from 'react-icons/fi';
 import NotificationsWidget from '@features/notifications/components/NotificationsWidget';
 import { DashboardInsetPanel, DashboardSectionHeader } from '@components/ui/dashboard';
 import MobileDashboardOverview from '../../../components/ui/MobileDashboardOverview';
+import { getDashboardPath } from '@shared/utils/navigation';
 
 const InstructorOverviewSection = ({
     user,
@@ -57,7 +59,7 @@ const InstructorOverviewSection = ({
         {
             title: 'Катталуулар',
             description: 'Студенттердин катталуусун, топторду жана катышуу агымын көзөмөлдөңүз.',
-            link: '/instructor?tab=students',
+            link: getDashboardPath('instructor', 'students'),
             buttonText: 'Катталгандар',
             icon: FiUsers,
         },
@@ -213,6 +215,30 @@ const InstructorOverviewSection = ({
             </div>
         </>
     );
+};
+
+InstructorOverviewSection.propTypes = {
+    user: PropTypes.shape({
+        firstName: PropTypes.string,
+        fullName: PropTypes.string,
+        email: PropTypes.string,
+    }),
+    profile: PropTypes.shape({
+        title: PropTypes.string,
+        numberOfStudents: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
+    }),
+    publishedCount: PropTypes.number,
+    pendingCount: PropTypes.number,
+    aiEnabledCount: PropTypes.number,
+    analyticsLink: PropTypes.string.isRequired,
+};
+
+InstructorOverviewSection.defaultProps = {
+    user: {},
+    profile: {},
+    publishedCount: 0,
+    pendingCount: 0,
+    aiEnabledCount: 0,
 };
 
 export default InstructorOverviewSection;

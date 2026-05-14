@@ -1,4 +1,5 @@
 /* eslint-disable react/prop-types */
+import { useNavigate } from 'react-router-dom';
 import {
     FiActivity,
     FiBookOpen,
@@ -68,6 +69,7 @@ const StudentsSection = ({
     onProgressMinChange,
     onProgressMaxChange,
 }) => {
+    const navigate = useNavigate();
     const selectedCourse = courses.find((course) => course.id === selectedCourseId) || null;
 
     const sortedStudents = (courseStudents || []).slice().sort((a, b) => {
@@ -202,9 +204,7 @@ const StudentsSection = ({
                             subtitle="Алгач курс түзүп баштаңыз, андан кийин студент агымдары ушул жерде көрүнөт."
                             action={{
                                 label: 'Курс түзүү',
-                                onClick: () => {
-                                    window.location.href = '/instructor/course/create';
-                                },
+                                onClick: () => navigate('/instructor/course/create'),
                             }}
                             className="py-8"
                         />

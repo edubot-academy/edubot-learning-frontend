@@ -1,5 +1,6 @@
 import { Suspense, lazy } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import PropTypes from 'prop-types';
 import PrivateRoute from '@shared/PrivateRoute';
 import MainLayout from './layouts/MainLayout';
 import Loader from '@shared/ui/Loader';
@@ -35,6 +36,19 @@ const InternalLeaderboardPage = lazy(() => import('../pages/InternalLeaderboard'
 const CertificateDownloadPage = lazy(() => import('../pages/CertificateDownload'));
 const CertificateVerificationPage = lazy(() => import('../pages/CertificateVerification'));
 
+const DashboardTabRedirect = ({ dashboardPath, tab }) => {
+    const { search } = useLocation();
+    const params = new URLSearchParams(search);
+    params.set('tab', tab);
+
+    return <Navigate to={`${dashboardPath}?${params.toString()}`} replace />;
+};
+
+DashboardTabRedirect.propTypes = {
+    dashboardPath: PropTypes.string.isRequired,
+    tab: PropTypes.string.isRequired,
+};
+
 const AppRoutes = () => {
     return (
         <MainLayout>
@@ -55,9 +69,18 @@ const AppRoutes = () => {
                     <Route path="/cart" element={<CartPage />} />
                     <Route element={<PrivateRoute allowedRoles={['instructor']} />}>
                         <Route path="/instructor" element={<InstructorDashboard />} />
-                        <Route path="/instructor/sessions" element={<Navigate to="/instructor?tab=sessions" replace />} />
-                        <Route path="/instructor/analytics" element={<Navigate to="/instructor?tab=analytics" replace />} />
-                        <Route path="/instructor/homework" element={<Navigate to="/instructor?tab=homework" replace />} />
+                        <Route
+                            path="/instructor/sessions"
+                            element={<DashboardTabRedirect dashboardPath="/instructor" tab="sessions" />}
+                        />
+                        <Route
+                            path="/instructor/analytics"
+                            element={<DashboardTabRedirect dashboardPath="/instructor" tab="analytics" />}
+                        />
+                        <Route
+                            path="/instructor/homework"
+                            element={<DashboardTabRedirect dashboardPath="/instructor" tab="homework" />}
+                        />
                         <Route path="/instructor/course/create" element={<CreateCourse />} />
                         <Route path="/instructor/courses" element={<InstructorCourses />} />
                         <Route
@@ -70,7 +93,7 @@ const AppRoutes = () => {
                         <Route path="/student" element={<StudentDashboard />} />
                         <Route
                             path="/student/analytics"
-                            element={<Navigate to="/student?tab=progress" replace />}
+                            element={<DashboardTabRedirect dashboardPath="/student" tab="progress" />}
                         />
                         <Route path="/dashboard" element={<StudentDashboard />} />
                     </Route>
@@ -82,7 +105,7 @@ const AppRoutes = () => {
                         <Route path="/admin/tenants/:id" element={<PlatformTenantDetail />} />
                         <Route
                             path="/admin/analytics"
-                            element={<Navigate to="/admin?tab=analytics" replace />}
+                            element={<DashboardTabRedirect dashboardPath="/admin" tab="analytics" />}
                         />
                     </Route>
 

@@ -8,15 +8,11 @@ import { isPlatformAdmin } from '@shared/utils/roles';
 import { toast } from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import { useSwipeNavigation } from '../hooks/useSwipeGestures';
+import { getDashboardPath } from '@shared/utils/navigation';
 import {
-    AnalyticsSummaryCard,
     AnalyticsSection,
     AnalyticsDataTable,
-    DashboardPageHeader,
-    ProgressList,
-    EmptyAnalyticsState,
     AnalyticsLineChart,
-    AnalyticsBarChart,
     AnalyticsDoughnutChart,
 } from '@components/analytics';
 import {
@@ -25,14 +21,6 @@ import {
     DashboardSectionHeader,
 } from '@components/ui/dashboard';
 import { FiActivity, FiBookOpen, FiTarget, FiUsers } from 'react-icons/fi';
-
-const toList = (payload) => {
-    if (Array.isArray(payload)) return payload;
-    if (Array.isArray(payload?.items)) return payload.items;
-    if (Array.isArray(payload?.data)) return payload.data;
-    if (Array.isArray(payload?.rows)) return payload.rows;
-    return [];
-};
 
 const metricNumber = (value, fallback = 0) => {
     const num = Number(value);
@@ -47,12 +35,15 @@ const InstructorAnalyticsPage = ({ embedded = false }) => {
     const [overview, setOverview] = useState(null);
 
     // Swipe navigation for mobile
-    const analyticsPages = ['/instructor/analytics', '/admin/analytics', '/student/analytics'];
-    const currentPageIndex = analyticsPages.indexOf('/instructor/analytics');
+    const instructorAnalyticsPath = getDashboardPath('instructor', 'analytics');
+    const adminAnalyticsPath = getDashboardPath('admin', 'analytics');
+    const studentProgressPath = getDashboardPath('student', 'progress');
+    const analyticsPages = [instructorAnalyticsPath, adminAnalyticsPath, studentProgressPath];
+    const currentPageIndex = analyticsPages.indexOf(instructorAnalyticsPath);
 
     const swipeRef = useSwipeNavigation({
-        goBack: () => navigate('/admin/analytics'),
-        goForward: () => navigate('/student/analytics'),
+        goBack: () => navigate(adminAnalyticsPath),
+        goForward: () => navigate(studentProgressPath),
         pages: analyticsPages,
         currentIndex: currentPageIndex,
     });
@@ -61,7 +52,7 @@ const InstructorAnalyticsPage = ({ embedded = false }) => {
         () => ({
             from: filters.from || undefined,
             to: filters.to || undefined,
-            instructorId: isPlatformAdmin(user) ? undefined : user?.id,
+            instructorId: isPlatformAdmin(user?.role) ? undefined : user?.id,
         }),
         [filters.from, filters.to, user?.role, user?.id] // Only depend on actual values
     );
@@ -82,7 +73,7 @@ const InstructorAnalyticsPage = ({ embedded = false }) => {
 
     useEffect(() => {
         loadAnalytics();
-    }, [requestFilters.from, requestFilters.to, requestFilters.instructorId]); // Depend on filter values
+    }, [loadAnalytics]);
 
     const kpis = useMemo(
         () => ({
@@ -192,10 +183,10 @@ const InstructorAnalyticsPage = ({ embedded = false }) => {
                         title="Коркунучтуу Окуучулар"
                         subtitle="Кошумча жардам керек окуучулар"
                         columns={['Окуучу', 'Курс', 'Коркунуч себеби', 'Акыркы активдүүлүк']}
-                        data={overview?.charts?.atRiskStudents?.map((item) => [
+                        data={overview?.charts?.atRiskStudents?.map((item, index) => [
                             item.studentName || `Окуучу #${item.studentId}`,
                             item.courseTitle || `Курс #${item.courseId}`,
-                            <span className={`px-2 py-1 text-xs rounded-full ${item.riskReason?.includes('progress') ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300' :
+                            <span key={`risk-${item.studentId || item.courseId || index}`} className={`px-2 py-1 text-xs rounded-full ${item.riskReason?.includes('progress') ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300' :
                                 item.riskReason?.includes('activity') ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300' :
                                     'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300'
                                 }`}>

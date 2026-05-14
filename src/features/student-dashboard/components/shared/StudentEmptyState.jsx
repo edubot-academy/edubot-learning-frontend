@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { FiAlertCircle, FiBookOpen, FiUser } from 'react-icons/fi';
+import { getDashboardPath } from '@shared/utils/navigation';
 
 const StudentEmptyState = () => (
     <div className="dashboard-panel relative overflow-hidden px-8 py-12 text-center">
@@ -31,7 +32,7 @@ const StudentEmptyState = () => (
                     Видео курстарды көрүү
                 </Link>
                 <Link
-                    to="/student?tab=profile"
+                    to={getDashboardPath('student', 'profile')}
                     className="dashboard-button-secondary inline-flex min-w-[220px] justify-center"
                 >
                     <FiUser className="h-4 w-4" />

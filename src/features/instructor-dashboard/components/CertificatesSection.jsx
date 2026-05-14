@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 /* eslint-disable react/prop-types */
+import { useNavigate } from 'react-router-dom';
 import {
     FiActivity,
     FiAward,
@@ -859,6 +860,7 @@ const CertificatesSection = ({
     disabledCourseCount = 0,
     disabledReason = '',
 }) => {
+    const navigate = useNavigate();
     const isAdminMode = mode === 'admin';
     const canIssueCertificates = isAdminMode;
     const canRevokeCertificates = isAdminMode;
@@ -1261,9 +1263,7 @@ const CertificatesSection = ({
                         subtitle="Алгач курс түзүп баштаңыз, андан кийин сертификаттар ушул жерде башкарылат."
                         action={{
                             label: 'Курс түзүү',
-                            onClick: () => {
-                                window.location.href = '/instructor/course/create';
-                            },
+                            onClick: () => navigate('/instructor/course/create'),
                         }}
                         className="py-8"
                     />

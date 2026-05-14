@@ -1,7 +1,8 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { FiPlus, FiBook, FiUserPlus, FiVideo } from "react-icons/fi";
 import PropTypes from "prop-types";
+import { getDashboardPath } from "@shared/utils/navigation";
 
 const FAB_SIZE = 56;
 const ACTION_MENU_WIDTH = 200;
@@ -51,14 +52,14 @@ const FloatingActionButton = ({
                     label: "Студент кошуу",
                     icon: <FiUserPlus className="w-5 h-5" />,
                     color: "bg-green-500 hover:bg-green-600",
-                    onClick: () => navigate("/instructor/students"),
+                    onClick: () => navigate(getDashboardPath("instructor", "students")),
                 },
                 {
                     id: "create-session",
                     label: "Live сессия",
                     icon: <FiVideo className="w-5 h-5" />,
                     color: "bg-purple-500 hover:bg-purple-600",
-                    onClick: () => navigate("/instructor/sessions"),
+                    onClick: () => navigate(getDashboardPath("instructor", "sessions")),
                 },
             ],
             student: [
@@ -74,7 +75,7 @@ const FloatingActionButton = ({
                     label: "Суроо берүү",
                     icon: <span className="text-lg">❓</span>,
                     color: "bg-green-500 hover:bg-green-600",
-                    onClick: () => navigate("/student/support"),
+                    onClick: () => navigate(getDashboardPath("student", "chat")),
                 },
             ],
             admin: [
@@ -90,7 +91,7 @@ const FloatingActionButton = ({
                     label: "Компания түзүү",
                     icon: <span className="text-lg">🏢</span>,
                     color: "bg-purple-500 hover:bg-purple-600",
-                    onClick: () => navigate("/admin/companies/create"),
+                    onClick: () => navigate(getDashboardPath("admin", "companies")),
                 },
             ],
             assistant: [

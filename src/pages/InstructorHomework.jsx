@@ -14,6 +14,7 @@ import {
     isCourseFeatureEnabled,
     TENANT_FEATURES,
 } from '@shared/utils/tenantFeatures';
+import { getDashboardPath } from '@shared/utils/navigation';
 
 const toArray = (payload) => {
     if (Array.isArray(payload)) return payload;
@@ -204,12 +205,13 @@ const buildSessionHomeworkPath = (item) => {
     const groupId = item?.groupId || item?.session?.group?.id;
     const sessionId = item?.sessionId || item?.session?.id;
     const homeworkId = item?.id;
-    const params = new URLSearchParams({ tab: 'sessions', workspaceTab: 'homework' });
-    if (courseId) params.set('courseId', String(courseId));
-    if (groupId) params.set('groupId', String(groupId));
-    if (sessionId) params.set('sessionId', String(sessionId));
-    if (homeworkId) params.set('homeworkId', String(homeworkId));
-    return `/instructor?${params.toString()}`;
+    return getDashboardPath('instructor', 'sessions', {
+        workspaceTab: 'homework',
+        courseId,
+        groupId,
+        sessionId,
+        homeworkId,
+    });
 };
 
 const getQueuePriority = (item) => {

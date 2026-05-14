@@ -1,9 +1,8 @@
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import PropTypes from 'prop-types';
 import { toast } from 'react-hot-toast';
-import { useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
-    ATTENDANCE_STATUS,
     COURSE_SESSION_STATUS,
     COURSE_TYPE,
     MEETING_PROVIDER,
@@ -44,19 +43,12 @@ import {
     FiActivity,
     FiBookOpen,
     FiCalendar,
-    FiCheck,
     FiCheckCircle,
     FiClock,
-    FiEdit3,
-    FiExternalLink,
-    FiFileText,
     FiLayers,
-    FiPaperclip,
     FiPlayCircle,
     FiRadio,
-    FiSearch,
     FiUsers,
-    FiXCircle,
 } from 'react-icons/fi';
 import { fetchGroupRoster } from '@features/courseGroups/roster';
 import SessionAttendanceTab from '@features/groupSessions/components/SessionAttendanceTab.jsx';
@@ -66,9 +58,9 @@ import SessionHomeworkTab from '@features/groupSessions/components/SessionHomewo
 import SessionNotesTab from '@features/groupSessions/components/SessionNotesTab.jsx';
 import SessionResourcesTab from '@features/groupSessions/components/SessionResourcesTab.jsx';
 import SessionSetupModal from '@features/groupSessions/components/SessionSetupModal.jsx';
+import { getDashboardPath } from '@shared/utils/navigation';
 import {
     DashboardFilterBar,
-    DashboardInsetPanel,
     DashboardMetricCard,
     DashboardWorkspaceHero,
     EmptyState,
@@ -145,12 +137,6 @@ const SESSION_MODE_META = {
     },
 };
 
-const statusMeta = {
-    [ATTENDANCE_STATUS.PRESENT]: { label: 'Катышты', className: 'bg-emerald-100 text-emerald-700' },
-    [ATTENDANCE_STATUS.LATE]: { label: 'Кечикти', className: 'bg-amber-100 text-amber-700' },
-    [ATTENDANCE_STATUS.ABSENT]: { label: 'Келген жок', className: 'bg-red-100 text-red-700' },
-};
-
 const SESSION_STATUS_OPTIONS = [
     { value: COURSE_SESSION_STATUS.SCHEDULED, label: 'Пландалган' },
     { value: COURSE_SESSION_STATUS.COMPLETED, label: 'Аяктады' },
@@ -174,13 +160,6 @@ const SESSION_STATUS_META = {
 
 const getCourseSessionStatusMeta = (status) =>
     SESSION_STATUS_META[status] || SESSION_STATUS_META[COURSE_SESSION_STATUS.SCHEDULED];
-
-const sessionStatusMap = {
-    [SESSION_ATTENDANCE_STATUS.PRESENT]: ATTENDANCE_STATUS.PRESENT,
-    [SESSION_ATTENDANCE_STATUS.LATE]: ATTENDANCE_STATUS.LATE,
-    [SESSION_ATTENDANCE_STATUS.ABSENT]: ATTENDANCE_STATUS.ABSENT,
-    [SESSION_ATTENDANCE_STATUS.EXCUSED]: ATTENDANCE_STATUS.ABSENT,
-};
 
 const UNMARKED_ATTENDANCE_STATUS = '__unmarked__';
 
@@ -217,7 +196,7 @@ const toInputDateTime = (isoValue) => {
     return local.toISOString().slice(0, 16);
 };
 
-const getNextSessionDateTime = (group, existingSessions = []) => {
+const getNextSessionDateTime = (group) => {
     if (!group) return { startsAt: '', endsAt: '' };
 
     // If group has schedule blocks, use them to calculate next session
@@ -419,32 +398,6 @@ const getAttachmentName = (value) => {
     }
 };
 
-const openAttachmentInBrowser = async (url, filename = 'attachment') => {
-    if (!url) return;
-
-    const response = await fetch(url);
-    if (!response.ok) {
-        throw new Error('Тиркемени ачуу мүмкүн болгон жок.');
-    }
-
-    const blob = await response.blob();
-    const blobUrl = URL.createObjectURL(blob);
-    const popup = window.open(blobUrl, '_blank', 'noopener,noreferrer');
-
-    if (!popup) {
-        const link = document.createElement('a');
-        link.href = blobUrl;
-        link.target = '_blank';
-        link.rel = 'noreferrer';
-        link.download = filename;
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
-    }
-
-    window.setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000);
-};
-
 const isJoinWindowOpen = (session, nowMs) => {
     const start = session?.startsAt ? new Date(session.startsAt).getTime() : null;
     const end = session?.endsAt ? new Date(session.endsAt).getTime() : null;
@@ -474,6 +427,7 @@ const getWorkspaceErrorMessage = (error, fallback) => {
 };
 
 const SessionWorkspace = () => {
+    const navigate = useNavigate();
     const { user } = useContext(AuthContext);
     const [searchParams, setSearchParams] = useSearchParams();
     const initialWorkspaceTab = searchParams.get('workspaceTab') || 'attendance';
@@ -503,7 +457,7 @@ const SessionWorkspace = () => {
     const [students, setStudents] = useState([]);
     const [attendanceRows, setAttendanceRows] = useState({});
     const [initialAttendanceRows, setInitialAttendanceRows] = useState({});
-    const [attendanceHistory, setAttendanceHistory] = useState([]);
+    const [, setAttendanceHistory] = useState([]);
     const [attendanceQuery, setAttendanceQuery] = useState('');
     const [attendanceFilter, setAttendanceFilter] = useState('all');
 
@@ -555,10 +509,6 @@ const SessionWorkspace = () => {
     const [homeworkSubmissions, setHomeworkSubmissions] = useState([]);
     const [loadingHomeworkSubmissions, setLoadingHomeworkSubmissions] = useState(false);
     const [reviewingSubmissionId, setReviewingSubmissionId] = useState('');
-    const [editingHomeworkId, setEditingHomeworkId] = useState('');
-    const [editHomeworkTitle, setEditHomeworkTitle] = useState('');
-    const [editHomeworkDescription, setEditHomeworkDescription] = useState('');
-    const [editHomeworkDeadline, setEditHomeworkDeadline] = useState('');
     const [updatingHomework, setUpdatingHomework] = useState(false);
     const [homeworkQuery, setHomeworkQuery] = useState('');
     const [homeworkFilter, setHomeworkFilter] = useState('all');
@@ -986,7 +936,6 @@ const SessionWorkspace = () => {
     useEffect(() => {
         setSelectedHomeworkId('');
         setHomeworkSubmissions([]);
-        setEditingHomeworkId('');
         setPublishedHomework([]);
         setHomeworkLoadedSessionId('');
 
@@ -2206,53 +2155,6 @@ const SessionWorkspace = () => {
         }
     };
 
-    const beginHomeworkEdit = (item) => {
-        if (!item?.id) return;
-        setEditingHomeworkId(String(item.id));
-        setEditHomeworkTitle(item.title || item.name || '');
-        setEditHomeworkDescription(item.description || '');
-        setEditHomeworkDeadline(
-            resolveHomeworkDeadline(item) ? String(resolveHomeworkDeadline(item)).slice(0, 10) : ''
-        );
-    };
-
-    const cancelHomeworkEdit = () => {
-        setEditingHomeworkId('');
-        setEditHomeworkTitle('');
-        setEditHomeworkDescription('');
-        setEditHomeworkDeadline('');
-    };
-
-    const saveHomeworkEdit = async () => {
-        if (!selectedSessionId || !editingHomeworkId) return;
-        if (!editHomeworkTitle.trim()) {
-            toast.error('Тапшырманын аталышын жазыңыз.');
-            return;
-        }
-
-        setUpdatingHomework(true);
-        try {
-            await updateSessionHomework(Number(selectedSessionId), Number(editingHomeworkId), {
-                title: editHomeworkTitle.trim(),
-                description: editHomeworkDescription.trim() || undefined,
-                deadline: editHomeworkDeadline || undefined,
-                isPublished: Boolean(selectedHomework?.isPublished),
-            });
-
-            const refreshed = await fetchSessionHomework(Number(selectedSessionId), { includeUnpublished: true });
-            const items = toArray(refreshed);
-            setPublishedHomework(items);
-            cancelHomeworkEdit();
-            await refreshSessionInsights();
-            toast.success('Үй тапшырма жаңыртылды.');
-        } catch (error) {
-            console.error(error);
-            toast.error(getWorkspaceErrorMessage(error, 'Үй тапшырманы жаңыртуу катасы'));
-        } finally {
-            setUpdatingHomework(false);
-        }
-    };
-
     const updateHomework = async (homeworkId, updates) => {
         if (!selectedSessionId) return;
 
@@ -2567,7 +2469,7 @@ const SessionWorkspace = () => {
                                         type="button"
                                         onClick={() => {
                                             setWorkspaceMode('create');
-                                            const nextDateTime = getNextSessionDateTime(selectedGroup, sessions);
+                                            const nextDateTime = getNextSessionDateTime(selectedGroup);
                                             setQuickSession((prev) => ({
                                                 ...QUICK_SESSION_DEFAULT,
                                                 status: prev.status,
@@ -2595,9 +2497,7 @@ const SessionWorkspace = () => {
                                     </button>
                                     <button
                                         type="button"
-                                        onClick={() => {
-                                            window.location.href = '/instructor?tab=groups';
-                                        }}
+                                        onClick={() => navigate(getDashboardPath('instructor', 'groups'))}
                                         className="rounded-2xl border border-edubot-line bg-transparent px-4 py-3 text-sm font-semibold text-edubot-ink transition hover:border-edubot-orange/40 dark:border-slate-700 dark:text-slate-200"
                                     >
                                         Groups tab ачуу

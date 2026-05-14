@@ -49,6 +49,7 @@ import {
     getCourseTypeTenantDisabledMessage,
     isCourseTypeAllowedForTenant,
 } from '@shared/utils/tenantFeatures';
+import { getDashboardPath } from '@shared/utils/navigation';
 
 const TABS = [
     { id: 'overview', label: 'Overview', icon: FiBriefcase, category: 'primary', priority: 1 },
@@ -69,6 +70,8 @@ const TABS = [
     { id: 'flags', label: 'Feature Flags', icon: FiFlag, category: 'secondary', priority: 7 },
     { id: 'activity', label: 'Activity', icon: FiClock, category: 'secondary', priority: 8 },
 ];
+
+const adminCompaniesPath = getDashboardPath('admin', 'companies');
 
 const COMPANY_STATUSES = ['trial', 'active', 'inactive', 'suspended', 'archived'];
 const COURSE_VISIBILITY_OPTIONS = ['PUBLIC', 'PRIVATE', 'TENANT_ONLY'];
@@ -682,7 +685,7 @@ export default function PlatformTenantDetail() {
                 },
                 {
                     label: 'Tenant registry',
-                    to: '/admin?tab=companies',
+                    to: adminCompaniesPath,
                     variant: 'secondary',
                 },
             ]}
@@ -755,7 +758,7 @@ export default function PlatformTenantDetail() {
                         description={`${company.status || 'active'} · ${tenantDomain(company)}`}
                     />
                     <Link
-                        to="/admin?tab=companies"
+                        to={adminCompaniesPath}
                         className="dashboard-button-secondary self-start"
                     >
                         <FiArrowLeft className="h-4 w-4" />

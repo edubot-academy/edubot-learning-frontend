@@ -2,6 +2,30 @@
 
 Version bumps are classified by delivery scale; see `VERSIONING.md`.
 
+## [1.11.7] - 2026-05-14
+
+### Changed
+
+- Consolidated dashboard tab navigation through `getDashboardPath(...)` so instructor, student, and admin links use a single route-building path.
+- Preserved legacy dashboard tab routes with query-aware redirects for instructor sessions, instructor analytics, instructor homework, student analytics, and admin analytics.
+- Updated dashboard and workspace navigation to use SPA navigation instead of full-page reloads where possible.
+- Made dashboard tab routing permissive so newly added tabs do not require a duplicated allowlist in shared navigation utilities.
+
+### Fixed
+
+- Fixed role-aware dashboard overview links so admin users land on the admin stats tab instead of an unsupported overview tab.
+- Replaced dead floating action button targets with currently mounted dashboard tabs.
+- Removed unused session workspace homework edit state and stale helper code that was no longer connected to the rendered homework workflow.
+- Cleaned release-blocking lint issues in the touched dashboard, analytics, session workspace, and leaderboard files.
+
+### Verification
+
+- `npx eslint src/app/routes.jsx src/shared/utils/navigation.js src/components/ui/FloatingActionButton.jsx src/components/ui/MobileDashboardOverview.jsx src/features/admin/pages/PlatformTenantDetail.jsx src/features/instructor-dashboard/components/CertificatesSection.jsx src/features/instructor-dashboard/components/CoursesSection.jsx src/features/instructor-dashboard/components/GroupsSection.jsx src/features/instructor-dashboard/components/InstructorOverviewSection.jsx src/features/integration/components/IntegrationTab.jsx src/features/leaderboard/components/LeaderboardExperience.jsx src/features/leaderboard/components/LeaderboardHub.jsx src/features/leaderboard/components/leaderboardSnapshot.js src/features/student-dashboard/components/shared/StudentEmptyState.jsx src/features/student-dashboard/components/tabs/CoursesTab.jsx src/pages/AdminAnalytics.jsx src/pages/InstructorAnalytics.jsx src/pages/InstructorDashboard.jsx src/pages/InstructorHomework.jsx src/pages/SessionWorkspace.jsx`
+- `git diff --check`
+- `npm run build` passes with existing Vite chunk-size/dynamic-import warnings.
+
+---
+
 ## [1.11.6] - 2026-05-13
 
 ### Changed

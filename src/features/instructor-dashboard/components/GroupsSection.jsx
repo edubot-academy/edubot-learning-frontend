@@ -1,6 +1,6 @@
 /* eslint-disable react/prop-types */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import {
     DashboardCardSkeleton,
@@ -34,6 +34,7 @@ import EnrollGroupStudentModal from './modals/EnrollGroupStudentModal.jsx';
 import GenerateGroupSessionsModal from './modals/GenerateGroupSessionsModal.jsx';
 import GroupFormModal from './modals/GroupFormModal.jsx';
 import { normalizeEnrollmentCourseType } from '@features/enrollments/policy';
+import { getDashboardPath } from '@shared/utils/navigation';
 import { fetchGroupRoster } from '@features/courseGroups/roster';
 
 const DELIVERY_TYPES = new Set(['offline', 'online_live']);
@@ -169,7 +170,9 @@ const formatScheduleBlocks = (blocks = []) =>
         .map((block) => `${WEEKDAY_LABELS[String(block.day).toLowerCase()] || block.day} · ${block.startTime}–${block.endTime}`);
 
 const GroupsSection = ({ courses = [] }) => {
+    const navigate = useNavigate();
     const [searchParams] = useSearchParams();
+    const sessionsPath = getDashboardPath('instructor', 'sessions');
     const deliveryCourses = useMemo(
         () => courses.filter((course) => DELIVERY_TYPES.has(normalizeCourseType(course))),
         [courses]
@@ -489,8 +492,9 @@ const GroupsSection = ({ courses = [] }) => {
             toast.error(Array.isArray(message) ? message.join(', ') : message);
             setGenerationPreview(null);
         } finally {
-            if (generationPreviewRequestRef.current !== requestId) return;
-            setPreviewLoading(false);
+            if (generationPreviewRequestRef.current === requestId) {
+                setPreviewLoading(false);
+            }
         }
     }, []);
 
@@ -639,9 +643,7 @@ const GroupsSection = ({ courses = [] }) => {
                         subtitle="Алгач delivery форматындагы курс түзүңүз. Video курстар группа талап кылбайт."
                         action={{
                             label: 'Курс түзүү',
-                            onClick: () => {
-                                window.location.href = '/instructor/course/create';
-                            },
+                            onClick: () => navigate('/instructor/course/create'),
                         }}
                     />
                 </DashboardInsetPanel>
@@ -657,7 +659,7 @@ const GroupsSection = ({ courses = [] }) => {
                 description="Оффлайн жана онлайн түз эфир курстары үчүн группа академиялык контейнер болуп саналат: enrollment группага байланышат, сессиялар ошол группадан окуйт."
                 action={(
                     <div className="flex flex-wrap items-center gap-2">
-                        <Link to="/instructor?tab=sessions" className="dashboard-button-secondary">
+                        <Link to={sessionsPath} className="dashboard-button-secondary">
                             <FiCalendar className="h-4 w-4" />
                             Сессия workspace
                         </Link>
@@ -822,7 +824,7 @@ const GroupsSection = ({ courses = [] }) => {
                                     </div>
 
                                     <div className="mt-5 flex flex-wrap gap-2">
-                                        <Link to="/instructor?tab=sessions" className="dashboard-button-secondary">
+                                        <Link to={sessionsPath} className="dashboard-button-secondary">
                                             Сессияларды башкаруу
                                         </Link>
                                         <button
@@ -883,7 +885,7 @@ const GroupsSection = ({ courses = [] }) => {
                         Бул бөлүмдө группа enrollment жана metadata башкарылат. Attendance, homework, meeting жана
                         session metadata өзүнчө session workflow болуп калат.
                     </p>
-                    <Link to="/instructor?tab=sessions" className="dashboard-button-secondary">
+                    <Link to={sessionsPath} className="dashboard-button-secondary">
                         <FiCalendar className="h-4 w-4" />
                         Session workspace
                     </Link>

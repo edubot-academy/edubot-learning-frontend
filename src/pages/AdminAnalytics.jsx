@@ -4,6 +4,7 @@ import { toast } from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import { FiAlertCircle, FiBarChart2, FiBookOpen, FiCheckCircle, FiRefreshCw, FiTrendingUp, FiUsers } from 'react-icons/fi';
 import { useSwipeNavigation } from '../hooks/useSwipeGestures';
+import { getDashboardPath } from '@shared/utils/navigation';
 import { AnalyticsDataTable, AnalyticsLineChart } from '@components/analytics';
 import {
     DashboardFilterBar,
@@ -23,12 +24,15 @@ const AdminAnalyticsPage = () => {
     const [loading, setLoading] = useState(false);
     const [overview, setOverview] = useState(null);
 
-    const analyticsPages = ['/admin/analytics', '/instructor/analytics', '/student/analytics'];
-    const currentPageIndex = analyticsPages.indexOf('/admin/analytics');
+    const adminAnalyticsPath = getDashboardPath('admin', 'analytics');
+    const instructorAnalyticsPath = getDashboardPath('instructor', 'analytics');
+    const studentProgressPath = getDashboardPath('student', 'progress');
+    const analyticsPages = [adminAnalyticsPath, instructorAnalyticsPath, studentProgressPath];
+    const currentPageIndex = analyticsPages.indexOf(adminAnalyticsPath);
 
     const swipeRef = useSwipeNavigation({
-        goBack: () => navigate('/instructor/analytics'),
-        goForward: () => navigate('/student/analytics'),
+        goBack: () => navigate(instructorAnalyticsPath),
+        goForward: () => navigate(studentProgressPath),
         pages: analyticsPages,
         currentIndex: currentPageIndex,
     });

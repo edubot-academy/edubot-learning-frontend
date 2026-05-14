@@ -1,9 +1,9 @@
 import { useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import React from 'react';
 import PropTypes from 'prop-types';
 import { SmoothTabTransition } from '@components/ui';
 import { Link, useSearchParams } from 'react-router-dom';
 import Loader from '@shared/ui/Loader';
+import { getDashboardPath } from '@shared/utils/navigation';
 import {
     DashboardInsetPanel,
     DashboardMetricCard,
@@ -25,7 +25,6 @@ import {
 import { AuthContext } from '../../../context/AuthContext';
 import {
     AchievementCloud,
-    buildLeaderboardSnapshot,
     ChallengeRail,
     LeaderboardListCard,
     MySkillProgressGrid,
@@ -33,6 +32,7 @@ import {
     PublicSpotlightPanel,
     SkillSpotlightGrid,
 } from './LeaderboardExperience';
+import { buildLeaderboardSnapshot } from './leaderboardSnapshot';
 
 const tabs = [
     { id: 'overview', label: 'Кыскача' },
@@ -251,7 +251,7 @@ const LeaderboardHub = ({ embedded = false, initialTrack = 'all', lockTrack = fa
 
     const currentXp = mySummary?.windowXp ?? mySummary?.xp ?? currentUserWeeklyEntry?.xp ?? 0;
     const currentStreak = mySummary?.streakDays ?? currentUserWeeklyEntry?.streakDays ?? 0;
-    const weeklyItems = Array.isArray(weekly?.items) ? weekly.items : [];
+    const weeklyItems = useMemo(() => (Array.isArray(weekly?.items) ? weekly.items : []), [weekly?.items]);
     const rankValue = snapshot.rank ? `#${snapshot.rank}` : 'Азырынча жок';
     const targetGapValue = snapshot.targetGap ? `${snapshot.targetGap} XP` : 'Жакында';
 
@@ -344,7 +344,7 @@ const LeaderboardHub = ({ embedded = false, initialTrack = 'all', lockTrack = fa
                 helper: 'Көрүнүктүү жеңиш',
             },
         ];
-    }, [weekly, achievementItems]);
+    }, [weeklyItems, achievementItems]);
 
     const heroMetrics = publicMode ? (
         <>
@@ -708,7 +708,7 @@ const LeaderboardHub = ({ embedded = false, initialTrack = 'all', lockTrack = fa
                                         embedded ? null : (
                                             <div className="flex flex-wrap gap-3 text-sm text-slate-500 dark:text-slate-300">
                                                 <span>Жумалык лидерлер жана сизге жакын орундар</span>
-                                                <Link to="/student?tab=leaderboard" className="font-semibold text-orange-500">
+                                                <Link to={getDashboardPath('student', 'leaderboard')} className="font-semibold text-orange-500">
                                                     Дашборддан ачуу
                                                 </Link>
                                             </div>

@@ -1,6 +1,6 @@
-import React from 'react';
 import PropTypes from 'prop-types';
 import { useNavigate } from 'react-router-dom';
+import { getDashboardPath } from '@shared/utils/navigation';
 
 const MobileDashboardOverview = ({ user, profile, courses, publishedCount, pendingCount, aiEnabledCount, analyticsLink }) => {
     const navigate = useNavigate();
@@ -58,7 +58,7 @@ const MobileDashboardOverview = ({ user, profile, courses, publishedCount, pendi
                         <span className="font-medium">Жаңы курс</span>
                     </button>
                     <button
-                        onClick={() => window.location.href = analyticsLink}
+                        onClick={() => navigate(analyticsLink)}
                         className="flex items-center justify-center p-4 bg-edubot-teal text-white rounded-lg touch-manipulation active:scale-95 min-h-[48px]"
                     >
                         <span className="mr-2">📊</span>
@@ -88,7 +88,7 @@ const MobileDashboardOverview = ({ user, profile, courses, publishedCount, pendi
                         Акыркы курсуулар
                     </h2>
                     <button
-                        onClick={() => window.location.href = '/instructor/courses'}
+                        onClick={() => navigate('/instructor/courses')}
                         className="text-edubot-orange hover:text-edubot-orange/80 font-medium text-sm touch-manipulation active:scale-95 min-h-[44px]"
                     >
                         Бардыгырау →
@@ -120,14 +120,14 @@ const MobileDashboardOverview = ({ user, profile, courses, publishedCount, pendi
             {/* Quick Links */}
             <div className="grid grid-cols-2 gap-3">
                 <button
-                    onClick={() => navigate('/instructor?tab=students')}
+                    onClick={() => navigate(getDashboardPath('instructor', 'students'))}
                     className="flex items-center justify-center p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 touch-manipulation active:scale-95 min-h-[48px]"
                 >
                     <span className="mr-2">👥</span>
                     <span className="font-medium text-gray-900 dark:text-gray-100">Окуучулар</span>
                 </button>
                 <button
-                    onClick={() => navigate('/instructor?tab=profile')}
+                    onClick={() => navigate(getDashboardPath('instructor', 'profile'))}
                     className="flex items-center justify-center p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 touch-manipulation active:scale-95 min-h-[48px]"
                 >
                     <span className="mr-2">👤</span>
@@ -141,11 +141,13 @@ const MobileDashboardOverview = ({ user, profile, courses, publishedCount, pendi
 MobileDashboardOverview.propTypes = {
     user: PropTypes.shape({
         id: PropTypes.string.isRequired,
+        firstName: PropTypes.string,
         fullName: PropTypes.string,
         email: PropTypes.string.isRequired,
         role: PropTypes.string.isRequired,
     }),
     profile: PropTypes.shape({
+        title: PropTypes.string,
         expertiseTags: PropTypes.array,
         expertiseTagsText: PropTypes.string,
         socialLinks: PropTypes.object,
@@ -156,6 +158,8 @@ MobileDashboardOverview.propTypes = {
             title: PropTypes.string,
             isPublished: PropTypes.bool,
             aiAssistantEnabled: PropTypes.bool,
+            studentsCount: PropTypes.number,
+            lessonsCount: PropTypes.number,
         })
     ),
     publishedCount: PropTypes.number.isRequired,

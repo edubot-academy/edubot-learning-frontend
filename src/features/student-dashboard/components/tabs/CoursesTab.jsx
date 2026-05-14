@@ -26,6 +26,7 @@ import {
     formatSessionDate,
     resolveRecordings,
 } from '../../utils/studentDashboard.helpers.js';
+import { getDashboardPath } from '@shared/utils/navigation';
 
 const fallbackCover =
     'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&w=600&q=80';
@@ -198,19 +199,13 @@ const CoursesTab = ({ courses, offeringsByCourse }) => {
                         filteredCourses.map((item) => {
                             const progressTone = getProgressTone(item.progressValue);
                             const isVideoCourse = item.courseType === 'video';
-                            const scheduleParams = new URLSearchParams({ tab: 'schedule' });
-                            if (item.courseId) {
-                                scheduleParams.set('courseId', String(item.courseId));
-                            }
-                            if (item.course.groupId || item.groupName) {
-                                const resolvedGroupId = item.course.groupId || item.course.group?.id;
-                                if (resolvedGroupId) {
-                                    scheduleParams.set('groupId', String(resolvedGroupId));
-                                }
-                            }
+                            const resolvedGroupId = item.course.groupId || item.course.group?.id;
                             const primaryLink = isVideoCourse
                                 ? (item.courseId ? `/courses/${item.courseId}` : '#')
-                                : `/student?${scheduleParams.toString()}`;
+                                : getDashboardPath('student', 'schedule', {
+                                    courseId: item.courseId,
+                                    groupId: item.course.groupId || item.groupName ? resolvedGroupId : undefined,
+                                });
                             const primaryActionLabel = isVideoCourse
                                 ? 'Курсту ачуу'
                                 : 'Расписаниени ачуу';
