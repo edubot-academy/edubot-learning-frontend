@@ -9,6 +9,7 @@ import {
     CourseDetailsMainArea,
     CourseDetailsMobileArea,
     CourseDetailsNotFoundState,
+    CourseDetailsJourneyBanner,
     CourseDetailsSidebar,
     EnrolledCourseSupport,
     InstructorChatDock,
@@ -113,6 +114,12 @@ const CourseDetailsPage = () => {
         <div className="min-h-screen pt-10 bg-[#f8f9fb] dark:bg-[#1A1A1A]">
             <InstructorChatDock enrolled={enrolled} userRole={user?.role} course={course} />
             <div className="mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-8">
+                <CourseDetailsJourneyBanner
+                    enrolled={enrolled}
+                    activeLesson={activeLesson}
+                    course={course}
+                    lessonCount={lessonCount}
+                />
                 <div className="space-y-6 lg:space-y-0 lg:grid lg:grid-cols-3 lg:gap-6">
                     <CourseDetailsMobileArea
                         isDesktop={isDesktop}

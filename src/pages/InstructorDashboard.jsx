@@ -599,6 +599,9 @@ const InstructorDashboard = () => {
                                 {activeWorkspaceGroup.label}
                             </h2>
                             <p className="mt-1 text-sm text-edubot-muted dark:text-slate-400">
+                                {activeWorkspaceGroup.description}
+                            </p>
+                            <p className="mt-1 text-xs font-medium text-edubot-muted dark:text-slate-500">
                                 {activeTabStatus.length ? activeTabStatus.join(' · ') : `${activeNavItem?.label || 'Бөлүм'} ачылды`}
                             </p>
                         </div>

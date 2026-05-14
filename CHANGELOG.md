@@ -6,6 +6,26 @@ Version bumps are classified by delivery scale; see `VERSIONING.md`.
 
 ---
 
+## [1.11.20] - 2026-05-14
+
+### Changed
+
+- Consolidated shared dashboard shell responsive behavior so dashboard pages use one CSS-driven main content layout.
+- Added student and instructor workspace grouping context for clearer dashboard wayfinding.
+- Added course-detail journey framing for prospect versus enrolled learning states.
+- Refined assistant overview decision signals and scoped course-load copy to the visible student page.
+- Updated the UX/UI audit to mark the completed shell, dashboard IA, course-detail journey, builder guidance, and assistant overview tasks.
+- Removed obsolete `CART-001`, `CART-C004`, and `PAGE-001` audit rows.
+
+### Verification
+
+- `npm run lint`
+- `git diff --check`
+- `npm test -- --run --testTimeout=15000`
+- `npm run build`
+
+---
+
 ## [1.11.19] - 2026-05-14
 
 ### Changed

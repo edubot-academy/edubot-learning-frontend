@@ -20,6 +20,7 @@ export const INSTRUCTOR_WORKSPACE_GROUPS = Object.freeze({
     OVERVIEW: Object.freeze({
         id: 'overview',
         label: 'Кыскача жана аналитика',
+        description: 'Жалпы абалды, тренддерди жана рейтинг сигналдарын тез текшерүү.',
         tabs: Object.freeze([
             INSTRUCTOR_DASHBOARD_TABS.OVERVIEW,
             INSTRUCTOR_DASHBOARD_TABS.ANALYTICS,
@@ -29,6 +30,7 @@ export const INSTRUCTOR_WORKSPACE_GROUPS = Object.freeze({
     COURSE_MANAGEMENT: Object.freeze({
         id: 'course-management',
         label: 'Курс башкаруу',
+        description: 'Курс, студент, группа, агым жана сертификат башкаруу иштери.',
         tabs: Object.freeze([
             INSTRUCTOR_DASHBOARD_TABS.COURSES,
             INSTRUCTOR_DASHBOARD_TABS.STUDENTS,
@@ -40,6 +42,7 @@ export const INSTRUCTOR_WORKSPACE_GROUPS = Object.freeze({
     DELIVERY_WORKBENCH: Object.freeze({
         id: 'delivery-workbench',
         label: 'Сабак өткөрүү',
+        description: 'Сессия, катышуу, үй тапшырма жана чат сыяктуу күнүмдүк delivery workflow.',
         tabs: Object.freeze([
             INSTRUCTOR_DASHBOARD_TABS.SESSIONS,
             INSTRUCTOR_DASHBOARD_TABS.HOMEWORK,
@@ -50,6 +53,7 @@ export const INSTRUCTOR_WORKSPACE_GROUPS = Object.freeze({
     SETTINGS: Object.freeze({
         id: 'settings',
         label: 'Профиль жана орнотуулар',
+        description: 'Профиль, AI ассистент жана билдирүү жөндөөлөрү.',
         tabs: Object.freeze([
             INSTRUCTOR_DASHBOARD_TABS.PROFILE,
             INSTRUCTOR_DASHBOARD_TABS.AI,

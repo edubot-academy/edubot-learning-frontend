@@ -60,18 +60,27 @@ const AssistantDashboardShell = ({
     const renderTabContent = () => {
         if (activeTab === "overview") {
             const availableCourses = courses.filter((course) => (courseCounts[course.id] || 0) === 0).length;
+            const visibleStudentsWithoutCourse = Math.max(0, students.length - enrolledStudents.length);
+            const loadedCourseCounts = Object.values(courseCounts).map((count) => Number(count || 0));
+            const averageCourseLoad = loadedCourseCounts.length
+                ? loadedCourseCounts.reduce((sum, count) => sum + count, 0) / loadedCourseCounts.length
+                : 0;
+            const highLoadCourses = courses.filter((course) => {
+                const courseLoad = Number(courseCounts[course.id] || 0);
+                return courseLoad > 0 && courseLoad >= Math.max(8, averageCourseLoad * 1.5);
+            }).length;
 
             return (
                 <div className="space-y-6">
                     <DashboardWorkspaceHero
                         eyebrow="Assistant overview"
                         title="Ассистенттин кыскача көрүнүшү"
-                        description="Компаниядагы студенттер, курстар жана каттоо агымы боюнча ыкчам абал."
+                        description="Күндөлүк чечим үчүн бул беттеги студент каттоосу жана курс жүктөмү боюнча сигналдар."
                         metrics={(
                             <>
-                                <DashboardMetricCard label="Жалпы студенттер" value={totalStudents} tone="blue" />
-                                <DashboardMetricCard label="Катталган студенттер" value={enrolledStudents.length} tone="green" />
-                                <DashboardMetricCard label="Жарыяланган курстар" value={courses.length} tone="amber" />
+                                <DashboardMetricCard label="Бул бетте курс жок" value={visibleStudentsWithoutCourse} tone="amber" />
+                                <DashboardMetricCard label="Бул бетте бош курс" value={availableCourses} tone="blue" />
+                                <DashboardMetricCard label="Бул бетте жүктөм көп" value={highLoadCourses} tone="green" />
                             </>
                         )}
                         metricsClassName="grid grid-cols-1 gap-3 sm:grid-cols-3"
@@ -95,13 +104,17 @@ const AssistantDashboardShell = ({
                                     </div>
                                     <div className="dashboard-panel-muted rounded-3xl p-4">
                                         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-edubot-muted dark:text-slate-400">
-                                            Каттоо мүмкүнчүлүгү
+                                            Чечим сигналы
                                         </p>
                                         <p className="mt-2 text-lg font-semibold text-edubot-ink dark:text-white">
-                                            {availableCourses} бош курс
+                                            {visibleStudentsWithoutCourse > 0
+                                                ? `${visibleStudentsWithoutCourse} студентке курс керек`
+                                                : highLoadCourses > 0
+                                                  ? `${highLoadCourses} курста жүктөм жогору`
+                                                  : `${availableCourses} бош курс`}
                                         </p>
                                         <p className="mt-1 text-sm text-edubot-muted dark:text-slate-400">
-                                            Учурда студент кошула элек жарыяланган курстарды тез аныктап, андан ары каттоо табына өтүңүз.
+                                            Бул сигнал учурда ачылган студенттер тизмесине жана ошол бет боюнча эсептелген курс жүктөмүнө жараша көрсөтүлөт.
                                         </p>
                                     </div>
                                 </div>

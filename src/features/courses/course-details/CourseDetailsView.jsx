@@ -268,6 +268,67 @@ ActiveLessonRuntime.propTypes = {
     onLessonClick: PropTypes.func.isRequired,
 };
 
+export const CourseDetailsJourneyBanner = ({ enrolled, activeLesson, course, lessonCount }) => {
+    const title = enrolled ? 'Активдүү окуу режими' : 'Курс менен таанышуу режими';
+    const description = enrolled
+        ? 'Бул бетте видео, тапшырма, прогресс жана окутуучу менен байланыш окууну улантууга багытталат.'
+        : 'Бул бетте программанын мазмуну, окутуучу жана сын-пикирлер курска катталуу чечимин колдойт.';
+    const primarySignal = enrolled
+        ? activeLesson?.title || activeLesson?.name || 'Кийинки сабакты тандаңыз'
+        : `${lessonCount} сабак`;
+    const secondarySignal = enrolled
+        ? 'Сабак мазмуну жана AI жардамчы enrollment абалына жараша ачылат.'
+        : course?.level || course?.category?.name || course?.categoryName || 'Курс маалыматы';
+
+    return (
+        <section className="rounded-2xl border border-[#E6E8EC] bg-white px-4 py-3 shadow-sm dark:border-[#2A2E35] dark:bg-[#1A1A1A]">
+            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-gray-500 dark:text-gray-400">
+                        {enrolled ? 'Окуу режими' : 'Таанышуу режими'}
+                    </p>
+                    <h2 className="mt-1 text-lg font-semibold text-gray-900 dark:text-white">
+                        {title}
+                    </h2>
+                    <p className="mt-1 max-w-3xl text-sm leading-6 text-gray-600 dark:text-gray-400">
+                        {description}
+                    </p>
+                </div>
+                <div className="grid gap-2 text-sm sm:grid-cols-2 md:min-w-[20rem]">
+                    <div className="rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 dark:border-gray-800 dark:bg-gray-950">
+                        <p className="text-xs font-medium text-gray-500 dark:text-gray-400">
+                            {enrolled ? 'Учурдагы сабак' : 'Программа'}
+                        </p>
+                        <p className="mt-1 font-semibold text-gray-900 dark:text-white">{primarySignal}</p>
+                    </div>
+                    <div className="rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 dark:border-gray-800 dark:bg-gray-950">
+                        <p className="text-xs font-medium text-gray-500 dark:text-gray-400">
+                            {enrolled ? 'Жеткиликтүүлүк' : 'Контекст'}
+                        </p>
+                        <p className="mt-1 font-semibold text-gray-900 dark:text-white">{secondarySignal}</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    );
+};
+
+CourseDetailsJourneyBanner.propTypes = {
+    enrolled: PropTypes.bool.isRequired,
+    activeLesson: PropTypes.shape({
+        title: PropTypes.string,
+        name: PropTypes.string,
+    }),
+    course: PropTypes.shape({
+        level: PropTypes.string,
+        category: PropTypes.shape({
+            name: PropTypes.string,
+        }),
+        categoryName: PropTypes.string,
+    }).isRequired,
+    lessonCount: PropTypes.number.isRequired,
+};
+
 export const CourseDetailsSidebar = ({
     enrolled,
     tabs,
