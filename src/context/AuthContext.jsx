@@ -1,6 +1,7 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useState, useEffect, useCallback } from 'react';
 import { fetchUserProfile, logoutUser } from '@services/api';
+import { normalizeUserAvatar } from '@shared/utils/avatar';
 
 export const AuthContext = createContext();
 
@@ -9,7 +10,7 @@ export const AuthProvider = ({ children }) => {
         try {
             const stored = localStorage.getItem('user');
             if (!stored || stored === 'undefined') return null;
-            return JSON.parse(stored);
+            return normalizeUserAvatar(JSON.parse(stored));
         } catch {
             // Remove bad data so it does not break subsequent renders
             localStorage.removeItem('user');
@@ -36,8 +37,9 @@ export const AuthProvider = ({ children }) => {
     const loadUserProfile = useCallback(async () => {
         try {
             const profile = await fetchUserProfile({ skipAuthRedirect: true });
-            setUser(profile);
-            localStorage.setItem('user', JSON.stringify(profile));
+            const normalizedProfile = normalizeUserAvatar(profile);
+            setUser(normalizedProfile);
+            localStorage.setItem('user', JSON.stringify(normalizedProfile));
         } catch (error) {
             // Silently handle 401 errors and suppressed errors (user not logged in)
             if (error?.response?.status !== 401 && !error?.suppressed) {
@@ -62,8 +64,9 @@ export const AuthProvider = ({ children }) => {
     }, [loadUserProfile]);
 
     const login = (userData) => {
-        setUser(userData);
-        localStorage.setItem('user', JSON.stringify(userData));
+        const normalizedUser = normalizeUserAvatar(userData);
+        setUser(normalizedUser);
+        localStorage.setItem('user', JSON.stringify(normalizedUser));
     };
 
     return (

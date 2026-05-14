@@ -21,6 +21,7 @@ const CourseContent = ({
     handleCheckboxToggle,
     maxHeight = "260px",
     compact = false,
+    presentationVariant,
 }) => {
     const [openIds, setOpenIds] = useState([]);
     const [searchQuery, setSearchQuery] = useState('');
@@ -32,6 +33,9 @@ const CourseContent = ({
 
     const [previewOpen, setPreviewOpen] = useState(false);
     const [previewLesson, setPreviewLesson] = useState(null);
+    const resolvedVariant = presentationVariant || (enrolled ? 'learning' : 'prospect');
+    const isLearningNavigator = resolvedVariant === 'learning';
+    const isProspectPreview = resolvedVariant === 'prospect' && !enrolled;
     const closePreview = () => {
         setPreviewOpen(false);
         setPreviewLesson(null);
@@ -108,6 +112,11 @@ const CourseContent = ({
             ) || 0;
         return { totalLessons: lessonsCount || 0, totalMinutes: minutes };
     }, [sections]);
+
+    const headerTitle = isLearningNavigator ? 'Окуу программасы' : 'Курстун программасы';
+    const headerDescription = isLearningNavigator
+        ? `${sections.length} бөлүм • ${totalLessons} лекция • ${formatMinutesToTime(totalMinutes)}. Сабактарды ачып, прогрессти белгилеңиз.`
+        : `${sections.length} бөлүм • ${totalLessons} лекция • ${formatMinutesToTime(totalMinutes)}. Катталуудан мурун темаларды жана алдын ала көрүү сабактарын караңыз.`;
 
     const filteredSections = useMemo(() => {
         if (!searchQuery.trim()) return sections;
@@ -219,15 +228,14 @@ const CourseContent = ({
                             <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                                 <div className="flex-1 min-w-0">
                                     <h3 className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-[#E8ECF3]">
-                                        Курстун мазмуну
+                                        {headerTitle}
                                     </h3>
                                     <p className="text-sm sm:text-base dark:text-[#a6adba] text-gray-600 mt-1">
-                                        {sections.length} бөлүм • {totalLessons} лекция •{' '}
-                                        {formatMinutesToTime(totalMinutes)}
+                                        {headerDescription}
                                     </p>
                                 </div>
 
-                                {enrolled && sections.length > 5 && (
+                                {isLearningNavigator && sections.length > 5 && (
                                     <div className="w-full sm:w-auto sm:max-w-xs">
                                         <div className="relative">
                                             <input
@@ -250,7 +258,7 @@ const CourseContent = ({
                                 )}
                             </div>
 
-                            {enrolled && !compact && (
+                            {isLearningNavigator && !compact && (
                                 <div className="flex flex-wrap gap-3 mt-2 text-sm text-gray-600 dark:text-gray-400">
                                     <div className="flex items-center gap-2 flex-shrink-0">
                                         <div className="w-3 h-3 rounded-full bg-orange-500 flex-shrink-0"></div>
@@ -264,6 +272,12 @@ const CourseContent = ({
                                         <div className="w-3 h-3 rounded-full bg-gray-300 dark:bg-gray-600 flex-shrink-0"></div>
                                         <span className="whitespace-nowrap">Жеткиликтүү лекция</span>
                                     </div>
+                                </div>
+                            )}
+
+                            {isProspectPreview && !compact && (
+                                <div className="rounded-xl border border-orange-100 bg-orange-50 px-4 py-3 text-sm text-orange-900 dark:border-orange-500/30 dark:bg-orange-500/10 dark:text-orange-200">
+                                    Алдын ала көрүү белгиси бар сабактарды азыр көрө аласыз. Калган сабактар курска катталгандан кийин ачылат.
                                 </div>
                             )}
                         </div>
@@ -473,7 +487,7 @@ const CourseContent = ({
                                                                         <div className="flex flex-wrap items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
                                                                             {lesson.previewVideo &&
                                                                                 lesson.kind !==
-                                                                                'article' && (
+                                                                                'article' ? (
                                                                                     <>
                                                                                         <RiPlayCircleFill
                                                                                             className="text-[#4b4b4b] dark:text-gray-400 flex-shrink-0"
@@ -484,10 +498,20 @@ const CourseContent = ({
                                                                                             }
                                                                                         />
                                                                                         <span className="text-[#1E72BE] dark:text-blue-400 font-semibold whitespace-nowrap">
-                                                                                            Алдын ала көрүү
+                                                                                            Алдын ала көрүү ачык
                                                                                         </span>
                                                                                     </>
-                                                                                )}
+                                                                                ) : locked ? (
+                                                                                    <span className="inline-flex items-center gap-1 text-gray-500 dark:text-gray-400">
+                                                                                        <TbLock
+                                                                                            className="flex-shrink-0"
+                                                                                            size={14}
+                                                                                        />
+                                                                                        <span className="whitespace-nowrap">
+                                                                                            Катталгандан кийин
+                                                                                        </span>
+                                                                                    </span>
+                                                                                ) : null}
                                                                             <span className="whitespace-nowrap">
                                                                                 {formatSecondsToTime(
                                                                                     lesson.duration

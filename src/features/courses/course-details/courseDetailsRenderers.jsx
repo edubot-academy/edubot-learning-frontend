@@ -23,7 +23,7 @@ export const renderPublicCourseInfo = (course, courseId, sections, { includeRevi
     <>
         <CourseDescription course={course} />
         {renderInstructorInfo(course)}
-        <CourseContent courseId={courseId} sections={sections} />
+        <CourseContent courseId={courseId} sections={sections} presentationVariant="prospect" />
         {includeReview ? renderCourseReview(course) : null}
     </>
 );

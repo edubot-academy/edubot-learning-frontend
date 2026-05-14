@@ -16,6 +16,7 @@ import { fetchUnreadNotificationsCount, searchCourses } from '@services/api';
 import SideBar from '@shared-ui/SideBar';
 import SidebarOverlay from '@shared-ui/SidebarOverlay';
 import UserMenuDropdown from '@shared-ui/UserMenuDropdown';
+import { getUserAvatarUrl } from '@shared/utils/avatar';
 import { isPlatformAdmin } from '@shared/utils/roles';
 import { useFavourites } from '../context/FavouritesContext';
 import { useCart } from '../context/CartContext';
@@ -89,6 +90,7 @@ const Header = () => {
     const cartItemsCount = getUniqueItemsCount();
 
     const { user } = useContext(AuthContext);
+    const avatarUrl = getUserAvatarUrl(user);
     const location = useLocation();
     const navigate = useNavigate();
     const { darkMode, setDarkMode } = useDarkMode();
@@ -99,6 +101,7 @@ const Header = () => {
     const [langOpen, setLangOpen] = useState(false);
     const [searchOpen, setSearchOpen] = useState(false);
     const [userMenuOpen, setUserMenuOpen] = useState(false);
+    const [avatarLoadFailed, setAvatarLoadFailed] = useState(false);
     const [activeIcon, setActiveIcon] = useState(null);
     const [unreadNotifications, setUnreadNotifications] = useState(0);
     const [searchLoading, setSearchLoading] = useState(false);
@@ -141,6 +144,10 @@ const Header = () => {
         setShowDropdown(false);
         setUserMenuOpen(false);
     }, [location.pathname]);
+
+    useEffect(() => {
+        setAvatarLoadFailed(false);
+    }, [avatarUrl]);
 
     useEffect(() => {
         const handleClickOutside = (e) => {
@@ -234,6 +241,20 @@ const Header = () => {
     };
 
     const isFavouritesPage = location.pathname === '/favourites';
+    const renderUserAvatar = (imageClassName, iconClassName) => {
+        if (avatarUrl && !avatarLoadFailed) {
+            return (
+                <img
+                    src={avatarUrl}
+                    alt={user?.fullName ? `${user.fullName} avatar` : 'User avatar'}
+                    className={imageClassName}
+                    onError={() => setAvatarLoadFailed(true)}
+                />
+            );
+        }
+
+        return <FaRegUser className={iconClassName} />;
+    };
 
     return (
         <header className="sticky top-0 w-full bg-white dark:bg-[#1A1A1A] text-black dark:text-[#E8ECF3] shadow dark:shadow-gray-900 z-[80]">
@@ -427,19 +448,12 @@ const Header = () => {
                                         aria-label="Колдонуучу менюсу"
                                         aria-expanded={userMenuOpen}
                                     >
-                                        {user.avatar ? (
-                                            <img
-                                                src={user.avatar}
-                                                alt="User Avatar"
-                                                className="w-10 h-10 rounded-full object-cover"
-                                            />
-                                        ) : (
-                                            <FaRegUser
-                                                className={`w-5 h-5 transition-colors duration-300 ${activeIcon === 'user' || userMenuOpen
-                                                    ? 'text-white'
-                                                    : 'text-black dark:text-gray-300'
-                                                    }`}
-                                            />
+                                        {renderUserAvatar(
+                                            'w-10 h-10 rounded-full object-cover',
+                                            `w-5 h-5 transition-colors duration-300 ${activeIcon === 'user' || userMenuOpen
+                                                ? 'text-white'
+                                                : 'text-black dark:text-gray-300'
+                                            }`
                                         )}
 
                                         {unreadNotifications > 0 && (
@@ -565,16 +579,9 @@ const Header = () => {
                                         aria-label="Колдонуучу менюсу"
                                         aria-expanded={userMenuOpen}
                                     >
-                                        {user.avatar ? (
-                                            <img
-                                                src={user.avatar}
-                                                alt="User Avatar"
-                                                className="w-9 h-9 rounded-full object-cover"
-                                            />
-                                        ) : (
-                                            <FaRegUser
-                                                className={`w-4 h-4 transition-colors duration-300 ${userMenuOpen ? 'text-white' : 'text-black dark:text-gray-300'}`}
-                                            />
+                                        {renderUserAvatar(
+                                            'w-9 h-9 rounded-full object-cover',
+                                            `w-4 h-4 transition-colors duration-300 ${userMenuOpen ? 'text-white' : 'text-black dark:text-gray-300'}`
                                         )}
                                     </button>
 

@@ -6,6 +6,26 @@ Version bumps are classified by delivery scale; see `VERSIONING.md`.
 
 ---
 
+## [1.11.21] - 2026-05-14
+
+### Changed
+
+- Replaced the contact-page Google Maps embed with a constrained 2GIS firm widget iframe and updated CSP to allow the 2GIS frame.
+- Normalized user avatar URLs from auth/profile data and added header fallback handling for failed avatar image loads.
+- Stabilized basic modal focus handling so changing modal callbacks does not steal focus from active form fields.
+- Split course content presentation copy between prospect preview and enrolled learning states.
+- Redesigned favourites as a saved-courses workspace with cohesive guest/loading/error/empty states plus search and sort controls.
+- Updated the UX/UI audit to mark the completed course-details and favourites tasks.
+
+### Verification
+
+- `npm run lint`
+- `git diff --check`
+- `npm test -- --run --testTimeout=15000`
+- `npm run build`
+
+---
+
 ## [1.11.20] - 2026-05-14
 
 ### Changed

@@ -5,6 +5,85 @@ import { useContext, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { isPublicVideoSignupEnabled } from '@shared/auth-config';
 import EmptyState from '@components/ui/dashboard/EmptyState';
+import { FiBookOpen, FiHeart, FiRefreshCw, FiSearch, FiSliders } from 'react-icons/fi';
+
+const FAVOURITES_LABELS = {
+    pageTitle: 'Сакталган курстар',
+    pageDescription:
+        'Кызыктырган курстарыңызды бир жерге топтоп, салыштырып, кийин катталууга кайта аласыз.',
+    savedCount: 'Сакталган',
+    visibleCount: 'Көрсөтүлүүдө',
+    nextStep: 'Кийинки кадам',
+    browseCourses: 'Курстарды карап чыгуу',
+};
+
+const FavouritePageShell = ({ children, totalCount = 0, visibleCount = 0, actions = null }) => (
+    <main className="min-h-screen bg-gray-50 px-4 py-8 dark:bg-gray-900 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-7xl space-y-6">
+            <section className="overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-950">
+                <div className="grid gap-6 p-6 lg:grid-cols-[minmax(0,1.4fr),minmax(0,0.8fr)] lg:p-8">
+                    <div>
+                        <div className="inline-flex items-center gap-2 rounded-full border border-orange-100 bg-orange-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-orange-700 dark:border-orange-500/30 dark:bg-orange-500/10 dark:text-orange-300">
+                            <FiHeart className="h-4 w-4" />
+                            Окуу тизмеси
+                        </div>
+                        <h1 className="mt-4 text-3xl font-bold text-gray-900 dark:text-white">
+                            {FAVOURITES_LABELS.pageTitle}
+                        </h1>
+                        <p className="mt-2 max-w-2xl text-sm leading-6 text-gray-600 dark:text-gray-400">
+                            {FAVOURITES_LABELS.pageDescription}
+                        </p>
+                    </div>
+                    <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
+                        <div className="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 dark:border-gray-800 dark:bg-gray-900">
+                            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-gray-500 dark:text-gray-400">
+                                {FAVOURITES_LABELS.savedCount}
+                            </p>
+                            <p className="mt-1 text-2xl font-bold text-gray-900 dark:text-white">{totalCount}</p>
+                        </div>
+                        <div className="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 dark:border-gray-800 dark:bg-gray-900">
+                            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-gray-500 dark:text-gray-400">
+                                {FAVOURITES_LABELS.visibleCount}
+                            </p>
+                            <p className="mt-1 text-2xl font-bold text-gray-900 dark:text-white">{visibleCount}</p>
+                        </div>
+                        <div className="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 dark:border-gray-800 dark:bg-gray-900">
+                            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-gray-500 dark:text-gray-400">
+                                {FAVOURITES_LABELS.nextStep}
+                            </p>
+                            <p className="mt-1 text-sm font-semibold text-gray-900 dark:text-white">
+                                {totalCount ? 'Курсту ачып, катталуу жолун тандаңыз' : 'Каталогдон курс сактаңыз'}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                {actions ? (
+                    <div className="border-t border-gray-200 bg-gray-50 px-6 py-4 dark:border-gray-800 dark:bg-gray-900/60 lg:px-8">
+                        {actions}
+                    </div>
+                ) : null}
+            </section>
+
+            {children}
+        </div>
+    </main>
+);
+
+const FavouriteSkeletonGrid = () => (
+    <section className="rounded-3xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-950">
+        <div
+            className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3"
+            aria-label="Сакталган курстар жүктөлүүдө"
+        >
+            {Array.from({ length: 3 }).map((_, index) => (
+                <div
+                    key={index}
+                    className="min-h-[28rem] animate-pulse rounded-3xl border border-gray-200 bg-gray-100 dark:border-gray-800 dark:bg-gray-800"
+                />
+            ))}
+        </div>
+    </section>
+);
 
 const Favourite = () => {
     const { favourites, loading, error, refreshFavourites } = useFavourites();
@@ -44,156 +123,159 @@ const Favourite = () => {
 
     if (!user) {
         return (
-            <div className="min-h-screen p-6 bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-                <div className="max-w-md mx-auto text-center">
-                    <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="h-24 w-24 mx-auto text-gray-300 dark:text-gray-600 mb-6"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                        aria-hidden="true"
-                    >
-                        <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={1}
-                            d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-                        />
-                    </svg>
-                    <h2 className="text-2xl font-bold mb-4 text-gray-900 dark:text-white">
-                        Тандалгандарга кирүү
-                    </h2>
-                    <p className="text-gray-600 dark:text-gray-300 mb-6">
-                        {isPublicVideoSignupEnabled
-                            ? 'Курстарды тандалгандарга кошуу үчүн аккаунт түзүү же кирүү керек'
-                            : 'Курстарды тандалгандарга кошуу үчүн кирүү керек'}
-                    </p>
-                    <div className="space-y-3">
+            <FavouritePageShell>
+                <section className="rounded-3xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-950">
+                    <EmptyState
+                        title="Сакталган курстарга кирүү"
+                        subtitle={
+                            isPublicVideoSignupEnabled
+                                ? 'Курстарды сактап, кийин кайтып келүү үчүн аккаунт түзүңүз же кириңиз.'
+                                : 'Сакталган курстарыңызды көрүү үчүн аккаунтуңузга кириңиз.'
+                        }
+                        variant="access"
+                        icon={<FiHeart className="h-14 w-14 text-blue-500" aria-hidden="true" />}
+                    />
+                    <div className="mx-auto mt-2 grid max-w-md gap-3 sm:grid-cols-2">
                         {isPublicVideoSignupEnabled ? (
                             <Link
                                 to="/register"
-                                className="inline-flex w-full items-center justify-center rounded-lg bg-gradient-to-b from-[#FF8C6E] to-[#E14219] px-4 py-3 font-medium text-white orange__shadow transition hover:from-[#C2410C] hover:to-[#C2410C] focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
+                                className="inline-flex items-center justify-center rounded-xl bg-gradient-to-b from-[#FF8C6E] to-[#E14219] px-4 py-3 text-sm font-semibold text-white orange__shadow transition hover:from-[#C2410C] hover:to-[#C2410C] focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
                             >
                                 Катталуу
                             </Link>
                         ) : null}
                         <Link
                             to="/login"
-                            className="inline-flex w-full items-center justify-center rounded-lg border border-black px-4 py-3 font-medium text-black transition hover:border-[#EA580C] hover:bg-[#EA580C] hover:text-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 dark:border-white dark:text-white"
+                            className="inline-flex items-center justify-center rounded-xl border border-gray-300 px-4 py-3 text-sm font-semibold text-gray-900 transition hover:border-[#EA580C] hover:bg-[#EA580C] hover:text-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 dark:border-gray-700 dark:text-white"
                         >
                             Кирүү
                         </Link>
-                        <Link to="/courses" className="inline-flex py-2 font-medium text-blue-600 hover:text-blue-800">
-                            Курстарды карап чыгуу
+                        <Link
+                            to="/courses"
+                            className="inline-flex items-center justify-center rounded-xl border border-transparent px-4 py-3 text-sm font-semibold text-blue-600 hover:text-blue-800 sm:col-span-2"
+                        >
+                            {FAVOURITES_LABELS.browseCourses}
                         </Link>
                     </div>
-                </div>
-            </div>
+                </section>
+            </FavouritePageShell>
         );
     }
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-gray-50 p-6 dark:bg-gray-900">
-                <div className="mx-auto max-w-7xl">
-                    <div className="mb-8 h-9 w-52 animate-pulse rounded bg-gray-200 dark:bg-gray-800" />
-                    <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3" aria-label="Тандалгандар жүктөлүүдө">
-                        {Array.from({ length: 3 }).map((_, index) => (
-                            <div key={index} className="min-h-[28rem] animate-pulse rounded-[24px] border border-gray-200 bg-gray-100 dark:border-gray-800 dark:bg-gray-800" />
-                        ))}
-                    </div>
-                </div>
-            </div>
+            <FavouritePageShell>
+                <FavouriteSkeletonGrid />
+            </FavouritePageShell>
         );
     }
 
     if (error) {
         return (
-            <div className="min-h-screen p-6 bg-gray-50 dark:bg-gray-900">
-                <div className="max-w-7xl mx-auto">
-                    <h2 className="text-3xl font-bold mb-3 text-gray-900 dark:text-white">
-                        Тандалгандар
-                    </h2>
-                    <p className="text-red-500 dark:text-red-400" role="alert">{error}</p>
-                    <button
-                        type="button"
-                        onClick={refreshFavourites}
-                        className="mt-4 px-4 py-2 bg-orange-500 text-white rounded hover:bg-orange-600 transition-colors"
-                    >
-                        Кайра аракет кылуу
-                    </button>
-                </div>
-            </div>
+            <FavouritePageShell>
+                <section className="rounded-3xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-950">
+                    <EmptyState
+                        title="Сакталган курстар жүктөлгөн жок"
+                        subtitle={String(error)}
+                        variant="error"
+                        action={{ label: 'Кайра аракет кылуу', onClick: refreshFavourites }}
+                        role="alert"
+                    />
+                </section>
+            </FavouritePageShell>
         );
     }
 
-    return (
-        <div className="min-h-screen p-6 bg-gray-50 dark:bg-gray-900">
-            <div className="max-w-7xl mx-auto">
-                <h2 className="text-3xl font-bold mb-3 text-gray-900 dark:text-white">
-                    Тандалгандар
-                </h2>
-                <p className="text-gray-600 dark:text-gray-400 mb-8">
-                    {favourites.length > 0
-                        ? `${favourites.length} ${favourites.length === 1 ? 'курс' : 'курс'} тандалды`
-                        : 'Азырынча тандалган курс жок'}
-                </p>
+    const actions = favourites.length ? (
+        <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_220px_auto] lg:items-end">
+            <div>
+                <label htmlFor="favourites-search" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Сакталган курстардан издөө
+                </label>
+                <div className="relative mt-1">
+                    <FiSearch className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                    <input
+                        id="favourites-search"
+                        type="search"
+                        value={search}
+                        onChange={(event) => setSearch(event.target.value)}
+                        placeholder="Курс же инструктор аты"
+                        className="w-full rounded-xl border border-gray-300 bg-white py-2 pl-10 pr-3 text-sm text-gray-900 dark:border-gray-700 dark:bg-gray-950 dark:text-white"
+                    />
+                </div>
+            </div>
+            <div>
+                <label htmlFor="favourites-sort" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Иреттөө
+                </label>
+                <div className="relative mt-1">
+                    <FiSliders className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                    <select
+                        id="favourites-sort"
+                        value={sortBy}
+                        onChange={(event) => setSortBy(event.target.value)}
+                        className="w-full rounded-xl border border-gray-300 bg-white py-2 pl-10 pr-3 text-sm text-gray-900 dark:border-gray-700 dark:bg-gray-950 dark:text-white"
+                    >
+                        <option value="recent">Жакында сакталган</option>
+                        <option value="title">Аталышы боюнча</option>
+                        <option value="price">Баасы боюнча</option>
+                    </select>
+                </div>
+            </div>
+            <Link
+                to="/courses"
+                className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-orange-200 bg-white px-4 py-2 text-sm font-semibold text-orange-700 transition hover:border-orange-400 hover:bg-orange-50 dark:border-orange-500/30 dark:bg-gray-950 dark:text-orange-300 dark:hover:bg-orange-500/10"
+            >
+                <FiBookOpen className="h-4 w-4" />
+                Дагы курс табуу
+            </Link>
+        </div>
+    ) : null;
 
-                {favourites.length > 0 && (
-                    <div className="mb-6 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-950">
-                        <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_220px]">
-                            <div>
-                                <label htmlFor="favourites-search" className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                                    Тандалгандардан издөө
-                                </label>
-                                <input
-                                    id="favourites-search"
-                                    type="search"
-                                    value={search}
-                                    onChange={(event) => setSearch(event.target.value)}
-                                    placeholder="Курс же инструктор аты"
-                                    className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
-                                />
-                            </div>
-                            <div>
-                                <label htmlFor="favourites-sort" className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                                    Иреттөө
-                                </label>
-                                <select
-                                    id="favourites-sort"
-                                    value={sortBy}
-                                    onChange={(event) => setSortBy(event.target.value)}
-                                    className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
-                                >
-                                    <option value="recent">Жакында кошулган</option>
-                                    <option value="title">Аталышы боюнча</option>
-                                    <option value="price">Баасы боюнча</option>
-                                </select>
-                            </div>
-                        </div>
-                        <p className="mt-3 text-sm text-gray-600 dark:text-gray-400" aria-live="polite">
+    return (
+        <FavouritePageShell
+            totalCount={favourites.length}
+            visibleCount={visibleFavourites.length}
+            actions={actions}
+        >
+            <section className="rounded-3xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-950">
+                <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                        <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+                            Окуу үчүн сакталган курстар
+                        </h2>
+                        <p className="mt-1 text-sm text-gray-600 dark:text-gray-400" aria-live="polite">
                             {visibleFavourites.length} / {favourites.length} курс көрсөтүлүүдө
                         </p>
                     </div>
-                )}
+                    {favourites.length ? (
+                        <button
+                            type="button"
+                            onClick={refreshFavourites}
+                            className="inline-flex items-center justify-center gap-2 rounded-xl border border-gray-200 px-3 py-2 text-sm font-semibold text-gray-700 transition hover:border-orange-300 hover:text-orange-700 dark:border-gray-800 dark:text-gray-300 dark:hover:border-orange-500/40 dark:hover:text-orange-300"
+                        >
+                            <FiRefreshCw className="h-4 w-4" />
+                            Жаңыртуу
+                        </button>
+                    ) : null}
+                </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
                     {favourites.length === 0 ? (
                         <EmptyState
-                            title="Азырынча курс тандалган эмес"
-                            subtitle="Курс картасындагы жүрөктү басуу менен видео курстарды тандалгандарга кошуңуз."
+                            title="Азырынча курс сакталган эмес"
+                            subtitle="Курс картасындагы жүрөктү басып, кызыктырган курстарды ушул тизмеге сактап коюңуз."
                             variant="discovery"
-                            action={{ label: 'Курстарды карап чыгуу', onClick: () => navigate('/courses') }}
-                            className="col-span-full rounded-[24px] border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-950"
+                            action={{ label: FAVOURITES_LABELS.browseCourses, onClick: () => navigate('/courses') }}
+                            className="col-span-full rounded-3xl border border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-gray-900"
                         />
                     ) : visibleFavourites.length === 0 ? (
                         <EmptyState
-                            title="Бул издөө боюнча курс жок"
-                            subtitle="Издөөнү тазалап же башка сөз менен аракет кылыңыз."
+                            title="Бул издөө боюнча сакталган курс жок"
+                            subtitle="Издөөнү тазалап же башка курс/инструктор аты менен аракет кылыңыз."
                             variant="discovery"
                             action={{ label: 'Издөөнү тазалоо', onClick: () => setSearch('') }}
-                            className="col-span-full rounded-[24px] border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-950"
+                            className="col-span-full rounded-3xl border border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-gray-900"
                         />
                     ) : (
                         visibleFavourites.map((course) => (
@@ -203,7 +285,7 @@ const Favourite = () => {
                                 title={course.title || `Курс ${course.id}`}
                                 instructor={
                                     course.instructor || {
-                                        fullName: 'Неизвестный инструктор',
+                                        fullName: 'Инструктор көрсөтүлгөн эмес',
                                         id: null,
                                     }
                                 }
@@ -217,8 +299,8 @@ const Favourite = () => {
                         ))
                     )}
                 </div>
-            </div>
-        </div>
+            </section>
+        </FavouritePageShell>
     );
 };
 

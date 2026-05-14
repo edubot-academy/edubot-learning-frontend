@@ -6,6 +6,7 @@ import {
     updateStudentNotificationSettings,
     updateUserProfile,
 } from '@services/api';
+import { normalizeUserAvatar } from '@shared/utils/avatar';
 import { DEFAULT_NOTIFICATION_SETTINGS } from '../utils/studentDashboard.constants.js';
 
 export const useStudentProfileSettings = ({ studentId }) => {
@@ -118,7 +119,7 @@ export const useStudentProfileSettings = ({ studentId }) => {
 
                 setProfileData((prev) => ({
                     ...(prev || {}),
-                    ...nextUser,
+                    ...normalizeUserAvatar(nextUser),
                     fullName: nextUser.fullName || fullName,
                     phoneNumber: nextUser.phoneNumber || phoneNumber,
                 }));
@@ -126,14 +127,15 @@ export const useStudentProfileSettings = ({ studentId }) => {
                 try {
                     const storedRaw = localStorage.getItem('user');
                     const stored = storedRaw ? JSON.parse(storedRaw) : {};
+                    const normalizedUser = normalizeUserAvatar({
+                        ...stored,
+                        ...nextUser,
+                        fullName: nextUser.fullName || fullName,
+                        phoneNumber: nextUser.phoneNumber || phoneNumber,
+                    });
                     localStorage.setItem(
                         'user',
-                        JSON.stringify({
-                            ...stored,
-                            ...nextUser,
-                            fullName: nextUser.fullName || fullName,
-                            phoneNumber: nextUser.phoneNumber || phoneNumber,
-                        })
+                        JSON.stringify(normalizedUser)
                     );
                 } catch {
                     // Profile is already persisted on the backend; local cache sync is best effort.

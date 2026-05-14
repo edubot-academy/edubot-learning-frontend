@@ -42,6 +42,11 @@ const BasicModal = ({
     const [portalTarget, setPortalTarget] = useState(null);
     const modalRef = useRef(null);
     const previousFocusRef = useRef(null);
+    const onCloseRef = useRef(onClose);
+
+    useEffect(() => {
+        onCloseRef.current = onClose;
+    }, [onClose]);
 
     useEffect(() => {
         setLocalIsOpen(isOpen);
@@ -58,8 +63,8 @@ const BasicModal = ({
         previousFocusRef.current = document.activeElement;
 
         const handleEscape = (e) => {
-            if (e.key === 'Escape' && closeOnEscape && onClose) {
-                onClose();
+            if (e.key === 'Escape' && closeOnEscape && onCloseRef.current) {
+                onCloseRef.current();
             }
         };
 
@@ -134,16 +139,16 @@ const BasicModal = ({
                 previousFocusRef.current.focus();
             }
         };
-    }, [localIsOpen, onClose, closeOnEscape, initialFocus]);
+    }, [localIsOpen, closeOnEscape, initialFocus]);
 
     const handleBackdropClick = (e) => {
-        if (e.target === e.currentTarget && closeOnBackdropClick && onClose) {
-            onClose();
+        if (e.target === e.currentTarget && closeOnBackdropClick && onCloseRef.current) {
+            onCloseRef.current();
         }
     };
 
     const handleCloseClick = () => {
-        if (onClose) onClose();
+        if (onCloseRef.current) onCloseRef.current();
     };
 
     if (!localIsOpen || !portalTarget) return null;

@@ -79,6 +79,27 @@ const CONTACT_FIELD_ERROR_KEYS = {
     message: 'message',
 };
 
+const TWO_GIS_FIRM_ID = '70000001089058889';
+const TWO_GIS_MAP_URL = `https://2gis.kg/bishkek/firm/${TWO_GIS_FIRM_ID}`;
+const TWO_GIS_WIDGET_OPTIONS = {
+    pos: {
+        lat: 42.843841,
+        lon: 74.596821,
+        zoom: 17,
+    },
+    opt: {
+        city: 'bishkek',
+        locale: 'ru_RU',
+    },
+    locale: 'ru_RU',
+    org: [{ id: TWO_GIS_FIRM_ID }],
+};
+const TWO_GIS_WIDGET_URL = `https://widgets.2gis.com/widget?type=firmsonmap&options=${encodeURIComponent(JSON.stringify({
+    pos: TWO_GIS_WIDGET_OPTIONS.pos,
+    opt: TWO_GIS_WIDGET_OPTIONS.opt,
+    org: TWO_GIS_FIRM_ID,
+}))}`;
+
 const getApiErrorMessage = (error) => {
     const data = error?.response?.data;
 
@@ -317,6 +338,41 @@ const ContactMethodsSection = () => (
     </section>
 );
 
+const TwoGisMapWidget = () => {
+    const [status, setStatus] = useState('loading');
+
+    return (
+        <div className="relative h-[400px] max-w-full overflow-hidden rounded-xl border border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-[#222222]">
+            <iframe
+                src={TWO_GIS_WIDGET_URL}
+                width="100%"
+                height="400"
+                title="EduBot 2GIS location"
+                loading="lazy"
+                onLoad={() => setStatus('ready')}
+                onError={() => setStatus('error')}
+                className="absolute inset-0 block h-full w-full border-0"
+            />
+            {status !== 'ready' && (
+                <div className="absolute inset-0 z-[1] flex flex-col items-center justify-center bg-gray-50 px-6 text-center dark:bg-[#222222]">
+                    <SlLocationPin className="h-10 w-10 text-[#EA580C] dark:text-orange-300" />
+                    <p className="mt-3 text-sm font-semibold text-gray-900 dark:text-white">
+                        {status === 'error' ? 'Карта жүктөлгөн жок.' : 'Карта жүктөлүүдө...'}
+                    </p>
+                    <a
+                        href={TWO_GIS_MAP_URL}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="mt-3 font-semibold text-[#EA580C] underline-offset-4 hover:underline dark:text-orange-300"
+                    >
+                        2GISтен ачуу
+                    </a>
+                </div>
+            )}
+        </div>
+    );
+};
+
 const LocationSection = () => (
     <>
         <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
@@ -330,7 +386,7 @@ const LocationSection = () => (
                 </p>
             </div>
             <a
-                href="https://www.google.com/maps?q=Ahunbaeva+129B,+Bishkek,+Kyrgyzstan"
+                href={TWO_GIS_MAP_URL}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex min-h-11 items-center justify-center rounded-xl border border-[#EA580C] px-4 text-sm font-semibold text-[#EA580C] transition hover:bg-[#EA580C] hover:text-white focus:outline-none focus:ring-2 focus:ring-[#EA580C] dark:border-orange-400 dark:text-orange-300"
@@ -339,19 +395,19 @@ const LocationSection = () => (
             </a>
         </div>
 
-        <div className="max-w-full">
-            <iframe
-                src="https://www.google.com/maps?q=Ahunbaeva+129B,+Bishkek,+Kyrgyzstan&output=embed"
-                width="100%"
-                height="400"
-                style={{ border: 0 }}
-                allowFullScreen
-                loading="lazy"
-                referrerPolicy="no-referrer-when-downgrade"
-                title="EduBot Location"
-                className="rounded-xl w-full dark:brightness-90 dark:contrast-110"
-            ></iframe>
-        </div>
+        <TwoGisMapWidget />
+        <p className="mt-2 text-sm text-gray-600 dark:text-[#a6adba]">
+            Карта ачылбаса,{' '}
+            <a
+                href={TWO_GIS_MAP_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-semibold text-[#EA580C] underline-offset-4 hover:underline dark:text-orange-300"
+            >
+                2GISтен даректи ачыңыз
+            </a>
+            .
+        </p>
     </>
 );
 

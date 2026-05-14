@@ -392,6 +392,7 @@ export const CourseDetailsSidebar = ({
                                 showHeader={false}
                                 handleCheckboxToggle={onCheckboxToggle}
                                 maxHeight={maxHeight}
+                                presentationVariant="learning"
                             />
                         ) : (
                             <div className="bg-white">
@@ -496,6 +497,7 @@ export const CourseDetailsMobileArea = ({
                     completedLessons={completedLessons}
                     lessonRefs={lessonRefs}
                     handleCheckboxToggle={onCheckboxToggle}
+                    presentationVariant="learning"
                 />
                 {instructorNode}
                 {reviewNode}
