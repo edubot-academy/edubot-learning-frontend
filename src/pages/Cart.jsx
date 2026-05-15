@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useCart } from '../context/CartContext';
 import { BsTrash, BsCartX } from 'react-icons/bs';
 import Button from '@shared-ui/Button';
@@ -8,16 +9,26 @@ import UnauthModal from '../shared/ui/UnauthModal';
 import Loader from '@shared/ui/Loader';
 import EmptyState from '@components/ui/dashboard/EmptyState';
 
-const formatPrice = (price) => {
-    if (price === null || price === undefined || price === '') return 'Баасы көрсөтүлгөн эмес';
+const getNumberLocale = (language) => {
+    if (language?.startsWith('en')) return 'en-US';
+    if (language?.startsWith('ky')) return 'ky-KG';
+    return 'ru-RU';
+};
+
+const formatPrice = (price, t, language) => {
+    if (price === null || price === undefined || price === '')
+        return t('public.cart.priceUnavailable');
     const numericPrice = Number(price);
 
-    if (!Number.isFinite(numericPrice)) return 'Баасы көрсөтүлгөн эмес';
+    if (!Number.isFinite(numericPrice)) return t('public.cart.priceUnavailable');
 
-    return `${new Intl.NumberFormat('ru-RU').format(numericPrice)} сом`;
+    return t('public.cart.priceWithCurrency', {
+        amount: new Intl.NumberFormat(getNumberLocale(language)).format(numericPrice),
+    });
 };
 
 const Cart = () => {
+    const { t, i18n } = useTranslation();
     const { cartItems, loading, removeCartItem, getTotalPrice, clearCart, user } = useCart();
 
     const navigate = useNavigate();
@@ -34,20 +45,21 @@ const Cart = () => {
     };
 
     if (loading) {
-        return (
-            <Loader fullScreen />
-        );
+        return <Loader fullScreen />;
     }
 
     if (cartItems.length === 0) {
         return (
             <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4 dark:bg-gray-900">
                 <EmptyState
-                    title="Себетиңиз бош"
-                    subtitle="Өз алдынча окуй турган видео курстарды каталогдон тандап, себетке кошуңуз."
+                    title={t('public.cart.emptyTitle')}
+                    subtitle={t('public.cart.emptySubtitle')}
                     variant="discovery"
                     icon={<BsCartX className="h-14 w-14 text-edubot-orange" aria-hidden="true" />}
-                    action={{ label: 'Курстарды карап чыгуу', onClick: () => navigate('/courses') }}
+                    action={{
+                        label: t('public.cart.browseCourses'),
+                        onClick: () => navigate('/courses'),
+                    }}
                     className="w-full max-w-xl rounded-[24px] border border-gray-200 bg-white px-6 dark:border-gray-800 dark:bg-gray-950"
                 />
             </div>
@@ -74,7 +86,7 @@ const Cart = () => {
             />
             <div className="container mx-auto px-4">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
-                    <h1 className="text-2xl sm:text-3xl font-bold">Менин себетим</h1>
+                    <h1 className="text-2xl sm:text-3xl font-bold">{t('public.cart.pageTitle')}</h1>
 
                     <div className="flex items-center gap-3">
                         <button
@@ -83,7 +95,7 @@ const Cart = () => {
                             className="flex items-center text-red-500 hover:text-red-700 text-sm font-medium px-3 py-2 border border-red-200 rounded-lg hover:bg-red-50 transition-colors"
                         >
                             <BsTrash className="w-4 h-4 mr-2" aria-hidden="true" />
-                            Бардыгын өчүрүү
+                            {t('public.cart.clearAll')}
                         </button>
                     </div>
                 </div>
@@ -99,7 +111,9 @@ const Cart = () => {
                                     <Link
                                         to={`/courses/${item.id}`}
                                         className="block sm:w-40"
-                                        aria-label={`${item.title} курсун ачуу`}
+                                        aria-label={t('public.cart.openCourseAria', {
+                                            title: item.title,
+                                        })}
                                     >
                                         <div className="h-48 sm:h-full">
                                             {item.coverImageUrl ? (
@@ -110,7 +124,9 @@ const Cart = () => {
                                                 />
                                             ) : (
                                                 <div className="w-full h-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
-                                                    <span className="text-gray-400 dark:text-gray-600">Сүрөт жок</span>
+                                                    <span className="text-gray-400 dark:text-gray-600">
+                                                        {t('public.cart.noImage')}
+                                                    </span>
                                                 </div>
                                             )}
                                         </div>
@@ -121,15 +137,18 @@ const Cart = () => {
                                             <Link
                                                 to={`/courses/${item.id}`}
                                                 className="flex-1 rounded focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900"
-                                                aria-label={`${item.title} курсунун деталдарын ачуу`}
+                                                aria-label={t('public.cart.openDetailsAria', {
+                                                    title: item.title,
+                                                })}
                                             >
                                                 <div>
                                                     <h3 className="text-lg font-semibold mb-2 hover:text-orange-500 transition-colors">
                                                         {item.title}
                                                     </h3>
                                                     <p className="text-gray-600 dark:text-[#a6adba] text-sm mb-2">
-                                                        Инструктор:{' '}
-                                                        {item.instructor?.fullName || 'Инструктор'}
+                                                        {t('public.cart.instructorLabel')}{' '}
+                                                        {item.instructor?.fullName ||
+                                                            t('public.cart.instructorFallback')}
                                                     </p>
                                                     <div className="flex flex-wrap gap-2 mb-3">
                                                         {item.level && (
@@ -139,7 +158,9 @@ const Cart = () => {
                                                         )}
                                                         {item.durationInHours && (
                                                             <span className="px-2 py-1 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-[#a6adba] text-xs rounded">
-                                                                {item.durationInHours} саат
+                                                                {t('public.cart.durationHours', {
+                                                                    count: item.durationInHours,
+                                                                })}
                                                             </span>
                                                         )}
                                                     </div>
@@ -148,16 +169,23 @@ const Cart = () => {
 
                                             <div className="flex flex-col items-start justify-between sm:items-end">
                                                 <p className="text-xl font-bold mb-3 sm:mb-0">
-                                                    {formatPrice(item.price)}
+                                                    {formatPrice(item.price, t, i18n.language)}
                                                 </p>
                                                 <button
                                                     type="button"
-                                                    onClick={() => removeCartItem(item.cartItemId || item.id)}
-                                                    aria-label={`${item.title} курсун себеттен өчүрүү`}
+                                                    onClick={() =>
+                                                        removeCartItem(item.cartItemId || item.id)
+                                                    }
+                                                    aria-label={t('public.cart.removeAria', {
+                                                        title: item.title,
+                                                    })}
                                                     className="text-red-500 hover:text-red-700 text-sm font-medium flex items-center px-3 py-1 border border-red-200 rounded hover:bg-red-50 transition-colors"
                                                 >
-                                                    <BsTrash className="w-3 h-3 mr-1" aria-hidden="true" />
-                                                    Өчүрүү
+                                                    <BsTrash
+                                                        className="w-3 h-3 mr-1"
+                                                        aria-hidden="true"
+                                                    />
+                                                    {t('public.cart.remove')}
                                                 </button>
                                             </div>
                                         </div>
@@ -167,24 +195,27 @@ const Cart = () => {
                         ))}
                     </div>
 
-                    {/* Сумма заказа */}
                     <div className="lg:col-span-1">
                         <div className="rounded-xl shadow-sm border border-gray-200 p-6 sticky top-6">
-                            <h3 className="text-xl font-bold mb-6">Заказды жыйынтыктоо</h3>
+                            <h3 className="text-xl font-bold mb-6">
+                                {t('public.cart.summaryTitle')}
+                            </h3>
 
                             <div className="space-y-4 mb-6">
                                 <div className="flex justify-between items-center">
                                     <span className="text-gray-600 dark:text-[#a6adba]">
-                                        Бардык курстар:
+                                        {t('public.cart.totalCourses')}
                                     </span>
                                     <span className="font-semibold">{cartItems.length}</span>
                                 </div>
 
                                 <div className="pt-4 border-t border-gray-200">
                                     <div className="flex justify-between items-center">
-                                        <span className="text-lg font-semibold">Жалпы сумма:</span>
+                                        <span className="text-lg font-semibold">
+                                            {t('public.cart.totalAmount')}
+                                        </span>
                                         <span className="text-2xl font-bold text-orange-500">
-                                            {formatPrice(totalPrice)}
+                                            {formatPrice(totalPrice, t, i18n.language)}
                                         </span>
                                     </div>
                                 </div>
@@ -196,7 +227,7 @@ const Cart = () => {
                                     onClick={handleCheckout}
                                     className="w-full py-3"
                                 >
-                                    Сатып алуу
+                                    {t('public.cart.checkout')}
                                 </Button>
                             </div>
                         </div>

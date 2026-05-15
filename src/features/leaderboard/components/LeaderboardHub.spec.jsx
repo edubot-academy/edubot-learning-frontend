@@ -2,6 +2,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { vi } from 'vitest';
+import i18n from '../../../i18n';
 import { AuthContext } from '../../../context/AuthContext';
 import LeaderboardHub from './LeaderboardHub';
 
@@ -36,8 +37,9 @@ const renderHub = (props = {}, user = { id: 42, fullName: 'Test Student' }) =>
     );
 
 describe('LeaderboardHub', () => {
-    beforeEach(() => {
+    beforeEach(async () => {
         vi.clearAllMocks();
+        await i18n.changeLanguage('ky');
         apiMocks.fetchWeeklyLeaderboard.mockResolvedValue({
             items: [],
             total: 0,

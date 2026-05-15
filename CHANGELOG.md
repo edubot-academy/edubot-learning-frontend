@@ -6,6 +6,30 @@ Version bumps are classified by delivery scale; see `VERSIONING.md`.
 
 ---
 
+## [1.13.1] - 2026-05-16
+
+### Added
+
+- Added localized footer, public leaderboard, favourites, cart, unauthenticated action modal, and payment-flow copy for `ky`, `ru`, and `en`.
+
+### Changed
+
+- Reworked public leaderboard panels, fallback states, achievements, skill highlights, and challenge CTAs to read display text from translation resources.
+- Reworked favourites and cart pages to use localized empty, loading, search, sort, pricing, and accessibility labels.
+
+### Fixed
+
+- Fixed localized leaderboard fallback challenge CTAs so route and label behavior comes from explicit action metadata instead of translated text matching.
+
+### Verification
+
+- `npm test -- --run src/i18n/resources.spec.js src/features/leaderboard/components/LeaderboardHub.spec.jsx`
+- `npm run lint`
+- `git diff --check`
+- `npm run build`
+
+---
+
 ## [1.13.0] - 2026-05-15
 
 ### Added

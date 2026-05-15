@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import Button from '@shared-ui/Button';
 import BasicModal from '@shared-ui/BasicModal';
 import { getAuthAcquisitionPath } from '@shared/auth-config';
@@ -11,6 +12,7 @@ const UnauthModal = ({
     courseTitle = '',
     course = null,
 }) => {
+    const { t } = useTranslation();
     const navigate = useNavigate();
     const returnPath = `${window.location.pathname}${window.location.search}${window.location.hash}`;
 
@@ -58,16 +60,21 @@ const UnauthModal = ({
     const getActionText = () => {
         switch (actionType) {
             case 'favourite':
-                return 'жактырылгандарга кошуу';
+                return t('public.authRequiredModal.actions.favourite');
             case 'cart':
-                return 'себеттеги сурамды улантуу';
+                return t('public.authRequiredModal.actions.cart');
             default:
-                return 'бул аракетти аткаруу';
+                return t('public.authRequiredModal.actions.default');
         }
     };
 
     return (
-        <BasicModal isOpen={isOpen} onClose={onClose} title='Каттоо талап кылынат' size="md">
+        <BasicModal
+            isOpen={isOpen}
+            onClose={onClose}
+            title={t('public.authRequiredModal.title')}
+            size="md"
+        >
             <div className="space-y-4">
                 <div className="flex items-center space-x-3">
                     <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
@@ -102,30 +109,30 @@ const UnauthModal = ({
                         )}
                     </div>
                     <div>
-                        <h3 className="font-bold">
-                            Кириңиз же катталыңыз
-                        </h3>
+                        <h3 className="font-bold">{t('public.authRequiredModal.heading')}</h3>
                     </div>
                 </div>
 
                 <p className="text-gray-600 dark:text-gray-300">
                     {courseTitle && actionType === 'favourite' ? (
-                        <>
-                            Курсту тандалгандарга кошуу үчүн каттодон өтүү керек
-                        </>
+                        <>{t('public.authRequiredModal.favouriteBody')}</>
                     ) : courseTitle && actionType === 'cart' ? (
-                        <>
-                            Себет боюнча сурамды улантуу үчүн кириңиз же катталыңыз.
-                            Себетиңиз жана бул аракет сакталат.
-                        </>
+                        <>{t('public.authRequiredModal.cartBody')}</>
                     ) : (
-                        <>{getActionText()} үчүн каттоо талап кылынат.</>
+                        <>
+                            {t('public.authRequiredModal.defaultBody', { action: getActionText() })}
+                        </>
                     )}
                 </p>
 
                 <div className="space-y-3 pt-2">
-                    <Button type="button" variant="primary" onClick={handleRegister} className="w-full py-3">
-                        Катталуу
+                    <Button
+                        type="button"
+                        variant="primary"
+                        onClick={handleRegister}
+                        className="w-full py-3"
+                    >
+                        {t('common.signup')}
                     </Button>
 
                     <div className="space-y-2">
@@ -134,7 +141,7 @@ const UnauthModal = ({
                             onClick={handleLogin}
                             className="w-full rounded-lg border border-blue-200 px-4 py-2 text-center font-medium text-blue-600 hover:bg-blue-50 hover:text-blue-800 dark:border-blue-900/50 dark:text-blue-300 dark:hover:bg-blue-950/30"
                         >
-                            Кирүү
+                            {t('common.login')}
                         </button>
 
                         <button
@@ -142,7 +149,7 @@ const UnauthModal = ({
                             onClick={onClose}
                             className="w-full py-2 text-center text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
                         >
-                            Баракчада калуу
+                            {t('public.authRequiredModal.stay')}
                         </button>
                     </div>
                 </div>
