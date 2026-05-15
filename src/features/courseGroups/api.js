@@ -4,6 +4,7 @@ import { COURSE_GROUP_STATUS, MEETING_PROVIDER } from '@shared/contracts';
 const VALID_GROUP_STATUS = new Set(Object.values(COURSE_GROUP_STATUS));
 const VALID_PROVIDER = new Set(Object.values(MEETING_PROVIDER));
 const VALID_SCHEDULE_DAYS = new Set(['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']);
+const VALID_DELIVERY_MODES = new Set(['group', 'individual']);
 
 const ensurePositiveInt = (value, fieldName) => {
     const numeric = Number(value);
@@ -104,6 +105,15 @@ const normalizeGroupPayload = (payload = {}, { partial = false } = {}) => {
                 : undefined,
         name: payload.name !== undefined ? ensureNonEmptyString(payload.name, 'name') : undefined,
         code: payload.code !== undefined ? ensureNonEmptyString(payload.code, 'code') : undefined,
+        deliveryMode:
+            payload.deliveryMode !== undefined
+                ? (() => {
+                      if (!VALID_DELIVERY_MODES.has(payload.deliveryMode)) {
+                          throw new Error('deliveryMode must be one of: group, individual');
+                      }
+                      return payload.deliveryMode;
+                  })()
+                : undefined,
         status:
             payload.status !== undefined
                 ? (() => {
@@ -142,6 +152,8 @@ const normalizeGroupPayload = (payload = {}, { partial = false } = {}) => {
             payload.instructorId !== undefined
                 ? ensurePositiveInt(payload.instructorId, 'instructorId')
                 : undefined,
+        createFirstSession:
+            payload.createFirstSession !== undefined ? Boolean(payload.createFirstSession) : undefined,
     });
 
     return normalized;
@@ -149,6 +161,39 @@ const normalizeGroupPayload = (payload = {}, { partial = false } = {}) => {
 
 export const createCourseGroup = async (payload) => {
     const { data } = await api.post('/course-groups', normalizeGroupPayload(payload));
+    return data;
+};
+
+export const createIndividualCourseGroup = async (payload = {}) => {
+    const allowedPayload = {
+        name: payload.name,
+        startDate: payload.startDate,
+        endDate: payload.endDate,
+        timezone: payload.timezone,
+        location: payload.location,
+        meetingProvider: payload.meetingProvider,
+        meetingUrl: payload.meetingUrl,
+        scheduleBlocks: payload.scheduleBlocks,
+        instructorId: payload.instructorId,
+        createFirstSession: payload.createFirstSession,
+    };
+    const normalized = normalizeGroupPayload(
+        {
+            ...allowedPayload,
+            deliveryMode: 'individual',
+            seatLimit: 1,
+        },
+        { partial: true }
+    );
+    const individualFields = { ...normalized };
+    delete individualFields.deliveryMode;
+    delete individualFields.seatLimit;
+    const { data } = await api.post('/course-groups/individual', {
+        ...individualFields,
+        createFirstSession: Boolean(payload.createFirstSession),
+        courseId: ensurePositiveInt(payload.courseId, 'courseId'),
+        studentId: ensurePositiveInt(payload.studentId, 'studentId'),
+    });
     return data;
 };
 

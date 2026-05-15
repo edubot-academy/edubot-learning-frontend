@@ -582,7 +582,14 @@ export const useInitialCourseDetailsLoad = ({
                 let enrollment = { enrolled: false };
                 if (user) {
                     if (user.role === 'student') {
-                        enrollment = await fetchEnrollment(courseId, user.id);
+                        try {
+                            enrollment = await fetchEnrollment(courseId, user.id);
+                        } catch (err) {
+                            if (!isForbiddenError(err)) {
+                                throw err;
+                            }
+                            enrollment = { enrolled: false };
+                        }
                     } else {
                         enrollment = { enrolled: true };
                     }

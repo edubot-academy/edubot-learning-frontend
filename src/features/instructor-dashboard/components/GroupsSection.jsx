@@ -13,6 +13,7 @@ import {
 import { COURSE_GROUP_STATUS } from '@shared/contracts';
 import {
     createCourseGroup,
+    createIndividualCourseGroup,
     enrollUserInCourse,
     fetchCourseGroups,
     fetchCourseGroupSessionGenerationPreview,
@@ -50,6 +51,9 @@ const WEEKDAY_LABELS = {
 const GROUP_FORM_DEFAULT = {
     name: '',
     code: '',
+    deliveryMode: 'group',
+    studentId: '',
+    createFirstSession: false,
     status: COURSE_GROUP_STATUS.PLANNED,
     startDate: '',
     endDate: '',
@@ -91,6 +95,11 @@ const buildGenerationRange = (group = {}) => {
 const normalizeCourseType = (course = {}) =>
     String(course.courseType || course.type || '').trim().toLowerCase();
 
+const isGroupEligibleCourse = (course = {}) =>
+    DELIVERY_TYPES.has(normalizeCourseType(course)) &&
+    course.status === 'approved' &&
+    course.isPublished === true;
+
 const formatDate = (value) => {
     if (!value) return '—';
     const date = new Date(value);
@@ -108,6 +117,15 @@ const statusTone = {
     completed: 'blue',
     cancelled: 'red',
 };
+
+const deliveryModeLabel = (value) => (value === 'individual' ? 'Жеке курс' : 'Группа');
+
+const isIndividualGroup = (group = {}) => group.deliveryMode === 'individual';
+
+const deliveryModeTone = (value) =>
+    value === 'individual'
+        ? 'bg-violet-100 text-violet-700 dark:bg-violet-500/15 dark:text-violet-200'
+        : 'bg-sky-100 text-sky-700 dark:bg-sky-500/15 dark:text-sky-200';
 
 const slugifySegment = (value) =>
     String(value || '')
@@ -145,6 +163,7 @@ const resolveDefaultTimezone = (course = null) =>
 const normalizeGroupForm = (group = {}) => ({
     name: group.name || '',
     code: group.code || '',
+    deliveryMode: group.deliveryMode || 'group',
     status: group.status || COURSE_GROUP_STATUS.PLANNED,
     startDate: group.startDate || '',
     endDate: group.endDate || '',
@@ -169,17 +188,37 @@ const formatScheduleBlocks = (blocks = []) =>
         .filter((block) => block?.day && block?.startTime && block?.endTime)
         .map((block) => `${WEEKDAY_LABELS[String(block.day).toLowerCase()] || block.day} · ${block.startTime}–${block.endTime}`);
 
+const hasCompleteScheduleBlock = (blocks = []) =>
+    (Array.isArray(blocks) ? blocks : []).some(
+        (block) => block?.day && block?.startTime && block?.endTime
+    );
+
+const getStudentDisplayName = (student) => {
+    if (!student) return '';
+    return student.fullName || student.name || student.email || (student.id ? `Student #${student.id}` : '');
+};
+
 const GroupsSection = ({ courses = [] }) => {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const sessionsPath = getDashboardPath('instructor', 'sessions');
     const deliveryCourses = useMemo(
-        () => courses.filter((course) => DELIVERY_TYPES.has(normalizeCourseType(course))),
+        () => courses.filter(isGroupEligibleCourse),
+        [courses]
+    );
+    const pendingDeliveryCourses = useMemo(
+        () =>
+            courses.filter(
+                (course) =>
+                    DELIVERY_TYPES.has(normalizeCourseType(course)) &&
+                    !isGroupEligibleCourse(course)
+            ),
         [courses]
     );
     const requestedCourseId = searchParams.get('courseId');
     const [selectedCourseId, setSelectedCourseId] = useState('');
     const [groups, setGroups] = useState([]);
+    const [individualStudentsByGroupId, setIndividualStudentsByGroupId] = useState({});
     const [loadingGroups, setLoadingGroups] = useState(false);
     const [showEnrollModal, setShowEnrollModal] = useState(false);
     const [enrollGroup, setEnrollGroup] = useState(null);
@@ -216,6 +255,11 @@ const GroupsSection = ({ courses = [] }) => {
             return;
         }
 
+        if (selectedCourseId && !deliveryCourses.some((course) => String(course.id) === String(selectedCourseId))) {
+            setSelectedCourseId(deliveryCourses.length ? String(deliveryCourses[0].id) : '');
+            return;
+        }
+
         if (!selectedCourseId && deliveryCourses.length) {
             setSelectedCourseId(hasRequestedCourse ? String(requestedCourseId) : String(deliveryCourses[0].id));
         }
@@ -235,6 +279,7 @@ const GroupsSection = ({ courses = [] }) => {
     const loadGroups = useCallback(async (courseId) => {
         if (!courseId) {
             setGroups([]);
+            setIndividualStudentsByGroupId({});
             return;
         }
 
@@ -252,6 +297,7 @@ const GroupsSection = ({ courses = [] }) => {
         } catch (error) {
             console.error('Failed to load course groups', error);
             setGroups([]);
+            setIndividualStudentsByGroupId({});
             toast.error('Группаларды жүктөө мүмкүн болбоду');
         } finally {
             setLoadingGroups(false);
@@ -261,6 +307,34 @@ const GroupsSection = ({ courses = [] }) => {
     useEffect(() => {
         loadGroups(selectedCourseId);
     }, [selectedCourseId, loadGroups]);
+
+    useEffect(() => {
+        const individualGroups = groups.filter((group) => isIndividualGroup(group));
+        if (!individualGroups.length) {
+            setIndividualStudentsByGroupId({});
+            return;
+        }
+
+        let cancelled = false;
+
+        Promise.all(
+            individualGroups.map((group) =>
+                fetchGroupRoster({ groupId: Number(group.id), page: 1, limit: 1 })
+                    .then((rows) => [group.id, rows[0] || null])
+                    .catch((error) => {
+                        console.error('Failed to load individual group student', error);
+                        return [group.id, null];
+                    })
+            )
+        ).then((entries) => {
+            if (cancelled) return;
+            setIndividualStudentsByGroupId(Object.fromEntries(entries));
+        });
+
+        return () => {
+            cancelled = true;
+        };
+    }, [groups]);
 
     useEffect(() => {
         if (previousCourseIdRef.current === selectedCourseId) return;
@@ -299,11 +373,28 @@ const GroupsSection = ({ courses = [] }) => {
 
     const handleCreateFormChange = useCallback(
         (field, value) => {
+            if (field === 'deliveryMode') {
+                setEnrollUserSearch('');
+                setStudentOptions([]);
+                setShowDropdown(false);
+            }
+
             setCreateForm((prev) => {
                 const next = {
                     ...prev,
                     [field]: value,
                 };
+
+                if (field === 'deliveryMode') {
+                    next.seatLimit = value === 'individual' ? '1' : '';
+                    next.studentId = '';
+                    next.createFirstSession = false;
+                    if (value === 'individual') {
+                        next.code = '';
+                    } else if (!prev.code) {
+                        next.code = buildSuggestedGroupCode(selectedCourse, groups, prev.startDate);
+                    }
+                }
 
                 if (field === 'startDate') {
                     if (!prev.code || prev.code === buildSuggestedGroupCode(selectedCourse, groups, prev.startDate)) {
@@ -344,35 +435,71 @@ const GroupsSection = ({ courses = [] }) => {
             return;
         }
 
-        if (!createForm.name.trim() || !createForm.code.trim()) {
+        const isIndividual = createForm.deliveryMode === 'individual';
+        const studentIdValue = Number(createForm.studentId);
+
+        if (!createForm.name.trim()) {
+            toast.error(isIndividual ? 'Жеке курс үчүн аталыш милдеттүү' : 'Группа үчүн аталыш жана код милдеттүү');
+            return;
+        }
+
+        if (!isIndividual && !createForm.code.trim()) {
             toast.error('Группа үчүн аталыш жана код милдеттүү');
+            return;
+        }
+
+        if (isIndividual && (!studentIdValue || Number.isNaN(studentIdValue))) {
+            toast.error('Жеке курс үчүн студентти тандаңыз');
+            return;
+        }
+
+        if (
+            isIndividual &&
+            createForm.createFirstSession &&
+            (!createForm.startDate || !hasCompleteScheduleBlock(createForm.scheduleBlocks))
+        ) {
+            toast.error('Биринчи сессия үчүн баштоо датасын жана толук график блогун кошуңуз');
             return;
         }
 
         setSavingGroup(true);
         try {
-            const created = await createCourseGroup({
+            const commonPayload = {
                 courseId: Number(selectedCourse.id),
                 name: createForm.name.trim(),
-                code: createForm.code.trim(),
-                status: createForm.status || undefined,
                 startDate: createForm.startDate || undefined,
                 endDate: createForm.endDate || undefined,
-                seatLimit: createForm.seatLimit ? Number(createForm.seatLimit) : undefined,
                 timezone: createForm.timezone || undefined,
                 location: createForm.location || undefined,
                 meetingProvider: createForm.meetingProvider || undefined,
                 meetingUrl: createForm.meetingUrl || undefined,
-                scheduleNote: createForm.scheduleNote || undefined,
                 scheduleBlocks: createForm.scheduleBlocks,
                 instructorId: createForm.instructorId ? Number(createForm.instructorId) : undefined,
-            });
+            };
+            const created = isIndividual
+                ? await createIndividualCourseGroup({
+                      ...commonPayload,
+                      studentId: studentIdValue,
+                      createFirstSession: Boolean(createForm.createFirstSession),
+                  })
+                : await createCourseGroup({
+                      ...commonPayload,
+                      code: createForm.code.trim(),
+                      deliveryMode: 'group',
+                      status: createForm.status || undefined,
+                      seatLimit: createForm.seatLimit ? Number(createForm.seatLimit) : undefined,
+                      scheduleNote: createForm.scheduleNote || undefined,
+                  });
+            const createdGroup = isIndividual ? created?.group : created;
 
-            toast.success('Группа түзүлдү');
+            toast.success(isIndividual ? 'Жеке курс түзүлдү' : 'Группа түзүлдү');
             await loadGroups(selectedCourse.id);
             resetCreateForm();
+            setEnrollUserSearch('');
+            setStudentOptions([]);
+            setShowDropdown(false);
             setShowCreateModal(false);
-            if (created?.id) setEditingGroupId(String(created.id));
+            if (createdGroup?.id) setEditingGroupId(String(createdGroup.id));
         } catch (error) {
             console.error('Failed to create group', error);
             const message =
@@ -389,16 +516,17 @@ const GroupsSection = ({ courses = [] }) => {
             return;
         }
 
-        if (!editForm.name.trim() || !editForm.code.trim()) {
+        const isIndividual = editForm.deliveryMode === 'individual';
+
+        if (!editForm.name.trim() || (!isIndividual && !editForm.code.trim())) {
             toast.error('Группа үчүн аталыш жана код милдеттүү');
             return;
         }
 
         setSavingGroupUpdate(true);
         try {
-            await updateCourseGroup(Number(editingGroupId), {
+            const patch = {
                 name: editForm.name.trim(),
-                code: editForm.code.trim(),
                 status: editForm.status || undefined,
                 startDate: editForm.startDate || undefined,
                 endDate: editForm.endDate || undefined,
@@ -410,7 +538,13 @@ const GroupsSection = ({ courses = [] }) => {
                 scheduleNote: editForm.scheduleNote || undefined,
                 scheduleBlocks: editForm.scheduleBlocks,
                 instructorId: editForm.instructorId ? Number(editForm.instructorId) : undefined,
-            });
+            };
+
+            if (!isIndividual) {
+                patch.code = editForm.code.trim();
+            }
+
+            await updateCourseGroup(Number(editingGroupId), patch);
 
             toast.success('Группа жаңыртылды');
             await loadGroups(selectedCourseId);
@@ -467,6 +601,9 @@ const GroupsSection = ({ courses = [] }) => {
 
     const handleOpenCreateModal = useCallback(() => {
         resetCreateForm();
+        setEnrollUserSearch('');
+        setStudentOptions([]);
+        setShowDropdown(false);
         setShowCreateModal(true);
     }, [resetCreateForm]);
 
@@ -541,7 +678,8 @@ const GroupsSection = ({ courses = [] }) => {
     }, [generationForm, generationGroup]);
 
     useEffect(() => {
-        if (!showEnrollModal) return;
+        const shouldSearchStudents = showEnrollModal || (showCreateModal && createForm.deliveryMode === 'individual');
+        if (!shouldSearchStudents) return;
 
         if (!enrollUserSearch || enrollUserSearch.trim().length < 2) {
             setStudentOptions([]);
@@ -584,7 +722,7 @@ const GroupsSection = ({ courses = [] }) => {
         return () => {
             cancelled = true;
         };
-    }, [showEnrollModal, enrollUserSearch]);
+    }, [createForm.deliveryMode, enrollUserSearch, showCreateModal, showEnrollModal]);
 
     const handleEnrollStudent = useCallback(async () => {
         if (!selectedCourse || !enrollGroup) return;
@@ -646,6 +784,11 @@ const GroupsSection = ({ courses = [] }) => {
                             onClick: () => navigate('/instructor/course/create'),
                         }}
                     />
+                    {pendingDeliveryCourses.length ? (
+                        <p className="mt-4 text-sm text-edubot-muted dark:text-slate-400">
+                            {pendingDeliveryCourses.length} delivery курс азырынча группага даяр эмес. Группа түзүү үчүн курс approved жана published болушу керек.
+                        </p>
+                    ) : null}
                 </DashboardInsetPanel>
             </div>
         );
@@ -719,6 +862,11 @@ const GroupsSection = ({ courses = [] }) => {
                                 </option>
                             ))}
                         </select>
+                        {pendingDeliveryCourses.length ? (
+                            <p className="mt-2 text-xs text-edubot-muted dark:text-slate-400">
+                                {pendingDeliveryCourses.length} delivery курс approved/published болмоюнча бул жерде көрсөтүлбөйт.
+                            </p>
+                        ) : null}
                     </label>
 
                     <div className="flex items-end">
@@ -740,6 +888,14 @@ const GroupsSection = ({ courses = [] }) => {
                                 const formattedScheduleBlocks = formatScheduleBlocks(group.scheduleBlocks);
                                 const scheduleSummary = group.scheduleNote || '';
                                 const hasDefaultSchedule = Boolean(scheduleSummary || formattedScheduleBlocks.length);
+                                const individual = isIndividualGroup(group);
+                                const hasLoadedIndividualStudent = Object.prototype.hasOwnProperty.call(
+                                    individualStudentsByGroupId,
+                                    group.id
+                                );
+                                const individualStudent = individualStudentsByGroupId[group.id];
+                                const individualStudentName = getStudentDisplayName(individualStudent);
+                                const individualGroupOccupied = individual && Number(group.activeStudentCount || 0) >= 1;
 
                                 return (
                                 <div
@@ -754,6 +910,15 @@ const GroupsSection = ({ courses = [] }) => {
                                             <p className="mt-1 text-sm text-edubot-muted dark:text-slate-400">
                                                 Code: {group.code || '—'}
                                             </p>
+                                            {individual ? (
+                                                <p className="mt-1 text-sm font-medium text-violet-700 dark:text-violet-200">
+                                                    {individualStudentName
+                                                        ? `Жеке студент: ${individualStudentName}`
+                                                        : hasLoadedIndividualStudent
+                                                          ? 'Жеке студент табылган жок'
+                                                          : 'Жеке студент жүктөлүүдө...'}
+                                                </p>
+                                            ) : null}
                                         </div>
                                         <span
                                             className={`rounded-full px-3 py-1 text-xs font-semibold ${
@@ -770,9 +935,20 @@ const GroupsSection = ({ courses = [] }) => {
                                         >
                                             {group.status || 'planned'}
                                         </span>
+                                        <span className={`rounded-full px-3 py-1 text-xs font-semibold ${deliveryModeTone(group.deliveryMode)}`}>
+                                            {deliveryModeLabel(group.deliveryMode)}
+                                        </span>
                                     </div>
 
                                     <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                                        <div className="rounded-2xl border border-edubot-line/70 bg-edubot-surfaceAlt/60 px-4 py-3 dark:border-slate-700 dark:bg-slate-900/70">
+                                            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-edubot-muted dark:text-slate-400">
+                                                Формат
+                                            </p>
+                                            <p className="mt-2 text-sm font-semibold text-edubot-ink dark:text-white">
+                                                {deliveryModeLabel(group.deliveryMode)}
+                                            </p>
+                                        </div>
                                         <div className="rounded-2xl border border-edubot-line/70 bg-edubot-surfaceAlt/60 px-4 py-3 dark:border-slate-700 dark:bg-slate-900/70">
                                             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-edubot-muted dark:text-slate-400">
                                                 Период
@@ -786,7 +962,11 @@ const GroupsSection = ({ courses = [] }) => {
                                                 Орун
                                             </p>
                                             <p className="mt-2 text-sm font-semibold text-edubot-ink dark:text-white">
-                                                {group.seatLimit ? `${group.seatLimit}` : 'Чектелбеген'}
+                                                {individual
+                                                    ? `${group.activeStudentCount || 0}/1`
+                                                    : group.seatLimit
+                                                      ? `${group.seatLimit}`
+                                                      : 'Чектелбеген'}
                                             </p>
                                         </div>
                                     </div>
@@ -838,9 +1018,11 @@ const GroupsSection = ({ courses = [] }) => {
                                         <button
                                             type="button"
                                             onClick={() => handleOpenEnrollModal(group)}
-                                            className="dashboard-button-secondary"
+                                            className="dashboard-button-secondary disabled:cursor-not-allowed disabled:opacity-60"
+                                            disabled={individualGroupOccupied}
+                                            title={individualGroupOccupied ? 'Жеке курс бир гана активдүү студентке арналган' : undefined}
                                         >
-                                            Студент кошуу
+                                            {individual ? 'Жеке студент кошуу' : 'Студент кошуу'}
                                         </button>
                                         <button
                                             type="button"
@@ -933,6 +1115,9 @@ const GroupsSection = ({ courses = [] }) => {
                     onClose={() => {
                         setShowCreateModal(false);
                         resetCreateForm();
+                        setEnrollUserSearch('');
+                        setStudentOptions([]);
+                        setShowDropdown(false);
                     }}
                     onSubmit={handleCreateGroup}
                     saving={savingGroup}
@@ -942,6 +1127,12 @@ const GroupsSection = ({ courses = [] }) => {
                             buildSuggestedGroupCode(selectedCourse, groups, createForm.startDate)
                         )
                     }
+                    studentOptions={studentOptions}
+                    userSearch={enrollUserSearch}
+                    onSearchChange={setEnrollUserSearch}
+                    loadingUserOptions={loadingUserOptions}
+                    showDropdown={showDropdown}
+                    setShowDropdown={setShowDropdown}
                 />
             ) : null}
 

@@ -48,6 +48,13 @@ const AdvancedModal = ({
     const modalRef = useRef(null);
     const previousFocusRef = useRef(null);
     const animationTimeoutRef = useRef(null);
+    const latestActionsRef = useRef(actions);
+    const latestOnCloseRef = useRef(onClose);
+    const latestModalStateRef = useRef({
+        closeOnEscape,
+        preventClose,
+        loading,
+    });
 
     // Animation states
     const [animationClass, setAnimationClass] = useState('');
@@ -59,6 +66,22 @@ const AdvancedModal = ({
     useEffect(() => {
         setPortalTarget(document.body);
     }, []);
+
+    useEffect(() => {
+        latestActionsRef.current = actions;
+    }, [actions]);
+
+    useEffect(() => {
+        latestOnCloseRef.current = onClose;
+    }, [onClose]);
+
+    useEffect(() => {
+        latestModalStateRef.current = {
+            closeOnEscape,
+            preventClose,
+            loading,
+        };
+    }, [closeOnEscape, preventClose, loading]);
 
     // Handle animation
     useEffect(() => {
@@ -111,17 +134,56 @@ const AdvancedModal = ({
         }
     }, []);
 
+    // Initial focus and focus restoration should only run when the modal opens/closes.
+    useEffect(() => {
+        if (!localIsOpen) return;
+
+        previousFocusRef.current = document.activeElement;
+
+        if (!initialFocus || !modalRef.current) {
+            return () => {
+                if (previousFocusRef.current && previousFocusRef.current.focus) {
+                    previousFocusRef.current.focus();
+                }
+            };
+        }
+
+        const timeoutId = setTimeout(() => {
+            if (!modalRef.current) return;
+
+            const firstInput = modalRef.current.querySelector('input:not([disabled]), textarea:not([disabled])');
+            const firstButton = modalRef.current.querySelector('button:not([disabled])');
+
+            if (firstInput) {
+                firstInput.focus();
+            } else if (firstButton) {
+                firstButton.focus();
+            } else {
+                modalRef.current.focus();
+            }
+        }, 150);
+
+        return () => {
+            clearTimeout(timeoutId);
+
+            if (previousFocusRef.current && previousFocusRef.current.focus) {
+                previousFocusRef.current.focus();
+            }
+        };
+    }, [localIsOpen, initialFocus]);
+
     // Enhanced keyboard and accessibility handling
     useEffect(() => {
         if (!localIsOpen) return;
 
-        // Store currently focused element
-        previousFocusRef.current = document.activeElement;
-
         const handleEscape = (e) => {
-            if (e.key === 'Escape' && closeOnEscape && onClose && !preventClose && !loading) {
+            const { closeOnEscape: canCloseOnEscape, preventClose: shouldPreventClose, loading: isLoading } =
+                latestModalStateRef.current;
+            const latestOnClose = latestOnCloseRef.current;
+
+            if (e.key === 'Escape' && canCloseOnEscape && latestOnClose && !shouldPreventClose && !isLoading) {
                 e.preventDefault();
-                onClose();
+                latestOnClose();
             }
         };
 
@@ -132,9 +194,13 @@ const AdvancedModal = ({
             if (e.ctrlKey || e.metaKey) {
                 switch (e.key) {
                     case 'Enter':
-                        if (actions && actions.length > 0 && !loading) {
+                        if (latestModalStateRef.current.loading) {
+                            return;
+                        }
+
+                        if (latestActionsRef.current && latestActionsRef.current.length > 0) {
                             e.preventDefault();
-                            const enabledActions = actions.filter((action) => !action.disabled && !action.loading);
+                            const enabledActions = latestActionsRef.current.filter((action) => !action.disabled && !action.loading);
                             const primaryAction = enabledActions.find(action => action.variant === 'primary') || enabledActions[0];
                             if (primaryAction && primaryAction.onClick) {
                                 primaryAction.onClick();
@@ -157,47 +223,13 @@ const AdvancedModal = ({
         document.addEventListener('keydown', handleEscape);
         document.addEventListener('keydown', handleKeyDown);
 
-        // Enhanced initial focus
-        if (initialFocus && modalRef.current) {
-            const timeoutId = setTimeout(() => {
-                // Try to focus the first input, then first button, then modal itself
-                const firstInput = modalRef.current.querySelector('input:not([disabled]), textarea:not([disabled])');
-                const firstButton = modalRef.current.querySelector('button:not([disabled])');
-
-                if (firstInput) {
-                    firstInput.focus();
-                } else if (firstButton) {
-                    firstButton.focus();
-                } else {
-                    modalRef.current.focus();
-                }
-            }, 150);
-
-            return () => {
-                clearTimeout(timeoutId);
-                document.body.style.overflow = originalOverflow;
-                document.body.style.paddingRight = originalPaddingRight;
-                document.removeEventListener('keydown', handleEscape);
-                document.removeEventListener('keydown', handleKeyDown);
-
-                // Enhanced focus restoration
-                if (previousFocusRef.current && previousFocusRef.current.focus) {
-                    previousFocusRef.current.focus();
-                }
-            };
-        }
-
         return () => {
             document.body.style.overflow = originalOverflow;
             document.body.style.paddingRight = originalPaddingRight;
             document.removeEventListener('keydown', handleEscape);
             document.removeEventListener('keydown', handleKeyDown);
-
-            if (previousFocusRef.current && previousFocusRef.current.focus) {
-                previousFocusRef.current.focus();
-            }
         };
-    }, [localIsOpen, onClose, closeOnEscape, initialFocus, preventClose, loading, trapFocus, actions]);
+    }, [localIsOpen, trapFocus]);
 
     const handleBackdropClick = useCallback((e) => {
         if (e.target === e.currentTarget && closeOnBackdropClick && onClose && !preventClose && !loading) {

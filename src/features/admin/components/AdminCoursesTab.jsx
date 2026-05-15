@@ -45,6 +45,13 @@ const getCourseTypeLabel = (courseType) => {
     }
 };
 
+const getDeliveryModeLabel = (value) => (value === 'individual' ? 'Жеке' : 'Группа');
+
+const getDeliveryModeClass = (value) =>
+    value === 'individual'
+        ? 'bg-violet-100 text-violet-700 dark:bg-violet-500/15 dark:text-violet-200'
+        : 'bg-sky-100 text-sky-700 dark:bg-sky-500/15 dark:text-sky-200';
+
 const AdminCoursesTab = ({
     courses,
     categories,
@@ -426,10 +433,22 @@ const AdminCoursesTab = ({
                                                             {groupOptions.map((group) => (
                                                                 <option key={group.id} value={group.id}>
                                                                     {(group.name || `Group #${group.id}`) +
-                                                                        ` (${group.code || '—'})`}
+                                                                        ` (${group.code || '—'}) · ${getDeliveryModeLabel(group.deliveryMode)}`}
                                                                 </option>
                                                             ))}
                                                         </select>
+                                                        {groupOptions.length ? (
+                                                            <div className="mt-2 flex flex-wrap gap-2">
+                                                                {groupOptions.map((group) => (
+                                                                    <span
+                                                                        key={group.id}
+                                                                        className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${getDeliveryModeClass(group.deliveryMode)}`}
+                                                                    >
+                                                                        {(group.name || `Group #${group.id}`)} · {getDeliveryModeLabel(group.deliveryMode)}
+                                                                    </span>
+                                                                ))}
+                                                            </div>
+                                                        ) : null}
                                                     </div>
                                                 ) : null}
 

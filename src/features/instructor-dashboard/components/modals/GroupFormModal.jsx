@@ -1,5 +1,6 @@
 import PropTypes from 'prop-types';
 import {
+    FiCheckCircle,
     FiCalendar,
     FiClock,
     FiEdit3,
@@ -8,10 +9,12 @@ import {
     FiMapPin,
     FiPlus,
     FiRefreshCw,
+    FiSearch,
     FiVideo,
     FiX,
 } from 'react-icons/fi';
 import { COURSE_GROUP_STATUS, COURSE_TYPE, MEETING_PROVIDER } from '@shared/contracts';
+import Loader from '@shared/ui/Loader';
 
 const WEEKDAY_OPTIONS = [
     { value: 'mon', label: 'Дүйшөмбү' },
@@ -23,6 +26,14 @@ const WEEKDAY_OPTIONS = [
     { value: 'sun', label: 'Жекшемби' },
 ];
 
+const getInitials = (value = '') =>
+    value
+        .split(' ')
+        .filter(Boolean)
+        .slice(0, 2)
+        .map((part) => part[0]?.toUpperCase())
+        .join('') || 'S';
+
 const GroupFormModal = ({
     mode,
     course,
@@ -32,13 +43,34 @@ const GroupFormModal = ({
     onSubmit,
     saving,
     onRegenerateCode,
+    studentOptions,
+    userSearch,
+    onSearchChange,
+    loadingUserOptions,
+    showDropdown,
+    setShowDropdown,
 }) => {
     const isEdit = mode === 'edit';
     const deliveryType = String(course?.courseType || course?.type || '').trim().toLowerCase();
     const isOffline = deliveryType === COURSE_TYPE.OFFLINE;
     const isOnlineLive = deliveryType === COURSE_TYPE.ONLINE_LIVE;
     const deliveryLabel = isOffline ? 'Оффлайн группа' : isOnlineLive ? 'Онлайн live группа' : 'Delivery группа';
+    const modeLabel = form.deliveryMode === 'individual' ? 'Жеке курс' : 'Группа';
     const scheduleBlocks = Array.isArray(form.scheduleBlocks) ? form.scheduleBlocks : [];
+    const isIndividual = form.deliveryMode === 'individual';
+    const selectedStudent = studentOptions.find((student) => String(student.id) === String(form.studentId));
+    const deliveryModeOptions = [
+        {
+            value: 'group',
+            label: 'Группа',
+            description: 'Бир нече студент үчүн cohort.',
+        },
+        {
+            value: 'individual',
+            label: 'Жеке курс',
+            description: 'Бир студентке арналган жеке агым.',
+        },
+    ];
 
     const handleScheduleBlockChange = (index, field, value) => {
         const next = scheduleBlocks.map((block, idx) =>
@@ -103,13 +135,39 @@ const GroupFormModal = ({
                                     <FiLayers className="h-4 w-4 text-edubot-orange" />
                                     Негизги маалымат
                                 </div>
+                                <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                                    {deliveryModeOptions.map((option) => {
+                                        const selected = form.deliveryMode === option.value;
+
+                                        return (
+                                            <button
+                                                key={option.value}
+                                                type="button"
+                                                disabled={isEdit}
+                                                onClick={() => onChange('deliveryMode', option.value)}
+                                                className={`rounded-2xl border px-4 py-3 text-left transition disabled:cursor-not-allowed ${
+                                                    selected
+                                                        ? 'border-edubot-orange bg-edubot-orange/10 text-edubot-ink shadow-sm dark:text-white'
+                                                        : 'border-edubot-line/70 bg-white/70 text-edubot-muted hover:border-edubot-orange/40 dark:border-slate-700 dark:bg-slate-950/50 dark:text-slate-400'
+                                                }`}
+                                                aria-pressed={selected}
+                                            >
+                                                <span className="block text-sm font-semibold">{option.label}</span>
+                                                <span className="mt-1 block text-xs leading-5 text-edubot-muted dark:text-slate-400">
+                                                    {option.description}
+                                                </span>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
                                 <div className="mt-4 grid gap-3 md:grid-cols-2">
                                     <input
                                         value={form.name}
                                         onChange={(e) => onChange('name', e.target.value)}
-                                        placeholder="Group name *"
+                                        placeholder={isIndividual ? 'Жеке курстун аты *' : 'Group name *'}
                                         className="dashboard-field md:col-span-2"
                                     />
+                                    {!isIndividual ? (
                                     <div className="space-y-2 md:col-span-2">
                                         <input
                                             value={form.code}
@@ -129,17 +187,20 @@ const GroupFormModal = ({
                                             </button>
                                         </div>
                                     </div>
-                                    <select
-                                        value={form.status}
-                                        onChange={(e) => onChange('status', e.target.value)}
-                                        className="dashboard-field dashboard-select"
-                                    >
-                                        {Object.values(COURSE_GROUP_STATUS).map((status) => (
-                                            <option key={status} value={status}>
-                                                {status}
-                                            </option>
-                                        ))}
-                                    </select>
+                                    ) : null}
+                                    {isEdit || !isIndividual ? (
+                                        <select
+                                            value={form.status}
+                                            onChange={(e) => onChange('status', e.target.value)}
+                                            className="dashboard-field dashboard-select"
+                                        >
+                                            {Object.values(COURSE_GROUP_STATUS).map((status) => (
+                                                <option key={status} value={status}>
+                                                    {status}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    ) : null}
                                     <input
                                         value={form.instructorId}
                                         onChange={(e) => onChange('instructorId', e.target.value)}
@@ -174,6 +235,7 @@ const GroupFormModal = ({
                                         onChange={(e) => onChange('seatLimit', e.target.value)}
                                         placeholder="Seat limit"
                                         className="dashboard-field"
+                                        disabled={isIndividual}
                                     />
                                     <input
                                         value={form.timezone}
@@ -183,6 +245,118 @@ const GroupFormModal = ({
                                     />
                                 </div>
                             </section>
+
+                            {!isEdit && isIndividual ? (
+                                <section className="rounded-[1.75rem] border border-edubot-line/70 bg-edubot-surfaceAlt/25 p-5 dark:border-slate-700 dark:bg-slate-900/25">
+                                    <div className="flex items-center gap-2 text-sm font-semibold text-edubot-ink dark:text-white">
+                                        <FiSearch className="h-4 w-4 text-edubot-orange" />
+                                        Студент тандоо
+                                    </div>
+                                    <p className="mt-1 text-sm text-edubot-muted dark:text-slate-400">
+                                        Жеке курс бир студентке байланып түзүлөт.
+                                    </p>
+
+                                    <div className="relative mt-4">
+                                        <input
+                                            type="text"
+                                            value={userSearch}
+                                            onChange={(e) => {
+                                                onSearchChange(e.target.value);
+                                                setShowDropdown(true);
+                                                onChange('studentId', '');
+                                            }}
+                                            className="dashboard-field pl-11"
+                                            placeholder="Аты же email (кеминде 2 тамга)"
+                                            onFocus={() => setShowDropdown(true)}
+                                        />
+                                        <FiSearch className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-edubot-muted" />
+
+                                        {showDropdown && studentOptions?.length > 0 ? (
+                                            <div className="absolute z-20 mt-2 max-h-64 w-full overflow-auto rounded-[1.25rem] border border-edubot-line/80 bg-white p-2 shadow-2xl dark:border-slate-700 dark:bg-[#141619]">
+                                                {studentOptions.map((student) => {
+                                                    const active = String(student.id) === String(form.studentId);
+                                                    return (
+                                                        <button
+                                                            key={student.id}
+                                                            type="button"
+                                                            className={`flex w-full items-start gap-3 rounded-2xl px-3 py-3 text-left transition ${
+                                                                active
+                                                                    ? 'bg-edubot-orange/10 text-edubot-orange'
+                                                                    : 'hover:bg-slate-50 dark:hover:bg-slate-800/80'
+                                                            }`}
+                                                            onClick={() => {
+                                                                onChange('studentId', String(student.id));
+                                                                onSearchChange(student.name || student.email || '');
+                                                                setShowDropdown(false);
+                                                            }}
+                                                        >
+                                                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-slate-100 text-sm font-semibold text-edubot-ink dark:bg-slate-800 dark:text-white">
+                                                                {getInitials(student.name || student.email)}
+                                                            </div>
+                                                            <div className="min-w-0">
+                                                                <div className="font-medium">{student.name || 'Белгисиз студент'}</div>
+                                                                {student.email ? (
+                                                                    <div className="truncate text-xs text-edubot-muted dark:text-slate-400">
+                                                                        {student.email}
+                                                                    </div>
+                                                                ) : null}
+                                                            </div>
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+                                        ) : null}
+                                    </div>
+
+                                    <div className="mt-3 min-h-[24px]">
+                                        {loadingUserOptions ? <Loader fullScreen={false} /> : null}
+                                        {!studentOptions?.length && userSearch.length >= 2 && !loadingUserOptions ? (
+                                            <p className="text-xs text-edubot-muted dark:text-slate-400">
+                                                Студент табылган жок.
+                                            </p>
+                                        ) : null}
+                                    </div>
+
+                                    <div className="mt-4 rounded-2xl border border-dashed border-edubot-line/80 bg-white/80 p-4 dark:border-slate-700 dark:bg-slate-900/45">
+                                        {form.studentId ? (
+                                            <div className="flex items-start gap-3">
+                                                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300">
+                                                    <FiCheckCircle className="h-5 w-5" />
+                                                </div>
+                                                <div className="min-w-0">
+                                                    <div className="text-sm font-semibold text-edubot-ink dark:text-white">
+                                                        {selectedStudent?.name || userSearch || `Student #${form.studentId}`}
+                                                    </div>
+                                                    <div className="mt-1 text-xs text-edubot-muted dark:text-slate-400">
+                                                        {selectedStudent?.email || `Тандалган студент ID: ${form.studentId}`}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <p className="text-sm text-edubot-muted dark:text-slate-400">
+                                                Кеминде эки тамга жазыңыз жана студентти тизмеден тандаңыз.
+                                            </p>
+                                        )}
+                                    </div>
+
+                                    <label className="mt-4 flex items-start gap-3 rounded-2xl border border-edubot-line/70 bg-white/70 px-4 py-3 text-sm text-edubot-muted dark:border-slate-700 dark:bg-slate-950/50 dark:text-slate-400">
+                                        <input
+                                            type="checkbox"
+                                            checked={Boolean(form.createFirstSession)}
+                                            onChange={(e) => onChange('createFirstSession', e.target.checked)}
+                                            className="mt-1"
+                                        />
+                                        <span>
+                                            <span className="block font-semibold text-edubot-ink dark:text-white">
+                                                Биринчи сессияны кошо түзүү
+                                            </span>
+                                            <span className="mt-1 block text-xs leading-5">
+                                                График блогу толтурулса, жеке курс үчүн баштапкы session workflow даярдалат.
+                                            </span>
+                                        </span>
+                                    </label>
+                                </section>
+                            ) : null}
                         </div>
 
                         <div className="space-y-5">
@@ -197,6 +371,9 @@ const GroupFormModal = ({
                                 </div>
                                 <div className="mt-3 rounded-2xl border border-edubot-line/70 bg-white/70 px-4 py-3 text-sm text-edubot-muted dark:border-slate-700 dark:bg-slate-950/60 dark:text-slate-400">
                                     Бул курс форматы: <span className="font-semibold text-edubot-ink dark:text-white">{deliveryLabel}</span>
+                                </div>
+                                <div className="mt-3 rounded-2xl border border-edubot-line/70 bg-white/70 px-4 py-3 text-sm text-edubot-muted dark:border-slate-700 dark:bg-slate-950/60 dark:text-slate-400">
+                                    Окутуу форматы: <span className="font-semibold text-edubot-ink dark:text-white">{modeLabel}</span>
                                 </div>
                                 <div className="mt-4 grid gap-3">
                                     {isOffline && (
@@ -284,18 +461,20 @@ const GroupFormModal = ({
                             </div>
 
                             <div className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,0.88fr),minmax(0,1.12fr)]">
-                                <div className="rounded-2xl border border-edubot-line/70 bg-white/70 p-4 dark:border-slate-700 dark:bg-slate-950/60">
-                                    <label className="block text-xs font-semibold uppercase tracking-[0.16em] text-edubot-muted dark:text-slate-400">
-                                        Кыскача эскертүү
-                                    </label>
-                                    <textarea
-                                        value={form.scheduleNote}
-                                        onChange={(e) => onChange('scheduleNote', e.target.value)}
-                                        placeholder="Мисалы: Дүйшөмбү, Шаршемби · 19:00–21:00"
-                                        rows={3}
-                                        className="dashboard-field mt-3 min-h-[104px]"
-                                    />
-                                </div>
+                                {isEdit || !isIndividual ? (
+                                    <div className="rounded-2xl border border-edubot-line/70 bg-white/70 p-4 dark:border-slate-700 dark:bg-slate-950/60">
+                                        <label className="block text-xs font-semibold uppercase tracking-[0.16em] text-edubot-muted dark:text-slate-400">
+                                            Кыскача эскертүү
+                                        </label>
+                                        <textarea
+                                            value={form.scheduleNote}
+                                            onChange={(e) => onChange('scheduleNote', e.target.value)}
+                                            placeholder="Мисалы: Дүйшөмбү, Шаршемби · 19:00–21:00"
+                                            rows={3}
+                                            className="dashboard-field mt-3 min-h-[104px]"
+                                        />
+                                    </div>
+                                ) : null}
 
                                 <div className="rounded-2xl border border-edubot-line/70 bg-white/70 p-4 dark:border-slate-700 dark:bg-slate-950/60">
                                     <div className="hidden items-center gap-3 border-b border-edubot-line/70 pb-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-edubot-muted dark:border-slate-700 dark:text-slate-400 xl:grid xl:grid-cols-[minmax(0,1fr),minmax(160px,180px),minmax(160px,180px)]">
@@ -399,7 +578,9 @@ const GroupFormModal = ({
                                 ? 'Сакталууда...'
                                 : isEdit
                                   ? 'Группаны жаңыртуу'
-                                  : 'Группа түзүү'}
+                                  : isIndividual
+                                    ? 'Жеке курс түзүү'
+                                    : 'Группа түзүү'}
                         </button>
                     </div>
                 </form>
@@ -416,6 +597,8 @@ GroupFormModal.propTypes = {
     form: PropTypes.shape({
         name: PropTypes.string,
         code: PropTypes.string,
+        deliveryMode: PropTypes.oneOf(['group', 'individual']),
+        studentId: PropTypes.string,
         status: PropTypes.string,
         startDate: PropTypes.string,
         endDate: PropTypes.string,
@@ -439,11 +622,29 @@ GroupFormModal.propTypes = {
     onSubmit: PropTypes.func.isRequired,
     saving: PropTypes.bool,
     onRegenerateCode: PropTypes.func.isRequired,
+    studentOptions: PropTypes.arrayOf(
+        PropTypes.shape({
+            id: PropTypes.oneOfType([PropTypes.number, PropTypes.string]).isRequired,
+            name: PropTypes.string,
+            email: PropTypes.string,
+        })
+    ),
+    userSearch: PropTypes.string,
+    onSearchChange: PropTypes.func,
+    loadingUserOptions: PropTypes.bool,
+    showDropdown: PropTypes.bool,
+    setShowDropdown: PropTypes.func,
 };
 
 GroupFormModal.defaultProps = {
     course: null,
     saving: false,
+    studentOptions: [],
+    userSearch: '',
+    onSearchChange: () => {},
+    loadingUserOptions: false,
+    showDropdown: false,
+    setShowDropdown: () => {},
 };
 
 export default GroupFormModal;

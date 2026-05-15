@@ -6,6 +6,26 @@ Version bumps are classified by delivery scale; see `VERSIONING.md`.
 
 ---
 
+## [1.12.0] - 2026-05-15
+
+### Added
+
+- Added individual course delivery creation from instructor course groups using the backend `POST /course-groups/individual` workflow.
+- Added a group/individual delivery mode selector, individual student picker, locked one-seat capacity, and optional first-session creation to the group form.
+- Added delivery mode badges and labels across instructor groups, admin group selection, attendance, and session workspace screens.
+
+### Fixed
+
+- Stabilized advanced modal focus handling so typing in modal fields no longer refocuses background action buttons.
+- Handled individual group roster lookups that return no student row without crashing group cards.
+- Treated forbidden student enrollment checks as unenrolled states on course details so instructor/admin course views continue loading.
+
+### Verification
+
+- `npm run build`
+
+---
+
 ## [1.11.24] - 2026-05-15
 
 ### Changed

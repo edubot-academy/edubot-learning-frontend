@@ -61,6 +61,13 @@ const statusMeta = {
     },
 };
 
+const getDeliveryModeLabel = (value) => (value === 'individual' ? 'Жеке курс' : 'Группа');
+
+const getDeliveryModeBadgeClass = (value) =>
+    value === 'individual'
+        ? 'bg-violet-100 text-violet-700 dark:bg-violet-500/15 dark:text-violet-200'
+        : 'bg-sky-100 text-sky-700 dark:bg-sky-500/15 dark:text-sky-200';
+
 const getStudentInitials = (fullName = '') =>
     fullName
         .split(' ')
@@ -221,7 +228,7 @@ const AttendancePage = ({ embedded = false }) => {
                             <option value="">Группа тандаңыз</option>
                             {groups.map((group) => (
                                 <option key={group.id} value={group.id}>
-                                    {group.name} {group.code ? `• ${group.code}` : ''}
+                                    {group.name} {group.code ? `• ${group.code}` : ''} · {getDeliveryModeLabel(group.deliveryMode)}
                                 </option>
                             ))}
                         </select>
@@ -236,6 +243,9 @@ const AttendancePage = ({ embedded = false }) => {
                             <span className="text-edubot-muted dark:text-slate-400">
                                 {selectedGroup.name}
                                 {selectedGroup.code ? ` • ${selectedGroup.code}` : ''}
+                            </span>
+                            <span className={`rounded-full px-3 py-1 text-xs font-semibold ${getDeliveryModeBadgeClass(selectedGroup.deliveryMode)}`}>
+                                {getDeliveryModeLabel(selectedGroup.deliveryMode)}
                             </span>
                         </div>
                     )}

@@ -94,6 +94,13 @@ const SESSION_MODE_META = {
     },
 };
 
+const getDeliveryModeLabel = (value) => (value === 'individual' ? 'Жеке курс' : 'Группа');
+
+const getDeliveryModeBadgeClass = (value) =>
+    value === 'individual'
+        ? 'border-violet-200 bg-violet-50 text-violet-700 dark:border-violet-500/30 dark:bg-violet-500/10 dark:text-violet-200'
+        : 'border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-500/30 dark:bg-sky-500/10 dark:text-sky-200';
+
 const SESSION_STATUS_OPTIONS = [
     { value: COURSE_SESSION_STATUS.SCHEDULED, label: 'Пландалган' },
     { value: COURSE_SESSION_STATUS.COMPLETED, label: 'Аяктады' },
@@ -729,10 +736,15 @@ const SessionWorkspace = () => {
                                             <option value="">Группа</option>
                                             {groups.map((group) => (
                                                 <option key={group.id} value={group.id}>
-                                                    {group.name || group.code || `Group #${group.id}`}
+                                                    {group.name || group.code || `Group #${group.id}`} · {getDeliveryModeLabel(group.deliveryMode)}
                                                 </option>
                                             ))}
                                         </select>
+                                        {selectedGroup ? (
+                                            <span className={`mt-2 inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${getDeliveryModeBadgeClass(selectedGroup.deliveryMode)}`}>
+                                                {getDeliveryModeLabel(selectedGroup.deliveryMode)}
+                                            </span>
+                                        ) : null}
                                     </div>
                                     <div className="text-sm">
                                         <span className="mb-1.5 inline-flex items-center gap-2 font-medium text-edubot-ink dark:text-white">
