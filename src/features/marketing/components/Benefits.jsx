@@ -48,6 +48,10 @@ export default function FeaturesSection() {
                                     alt=""
                                     aria-hidden="true"
                                     className="h-10 w-10 object-contain"
+                                    width="40"
+                                    height="40"
+                                    loading="lazy"
+                                    decoding="async"
                                 />
                             </div>
                             <div className="mt-6 flex items-center gap-3">

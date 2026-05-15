@@ -70,16 +70,21 @@ const CardVideo = ({ coverImageUrl, course, lessonCount,
                 onClick={() => setIsModalOpen(true)}
                 className="overflow-hidden rounded-2xl border border-gray-200 bg-white px-5 py-5 shadow-sm dark:border-[#2A2E35] dark:bg-[#222222]"
             >
-                <div className="relative w-full ">
+                <div className="relative aspect-video w-full overflow-hidden rounded bg-gray-100 dark:bg-gray-800">
                     <img
                         src={coverImageUrl || NoImage}
-                        className="max-h-52 w-full object-cover rounded"
+                        className="absolute inset-0 h-full w-full object-cover"
                         alt={course?.title || 'Курс'}
+                        width="640"
+                        height="360"
+                        loading="eager"
+                        fetchPriority="high"
+                        decoding="async"
                         onError={(e) => {
                             e.currentTarget.src = NoImage;
                         }}
                     />
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/35 hover:bg-black/45 transition rounded-md">
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/35 transition hover:bg-black/45">
                         <button type="button" className="bg-white/35 rounded-full p-4" aria-label="Курстун алдын ала видеосун көрүү">
                             <FaPlay className="text-[#EA580C] text-2xl pl-1" aria-hidden="true" />
                         </button>

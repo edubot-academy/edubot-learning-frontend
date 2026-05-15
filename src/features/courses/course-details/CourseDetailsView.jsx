@@ -350,7 +350,6 @@ export const CourseDetailsSidebar = ({
     languageCode,
     course,
     lessonCount,
-    reviewNode,
 }) => {
     const renderTabButtons = () => (
         <div className="flex flex-wrap gap-2 dark:bg-white/10 bg-gray-100 rounded-2xl p-1">
@@ -413,15 +412,12 @@ export const CourseDetailsSidebar = ({
                         )}
                     </div>
                 ) : (
-                    <>
-                        <CardVideo
-                            key={courseId}
-                            course={course}
-                            lessonCount={lessonCount}
-                            coverImageUrl={course.coverImageUrl}
-                        />
-                        {reviewNode}
-                    </>
+                    <CardVideo
+                        key={courseId}
+                        course={course}
+                        lessonCount={lessonCount}
+                        coverImageUrl={course.coverImageUrl}
+                    />
                 )}
             </div>
         </div>
@@ -456,7 +452,6 @@ CourseDetailsSidebar.propTypes = {
         coverImageUrl: PropTypes.string,
     }).isRequired,
     lessonCount: PropTypes.number.isRequired,
-    reviewNode: PropTypes.node.isRequired,
 };
 
 export const CourseDetailsMobileArea = ({

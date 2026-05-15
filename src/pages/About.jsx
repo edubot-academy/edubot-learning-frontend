@@ -14,6 +14,10 @@ const AboutPage = () => {
                 src={team}
                 alt="EduBot командасынын биргелешип иштеген учуру"
                 className="my-10 max-h-[32rem] w-full rounded-2xl object-cover"
+                width="1280"
+                height="512"
+                loading="lazy"
+                decoding="async"
             />
             <Vision />
             <InfoCards />

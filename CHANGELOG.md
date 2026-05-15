@@ -6,6 +6,25 @@ Version bumps are classified by delivery scale; see `VERSIONING.md`.
 
 ---
 
+## [1.12.1] - 2026-05-15
+
+### Changed
+
+- Moved public course reviews into the main course-details content flow and loaded latest review comments from the course reviews endpoint.
+- Tuned image loading priorities so first-viewport course, signup, home, about, and contact imagery loads promptly while lower-page imagery remains lazy.
+- Scoped signup phone input floating-label styling behind an opt-in shared `PhoneInput` prop so other phone inputs keep their existing layout.
+
+### Fixed
+
+- Prevented course-detail media and instructor images from shifting or cropping poorly while assets load.
+- Removed the unused legacy `CourseHeader` component.
+
+### Verification
+
+- `npm run build`
+
+---
+
 ## [1.12.0] - 2026-05-15
 
 ### Added

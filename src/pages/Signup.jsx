@@ -181,6 +181,11 @@ const SignupPage = () => {
                                 src={SignUpImg}
                                 alt="EduBot Learning"
                                 className="h-[145px] w-full object-contain drop-shadow-xl lg:h-[170px]"
+                                width="384"
+                                height="170"
+                                loading="eager"
+                                fetchPriority="high"
+                                decoding="async"
                             />
                         </div>
 
@@ -265,6 +270,7 @@ const SignupPage = () => {
                                 label="Телефон номери"
                                 helperText="Милдеттүү эмес. Эл аралык формат: +996700123456."
                                 error={fieldErrors.phoneNumber}
+                                floatingLabel
                             />
                         </div>
 

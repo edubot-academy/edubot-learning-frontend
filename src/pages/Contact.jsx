@@ -319,6 +319,10 @@ const SupportPanel = () => (
                     alt=""
                     aria-hidden="true"
                     className="max-h-72 w-auto object-contain"
+                    width="288"
+                    height="288"
+                    loading="lazy"
+                    decoding="async"
                 />
             </div>
             <div className="mt-6">

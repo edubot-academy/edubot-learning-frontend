@@ -7,6 +7,10 @@ function Vision() {
                 src={workplace}
                 alt="EduBot окуу жана иш чөйрөсү"
                 className="h-80 w-full rounded-2xl object-cover dark:brightness-90 dark:contrast-110 md:h-[28rem]"
+                width="640"
+                height="448"
+                loading="lazy"
+                decoding="async"
             />
             <div>
                 <p className="text-sm font-semibold uppercase tracking-wide text-edubot-orange">

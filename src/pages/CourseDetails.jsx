@@ -104,11 +104,9 @@ const CourseDetailsPage = () => {
         />
     );
     const instructorNode = renderInstructorInfo(course);
-    const reviewNode = renderCourseReview(course);
+    const reviewNode = renderCourseReview(course, id);
     const publicInfoNode = renderPublicCourseInfo(course, id, sections);
-    const desktopPublicInfoNode = renderPublicCourseInfo(course, id, sections, {
-        includeReview: false,
-    });
+    const desktopPublicInfoNode = renderPublicCourseInfo(course, id, sections);
 
     return (
         <div className="min-h-screen pt-10 bg-[#f8f9fb] dark:bg-[#1A1A1A]">
@@ -167,7 +165,6 @@ const CourseDetailsPage = () => {
                         languageCode={course.languageCode}
                         course={course}
                         lessonCount={lessonCount}
-                        reviewNode={reviewNode}
                     />
                 </div>
 

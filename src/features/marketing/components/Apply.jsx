@@ -28,17 +28,25 @@ function Apply() {
                         alt=""
                         aria-hidden="true"
                         className="absolute inset-0 h-full w-full object-cover opacity-90 dark:hidden"
+                        loading="lazy"
+                        decoding="async"
                     />
                     <img
                         src={BackgroundDark}
                         alt=""
                         aria-hidden="true"
                         className="absolute inset-0 hidden h-full w-full object-cover opacity-90 dark:block"
+                        loading="lazy"
+                        decoding="async"
                     />
                     <img
                         src={student}
                         alt="EduBot окуучусу"
                         className="absolute bottom-0 left-1/2 h-[88%] max-h-[430px] w-auto -translate-x-1/2 object-contain"
+                        width="338"
+                        height="430"
+                        loading="lazy"
+                        decoding="async"
                     />
                     <div className="absolute left-5 top-5 rounded-2xl border border-white/80 bg-white/90 px-4 py-3 shadow-sm backdrop-blur dark:border-white/10 dark:bg-[#1f2430]/90">
                         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-orange-600 dark:text-orange-300">EduBot Learning</p>
@@ -54,6 +62,10 @@ function Apply() {
                                 alt=""
                                 aria-hidden="true"
                                 className="h-12 w-12 object-contain"
+                                width="48"
+                                height="48"
+                                loading="lazy"
+                                decoding="async"
                             />
                         </div>
                         <div className="min-w-0">

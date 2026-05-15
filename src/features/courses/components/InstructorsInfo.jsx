@@ -64,7 +64,7 @@ const getSocialIcon = (platform) => {
     }
 };
 
-function InstructorsInfo({ instructorData, ratingAverage, ratingCount }) {
+function InstructorsInfo({ instructorData, ratingAverage, ratingCount, priority = false }) {
     const {
         avatarUrl,
         fullName = 'Инструктор',
@@ -126,11 +126,16 @@ function InstructorsInfo({ instructorData, ratingAverage, ratingCount }) {
 
     return (
         <div className="w-full border border-gray-200 rounded-xl p-6 md:p-7 shadow-sm flex flex-col md:flex-row gap-5 dark:border-gray-700 dark:bg-[#222222]">
-            <div className="flex-shrink-0 flex flex-col items-start justify-start">
+            <div className="flex h-[104px] w-[104px] flex-shrink-0 items-center justify-center rounded-xl bg-gray-100 p-1 dark:bg-gray-800">
                 <img
                     src={avatarUrl || DefaultAvatar}
                     alt={fullName}
-                    className="w-[96px] h-[96px] object-cover rounded-lg dark:brightness-90"
+                    className="h-full w-full rounded-lg object-contain dark:brightness-90"
+                    width="96"
+                    height="96"
+                    loading={priority ? 'eager' : 'lazy'}
+                    fetchPriority={priority ? 'high' : 'auto'}
+                    decoding="async"
                     onError={(e) => {
                         e.target.src = DefaultAvatar;
                     }}
@@ -237,4 +242,5 @@ InstructorsInfo.propTypes = {
     }),
     ratingAverage: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
     ratingCount: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
+    priority: PropTypes.bool,
 };

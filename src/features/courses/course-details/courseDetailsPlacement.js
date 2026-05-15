@@ -1,6 +1,6 @@
 export const COURSE_DETAILS_SUPPORT_PLACEMENT = Object.freeze({
     PROSPECT: Object.freeze({
-        desktop: Object.freeze(['sidebar-video', 'sidebar-review', 'main-public-info']),
+        desktop: Object.freeze(['sidebar-video', 'main-public-info']),
         mobile: Object.freeze(['video', 'public-info']),
     }),
     ENROLLED: Object.freeze({

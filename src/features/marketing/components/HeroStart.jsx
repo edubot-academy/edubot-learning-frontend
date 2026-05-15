@@ -122,16 +122,25 @@ const HeroStart = () => {
                                             src={slide.image}
                                             alt="Edubot"
                                             className="z-[1] lg:h-full w-[326px] lg:mr-20"
+                                            width="326"
+                                            height="454"
+                                            loading="eager"
+                                            fetchPriority="high"
+                                            decoding="async"
                                         />
                                         <img
                                             src={bannerBlure1}
                                             alt=""
                                             className="absolute z-[1] right-[-3%] bottom-[0px] h-[97%] lg:flex hidden dark:hidden"
+                                            loading="lazy"
+                                            decoding="async"
                                         />
                                         <img
                                             src={bannerBlureDark}
                                             alt=""
                                             className="absolute z-[1] right-[-3%] bottom-[0px] h-[97%] dark:lg:flex hidden"
+                                            loading="lazy"
+                                            decoding="async"
                                         />
                                     </div>
                                 </section>
@@ -146,6 +155,8 @@ const HeroStart = () => {
                                             src={slide.image}
                                             alt="Background"
                                             className="w-full h-full"
+                                            loading="lazy"
+                                            decoding="async"
                                         />
                                         <div className="absolute inset-0 bg-[linear-gradient(173.96deg,rgba(141,63,14,0.86)_19.82%,rgba(255,255,255,0)_204.47%)] dark:bg-gradient-to-t from-black/[86%] to-transparent to-[125.26%]" />
                                     </div>
@@ -193,6 +204,8 @@ const HeroStart = () => {
                                             src={slide.image}
                                             alt="background"
                                             className="w-full h-full object-cover"
+                                            loading="lazy"
+                                            decoding="async"
                                         />
                                         <div className="absolute inset-0 bg-black/30 dark:bg-[#000000BD]" />
                                     </div>
@@ -213,6 +226,8 @@ const HeroStart = () => {
                                             src={bannerMan3}
                                             alt="Student"
                                             className="lg:h-[120%] -scale-x-100 absolute lg:left-[26%] bottom-0 h-[55%] md:h-[70%] "
+                                            loading="lazy"
+                                            decoding="async"
                                         />
                                         <div className="flex-col justify-between hidden lg:flex">
                                             <p className="text-[#FFFFFF73] font-normal text-[26px] leading-[120%] tracking-[0%]">

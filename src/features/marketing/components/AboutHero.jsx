@@ -22,6 +22,11 @@ function AboutHero() {
                     alt=""
                     aria-hidden="true"
                     className="relative w-full object-contain dark:brightness-90 dark:contrast-110"
+                    width="448"
+                    height="448"
+                    loading="eager"
+                    fetchPriority="high"
+                    decoding="async"
                 />
             </div>
         </section>
