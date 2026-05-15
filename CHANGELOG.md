@@ -6,6 +6,22 @@ Version bumps are classified by delivery scale; see `VERSIONING.md`.
 
 ---
 
+## [1.12.3] - 2026-05-15
+
+### Fixed
+
+- Improved mobile video fullscreen behavior with browser-specific fullscreen fallbacks, native iOS video fullscreen support, and best-effort landscape orientation handling.
+- Expanded fullscreen CSS for WebKit fullscreen and dynamic viewport height so the player fills the mobile screen more reliably.
+
+### Verification
+
+- `npm run lint`
+- `npm run test -- src/features/courses/utils/courseDuration.spec.js`
+- `npm run build`
+- `git diff --check`
+
+---
+
 ## [1.12.2] - 2026-05-15
 
 ### Changed

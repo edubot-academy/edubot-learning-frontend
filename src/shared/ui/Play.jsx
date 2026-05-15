@@ -6,6 +6,50 @@ import Rewind15sekBack from '@assets/icons/Rewind 15 Seconds Back.svg';
 import Rewind15sekForward from '@assets/icons/Rewind 15 Seconds Forward.svg';
 import PlayPauseIndicator from './PlayPauseIndicator';
 
+const getFullscreenElement = () =>
+    document.fullscreenElement ||
+    document.webkitFullscreenElement ||
+    document.msFullscreenElement ||
+    null;
+
+const requestElementFullscreen = (element) => {
+    if (!element) return Promise.reject(new Error('Fullscreen element is unavailable'));
+
+    const request =
+        element.requestFullscreen ||
+        element.webkitRequestFullscreen ||
+        element.msRequestFullscreen;
+
+    if (!request) return Promise.reject(new Error('Fullscreen API is unavailable'));
+
+    const result = request.call(element);
+    return result && typeof result.then === 'function' ? result : Promise.resolve();
+};
+
+const exitElementFullscreen = () => {
+    const exit =
+        document.exitFullscreen ||
+        document.webkitExitFullscreen ||
+        document.msExitFullscreen;
+
+    if (!exit) return Promise.resolve();
+
+    const result = exit.call(document);
+    return result && typeof result.then === 'function' ? result : Promise.resolve();
+};
+
+const requestLandscapeOrientation = () => {
+    const orientation = typeof screen !== 'undefined' ? screen.orientation : null;
+    if (!orientation?.lock) return;
+    orientation.lock('landscape').catch(() => undefined);
+};
+
+const unlockOrientation = () => {
+    const orientation = typeof screen !== 'undefined' ? screen.orientation : null;
+    if (!orientation?.unlock) return;
+    orientation.unlock();
+};
+
 const VideoPlayerUI = ({
     videoRef,
     containerRef,
@@ -81,16 +125,39 @@ const VideoPlayerUI = ({
     );
 
     const toggleFullscreen = useCallback(
-        (e) => {
+        async (e) => {
             if (e) e.stopPropagation();
-            if (!containerRef.current) return;
-            if (!document.fullscreenElement) {
-                containerRef.current.requestFullscreen?.();
-            } else {
-                document.exitFullscreen?.();
+            const container = containerRef.current;
+            const video = videoRef.current;
+            if (!container && !video) return;
+
+            if (getFullscreenElement()) {
+                try {
+                    await exitElementFullscreen();
+                } finally {
+                    unlockOrientation();
+                }
+                return;
+            }
+
+            try {
+                await requestElementFullscreen(container);
+                requestLandscapeOrientation();
+                return;
+            } catch {
+                // iOS Safari often only supports native video fullscreen.
+            }
+
+            if (video?.webkitEnterFullscreen) {
+                try {
+                    video.webkitEnterFullscreen();
+                    requestLandscapeOrientation();
+                } catch {
+                    // Keep inline playback if the browser rejects fullscreen.
+                }
             }
         },
-        [containerRef]
+        [containerRef, videoRef]
     );
 
     const formatTime = useCallback((time) => {
@@ -194,13 +261,30 @@ const VideoPlayerUI = ({
     }, [videoRef]);
 
     useEffect(() => {
+        const v = videoRef.current;
         const handleFullscreenChange = () => {
-            setFullScreen(!!document.fullscreenElement);
+            const isFullscreen = Boolean(getFullscreenElement());
+            setFullScreen(isFullscreen);
+            if (!isFullscreen) unlockOrientation();
+        };
+        const handleWebkitBeginFullscreen = () => setFullScreen(true);
+        const handleWebkitEndFullscreen = () => {
+            setFullScreen(false);
+            unlockOrientation();
         };
 
         document.addEventListener('fullscreenchange', handleFullscreenChange);
-        return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
-    }, []);
+        document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+        v?.addEventListener('webkitbeginfullscreen', handleWebkitBeginFullscreen);
+        v?.addEventListener('webkitendfullscreen', handleWebkitEndFullscreen);
+
+        return () => {
+            document.removeEventListener('fullscreenchange', handleFullscreenChange);
+            document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+            v?.removeEventListener('webkitbeginfullscreen', handleWebkitBeginFullscreen);
+            v?.removeEventListener('webkitendfullscreen', handleWebkitEndFullscreen);
+        };
+    }, [videoRef]);
 
     useEffect(() => {
         const container = containerRef.current;
