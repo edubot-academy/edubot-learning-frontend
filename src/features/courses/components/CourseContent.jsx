@@ -9,6 +9,7 @@ import { formatMinutesToTime, formatSecondsToTime } from '../../../utils/timeUti
 import { getPlayableVideoUrl } from '../../../utils/videoUtils';
 import { getSectionDurationMinutes, getSectionsDurationMinutes } from '../utils/courseDuration';
 import ModalPreviewVideo from './ModalPreviewVideo';
+import { useTranslation } from 'react-i18next';
 
 const CourseContent = ({
     courseId,
@@ -24,6 +25,7 @@ const CourseContent = ({
     compact = false,
     presentationVariant,
 }) => {
+    const { t } = useTranslation();
     const [openIds, setOpenIds] = useState([]);
     const [searchQuery, setSearchQuery] = useState('');
     const contentRefs = useRef({});
@@ -104,10 +106,20 @@ const CourseContent = ({
         };
     }, [sections]);
 
-    const headerTitle = isLearningNavigator ? 'Окуу программасы' : 'Курстун программасы';
+    const headerTitle = isLearningNavigator
+        ? t('public.courseShared.content.learningTitle')
+        : t('public.courseShared.content.prospectTitle');
     const headerDescription = isLearningNavigator
-        ? `${sections.length} бөлүм • ${totalLessons} лекция • ${formatMinutesToTime(totalMinutes)}. Сабактарды ачып, прогрессти белгилеңиз.`
-        : `${sections.length} бөлүм • ${totalLessons} лекция • ${formatMinutesToTime(totalMinutes)}. Катталуудан мурун темаларды жана алдын ала көрүү сабактарын караңыз.`;
+        ? t('public.courseShared.content.learningDescription', {
+              sections: sections.length,
+              lessons: totalLessons,
+              duration: formatMinutesToTime(totalMinutes),
+          })
+        : t('public.courseShared.content.prospectDescription', {
+              sections: sections.length,
+              lessons: totalLessons,
+              duration: formatMinutesToTime(totalMinutes),
+          });
 
     const filteredSections = useMemo(() => {
         if (!searchQuery.trim()) return sections;
@@ -231,7 +243,9 @@ const CourseContent = ({
                                         <div className="relative">
                                             <input
                                                 type="text"
-                                                placeholder="Лекциялардан издөө..."
+                                                placeholder={t(
+                                                    'public.courseShared.content.searchPlaceholder'
+                                                )}
                                                 value={searchQuery}
                                                 onChange={(e) => setSearchQuery(e.target.value)}
                                                 className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-[#222222] dark:text-[#E8ECF3] rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm dark:placeholder:text-gray-500"
@@ -253,22 +267,28 @@ const CourseContent = ({
                                 <div className="flex flex-wrap gap-3 mt-2 text-sm text-gray-600 dark:text-gray-400">
                                     <div className="flex items-center gap-2 flex-shrink-0">
                                         <div className="w-3 h-3 rounded-full bg-orange-500 flex-shrink-0"></div>
-                                        <span className="whitespace-nowrap">Активдүү лекция</span>
+                                        <span className="whitespace-nowrap">
+                                            {t('public.courseShared.content.activeLecture')}
+                                        </span>
                                     </div>
                                     <div className="flex items-center gap-2 flex-shrink-0">
                                         <div className="w-3 h-3 rounded-full bg-green-500 flex-shrink-0"></div>
-                                        <span className="whitespace-nowrap">Аякталган</span>
+                                        <span className="whitespace-nowrap">
+                                            {t('public.courseShared.content.completed')}
+                                        </span>
                                     </div>
                                     <div className="flex items-center gap-2 flex-shrink-0">
                                         <div className="w-3 h-3 rounded-full bg-gray-300 dark:bg-gray-600 flex-shrink-0"></div>
-                                        <span className="whitespace-nowrap">Жеткиликтүү лекция</span>
+                                        <span className="whitespace-nowrap">
+                                            {t('public.courseShared.content.availableLecture')}
+                                        </span>
                                     </div>
                                 </div>
                             )}
 
                             {isProspectPreview && !compact && (
                                 <div className="rounded-xl border border-orange-100 bg-orange-50 px-4 py-3 text-sm text-orange-900 dark:border-orange-500/30 dark:bg-orange-500/10 dark:text-orange-200">
-                                    Алдын ала көрүү белгиси бар сабактарды азыр көрө аласыз. Калган сабактар курска катталгандан кийин ачылат.
+                                    {t('public.courseShared.content.previewNotice')}
                                 </div>
                             )}
                         </div>
@@ -277,7 +297,7 @@ const CourseContent = ({
 
                 {searchQuery && filteredSections.length === 0 && (
                     <div className="px-4 sm:px-6 py-8 text-center text-gray-500 dark:text-gray-400 flex-shrink-0">
-                        &quot;{searchQuery}&quot; сураныч менен табылган жок
+                        {t('public.courseShared.content.searchEmpty', { query: searchQuery })}
                     </div>
                 )}
 
@@ -314,14 +334,16 @@ const CourseContent = ({
                                         </div>
                                         {enrolled && sectionCompleted && (
                                             <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 flex-shrink-0 ml-2">
-                                                Аякталды
+                                                {t('public.courseShared.content.completed')}
                                             </span>
                                         )}
                                     </div>
                                     {!enrolled && (
                                         <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 ml-4 flex-shrink-0">
                                             <span className="whitespace-nowrap">
-                                                {section.lessons?.length || 0} лекция
+                                                {t('public.courseShared.lectureCount', {
+                                                    count: section.lessons?.length || 0,
+                                                })}
                                             </span>
                                             <span className="hidden sm:inline">•</span>
                                             <span className="whitespace-nowrap">
@@ -442,14 +464,20 @@ const CourseContent = ({
                                                                         rel="noopener noreferrer"
                                                                         onClick={handleDownload}
                                                                         className="inline-flex items-center gap-1 px-3 py-1.5 text-sm border border-[#E05A22] dark:border-orange-400 text-[#E05A22] dark:text-orange-400 rounded-lg hover:bg-orange-50 dark:hover:bg-orange-900/30 transition whitespace-nowrap w-full sm:w-auto"
-                                                                        title="Ресурстарды жүктөө"
+                                                                        title={t(
+                                                                            'public.courseShared.content.resourcesDownloadTitle'
+                                                                        )}
                                                                     >
                                                                         <MdDownload size={16} />
                                                                         <span className="hidden sm:inline">
-                                                                            Ресурстар
+                                                                            {t(
+                                                                                'public.courseShared.content.resources'
+                                                                            )}
                                                                         </span>
                                                                         <span className="sm:hidden">
-                                                                            Жүктөө
+                                                                            {t(
+                                                                                'public.courseShared.content.download'
+                                                                            )}
                                                                         </span>
                                                                     </a>
                                                                 </div>
@@ -466,7 +494,9 @@ const CourseContent = ({
                                                                 ) : (
                                                                     <img
                                                                         src={ReelsIcon}
-                                                                        alt="video lesson"
+                                                                        alt={t(
+                                                                            'public.courseShared.content.videoLessonAlt'
+                                                                        )}
                                                                         className={`${compact ? 'w-5 h-5' : 'w-6 h-6'} flex-shrink-0`}
                                                                     />
                                                                 )}
@@ -480,32 +510,36 @@ const CourseContent = ({
                                                                         </p>
                                                                         <div className="flex flex-wrap items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
                                                                             {lesson.previewVideo &&
-                                                                                lesson.kind !==
+                                                                            lesson.kind !==
                                                                                 'article' ? (
-                                                                                    <>
-                                                                                        <RiPlayCircleFill
-                                                                                            className="text-[#4b4b4b] dark:text-gray-400 flex-shrink-0"
-                                                                                            size={
-                                                                                                compact
-                                                                                                    ? 16
-                                                                                                    : 22
-                                                                                            }
-                                                                                        />
-                                                                                        <span className="text-[#1E72BE] dark:text-blue-400 font-semibold whitespace-nowrap">
-                                                                                            Алдын ала көрүү ачык
-                                                                                        </span>
-                                                                                    </>
-                                                                                ) : locked ? (
-                                                                                    <span className="inline-flex items-center gap-1 text-gray-500 dark:text-gray-400">
-                                                                                        <TbLock
-                                                                                            className="flex-shrink-0"
-                                                                                            size={14}
-                                                                                        />
-                                                                                        <span className="whitespace-nowrap">
-                                                                                            Катталгандан кийин
-                                                                                        </span>
+                                                                                <>
+                                                                                    <RiPlayCircleFill
+                                                                                        className="text-[#4b4b4b] dark:text-gray-400 flex-shrink-0"
+                                                                                        size={
+                                                                                            compact
+                                                                                                ? 16
+                                                                                                : 22
+                                                                                        }
+                                                                                    />
+                                                                                    <span className="text-[#1E72BE] dark:text-blue-400 font-semibold whitespace-nowrap">
+                                                                                        {t(
+                                                                                            'public.courseShared.content.previewOpen'
+                                                                                        )}
                                                                                     </span>
-                                                                                ) : null}
+                                                                                </>
+                                                                            ) : locked ? (
+                                                                                <span className="inline-flex items-center gap-1 text-gray-500 dark:text-gray-400">
+                                                                                    <TbLock
+                                                                                        className="flex-shrink-0"
+                                                                                        size={14}
+                                                                                    />
+                                                                                    <span className="whitespace-nowrap">
+                                                                                        {t(
+                                                                                            'public.courseShared.content.afterEnrollment'
+                                                                                        )}
+                                                                                    </span>
+                                                                                </span>
+                                                                            ) : null}
                                                                             <span className="whitespace-nowrap">
                                                                                 {formatSecondsToTime(
                                                                                     lesson.duration
@@ -531,7 +565,10 @@ const CourseContent = ({
                     <div className="px-4 sm:px-6 py-3 border-t border-[#DFE1E5] dark:border-[#2A2E35] bg-gray-50 dark:bg-gray-800/50 flex-shrink-0">
                         <div className="flex flex-col xs:flex-row xs:items-center justify-between gap-2">
                             <div className="text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">
-                                Прогресс: {completedLessons.length}/{totalLessons} лекция
+                                {t('public.courseShared.content.progress', {
+                                    completed: completedLessons.length,
+                                    total: totalLessons,
+                                })}
                             </div>
                             <div className="text-sm font-medium text-gray-900 dark:text-[#E8ECF3] whitespace-nowrap">
                                 {Math.round((completedLessons.length / totalLessons) * 100)}%

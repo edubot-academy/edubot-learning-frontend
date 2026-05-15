@@ -1,38 +1,31 @@
 import laptop from '@assets/icons/laptop.svg';
 import circle from '@assets/icons/circle.svg';
 import account from '@assets/icons/account.svg';
+import { useTranslation } from 'react-i18next';
 
-const features = [
-    {
-        icon: laptop,
-        title: 'Интерактивдүү окуу',
-        description: 'Практикалык тапшырмалар, тесттер жана дароо кайтарым байланыш аркылуу теманы бекемдеңиз.',
-    },
-    {
-        icon: circle,
-        title: '100+ курс',
-        description: 'Программалоо, санарип көндүмдөр жана карьералык өсүш үчүн тандалган окуу багыттары.',
-    },
-    {
-        icon: account,
-        title: 'Тажрыйбалуу окутуучулар',
-        description: 'Сабактарды практикада иштеген адистерден үйрөнүп, түшүнүксүз жерлерди тактаңыз.',
-    },
-];
+const featureIcons = [laptop, circle, account];
 
 export default function FeaturesSection() {
+    const { t } = useTranslation();
+    const features = t('public.home.benefits.items', { returnObjects: true }).map(
+        (feature, index) => ({
+            ...feature,
+            icon: featureIcons[index],
+        })
+    );
+
     return (
         <section className="bg-[#f6f6f6] px-4 py-16 text-[#141619] dark:bg-[#1A1A1A] dark:text-[#E8ECF3] sm:px-6 lg:px-12">
             <div className="mx-auto max-w-6xl">
                 <div className="mx-auto max-w-3xl text-center">
                     <p className="text-sm font-semibold uppercase tracking-[0.18em] text-orange-600 dark:text-orange-300">
-                        Эмне үчүн EduBot
+                        {t('public.home.benefits.eyebrow')}
                     </p>
                     <h2 className="mt-3 text-2xl font-semibold leading-tight sm:text-3xl">
-                        Окуу процесси түшүнүктүү, практикалык жана өлчөнө турган болушу керек
+                        {t('public.home.benefits.title')}
                     </h2>
                     <p className="mt-4 text-sm leading-6 text-gray-600 dark:text-[#a6adba] sm:text-base">
-                        Курстарды тандоодон баштап прогрессти көзөмөлдөөгө чейин негизги окуу кадамдары бир жерде чогулат.
+                        {t('public.home.benefits.body')}
                     </p>
                 </div>
 

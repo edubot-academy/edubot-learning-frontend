@@ -1,4 +1,3 @@
-
 import { useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
@@ -50,6 +49,7 @@ import {
     isCourseTypeAllowedForTenant,
 } from '@shared/utils/tenantFeatures';
 import { getDashboardPath } from '@shared/utils/navigation';
+import { LOCALE_OPTIONS, getLocaleLabel, normalizeLocale } from '../../../i18n/locale';
 
 const TABS = [
     { id: 'overview', label: 'Overview', icon: FiBriefcase, category: 'primary', priority: 1 },
@@ -193,7 +193,7 @@ const buildForm = (company) => ({
     crmTenantSlug: company?.crmTenantSlug ?? '',
     crmPrimaryDomain: company?.crmPrimaryDomain ?? '',
     timezone: company?.timezone ?? 'Asia/Bishkek',
-    locale: company?.locale ?? 'ky',
+    locale: normalizeLocale(company?.locale),
 });
 
 const buildBrandingForm = (branding) => ({
@@ -757,10 +757,7 @@ export default function PlatformTenantDetail() {
                         title={company.name}
                         description={`${company.status || 'active'} · ${tenantDomain(company)}`}
                     />
-                    <Link
-                        to={adminCompaniesPath}
-                        className="dashboard-button-secondary self-start"
-                    >
+                    <Link to={adminCompaniesPath} className="dashboard-button-secondary self-start">
                         <FiArrowLeft className="h-4 w-4" />
                         Tenants
                     </Link>
@@ -817,7 +814,7 @@ export default function PlatformTenantDetail() {
                         <DashboardInsetPanel title="Tenant Snapshot">
                             <div className="grid gap-3 text-sm text-edubot-muted dark:text-slate-400 md:grid-cols-2">
                                 <p>Name: {company.name}</p>
-                                <p>Locale: {company.locale || 'ky'}</p>
+                                <p>Locale: {getLocaleLabel(company.locale)}</p>
                                 <p>Timezone: {company.timezone || 'Asia/Bishkek'}</p>
                                 <p>Billing: {company.billingStatus || 'Not set'}</p>
                                 <p>Subdomain: {company.subdomain || 'Not set'}</p>
@@ -1067,11 +1064,17 @@ export default function PlatformTenantDetail() {
                                     value={form.timezone}
                                     onChange={(value) => updateField('timezone', value)}
                                 />
-                                <Field
+                                <SelectField
                                     label="Locale"
-                                    value={form.locale}
+                                    value={normalizeLocale(form.locale)}
                                     onChange={(value) => updateField('locale', value)}
-                                />
+                                >
+                                    {LOCALE_OPTIONS.map((locale) => (
+                                        <option key={locale.value} value={locale.value}>
+                                            {locale.nativeLabel} ({locale.value})
+                                        </option>
+                                    ))}
+                                </SelectField>
                             </div>
                         ) : (
                             <div className="mt-4 grid gap-4 md:grid-cols-2">
@@ -1082,7 +1085,7 @@ export default function PlatformTenantDetail() {
                                     label="Timezone"
                                     value={company.timezone || 'Asia/Bishkek'}
                                 />
-                                <ReadField label="Locale" value={company.locale || 'ky'} />
+                                <ReadField label="Locale" value={getLocaleLabel(company.locale)} />
                             </div>
                         )}
                         <SectionActions

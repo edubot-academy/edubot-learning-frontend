@@ -7,17 +7,14 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useContext } from 'react';
 import { AuthContext } from '@app/providers';
 import { FiBookOpen, FiCheckCircle, FiMessageCircle } from 'react-icons/fi';
-
-const proofPoints = [
-    'Видео курстарды өзүңүзгө ыңгайлуу темпте баштаңыз',
-    'Прогресс, тесттер жана сертификаттар бир аккаунтта сакталат',
-    'Суроолор болсо команда менен түз байланышууга болот',
-];
+import { useTranslation } from 'react-i18next';
 
 function Apply() {
+    const { t } = useTranslation();
     const { user } = useContext(AuthContext);
     const navigate = useNavigate();
     const primaryPath = user ? '/courses' : '/login';
+    const proofPoints = t('public.home.apply.proofPoints', { returnObjects: true });
 
     return (
         <section className="bg-white px-4 py-16 text-[#141619] dark:bg-[#1A1A1A] dark:text-[#E8ECF3] sm:px-6 lg:px-12 lg:py-20">
@@ -41,7 +38,7 @@ function Apply() {
                     />
                     <img
                         src={student}
-                        alt="EduBot окуучусу"
+                        alt={t('public.home.apply.imageAlt')}
                         className="absolute bottom-0 left-1/2 h-[88%] max-h-[430px] w-auto -translate-x-1/2 object-contain"
                         width="338"
                         height="430"
@@ -49,8 +46,12 @@ function Apply() {
                         decoding="async"
                     />
                     <div className="absolute left-5 top-5 rounded-2xl border border-white/80 bg-white/90 px-4 py-3 shadow-sm backdrop-blur dark:border-white/10 dark:bg-[#1f2430]/90">
-                        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-orange-600 dark:text-orange-300">EduBot Learning</p>
-                        <p className="mt-1 text-sm font-medium text-[#3E424A] dark:text-[#c8ced8]">Окуу темпиңиз дайыма көрүнүп турат</p>
+                        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-orange-600 dark:text-orange-300">
+                            EduBot Learning
+                        </p>
+                        <p className="mt-1 text-sm font-medium text-[#3E424A] dark:text-[#c8ced8]">
+                            {t('public.home.apply.pace')}
+                        </p>
                     </div>
                 </div>
 
@@ -70,22 +71,30 @@ function Apply() {
                         </div>
                         <div className="min-w-0">
                             <p className="text-sm font-semibold uppercase tracking-[0.18em] text-orange-600 dark:text-orange-300">
-                                Кийинки кадам
+                                {t('public.home.apply.eyebrow')}
                             </p>
                             <h2 className="mt-2 text-2xl font-semibold leading-tight text-[#141619] dark:text-[#E8ECF3] sm:text-3xl">
-                                Окууну бүгүн баштап, прогрессти бир жерде сактаңыз
+                                {t('public.home.apply.title')}
                             </h2>
                             <p className="mt-3 max-w-2xl text-sm leading-6 text-[#3E424A] dark:text-[#a6adba] sm:text-base">
-                                Курстарды көрүп, өзүңүзгө туура багытты тандаңыз. Киргенден кийин сабактар, тесттер жана сертификаттар жеке кабинетиңизде уланат.
+                                {t('public.home.apply.body')}
                             </p>
                         </div>
                     </div>
 
                     <div className="mt-6 grid gap-3">
                         {proofPoints.map((point) => (
-                            <div key={point} className="flex items-start gap-3 rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3 dark:border-[#2A2E35] dark:bg-[#1A1A1A]">
-                                <FiCheckCircle className="mt-0.5 shrink-0 text-lg text-emerald-600 dark:text-emerald-300" aria-hidden="true" />
-                                <p className="text-sm leading-6 text-[#3E424A] dark:text-[#c8ced8]">{point}</p>
+                            <div
+                                key={point}
+                                className="flex items-start gap-3 rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3 dark:border-[#2A2E35] dark:bg-[#1A1A1A]"
+                            >
+                                <FiCheckCircle
+                                    className="mt-0.5 shrink-0 text-lg text-emerald-600 dark:text-emerald-300"
+                                    aria-hidden="true"
+                                />
+                                <p className="text-sm leading-6 text-[#3E424A] dark:text-[#c8ced8]">
+                                    {point}
+                                </p>
                             </div>
                         ))}
                     </div>
@@ -96,14 +105,16 @@ function Apply() {
                             icon={<FiBookOpen aria-hidden="true" />}
                             onClick={() => navigate(primaryPath)}
                         >
-                            {user ? 'Курстарды көрүү' : 'Кирип, окууну баштоо'}
+                            {user
+                                ? t('public.home.apply.viewCourses')
+                                : t('public.home.apply.signInStart')}
                         </Button>
                         <Link
                             to="/contact"
                             className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-gray-300 px-5 py-3 text-sm font-medium text-[#141619] transition hover:border-orange-500 hover:text-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 dark:border-[#3A3F49] dark:text-[#E8ECF3] dark:hover:border-orange-400 dark:hover:text-orange-300 sm:w-auto md:text-base"
                         >
                             <FiMessageCircle aria-hidden="true" />
-                            Кеңеш алуу
+                            {t('public.home.apply.getAdvice')}
                         </Link>
                     </div>
                 </div>

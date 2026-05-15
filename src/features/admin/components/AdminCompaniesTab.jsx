@@ -1,4 +1,3 @@
-
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
@@ -21,6 +20,7 @@ import {
     FiX,
 } from 'react-icons/fi';
 import { fetchUsers } from '@services/api';
+import { LOCALE_OPTIONS, normalizeLocale } from '../../../i18n/locale';
 
 const COMPANY_STATUSES = [
     { value: 'trial', label: 'Trial' },
@@ -87,7 +87,10 @@ const toTenantForm = (company = {}) =>
     TENANT_FIELDS.reduce(
         (form, key) => ({
             ...form,
-            [key]: company[key] ?? defaultTenantForm[key] ?? '',
+            [key]:
+                key === 'locale'
+                    ? normalizeLocale(company[key])
+                    : (company[key] ?? defaultTenantForm[key] ?? ''),
         }),
         {}
     );
@@ -476,8 +479,10 @@ const AdminCompaniesTab = ({
                                                     </label>
                                                     <label className="space-y-1">
                                                         <FieldLabel>Locale</FieldLabel>
-                                                        <input
-                                                            value={editingCompanyForm.locale}
+                                                        <select
+                                                            value={normalizeLocale(
+                                                                editingCompanyForm.locale
+                                                            )}
                                                             onChange={(e) =>
                                                                 updateFormField(
                                                                     setEditingCompanyForm,
@@ -485,8 +490,18 @@ const AdminCompaniesTab = ({
                                                                     e.target.value
                                                                 )
                                                             }
-                                                            className="dashboard-field w-full"
-                                                        />
+                                                            className="dashboard-select w-full"
+                                                        >
+                                                            {LOCALE_OPTIONS.map((locale) => (
+                                                                <option
+                                                                    key={locale.value}
+                                                                    value={locale.value}
+                                                                >
+                                                                    {locale.nativeLabel} (
+                                                                    {locale.value})
+                                                                </option>
+                                                            ))}
+                                                        </select>
                                                     </label>
                                                 </div>
                                                 <div className="flex flex-wrap gap-2">
@@ -836,6 +851,22 @@ const AdminCompaniesTab = ({
                             {BILLING_STATUSES.map((status) => (
                                 <option key={status.value || 'empty'} value={status.value}>
                                     {status.label}
+                                </option>
+                            ))}
+                        </select>
+                    </label>
+                    <label className="space-y-1">
+                        <FieldLabel>Locale</FieldLabel>
+                        <select
+                            value={normalizeLocale(newCompanyForm.locale)}
+                            onChange={(e) =>
+                                updateFormField(setNewCompanyForm, 'locale', e.target.value)
+                            }
+                            className="dashboard-select w-full"
+                        >
+                            {LOCALE_OPTIONS.map((locale) => (
+                                <option key={locale.value} value={locale.value}>
+                                    {locale.nativeLabel} ({locale.value})
                                 </option>
                             ))}
                         </select>

@@ -13,21 +13,25 @@ import { AuthContext } from '../../../context/AuthContext';
 import UnauthModal from '../../../shared/ui/UnauthModal';
 import { formatMinutesToTime } from '../../../utils/timeUtils';
 import { getSectionsDurationMinutes } from '../utils/courseDuration';
+import { useTranslation } from 'react-i18next';
 
-const courseTypeLabel = (type) => {
+const courseTypeLabel = (type, t) => {
     const normalized = String(type || 'video').toLowerCase();
-    if (normalized === 'offline') return 'Оффлайн';
-    if (normalized === 'online_live') return 'Онлайн түз эфир';
-    return 'Видео';
+    if (normalized === 'offline') return t('public.courseShared.offline');
+    if (normalized === 'online_live') return t('public.courseShared.onlineLive');
+    return t('public.courseShared.video');
 };
 
-const formatPrice = (price, currency = 'KGS') => {
-    if (!price && price !== 0) return 'Баасы көрсөтүлгөн эмес';
+const formatPrice = (price, currency = 'KGS', t, language = 'ru-RU') => {
+    if (!price && price !== 0) return t('public.courseShared.priceUnavailable');
     const formattedPrice = new Intl.NumberFormat('ru-RU').format(price);
     switch (currency) {
-        case 'USD': return `${formattedPrice}$`;
-        case 'KGS': return `${formattedPrice} сом`;
-        default: return `${formattedPrice} ${currency}`;
+        case 'USD':
+            return `${formattedPrice}$`;
+        case 'KGS':
+            return t('public.courseShared.currencyKgs', { amount: formattedPrice });
+        default:
+            return `${new Intl.NumberFormat(language).format(price)} ${currency}`;
     }
 };
 
@@ -49,6 +53,7 @@ const CardCourse = ({
     location,
     meetingUrl,
 }) => {
+    const { t, i18n } = useTranslation();
     const [showPopup, setShowPopup] = useState(false);
     const [showFavoritePopup, setShowFavoritePopup] = useState(false);
     const [showUnauthModal, setShowUnauthModal] = useState(false);
@@ -61,7 +66,7 @@ const CardCourse = ({
     const isCourseFavourite = isFavourite(id);
     const normalizedCourseType = String(courseType || 'video').toLowerCase();
     const isSelfServeVideoCourse = normalizedCourseType === 'video';
-    const safeTitle = title || 'Курс';
+    const safeTitle = title || t('public.courseShared.course');
     const safeDuration = Number(durationInHours) || 0;
     const normalizedDurationMinutes = Number(durationMinutes);
     const sectionsDurationMinutes = getSectionsDurationMinutes(sections);
@@ -74,8 +79,8 @@ const CardCourse = ({
     const safeRatingAverage = Math.max(0, Math.min(5, Number(ratingAverage) || 0));
     const safeRatingCount = Number(ratingCount) || 0;
     const availabilityText = isSelfServeVideoCourse
-        ? 'Видеокурс: өз алдынча сатып алып окуй аласыз'
-        : 'Компания же администратор аркылуу дайындалат';
+        ? t('public.courseShared.selfServeAvailability')
+        : t('public.courseShared.assignedAvailability');
 
     const courseData = {
         id,
@@ -162,13 +167,17 @@ const CardCourse = ({
                 <div
                     className="max-w-md cursor-pointer bg-white text-[#141619] border border-gray-200 dark:bg-[#141619] dark:text-[#E8ECF3] dark:border-[#2A2E35] rounded flex flex-col hover:shadow-lg transition-shadow duration-300 relative"
                     onClick={handleCardClick}
-                    aria-label={`${safeTitle} курсу тууралуу кененирээк көрүү`}
+                    aria-label={t('public.courseShared.viewCourseDetails', { title: safeTitle })}
                 >
                     <button
                         type="button"
                         onClick={handleFavoriteClick}
                         className="absolute top-3 right-3 z-10 bg-white dark:bg-gray-800 p-2 rounded-full shadow-md hover:shadow-lg transition-shadow"
-                        aria-label={isCourseFavourite ? 'Тандалгандар өчүрүү' : 'Тандалгандарга кошуу'}
+                        aria-label={
+                            isCourseFavourite
+                                ? t('public.courseShared.removeFavourite')
+                                : t('public.courseShared.addFavourite')
+                        }
                         aria-pressed={isCourseFavourite}
                     >
                         <svg
@@ -212,45 +221,62 @@ const CardCourse = ({
                             </h3>
                             <div className="flex flex-wrap gap-1.5 my-2">
                                 <span className="text-[11px] px-2 py-0.5 rounded-full bg-blue-50 text-blue-700">
-                                    {courseTypeLabel(courseType)}
+                                    {courseTypeLabel(courseType, t)}
                                 </span>
-                                {String(courseType || '').toLowerCase() === 'offline' && location ? (
+                                {String(courseType || '').toLowerCase() === 'offline' &&
+                                location ? (
                                     <span className="text-[11px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-700">
                                         {location}
                                     </span>
                                 ) : null}
-                                {String(courseType || '').toLowerCase() === 'online_live' && meetingUrl ? (
+                                {String(courseType || '').toLowerCase() === 'online_live' &&
+                                meetingUrl ? (
                                     <span className="text-[11px] px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700">
-                                        Түз эфир
+                                        {t('public.courseShared.live')}
                                     </span>
                                 ) : null}
                             </div>
                             <p className="my-1 flex items-center gap-1.5 text-sm text-gray-600 dark:text-[#a6adba]">
                                 <FiUser aria-hidden="true" />
-                                {instructor?.fullName || 'Белгисиз инструктор'}
+                                {instructor?.fullName || t('public.courseShared.unknownInstructor')}
                             </p>
                             <p className="mt-1 text-xs leading-5 text-gray-500 dark:text-[#a6adba]">
                                 {availabilityText}
                             </p>
-                            <div className="mb-3 mt-3 flex items-center gap-2" aria-label={`Рейтинг ${safeRatingAverage.toFixed(1)} / 5`}>
+                            <div
+                                className="mb-3 mt-3 flex items-center gap-2"
+                                aria-label={t('public.courseShared.ratingAria', {
+                                    rating: safeRatingAverage.toFixed(1),
+                                })}
+                            >
                                 <div className="flex gap-1">
                                     {[1, 2, 3, 4, 5].map((star) => (
                                         <span key={star} aria-hidden="true">
                                             {star <= safeRatingAverage ? (
-                                                <AiFillStar className="text-yellow-500" aria-hidden="true" />
+                                                <AiFillStar
+                                                    className="text-yellow-500"
+                                                    aria-hidden="true"
+                                                />
                                             ) : (
-                                                <AiOutlineStar className="text-gray-300 dark:text-gray-600" aria-hidden="true" />
+                                                <AiOutlineStar
+                                                    className="text-gray-300 dark:text-gray-600"
+                                                    aria-hidden="true"
+                                                />
                                             )}
                                         </span>
                                     ))}
                                 </div>
                                 <span className="text-gray-600 dark:text-[#a6adba] text-sm">
-                                    {safeRatingAverage.toFixed(1)} ({safeRatingCount} пикир)
+                                    {safeRatingAverage.toFixed(1)} (
+                                    {t('public.courseShared.reviewCount', {
+                                        count: safeRatingCount,
+                                    })}
+                                    )
                                 </span>
                             </div>
                             <div className="flex flex-wrap gap-2 mb-4">
                                 <span className="text-xs bg-[#DFF5FF] text-[#006F9D] rounded px-2 py-1">
-                                    {level || 'Көрсөтүлгөн эмес'}
+                                    {level || t('public.courseShared.notSpecified')}
                                 </span>
                                 <span className="text-xs bg-[#F0F0F0] text-[#141619] dark:bg-[#2A2E35] dark:text-[#E8ECF3] rounded px-2 py-1 flex items-center gap-1">
                                     <IoMdTime className="w-3 h-3" />
@@ -258,14 +284,18 @@ const CardCourse = ({
                                 </span>
                                 <span className="text-xs bg-[#F0F0F0] text-[#141619] dark:bg-[#2A2E35] dark:text-[#E8ECF3] rounded px-2 py-1 flex items-center gap-1">
                                     <FiBook className="w-3 h-3" />
-                                    {lessonCount || 0} сабак
+                                    {t('public.courseShared.lessonCount', {
+                                        count: lessonCount || 0,
+                                    })}
                                 </span>
                             </div>
                             <div className="flex flex-col gap-3 mt-auto pt-4 border-t sm:flex-row sm:items-center sm:justify-between">
                                 <div className="flex flex-col gap-1">
-                                    <p className="text-gray-500 dark:text-[#a6adba] text-xs">Баасы</p>
+                                    <p className="text-gray-500 dark:text-[#a6adba] text-xs">
+                                        {t('public.courseShared.price')}
+                                    </p>
                                     <p className="text-base text-[#141619] dark:text-white font-bold">
-                                        {formatPrice(price, 'KGS')}
+                                        {formatPrice(price, 'KGS', t, i18n.language)}
                                     </p>
                                 </div>
                                 <Button
@@ -276,21 +306,32 @@ const CardCourse = ({
                                     className="w-full sm:w-auto"
                                     aria-label={
                                         !isSelfServeVideoCourse
-                                            ? `${safeTitle} курсу администратор аркылуу дайындалат`
+                                            ? t('public.courseShared.adminAssignedAria', {
+                                                  title: safeTitle,
+                                              })
                                             : courseAlreadyInCart
-                                                ? `${safeTitle} себетте`
-                                                : `${safeTitle} себетке кошуу`
+                                              ? t('public.courseShared.inCartAria', {
+                                                    title: safeTitle,
+                                                })
+                                              : t('public.courseShared.addToCartAria', {
+                                                    title: safeTitle,
+                                                })
                                     }
                                 >
                                     {!isSelfServeVideoCourse ? (
-                                        'Дайындалат'
+                                        t('public.courseShared.assigned')
                                     ) : courseAlreadyInCart ? (
                                         <>
-                                            <img src={CardIcon} alt="" aria-hidden="true" className="w-5 h-5 mr-2" />
-                                            Себетте
+                                            <img
+                                                src={CardIcon}
+                                                alt=""
+                                                aria-hidden="true"
+                                                className="w-5 h-5 mr-2"
+                                            />
+                                            {t('public.courseShared.inCart')}
                                         </>
                                     ) : (
-                                        'Себетке кошуу'
+                                        t('public.courseShared.addToCart')
                                     )}
                                 </Button>
                             </div>
@@ -322,22 +363,36 @@ const CardCourse = ({
 
             {showPopup && (
                 <>
-                    <div className="fixed inset-0 bg-black bg-opacity-50 z-40" onClick={closePopup} />
+                    <div
+                        className="fixed inset-0 bg-black bg-opacity-50 z-40"
+                        onClick={closePopup}
+                    />
                     <div
                         className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white dark:bg-gray-800 rounded-lg shadow-2xl z-50 w-[calc(100%-2rem)] max-w-lg"
                         onClick={handlePopupClick}
                     >
                         <div className="p-4 sm:p-6">
                             <div className="flex items-center justify-between mb-4">
-                                <h3 className="text-lg font-bold text-gray-800 dark:text-white">Ийгиликтүү кошулду!</h3>
-                                <button onClick={closePopup} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 text-2xl">×</button>
+                                <h3 className="text-lg font-bold text-gray-800 dark:text-white">
+                                    {t('public.courseShared.addedToCartTitle')}
+                                </h3>
+                                <button
+                                    onClick={closePopup}
+                                    className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 text-2xl"
+                                >
+                                    ×
+                                </button>
                             </div>
                             <p className="text-gray-600 dark:text-gray-300 mb-4">
-                                Курс <span className="font-semibold">{safeTitle}</span> себетке кошулду
+                                {t('public.courseShared.addedToCartBody', { title: safeTitle })}
                             </p>
                             <div className="mt-6 flex flex-col-reverse sm:flex-row justify-between gap-3">
-                                <Button variant="secondary" onClick={closePopup}>Сатып алууну улантыңыз</Button>
-                                <Button variant="primary" onClick={goToCart}>Себетке өтүү</Button>
+                                <Button variant="secondary" onClick={closePopup}>
+                                    {t('public.courseShared.continueShopping')}
+                                </Button>
+                                <Button variant="primary" onClick={goToCart}>
+                                    {t('public.courseShared.goToCart')}
+                                </Button>
                             </div>
                         </div>
                     </div>
@@ -369,6 +424,8 @@ CardCourse.propTypes = {
 };
 
 const FavoritePopupModal = ({ isOpen, onClose, onGoToFavourites, course }) => {
+    const { t, i18n } = useTranslation();
+
     useEffect(() => {
         const handleEscape = (e) => {
             if (e.key === 'Escape') onClose();
@@ -381,10 +438,7 @@ const FavoritePopupModal = ({ isOpen, onClose, onGoToFavourites, course }) => {
 
     if (!isOpen) return null;
 
-    const imageUrl =
-        course?.coverImageUrl ??
-        course?.image ??
-        NoImage;
+    const imageUrl = course?.coverImageUrl ?? course?.image ?? NoImage;
 
     return (
         <div className="fixed inset-0 z-50">
@@ -392,8 +446,16 @@ const FavoritePopupModal = ({ isOpen, onClose, onGoToFavourites, course }) => {
             <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 dark:bg-gray-800 bg-white rounded-lg shadow-2xl w-[calc(100%-2rem)] max-w-lg">
                 <div className="p-6">
                     <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-lg font-bold text-gray-800 dark:text-white">Тандалгандарга ийгиликтүү кошулду!</h3>
-                        <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 text-2xl">×</button>
+                        <h3 className="text-lg font-bold text-gray-800 dark:text-white">
+                            {t('public.courseShared.addedToFavouritesTitle')}
+                        </h3>
+                        <button
+                            onClick={onClose}
+                            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 text-2xl"
+                            aria-label={t('public.courseShared.authRequired.close')}
+                        >
+                            ×
+                        </button>
                     </div>
                     <div className="mb-4 p-3 border rounded-lg bg-gray-50 dark:bg-gray-700">
                         <div className="flex items-center gap-3">
@@ -406,22 +468,25 @@ const FavoritePopupModal = ({ isOpen, onClose, onGoToFavourites, course }) => {
                                 }}
                             />
                             <div className="flex-1 min-w-0">
-                                <h4 className="font-medium text-sm truncate text-gray-900 dark:text-white">{course?.title}</h4>
+                                <h4 className="font-medium text-sm truncate text-gray-900 dark:text-white">
+                                    {course?.title}
+                                </h4>
                                 <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                                    {course?.instructor || 'Белгисиз инструктор'}
+                                    {course?.instructor ||
+                                        t('public.courseShared.unknownInstructor')}
                                 </p>
                                 <p className="text-sm font-bold mt-1 text-gray-900 dark:text-white">
-                                    {formatPrice(course?.price, 'KGS')}
+                                    {formatPrice(course?.price, 'KGS', t, i18n.language)}
                                 </p>
                             </div>
                         </div>
                     </div>
                     <div className="flex flex-col sm:flex-row gap-3">
                         <Button variant="secondary" onClick={onClose} className="flex-1">
-                            Көрүүну улантуу
+                            {t('public.courseShared.continueViewing')}
                         </Button>
                         <Button variant="primary" onClick={onGoToFavourites} className="flex-1">
-                            Тандалгандарга өтүү
+                            {t('public.courseShared.goToFavourites')}
                         </Button>
                     </div>
                 </div>

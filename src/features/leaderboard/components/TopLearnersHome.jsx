@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { fetchHomepageLeaderboard } from '@services/api';
 import Loader from '@shared/ui/Loader';
+import { useTranslation } from 'react-i18next';
 
 const badges = ['🚀 Fast Progress', '⚡ Quiz Momentum', '🏅 Top Learner'];
 
@@ -9,7 +10,8 @@ const pickBadge = (item, index) => {
     if (item?.progressPercent >= 100) return '⭐ Course Finisher';
     if (item?.streakDays >= 5) return '🔥 Learning Streak';
     if (item?.streakDays >= 3) return '🔥 3+ Day Streak';
-    if (Number(item?.quizzesPassed) > 0 && Number(item?.quizzesPassed) >= 10) return '🏆 Quiz Champion';
+    if (Number(item?.quizzesPassed) > 0 && Number(item?.quizzesPassed) >= 10)
+        return '🏆 Quiz Champion';
     return badges[index % badges.length];
 };
 
@@ -31,13 +33,14 @@ const Avatar = ({ src, name }) => {
 };
 
 const HighlightCard = ({ item, index }) => {
+    const { t } = useTranslation();
     const badge = pickBadge(item, index);
     const gradient =
         index === 0
             ? 'from-[#FFE8D6] via-white to-[#FFF4EC] dark:from-[#1f242c] dark:via-[#161a22] dark:to-[#1f242c]'
             : index === 1
-            ? 'from-[#E0F2FE] via-white to-[#EBF8FF] dark:from-[#1f262f] dark:via-[#161a22] dark:to-[#1b212b]'
-            : 'from-[#EEF2FF] via-white to-[#F5F3FF] dark:from-[#1e2330] dark:via-[#151a23] dark:to-[#1c2230]';
+              ? 'from-[#E0F2FE] via-white to-[#EBF8FF] dark:from-[#1f262f] dark:via-[#161a22] dark:to-[#1b212b]'
+              : 'from-[#EEF2FF] via-white to-[#F5F3FF] dark:from-[#1e2330] dark:via-[#151a23] dark:to-[#1c2230]';
 
     return (
         <div
@@ -54,16 +57,24 @@ const HighlightCard = ({ item, index }) => {
                 <Avatar src={item?.avatarUrl} name={item?.fullName} />
                 <div className="flex-1">
                     <div className="flex items-center gap-2">
-                        <p className="font-semibold text-gray-900 dark:text-white">{item?.fullName || 'Студент'}</p>
+                        <p className="font-semibold text-gray-900 dark:text-white">
+                            {item?.fullName || t('public.home.leaderboard.defaultStudent')}
+                        </p>
                         <span className="text-xs bg-orange-100 text-orange-700 rounded-full px-2 py-0.5">
                             #{index + 1}
                         </span>
                     </div>
                     <p className="text-sm text-gray-500">
-                        {item?.progressPercent ? `${item.progressPercent}% прогресс` : `${item?.xp || 0} XP`}
+                        {item?.progressPercent
+                            ? t('public.home.leaderboard.progress', {
+                                  count: item.progressPercent,
+                              })
+                            : `${item?.xp || 0} XP`}
                     </p>
                     {item?.streakDays ? (
-                        <p className="text-xs text-amber-600 mt-1">🔥 {item.streakDays}-күн катары менен</p>
+                        <p className="text-xs text-amber-600 mt-1">
+                            🔥 {t('public.home.leaderboard.streak', { count: item.streakDays })}
+                        </p>
                     ) : null}
                 </div>
             </div>
@@ -73,7 +84,11 @@ const HighlightCard = ({ item, index }) => {
                     {badge}
                 </div>
                 <div className="text-sm text-orange-700 font-semibold">
-                    {Number(item?.quizzesPassed) > 0 ? `${item.quizzesPassed} тест` : `${item?.lessonsCompleted || 0} сабак`}
+                    {Number(item?.quizzesPassed) > 0
+                        ? t('public.home.leaderboard.quizzes', { count: item.quizzesPassed })
+                        : t('public.home.leaderboard.lessons', {
+                              count: item?.lessonsCompleted || 0,
+                          })}
                 </div>
             </div>
         </div>
@@ -81,6 +96,7 @@ const HighlightCard = ({ item, index }) => {
 };
 
 const TopLearnersHome = () => {
+    const { t } = useTranslation();
     const [items, setItems] = useState([]);
     const [loading, setLoading] = useState(true);
     const [fallbackMeta, setFallbackMeta] = useState({ fallback: false, message: '' });
@@ -109,20 +125,20 @@ const TopLearnersHome = () => {
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
                 <div>
                     <p className="text-sm uppercase tracking-wide text-orange-500 font-semibold">
-                        Бул жуманын мыктылары
+                        {t('public.home.leaderboard.eyebrow')}
                     </p>
                     <h2 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mt-1">
-                        Бул жуманын лидерлери
+                        {t('public.home.leaderboard.title')}
                     </h2>
                     <p className="text-gray-500 dark:text-gray-300 mt-1 max-w-xl">
-                        Эң активдүү студенттер, ырааттуу прогресс жана тесттердеги жеңиштер.
+                        {t('public.home.leaderboard.subtitle')}
                     </p>
                 </div>
                 <Link
                     to="/leaderboard"
                     className="inline-flex items-center justify-center rounded-full px-4 py-2 bg-orange-500 text-white font-semibold shadow-md hover:shadow-lg hover:translate-y-[-1px] transition"
                 >
-                    Толук рейтингди көрүү →
+                    {t('public.home.leaderboard.viewFull')} →
                 </Link>
             </div>
 
@@ -132,12 +148,16 @@ const TopLearnersHome = () => {
                 </div>
             ) : fallbackMeta.fallback ? (
                 <div className="rounded-2xl border border-amber-200 bg-amber-50/90 px-5 py-4 text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100">
-                    <p className="text-sm font-semibold uppercase tracking-[0.18em] text-amber-700 dark:text-amber-200">Рейтинг эскертүүсү</p>
-                    <p className="mt-1 text-sm">Бул жуманын мыктылары азырынча жүктөлгөн жок. Жасалма студенттер көрсөтүлгөн жок.</p>
-                    {fallbackMeta.message ? <p className="mt-2 text-xs opacity-80">{fallbackMeta.message}</p> : null}
+                    <p className="text-sm font-semibold uppercase tracking-[0.18em] text-amber-700 dark:text-amber-200">
+                        {t('public.home.leaderboard.fallbackTitle')}
+                    </p>
+                    <p className="mt-1 text-sm">{t('public.home.leaderboard.fallbackBody')}</p>
+                    {fallbackMeta.message ? (
+                        <p className="mt-2 text-xs opacity-80">{fallbackMeta.message}</p>
+                    ) : null}
                 </div>
             ) : items.length === 0 ? (
-                <p className="text-gray-500">Лидерборд маалыматтары азырынча жок.</p>
+                <p className="text-gray-500">{t('public.home.leaderboard.empty')}</p>
             ) : (
                 <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                     {items.slice(0, 3).map((item, idx) => (

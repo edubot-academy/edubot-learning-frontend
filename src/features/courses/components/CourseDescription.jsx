@@ -2,9 +2,16 @@ import { RiCheckboxCircleFill } from 'react-icons/ri';
 import { GrLanguage } from 'react-icons/gr';
 import { RiSpam2Line } from 'react-icons/ri';
 import Loader from '@shared/ui/Loader';
+import { useTranslation } from 'react-i18next';
 
 const CourseDescription = ({ course }) => {
-    if (!course) return <div><Loader fullScreen /></div>;
+    const { t, i18n } = useTranslation();
+    if (!course)
+        return (
+            <div>
+                <Loader fullScreen />
+            </div>
+        );
 
     const isNew = () => {
         if (course.createdAt) {
@@ -20,8 +27,8 @@ const CourseDescription = ({ course }) => {
         course.learningOutcomes && course.learningOutcomes.length > 0
             ? course.learningOutcomes
             : course.description
-                ? [course.description]
-                : [];
+              ? [course.description]
+              : [];
 
     return (
         <div className="w-full border border-[#C5C9D1] rounded-xl px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
@@ -38,7 +45,7 @@ const CourseDescription = ({ course }) => {
                 <div className="flex flex-wrap items-center gap-3 sm:gap-4 text-sm">
                     {isNew() && (
                         <span className="inline-flex items-center px-3 py-1 rounded-full text-xs sm:text-sm font-medium bg-red-100 text-red-800">
-                            Жаңы чыгарылыш
+                            {t('public.courseShared.courseDescription.newRelease')}
                         </span>
                     )}
 
@@ -46,14 +53,23 @@ const CourseDescription = ({ course }) => {
                         <div className="flex items-center gap-2">
                             <RiSpam2Line size={18} />
                             {course.updatedAt
-                                ? `Акыркы жаңыртуу: ${new Date(course.updatedAt).toLocaleDateString('kg-KG')}`
-                                : `түзүлгөн ${new Date(course.createdAt).toLocaleDateString('kg-Kg')}`}
+                                ? t('public.courseShared.courseDescription.lastUpdated', {
+                                      date: new Date(course.updatedAt).toLocaleDateString(
+                                          i18n.language
+                                      ),
+                                  })
+                                : t('public.courseShared.courseDescription.created', {
+                                      date: new Date(course.createdAt).toLocaleDateString(
+                                          i18n.language
+                                      ),
+                                  })}
                         </div>
                     )}
 
                     <div className="flex items-center gap-2">
                         <GrLanguage />
-                        {course.language || 'Кыргызча'}
+                        {course.language ||
+                            t('public.courseShared.courseDescription.defaultLanguage')}
                     </div>
 
                     {course.category && (
@@ -70,7 +86,7 @@ const CourseDescription = ({ course }) => {
                     <div className="flex items-center gap-3">
                         <RiCheckboxCircleFill color="#EA580C" size={20} className="flex-shrink-0" />
                         <p className="text-sm sm:text-base text-gray-600">
-                            Курс жөнүндө маалымат жакында кошулат...
+                            {t('public.courseShared.courseDescription.empty')}
                         </p>
                     </div>
                 ) : (

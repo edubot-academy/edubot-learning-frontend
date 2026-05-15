@@ -13,11 +13,14 @@ import { AuthContext } from '../../../context/AuthContext';
 import { useFavourites } from '../../../context/FavouritesContext';
 import { useCart } from '../../../context/CartContext';
 import NoImage from '@assets/icons/noImage.svg';
+import { useTranslation } from 'react-i18next';
 
-const formatPrice = (price, currency = 'KGS') => {
-    if (!price && price !== 0) return 'Баасы көрсөтүлгөн эмес';
+const formatPrice = (price, currency = 'KGS', t) => {
+    if (!price && price !== 0) return t('public.courseShared.priceUnavailable');
     const formattedPrice = new Intl.NumberFormat('ru-RU').format(Number(price) || 0);
-    return currency === 'KGS' ? `${formattedPrice} сом` : `${formattedPrice} ${currency}`;
+    return currency === 'KGS'
+        ? t('public.courseShared.currencyKgs', { amount: formattedPrice })
+        : `${formattedPrice} ${currency}`;
 };
 
 const CardVideo = ({
@@ -32,13 +35,16 @@ const CardVideo = ({
     handlePause,
     videoRef,
 }) => {
+    const { t } = useTranslation();
     const [isContactOpen, setIsContactOpen] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [showUnauthModal, setShowUnauthModal] = useState(false);
     const { user } = useContext(AuthContext);
     const { toggleFavourite, isFavourite } = useFavourites();
     const { addToCart, isInCart } = useCart();
-    const normalizedCourseType = String(course?.courseType || course?.type || 'video').toLowerCase();
+    const normalizedCourseType = String(
+        course?.courseType || course?.type || 'video'
+    ).toLowerCase();
     const isSelfServeVideoCourse = normalizedCourseType === 'video';
     const courseAlreadyInCart = isInCart(course.id);
     const normalizedDurationMinutes = Number(durationMinutes);
@@ -92,7 +98,7 @@ const CardVideo = ({
                     <img
                         src={coverImageUrl || NoImage}
                         className="absolute inset-0 h-full w-full object-cover"
-                        alt={course?.title || 'Курс'}
+                        alt={course?.title || t('public.courseShared.course')}
                         width="640"
                         height="360"
                         loading="eager"
@@ -103,7 +109,11 @@ const CardVideo = ({
                         }}
                     />
                     <div className="absolute inset-0 flex items-center justify-center bg-black/35 transition hover:bg-black/45">
-                        <button type="button" className="bg-white/35 rounded-full p-4" aria-label="Курстун алдын ала видеосун көрүү">
+                        <button
+                            type="button"
+                            className="bg-white/35 rounded-full p-4"
+                            aria-label={t('public.courseShared.previewVideoAria')}
+                        >
                             <FaPlay className="text-[#EA580C] text-2xl pl-1" aria-hidden="true" />
                         </button>
                     </div>
@@ -111,15 +121,16 @@ const CardVideo = ({
                 <div className="flex flex-col gap-3 py-4">
                     <div className="flex items-center justify-between text-[#141619] dark:text-[#E8ECF3]">
                         <p className="text-lg text-[#3E424A] dark:text-[#a6adba] font-normal">
-                            Баасы
+                            {t('public.courseShared.price')}
                         </p>
                         <span className="text-2xl font-bold text-[#141619] dark:text-white">
-                            {formatPrice(course.price)}
+                            {formatPrice(course.price, 'KGS', t)}
                         </span>
                     </div>
                     <div className="flex flex-col gap-2 text-[#3E424A] dark:text-[#a6adba]">
                         <p className="flex items-center gap-2 text-base font-semibold">
-                            <FiBook /> {lessonCount} сабак
+                            <FiBook />{' '}
+                            {t('public.courseShared.lessonCount', { count: lessonCount })}
                         </p>
 
                         <p className="flex items-center gap-2 text-base font-semibold">
@@ -127,13 +138,16 @@ const CardVideo = ({
                         </p>
 
                         <p className="flex items-center gap-2 text-base font-semibold">
-                            <TbLock /> Мүмкүнчүлүк: {course.isPaid ? 'Төлөм керектелет' : 'Бекер'}
+                            <TbLock /> {t('public.courseShared.access')}:{' '}
+                            {course.isPaid
+                                ? t('public.courseShared.paidAccess')
+                                : t('public.courseShared.freeAccess')}
                         </p>
                     </div>
                     <div className="rounded-2xl border border-orange-100 bg-orange-50 px-4 py-3 text-sm leading-6 text-orange-900 dark:border-orange-500/20 dark:bg-orange-500/10 dark:text-orange-100">
                         {isSelfServeVideoCourse
-                            ? 'Бул видео курсту себетке кошуп, өзүңүзгө ыңгайлуу убакта баштай аласыз.'
-                            : 'Бул курс коомдук сатып алууга ачылган эмес. Жеткиликтүүлүк үчүн команда менен байланышыңыз.'}
+                            ? t('public.courseShared.videoCourseNote')
+                            : t('public.courseShared.assignedCourseNote')}
                     </div>
 
                     <div className="flex flex-col gap-3 mt-3" onClick={(e) => e.stopPropagation()}>
@@ -144,8 +158,10 @@ const CardVideo = ({
                                 className="w-full"
                             >
                                 {isSelfServeVideoCourse
-                                    ? courseAlreadyInCart ? 'Себетте' : 'Себетке кошуу'
-                                    : 'Байланышуу'}
+                                    ? courseAlreadyInCart
+                                        ? t('public.courseShared.inCart')
+                                        : t('public.courseShared.addToCart')
+                                    : t('public.courseShared.contact')}
                             </Button>
                         </div>
                         <div>
@@ -154,7 +170,9 @@ const CardVideo = ({
                                 variant="secondary"
                                 aria-pressed={isCourseFavourite}
                             >
-                                {isCourseFavourite ? 'Тандалгандардан өчүрүү' : 'Тандалгандарга кошуу'}
+                                {isCourseFavourite
+                                    ? t('public.courseShared.removeFavourite')
+                                    : t('public.courseShared.addFavourite')}
                             </Button>
                         </div>
                     </div>

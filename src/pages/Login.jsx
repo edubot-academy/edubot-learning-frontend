@@ -11,31 +11,27 @@ import LabelPassword from '@shared-ui/forms/LabelPassword';
 import ForgotPassword from '@features/auth/components/ForgotPassword';
 import { getAuthAcquisitionPath, isPublicVideoSignupEnabled } from '@shared/auth-config';
 import { executePendingAuthAction, getPostLoginPath } from '@features/auth/utils/postLogin';
+import { useTranslation } from 'react-i18next';
 
-const loginBenefits = [
-    'Сатып алган курстарыңыз жана сабак прогрессиңиз сакталат.',
-    'Ментор менен билдирүүлөр жана тапшырмалар бир жерде ачылат.',
-    'Ролуңузга жараша туура окуу же башкаруу панели ачылат.',
-];
-
-const validateLoginForm = ({ email, password }) => {
+const validateLoginForm = ({ email, password }, t) => {
     const errors = {};
     const trimmedEmail = email.trim();
 
     if (!trimmedEmail) {
-        errors.email = 'Email дарегиңизди жазыңыз.';
+        errors.email = t('public.auth.login.validation.emailRequired');
     } else if (!/^[\w-.]+@([\w-]+\.)+[\w-]{2,}$/.test(trimmedEmail)) {
-        errors.email = 'Туура email дарегин жазыңыз.';
+        errors.email = t('public.auth.login.validation.emailInvalid');
     }
 
     if (!password) {
-        errors.password = 'Сырсөздү жазыңыз.';
+        errors.password = t('public.auth.login.validation.passwordRequired');
     }
 
     return errors;
 };
 
 const LoginPage = () => {
+    const { t } = useTranslation();
     const { login } = useContext(AuthContext);
     const { addToCart } = useCart();
     const { toggleFavourite } = useFavourites();
@@ -50,11 +46,11 @@ const LoginPage = () => {
 
     const handleLogin = async (e) => {
         e.preventDefault();
-        const nextFieldErrors = validateLoginForm({ email, password });
+        const nextFieldErrors = validateLoginForm({ email, password }, t);
 
         if (Object.keys(nextFieldErrors).length > 0) {
             setFieldErrors(nextFieldErrors);
-            setError('Кирүү үчүн email жана сырсөздү туура толтуруңуз.');
+            setError(t('public.auth.login.validation.form'));
             return;
         }
 
@@ -85,11 +81,13 @@ const LoginPage = () => {
             }
         } catch (err) {
             console.error('Login error:', err);
-            setError('Email же сырсөз туура эмес. Кайра аракет кылыңыз.');
+            setError(t('public.auth.login.validation.invalidCredentials'));
         } finally {
             setLoading(false);
         }
     };
+
+    const loginBenefits = t('public.auth.login.benefits', { returnObjects: true });
 
     const handleEmailChange = (e) => {
         setEmail(e.target.value);
@@ -127,7 +125,9 @@ const LoginPage = () => {
                                 <p className="text-sm font-semibold uppercase tracking-[0.2em] text-orange-100">
                                     EduBot Learning
                                 </p>
-                                <h1 className="text-2xl font-bold">Окууга кайтуу</h1>
+                                <h1 className="text-2xl font-bold">
+                                    {t('public.auth.login.sideTitle')}
+                                </h1>
                             </div>
                         </div>
 
@@ -143,13 +143,21 @@ const LoginPage = () => {
                             <div className="grid grid-cols-2 gap-3">
                                 <div className="rounded-lg border border-white/20 bg-white/10 p-4 backdrop-blur">
                                     <FaBookOpen className="mb-3 h-5 w-5 text-orange-100" />
-                                    <p className="text-xl font-bold">Курстар</p>
-                                    <p className="mt-1 text-sm text-orange-50/80">сабактар жана материалдар</p>
+                                    <p className="text-xl font-bold">
+                                        {t('public.auth.login.coursesCardTitle')}
+                                    </p>
+                                    <p className="mt-1 text-sm text-orange-50/80">
+                                        {t('public.auth.login.coursesCardText')}
+                                    </p>
                                 </div>
                                 <div className="rounded-lg border border-white/20 bg-white/10 p-4 backdrop-blur">
                                     <FaLock className="mb-3 h-5 w-5 text-orange-100" />
-                                    <p className="text-xl font-bold">Коопсуз</p>
-                                    <p className="mt-1 text-sm text-orange-50/80">жеке окуу панели</p>
+                                    <p className="text-xl font-bold">
+                                        {t('public.auth.login.secureCardTitle')}
+                                    </p>
+                                    <p className="mt-1 text-sm text-orange-50/80">
+                                        {t('public.auth.login.secureCardText')}
+                                    </p>
                                 </div>
                             </div>
 
@@ -170,23 +178,28 @@ const LoginPage = () => {
                         <div className="mb-5 space-y-3">
                             <div className="inline-flex items-center gap-2 rounded-full bg-orange-50/80 px-3 py-1 text-sm font-semibold text-orange-700 dark:bg-amber-500/10 dark:text-amber-200">
                                 <FaLock className="h-3.5 w-3.5" />
-                                Аккаунтка кирүү
+                                {t('public.auth.login.badge')}
                             </div>
-                            <h2 className="text-2xl font-bold text-black dark:text-white sm:text-3xl">Кайра кош келиңиз</h2>
+                            <h2 className="text-2xl font-bold text-black dark:text-white sm:text-3xl">
+                                {t('public.auth.login.title')}
+                            </h2>
                             <p className="text-sm leading-6 text-gray-600 dark:text-[#a6adba]">
-                                Окуу панелиңизге, сатып алган курстарыңызга жана билдирүүлөрүңүзгө кирүү үчүн аккаунтуңуз менен кириңиз.
+                                {t('public.auth.login.intro')}
                             </p>
                         </div>
 
                         {error && (
-                            <p className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700" role="alert">
+                            <p
+                                className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700"
+                                role="alert"
+                            >
                                 {error}
                             </p>
                         )}
 
                         <form onSubmit={handleLogin} className="space-y-2">
                             <DefaultLabel
-                                label="Email"
+                                label={t('public.auth.login.emailLabel')}
                                 name="email"
                                 type="email"
                                 value={email}
@@ -200,7 +213,7 @@ const LoginPage = () => {
                             />
 
                             <LabelPassword
-                                label="Пароль"
+                                label={t('public.auth.login.passwordLabel')}
                                 name="password"
                                 value={password}
                                 onChange={handlePasswordChange}
@@ -218,7 +231,7 @@ const LoginPage = () => {
                                 onClick={() => setForgotPassword(!forgotPassword)}
                                 aria-expanded={forgotPassword}
                             >
-                                Сырсөздү унуттуңузбу?
+                                {t('public.auth.login.forgotPassword')}
                             </button>
 
                             <button
@@ -227,20 +240,25 @@ const LoginPage = () => {
                                 aria-busy={loading}
                                 className="mt-4 min-h-[48px] w-full rounded-lg bg-[linear-gradient(180deg,#FF8C6E_0%,#E14219_100%)] py-3 text-base font-semibold text-white shadow-[0px_4px_14px_0px_rgba(225,66,25,0.45)] transition hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-75 dark:shadow-[0px_4px_12px_0px_rgba(225,66,25,0.28)] dark:focus:ring-offset-[#1f1f1f] sm:text-lg"
                             >
-                                {loading ? 'Кирүүдө...' : 'Кирүү'}
+                                {loading
+                                    ? t('public.auth.login.submitting')
+                                    : t('public.auth.login.submit')}
                             </button>
                         </form>
 
                         <p className="mt-4 rounded-lg border border-transparent bg-gray-50 px-4 py-3 text-center text-sm leading-6 text-gray-600 dark:border-gray-700 dark:bg-[#292929] dark:text-[#a6adba]">
                             {isPublicVideoSignupEnabled ? (
                                 <>
-                                    Аккаунтуңуз жокпу?{' '}
-                                    <Link to={getAuthAcquisitionPath()} className="font-semibold text-blue-500 hover:underline">
-                                        Катталуу
+                                    {t('public.auth.login.noAccount')}{' '}
+                                    <Link
+                                        to={getAuthAcquisitionPath()}
+                                        className="font-semibold text-blue-500 hover:underline"
+                                    >
+                                        {t('public.auth.login.signup')}
                                     </Link>
                                 </>
                             ) : (
-                                'Эсеп CRM аркылуу ачылат. Кирүү же сырсөздү калыбына келтирүү жолун колдонуңуз.'
+                                t('public.auth.login.crmOnly')
                             )}
                         </p>
                     </div>

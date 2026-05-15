@@ -7,33 +7,19 @@ import bannerImg3 from '/banner-img3.png';
 import bannerMan3 from '/banner-img-man.png';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '@app/providers';
+import { useTranslation } from 'react-i18next';
 
 const HeroStart = () => {
+    const { t } = useTranslation();
     const [currentSlide, setCurrentSlide] = useState(0);
     const { user } = useContext(AuthContext);
     const navigate = useNavigate();
 
+    const slideCopy = t('public.home.hero.slides', { returnObjects: true });
     const slides = [
-        {
-            title: 'Окуңуз, өнүгүңүз жана ийгиликке Edubot Learning менен бирге жетишиңиз!',
-            description:
-                'Программалоо тилдерин жана код жазуу жөндөмдөрүн интерактивдүү сабактар аркылуу өздөштүрүңүз',
-            image: bannerImg1,
-            color: 'from-white to-gray-50',
-        },
-        {
-            title: 'БИЗДИН КУРСТАР DIGITAL-ДҮЙНӨСҮ КАНТИП ИШТЕШИН ТУШУНУУГО ЖАРДАМ БЕРЕТ.',
-            description:
-                'Биз баштан-аяк, этап-этабы менен – баштапкыдан жогорку деңгээлге чейин үйрөтөбүз. Жаңы кесибиңиз сиз ойлогондон да жакын!',
-            image: bannerImg2,
-            color: 'from-teal-900 to-teal-700',
-        },
-        {
-            title: 'Ишкердик жана келечекке инвестиция',
-            description: 'IT-адистери үчүн керектүү билимдерди алгыла',
-            image: bannerImg3,
-            color: 'from-emerald-900 to-emerald-700',
-        },
+        { ...slideCopy[0], image: bannerImg1 },
+        { ...slideCopy[1], image: bannerImg2 },
+        { ...slideCopy[2], image: bannerImg3 },
     ];
 
     useEffect(() => {
@@ -51,7 +37,7 @@ const HeroStart = () => {
         <div
             className="relative from-green-900 to-green-800 text-white 2xl:h-[600px] h-[794px] lg:h-[535px] overflow-hidden"
             aria-roledescription="carousel"
-            aria-label="EduBot негизги сунуштары"
+            aria-label={t('public.home.hero.aria')}
         >
             <div className="relative h-full">
                 {slides.map((slide, index) => {
@@ -60,13 +46,14 @@ const HeroStart = () => {
                     return (
                         <div
                             key={index}
-                            className={`absolute inset-0 transition-all duration-1000 ease-in-out  ${isActive
-                                ? 'opacity-100 z-10 translate-x-0'
-                                : 'opacity-0 z-0 translate-x-full'
-                                }`}
+                            className={`absolute inset-0 transition-all duration-1000 ease-in-out  ${
+                                isActive
+                                    ? 'opacity-100 z-10 translate-x-0'
+                                    : 'opacity-0 z-0 translate-x-full'
+                            }`}
                             aria-hidden={!isActive}
                         >
-                            {/* ---------- СЛАЙД 1 ---------- */}
+                            {/* Slide 1 */}
                             {index === 0 && (
                                 <section className="w-full relative mx-auto flex flex-col lg:flex-row items-center justify-between px-10 py-12 text-black dark:text-white bg-white dark:bg-[#0F1013]">
                                     <div className="lg:w-[600px] text-center lg:text-left space-y-6 h-[50%] lg:h-[454px]">
@@ -86,7 +73,7 @@ const HeroStart = () => {
                                                 }}
                                                 className="border border-[#141619] dark:border-white/70 rounded-lg text-gray-800 dark:text-white hover:bg-gray-100 dark:hover:bg-white/10 transition font-semibold h-[52px] w-[197px] md:w-[220px] md:h-[54px] text-[14px]"
                                             >
-                                                Толук маалымат алуу
+                                                {t('public.home.hero.learnMore')}
                                             </button>
                                             <button
                                                 type="button"
@@ -94,7 +81,7 @@ const HeroStart = () => {
                                                 onClick={goToCourses}
                                                 className="rounded-lg bg-gradient-to-b from-[#FF8C6E] to-[#E14219] text-white shadow-[0px_5px_21.3px_0px_#E14219BF] font-semibold h-[52px] w-[197px] md:w-[220px] md:h-[54px] text-[14px]"
                                             >
-                                                Сабакты азыр баштоо
+                                                {t('public.home.hero.startLesson')}
                                             </button>
                                         </div>
                                     </div>
@@ -105,7 +92,7 @@ const HeroStart = () => {
                                                 200+
                                             </span>
                                             <p className="leading-[100%] tracking-[0%] text-[#141619] dark:text-[#E8ECF3] font-normal text-[12px] mt-[5.91px]">
-                                                Тажрыйбалуу менторлордон онлайн сабактар
+                                                {t('public.home.hero.mentorLessons')}
                                             </p>
                                         </div>
 
@@ -114,7 +101,7 @@ const HeroStart = () => {
                                                 10k+
                                             </span>
                                             <p className="font-[Suisse_Intl] text-[12px] leading-[100%] tracking-[0%] text-[#141619] dark:text-[#E8ECF3] mt-[6.53px]">
-                                                Азыркы күнгө чейинки колдонуучулар
+                                                {t('public.home.hero.usersToDate')}
                                             </p>
                                         </div>
 
@@ -146,10 +133,10 @@ const HeroStart = () => {
                                 </section>
                             )}
 
-                            {/* ---------- СЛАЙД 2 ---------- */}
+                            {/* Slide 2 */}
                             {index === 1 && (
                                 <section className="relative h-full flex items-center justify-center text-white">
-                                    {/* фон с затемнением */}
+                                    {/* Background with overlay */}
                                     <div className="absolute inset-0">
                                         <img
                                             src={slide.image}
@@ -161,7 +148,7 @@ const HeroStart = () => {
                                         <div className="absolute inset-0 bg-[linear-gradient(173.96deg,rgba(141,63,14,0.86)_19.82%,rgba(255,255,255,0)_204.47%)] dark:bg-gradient-to-t from-black/[86%] to-transparent to-[125.26%]" />
                                     </div>
 
-                                    {/* контент */}
+                                    {/* Content */}
                                     <div className="relative z-10 flex flex-col items-center text-center max-w-[1079px] space-y-6">
                                         <h1 className="font-bold lg:text-[57.95px] md:text-[40px] text-[28px] leading-[120%] tracking-[1%] text-center">
                                             {slide.title}
@@ -170,7 +157,7 @@ const HeroStart = () => {
                                             {slide.description}
                                         </p>
 
-                                        {/* блок кнопок и контактов */}
+                                        {/* Actions */}
                                         <div className="flex flex-wrap justify-center lg:justify-start gap-4 pt-[60px]">
                                             <button
                                                 type="button"
@@ -180,7 +167,7 @@ const HeroStart = () => {
                                                     navigate('/contact');
                                                 }}
                                             >
-                                                Толук маалымат алуу
+                                                {t('public.home.hero.learnMore')}
                                             </button>
                                             <button
                                                 type="button"
@@ -188,17 +175,17 @@ const HeroStart = () => {
                                                 onClick={goToCourses}
                                                 className="rounded-lg w-[177px] h-[46px] md:w-[373px] md:h-[72px] bg-gradient-to-b from-[#FF8C6E] to-[#E14219] font-semibold text-[10.12px] md:text-[20px] text-white shadow-[0px_5px_21.3px_0px_#E14219BF]"
                                             >
-                                                Сабакты азыр баштоо
+                                                {t('public.home.hero.startLesson')}
                                             </button>
                                         </div>
                                     </div>
                                 </section>
                             )}
 
-                            {/* ---------- СЛАЙД 3 ---------- */}
+                            {/* Slide 3 */}
                             {index === 2 && (
                                 <section className="relative h-full flex justify-center text-white">
-                                    {/* Фон офиса */}
+                                    {/* Office background */}
                                     <div className="absolute inset-0">
                                         <img
                                             src={slide.image}
@@ -210,16 +197,14 @@ const HeroStart = () => {
                                         <div className="absolute inset-0 bg-black/30 dark:bg-[#000000BD]" />
                                     </div>
 
-                                    {/* Оранжевый блок с текстом */}
+                                    {/* Offer block */}
                                     <div className="relative bg-[linear-gradient(93.72deg,#F06743_11.31%,#D27A3B_67.42%)] text-white px-[4%] py-[4%] md:px-[2%] md:py-[2%] flex flex-col lg:flex-row h-[80%] w-[90%] rounded-3xl m-auto justify-between">
                                         <div className="">
                                             <h1 className="font-[Suisse_Intl] text-[30px] leading-[120%] tracking-[1%]">
-                                                Жылдык планды сатып алыңыз <br /> жана бардык курстарга
-                                                50% <br /> арзандатуу алыңыз.
+                                                {t('public.home.hero.yearlyPlanTitle')}
                                             </h1>
                                             <p className="font-[Suisse_Intl] text-[18px] leading-[120%] tracking-[0%] mt-[26px] ">
-                                                Программалоо тилдерин жана код жазуу <br /> жөндөмдөрүн
-                                                интерактивдүү сабактар аркылуу <br /> өздөштүрүңүз
+                                                {t('public.home.hero.yearlyPlanBody')}
                                             </p>
                                         </div>
                                         <img
@@ -231,7 +216,7 @@ const HeroStart = () => {
                                         />
                                         <div className="flex-col justify-between hidden lg:flex">
                                             <p className="text-[#FFFFFF73] font-normal text-[26px] leading-[120%] tracking-[0%]">
-                                                болуп көрбөгөндөй арзандатуу!
+                                                {t('public.home.hero.discountNote')}
                                             </p>
                                             <div className="text-[#FFFFFF26] font-bold text-[150.49px] lg:text-center text-left">
                                                 50%
@@ -245,7 +230,7 @@ const HeroStart = () => {
                 })}
             </div>
 
-            {/* индикаторы */}
+            {/* Indicators */}
             <div className="absolute bottom-8 left-0 right-0 z-20 flex justify-center space-x-3">
                 {slides.map((_, index) => {
                     const isActive = index === currentSlide;
@@ -255,12 +240,15 @@ const HeroStart = () => {
                             type="button"
                             onClick={() => setCurrentSlide(index)}
                             className="h-1 w-12 bg-white/30 rounded-full overflow-hidden focus:outline-none focus:ring-2 focus:ring-orange-400 focus:ring-offset-2 focus:ring-offset-black"
-                            aria-label={`${index + 1}-слайдга өтүү`}
+                            aria-label={t('public.home.hero.slideButton', {
+                                count: index + 1,
+                            })}
                             aria-current={isActive ? 'true' : undefined}
                         >
                             <span
-                                className={`block h-full bg-white rounded-full transition-all duration-5000 ease-linear ${isActive ? 'animate-progress' : ''
-                                    }`}
+                                className={`block h-full bg-white rounded-full transition-all duration-5000 ease-linear ${
+                                    isActive ? 'animate-progress' : ''
+                                }`}
                                 style={{ width: isActive ? '100%' : '0%' }}
                             />
                         </button>

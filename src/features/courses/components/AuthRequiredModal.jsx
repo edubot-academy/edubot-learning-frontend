@@ -2,13 +2,10 @@
 import { useNavigate } from 'react-router-dom';
 import { FaShoppingCart, FaUserPlus, FaSignInAlt } from 'react-icons/fa';
 import { getAuthAcquisitionPath, isPublicVideoSignupEnabled } from '@shared/auth-config';
+import { useTranslation } from 'react-i18next';
 
-const AuthRequiredModal = ({
-    isOpen,
-    onClose,
-    title = 'Себетке кошуу',
-    description = 'Курсту себетке кошуу үчүн системага кириңиз же жаңы аккаунт түзүңүз',
-}) => {
+const AuthRequiredModal = ({ isOpen, onClose, title, description }) => {
+    const { t } = useTranslation();
     const navigate = useNavigate();
 
     if (!isOpen) return null;
@@ -22,6 +19,8 @@ const AuthRequiredModal = ({
         navigate(getAuthAcquisitionPath(), { state: { from: '/cart' } });
         onClose();
     };
+    const resolvedTitle = title || t('public.courseShared.authRequired.title');
+    const resolvedDescription = description || t('public.courseShared.authRequired.description');
 
     return (
         <>
@@ -42,14 +41,18 @@ const AuthRequiredModal = ({
                                     <FaShoppingCart className="w-6 h-6 text-orange-500" />
                                 </div>
                                 <div>
-                                    <h3 className="text-xl font-bold text-gray-900">{title}</h3>
-                                    <p className="text-sm text-gray-600 mt-1">{description}</p>
+                                    <h3 className="text-xl font-bold text-gray-900">
+                                        {resolvedTitle}
+                                    </h3>
+                                    <p className="text-sm text-gray-600 mt-1">
+                                        {resolvedDescription}
+                                    </p>
                                 </div>
                             </div>
                             <button
                                 onClick={onClose}
                                 className="text-gray-400 hover:text-gray-600 text-2xl leading-none w-8 h-8 flex items-center justify-center hover:bg-gray-100 rounded-full transition-colors"
-                                aria-label="Жабуу"
+                                aria-label={t('public.courseShared.authRequired.close')}
                             >
                                 ×
                             </button>
@@ -60,8 +63,10 @@ const AuthRequiredModal = ({
                         <div className="space-y-4">
                             <div className="bg-orange-50 border border-orange-100 rounded-xl p-4">
                                 <p className="text-orange-800 text-sm">
-                                    <span className="font-semibold">Эскертүү:</span> Сиз Себетте
-                                    сакталган курстарды кийин карап чыга аласыз
+                                    <span className="font-semibold">
+                                        {t('public.courseShared.authRequired.noticeLabel')}
+                                    </span>{' '}
+                                    {t('public.courseShared.authRequired.notice')}
                                 </p>
                             </div>
 
@@ -72,7 +77,9 @@ const AuthRequiredModal = ({
                                         className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-4 px-6 rounded-xl flex items-center justify-center space-x-3 transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98]"
                                     >
                                         <FaUserPlus className="w-5 h-5" />
-                                        <span>Аккаунт түзүү</span>
+                                        <span>
+                                            {t('public.courseShared.authRequired.createAccount')}
+                                        </span>
                                     </button>
                                 ) : null}
 
@@ -81,7 +88,7 @@ const AuthRequiredModal = ({
                                     className="w-full border-2 border-orange-500 text-orange-500 hover:bg-orange-50 font-semibold py-4 px-6 rounded-xl flex items-center justify-center space-x-3 transition-all duration-300"
                                 >
                                     <FaSignInAlt className="w-5 h-5" />
-                                    <span>Кирип көрүү</span>
+                                    <span>{t('public.courseShared.authRequired.login')}</span>
                                 </button>
                             </div>
 
@@ -90,7 +97,7 @@ const AuthRequiredModal = ({
                                     onClick={onClose}
                                     className="w-full text-gray-600 hover:text-gray-800 py-2 text-sm font-medium transition-colors"
                                 >
-                                    Кийинчерээк
+                                    {t('public.courseShared.authRequired.later')}
                                 </button>
                             </div>
                         </div>

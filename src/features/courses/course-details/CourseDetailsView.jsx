@@ -14,8 +14,10 @@ import { HiChatAlt2 } from 'react-icons/hi';
 import Loader from '@shared/ui/Loader';
 import { COURSE_DETAILS_SUPPORT_PLACEMENT } from './courseDetailsPlacement';
 import { getSectionsDurationMinutes } from '../utils/courseDuration';
+import { useTranslation } from 'react-i18next';
 
 export const InstructorChatDock = ({ enrolled, userRole, course }) => {
+    const { t } = useTranslation();
     const [instructorChat, setInstructorChat] = useState(false);
     const chatRef = useRef(null);
     const buttonRef = useRef(null);
@@ -102,8 +104,8 @@ export const InstructorChatDock = ({ enrolled, userRole, course }) => {
                         onClick={toggleInstructorChat}
                         aria-label={
                             instructorChat
-                                ? 'Окутуучу менен чатты жабуу'
-                                : 'Окутуучу менен чатты ачуу'
+                                ? t('public.courseDetails.closeInstructorChat')
+                                : t('public.courseDetails.openInstructorChat')
                         }
                         aria-expanded={instructorChat}
                         aria-controls="instructor-chat-panel"
@@ -121,7 +123,7 @@ export const InstructorChatDock = ({ enrolled, userRole, course }) => {
                             ref={chatPanelRef}
                             role="dialog"
                             aria-modal="false"
-                            aria-label="Окутуучу менен чат"
+                            aria-label={t('public.courseDetails.instructorChat')}
                             tabIndex={-1}
                             className="h-full outline-none"
                         >
@@ -273,23 +275,31 @@ ActiveLessonRuntime.propTypes = {
 };
 
 export const CourseDetailsJourneyBanner = ({ enrolled, activeLesson, course, lessonCount }) => {
-    const title = enrolled ? 'Активдүү окуу режими' : 'Курс менен таанышуу режими';
+    const { t } = useTranslation();
+    const title = enrolled
+        ? t('public.courseDetails.titleEnrolled')
+        : t('public.courseDetails.titleProspect');
     const description = enrolled
-        ? 'Бул бетте видео, тапшырма, прогресс жана окутуучу менен байланыш окууну улантууга багытталат.'
-        : 'Бул бетте программанын мазмуну, окутуучу жана сын-пикирлер курска катталуу чечимин колдойт.';
+        ? t('public.courseDetails.descriptionEnrolled')
+        : t('public.courseDetails.descriptionProspect');
     const primarySignal = enrolled
-        ? activeLesson?.title || activeLesson?.name || 'Кийинки сабакты тандаңыз'
-        : `${lessonCount} сабак`;
+        ? activeLesson?.title || activeLesson?.name || t('public.courseDetails.pickNextLesson')
+        : t('public.courseDetails.lessonCount', { count: lessonCount });
     const secondarySignal = enrolled
-        ? 'Сабак мазмуну жана AI жардамчы enrollment абалына жараша ачылат.'
-        : course?.level || course?.category?.name || course?.categoryName || 'Курс маалыматы';
+        ? t('public.courseDetails.assistantAccess')
+        : course?.level ||
+          course?.category?.name ||
+          course?.categoryName ||
+          t('public.courseDetails.courseInfo');
 
     return (
         <section className="rounded-2xl border border-[#E6E8EC] bg-white px-4 py-3 shadow-sm dark:border-[#2A2E35] dark:bg-[#1A1A1A]">
             <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                 <div>
                     <p className="text-xs font-semibold uppercase tracking-[0.16em] text-gray-500 dark:text-gray-400">
-                        {enrolled ? 'Окуу режими' : 'Таанышуу режими'}
+                        {enrolled
+                            ? t('public.courseDetails.modeLabelEnrolled')
+                            : t('public.courseDetails.modeLabelProspect')}
                     </p>
                     <h2 className="mt-1 text-lg font-semibold text-gray-900 dark:text-white">
                         {title}
@@ -301,15 +311,23 @@ export const CourseDetailsJourneyBanner = ({ enrolled, activeLesson, course, les
                 <div className="grid gap-2 text-sm sm:grid-cols-2 md:min-w-[20rem]">
                     <div className="rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 dark:border-gray-800 dark:bg-gray-950">
                         <p className="text-xs font-medium text-gray-500 dark:text-gray-400">
-                            {enrolled ? 'Учурдагы сабак' : 'Программа'}
+                            {enrolled
+                                ? t('public.courseDetails.currentLesson')
+                                : t('public.courseDetails.program')}
                         </p>
-                        <p className="mt-1 font-semibold text-gray-900 dark:text-white">{primarySignal}</p>
+                        <p className="mt-1 font-semibold text-gray-900 dark:text-white">
+                            {primarySignal}
+                        </p>
                     </div>
                     <div className="rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 dark:border-gray-800 dark:bg-gray-950">
                         <p className="text-xs font-medium text-gray-500 dark:text-gray-400">
-                            {enrolled ? 'Жеткиликтүүлүк' : 'Контекст'}
+                            {enrolled
+                                ? t('public.courseDetails.availability')
+                                : t('public.courseDetails.context')}
                         </p>
-                        <p className="mt-1 font-semibold text-gray-900 dark:text-white">{secondarySignal}</p>
+                        <p className="mt-1 font-semibold text-gray-900 dark:text-white">
+                            {secondarySignal}
+                        </p>
                     </div>
                 </div>
             </div>
@@ -616,47 +634,55 @@ EnrolledCourseSupport.propTypes = {
     courseId: PropTypes.oneOfType([PropTypes.number, PropTypes.string]).isRequired,
 };
 
-export const CourseDetailsErrorState = ({ message }) => (
-    <main className="min-h-screen bg-white px-4 py-16 dark:bg-[#222222]">
-        <div className="mx-auto max-w-xl rounded-2xl border border-red-200 bg-red-50 p-6 text-red-800 dark:border-red-900/40 dark:bg-red-950/20 dark:text-red-100">
-            <h1 className="text-2xl font-bold">Курс жүктөлгөн жок</h1>
-            <p className="mt-3 text-sm leading-6">{message}</p>
-            <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-                <button
-                    type="button"
-                    onClick={() => window.location.reload()}
-                    className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-700"
-                >
-                    Кайра аракет кылуу
-                </button>
-                <Link
-                    to="/courses"
-                    className="rounded-lg border border-red-300 px-4 py-2 text-center text-sm font-semibold text-red-700 transition hover:bg-red-100 dark:text-red-100"
-                >
-                    Курстарга кайтуу
-                </Link>
+export const CourseDetailsErrorState = ({ message }) => {
+    const { t } = useTranslation();
+
+    return (
+        <main className="min-h-screen bg-white px-4 py-16 dark:bg-[#222222]">
+            <div className="mx-auto max-w-xl rounded-2xl border border-red-200 bg-red-50 p-6 text-red-800 dark:border-red-900/40 dark:bg-red-950/20 dark:text-red-100">
+                <h1 className="text-2xl font-bold">
+                    {t('public.courseDetails.loadingFailedTitle')}
+                </h1>
+                <p className="mt-3 text-sm leading-6">{message}</p>
+                <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+                    <button
+                        type="button"
+                        onClick={() => window.location.reload()}
+                        className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-700"
+                    >
+                        {t('public.courseDetails.retry')}
+                    </button>
+                    <Link
+                        to="/courses"
+                        className="rounded-lg border border-red-300 px-4 py-2 text-center text-sm font-semibold text-red-700 transition hover:bg-red-100 dark:text-red-100"
+                    >
+                        {t('public.courseDetails.backToCourses')}
+                    </Link>
+                </div>
             </div>
-        </div>
-    </main>
-);
+        </main>
+    );
+};
 
 CourseDetailsErrorState.propTypes = {
     message: PropTypes.string.isRequired,
 };
 
-export const CourseDetailsNotFoundState = () => (
-    <main className="min-h-screen bg-white px-4 py-16 dark:bg-[#222222]">
-        <div className="mx-auto max-w-xl rounded-2xl border border-gray-200 bg-gray-50 p-6 text-gray-800 dark:border-gray-800 dark:bg-gray-950 dark:text-gray-100">
-            <h1 className="text-2xl font-bold">Курс табылган жок</h1>
-            <p className="mt-3 text-sm leading-6">
-                Бул курс өчүрүлгөн, жашырылган же шилтемеси туура эмес болушу мүмкүн.
-            </p>
-            <Link
-                to="/courses"
-                className="mt-6 inline-flex rounded-lg bg-edubot-orange px-4 py-2 text-sm font-semibold text-white transition hover:bg-orange-600"
-            >
-                Курстарды көрүү
-            </Link>
-        </div>
-    </main>
-);
+export const CourseDetailsNotFoundState = () => {
+    const { t } = useTranslation();
+
+    return (
+        <main className="min-h-screen bg-white px-4 py-16 dark:bg-[#222222]">
+            <div className="mx-auto max-w-xl rounded-2xl border border-gray-200 bg-gray-50 p-6 text-gray-800 dark:border-gray-800 dark:bg-gray-950 dark:text-gray-100">
+                <h1 className="text-2xl font-bold">{t('public.courseDetails.notFoundTitle')}</h1>
+                <p className="mt-3 text-sm leading-6">{t('public.courseDetails.notFoundBody')}</p>
+                <Link
+                    to="/courses"
+                    className="mt-6 inline-flex rounded-lg bg-edubot-orange px-4 py-2 text-sm font-semibold text-white transition hover:bg-orange-600"
+                >
+                    {t('public.courseDetails.viewCourses')}
+                </Link>
+            </div>
+        </main>
+    );
+};

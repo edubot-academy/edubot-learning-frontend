@@ -2,6 +2,7 @@ import { useContext } from 'react';
 import PropTypes from 'prop-types';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { FaTimes } from 'react-icons/fa';
+import { useTranslation } from 'react-i18next';
 import { AuthContext } from '@app/providers';
 import { isPublicVideoSignupEnabled } from '@shared/auth-config';
 import { getUserMenuItems, getUserNavigationPaths } from '@shared/utils/navigation';
@@ -10,6 +11,7 @@ import { IoChatbubblesOutline, IoHeartOutline } from 'react-icons/io5';
 import { FaRegBell } from 'react-icons/fa';
 import { BsCart2 } from 'react-icons/bs';
 import { FiBarChart2, FiBookOpen, FiCalendar } from 'react-icons/fi';
+import LanguageSwitcher from '@shared-ui/LanguageSwitcher';
 
 const menuIcons = {
     'my-courses': FiBookOpen,
@@ -22,6 +24,7 @@ const menuIcons = {
 };
 
 const SideBar = ({ setMenuOpen, setPosition }) => {
+    const { t } = useTranslation();
     const { user, logout } = useContext(AuthContext);
     const location = useLocation();
     const navigate = useNavigate();
@@ -54,7 +57,7 @@ const SideBar = ({ setMenuOpen, setPosition }) => {
                         closeMenus();
                     }}
                     className="  text-gray-600 dark:text-gray-300"
-                    aria-label="Менюну жабуу"
+                    aria-label={t('common.closeMenu')}
                 >
                     <FaTimes className="text-2xl" aria-hidden="true" />
                 </button>
@@ -63,7 +66,7 @@ const SideBar = ({ setMenuOpen, setPosition }) => {
             <div className="mt-8">
                 <div className="flex justify-between gap-1 pb-6 border-b border-gray-300 rounded-lg p-2">
                     <div className="flex">
-                        <img src={Person} alt="Person" />
+                        <img src={Person} alt="" aria-hidden="true" />
                     </div>
 
                     {user ? (
@@ -75,8 +78,10 @@ const SideBar = ({ setMenuOpen, setPosition }) => {
                             onKeyDown={(e) => e.key === 'Enter' && handleProfileClick()}
                         >
                             <div className="flex flex-col items-start">
-                                <h2 className="text-xl font-semibold">{user?.fullName || 'Колдонуучу'}</h2>
-                                <span className="text-[#208D28]">Идентифицированный</span>
+                                <h2 className="text-xl font-semibold">
+                                    {user?.fullName || t('common.userFallback')}
+                                </h2>
+                                <span className="text-[#208D28]">{t('common.identified')}</span>
                                 <span className="text-sm text-gray-500 capitalize">
                                     {user?.role}
                                 </span>
@@ -91,28 +96,44 @@ const SideBar = ({ setMenuOpen, setPosition }) => {
                                 }}
                                 className="inline-flex items-center justify-center rounded-lg bg-gradient-to-b from-[#FF8C6E] to-[#E14219] px-5 py-3 text-sm font-medium text-white orange__shadow transition hover:from-[#C2410C] hover:to-[#C2410C] focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
                             >
-                                Кирүү
+                                {t('common.login')}
                             </Link>
                         </div>
                     )}
                 </div>
 
                 {user ? (
-                    <nav aria-label="Аккаунт менюсу">
+                    <nav aria-label={t('nav.accountMenu')}>
                         <ul className="flex flex-col justify-between items-start">
                             <li className="w-full">
-                                <Link to={paths.dashboardOverview} onClick={closeMenus} className={`${active(paths.dashboardOverview)} ${linkClass}`} aria-current={location.pathname === paths.dashboardOverview ? 'page' : undefined}>
+                                <Link
+                                    to={paths.dashboardOverview}
+                                    onClick={closeMenus}
+                                    className={`${active(paths.dashboardOverview)} ${linkClass}`}
+                                    aria-current={
+                                        location.pathname === paths.dashboardOverview
+                                            ? 'page'
+                                            : undefined
+                                    }
+                                >
                                     <FiBarChart2 className="w-6 h-6" aria-hidden="true" />
-                                    Дашборд
+                                    {t('nav.dashboard')}
                                 </Link>
                             </li>
                             {userMenuItems.map((item) => {
                                 const Icon = menuIcons[item.id] || FiBarChart2;
                                 return (
                                     <li key={item.id} className="w-full">
-                                        <Link to={item.path} onClick={closeMenus} className={`${active(item.path)} ${linkClass}`} aria-current={location.pathname === item.path ? 'page' : undefined}>
+                                        <Link
+                                            to={item.path}
+                                            onClick={closeMenus}
+                                            className={`${active(item.path)} ${linkClass}`}
+                                            aria-current={
+                                                location.pathname === item.path ? 'page' : undefined
+                                            }
+                                        >
                                             <Icon className="w-6 h-6" aria-hidden="true" />
-                                            {item.label}
+                                            {t(item.labelKey)}
                                         </Link>
                                     </li>
                                 );
@@ -120,33 +141,65 @@ const SideBar = ({ setMenuOpen, setPosition }) => {
                         </ul>
                     </nav>
                 ) : (
-                    <nav aria-label="Конок менюсу">
+                    <nav aria-label={t('nav.guestMenu')}>
                         <ul className="flex flex-col justify-between items-start">
                             <li className="w-full">
-                                <Link to="/cart" onClick={closeMenus} className={`${active('/cart')} ${linkClass}`} aria-current={location.pathname === '/cart' ? 'page' : undefined}>
-                                    <BsCart2 className='w-6 h-6' aria-hidden="true" />
-                                    Себет
+                                <Link
+                                    to="/cart"
+                                    onClick={closeMenus}
+                                    className={`${active('/cart')} ${linkClass}`}
+                                    aria-current={
+                                        location.pathname === '/cart' ? 'page' : undefined
+                                    }
+                                >
+                                    <BsCart2 className="w-6 h-6" aria-hidden="true" />
+                                    {t('common.cart')}
                                 </Link>
                             </li>
                             <li className="w-full">
-                                <Link to="/favourites" onClick={closeMenus} className={`${active('/favourites')} ${linkClass}`} aria-current={location.pathname === '/favourites' ? 'page' : undefined}>
-                                    <IoHeartOutline className='w-6 h-6' aria-hidden="true" />
-                                    Тандалгандар
+                                <Link
+                                    to="/favourites"
+                                    onClick={closeMenus}
+                                    className={`${active('/favourites')} ${linkClass}`}
+                                    aria-current={
+                                        location.pathname === '/favourites' ? 'page' : undefined
+                                    }
+                                >
+                                    <IoHeartOutline className="w-6 h-6" aria-hidden="true" />
+                                    {t('common.favourites')}
                                 </Link>
                             </li>
                         </ul>
                     </nav>
                 )}
 
-                <nav className={`flex flex-col ${user !== null ? 'mt-0' : 'mt-4'}`} aria-label="Негизги навигация">
-                    <Link to="/courses" onClick={closeMenus} className={`${active('/courses')} ${linkClass}`} aria-current={location.pathname === '/courses' ? 'page' : undefined}>
-                        Курстар
+                <nav
+                    className={`flex flex-col ${user !== null ? 'mt-0' : 'mt-4'}`}
+                    aria-label={t('nav.primaryNavigation')}
+                >
+                    <Link
+                        to="/courses"
+                        onClick={closeMenus}
+                        className={`${active('/courses')} ${linkClass}`}
+                        aria-current={location.pathname === '/courses' ? 'page' : undefined}
+                    >
+                        {t('nav.courses')}
                     </Link>
-                    <Link to="/about" onClick={closeMenus} className={`${active('/about')} ${linkClass}`} aria-current={location.pathname === '/about' ? 'page' : undefined}>
-                        Биз жөнүндө
+                    <Link
+                        to="/about"
+                        onClick={closeMenus}
+                        className={`${active('/about')} ${linkClass}`}
+                        aria-current={location.pathname === '/about' ? 'page' : undefined}
+                    >
+                        {t('nav.about')}
                     </Link>
-                    <Link to="/contact" onClick={closeMenus} className={`${active('/contact')} ${linkClass}`} aria-current={location.pathname === '/contact' ? 'page' : undefined}>
-                        Байланышуу
+                    <Link
+                        to="/contact"
+                        onClick={closeMenus}
+                        className={`${active('/contact')} ${linkClass}`}
+                        aria-current={location.pathname === '/contact' ? 'page' : undefined}
+                    >
+                        {t('nav.contact')}
                     </Link>
                     {user !== null ? (
                         <>
@@ -158,19 +211,30 @@ const SideBar = ({ setMenuOpen, setPosition }) => {
                                     closeMenus();
                                 }}
                             >
-                                Аккаунттан чыгуу
+                                {t('common.logout')}
                             </button>
                         </>
                     ) : (
                         <>
                             {isPublicVideoSignupEnabled ? (
-                                <Link to="/register" onClick={closeMenus} className={`${active('/register')} ${linkClass}`} aria-current={location.pathname === '/register' ? 'page' : undefined}>
-                                    Катталуу
+                                <Link
+                                    to="/register"
+                                    onClick={closeMenus}
+                                    className={`${active('/register')} ${linkClass}`}
+                                    aria-current={
+                                        location.pathname === '/register' ? 'page' : undefined
+                                    }
+                                >
+                                    {t('common.signup')}
                                 </Link>
                             ) : null}
                         </>
                     )}
                 </nav>
+
+                <div className="mt-6 border-t border-gray-200 px-3 pt-5 dark:border-gray-700">
+                    <LanguageSwitcher placement="top" />
+                </div>
             </div>
         </>
     );

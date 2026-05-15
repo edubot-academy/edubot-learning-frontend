@@ -1,10 +1,13 @@
 import FeedbackSection from '@features/courses/components/FeedbackSection';
+import { useTranslation } from 'react-i18next';
 
 function Feedback() {
+    const { t } = useTranslation();
+
     return (
         <FeedbackSection
-            title="Биздин окуучулар эмне дейт"
-            subtitle="Бул жерде сиз биздин онлайн сабактарыбызды бүтүргөн студенттерибиздин бардык сын-пикирлерин көрө аласыз."
+            title={t('public.home.feedback.title')}
+            subtitle={t('public.home.feedback.subtitle')}
         />
     );
 }

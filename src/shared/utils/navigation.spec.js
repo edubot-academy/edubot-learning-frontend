@@ -43,12 +43,12 @@ describe('navigation helpers', () => {
 
     it('exposes menu links that match role-specific dashboard paths', () => {
         const adminItems = getUserMenuItems('admin');
-        expect(adminItems).toContainEqual({ id: 'courses', label: 'Курстар', path: '/admin?tab=courses' });
-        expect(adminItems).toContainEqual({ id: 'notifications', label: 'Билдирүүлөр', path: '/admin?tab=notifications' });
-        expect(adminItems).toContainEqual({ id: 'chat', label: 'Чат', path: '/admin?tab=notifications' });
+        expect(adminItems).toContainEqual({ id: 'courses', labelKey: 'nav.courses', path: '/admin?tab=courses' });
+        expect(adminItems).toContainEqual({ id: 'notifications', labelKey: 'nav.notifications', path: '/admin?tab=notifications' });
+        expect(adminItems).toContainEqual({ id: 'chat', labelKey: 'nav.chat', path: '/admin?tab=notifications' });
 
         const studentItems = getUserMenuItems('student');
-        expect(studentItems).toContainEqual({ id: 'my-courses', label: 'Менин курстарым', path: '/student?tab=my-courses' });
-        expect(studentItems).toContainEqual({ id: 'chat', label: 'Чат', path: '/student?tab=chat' });
+        expect(studentItems).toContainEqual({ id: 'my-courses', labelKey: 'nav.myCourses', path: '/student?tab=my-courses' });
+        expect(studentItems).toContainEqual({ id: 'chat', labelKey: 'nav.chat', path: '/student?tab=chat' });
     });
 });

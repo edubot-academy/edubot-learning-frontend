@@ -1,5 +1,7 @@
 import axios from 'axios';
 import { API_BASE_URL } from '../../config';
+import { getResolvedLocale } from '../../i18n/locale';
+import { API_ERROR_CODES, getApiErrorCode } from './error';
 
 // Token management for cross-domain authentication
 const getStoredToken = () => {
@@ -57,19 +59,22 @@ export const getCookieValue = (name) => {
 
 api.interceptors.request.use(
     (config) => {
+        if (!config.headers) {
+            config.headers = {};
+        }
+
         // Add Authorization header as fallback for cross-domain requests
         const token = getStoredToken();
         if (token && !config.headers.Authorization) {
             config.headers.Authorization = `Bearer ${token}`;
         }
 
+        config.headers['Accept-Language'] = getResolvedLocale();
+
         const method = String(config.method || 'get').toUpperCase();
         if (!['GET', 'HEAD', 'OPTIONS'].includes(method)) {
             const csrfToken = getCookieValue('edubot_csrf_token');
             if (csrfToken) {
-                if (!config.headers) {
-                    config.headers = {};
-                }
                 config.headers['X-CSRF-Token'] = csrfToken;
             }
         }
@@ -94,11 +99,13 @@ api.interceptors.response.use(
     async (error) => {
         const shouldSkipAuthRedirect = Boolean(error?.config?.skipAuthRedirect);
         const message = error?.response?.data?.message;
+        const code = getApiErrorCode(error);
         const isCsrfError =
             error?.response?.status === 403 &&
-            (Array.isArray(message)
-                ? message.includes(CSRF_ERROR_TEXT)
-                : String(message || '').includes(CSRF_ERROR_TEXT));
+            (code === API_ERROR_CODES.CSRF_TOKEN_INVALID ||
+                (Array.isArray(message)
+                    ? message.includes(CSRF_ERROR_TEXT)
+                    : String(message || '').includes(CSRF_ERROR_TEXT)));
 
         if (isCsrfError && error.config && !error.config.__csrfRetry) {
             error.config.__csrfRetry = true;

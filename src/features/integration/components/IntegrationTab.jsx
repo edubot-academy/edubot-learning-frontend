@@ -182,7 +182,15 @@ const IntegrationTab = ({ companyId = null }) => {
 
             return next;
         });
-    }, [dateFrom, dateTo, issueTypeFilter, quickView, setSearchParams, severityFilter, statusFilter]);
+    }, [
+        dateFrom,
+        dateTo,
+        issueTypeFilter,
+        quickView,
+        setSearchParams,
+        severityFilter,
+        statusFilter,
+    ]);
 
     const loadData = useCallback(async () => {
         setLoading(true);
@@ -198,7 +206,7 @@ const IntegrationTab = ({ companyId = null }) => {
             setEnrollmentEvents(eventResponse?.items || []);
             setIntegrationHealth(healthResponse?.queue || null);
         } catch (error) {
-            toast.error(parseApiError(error, 'Интеграция маалыматы жүктөлгөн жок'));
+            toast.error(parseApiError(error, 'Интеграция маалыматы жүктөлгөн жок').message);
         } finally {
             setLoading(false);
         }
@@ -229,7 +237,10 @@ const IntegrationTab = ({ companyId = null }) => {
             })
             .catch((error) => {
                 if (!mounted) return;
-                const parsed = parseApiError(error, 'Окуянын толук маалыматын жүктөө мүмкүн болгон жок');
+                const parsed = parseApiError(
+                    error,
+                    'Окуянын толук маалыматын жүктөө мүмкүн болгон жок'
+                );
                 setDetailError(parsed.message);
                 setSelectedEnrollmentEventDetail(null);
             })
@@ -289,7 +300,8 @@ const IntegrationTab = ({ companyId = null }) => {
     }, [dateFrom, dateTo, enrollmentEvents, quickView, statusFilter]);
 
     const criticalCount = useMemo(
-        () => filteredRiskAlerts.filter((alert) => alert?.severity === RISK_SEVERITY.CRITICAL).length,
+        () =>
+            filteredRiskAlerts.filter((alert) => alert?.severity === RISK_SEVERITY.CRITICAL).length,
         [filteredRiskAlerts]
     );
 
@@ -302,8 +314,7 @@ const IntegrationTab = ({ companyId = null }) => {
     );
 
     const failedEnrollmentDispatchCount = useMemo(
-        () =>
-            filteredEnrollmentEvents.filter((event) => event?.status === 'failed').length,
+        () => filteredEnrollmentEvents.filter((event) => event?.status === 'failed').length,
         [filteredEnrollmentEvents]
     );
 
@@ -322,7 +333,7 @@ const IntegrationTab = ({ companyId = null }) => {
                 eyebrow="CRM and LMS sync"
                 title="CRM-LMS Интеграция"
                 description="Webhook абалы, тобокелдик жыйынтыгы жана enrollment статус окуялары."
-                action={(
+                action={
                     <button
                         type="button"
                         onClick={loadData}
@@ -331,7 +342,7 @@ const IntegrationTab = ({ companyId = null }) => {
                     >
                         {loading ? 'Жүктөлүүдө...' : 'Жаңыртуу'}
                     </button>
-                )}
+                }
             >
                 <DashboardFilterBar gridClassName="lg:grid-cols-3">
                     <FilterSelect
@@ -376,15 +387,36 @@ const IntegrationTab = ({ companyId = null }) => {
                 </DashboardFilterBar>
 
                 <div className="grid gap-4 mt-5 md:grid-cols-3">
-                    <DashboardMetricCard label="Бүгүнкү тобокелдик эскертмеси" value={riskSummary?.todayGenerated ?? 0} />
-                    <DashboardMetricCard label="Критикалык эскертме" value={criticalCount} tone={criticalCount ? 'red' : 'default'} />
-                    <DashboardMetricCard label="Каттоо окуялары" value={filteredEnrollmentEvents.length} tone={filteredEnrollmentEvents.length ? 'blue' : 'default'} />
+                    <DashboardMetricCard
+                        label="Бүгүнкү тобокелдик эскертмеси"
+                        value={riskSummary?.todayGenerated ?? 0}
+                    />
+                    <DashboardMetricCard
+                        label="Критикалык эскертме"
+                        value={criticalCount}
+                        tone={criticalCount ? 'red' : 'default'}
+                    />
+                    <DashboardMetricCard
+                        label="Каттоо окуялары"
+                        value={filteredEnrollmentEvents.length}
+                        tone={filteredEnrollmentEvents.length ? 'blue' : 'default'}
+                    />
                 </div>
 
                 <div className="grid gap-4 mt-4 md:grid-cols-3">
-                    <DashboardMetricCard label="Күтүүдөгү вебхук" value={integrationHealth?.pending ?? 0} />
-                    <DashboardMetricCard label="Ишке ашпаган вебхук" value={integrationHealth?.failed ?? 0} tone={(integrationHealth?.failed ?? 0) ? 'amber' : 'green'} />
-                    <DashboardMetricCard label="Акыркы жөнөтүү" value={formatDateTime(integrationHealth?.lastSentAt)} />
+                    <DashboardMetricCard
+                        label="Күтүүдөгү вебхук"
+                        value={integrationHealth?.pending ?? 0}
+                    />
+                    <DashboardMetricCard
+                        label="Ишке ашпаган вебхук"
+                        value={integrationHealth?.failed ?? 0}
+                        tone={(integrationHealth?.failed ?? 0) ? 'amber' : 'green'}
+                    />
+                    <DashboardMetricCard
+                        label="Акыркы жөнөтүү"
+                        value={formatDateTime(integrationHealth?.lastSentAt)}
+                    />
                 </div>
 
                 <div className="grid gap-4 mt-4 md:grid-cols-3">
@@ -400,7 +432,10 @@ const IntegrationTab = ({ companyId = null }) => {
                     />
                     <DashboardMetricCard
                         label="Акыркы pending каттоо"
-                        value={formatDateTime(pendingEnrollmentEvents[0]?.createdAt || pendingEnrollmentEvents[0]?.occurredAt)}
+                        value={formatDateTime(
+                            pendingEnrollmentEvents[0]?.createdAt ||
+                                pendingEnrollmentEvents[0]?.occurredAt
+                        )}
                     />
                 </div>
 
@@ -521,7 +556,9 @@ const IntegrationTab = ({ companyId = null }) => {
                         <tbody>
                             {filteredRiskAlerts.map((alert) => (
                                 <tr
-                                    key={alert.eventId || `${alert.enrollmentId}-${alert.createdAt}`}
+                                    key={
+                                        alert.eventId || `${alert.enrollmentId}-${alert.createdAt}`
+                                    }
                                     className="border-b border-gray-50 dark:border-gray-900"
                                 >
                                     <td className="py-2 pr-3 text-gray-700 dark:text-gray-200">
@@ -599,7 +636,9 @@ const IntegrationTab = ({ companyId = null }) => {
                                         {renderStudentCell(event)}
                                     </td>
                                     <td className="py-2 pr-3">
-                                        <StatusBadge tone={statusBadgeClass(event.enrollmentStatus)}>
+                                        <StatusBadge
+                                            tone={statusBadgeClass(event.enrollmentStatus)}
+                                        >
                                             {event.enrollmentStatus || '-'}
                                         </StatusBadge>
                                     </td>
@@ -739,7 +778,10 @@ const EnrollmentEventDetailModal = ({ event, detail, loading, error, onClose }) 
         {event ? (
             <div className="space-y-4">
                 <div className="grid gap-4 sm:grid-cols-2">
-                    <DetailField label="Окуя убактысы" value={formatDateTime(event.createdAt || event.occurredAt)} />
+                    <DetailField
+                        label="Окуя убактысы"
+                        value={formatDateTime(event.createdAt || event.occurredAt)}
+                    />
                     <DetailField label="Окуя ID" value={event.eventId || '-'} />
                     <DetailField
                         label="LMS каттоо"
@@ -781,7 +823,9 @@ const EnrollmentEventDetailModal = ({ event, detail, loading, error, onClose }) 
 
                 {detail?.payload ? (
                     <div className="space-y-2">
-                        <p className="text-sm font-semibold text-edubot-ink dark:text-white">Webhook payload</p>
+                        <p className="text-sm font-semibold text-edubot-ink dark:text-white">
+                            Webhook payload
+                        </p>
                         <pre className="max-h-72 overflow-auto rounded-xl border border-edubot-line/80 bg-slate-950 px-4 py-3 text-xs text-slate-100">
                             {JSON.stringify(detail.payload, null, 2)}
                         </pre>
@@ -800,10 +844,10 @@ const EnrollmentEventDetailModal = ({ event, detail, loading, error, onClose }) 
                             event.enrollmentStatus === ENROLLMENT_STATUS.PENDING
                                 ? QUICK_VIEW.PENDING
                                 : event.enrollmentStatus === ENROLLMENT_STATUS.ACTIVE
-                                    ? QUICK_VIEW.ACTIVE
-                                    : event.status === 'failed'
-                                        ? QUICK_VIEW.FAILED
-                                        : QUICK_VIEW.ALL
+                                  ? QUICK_VIEW.ACTIVE
+                                  : event.status === 'failed'
+                                    ? QUICK_VIEW.FAILED
+                                    : QUICK_VIEW.ALL
                         )}
                         className="dashboard-button-secondary"
                     >
@@ -819,8 +863,12 @@ const DetailField = ({ label, value, copyLabel }) => (
     <div className="rounded-xl border border-edubot-line/80 bg-white px-4 py-3 dark:border-slate-700 dark:bg-slate-900">
         <div className="flex items-start justify-between gap-3">
             <div className="min-w-0 flex-1">
-                <p className="text-xs uppercase tracking-wide text-edubot-muted dark:text-slate-400">{label}</p>
-                <p className="mt-1 text-sm font-medium text-edubot-ink dark:text-white break-all">{value}</p>
+                <p className="text-xs uppercase tracking-wide text-edubot-muted dark:text-slate-400">
+                    {label}
+                </p>
+                <p className="mt-1 text-sm font-medium text-edubot-ink dark:text-white break-all">
+                    {value}
+                </p>
             </div>
             {copyLabel && value && value !== '-' ? (
                 <button

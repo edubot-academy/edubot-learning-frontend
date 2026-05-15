@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { SUPPORT_CONTACT } from '@shared/config/support';
+import { useTranslation } from 'react-i18next';
 
 const FAQItem = ({ id, question, answer, isOpen, onClick }) => (
     <div className="border-b border-gray-200 dark:border-[#2A2E35]">
@@ -12,15 +13,18 @@ const FAQItem = ({ id, question, answer, isOpen, onClick }) => (
             id={`${id}-button`}
         >
             <span className="font-semibold text-gray-900 dark:text-[#E8ECF3]">{question}</span>
-            <span className="text-xl text-gray-500 dark:text-gray-300" aria-hidden="true">{isOpen ? '−' : '+'}</span>
+            <span className="text-xl text-gray-500 dark:text-gray-300" aria-hidden="true">
+                {isOpen ? '−' : '+'}
+            </span>
         </button>
 
         <div
             id={`${id}-panel`}
             role="region"
             aria-labelledby={`${id}-button`}
-            className={`overflow-hidden transition-all duration-500 ease-in-out ${isOpen ? 'max-h-40 opacity-100 mb-4' : 'max-h-0 opacity-0'
-                }`}
+            className={`overflow-hidden transition-all duration-500 ease-in-out ${
+                isOpen ? 'max-h-40 opacity-100 mb-4' : 'max-h-0 opacity-0'
+            }`}
         >
             <p className="text-gray-500 dark:text-gray-300 text-sm leading-relaxed">{answer}</p>
         </div>
@@ -28,32 +32,19 @@ const FAQItem = ({ id, question, answer, isOpen, onClick }) => (
 );
 
 const FAQ = () => {
-    const faqData = [
-        {
-            q: 'Курска кантип катталса болот?',
-            a: 'Каттоо үчүн каттоо эсебин түзүп, курсту тандап, "Катталуу" баскычын басыңыз.',
-        },
-        {
-            q: 'Edubot кандай курстарды сунуш кылат?',
-            a: 'Бизде IT, дизайн, маркетинг, ар кандай тилдер жана башка багыттар боюнча курстар бар.',
-        },
-        {
-            q: 'Курсту аяктагандан кийин кантип сертификат алсам болот?',
-            a: 'Курсту ийгиликтүү аяктап, тесттен өткөндөн кийин жеке кабинетиңизде сертификат аласыз.',
-        },
-        {
-            q: 'Суроолорум болсо, колдоо алууга кандай кайрылсам болот?',
-            a: `Сиз бизге ${SUPPORT_CONTACT.email} дарегине жазсаңыз же ${SUPPORT_CONTACT.phoneDisplay} номерине кайрылсаңыз болот.`,
-        },
-    ];
-
+    const { t } = useTranslation();
+    const faqData = t('public.home.faq.items', {
+        email: SUPPORT_CONTACT.email,
+        phone: SUPPORT_CONTACT.phoneDisplay,
+        returnObjects: true,
+    });
     const [openIndex, setOpenIndex] = useState(null);
 
     return (
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12 mb-20 bg-white dark:bg-[#141619] rounded-xl shadow-sm border border-gray-200 dark:border-[#2A2E35]">
             <h3 className="text-2xl font-bold text-gray-900 dark:text-[#E8ECF3]">FAQ</h3>
             <p className="text-gray-500 dark:text-gray-300 text-sm mb-6">
-                Биз бул жерде көп берилүүчү суроолорго жоопторду чогулттук.
+                {t('public.home.faq.intro')}
             </p>
             <div className="divide-y divide-gray-200 dark:divide-[#2A2E35]">
                 {faqData.map((item, index) => (

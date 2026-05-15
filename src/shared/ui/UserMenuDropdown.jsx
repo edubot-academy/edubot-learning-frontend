@@ -1,5 +1,6 @@
 import { useContext } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import Lamp from '@assets/icons/lamp.svg';
 import Bell from '@assets/icons/call.svg';
 import Basket from '@assets/icons/basket.svg';
@@ -41,6 +42,7 @@ const renderMenuIcon = (itemId) => {
 };
 
 function UserMenuDropdown({ user, onClose }) {
+    const { t } = useTranslation();
     const { logout } = useContext(AuthContext);
     const paths = getUserNavigationPaths(user);
     const menuItemsTop = getUserMenuItems(user);
@@ -65,7 +67,8 @@ function UserMenuDropdown({ user, onClose }) {
                     <div className="flex min-w-0 items-center gap-3">
                         <img
                             src={Profile}
-                            alt="Profile"
+                            alt=""
+                            aria-hidden="true"
                             className="h-11 w-11 shrink-0 rounded-full"
                         />
                         <div className="min-w-0">
@@ -73,7 +76,7 @@ function UserMenuDropdown({ user, onClose }) {
                                 {user.fullName}
                             </h3>
                             <p className="text-xs text-green-600 dark:text-green-400">
-                                Активдүү аккаунт
+                                {t('common.activeAccount')}
                             </p>
                             {user?.role && (
                                 <p className="text-xs capitalize text-gray-500 dark:text-gray-300">
@@ -84,22 +87,23 @@ function UserMenuDropdown({ user, onClose }) {
                     </div>
                     <img
                         src={ArrowRight}
-                        alt="Arrow"
+                        alt=""
+                        aria-hidden="true"
                         className="w-5 shrink-0 dark:invert dark:brightness-200"
                     />
                 </div>
             </Link>
 
-            <nav className="border-t border-gray-200 p-2 dark:border-gray-700" aria-label="User menu">
+            <nav className="border-t border-gray-200 p-2 dark:border-gray-700" aria-label={t('common.userMenu')}>
                 {menuItemsTop.map((item) => (
                     <Link
-                        key={`${item.label}-${item.path}`}
+                        key={`${item.id}-${item.path}`}
                         to={item.path}
                         onClick={handleItemClick}
                         className="flex min-h-11 items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-gray-800 transition-colors hover:bg-orange-500 hover:text-white dark:text-gray-300 dark:hover:bg-orange-600"
                     >
                         {renderMenuIcon(item.id)}
-                        <span className="truncate">{item.label}</span>
+                        <span className="truncate">{t(item.labelKey)}</span>
                     </Link>
                 ))}
             </nav>
@@ -111,7 +115,7 @@ function UserMenuDropdown({ user, onClose }) {
                     className="flex min-h-11 w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 dark:text-red-400 dark:hover:bg-gray-700"
                 >
                     <LuLogOut className="h-5 w-5 shrink-0" />
-                    <span className="truncate">Чыгуу</span>
+                    <span className="truncate">{t('common.logout')}</span>
                 </button>
             </div>
         </div>

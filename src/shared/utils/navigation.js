@@ -107,24 +107,24 @@ export const getUserMenuItems = (userOrRole) => {
     const items = [];
 
     if (role === 'student') {
-        items.push({ id: 'my-courses', label: 'Менин курстарым', path: paths.myCourses });
+        items.push({ id: 'my-courses', labelKey: 'nav.myCourses', path: paths.myCourses });
     } else if (role === 'assistant') {
         items.push(
-            { id: 'courses', label: 'Курстар', path: paths.courses },
-            { id: 'attendance', label: 'Катышуу', path: paths.attendance },
+            { id: 'courses', labelKey: 'nav.courses', path: paths.courses },
+            { id: 'attendance', labelKey: 'nav.attendance', path: paths.attendance },
         );
     } else if (role === 'instructor' || isPlatformAdmin(role)) {
-        items.push({ id: 'courses', label: 'Курстар', path: paths.courses });
+        items.push({ id: 'courses', labelKey: 'nav.courses', path: paths.courses });
     }
 
     if (['student', 'instructor', 'admin', 'superadmin'].includes(role)) {
-        items.push({ id: 'notifications', label: 'Билдирүүлөр', path: paths.notifications });
+        items.push({ id: 'notifications', labelKey: 'nav.notifications', path: paths.notifications });
     }
 
     items.push(
-        { id: 'cart', label: 'Себет', path: paths.cart },
-        { id: 'favourites', label: 'Тандалгандар', path: paths.favourites },
-        { id: 'chat', label: 'Чат', path: paths.chat },
+        { id: 'cart', labelKey: 'common.cart', path: paths.cart },
+        { id: 'favourites', labelKey: 'common.favourites', path: paths.favourites },
+        { id: 'chat', labelKey: 'nav.chat', path: paths.chat },
     );
 
     return items;

@@ -11,6 +11,7 @@ import { useCart } from '../context/CartContext';
 import { useFavourites } from '../context/FavouritesContext';
 import Loader from '@shared/ui/Loader';
 import { executePendingAuthAction, getPostLoginPath } from '@features/auth/utils/postLogin';
+import { useTranslation } from 'react-i18next';
 
 const getPasswordChecks = (password) => ({
     length: password.length >= 8,
@@ -20,55 +21,33 @@ const getPasswordChecks = (password) => ({
     specialChar: /[!@#$%^&*(),.?":{}|<>]/.test(password),
 });
 
-const PASSWORD_RULES = [
-    ['length', 'Кеминде 8 белги'],
-    ['lowercase', 'Кичине тамга'],
-    ['uppercase', 'Баш тамга'],
-    ['number', 'Сан'],
-    ['specialChar', 'Атайын белги'],
-];
+const PASSWORD_RULE_KEYS = ['length', 'lowercase', 'uppercase', 'number', 'specialChar'];
+const SIGNUP_STEP_ICONS = [FaUserPlus, FaCreditCard, FaBookOpen];
 
-const SIGNUP_STEPS = [
-    {
-        icon: FaUserPlus,
-        title: 'Аккаунт түзүңүз',
-        description: 'Жеке маалымат жана коопсуз сырсөз менен окуу профилиңиз ачылат.',
-    },
-    {
-        icon: FaCreditCard,
-        title: 'Курс сатып алыңыз',
-        description: 'Өз алдынча видео курстарды дароо кошуп окуй аласыз.',
-    },
-    {
-        icon: FaBookOpen,
-        title: 'Окууну улантыңыз',
-        description: 'Сабак прогрессиңиз, материалдар жана билдирүүлөр бир жерде сакталат.',
-    },
-];
-
-const validateSignupForm = (formData) => {
+const validateSignupForm = (formData, t) => {
     const errors = {};
     const passwordChecks = getPasswordChecks(formData.password);
 
-    if (!formData.lastName.trim()) errors.lastName = 'Фамилияңызды жазыңыз.';
-    if (!formData.firstName.trim()) errors.firstName = 'Атыңызды жазыңыз.';
+    if (!formData.lastName.trim()) errors.lastName = t('public.auth.signup.validation.lastName');
+    if (!formData.firstName.trim()) errors.firstName = t('public.auth.signup.validation.firstName');
     if (!/^[\w-.]+@([\w-]+\.)+[\w-]{2,}$/.test(formData.email.trim())) {
-        errors.email = 'Туура email дарегин жазыңыз.';
+        errors.email = t('public.auth.signup.validation.email');
     }
     if (!Object.values(passwordChecks).every(Boolean)) {
-        errors.password = 'Сырсөз бардык талаптарга жооп бериши керек.';
+        errors.password = t('public.auth.signup.validation.password');
     }
     if (formData.password !== formData.repeatPassword) {
-        errors.repeatPassword = 'Сырсөздөр дал келген жок.';
+        errors.repeatPassword = t('public.auth.signup.validation.repeatPassword');
     }
     if (formData.phoneNumber && !/^\+\d{10,15}$/.test(formData.phoneNumber)) {
-        errors.phoneNumber = 'Телефон эл аралык форматта болсун. Мисалы: +996700123456.';
+        errors.phoneNumber = t('public.auth.signup.validation.phone');
     }
 
     return errors;
 };
 
 const SignupPage = () => {
+    const { t } = useTranslation();
     const [formData, setFormData] = useState({
         lastName: '',
         firstName: '',
@@ -90,6 +69,12 @@ const SignupPage = () => {
     const { toggleFavourite } = useFavourites();
 
     const passwordValidations = getPasswordChecks(formData.password);
+    const signupSteps = t('public.auth.signup.steps', { returnObjects: true }).map(
+        (step, index) => ({
+            ...step,
+            icon: SIGNUP_STEP_ICONS[index],
+        })
+    );
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -115,11 +100,11 @@ const SignupPage = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError(null);
-        const nextErrors = validateSignupForm(formData);
+        const nextErrors = validateSignupForm(formData, t);
 
         if (Object.keys(nextErrors).length > 0) {
             setFieldErrors(nextErrors);
-            setError('Катталуу үчүн белгиленген талааларды оңдоңуз.');
+            setError(t('public.auth.signup.validation.form'));
             return;
         }
 
@@ -147,7 +132,7 @@ const SignupPage = () => {
                 navigate(getPostLoginPath(user, location), { replace: true });
             }
         } catch (err) {
-            setError(err.response?.data?.message || 'Ката чыкты. Кайра аракет кылыңыз.');
+            setError(err.response?.data?.message || t('public.auth.signup.errorFallback'));
         } finally {
             setLoading(false);
         }
@@ -169,10 +154,10 @@ const SignupPage = () => {
                                 EduBot Learning
                             </p>
                             <h1 className="mt-2 text-2xl font-bold leading-tight">
-                                Окуу аккаунтун түзүңүз
+                                {t('public.auth.signup.sideTitle')}
                             </h1>
                             <p className="mt-2 max-w-md text-sm leading-5 text-orange-50/85">
-                                Өз алдынча видео курстарды сатып алып окуу үчүн катталыңыз. Компаниялык же түз эфир курстары администратор аркылуу дайындалат.
+                                {t('public.auth.signup.sideIntro')}
                             </p>
                         </div>
 
@@ -190,12 +175,17 @@ const SignupPage = () => {
                         </div>
 
                         <div className="relative z-10 space-y-2">
-                            {SIGNUP_STEPS.map(({ icon: Icon, title, description }) => (
-                                <div key={title} className="flex gap-3 rounded-lg border border-white/15 bg-white/10 p-2 backdrop-blur">
+                            {signupSteps.map(({ icon: Icon, title, description }) => (
+                                <div
+                                    key={title}
+                                    className="flex gap-3 rounded-lg border border-white/15 bg-white/10 p-2 backdrop-blur"
+                                >
                                     <Icon className="mt-1 h-4 w-4 shrink-0 text-orange-100" />
                                     <div>
                                         <p className="text-sm font-semibold">{title}</p>
-                                        <p className="mt-0.5 text-xs leading-4 text-orange-50/80 sm:text-sm sm:leading-5">{description}</p>
+                                        <p className="mt-0.5 text-xs leading-4 text-orange-50/80 sm:text-sm sm:leading-5">
+                                            {description}
+                                        </p>
                                     </div>
                                 </div>
                             ))}
@@ -208,141 +198,164 @@ const SignupPage = () => {
                         <div className="mb-4 space-y-2">
                             <div className="inline-flex items-center gap-2 rounded-full bg-orange-50/80 px-3 py-1 text-sm font-semibold text-orange-700 dark:bg-amber-500/10 dark:text-amber-200">
                                 <FaCheckCircle className="h-3.5 w-3.5" />
-                                Жаңы аккаунт
+                                {t('public.auth.signup.badge')}
                             </div>
-                            <h2 className="text-2xl font-bold text-black dark:text-white">Катталуу</h2>
+                            <h2 className="text-2xl font-bold text-black dark:text-white">
+                                {t('public.auth.signup.title')}
+                            </h2>
                             <p className="text-sm leading-6 text-gray-600 dark:text-[#a6adba]">
-                                Форманы толтургандан кийин аккаунтуңуз ачылып, окуу панелиңизге өтөсүз.
+                                {t('public.auth.signup.intro')}
                             </p>
                         </div>
 
-                        {error && <p className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-500 dark:bg-red-950/20 dark:text-red-400" role="alert">{error}</p>}
+                        {error && (
+                            <p
+                                className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-500 dark:bg-red-950/20 dark:text-red-400"
+                                role="alert"
+                            >
+                                {error}
+                            </p>
+                        )}
 
-                        <form onSubmit={handleSubmit} className="grid gap-x-4 gap-y-1 md:grid-cols-2">
-                        <DefaultLabel
-                            label="Фамилияңызды жазыңыз"
-                            name="lastName"
-                            value={formData.lastName}
-                            onChange={handleChange}
-                            placeholder=""
-                            required={true}
-                            error={fieldErrors.lastName}
-                            autoComplete="family-name"
-                            width="w-full"
-                            className="py-1.5"
-                        />
-
-                        <DefaultLabel
-                            label="Атыңызды жазыңыз"
-                            name="firstName"
-                            value={formData.firstName}
-                            onChange={handleChange}
-                            placeholder=""
-                            required={true}
-                            error={fieldErrors.firstName}
-                            autoComplete="given-name"
-                            width="w-full"
-                            className="py-1.5"
-                        />
-
-                        <div className="md:col-span-2">
+                        <form
+                            onSubmit={handleSubmit}
+                            className="grid gap-x-4 gap-y-1 md:grid-cols-2"
+                        >
                             <DefaultLabel
-                                label="Email почтаңызды жазыңыз"
-                                name="email"
-                                type="email"
-                                value={formData.email}
+                                label={t('public.auth.signup.fields.lastName')}
+                                name="lastName"
+                                value={formData.lastName}
                                 onChange={handleChange}
                                 placeholder=""
                                 required={true}
-                                error={fieldErrors.email}
-                                autoComplete="email"
+                                error={fieldErrors.lastName}
+                                autoComplete="family-name"
                                 width="w-full"
                                 className="py-1.5"
                             />
-                        </div>
 
-                        <div className="py-1.5 md:col-span-2">
-                            <PhoneInput
-                                id="signup-phone"
-                                name="phoneNumber"
-                                onChange={handlePhoneChange}
-                                value={formData.phoneNumber}
-                                label="Телефон номери"
-                                helperText="Милдеттүү эмес. Эл аралык формат: +996700123456."
-                                error={fieldErrors.phoneNumber}
-                                floatingLabel
-                            />
-                        </div>
-
-                        <div className="relative py-1.5 md:col-span-2">
-                            <LabelPassword
-                                label="Сырсөз ойлоп табыңыз"
-                                name="password"
-                                value={formData.password}
+                            <DefaultLabel
+                                label={t('public.auth.signup.fields.firstName')}
+                                name="firstName"
+                                value={formData.firstName}
                                 onChange={handleChange}
                                 placeholder=""
                                 required={true}
-                                error={fieldErrors.password}
-                                autoComplete="new-password"
-                                describedBy={showPasswordRules ? 'signup-password-rules' : undefined}
-                                onFocus={() => setShowPasswordRules(true)}
-                                onBlur={() => setShowPasswordRules(false)}
+                                error={fieldErrors.firstName}
+                                autoComplete="given-name"
                                 width="w-full"
+                                className="py-1.5"
                             />
-                            {showPasswordRules && (
-                                <div
-                                    id="signup-password-rules"
-                                    className="mt-2 rounded-lg border border-gray-200 bg-white p-3 shadow-sm dark:border-[#2A2E35] dark:bg-[#222222] lg:absolute lg:left-0 lg:right-0 lg:top-full lg:z-20 lg:shadow-lg"
-                                    role="status"
-                                    aria-label="Сырсөз талаптары"
-                                >
-                                    <ul className="grid grid-cols-1 gap-1 text-xs sm:grid-cols-2">
-                                        {PASSWORD_RULES.map(([key, label]) => (
-                                            <li
-                                                key={key}
-                                                className={passwordValidations[key] ? 'text-green-600' : 'text-gray-500 dark:text-[#a6adba]'}
-                                            >
-                                                {passwordValidations[key] ? '✓' : '•'} {label}
-                                            </li>
-                                        ))}
-                                    </ul>
-                                </div>
-                            )}
-                        </div>
 
-                        <div className="py-1.5 md:col-span-2">
-                            <LabelPassword
-                                label="Сырсөздү кайталаңыз"
-                                name="repeatPassword"
-                                value={formData.repeatPassword}
-                                onChange={handleChange}
-                                placeholder=""
-                                required={true}
-                                error={fieldErrors.repeatPassword}
-                                autoComplete="new-password"
-                                width="w-full"
-                            />
-                        </div>
+                            <div className="md:col-span-2">
+                                <DefaultLabel
+                                    label={t('public.auth.signup.fields.email')}
+                                    name="email"
+                                    type="email"
+                                    value={formData.email}
+                                    onChange={handleChange}
+                                    placeholder=""
+                                    required={true}
+                                    error={fieldErrors.email}
+                                    autoComplete="email"
+                                    width="w-full"
+                                    className="py-1.5"
+                                />
+                            </div>
 
-                        <button
-                            type="submit"
-                            disabled={loading}
-                            aria-busy={loading}
-                            className="mt-3 flex min-h-[48px] w-full items-center justify-center rounded-lg bg-[linear-gradient(180deg,#FF8C6E_0%,#E14219_100%)] py-3 text-base font-semibold text-white shadow-[0px_4px_14px_0px_rgba(225,66,25,0.45)] transition hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-75 dark:shadow-[0px_4px_12px_0px_rgba(225,66,25,0.28)] dark:focus:ring-offset-[#1f1f1f] md:col-span-2"
-                        >
-                            {loading ? <Loader fullScreen={false} /> : 'Катталуу'}
-                        </button>
-                    </form>
+                            <div className="py-1.5 md:col-span-2">
+                                <PhoneInput
+                                    id="signup-phone"
+                                    name="phoneNumber"
+                                    onChange={handlePhoneChange}
+                                    value={formData.phoneNumber}
+                                    label={t('public.auth.signup.fields.phone')}
+                                    helperText={t('public.auth.signup.phoneHelper')}
+                                    error={fieldErrors.phoneNumber}
+                                    floatingLabel
+                                />
+                            </div>
 
-                    <p className="mt-3 rounded-lg border border-transparent bg-gray-50 px-4 py-2.5 text-center text-sm leading-6 text-gray-600 dark:border-gray-700 dark:bg-[#292929] dark:text-[#a6adba]">
-                        Аккаунтуңуз бар?{' '}
-                        <Link to="/login" className="text-blue-500 hover:underline">
-                            Кирүү
-                        </Link>
-                    </p>
+                            <div className="relative py-1.5 md:col-span-2">
+                                <LabelPassword
+                                    label={t('public.auth.signup.fields.password')}
+                                    name="password"
+                                    value={formData.password}
+                                    onChange={handleChange}
+                                    placeholder=""
+                                    required={true}
+                                    error={fieldErrors.password}
+                                    autoComplete="new-password"
+                                    describedBy={
+                                        showPasswordRules ? 'signup-password-rules' : undefined
+                                    }
+                                    onFocus={() => setShowPasswordRules(true)}
+                                    onBlur={() => setShowPasswordRules(false)}
+                                    width="w-full"
+                                />
+                                {showPasswordRules && (
+                                    <div
+                                        id="signup-password-rules"
+                                        className="mt-2 rounded-lg border border-gray-200 bg-white p-3 shadow-sm dark:border-[#2A2E35] dark:bg-[#222222] lg:absolute lg:left-0 lg:right-0 lg:top-full lg:z-20 lg:shadow-lg"
+                                        role="status"
+                                        aria-label={t('public.auth.signup.passwordRulesLabel')}
+                                    >
+                                        <ul className="grid grid-cols-1 gap-1 text-xs sm:grid-cols-2">
+                                            {PASSWORD_RULE_KEYS.map((key) => (
+                                                <li
+                                                    key={key}
+                                                    className={
+                                                        passwordValidations[key]
+                                                            ? 'text-green-600'
+                                                            : 'text-gray-500 dark:text-[#a6adba]'
+                                                    }
+                                                >
+                                                    {passwordValidations[key] ? '✓' : '•'}{' '}
+                                                    {t(`public.auth.signup.passwordRules.${key}`)}
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="py-1.5 md:col-span-2">
+                                <LabelPassword
+                                    label={t('public.auth.signup.fields.repeatPassword')}
+                                    name="repeatPassword"
+                                    value={formData.repeatPassword}
+                                    onChange={handleChange}
+                                    placeholder=""
+                                    required={true}
+                                    error={fieldErrors.repeatPassword}
+                                    autoComplete="new-password"
+                                    width="w-full"
+                                />
+                            </div>
+
+                            <button
+                                type="submit"
+                                disabled={loading}
+                                aria-busy={loading}
+                                className="mt-3 flex min-h-[48px] w-full items-center justify-center rounded-lg bg-[linear-gradient(180deg,#FF8C6E_0%,#E14219_100%)] py-3 text-base font-semibold text-white shadow-[0px_4px_14px_0px_rgba(225,66,25,0.45)] transition hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-75 dark:shadow-[0px_4px_12px_0px_rgba(225,66,25,0.28)] dark:focus:ring-offset-[#1f1f1f] md:col-span-2"
+                            >
+                                {loading ? (
+                                    <Loader fullScreen={false} />
+                                ) : (
+                                    t('public.auth.signup.submit')
+                                )}
+                            </button>
+                        </form>
+
+                        <p className="mt-3 rounded-lg border border-transparent bg-gray-50 px-4 py-2.5 text-center text-sm leading-6 text-gray-600 dark:border-gray-700 dark:bg-[#292929] dark:text-[#a6adba]">
+                            {t('public.auth.signup.haveAccount')}{' '}
+                            <Link to="/login" className="text-blue-500 hover:underline">
+                                {t('public.auth.signup.login')}
+                            </Link>
+                        </p>
                     </div>
                 </section>
-                </div>
+            </div>
         </div>
     );
 };

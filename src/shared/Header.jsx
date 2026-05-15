@@ -1,11 +1,12 @@
-
 import { useState, useContext, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { FaBars } from 'react-icons/fa';
 import { IoSearch } from 'react-icons/io5';
+import { useTranslation } from 'react-i18next';
 import { useDarkMode } from '../contexts/DarkModeContext';
 import EduBotLogo from '@assets/images/edubot-signup.png';
 import ThemeToggle from '@shared-ui/ThemeToggle';
+import LanguageSwitcher from '@shared-ui/LanguageSwitcher';
 
 import { IoHeartOutline, IoHeart } from 'react-icons/io5';
 import { BsCart2 } from 'react-icons/bs';
@@ -22,6 +23,7 @@ import { useFavourites } from '../context/FavouritesContext';
 import { useCart } from '../context/CartContext';
 
 const NavLinks = ({ isMobile, user }) => {
+    const { t } = useTranslation();
     const location = useLocation();
     const active = (path) =>
         location.pathname === path ? 'text-orange-500 dark:text-orange-400' : '';
@@ -34,7 +36,9 @@ const NavLinks = ({ isMobile, user }) => {
 
     return (
         <nav
-            aria-label={isMobile ? 'Mobile primary navigation' : 'Primary navigation'}
+            aria-label={t(
+                isMobile ? 'nav.mobilePrimaryNavigation' : 'nav.primaryNavigation'
+            )}
             className={
                 isMobile
                     ? 'flex flex-col space-y-4 mt-4'
@@ -45,40 +49,40 @@ const NavLinks = ({ isMobile, user }) => {
                 to={'/courses'}
                 className={`${active('/courses')} ${linkClass}  lg:text-sm xl:text-base 2xl:text-lg `}
             >
-                Курстар
+                {t('nav.courses')}
             </Link>
 
             <Link
                 to="/about"
                 className={`${active('/about')} ${linkClass}   lg:text-sm xl:text-base 2xl:text-lg`}
             >
-                Биз жөнүндө
+                {t('nav.about')}
             </Link>
             <Link
                 to="/contact"
                 className={`${active('/contact')} ${linkClass} lg:text-sm xl:text-base 2xl:text-lg`}
             >
-                Байланыш
+                {t('nav.contact')}
             </Link>
 
             {user && user.role === 'instructor' && (
                 <Link to="/instructor" className={`${active('/instructor')} ${linkClass}`}>
-                    Dashboard
+                    {t('nav.dashboard')}
                 </Link>
             )}
             {user && isPlatformAdmin(user) && (
                 <Link to="/admin" className={`${active('/admin')} ${linkClass}`}>
-                    Dashboard
+                    {t('nav.dashboard')}
                 </Link>
             )}
             {user && user.role === 'assistant' && (
                 <Link to="/assistant" className={`${active('/assistant')} ${linkClass}`}>
-                    Dashboard
+                    {t('nav.dashboard')}
                 </Link>
             )}
             {user && user.role === 'student' && (
                 <Link to="/student" className={`${active('/student')} ${linkClass}`}>
-                    Dashboard
+                    {t('nav.dashboard')}
                 </Link>
             )}
         </nav>
@@ -86,6 +90,7 @@ const NavLinks = ({ isMobile, user }) => {
 };
 
 const Header = () => {
+    const { t } = useTranslation();
     const { getUniqueItemsCount } = useCart();
     const cartItemsCount = getUniqueItemsCount();
 
@@ -98,7 +103,6 @@ const Header = () => {
     const [menuOpen, setMenuOpen] = useState(false);
     const [positionBar, setPositionBar] = useState(false);
     const [search, setSearch] = useState('');
-    const [langOpen, setLangOpen] = useState(false);
     const [searchOpen, setSearchOpen] = useState(false);
     const [userMenuOpen, setUserMenuOpen] = useState(false);
     const [avatarLoadFailed, setAvatarLoadFailed] = useState(false);
@@ -107,7 +111,6 @@ const Header = () => {
     const [searchLoading, setSearchLoading] = useState(false);
     const [searchError, setSearchError] = useState('');
 
-    const langRef = useRef(null);
     const [results, setResults] = useState([]);
     const [showDropdown, setShowDropdown] = useState(false);
     const searchContainerRef = useRef(null);
@@ -150,22 +153,11 @@ const Header = () => {
     }, [avatarUrl]);
 
     useEffect(() => {
-        const handleClickOutside = (e) => {
-            if (langRef.current && !langRef.current.contains(e.target)) {
-                setLangOpen(false);
-            }
-        };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
-
-    useEffect(() => {
         const handleKeyDown = (e) => {
             if (e.key !== 'Escape') return;
 
             setMenuOpen(false);
             setPositionBar(false);
-            setLangOpen(false);
             setSearchOpen(false);
             setShowDropdown(false);
             setUserMenuOpen(false);
@@ -214,7 +206,7 @@ const Header = () => {
             } catch {
                 if (searchRequestIdRef.current !== requestId) return;
                 setResults([]);
-                setSearchError('Издөө азыр иштебей жатат.');
+                setSearchError(t('common.searchUnavailable'));
                 setShowDropdown(true);
             } finally {
                 if (searchRequestIdRef.current === requestId) {
@@ -224,7 +216,7 @@ const Header = () => {
         }, 300);
 
         return () => clearTimeout(timeoutId);
-    }, [search]);
+    }, [search, t]);
 
     const handleSearch = (value) => {
         setSearch(value);
@@ -267,7 +259,7 @@ const Header = () => {
                             <div className="h-16 w-16 md:h-20 md:w-20 ">
                                 <img
                                     src={EduBotLogo}
-                                    alt="EduBot Logo"
+                                    alt={t('common.appName')}
                                     className="w-full h-full object-contain"
                                 />
                             </div>
@@ -289,7 +281,7 @@ const Header = () => {
                             <IoSearch className="w-5 h-5 ml-2 text-[#7B818C] dark:text-gray-300" />
                             <input
                                 type="text"
-                                placeholder="Издөө"
+                                placeholder={t('common.search')}
                                 value={search}
                                 onChange={(e) => handleSearch(e.target.value)}
                                 onFocus={() => search.length >= 2 && setShowDropdown(true)}
@@ -298,7 +290,7 @@ const Header = () => {
                                         setShowDropdown(false);
                                     }
                                 }}
-                                aria-label="Курстарды издөө"
+                                aria-label={t('common.searchCourses')}
                                 aria-expanded={showDropdown}
                                 aria-controls="desktop-course-search-results"
                                 className="px-3 py-2 focus:outline-none focus:ring-1 focus:ring-[#EA580C] dark:focus:ring-[#F97316] bg-transparent w-full text-base text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400"
@@ -306,10 +298,13 @@ const Header = () => {
 
                             {/* Search Dropdown */}
                             {showDropdown && (
-                                <div id="desktop-course-search-results" className="absolute top-full left-0 right-0 mt-2 max-w-xs w-full bg-white dark:bg-[#141619] border border-gray-200 dark:border-gray-700 shadow-xl dark:shadow-gray-900 z-50 max-h-64 overflow-y-auto">
+                                <div
+                                    id="desktop-course-search-results"
+                                    className="absolute top-full left-0 right-0 mt-2 max-w-xs w-full bg-white dark:bg-[#141619] border border-gray-200 dark:border-gray-700 shadow-xl dark:shadow-gray-900 z-50 max-h-64 overflow-y-auto"
+                                >
                                     {searchLoading ? (
                                         <div className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
-                                            Изделүүдө...
+                                            {t('common.searching')}
                                         </div>
                                     ) : searchError ? (
                                         <div className="px-4 py-3 text-sm text-red-600 dark:text-red-300">
@@ -338,7 +333,7 @@ const Header = () => {
                                         ))
                                     ) : (
                                         <div className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
-                                            Натыйжа жок
+                                            {t('common.noResults')}
                                         </div>
                                     )}
                                 </div>
@@ -352,36 +347,7 @@ const Header = () => {
                     </div>
 
                     <div className="flex items-center space-x-4">
-                        <div className="relative" ref={langRef}>
-                            {/* localization hasn't been added yet */}
-
-                            {/* <button
-                                onClick={() => setLangOpen((p) => !p)}
-                                className="flex items-center space-x-1 p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors"
-                            >
-                                <GrLanguage className="text-gray-700 dark:text-gray-300 w-5 h-5" />
-                                <BsChevronDown
-                                    className={`w-4 h-4 text-gray-700 dark:text-gray-300 transform transition-transform duration-300 ${
-                                        langOpen ? 'rotate-180' : ''
-                                    }`}
-                                />
-                            </button> */}
-                            {langOpen && (
-                                <div className="absolute right-0 mt-2 bg-white dark:bg-gray-800 shadow-lg dark:shadow-gray-900 rounded border border-gray-200 dark:border-gray-700 z-50">
-                                    {['Кыргызча', 'Русский', 'English'].map((l) => (
-                                        <button
-                                            key={l}
-                                            onClick={() => {
-                                                setLangOpen(false);
-                                            }}
-                                            className="block px-4 py-2 w-full text-left hover:bg-gray-100 dark:hover:bg-gray-700 text-sm text-gray-800 dark:text-gray-300"
-                                        >
-                                            {l}
-                                        </button>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
+                        <LanguageSwitcher />
 
                         <div className="relative top-[-12px]">
                             <ThemeToggle dark={darkMode} setDark={setDarkMode} />
@@ -390,12 +356,13 @@ const Header = () => {
                         {user ? (
                             <div className="flex items-center gap-3">
                                 <button
-                                    className={`relative w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-300 ${isFavouritesPage || activeIcon === 'heart'
-                                        ? 'bg-orange-500 border-orange-500'
-                                        : 'border-black dark:border-gray-400 hover:border-gray-600 dark:hover:border-gray-300'
-                                        }`}
+                                    className={`relative w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-300 ${
+                                        isFavouritesPage || activeIcon === 'heart'
+                                            ? 'bg-orange-500 border-orange-500'
+                                            : 'border-black dark:border-gray-400 hover:border-gray-600 dark:hover:border-gray-300'
+                                    }`}
                                     onClick={handleFavouriteClick}
-                                    aria-label="Избранное"
+                                    aria-label={t('common.favourites')}
                                     aria-current={isFavouritesPage ? 'page' : undefined}
                                 >
                                     {favourites.length > 0 && (
@@ -411,22 +378,26 @@ const Header = () => {
                                 </button>
                                 <div className="relative">
                                     <button
-                                        className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-300 ${activeIcon === 'cart' || location.pathname === '/cart'
-                                            ? 'bg-orange-500 border-orange-500'
-                                            : 'border-black dark:border-gray-400 hover:border-gray-600 dark:hover:border-gray-300'
-                                            }`}
+                                        className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-300 ${
+                                            activeIcon === 'cart' || location.pathname === '/cart'
+                                                ? 'bg-orange-500 border-orange-500'
+                                                : 'border-black dark:border-gray-400 hover:border-gray-600 dark:hover:border-gray-300'
+                                        }`}
                                         onClick={() =>
                                             handleIconClick('cart', () => navigate('/cart'))
                                         }
-                                        aria-label="Себет"
-                                        aria-current={location.pathname === '/cart' ? 'page' : undefined}
+                                        aria-label={t('common.cart')}
+                                        aria-current={
+                                            location.pathname === '/cart' ? 'page' : undefined
+                                        }
                                     >
                                         <BsCart2
-                                            className={`w-5 h-5 transition-colors duration-300 ${activeIcon === 'cart' ||
+                                            className={`w-5 h-5 transition-colors duration-300 ${
+                                                activeIcon === 'cart' ||
                                                 location.pathname === '/cart'
-                                                ? 'text-white'
-                                                : 'text-black dark:text-gray-300'
-                                                }`}
+                                                    ? 'text-white'
+                                                    : 'text-black dark:text-gray-300'
+                                            }`}
                                         />
                                         {cartItemsCount > 0 && (
                                             <span className="absolute -top-1 -right-1 bg-orange-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-medium">
@@ -437,22 +408,24 @@ const Header = () => {
                                 </div>
                                 <div className="relative group" data-user-menu>
                                     <button
-                                        className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-300 ${activeIcon === 'user' || userMenuOpen
-                                            ? 'bg-orange-500 border-orange-500'
-                                            : 'border-black dark:border-gray-400 hover:border-gray-600 dark:hover:border-gray-300'
-                                            }`}
+                                        className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-300 ${
+                                            activeIcon === 'user' || userMenuOpen
+                                                ? 'bg-orange-500 border-orange-500'
+                                                : 'border-black dark:border-gray-400 hover:border-gray-600 dark:hover:border-gray-300'
+                                        }`}
                                         onClick={() => {
                                             handleIconClick('user');
                                             setUserMenuOpen(!userMenuOpen);
                                         }}
-                                        aria-label="Колдонуучу менюсу"
+                                        aria-label={t('common.userMenu')}
                                         aria-expanded={userMenuOpen}
                                     >
                                         {renderUserAvatar(
                                             'w-10 h-10 rounded-full object-cover',
-                                            `w-5 h-5 transition-colors duration-300 ${activeIcon === 'user' || userMenuOpen
-                                                ? 'text-white'
-                                                : 'text-black dark:text-gray-300'
+                                            `w-5 h-5 transition-colors duration-300 ${
+                                                activeIcon === 'user' || userMenuOpen
+                                                    ? 'text-white'
+                                                    : 'text-black dark:text-gray-300'
                                             }`
                                         )}
 
@@ -462,14 +435,18 @@ const Header = () => {
                                     </button>
 
                                     <div
-                                        className={`absolute top-full right-0 pt-2 transform transition-all duration-300 ease-out z-60 group-hover:visible group-hover:translate-y-0 group-hover:opacity-100 ${userMenuOpen
-                                            ? 'visible translate-y-0 opacity-100'
-                                            : 'invisible translate-y-2 opacity-0'
+                                        className={`absolute top-full right-0 pt-2 transform transition-all duration-300 ease-out z-60 group-hover:visible group-hover:translate-y-0 group-hover:opacity-100 ${
+                                            userMenuOpen
+                                                ? 'visible translate-y-0 opacity-100'
+                                                : 'invisible translate-y-2 opacity-0'
                                         }`}
                                     >
                                         <div className="relative">
                                             <div className="absolute -top-2 left-0 right-0 h-2 bg-transparent"></div>
-                                            <UserMenuDropdown user={user} onClose={() => setUserMenuOpen(false)} />
+                                            <UserMenuDropdown
+                                                user={user}
+                                                onClose={() => setUserMenuOpen(false)}
+                                            />
                                         </div>
                                     </div>
                                 </div>
@@ -477,34 +454,39 @@ const Header = () => {
                         ) : (
                             <div className="flex items-center gap-3">
                                 <button
-                                    className={`relative w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-300 ${isFavouritesPage || activeIcon === 'heart'
-                                        ? 'border-orange-500'
-                                        : 'border-black dark:border-[#E8ECF3] hover:border-gray-600 dark:hover:border-[#E8ECF3]/70'
-                                        }`}
+                                    className={`relative w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-300 ${
+                                        isFavouritesPage || activeIcon === 'heart'
+                                            ? 'border-orange-500'
+                                            : 'border-black dark:border-[#E8ECF3] hover:border-gray-600 dark:hover:border-[#E8ECF3]/70'
+                                    }`}
                                     onClick={handleFavouriteClick}
-                                    aria-label="Избранное"
+                                    aria-label={t('common.favourites')}
                                 >
                                     <IoHeartOutline className="w-5 h-5 text-black dark:text-[#E8ECF3]" />
                                 </button>
 
                                 <div className="relative">
                                     <button
-                                        className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-300 ${activeIcon === 'cart' || location.pathname === '/cart'
-                                            ? 'bg-orange-500 border-orange-500'
-                                            : 'border-black dark:border-gray-400 hover:border-gray-600 dark:hover:border-gray-300'
-                                            }`}
+                                        className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-300 ${
+                                            activeIcon === 'cart' || location.pathname === '/cart'
+                                                ? 'bg-orange-500 border-orange-500'
+                                                : 'border-black dark:border-gray-400 hover:border-gray-600 dark:hover:border-gray-300'
+                                        }`}
                                         onClick={() =>
                                             handleIconClick('cart', () => navigate('/cart'))
                                         }
-                                        aria-label="Себет"
-                                        aria-current={location.pathname === '/cart' ? 'page' : undefined}
+                                        aria-label={t('common.cart')}
+                                        aria-current={
+                                            location.pathname === '/cart' ? 'page' : undefined
+                                        }
                                     >
                                         <BsCart2
-                                            className={`w-5 h-5 transition-colors duration-300 ${activeIcon === 'cart' ||
+                                            className={`w-5 h-5 transition-colors duration-300 ${
+                                                activeIcon === 'cart' ||
                                                 location.pathname === '/cart'
-                                                ? 'text-white'
-                                                : 'text-black dark:text-gray-300'
-                                                }`}
+                                                    ? 'text-white'
+                                                    : 'text-black dark:text-gray-300'
+                                            }`}
                                         />
 
                                         {cartItemsCount > 0 && (
@@ -519,7 +501,7 @@ const Header = () => {
                                     to="/login"
                                     className="inline-flex items-center justify-center rounded bg-orange-500 px-4 py-2 text-white transition-colors hover:bg-orange-600 dark:bg-orange-600 dark:hover:bg-orange-500"
                                 >
-                                    Кирүү
+                                    {t('common.login')}
                                 </Link>
                             </div>
                         )}
@@ -534,7 +516,7 @@ const Header = () => {
                                 setPositionBar(false);
                             }}
                             className="text-gray-700 dark:text-gray-300 text-2xl p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors"
-                            aria-label="Менюну ачуу"
+                            aria-label={t('common.openMenu')}
                             aria-expanded={menuOpen}
                         >
                             <FaBars />
@@ -544,7 +526,7 @@ const Header = () => {
                             <div className="h-12 w-12">
                                 <img
                                     src={EduBotLogo}
-                                    alt="EduBot Logo"
+                                    alt={t('common.appName')}
                                     className="w-full h-full object-contain"
                                 />
                             </div>
@@ -562,7 +544,7 @@ const Header = () => {
                             <button
                                 onClick={() => setSearchOpen(!searchOpen)}
                                 className="text-gray-700 dark:text-gray-300 text-2xl p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors"
-                                aria-label="Издөөнү ачуу"
+                                aria-label={t('common.openSearch')}
                                 aria-expanded={searchOpen}
                             >
                                 <IoSearch />
@@ -571,12 +553,13 @@ const Header = () => {
                             {user && (
                                 <div className="relative hidden md:block" data-user-menu>
                                     <button
-                                        className={`w-9 h-9 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${userMenuOpen
-                                            ? 'bg-orange-500 border-orange-500'
-                                            : 'border-black dark:border-gray-400 hover:border-gray-600 dark:hover:border-gray-300'
+                                        className={`w-9 h-9 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${
+                                            userMenuOpen
+                                                ? 'bg-orange-500 border-orange-500'
+                                                : 'border-black dark:border-gray-400 hover:border-gray-600 dark:hover:border-gray-300'
                                         }`}
                                         onClick={() => setUserMenuOpen(!userMenuOpen)}
-                                        aria-label="Колдонуучу менюсу"
+                                        aria-label={t('common.userMenu')}
                                         aria-expanded={userMenuOpen}
                                     >
                                         {renderUserAvatar(
@@ -605,7 +588,7 @@ const Header = () => {
                                 <IoSearch className="w-5 h-5 ml-2 text-[#7B818C] dark:text-gray-300" />
                                 <input
                                     type="text"
-                                    placeholder="Издөө"
+                                    placeholder={t('common.search')}
                                     value={search}
                                     onChange={(e) => handleSearch(e.target.value)}
                                     onFocus={() => search.length >= 2 && setShowDropdown(true)}
@@ -614,7 +597,7 @@ const Header = () => {
                                             setShowDropdown(false);
                                         }
                                     }}
-                                    aria-label="Курстарды издөө"
+                                    aria-label={t('common.searchCourses')}
                                     aria-expanded={showDropdown}
                                     aria-controls="mobile-course-search-results"
                                     className="px-3 py-2 focus:outline-none focus:ring-1 focus:ring-[#EA580C] dark:focus:ring-[#F97316] bg-transparent w-full text-base text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400"
@@ -623,10 +606,13 @@ const Header = () => {
 
                             {/* Mobile Search Dropdown */}
                             {showDropdown && (
-                                <div id="mobile-course-search-results" className="absolute left-0 right-0 mt-1 mx-4 z-50">
+                                <div
+                                    id="mobile-course-search-results"
+                                    className="absolute left-0 right-0 mt-1 mx-4 z-50"
+                                >
                                     {searchLoading ? (
                                         <div className="bg-white dark:bg-gray-800 shadow-lg border border-gray-200 dark:border-gray-700 rounded p-4 text-sm text-gray-500 dark:text-gray-400">
-                                            Изделүүдө...
+                                            {t('common.searching')}
                                         </div>
                                     ) : searchError ? (
                                         <div className="bg-white dark:bg-gray-800 shadow-lg border border-gray-200 dark:border-gray-700 rounded p-4 text-sm text-red-600 dark:text-red-300">
@@ -658,7 +644,7 @@ const Header = () => {
                                         </div>
                                     ) : (
                                         <div className="bg-white dark:bg-gray-800 shadow-lg border border-gray-200 dark:border-gray-700 rounded p-4 text-sm text-gray-500 dark:text-gray-400">
-                                            Натыйжа жок
+                                            {t('common.noResults')}
                                         </div>
                                     )}
                                 </div>
