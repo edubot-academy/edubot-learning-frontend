@@ -54,6 +54,7 @@ const VideoPlayerInner = ({
     containerRef,
     onEnded,
     autoPlay = false,
+    defaultFitMode = 'contain',
 }) => {
     const hlsRef = useRef(null);
     const internalVideoRef = useRef(null);
@@ -61,6 +62,9 @@ const VideoPlayerInner = ({
     const [isLoading, setIsLoading] = useState(true);
     const [qualityOptions, setQualityOptions] = useState([{ id: 'auto', label: 'Auto' }]);
     const [currentQuality, setCurrentQuality] = useState('auto');
+    const fitMode = ['contain', 'cover', 'crop'].includes(defaultFitMode)
+        ? defaultFitMode
+        : 'contain';
     const [reloadToken, setReloadToken] = useState(0);
     const hlsRecoveryRef = useRef({ network: 0, media: 0 });
     const lastAppliedResumeTimeRef = useRef(null);
@@ -317,7 +321,11 @@ const VideoPlayerInner = ({
             {allowPlay && !hasError && (
                 <video
                     ref={setVideoRef}
-                    className="absolute inset-0 w-full h-full object-contain"
+                    className={`absolute inset-0 h-full w-full ${
+                        fitMode === 'contain' ? 'object-contain' : 'object-cover'
+                    } ${
+                        fitMode === 'crop' ? 'scale-[1.12]' : ''
+                    }`}
                     preload="metadata"
                     playsInline
                     aria-label="Видео окуу"
@@ -397,6 +405,7 @@ VideoPlayerInner.propTypes = {
     containerRef: PropTypes.shape({ current: PropTypes.any }),
     onEnded: PropTypes.func,
     autoPlay: PropTypes.bool,
+    defaultFitMode: PropTypes.oneOf(['contain', 'cover', 'crop']),
 };
 
 VideoPlayerInner.defaultProps = {
@@ -410,6 +419,7 @@ VideoPlayerInner.defaultProps = {
     containerRef: null,
     onEnded: null,
     autoPlay: false,
+    defaultFitMode: 'contain',
 };
 
 export default VideoPlayer;

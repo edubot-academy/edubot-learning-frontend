@@ -12,6 +12,7 @@ import NoImage from '@assets/icons/noImage.svg';
 import { AuthContext } from '../../../context/AuthContext';
 import UnauthModal from '../../../shared/ui/UnauthModal';
 import { formatMinutesToTime } from '../../../utils/timeUtils';
+import { getSectionsDurationMinutes } from '../utils/courseDuration';
 
 const courseTypeLabel = (type) => {
     const normalized = String(type || 'video').toLowerCase();
@@ -40,6 +41,8 @@ const CardCourse = ({
     id,
     level,
     durationInHours,
+    durationMinutes,
+    sections,
     lessonCount,
     isPublished = true,
     courseType = 'video',
@@ -60,6 +63,14 @@ const CardCourse = ({
     const isSelfServeVideoCourse = normalizedCourseType === 'video';
     const safeTitle = title || 'Курс';
     const safeDuration = Number(durationInHours) || 0;
+    const normalizedDurationMinutes = Number(durationMinutes);
+    const sectionsDurationMinutes = getSectionsDurationMinutes(sections);
+    const displayDurationMinutes =
+        Number.isFinite(normalizedDurationMinutes) && normalizedDurationMinutes > 0
+            ? normalizedDurationMinutes
+            : sectionsDurationMinutes > 0
+              ? sectionsDurationMinutes
+              : safeDuration * 60;
     const safeRatingAverage = Math.max(0, Math.min(5, Number(ratingAverage) || 0));
     const safeRatingCount = Number(ratingCount) || 0;
     const availabilityText = isSelfServeVideoCourse
@@ -79,6 +90,7 @@ const CardCourse = ({
         ratingAverage,
         level,
         durationInHours,
+        durationMinutes: displayDurationMinutes,
         duration: durationInHours,
         lessonCount,
         isPublished,
@@ -242,7 +254,7 @@ const CardCourse = ({
                                 </span>
                                 <span className="text-xs bg-[#F0F0F0] text-[#141619] dark:bg-[#2A2E35] dark:text-[#E8ECF3] rounded px-2 py-1 flex items-center gap-1">
                                     <IoMdTime className="w-3 h-3" />
-                                    {formatMinutesToTime(safeDuration * 60)}
+                                    {formatMinutesToTime(displayDurationMinutes)}
                                 </span>
                                 <span className="text-xs bg-[#F0F0F0] text-[#141619] dark:bg-[#2A2E35] dark:text-[#E8ECF3] rounded px-2 py-1 flex items-center gap-1">
                                     <FiBook className="w-3 h-3" />
@@ -347,6 +359,8 @@ CardCourse.propTypes = {
     id: PropTypes.oneOfType([PropTypes.number, PropTypes.string]).isRequired,
     level: PropTypes.string,
     durationInHours: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
+    durationMinutes: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
+    sections: PropTypes.arrayOf(PropTypes.shape({})),
     lessonCount: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
     isPublished: PropTypes.bool,
     courseType: PropTypes.string,

@@ -13,6 +13,7 @@ import InstructorChat from '@features/instructorChat/InstructorChat';
 import { HiChatAlt2 } from 'react-icons/hi';
 import Loader from '@shared/ui/Loader';
 import { COURSE_DETAILS_SUPPORT_PLACEMENT } from './courseDetailsPlacement';
+import { getSectionsDurationMinutes } from '../utils/courseDuration';
 
 export const InstructorChatDock = ({ enrolled, userRole, course }) => {
     const [instructorChat, setInstructorChat] = useState(false);
@@ -351,6 +352,7 @@ export const CourseDetailsSidebar = ({
     course,
     lessonCount,
 }) => {
+    const durationMinutes = getSectionsDurationMinutes(sections);
     const renderTabButtons = () => (
         <div className="flex flex-wrap gap-2 dark:bg-white/10 bg-gray-100 rounded-2xl p-1">
             {tabs?.map((tab) => (
@@ -416,6 +418,7 @@ export const CourseDetailsSidebar = ({
                         key={courseId}
                         course={course}
                         lessonCount={lessonCount}
+                        durationMinutes={durationMinutes}
                         coverImageUrl={course.coverImageUrl}
                     />
                 )}
@@ -477,6 +480,8 @@ export const CourseDetailsMobileArea = ({
     instructorNode,
     reviewNode,
 }) => {
+    const durationMinutes = getSectionsDurationMinutes(sections);
+
     if (isDesktop) return null;
 
     if (enrolled) {
@@ -513,6 +518,7 @@ export const CourseDetailsMobileArea = ({
                 key={courseId}
                 course={course}
                 lessonCount={lessonCount}
+                durationMinutes={durationMinutes}
                 coverImageUrl={course.coverImageUrl}
                 resumeVideoTime={resumeVideoTime}
                 handleVideoProgress={(progress) => onVideoProgress(progress, activeLesson)}

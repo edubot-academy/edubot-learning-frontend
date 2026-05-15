@@ -31,6 +31,7 @@ const CourseVideoPlayer = ({
                 onTimeUpdate={handleTimeUpdate}
                 onPause={handlePause}
                 autoPlay={autoPlay}
+                defaultFitMode="crop"
             />
 
             <button

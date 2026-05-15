@@ -30,7 +30,7 @@ const formatReviewDate = (value) => {
  * Read-only course review summary that matches the provided design.
  * Shows total reviews, per-star counts with bars, and average rating with stars.
  */
-const CourseReview = ({ courseId, ratingAverage = 0, ratingCount, ratingBreakdown = {}, onViewAll }) => {
+const CourseReview = ({ courseId, ratingAverage = 0, ratingCount, ratingBreakdown, onViewAll }) => {
     const [reviewsData, setReviewsData] = useState(null);
     const [loadingReviews, setLoadingReviews] = useState(false);
 
@@ -61,7 +61,10 @@ const CourseReview = ({ courseId, ratingAverage = 0, ratingCount, ratingBreakdow
 
     const resolvedRatingAverage = Number(reviewsData?.ratingAverage ?? ratingAverage) || 0;
     const resolvedRatingCount = Number(reviewsData?.ratingCount ?? ratingCount) || 0;
-    const resolvedRatingBreakdown = reviewsData?.ratingBreakdown || ratingBreakdown || {};
+    const resolvedRatingBreakdown = useMemo(
+        () => reviewsData?.ratingBreakdown || ratingBreakdown || {},
+        [reviewsData?.ratingBreakdown, ratingBreakdown]
+    );
     const reviews = Array.isArray(reviewsData?.items) ? reviewsData.items : [];
 
     const countsByLevel = useMemo(() => {

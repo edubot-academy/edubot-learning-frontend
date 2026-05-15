@@ -7,6 +7,7 @@ import { MdQuiz, MdDownload } from 'react-icons/md';
 import ReelsIcon from '@assets/icons/reelsIcon.svg';
 import { formatMinutesToTime, formatSecondsToTime } from '../../../utils/timeUtils';
 import { getPlayableVideoUrl } from '../../../utils/videoUtils';
+import { getSectionDurationMinutes, getSectionsDurationMinutes } from '../utils/courseDuration';
 import ModalPreviewVideo from './ModalPreviewVideo';
 
 const CourseContent = ({
@@ -97,17 +98,10 @@ const CourseContent = ({
 
     const { totalLessons, totalMinutes } = useMemo(() => {
         const lessonsCount = sections?.reduce((acc, sec) => acc + (sec.lessons?.length || 0), 0);
-        const minutes =
-            sections?.reduce(
-                (acc, sec) =>
-                    acc +
-                    (sec.lessons || []).reduce(
-                        (inner, l) => inner + Math.ceil((l.duration || 0) / 60),
-                        0
-                    ),
-                0
-            ) || 0;
-        return { totalLessons: lessonsCount || 0, totalMinutes: minutes };
+        return {
+            totalLessons: lessonsCount || 0,
+            totalMinutes: getSectionsDurationMinutes(sections),
+        };
     }, [sections]);
 
     const headerTitle = isLearningNavigator ? 'Окуу программасы' : 'Курстун программасы';
@@ -331,7 +325,9 @@ const CourseContent = ({
                                             </span>
                                             <span className="hidden sm:inline">•</span>
                                             <span className="whitespace-nowrap">
-                                                {formatMinutesToTime(section.durationMinutes)}
+                                                {formatMinutesToTime(
+                                                    getSectionDurationMinutes(section)
+                                                )}
                                             </span>
                                             {enrolled && (
                                                 <span className="text-xs bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded whitespace-nowrap ml-2 dark:text-gray-300">

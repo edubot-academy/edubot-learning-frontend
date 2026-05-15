@@ -110,6 +110,7 @@ function ModalPreviewVideo({ isOpen, onClose, courseId, previewData: previewData
                             onTimeUpdate={handleTimeUpdate}
                             onPause={handlePause}
                             autoPlay
+                            defaultFitMode="crop"
                             className="w-full aspect-video rounded"
                         />
                     ) : (

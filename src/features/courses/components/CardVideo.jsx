@@ -20,8 +20,18 @@ const formatPrice = (price, currency = 'KGS') => {
     return currency === 'KGS' ? `${formattedPrice} сом` : `${formattedPrice} ${currency}`;
 };
 
-const CardVideo = ({ coverImageUrl, course, lessonCount,
-    resumeVideoTime, onEnded, handleVideoProgress, handleTimeUpdate, handlePause, videoRef }) => {
+const CardVideo = ({
+    coverImageUrl,
+    course,
+    lessonCount,
+    durationMinutes,
+    resumeVideoTime,
+    onEnded,
+    handleVideoProgress,
+    handleTimeUpdate,
+    handlePause,
+    videoRef,
+}) => {
     const [isContactOpen, setIsContactOpen] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [showUnauthModal, setShowUnauthModal] = useState(false);
@@ -31,6 +41,14 @@ const CardVideo = ({ coverImageUrl, course, lessonCount,
     const normalizedCourseType = String(course?.courseType || course?.type || 'video').toLowerCase();
     const isSelfServeVideoCourse = normalizedCourseType === 'video';
     const courseAlreadyInCart = isInCart(course.id);
+    const normalizedDurationMinutes = Number(durationMinutes);
+    const courseDurationInHours = Number(course.durationInHours);
+    const displayDurationMinutes =
+        Number.isFinite(normalizedDurationMinutes) && normalizedDurationMinutes > 0
+            ? normalizedDurationMinutes
+            : Number.isFinite(courseDurationInHours) && courseDurationInHours > 0
+              ? courseDurationInHours * 60
+              : 0;
 
     const courseData = {
         ...course,
@@ -105,7 +123,7 @@ const CardVideo = ({ coverImageUrl, course, lessonCount,
                         </p>
 
                         <p className="flex items-center gap-2 text-base font-semibold">
-                            <IoMdTime /> {formatMinutesToTime(course.durationInHours * 60)}
+                            <IoMdTime /> {formatMinutesToTime(displayDurationMinutes)}
                         </p>
 
                         <p className="flex items-center gap-2 text-base font-semibold">
@@ -185,6 +203,7 @@ CardVideo.propTypes = {
         isPaid: PropTypes.bool,
     }).isRequired,
     lessonCount: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
+    durationMinutes: PropTypes.number,
     resumeVideoTime: PropTypes.number,
     onEnded: PropTypes.func,
     handleVideoProgress: PropTypes.func,

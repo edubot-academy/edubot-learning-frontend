@@ -286,7 +286,7 @@ const VideoPlayerUI = ({
             />
 
             <div
-                className="absolute bottom-0 left-0 w-full px-4 pb-3 z-20 pointer-events-auto"
+                className="absolute bottom-0 left-0 w-full bg-gradient-to-t from-black/85 via-black/55 to-transparent px-4 pb-3 pt-14 z-20 pointer-events-auto"
                 onClick={(e) => e.stopPropagation()}
             >
                 <div
@@ -406,22 +406,22 @@ const VideoPlayerUI = ({
 
                             {openMenu && (
                                 <div
-                                    className="absolute bottom-10 right-0 bg-black/90 text-white rounded-lg py-2 px-4 
-                                    shadow-xl w-24 border border-gray-700"
+                                    className="absolute bottom-10 right-0 w-28 rounded-lg border border-white/10 bg-black/90 px-3 py-2 text-white shadow-xl"
                                     onClick={(e) => e.stopPropagation()}
                                 >
                                     {(qualityOptions?.length
                                         ? qualityOptions
                                         : [{ id: 'auto', label: 'Auto' }]
                                     ).map((item) => (
-                                        <div
+                                        <button
                                             key={item.id}
+                                            type="button"
                                             onClick={() => changeQuality(item.id)}
-                                            className={`py-1 cursor-pointer hover:text-orange-400 text-center 
+                                            className={`block w-full py-1 cursor-pointer hover:text-orange-400 text-left
                                               text-xs sm:text-sm ${currentQuality === item.id ? 'text-orange-400 font-bold' : ''}`}
                                         >
                                             {item.label}
-                                        </div>
+                                        </button>
                                     ))}
                                 </div>
                             )}

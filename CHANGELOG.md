@@ -6,6 +6,27 @@ Version bumps are classified by delivery scale; see `VERSIONING.md`.
 
 ---
 
+## [1.12.2] - 2026-05-15
+
+### Changed
+
+- Standardized course-detail duration totals so curriculum summaries, preview cards, and course cards can use the same lesson-based duration calculation.
+- Improved course video playback framing with an internal crop mode for lesson and preview videos, while keeping shared player defaults unchanged for other contexts.
+- Strengthened the video control gradient and simplified the quality menu so controls remain readable on bright lesson videos.
+
+### Fixed
+
+- Prevented course content totals from inflating duration by rounding every lesson separately.
+- Fixed course review rating breakdown memoization so lint passes without hook dependency warnings.
+
+### Verification
+
+- `npm run lint`
+- `npm run test -- src/features/courses/utils/courseDuration.spec.js`
+- `npm run build`
+
+---
+
 ## [1.12.1] - 2026-05-15
 
 ### Changed
