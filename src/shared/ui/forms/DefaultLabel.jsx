@@ -18,7 +18,6 @@ const DefaultLabel = ({
     onBlur,
 }) => {
     const [focused, setFocused] = useState(false);
-    const [showAsterisk, setShowAsterisk] = useState(false);
 
     const hasError = !!error;
     const value = propValue ?? '';
@@ -28,17 +27,11 @@ const DefaultLabel = ({
 
     const handleFocus = () => {
         setFocused(true);
-        setShowAsterisk(false);
         onFocus?.();
     };
 
     const handleBlur = () => {
         setFocused(false);
-        if (value) {
-            setShowAsterisk(true);
-        } else {
-            setShowAsterisk(false);
-        }
         onBlur?.();
     };
 
@@ -51,10 +44,9 @@ const DefaultLabel = ({
             <div className={`flex flex-col space-y-1 ${width}`}>
                 <div
                     className={`relative border rounded-md transition-colors duration-200
-            ${hasError ? 'border-red-600' : focused ? 'border-amber-600' : 'border-gray-300'}
+            ${hasError ? 'border-red-600 bg-red-50/60 dark:border-red-500 dark:bg-red-950/20' : focused ? 'border-amber-600 dark:border-amber-500 bg-white dark:bg-[#222222]' : 'border-gray-300 dark:border-gray-700 bg-white dark:bg-[#222222]'}
             px-2 sm:px-3 md:px-4
             py-1.5 sm:py-2 md:py-2.5
-            bg-white dark:bg-[#222222]
           `}
                 >
                     <label
@@ -65,11 +57,15 @@ const DefaultLabel = ({
                                 : 'top-2 sm:top-3 text-gray-500 dark:text-[#a6adba] text-sm sm:text-base'
                             }
               ${hasError ? 'text-red-600' : focused ? 'text-amber-600' : 'text-gray-500 dark:text-[#a6adba]'}
-              bg-white dark:bg-[#222222] px-1 pointer-events-none  
+              ${hasError ? 'bg-red-50 dark:bg-[#251b1b]' : 'bg-white dark:bg-[#222222]'} px-1 pointer-events-none
             `}
                     >
                         {label}
-                        {showAsterisk && <span className="text-red-600 ml-0.5">*</span>}
+                        {required && (
+                            <span className="ml-0.5 text-red-600 dark:text-red-400" aria-hidden="true">
+                                *
+                            </span>
+                        )}
                     </label>
 
                     <input
@@ -89,7 +85,7 @@ const DefaultLabel = ({
                     />
                 </div>
 
-                {hasError && <p id={errorId} className="text-red-600 text-xs sm:text-sm">{error}</p>}
+                {hasError && <p id={errorId} className="text-red-600 dark:text-red-400 text-xs sm:text-sm">{error}</p>}
             </div>
         </div>
     );

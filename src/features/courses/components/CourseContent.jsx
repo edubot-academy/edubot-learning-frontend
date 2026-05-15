@@ -19,7 +19,7 @@ const CourseContent = ({
     lessonRefs,
     showHeader = true,
     handleCheckboxToggle,
-    maxHeight = "260px",
+    maxHeight,
     compact = false,
     presentationVariant,
 }) => {
@@ -28,7 +28,6 @@ const CourseContent = ({
     const contentRefs = useRef({});
     const hasInitialized = useRef(false);
 
-    // Новый ref для скроллируемого контейнера
     const scrollContainerRef = useRef(null);
 
     const [previewOpen, setPreviewOpen] = useState(false);
@@ -73,10 +72,8 @@ const CourseContent = ({
         }
     }, [sections, activeLesson?.sectionId]);
 
-    // Эффект для скролла к активному уроку при открытии секции
     useEffect(() => {
         if (activeLesson && openIds.includes(activeLesson.sectionId)) {
-            // Даем время на анимацию раскрытия секции
             setTimeout(() => {
                 if (lessonRefs?.current[activeLesson.id]) {
                     lessonRefs.current[activeLesson.id].scrollIntoView({
@@ -290,11 +287,12 @@ const CourseContent = ({
                     </div>
                 )}
 
-                {/* Скроллируемый контейнер с динамической максимальной высотой */}
                 <div
                     ref={scrollContainerRef}
-                    className="divide-y divide-[#E6E8EC] dark:divide-[#2A2E35] overflow-y-auto"
-                    style={maxHeight ? { maxHeight } : {}} // Применяем максимальную высоту
+                    className={`divide-y divide-[#E6E8EC] dark:divide-[#2A2E35] ${
+                        maxHeight ? 'overflow-y-auto' : 'overflow-visible'
+                    }`}
+                    style={maxHeight ? { maxHeight } : undefined}
                 >
                     {filteredSections.map((section) => {
                         const sectionCompleted = section.lessons?.every((lesson) =>

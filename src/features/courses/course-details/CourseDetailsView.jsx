@@ -394,7 +394,7 @@ export const CourseDetailsSidebar = ({
                                 lessonRefs={lessonRefs}
                                 showHeader={false}
                                 handleCheckboxToggle={onCheckboxToggle}
-                                maxHeight={maxHeight}
+                                maxHeight={maxHeight || 'calc(100vh - 14rem)'}
                                 presentationVariant="learning"
                             />
                         ) : (
@@ -565,7 +565,6 @@ CourseDetailsMobileArea.propTypes = {
 export const CourseDetailsMainArea = ({
     isDesktop,
     enrolled,
-    videoContainerRef,
     activeLessonRuntime,
     publicInfoNode,
 }) => {
@@ -574,9 +573,7 @@ export const CourseDetailsMainArea = ({
     return (
         <div className="lg:col-span-2">
             {enrolled ? (
-                <div className="space-y-8" ref={videoContainerRef}>
-                    {activeLessonRuntime}
-                </div>
+                <div className="space-y-8">{activeLessonRuntime}</div>
             ) : (
                 <div className="space-y-8">{publicInfoNode}</div>
             )}
@@ -587,9 +584,6 @@ export const CourseDetailsMainArea = ({
 CourseDetailsMainArea.propTypes = {
     isDesktop: PropTypes.bool.isRequired,
     enrolled: PropTypes.bool.isRequired,
-    videoContainerRef: PropTypes.shape({
-        current: PropTypes.object,
-    }).isRequired,
     activeLessonRuntime: PropTypes.node,
     publicInfoNode: PropTypes.node.isRequired,
 };

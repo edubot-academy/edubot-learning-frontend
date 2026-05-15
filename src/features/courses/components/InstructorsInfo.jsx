@@ -1,20 +1,35 @@
 import PropTypes from 'prop-types';
 import {
-    FaStar,
-    FaCheckCircle,
     FaBriefcase,
     FaBookOpen,
-    FaUsers,
-    FaInstagram,
-    FaTelegram,
-    FaLinkedin,
+    FaCheckCircle,
+    FaEnvelope,
     FaGithub,
-    FaYoutube,
+    FaInstagram,
+    FaLinkedin,
+    FaStar,
+    FaTelegram,
     FaTwitter,
-    FaEnvelope
+    FaUsers,
+    FaYoutube,
 } from 'react-icons/fa';
 import { IoLogoFacebook } from 'react-icons/io5';
 import DefaultAvatar from '../../../assets/icons/personBlack.svg';
+
+const SOCIAL_LABELS = {
+    instagram: 'Instagram',
+    telegram: 'Telegram',
+    linkedin: 'LinkedIn',
+    portfolio: 'Портфолио',
+    github: 'GitHub',
+    facebook: 'Facebook',
+    fb: 'Facebook',
+    twitter: 'X',
+    x: 'X',
+    youtube: 'YouTube',
+    yt: 'YouTube',
+    email: 'Email',
+};
 
 const isValidLink = (platform, url) => {
     if (!url || typeof url !== 'string') return false;
@@ -49,7 +64,7 @@ const getSocialIcon = (platform) => {
     }
 };
 
-function InstructorsInfo({ instructorData }) {
+function InstructorsInfo({ instructorData, ratingAverage, ratingCount }) {
     const {
         avatarUrl,
         fullName = 'Инструктор',
@@ -60,21 +75,54 @@ function InstructorsInfo({ instructorData }) {
         coursesCount = 0,
         numberOfStudents = 0,
         socialLinks = {},
-        rating = 0,
+        rating,
         reviewsCount = 0,
         topTutor = false,
-        ratingAverage,
-        ratingCount
+        ratingAverage: instructorRatingAverage,
+        ratingCount: instructorRatingCount,
     } = instructorData || {};
 
     const safeSocialLinks = socialLinks && typeof socialLinks === 'object' ? socialLinks : {};
-    const displayRating = Number.isFinite(Number(ratingAverage ?? rating))
-        ? Number(ratingAverage ?? rating)
+    const ratingValue = instructorRatingAverage ?? ratingAverage ?? rating;
+    const ratingCountValue = instructorRatingCount ?? ratingCount ?? reviewsCount;
+    const displayRating = Number.isFinite(Number(ratingValue))
+        ? Number(ratingValue)
         : 0;
-    const displayRatingCount = Number.isFinite(Number(ratingCount ?? reviewsCount))
-        ? Number(ratingCount ?? reviewsCount)
+    const displayRatingCount = Number.isFinite(Number(ratingCountValue))
+        ? Number(ratingCountValue)
         : 0;
     const isTopTutor = topTutor ?? (displayRating >= 4.7 && displayRatingCount >= 30);
+    const validSocialLinks = Object.entries(safeSocialLinks)
+        .map(([platform, url]) => {
+            const iconData = getSocialIcon(platform);
+
+            return {
+                platform,
+                url,
+                IconComponent: iconData.component,
+                label: SOCIAL_LABELS[platform.toLowerCase()] || platform,
+            };
+        })
+        .filter(({ platform, url, IconComponent }) => IconComponent && isValidLink(platform, url));
+    const proofPoints = [
+        yearsOfExperience !== undefined && yearsOfExperience !== null
+            ? {
+                  id: 'experience',
+                  icon: FaBriefcase,
+                  label: `${yearsOfExperience}+ жыл тажрыйба`,
+              }
+            : null,
+        {
+            id: 'courses',
+            icon: FaBookOpen,
+            label: `${coursesCount} курс`,
+        },
+        {
+            id: 'students',
+            icon: FaUsers,
+            label: `${numberOfStudents}+ студент`,
+        },
+    ].filter(Boolean);
 
     return (
         <div className="w-full border border-gray-200 rounded-xl p-6 md:p-7 shadow-sm flex flex-col md:flex-row gap-5 dark:border-gray-700 dark:bg-[#222222]">
@@ -109,7 +157,7 @@ function InstructorsInfo({ instructorData }) {
                     </h2>
                 </div>
 
-                <p className="text-sm text-gray-600 dark:text-gray-300">{title}</p>
+                {title && <p className="text-sm text-gray-600 dark:text-gray-300">{title}</p>}
 
                 <div className="flex flex-col gap-4">
                     <p className="text-base leading-relaxed break-words text-gray-700 dark:text-gray-300">{bio}</p>
@@ -125,47 +173,42 @@ function InstructorsInfo({ instructorData }) {
                         ))}
                     </div>
 
-                    <div className="flex flex-col md:flex-row items-start md:items-center gap-3 md:gap-8 text-sm mt-4">
-                        {yearsOfExperience !== undefined && yearsOfExperience !== null && (
-                            <div className="flex items-center gap-2 text-gray-600 dark:text-gray-300">
-                                <FaBriefcase className="w-4 h-4 text-gray-500 dark:text-white" />
-                                <span>{yearsOfExperience}+ жыл тажрыйба</span>
-                            </div>
-                        )}
-
-                        <div className="flex items-center gap-2 text-gray-600 dark:text-gray-300">
-                            <FaBookOpen className="w-4 h-4 text-gray-500 dark:text-white" />
-                            <span>{coursesCount} курс</span>
+                    <div className="mt-4 flex flex-col gap-4 border-t border-gray-200 pt-4 dark:border-gray-700 xl:flex-row xl:items-center xl:justify-between">
+                        <div className="flex flex-wrap items-center gap-x-5 gap-y-3 text-sm text-gray-600 dark:text-gray-300">
+                            {proofPoints.map(({ id, icon: Icon, label }, index) => (
+                                <div key={id} className="flex items-center gap-5">
+                                    {index > 0 && (
+                                        <span
+                                            className="hidden h-5 w-px bg-gray-300 dark:bg-gray-700 md:block"
+                                            aria-hidden="true"
+                                        />
+                                    )}
+                                    <div className="flex items-center gap-2 whitespace-nowrap">
+                                        <Icon className="w-4 h-4 text-gray-500 dark:text-white" />
+                                        <span>{label}</span>
+                                    </div>
+                                </div>
+                            ))}
                         </div>
 
-                        <div className="flex items-center gap-2 text-gray-600 dark:text-gray-300">
-                            <FaUsers className="w-4 h-4 text-gray-500 dark:text-white" />
-                            <span>{numberOfStudents}+ студент</span>
-                        </div>
-
-                        <div className="flex items-center gap-3 ml-auto">
-                            {Object.entries(safeSocialLinks).map(([platform, url]) => {
-                                const iconData = getSocialIcon(platform);
-                                if (!iconData || !url || !isValidLink(platform, url)) return null;
-
-                                const IconComponent = iconData.component;
-
-                                return (
+                        {validSocialLinks.length > 0 && (
+                            <div className="flex items-center gap-3 xl:justify-end">
+                                {validSocialLinks.map(({ platform, url, IconComponent, label }) => (
                                     <a
                                         key={platform}
                                         href={url}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        aria-label={`${platform} профилин ачуу`}
+                                        aria-label={`${label} профилин ачуу`}
                                         className="flex items-center gap-2 text-gray-600 hover:text-blue-600 transition-colors dark:text-gray-400 dark:hover:text-blue-400"
                                     >
                                         <div className="w-5 h-5 flex items-center justify-center">
                                             <IconComponent className="w-full h-full" />
                                         </div>
                                     </a>
-                                );
-                            })}
-                        </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
@@ -192,4 +235,6 @@ InstructorsInfo.propTypes = {
         ratingAverage: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
         ratingCount: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
     }),
+    ratingAverage: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
+    ratingCount: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
 };

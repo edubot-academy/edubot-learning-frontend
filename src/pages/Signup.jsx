@@ -5,6 +5,7 @@ import PhoneInput from '@shared/ui/forms/PhoneInput';
 import SignUpImg from '../assets/images/edubot-signup.png';
 import DefaultLabel from '@shared-ui/forms/DefaultLabel';
 import LabelPassword from '@shared-ui/forms/LabelPassword';
+import { FaBookOpen, FaCheckCircle, FaCreditCard, FaUserPlus } from 'react-icons/fa';
 import { AuthContext } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import { useFavourites } from '../context/FavouritesContext';
@@ -25,6 +26,24 @@ const PASSWORD_RULES = [
     ['uppercase', 'Баш тамга'],
     ['number', 'Сан'],
     ['specialChar', 'Атайын белги'],
+];
+
+const SIGNUP_STEPS = [
+    {
+        icon: FaUserPlus,
+        title: 'Аккаунт түзүңүз',
+        description: 'Жеке маалымат жана коопсуз сырсөз менен окуу профилиңиз ачылат.',
+    },
+    {
+        icon: FaCreditCard,
+        title: 'Курс сатып алыңыз',
+        description: 'Өз алдынча видео курстарды дароо кошуп окуй аласыз.',
+    },
+    {
+        icon: FaBookOpen,
+        title: 'Окууну улантыңыз',
+        description: 'Сабак прогрессиңиз, материалдар жана билдирүүлөр бир жерде сакталат.',
+    },
 ];
 
 const validateSignupForm = (formData) => {
@@ -135,28 +154,66 @@ const SignupPage = () => {
     };
 
     return (
-        <div className="min-h-screen flex">
-            <div className="hidden md:flex md:w-1/2 bg-[linear-gradient(151.1deg,#FFCBA5_3.26%,#E64D26_96.74%)] flex-col justify-center items-center text-white px-6">
-                <img
-                    src={SignUpImg}
-                    alt="EduBot Learning"
-                    className="object-contain mb-6 w-[400px] h-[300px]"
-                />
-                <h2 className="font-bold text-center text-[50px]">
-                    EDUBOT <br /> LEARNING
-                </h2>
-            </div>
+        <div className="min-h-[calc(100vh-5.5rem)] bg-[#f7f4ef] px-4 py-4 text-gray-950 dark:bg-[#111111] dark:text-white sm:px-6 lg:h-[calc(100vh-6.5rem)] lg:min-h-0 lg:overflow-hidden lg:px-10">
+            <div className="mx-auto grid w-full max-w-6xl gap-6 lg:h-full lg:grid-cols-[1fr_1.05fr]">
+                <section className="hidden overflow-hidden rounded-lg border border-white/35 bg-[#111827] text-white shadow-xl shadow-orange-950/10 dark:border-gray-700 lg:block">
+                    <div className="relative flex h-full min-h-0 flex-col justify-between p-5 lg:p-6">
+                        <div className="absolute inset-0 bg-[linear-gradient(135deg,#FB8A3C_0%,#EA580C_44%,#172033_100%)]" />
+                        <div className="absolute inset-x-0 bottom-0 h-2/3 bg-[linear-gradient(180deg,rgba(23,32,51,0)_0%,rgba(17,24,39,0.88)_76%)]" />
 
-            <div className="flex-1 flex items-center justify-center px-6">
-                <div className="w-full max-w-md">
-                    <h2 className="text-2xl font-bold text-black dark:text-white mb-6">Катталуу</h2>
-                    <p className="mb-5 text-sm leading-6 text-gray-600 dark:text-[#a6adba]">
-                        Өз алдынча видео курстарды сатып алып окуу үчүн аккаунт түзүңүз. Компаниялык же түз эфир курстары администратор аркылуу дайындалат.
-                    </p>
+                        <div className="relative z-10">
+                            <div className="inline-flex h-12 w-12 items-center justify-center rounded-lg bg-white text-orange-600 shadow-lg">
+                                <FaUserPlus className="h-6 w-6" />
+                            </div>
+                            <p className="mt-4 text-sm font-semibold uppercase tracking-[0.2em] text-orange-100">
+                                EduBot Learning
+                            </p>
+                            <h1 className="mt-2 text-2xl font-bold leading-tight">
+                                Окуу аккаунтун түзүңүз
+                            </h1>
+                            <p className="mt-2 max-w-md text-sm leading-5 text-orange-50/85">
+                                Өз алдынча видео курстарды сатып алып окуу үчүн катталыңыз. Компаниялык же түз эфир курстары администратор аркылуу дайындалат.
+                            </p>
+                        </div>
 
-                    {error && <p className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700" role="alert">{error}</p>}
+                        <div className="relative z-10 mx-auto flex w-full max-w-sm justify-center py-2">
+                            <img
+                                src={SignUpImg}
+                                alt="EduBot Learning"
+                                className="h-[145px] w-full object-contain drop-shadow-xl lg:h-[170px]"
+                            />
+                        </div>
 
-                    <form onSubmit={handleSubmit} className="space-y-2">
+                        <div className="relative z-10 space-y-2">
+                            {SIGNUP_STEPS.map(({ icon: Icon, title, description }) => (
+                                <div key={title} className="flex gap-3 rounded-lg border border-white/15 bg-white/10 p-2 backdrop-blur">
+                                    <Icon className="mt-1 h-4 w-4 shrink-0 text-orange-100" />
+                                    <div>
+                                        <p className="text-sm font-semibold">{title}</p>
+                                        <p className="mt-0.5 text-xs leading-4 text-orange-50/80 sm:text-sm sm:leading-5">{description}</p>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </section>
+
+                <section className="flex items-center justify-center">
+                    <div className="w-full rounded-lg border border-gray-200 bg-white p-5 shadow-lg shadow-gray-200/60 dark:border-gray-700 dark:bg-[#1f1f1f] dark:shadow-black/25 sm:p-6">
+                        <div className="mb-4 space-y-2">
+                            <div className="inline-flex items-center gap-2 rounded-full bg-orange-50/80 px-3 py-1 text-sm font-semibold text-orange-700 dark:bg-amber-500/10 dark:text-amber-200">
+                                <FaCheckCircle className="h-3.5 w-3.5" />
+                                Жаңы аккаунт
+                            </div>
+                            <h2 className="text-2xl font-bold text-black dark:text-white">Катталуу</h2>
+                            <p className="text-sm leading-6 text-gray-600 dark:text-[#a6adba]">
+                                Форманы толтургандан кийин аккаунтуңуз ачылып, окуу панелиңизге өтөсүз.
+                            </p>
+                        </div>
+
+                        {error && <p className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-500 dark:bg-red-950/20 dark:text-red-400" role="alert">{error}</p>}
+
+                        <form onSubmit={handleSubmit} className="grid gap-x-4 gap-y-1 md:grid-cols-2">
                         <DefaultLabel
                             label="Фамилияңызды жазыңыз"
                             name="lastName"
@@ -167,7 +224,7 @@ const SignupPage = () => {
                             error={fieldErrors.lastName}
                             autoComplete="family-name"
                             width="w-full"
-                            className="py-2"
+                            className="py-1.5"
                         />
 
                         <DefaultLabel
@@ -180,45 +237,38 @@ const SignupPage = () => {
                             error={fieldErrors.firstName}
                             autoComplete="given-name"
                             width="w-full"
-                            className="py-2"
+                            className="py-1.5"
                         />
 
-                        <DefaultLabel
-                            label="Email почтаңызды жазыңыз"
-                            name="email"
-                            type="email"
-                            value={formData.email}
-                            onChange={handleChange}
-                            placeholder=""
-                            required={true}
-                            error={fieldErrors.email}
-                            autoComplete="email"
-                            width="w-full"
-                            className="py-2"
-                        />
+                        <div className="md:col-span-2">
+                            <DefaultLabel
+                                label="Email почтаңызды жазыңыз"
+                                name="email"
+                                type="email"
+                                value={formData.email}
+                                onChange={handleChange}
+                                placeholder=""
+                                required={true}
+                                error={fieldErrors.email}
+                                autoComplete="email"
+                                width="w-full"
+                                className="py-1.5"
+                            />
+                        </div>
 
-                        <div className="py-2">
-                            <label htmlFor="signup-phone" className="mb-1 block text-sm font-medium text-gray-700 dark:text-[#a6adba]">
-                                Телефон номери <span className="font-normal">(милдеттүү эмес)</span>
-                            </label>
+                        <div className="py-1.5 md:col-span-2">
                             <PhoneInput
                                 id="signup-phone"
                                 name="phoneNumber"
                                 onChange={handlePhoneChange}
                                 value={formData.phoneNumber}
-                                aria-invalid={Boolean(fieldErrors.phoneNumber)}
-                                aria-describedby={fieldErrors.phoneNumber ? 'signup-phone-error' : 'signup-phone-help'}
-                                className={fieldErrors.phoneNumber ? 'border-red-500' : 'border-gray-300'}
+                                label="Телефон номери"
+                                helperText="Милдеттүү эмес. Эл аралык формат: +996700123456."
+                                error={fieldErrors.phoneNumber}
                             />
-                            <p id="signup-phone-help" className="mt-1 text-xs text-gray-500 dark:text-[#a6adba]">
-                                Эл аралык формат: +996700123456.
-                            </p>
-                            {fieldErrors.phoneNumber && (
-                                <p id="signup-phone-error" className="mt-1 text-xs text-red-600">{fieldErrors.phoneNumber}</p>
-                            )}
                         </div>
 
-                        <div className="relative py-2">
+                        <div className="relative py-1.5 md:col-span-2">
                             <LabelPassword
                                 label="Сырсөз ойлоп табыңыз"
                                 name="password"
@@ -236,7 +286,7 @@ const SignupPage = () => {
                             {showPasswordRules && (
                                 <div
                                     id="signup-password-rules"
-                                    className="absolute left-0 right-0 top-full z-20 mt-1 rounded-lg border border-gray-200 bg-white p-3 shadow-lg dark:border-[#2A2E35] dark:bg-[#222222]"
+                                    className="mt-2 rounded-lg border border-gray-200 bg-white p-3 shadow-sm dark:border-[#2A2E35] dark:bg-[#222222] lg:absolute lg:left-0 lg:right-0 lg:top-full lg:z-20 lg:shadow-lg"
                                     role="status"
                                     aria-label="Сырсөз талаптары"
                                 >
@@ -254,7 +304,7 @@ const SignupPage = () => {
                             )}
                         </div>
 
-                        <div className="py-2">
+                        <div className="py-1.5 md:col-span-2">
                             <LabelPassword
                                 label="Сырсөздү кайталаңыз"
                                 name="repeatPassword"
@@ -272,20 +322,21 @@ const SignupPage = () => {
                             type="submit"
                             disabled={loading}
                             aria-busy={loading}
-                            className="mt-4 flex min-h-[52px] w-full items-center justify-center rounded bg-[linear-gradient(180deg,#FF8C6E_0%,#E14219_100%)] py-3 text-lg font-semibold text-white shadow-[0px_5px_21.3px_0px_#E14219BF] transition hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-75"
+                            className="mt-3 flex min-h-[48px] w-full items-center justify-center rounded-lg bg-[linear-gradient(180deg,#FF8C6E_0%,#E14219_100%)] py-3 text-base font-semibold text-white shadow-[0px_4px_14px_0px_rgba(225,66,25,0.45)] transition hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-75 dark:shadow-[0px_4px_12px_0px_rgba(225,66,25,0.28)] dark:focus:ring-offset-[#1f1f1f] md:col-span-2"
                         >
                             {loading ? <Loader fullScreen={false} /> : 'Катталуу'}
                         </button>
                     </form>
 
-                    <p className="mt-4 text-sm text-gray-600 dark:text-[#a6adba] text-center">
-                        Каттоо эсебиңиз бар?{' '}
+                    <p className="mt-3 rounded-lg border border-transparent bg-gray-50 px-4 py-2.5 text-center text-sm leading-6 text-gray-600 dark:border-gray-700 dark:bg-[#292929] dark:text-[#a6adba]">
+                        Аккаунтуңуз бар?{' '}
                         <Link to="/login" className="text-blue-500 hover:underline">
                             Кирүү
                         </Link>
                     </p>
+                    </div>
+                </section>
                 </div>
-            </div>
         </div>
     );
 };

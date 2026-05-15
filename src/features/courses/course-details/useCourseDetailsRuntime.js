@@ -708,56 +708,33 @@ export const useInitialCourseDetailsLoad = ({
     /* eslint-enable react-hooks/exhaustive-deps */
 };
 
-export const useCourseDetailsLayoutMetrics = (activeLesson) => {
-    const [videoHeight, setVideoHeight] = useState(0);
+export const useCourseDetailsLayoutMetrics = () => {
     const [isDesktop, setIsDesktop] = useState(
         typeof window !== 'undefined' ? window.innerWidth >= 1024 : false
     );
-    const videoContainerRef = useRef(null);
 
     useEffect(() => {
         if (typeof window === 'undefined') return undefined;
-
-        const updateVideoHeight = () => {
-            if (videoContainerRef.current) {
-                const height = videoContainerRef.current.offsetHeight;
-                setVideoHeight(height);
-            }
-        };
 
         const updateBreakpoint = () => {
             setIsDesktop(window.innerWidth >= 1024);
         };
 
-        updateVideoHeight();
         updateBreakpoint();
 
         const handleResize = debounce(() => {
-            updateVideoHeight();
             updateBreakpoint();
         }, 100);
 
         window.addEventListener('resize', handleResize);
 
-        const resizeObserver =
-            typeof ResizeObserver !== 'undefined'
-                ? new ResizeObserver(() => {
-                      updateVideoHeight();
-                  })
-                : null;
-
-        if (videoContainerRef.current) {
-            resizeObserver?.observe(videoContainerRef.current);
-        }
-
         return () => {
             window.removeEventListener('resize', handleResize);
             handleResize.cancel();
-            resizeObserver?.disconnect();
         };
-    }, [activeLesson]);
+    }, []);
 
-    return { videoHeight, isDesktop, videoContainerRef };
+    return { isDesktop };
 };
 
 export const useCourseDetailsController = ({ courseId, searchParams, user }) => {
@@ -778,8 +755,7 @@ export const useCourseDetailsController = ({ courseId, searchParams, user }) => 
     const markingCompleteRef = useRef(false);
     const shouldScrollToLesson = true;
     const [activeTab, setActiveTab] = useState('program');
-    const { videoHeight, isDesktop, videoContainerRef } =
-        useCourseDetailsLayoutMetrics(activeLesson);
+    const { isDesktop } = useCourseDetailsLayoutMetrics();
 
     useEffect(() => {
         hasPlayedRef.current = false;
@@ -1134,8 +1110,6 @@ export const useCourseDetailsController = ({ courseId, searchParams, user }) => 
         resumeVideoTime,
         sections,
         tabs,
-        videoContainerRef,
-        videoHeight,
         videoRef,
     };
 };

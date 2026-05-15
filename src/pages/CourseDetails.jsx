@@ -65,8 +65,6 @@ const CourseDetailsPage = () => {
         resumeVideoTime,
         sections,
         tabs,
-        videoContainerRef,
-        videoHeight,
         videoRef,
     } = useCourseDetailsController({ courseId: id, searchParams, user });
 
@@ -149,7 +147,6 @@ const CourseDetailsPage = () => {
                     <CourseDetailsMainArea
                         isDesktop={isDesktop}
                         enrolled={enrolled}
-                        videoContainerRef={videoContainerRef}
                         activeLessonRuntime={activeLessonRuntime}
                         publicInfoNode={desktopPublicInfoNode}
                     />
@@ -162,7 +159,6 @@ const CourseDetailsPage = () => {
                         activeLesson={activeLesson}
                         completedLessons={completedLessons}
                         lessonRefs={lessonRefs}
-                        maxHeight={videoHeight ? `${videoHeight}px` : undefined}
                         onLessonClick={handleLessonClick}
                         onCheckboxToggle={handleCheckboxToggle}
                         isAiAvailable={isAiAvailable}

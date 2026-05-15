@@ -26,6 +26,7 @@ const PhoneInput = ({
     const helperId = helperText ? `${inputId}-help` : undefined;
     const errorId = error ? `${inputId}-error` : undefined;
     const describedBy = [ariaDescribedBy, helperId, errorId].filter(Boolean).join(' ') || undefined;
+    const hasError = Boolean(error) || ariaInvalid === true;
 
     const handleInput = (e) => {
         const raw = e.target.value;
@@ -56,7 +57,11 @@ const PhoneInput = ({
             inputMode="tel"
             aria-invalid={ariaInvalid ?? Boolean(error)}
             aria-describedby={describedBy}
-            className={`w-full px-4 py-2 rounded text-black dark:text-white bg-white dark:bg-[#222222] focus:outline-none border ${className} ${inputClassName}`}
+            className={`w-full rounded-md border px-2 py-1.5 text-sm text-gray-900 transition-colors duration-200 focus:outline-none sm:px-3 sm:py-2 sm:text-base md:px-4 md:py-2.5 dark:text-[#E8ECF3] ${
+                hasError
+                    ? 'border-red-600 bg-red-50/60 dark:border-red-500 dark:bg-red-950/20'
+                    : 'border-gray-300 bg-white focus:border-amber-600 dark:border-gray-700 dark:bg-[#222222] dark:focus:border-amber-500'
+            } ${className} ${inputClassName}`}
             required={required}
             {...props}
         />
@@ -67,18 +72,23 @@ const PhoneInput = ({
     return (
         <div className={wrapperClassName}>
             {label ? (
-                <label htmlFor={inputId} className="text-sm font-medium text-edubot-muted dark:text-slate-400">
+                <label htmlFor={inputId} className="mb-1 block text-sm font-medium text-gray-700 dark:text-[#a6adba]">
                     {label}
+                    {required && (
+                        <span className="ml-0.5 text-red-600 dark:text-red-400" aria-hidden="true">
+                            *
+                        </span>
+                    )}
                 </label>
             ) : null}
-            <div className={label ? 'mt-1' : undefined}>{input}</div>
+            <div>{input}</div>
             {helperText ? (
-                <p id={helperId} className="mt-1 text-xs text-edubot-muted dark:text-slate-400">
+                <p id={helperId} className="mt-1 text-xs text-gray-500 dark:text-[#a6adba]">
                     {helperText}
                 </p>
             ) : null}
             {error ? (
-                <p id={errorId} className="mt-1 text-xs font-medium text-red-600 dark:text-red-300">
+                <p id={errorId} className="mt-1 text-xs text-red-600 dark:text-red-400">
                     {error}
                 </p>
             ) : null}

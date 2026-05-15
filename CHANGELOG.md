@@ -6,6 +6,27 @@ Version bumps are classified by delivery scale; see `VERSIONING.md`.
 
 ---
 
+## [1.11.24] - 2026-05-15
+
+### Changed
+
+- Improved enrolled course-detail program scrolling so lesson navigation no longer depends on active lesson/video height and mobile program content can use normal page scrolling.
+- Refined the course-detail instructor panel footer so proof points and social links are easier to scan without changing the main profile layout.
+- Reworked the login page composition so the brand panel and form feel tailored to returning learners instead of a generic split-layout template.
+- Removed the shared public footer from the login route to keep authentication focused.
+- Improved shared auth field required markers and error styling so validation states are clearer and consistent.
+- Reworked the signup page composition into a purpose-built onboarding flow with clearer registration context.
+- Aligned the shared phone input styling and signup usage with the auth form field system.
+
+### Verification
+
+- `npm run lint`
+- `npm test -- --run --testTimeout=15000`
+- `git diff --check`
+- `npm run build`
+
+---
+
 ## [1.11.23] - 2026-05-15
 
 ### Fixed
