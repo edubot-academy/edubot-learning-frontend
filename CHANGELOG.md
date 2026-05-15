@@ -6,6 +6,37 @@ Version bumps are classified by delivery scale; see `VERSIONING.md`.
 
 ---
 
+## [1.13.0] - 2026-05-15
+
+### Added
+
+- Added the frontend localization foundation with `i18next`, `react-i18next`, supported `ky`, `ru`, and `en` resources, persisted language selection, and translation key parity coverage.
+- Added a compact language switcher in the desktop header and mobile drawer.
+- Added localized public-page copy for home, courses, course details, about, contact, login, and signup.
+- Added `Accept-Language` handling on API requests and focused tests for locale resolution, API locale headers, translated error handling, and shared navigation labels.
+- Added a frontend localization release plan covering completed public scope, remaining internal/admin gaps, and smoke QA.
+
+### Changed
+
+- Reworked shared header, mobile drawer, user menu, marketing sections, public auth pages, course cards/details, contact flows, leaderboard snippets, and instructor/course list surfaces to read user-facing copy from translation resources.
+- Replaced free-text company locale controls in admin surfaces with supported locale selections.
+- Refined Kyrgyz and Russian public copy for mixed-language terms, preview wording, and Russian count labels.
+
+### Fixed
+
+- Fixed contact phone input handling so international `+996...` values can be entered and validated consistently.
+- Improved language switcher accessibility with menu semantics, focus handling, keyboard navigation, and decorative image alt cleanup in user menus.
+- Preserved CSRF retry behavior while preferring stable localized backend error codes when available.
+
+### Verification
+
+- `npm run lint`
+- `npm test -- --run src/i18n/resources.spec.js src/i18n/locale.spec.js src/shared/utils/navigation.spec.js src/shared/api/client.spec.js src/shared/api/error.spec.js`
+- `git diff --check`
+- `npm run build`
+
+---
+
 ## [1.12.3] - 2026-05-15
 
 ### Fixed
