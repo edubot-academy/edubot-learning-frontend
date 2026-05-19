@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import Button from '@shared-ui/Button';
 import { IoStar, IoStarOutline } from 'react-icons/io5';
 import { rateCourse, getCourseRating } from '@services/api';
@@ -7,6 +8,7 @@ import toast from 'react-hot-toast';
 const STARS = [1, 2, 3, 4, 5];
 
 function Comment({ courseId }) {
+    const { t } = useTranslation();
     const [rating, setRating] = useState(0);
     const [hoverRating, setHoverRating] = useState(0);
     const [comment, setComment] = useState('');
@@ -65,15 +67,15 @@ function Comment({ courseId }) {
 
     const handleRateCourse = async () => {
         if (!courseId) {
-            toast.error('Курс табылган жок.');
+            toast.error(t('ratings.comment.toasts.courseMissing'));
             return;
         }
         if (rating === 0) {
-            toast.error('Алды менен баа коюңуз.');
+            toast.error(t('ratings.comment.toasts.ratingRequired'));
             return;
         }
         if (comment.trim().length < 5) {
-            toast.error('Сын-пикир кеминде 5 символ болушу керек.');
+            toast.error(t('ratings.comment.toasts.commentTooShort'));
             return;
         }
 
@@ -82,7 +84,7 @@ function Comment({ courseId }) {
             const payload = { value: rating, comment: comment.trim() };
             await rateCourse(courseId, payload);
 
-            toast.success('Сын-пикир ийгиликтүү жөнөтүлдү.');
+            toast.success(t('ratings.comment.toasts.submitted'));
 
             // Treat this as "now rated"
             setExistingRating(payload);
@@ -91,7 +93,7 @@ function Comment({ courseId }) {
             console.error('Error rating course:', error);
             toast.error(
                 error?.response?.data?.message ||
-                    'Сын-пикир жөнөтүүдө ката кетти. Кайра аракет кылыңыз.'
+                    t('ratings.comment.toasts.submitError')
             );
         } finally {
             setLoading(false);
@@ -112,7 +114,7 @@ function Comment({ courseId }) {
                     'transition-transform hover:scale-110 focus:outline-none ' +
                     (isRated ? 'cursor-not-allowed opacity-70' : '')
                 }
-                aria-label={`${value} жылдыз`}
+                aria-label={t('ratings.comment.starAria', { count: value })}
                 disabled={isRated}
             >
                 {active ? (
@@ -150,19 +152,18 @@ function Comment({ courseId }) {
                     
                     {/* Заголовок */}
                     <h3 className="font-semibold text-xl md:text-2xl text-gray-800 mb-2 dark:text-gray-100">
-                        Сын-пикириңиз үчүн чоң рахмат!
+                        {t('ratings.comment.success.title')}
                     </h3>
                     
                     {/* Описание */}
                     <p className="text-[#3E424A] text-sm md:text-base font-normal max-w-md mx-auto dark:text-gray-300">
-                        Сиздин пикириңиз башка студенттерге курс тандоодо жардам берет. 
-                        Биздин курстарды жакшыртууга кошкон салымыңыз үчүн ыраазычылык билдиребиз!
+                        {t('ratings.comment.success.description')}
                     </p>
                     
                     {/* Отображение оценки (опционально) */}
                     {existingRating && (
                         <div className="mt-4 flex items-center justify-center gap-2">
-                            <span className="text-gray-600 dark:text-gray-300">Сиздин бааңыз:</span>
+                            <span className="text-gray-600 dark:text-gray-300">{t('ratings.comment.success.yourRating')}</span>
                             <div className="flex gap-1">
                                 {STARS.map((value) => (
                                     <span key={value}>
@@ -190,12 +191,12 @@ function Comment({ courseId }) {
 
                 <div className="px-4 md:px-0 flex flex-col items-center md:items-start gap-2 text-center md:text-left">
                     <h3 className="font-semibold text-xl md:text-2xl text-gray-800 dark:text-gray-100">
-                        Курс кандай өттү? Сын-пикир калтырыңыз
+                        {t('ratings.comment.form.title')}
                     </h3>
                     <p className="text-[#3E424A] text-sm md:text-base font-normal dark:text-gray-300">
-                        Сиздин пикириңиз башка студенттерге курс тандоодо жардам берет.
+                        {t('ratings.comment.form.descriptionLine1')}
                         <br className="hidden md:block" />
-                        Сиздин пикир биз үчүн да абдан баалуу!
+                        {t('ratings.comment.form.descriptionLine2')}
                     </p>
                 </div>
             </div>
@@ -203,16 +204,16 @@ function Comment({ courseId }) {
             {/* Right side: textarea + button */}
             <div className="flex flex-col items-start gap-4 md:w-1/2">
                 <textarea
-                    placeholder="Сиздин тажрыйбаңыз тууралуу жазыңыз..."
+                    placeholder={t('ratings.comment.form.placeholder')}
                     className="w-full min-h-[120px] border border-gray-300 rounded-lg px-3 py-2 text-gray-700 bg-white text-sm md:text-base resize-none focus:outline-none focus:ring-2 focus:ring-[#1e605e] focus:border-transparent placeholder-gray-400 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 dark:focus:ring-teal-500 dark:placeholder-gray-500"
                     value={comment}
                     onChange={(e) => setComment(e.target.value)}
                 />
 
                 <div className="flex items-center justify-between w-full text-xs md:text-sm text-gray-500 dark:text-gray-400">
-                    <span>Минималдуу: 5 символ. Сиз жаздыңыз: {comment.trim().length}.</span>
+                    <span>{t('ratings.comment.form.minimum', { count: comment.trim().length })}</span>
                     {rating > 0 && (
-                        <span className="font-medium text-amber-500 dark:text-amber-400">Баа: {rating} / 5</span>
+                        <span className="font-medium text-amber-500 dark:text-amber-400">{t('ratings.comment.form.rating', { rating })}</span>
                     )}
                 </div>
 
@@ -221,7 +222,7 @@ function Comment({ courseId }) {
                     onClick={handleRateCourse}
                     disabled={isSubmitDisabled}
                 >
-                    {loading || loadingInitial ? 'Жөнөтүлүүдө...' : 'Жиберүү'}
+                    {loading || loadingInitial ? t('ratings.comment.actions.sending') : t('ratings.comment.actions.submit')}
                 </Button>
             </div>
         </div>

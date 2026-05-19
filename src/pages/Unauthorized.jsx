@@ -1,22 +1,9 @@
 import { useContext, useEffect, useMemo, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { FiArrowLeft, FiBookOpen, FiHelpCircle, FiHome, FiLock, FiLogIn } from 'react-icons/fi';
 import { AuthContext } from '../context/AuthContext';
 import { getDashboardPath } from '@shared/utils/navigation';
-
-const REASON_LABELS = {
-    role: 'Бул бөлүм башка роль үчүн ачылган болушу мүмкүн.',
-    enrollment: 'Курска же уюмга кирүү укугуңуз азырынча активдүү эмес болушу мүмкүн.',
-    session: 'Сессияңыз аяктап калган болсо, кайра кирүү керек болот.',
-};
-
-const ROLE_LABELS = {
-    student: 'студент',
-    instructor: 'мугалим',
-    assistant: 'ассистент',
-    admin: 'администратор',
-    superadmin: 'суперадмин',
-};
 
 const ActionLink = ({ to, icon: Icon, children, primary = false }) => (
     <Link
@@ -39,20 +26,27 @@ const GuidanceItem = ({ title, children }) => (
     </li>
 );
 
-const getReasonText = (searchParams) => {
+const getReasonText = (searchParams, t) => {
     const reason = searchParams.get('reason');
-    return REASON_LABELS[reason] || 'Сиз кирүүгө аракет кылган бөлүм учурдагы аккаунтуңуз үчүн жабык.';
+    return reason
+        ? t(`unauthorized.reasons.${reason}`, {
+            defaultValue: t('unauthorized.reasons.default'),
+        })
+        : t('unauthorized.reasons.default');
 };
 
 const Unauthorized = () => {
+    const { t } = useTranslation();
     const { user } = useContext(AuthContext);
     const navigate = useNavigate();
     const location = useLocation();
     const headingRef = useRef(null);
 
     const searchParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
-    const reasonText = getReasonText(searchParams);
-    const roleLabel = ROLE_LABELS[user?.role] || user?.role;
+    const reasonText = getReasonText(searchParams, t);
+    const roleLabel = user?.role
+        ? t(`unauthorized.roles.${user.role}`, { defaultValue: user.role })
+        : '';
     const dashboardPath = user ? getDashboardPath(user) : '/login';
 
     useEffect(() => {
@@ -69,28 +63,30 @@ const Unauthorized = () => {
                         </div>
 
                         <p className="text-sm font-semibold uppercase tracking-wide text-edubot-orange">
-                            Кирүү чектелген
+                            {t('unauthorized.eyebrow')}
                         </p>
                         <h1
                             ref={headingRef}
                             tabIndex="-1"
                             className="mt-3 text-3xl font-bold text-gray-950 outline-none sm:text-4xl"
                         >
-                            Бул баракчага кирүүгө укугуңуз жок
+                            {t('unauthorized.title')}
                         </h1>
                         <p className="mt-4 max-w-2xl text-base leading-7 text-gray-600">
                             {reasonText}{' '}
                             {user
-                                ? `Учурда сиз ${roleLabel || 'аккаунт'} катары кирип турасыз.`
-                                : 'Улантуу үчүн аккаунтуңузга кириңиз же туура аккаунтту тандаңыз.'}
+                                ? t('unauthorized.signedInAs', {
+                                    role: roleLabel || t('unauthorized.roles.account'),
+                                })
+                                : t('unauthorized.signInPrompt')}
                         </p>
 
                         <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
                             <ActionLink to={dashboardPath} icon={user ? FiHome : FiLogIn} primary>
-                                {user ? 'Панелге кайтуу' : 'Кирүү'}
+                                {user ? t('unauthorized.actions.dashboard') : t('unauthorized.actions.login')}
                             </ActionLink>
                             <ActionLink to="/courses" icon={FiBookOpen}>
-                                Курстарды көрүү
+                                {t('unauthorized.actions.courses')}
                             </ActionLink>
                             <button
                                 type="button"
@@ -98,7 +94,7 @@ const Unauthorized = () => {
                                 className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-800 transition hover:border-orange-200 hover:bg-orange-50 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
                             >
                                 <FiArrowLeft className="h-4 w-4" aria-hidden="true" />
-                                Артка кайтуу
+                                {t('unauthorized.actions.back')}
                             </button>
                         </div>
                     </div>
@@ -107,23 +103,23 @@ const Unauthorized = () => {
                         <div className="mb-5 flex h-11 w-11 items-center justify-center rounded-xl bg-white/10 text-orange-200">
                             <FiHelpCircle className="h-6 w-6" aria-hidden="true" />
                         </div>
-                        <h2 className="text-xl font-bold">Эмне кылса болот?</h2>
+                        <h2 className="text-xl font-bold">{t('unauthorized.guidance.title')}</h2>
                         <ul className="mt-5 space-y-3">
-                            <GuidanceItem title="Ролуңузду текшериңиз">
-                                Бул бөлүм студент, мугалим, ассистент же админ ролдорунун бирине гана ачылган болушу мүмкүн.
+                            <GuidanceItem title={t('unauthorized.guidance.role.title')}>
+                                {t('unauthorized.guidance.role.description')}
                             </GuidanceItem>
-                            <GuidanceItem title="Аккаунтту алмаштырыңыз">
-                                Эгер башка аккаунт менен иштесеңиз, чыгуу жасап туура аккаунт менен кайра кириңиз.
+                            <GuidanceItem title={t('unauthorized.guidance.account.title')}>
+                                {t('unauthorized.guidance.account.description')}
                             </GuidanceItem>
-                            <GuidanceItem title="Кирүү укугун сураңыз">
-                                Курс, компания же админ панель боюнча укук керек болсо, администратор же колдоо тобу менен байланышыңыз.
+                            <GuidanceItem title={t('unauthorized.guidance.access.title')}>
+                                {t('unauthorized.guidance.access.description')}
                             </GuidanceItem>
                         </ul>
                         <Link
                             to="/contact"
                             className="mt-5 inline-flex min-h-11 w-full items-center justify-center rounded-lg bg-white px-4 py-2.5 text-sm font-semibold text-gray-950 transition hover:bg-orange-50 focus:outline-none focus:ring-2 focus:ring-orange-300 focus:ring-offset-2 focus:ring-offset-gray-950"
                         >
-                            Колдоо менен байланышуу
+                            {t('unauthorized.actions.support')}
                         </Link>
                     </aside>
                 </div>

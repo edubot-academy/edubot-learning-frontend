@@ -45,6 +45,57 @@ export const ru = {
         qrAlt: 'QR-код для сайта {{brand}}',
         copyright: '© {{year}} EduBot Learning. Все права защищены.',
     },
+    chatRedirect: {
+        title: 'Раздел чата не найден',
+        description:
+            'Для этого аккаунта не настроен прямой маршрут чата. Вернитесь в панель и выберите доступный раздел сообщений или поддержки.',
+        actions: {
+            dashboard: 'Вернуться в панель',
+            support: 'Поддержка',
+        },
+    },
+    unauthorized: {
+        eyebrow: 'Доступ ограничен',
+        title: 'У вас нет прав для открытия этой страницы',
+        signedInAs: 'Сейчас вы вошли как {{role}}.',
+        signInPrompt: 'Войдите, чтобы продолжить, или выберите правильный аккаунт.',
+        reasons: {
+            role: 'Этот раздел может быть доступен только для другой роли.',
+            enrollment: 'Ваш доступ к этому курсу или организации может быть еще не активен.',
+            session: 'Если сессия истекла, войдите снова.',
+            default: 'Раздел, который вы пытались открыть, закрыт для текущего аккаунта.',
+        },
+        roles: {
+            student: 'студент',
+            instructor: 'инструктор',
+            assistant: 'ассистент',
+            admin: 'администратор',
+            superadmin: 'суперадмин',
+            account: 'аккаунт',
+        },
+        actions: {
+            dashboard: 'Вернуться в панель',
+            login: 'Войти',
+            courses: 'Посмотреть курсы',
+            back: 'Назад',
+            support: 'Связаться с поддержкой',
+        },
+        guidance: {
+            title: 'Что можно сделать?',
+            role: {
+                title: 'Проверьте роль',
+                description: 'Этот раздел может быть открыт только для одной из ролей: студент, инструктор, ассистент или админ.',
+            },
+            account: {
+                title: 'Смените аккаунт',
+                description: 'Если вы используете другой аккаунт, выйдите и войдите снова с правильным аккаунтом.',
+            },
+            access: {
+                title: 'Запросите доступ',
+                description: 'Если нужен доступ к курсу, компании или админ-панели, свяжитесь с администратором или поддержкой.',
+            },
+        },
+    },
     errors: {
         generic: 'Произошла ошибка сервера.',
         CSRF_TOKEN_INVALID: 'Защита сессии обновлена. Повторите действие.',
@@ -155,6 +206,155 @@ export const ru = {
             quickActions: 'Быстрые действия',
         },
     },
+    ratings: {
+        card: {
+            fallbackInstructor: 'Инструктор',
+            fallbackTitle: 'Преподаватель',
+            fallbackSpecialty: 'Практические занятия',
+            newRating: 'Новый рейтинг',
+            topInstructor: 'Топ-преподаватель',
+            ratingAria: 'Рейтинг {{rating}}',
+            reviews: 'Отзывы',
+            students: 'Студенты',
+        },
+        comment: {
+            toasts: {
+                courseMissing: 'Курс не найден.',
+                ratingRequired: 'Сначала поставьте оценку.',
+                commentTooShort: 'Отзыв должен быть не короче 5 символов.',
+                submitted: 'Отзыв успешно отправлен.',
+                submitError: 'Не удалось отправить отзыв. Попробуйте еще раз.',
+            },
+            starAria: '{{count}} звезд',
+            success: {
+                title: 'Спасибо за отзыв!',
+                description:
+                    'Ваш отзыв помогает другим студентам выбрать курс и помогает нам улучшать курсы.',
+                yourRating: 'Ваша оценка:',
+            },
+            form: {
+                title: 'Как прошел курс? Оставьте отзыв',
+                descriptionLine1: 'Ваш отзыв помогает другим студентам выбрать курс.',
+                descriptionLine2: 'Ваше мнение очень ценно для нас.',
+                placeholder: 'Напишите о своем опыте...',
+                minimum: 'Минимум: 5 символов. Вы написали: {{count}}.',
+                rating: 'Оценка: {{rating}} / 5',
+            },
+            actions: {
+                sending: 'Отправка...',
+                submit: 'Отправить',
+            },
+        },
+    },
+    certificates: {
+        download: {
+            eyebrow: 'PDF сертификата',
+            title: 'Сертификат загружается',
+            description:
+                'Мы готовим PDF-файл. Если браузер заблокирует загрузку, вы сможете повторить попытку на этой странице.',
+            status: {
+                failed: 'Загрузка не удалась',
+                ready: 'Загрузка началась',
+                preparing: 'PDF готовится',
+            },
+            messages: {
+                failedTitle: 'Сейчас не удалось загрузить сертификат',
+                readyTitle: 'Файл должен загрузиться через браузер',
+                preparingTitle: 'Файл сертификата готовится',
+                readyDescription: 'Если файл не виден, проверьте список загрузок браузера или попробуйте загрузить снова.',
+                preparingDescription: 'Обычно это занимает несколько секунд. Не закрывайте страницу.',
+            },
+            errors: {
+                missingId: 'Идентификатор сертификата не найден.',
+                downloadFailed:
+                    'PDF не загрузился. Браузер мог заблокировать загрузку или сертификат сейчас недоступен.',
+            },
+            actions: {
+                preparing: 'Готовится',
+                retry: 'Загрузить снова',
+                openVerification: 'Открыть страницу проверки',
+                home: 'Вернуться на главную',
+            },
+            labels: {
+                certificateId: 'ID сертификата',
+            },
+        },
+        verification: {
+            hero: {
+                eyebrow: 'Реестр EduBot Learning',
+                title: 'Проверка сертификата',
+                description:
+                    'Эта страница объясняет текущий статус сертификата в реестре EduBot Learning для внешней проверки.',
+            },
+            loading: 'Информация проверки загружается...',
+            status: {
+                issued: {
+                    label: 'Подтвержден',
+                    description: 'Этот сертификат активен и действителен в реестре EduBot Learning.',
+                    guidance: 'Третья сторона может использовать эту запись для подтверждения успешного завершения курса студентом.',
+                },
+                pending: {
+                    label: 'На проверке',
+                    description: 'Запись сертификата существует, но финальное подтверждение еще не завершено.',
+                    guidance: 'Не используйте этот статус как окончательное официальное подтверждение. Проверьте позже или обратитесь в поддержку EduBot.',
+                },
+                revoked: {
+                    label: 'Отозван',
+                    description: 'Этот сертификат был выдан ранее, но сейчас он недействителен.',
+                    guidance: 'Отозванный сертификат не следует принимать как подтверждение завершения обучения.',
+                },
+                rejected: {
+                    label: 'Отклонен',
+                    description: 'Запрос сертификата был отклонен и не был выдан как действительный сертификат.',
+                    guidance: 'Эта запись не является официальным сертификатом. Обратитесь в поддержку EduBot, если данные выглядят неверно.',
+                },
+            },
+            error: {
+                title: 'Не удалось подтвердить сертификат',
+                description:
+                    'Проверьте ссылку еще раз. Если это должен быть официальный сертификат, обратитесь в поддержку EduBot Learning.',
+            },
+            errors: {
+                missingId: 'Идентификатор сертификата не найден.',
+                notFound: 'Сертификат не найден или не может быть проверен по этой ссылке.',
+            },
+            labels: {
+                certificateId: 'ID сертификата',
+                partner: 'Партнер',
+                student: 'Студент',
+                course: 'Курс',
+                issuedAt: 'Дата выдачи',
+                signer: 'Подписант',
+                verificationLink: 'Ссылка проверки',
+                registryOwner: 'Владелец реестра',
+                registryOwnerHelper: 'Основная сторона, которая выдала и проверяет этот сертификат.',
+            },
+            official: {
+                title: 'Официальная проверка',
+                registry: 'Реестр EduBot Learning',
+                description:
+                    'Эта запись опирается на реестр проверки EduBot Learning, а не на QR-код или сторонний сервис.',
+            },
+            actions: {
+                contactSupport: 'Связаться с поддержкой',
+                home: 'Вернуться на главную',
+                copyLink: 'Скопировать ссылку',
+                copied: 'Скопировано',
+                open: 'Открыть',
+            },
+            copy: {
+                missing: 'Ссылка проверки сейчас не показана.',
+                unsupported: 'Этот браузер не поддерживает автоматическое копирование. Скопируйте ссылку вручную ниже.',
+                failed: 'Не удалось скопировать ссылку. Скопируйте текст ниже вручную.',
+            },
+            fallbacks: {
+                notSpecified: 'Не указано',
+                certificate: 'Сертификат',
+                noLink: 'Ссылка не показана',
+            },
+            revokedAt: 'Отозвано {{date}}.',
+        },
+    },
     groupSessions: {
         workspace: {
             tabs: {
@@ -195,6 +395,108 @@ export const ru = {
                     responseSaveError: 'Не удалось сохранить ответ по активности.',
                 },
             },
+            attendance: {
+                title: 'Посещаемость',
+                description: 'Отмечайте посещаемость сессии и быстрее сохраняйте изменения с массовыми действиями.',
+                sessionStatus: {
+                    present: 'Присутствовал',
+                    late: 'Опоздал',
+                    absent: 'Отсутствовал',
+                    excused: 'По уважительной причине',
+                },
+                sessionModes: {
+                    upcoming: 'Ожидается',
+                    live: 'В эфире',
+                    completed: 'Завершено',
+                },
+                fallbacks: {
+                    session: 'Сессия #{{value}}',
+                    group: 'Группа',
+                    noTime: 'Время не указано',
+                },
+                actions: {
+                    importingZoom: 'Импорт...',
+                    importZoom: 'Импорт Zoom',
+                    saving: 'Сохранение...',
+                    save: 'Сохранить посещаемость',
+                    noChanges: 'Изменений нет',
+                },
+                filters: {
+                    searchPlaceholder: 'Поиск студента',
+                    all: 'Все',
+                    unmarked: 'Не отмечены',
+                    changed: 'Измененные',
+                },
+                bulk: {
+                    present: 'Отметить всех присутствующими',
+                    late: 'Отметить всех опоздавшими',
+                    absent: 'Отметить всех отсутствующими',
+                    clearVisible: 'Очистить показанных',
+                },
+                counters: {
+                    visible: 'Показано: {{count}}',
+                    unmarked: 'Не отмечены: {{count}}',
+                    unsaved: 'Несохранено: {{value}}',
+                    marked: 'Отмечено: {{marked}}/{{total}}',
+                    presentRate: 'Доля посещения: {{value}}%',
+                },
+                values: {
+                    yes: 'да',
+                    no: 'нет',
+                },
+                unsavedMessage: 'Изменения еще не сохранены. Кнопка сохранения запишет все отметки для текущей сессии.',
+                savedMessage: 'Посещаемость сохранена. Массовые действия применяются только к студентам из текущего поиска и фильтра.',
+                empty: {
+                    selectSession: 'Сначала выберите сессию, чтобы отметить посещаемость.',
+                    loadingStudents: 'Студенты загружаются...',
+                    noStudents: 'Студенты не найдены.',
+                    noFilteredStudents: 'По этому фильтру студенты не найдены.',
+                },
+                studentStatusHelper: 'Выберите статус посещаемости для этой сессии.',
+                notesPlaceholder: 'Примечание',
+                toasts: {
+                    loadError: 'Не удалось загрузить данные сессии.',
+                    selectSession: 'Выберите сессию перед сохранением посещаемости.',
+                    noChanges: 'Изменений нет.',
+                    saved: 'Посещаемость сохранена для этой сессии.',
+                    saveError: 'Не удалось сохранить посещаемость.',
+                },
+                notices: {
+                    noSessionTitle: 'Сессия не выбрана',
+                    noSessionMessage: 'Выберите активную сессию перед сохранением посещаемости.',
+                    unmarkedTitle: 'Посещаемость заполнена не полностью',
+                    unmarkedMessage: 'Сначала выберите статус посещаемости для {{count}} студентов.',
+                    noChangesTitle: 'Изменений нет',
+                    noChangesMessage: 'Список посещаемости совпадает с сохраненным состоянием.',
+                    savedTitle: 'Посещаемость сохранена',
+                    savedMessage: 'Посещаемость обновлена для активной сессии.',
+                    saveFailedTitle: 'Посещаемость не сохранена',
+                },
+            },
+            homework: {
+                deadlineStates: {
+                    noDeadline: 'Без срока',
+                    unknown: 'Срок неизвестен',
+                    overdue: 'Просрочено',
+                    dueSoon: 'Скоро срок',
+                    active: 'Активно',
+                },
+                validation: {
+                    titleRequired: 'Введите название домашнего задания.',
+                    selectSessionFirst: 'Сначала выберите сессию.',
+                },
+                toasts: {
+                    loadError: 'Не удалось загрузить домашние задания.',
+                    reviewRosterLoadError: 'Не удалось загрузить список проверки.',
+                    published: 'Домашнее задание опубликовано.',
+                    unpublished: 'Домашнее задание снято с публикации.',
+                    publishError: 'Не удалось опубликовать домашнее задание.',
+                    updateError: 'Не удалось обновить домашнее задание.',
+                    reviewUpdated: 'Статус проверки ответа обновлен.',
+                    reviewError: 'Не удалось проверить ответ.',
+                    statusError: 'Не удалось изменить статус домашнего задания.',
+                },
+            },
             resources: {
                 fallbacks: {
                     lessonVideo: 'Видео урока',
@@ -217,6 +519,18 @@ export const ru = {
                     zoomRecordingsSynced: 'Записи Zoom синхронизированы.',
                     recordingsSyncError: 'Не удалось синхронизировать записи.',
                     meetingLinkMissing: 'Ссылка на встречу не найдена.',
+                },
+            },
+            selections: {
+                toasts: {
+                    coursesLoadError: 'Не удалось загрузить курсы.',
+                    groupsLoadError: 'Не удалось загрузить группы.',
+                    sessionsLoadError: 'Не удалось загрузить сессии.',
+                },
+                notices: {
+                    coursesLoadTitle: 'Курсы не загрузились',
+                    groupsLoadTitle: 'Группы не загрузились',
+                    sessionsLoadTitle: 'Сессии не загрузились',
                 },
             },
         },
@@ -858,6 +1172,214 @@ export const ru = {
             },
         },
     },
+    internalLeaderboard: {
+        trackSwitcherLabel: 'Направление рейтинга',
+        currentView: 'Текущий вид',
+        tracks: {
+            all: {
+                label: 'Все',
+                helper: 'Общая активность',
+            },
+            video: {
+                label: 'Видео',
+                helper: 'Самостоятельное обучение',
+            },
+            live: {
+                label: 'Живое',
+                helper: 'Обучение по сессиям',
+            },
+        },
+        roles: {
+            student: {
+                eyebrow: 'Student Ranking',
+                title: 'Мой внутренний рейтинг',
+                description: 'Сравните свое место, лидеров курса и активность за эту неделю.',
+                courseLabel: 'Мои курсы',
+                courseDescription: 'Сравните лидеров в курсах, где вы учитесь.',
+            },
+            instructor: {
+                eyebrow: 'Instructor Ranking',
+                title: 'Рейтинг студентов',
+                description: 'Отслеживайте активных студентов, студента недели и темп внутри ваших курсов.',
+                courseLabel: 'Мои курсы',
+                courseDescription: 'Выберите курс, чтобы увидеть активных студентов внутри него.',
+            },
+            admin: {
+                eyebrow: 'Admin Ranking',
+                title: 'Рейтинг платформы',
+                description: 'Смотрите недельную активность платформы, лидеров главной страницы и рейтинги курсов.',
+                courseLabel: 'Курсы платформы',
+                courseDescription: 'Проверьте внутренний рейтинг любого курса.',
+            },
+            default: {
+                eyebrow: 'Leaderboard workspace',
+                title: 'Внутренний рейтинг',
+                description: 'Смотрите недельных лидеров, студента недели и места внутри курсов.',
+                courseLabel: 'Доски курсов',
+                courseDescription: 'Сравните лучших студентов внутри выбранного курса.',
+            },
+        },
+        metrics: {
+            weekly: 'Недельные лидеры',
+            homepage: 'Лучшие на главной',
+            studentOfWeek: 'Студент недели',
+        },
+        row: {
+            streakDays: '🔥 {{count}} дней',
+            quizCount: '{{count}} тестов',
+        },
+        weekly: {
+            title: 'Недельный рейтинг',
+            description: 'Самые активные студенты сейчас.',
+            emptyTitle: 'Лидеры не найдены',
+            emptySubtitle: 'Для выбранного направления пока нет данных рейтинга.',
+        },
+        studentOfWeek: {
+            title: 'Студент недели',
+            description: 'Выделенный участник недели и лучшие студенты на главной странице.',
+            emptyTitle: 'Студента недели нет',
+            emptySubtitle: 'Для этого направления пока не определен выделенный студент.',
+        },
+        homepage: {
+            title: 'Лучшие на главной',
+            emptyTitle: 'Нет данных главной страницы',
+            emptySubtitle: 'Для выбранного направления нет лидеров главной страницы.',
+        },
+        courseBoard: {
+            title: 'Рейтинг курса',
+            description: 'Сравните лучших студентов внутри выбранного курса.',
+            courseLabel: 'Курс',
+            selectCourse: 'Выберите курс',
+            noCourseTitle: 'Курс не выбран',
+            noCourseSubtitle: 'Выберите курс выше, чтобы посмотреть внутренний рейтинг.',
+            noDataTitle: 'Нет данных',
+            noDataSubtitle: 'Для этого курса и направления рейтинг пока недоступен.',
+        },
+        fallbacks: {
+            student: 'Студент',
+            course: 'Курс',
+        },
+        errors: {
+            coursesLoad: 'Не удалось загрузить курсы.',
+            leaderboardLoad: 'Не удалось загрузить данные внутреннего рейтинга.',
+            courseBoardLoad: 'Рейтинг курса сейчас не загружается.',
+        },
+    },
+    instructorHomework: {
+        hero: {
+            eyebrow: 'Homework Queue',
+            title: 'Очередь домашних заданий',
+            description:
+                'Найдите, по какому курсу, группе и сессии нужны действия. Полный поток проверки открывается в разделе домашнего задания связанной сессии.',
+        },
+        metrics: {
+            total: 'Всего',
+            actionRequired: 'Нужны действия',
+            missing: 'Не сдали',
+            needsRevision: 'На доработке',
+        },
+        filters: {
+            title: 'Фильтры',
+            description:
+                'Сужайте очередь по курсу, группе, статусу и поиску. Нажмите на карточку метрики, чтобы автоматически выбрать связанный статус.',
+            status: 'Статус',
+            results: 'Результат',
+            allCourses: 'Все курсы',
+            allGroups: 'Все группы',
+            searchPlaceholder: 'Поиск',
+            limitPlaceholder: 'Лимит',
+        },
+        filterOptions: {
+            all: 'Все',
+            needsReview: 'Нужна проверка',
+            missing: 'Не сдали',
+            needsRevision: 'На доработке',
+            late: 'Сдали поздно',
+            draft: 'Черновик',
+            active: 'Активно',
+            dueSoon: 'Скоро срок',
+            overdue: 'Просрочено',
+            checked: 'Проверено',
+            noDeadline: 'Без срока',
+        },
+        states: {
+            draft: 'Черновик',
+            needsReview: 'Нужна проверка',
+            missing: 'Не сдали',
+            needsRevision: 'На доработке',
+            late: 'Сдали поздно',
+            checked: 'Проверено',
+            noDeadline: 'Без срока',
+            unknown: 'Неизвестно',
+            overdue: 'Просрочено',
+            dueSoon: 'Скоро срок',
+            active: 'Активно',
+        },
+        nextActions: {
+            title: 'Следующие действия',
+            description:
+                'Очередь отсортирована по срочности: проверка, несданные работы, доработки и поздние ответы идут первыми.',
+            priorityCount: '{{count}} приоритет',
+        },
+        queueActions: {
+            needsReview: {
+                label: 'Сначала проверить',
+                description: '{{count}} ответов ждут проверки преподавателя.',
+            },
+            missing: {
+                label: 'Проверить несданные работы',
+                description: '{{count}} студентов не сдали задание.',
+            },
+            needsRevision: {
+                label: 'Повторно проверить доработки',
+                description: '{{count}} ответов ждут после доработки.',
+            },
+            late: {
+                label: 'Проверить поздние сдачи',
+                description: '{{count}} ответов пришли после срока.',
+            },
+            default: {
+                label: 'Наблюдать',
+                description: 'Сейчас по этому заданию нет срочных действий.',
+            },
+        },
+        tasks: {
+            title: 'Задания',
+            description: 'Результаты по выбранным фильтрам появятся здесь.',
+        },
+        empty: {
+            title: 'Домашние задания не найдены',
+            subtitle: 'Попробуйте изменить фильтры курса или группы либо очистить поисковый запрос.',
+        },
+        queue: {
+            title: 'Задания в очереди',
+            description: 'Каждая карточка ведет в связанную сессию и открывает полный поток проверки.',
+            recordCount: '{{count}} записей',
+        },
+        card: {
+            actionRequired: 'Нужны действия',
+            needsReview: 'Нужна проверка',
+            missing: 'Не сдали',
+            needsRevision: 'На доработке',
+            late: 'Сдали поздно',
+        },
+        actions: {
+            openSession: 'Открыть в сессии',
+        },
+        fallbacks: {
+            homework: 'Домашнее задание',
+            noSession: 'Сессия не указана',
+            noDeadline: 'Срок не указан',
+        },
+        errors: {
+            unauthorized: 'Сессия истекла. Войдите снова.',
+            forbidden: 'Этот курс или группа не назначены вам.',
+            coursesLoad: 'Не удалось загрузить курсы.',
+            groupsLoad: 'Не удалось загрузить группы.',
+            homeworkLoad: 'Не удалось загрузить домашние задания.',
+            queueLoadTitle: 'Очередь не загрузилась',
+        },
+    },
     instructorDashboard: {
         deliveryCourseModal: {
             header: {
@@ -914,6 +1436,112 @@ export const ru = {
                 loadError: 'Не удалось загрузить информацию инструктора.',
                 saveSuccess: 'Профиль инструктора сохранен.',
                 saveError: 'Не удалось сохранить профиль инструктора.',
+            },
+        },
+        createCoursePage: {
+            title: 'Создать новый курс',
+            description: 'Создайте курс в три шага: информация, содержание и финальная проверка.',
+            steps: {
+                info: '1. Точно заполните информацию',
+                lessons: '2. Сохраните уроки',
+                submit: '3. Отправьте на проверку',
+            },
+            draft: {
+                title: 'Черновик автоматически сохраняется в этом браузере.',
+                description: 'Информация и текущий шаг сохраняются; используйте кнопку "Сохранить все", чтобы сохранить содержание на сервер.',
+                restored: 'Восстановлен черновик: {{time}}.',
+                lastSaved: 'Последнее автосохранение: {{time}}.',
+            },
+            actions: {
+                clearDraft: 'Очистить черновик',
+            },
+            toasts: {
+                savedForReview: 'Курс сохранен для проверки.',
+                saveBeforeApproval: 'Сохраните изменения перед отправкой на одобрение.',
+                submittedForApproval: 'Курс отправлен на одобрение.',
+                submitError: 'Не удалось отправить курс.',
+                localDraftClearedServerPreserved: 'Локальный черновик очищен. Черновик курса на сервере сохранен.',
+                localDraftCleared: 'Локальный черновик очищен.',
+                invalidLesson: 'Проверьте перед отправкой: {{issue}} (Раздел {{section}}, Урок {{lesson}})',
+            },
+        },
+        editCoursePage: {
+            title: 'Редактировать курс',
+            description: 'Измените курс в три шага: информация, содержание и финальная проверка.',
+            notice: {
+                title: 'Проверьте влияние изменений перед публикацией.',
+                description:
+                    'Несохраненные изменения блокируют предпросмотр и отправку на одобрение. Отправленные изменения должны стать видны студентам только после review процесса.',
+                unsaved: 'Сейчас есть несохраненные изменения.',
+            },
+            toasts: {
+                saveBeforeApproval: 'Сохраните изменения перед отправкой на одобрение.',
+                submittedForApproval: 'Курс отправлен на одобрение.',
+                submitError: 'Не удалось отправить курс.',
+                invalidLesson: 'Проверьте перед отправкой: {{issue}} (Раздел {{section}}, Урок {{lesson}})',
+            },
+        },
+        coursesPage: {
+            title: 'Мои курсы',
+            workflowSummaryLabel: 'Статус workflow курсов',
+            filtersLabel: 'Фильтры управления курсами',
+            workflows: {
+                video: 'Self-paced video',
+                delivery: 'Delivery / group',
+            },
+            workflowCards: {
+                videoDescription: 'Управляется через контент, preview и approval.',
+                deliveryDescription: 'Работает с группой, schedule и workflow посещаемости.',
+                lastUpdated: 'Последнее обновление',
+            },
+            filters: {
+                all: 'Все',
+                allWorkflows: 'Все workflow',
+                search: 'Поиск курса',
+                searchPlaceholder: 'По названию, инструктору или типу',
+                status: 'Статус',
+                workflow: 'Workflow',
+            },
+            lifecycle: {
+                draft: 'Черновик',
+                pending: 'На проверке',
+                published: 'Опубликован',
+                rejected: 'Нужны правки',
+                aria: 'Статус курса: {{status}}',
+            },
+            courseTypes: {
+                video: 'Видео',
+                offline: 'Offline',
+                onlineLive: 'Online Live',
+            },
+            price: {
+                label: 'Цена',
+                value: '{{value}} сом',
+                missing: 'Цена не указана',
+            },
+            actions: {
+                refresh: 'Обновить',
+                reload: 'Загрузить снова',
+                manage: 'Управление',
+                review: 'Проверить',
+                fix: 'Исправить',
+                edit: 'Изменить',
+                unavailable: 'Изменение недоступно',
+                createFirst: 'Создать первый курс',
+            },
+            errors: {
+                load: 'Не удалось загрузить курсы.',
+            },
+            loading: 'Курсы загружаются...',
+            empty: {
+                noCourses: 'У вас пока нет курсов.',
+                noFilteredCourses: 'По этим фильтрам курсы не найдены.',
+            },
+            fallbacks: {
+                courseWithId: 'Курс {{id}}',
+                untitledCourse: 'Курс без названия',
+                noInstructor: 'Инструктор не указан',
+                noImage: 'Нет изображения курса',
             },
         },
         overview: {
@@ -4172,6 +4800,54 @@ export const ru = {
                     form: 'Для входа заполните корректный email и пароль.',
                     invalidCredentials: 'Неверный email или пароль. Попробуйте снова.',
                 },
+            },
+            forgotPassword: {
+                eyebrow: 'Доступ к аккаунту',
+                title: 'Восстановление пароля',
+                description: 'Получите код по email или WhatsApp и задайте новый пароль.',
+                close: 'Закрыть окно восстановления',
+                methodLabel: 'Способ получения кода',
+                methodPlaceholder: 'Выберите способ',
+                emailLabel: 'Email адрес',
+                whatsappLabel: 'WhatsApp номер',
+                selectedChannel: 'выбранный канал',
+                otpSent: 'Код отправлен через {{channel}}.',
+                otpPlaceholder: 'OTP код',
+                newPasswordPlaceholder: 'Новый пароль',
+                confirmPasswordPlaceholder: 'Повторите пароль',
+                methods: {
+                    emailHint: 'Введите email адрес, привязанный к аккаунту.',
+                    whatsappHint: 'Введите номер телефона с кодом страны.',
+                },
+                actions: {
+                    sending: 'Отправка...',
+                    sendOtp: 'Отправить OTP',
+                    resetting: 'Сброс...',
+                    resetPassword: 'Обновить пароль',
+                    backToLogin: 'Вернуться к входу',
+                },
+                validation: {
+                    methodRequired: 'Выберите способ восстановления.',
+                    identifierRequired: 'Введите данные, куда нужно отправить код.',
+                    emailInvalid: 'Введите корректный email адрес.',
+                    whatsappInvalid: 'WhatsApp номер должен содержать 9-16 цифр.',
+                    otpInvalid: 'OTP код должен содержать 4-8 цифр.',
+                    passwordTooShort: 'Новый пароль должен быть не короче 8 символов.',
+                    passwordMismatch: 'Пароли не совпадают.',
+                },
+                errors: {
+                    sendOtp: 'OTP не отправлен. Проверьте данные и попробуйте снова.',
+                    resetPassword: 'Пароль не обновлен. Проверьте код и попробуйте снова.',
+                },
+                success: {
+                    title: 'Пароль успешно обновлен.',
+                    description: 'Теперь можно войти с новым паролем.',
+                },
+            },
+            postLogin: {
+                courseFallback: 'Курс {{id}}',
+                favouriteAdded: 'Курс добавлен в избранное.',
+                cartAdded: 'Курс добавлен в корзину.',
             },
             signup: {
                 sideTitle: 'Создайте учебный аккаунт',

@@ -1,5 +1,6 @@
 import { useContext, useEffect, useMemo, useState } from 'react';
 import { toast } from 'react-hot-toast';
+import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { FiAlertCircle, FiBookOpen, FiCalendar, FiCheckCircle, FiClock, FiLayers, FiSearch } from 'react-icons/fi';
 import { fetchInstructorCourses, fetchCourseGroups, fetchHomework, fetchHomeworkSummary } from '@services/api';
@@ -23,32 +24,47 @@ const toArray = (payload) => {
     return [];
 };
 
-const getHomeworkErrorMessage = (error, fallback) => {
+const HOMEWORK_QUEUE_FILTERS = [
+    'all',
+    'needsReview',
+    'missing',
+    'needsRevision',
+    'late',
+    'draft',
+    'active',
+    'dueSoon',
+    'overdue',
+    'checked',
+    'noDeadline',
+];
+
+const getHomeworkErrorMessage = (error, fallback, t) => {
     const status = error?.response?.status;
-    if (status === 401) return 'Сессия мөөнөтү бүттү. Кайра кириңиз.';
-    if (status === 403) return 'Бул курс же группа сизге бекитилген эмес.';
+    if (status === 401) return t('instructorHomework.errors.unauthorized');
+    if (status === 403) return t('instructorHomework.errors.forbidden');
     const message = error?.response?.data?.message || fallback;
     return Array.isArray(message) ? message.join(', ') : message;
 };
 
-const formatDisplayDate = (value, fallback = 'Мөөнөт коюлган эмес') => {
+const formatDisplayDate = (value, fallback, language) => {
     if (!value) return fallback;
     const normalized =
         typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value) ? `${value}T12:00:00` : value;
     const date = new Date(normalized);
     if (Number.isNaN(date.getTime())) return fallback;
-    return date.toLocaleDateString('ky-KG', {
+    return date.toLocaleDateString(language || undefined, {
         day: '2-digit',
         month: 'short',
         year: 'numeric',
     });
 };
 
-const getHomeworkStateMeta = (item) => {
+const getHomeworkStateMeta = (item, t) => {
     const queue = item?.queue || {};
     if (!item?.isPublished) {
         return {
-            label: 'Жарыялана элек',
+            key: 'draft',
+            label: t('instructorHomework.states.draft'),
             tone: 'default',
             badgeClass:
                 'border-edubot-line bg-white text-edubot-muted dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300',
@@ -56,7 +72,8 @@ const getHomeworkStateMeta = (item) => {
     }
     if (Number(queue.needsReviewCount || 0) > 0) {
         return {
-            label: 'Текшерүү керек',
+            key: 'needsReview',
+            label: t('instructorHomework.states.needsReview'),
             tone: 'amber',
             badgeClass:
                 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300',
@@ -64,7 +81,8 @@ const getHomeworkStateMeta = (item) => {
     }
     if (Number(queue.missingCount || 0) > 0) {
         return {
-            label: 'Жөнөткөн жок',
+            key: 'missing',
+            label: t('instructorHomework.states.missing'),
             tone: 'red',
             badgeClass:
                 'border-red-200 bg-red-50 text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300',
@@ -72,7 +90,8 @@ const getHomeworkStateMeta = (item) => {
     }
     if (Number(queue.needsRevisionCount || 0) > 0) {
         return {
-            label: 'Оңдотуу керек',
+            key: 'needsRevision',
+            label: t('instructorHomework.states.needsRevision'),
             tone: 'amber',
             badgeClass:
                 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300',
@@ -84,7 +103,8 @@ const getHomeworkStateMeta = (item) => {
 
     if (['completed', 'approved', 'reviewed', 'checked'].includes(status)) {
         return {
-            label: 'Текшерилген',
+            key: 'checked',
+            label: t('instructorHomework.states.checked'),
             tone: 'green',
             badgeClass:
                 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300',
@@ -93,7 +113,8 @@ const getHomeworkStateMeta = (item) => {
 
     if (!rawDeadline) {
         return {
-            label: 'Мөөнөт жок',
+            key: 'noDeadline',
+            label: t('instructorHomework.states.noDeadline'),
             tone: 'default',
             badgeClass:
                 'border-edubot-line bg-white text-edubot-muted dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300',
@@ -107,7 +128,8 @@ const getHomeworkStateMeta = (item) => {
     const deadlineMs = new Date(normalized).getTime();
     if (Number.isNaN(deadlineMs)) {
         return {
-            label: 'Белгисиз',
+            key: 'unknown',
+            label: t('instructorHomework.states.unknown'),
             tone: 'default',
             badgeClass:
                 'border-edubot-line bg-white text-edubot-muted dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300',
@@ -117,7 +139,8 @@ const getHomeworkStateMeta = (item) => {
     const nowMs = Date.now();
     if (deadlineMs < nowMs) {
         return {
-            label: 'Өтүп кеткен',
+            key: 'overdue',
+            label: t('instructorHomework.states.overdue'),
             tone: 'red',
             badgeClass:
                 'border-red-200 bg-red-50 text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300',
@@ -127,7 +150,8 @@ const getHomeworkStateMeta = (item) => {
     const daysLeft = Math.ceil((deadlineMs - nowMs) / (1000 * 60 * 60 * 24));
     if (daysLeft <= 3) {
         return {
-            label: 'Жакында бүтөт',
+            key: 'dueSoon',
+            label: t('instructorHomework.states.dueSoon'),
             tone: 'amber',
             badgeClass:
                 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300',
@@ -135,21 +159,22 @@ const getHomeworkStateMeta = (item) => {
     }
 
     return {
-        label: 'Активдүү',
+        key: 'active',
+        label: t('instructorHomework.states.active'),
         tone: 'blue',
         badgeClass:
             'border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-500/30 dark:bg-sky-500/10 dark:text-sky-300',
     };
 };
 
-const getHomeworkQueueBadges = (item) => {
+const getHomeworkQueueBadges = (item, t) => {
     const queue = item?.queue || {};
     const badges = [];
 
     if (!item?.isPublished) {
         badges.push({
             key: 'draft',
-            label: 'Жарыялана элек',
+            label: t('instructorHomework.states.draft'),
             className:
                 'border-edubot-line bg-white text-edubot-muted dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300',
         });
@@ -159,7 +184,7 @@ const getHomeworkQueueBadges = (item) => {
     if (Number(queue.needsReviewCount || 0) > 0) {
         badges.push({
             key: 'needs_review',
-            label: 'Текшерүү керек',
+            label: t('instructorHomework.states.needsReview'),
             className:
                 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300',
         });
@@ -167,7 +192,7 @@ const getHomeworkQueueBadges = (item) => {
     if (Number(queue.missingCount || 0) > 0) {
         badges.push({
             key: 'missing',
-            label: 'Жөнөткөн жок',
+            label: t('instructorHomework.states.missing'),
             className:
                 'border-red-200 bg-red-50 text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300',
         });
@@ -175,7 +200,7 @@ const getHomeworkQueueBadges = (item) => {
     if (Number(queue.needsRevisionCount || 0) > 0) {
         badges.push({
             key: 'needs_revision',
-            label: 'Оңдотуу керек',
+            label: t('instructorHomework.states.needsRevision'),
             className:
                 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300',
         });
@@ -183,7 +208,7 @@ const getHomeworkQueueBadges = (item) => {
     if (Number(queue.lateCount || 0) > 0) {
         badges.push({
             key: 'late',
-            label: 'Кеч тапшырган',
+            label: t('instructorHomework.states.late'),
             className:
                 'border-orange-200 bg-orange-50 text-orange-700 dark:border-orange-500/30 dark:bg-orange-500/10 dark:text-orange-300',
         });
@@ -192,8 +217,8 @@ const getHomeworkQueueBadges = (item) => {
     if (!badges.length) {
         badges.push({
             key: 'state',
-            label: getHomeworkStateMeta(item).label,
-            className: getHomeworkStateMeta(item).badgeClass,
+            label: getHomeworkStateMeta(item, t).label,
+            className: getHomeworkStateMeta(item, t).badgeClass,
         });
     }
 
@@ -223,39 +248,39 @@ const getQueuePriority = (item) => {
     return 4;
 };
 
-const getQueueAction = (item) => {
+const getQueueAction = (item, t) => {
     const queue = item?.queue || {};
     if (Number(queue.needsReviewCount || 0) > 0) {
         return {
-            label: 'Биринчи текшерүү керек',
-            description: `${queue.needsReviewCount} жооп мугалимдин баасын күтүп турат.`,
+            label: t('instructorHomework.queueActions.needsReview.label'),
+            description: t('instructorHomework.queueActions.needsReview.description', { count: queue.needsReviewCount }),
             tone: 'amber',
         };
     }
     if (Number(queue.missingCount || 0) > 0) {
         return {
-            label: 'Жөнөтпөгөндөрдү көзөмөлдөө',
-            description: `${queue.missingCount} студент тапшырма жөнөткөн жок.`,
+            label: t('instructorHomework.queueActions.missing.label'),
+            description: t('instructorHomework.queueActions.missing.description', { count: queue.missingCount }),
             tone: 'red',
         };
     }
     if (Number(queue.needsRevisionCount || 0) > 0) {
         return {
-            label: 'Оңдотууларды кайра караңыз',
-            description: `${queue.needsRevisionCount} жооп оңдотуудан кийин кайра күтүп турат.`,
+            label: t('instructorHomework.queueActions.needsRevision.label'),
+            description: t('instructorHomework.queueActions.needsRevision.description', { count: queue.needsRevisionCount }),
             tone: 'amber',
         };
     }
     if (Number(queue.lateCount || 0) > 0) {
         return {
-            label: 'Кеч тапшырылган иштерди текшерүү',
-            description: `${queue.lateCount} жооп мөөнөттөн кийин келген.`,
+            label: t('instructorHomework.queueActions.late.label'),
+            description: t('instructorHomework.queueActions.late.description', { count: queue.lateCount }),
             tone: 'amber',
         };
     }
     return {
-        label: 'Көзөмөлдөө',
-        description: 'Бул тапшырмада азыр шашылыш аракет жок.',
+        label: t('instructorHomework.queueActions.default.label'),
+        description: t('instructorHomework.queueActions.default.description'),
         tone: 'default',
     };
 };
@@ -263,14 +288,15 @@ const getQueueAction = (item) => {
 const matchesHomeworkQueueFilter = (item, filter) => {
     if (filter === 'all') return true;
     const queue = item?.queue || {};
-    if (filter === 'текшерүү керек') return Number(queue.needsReviewCount || 0) > 0;
-    if (filter === 'жөнөткөн жок') return Number(queue.missingCount || 0) > 0;
-    if (filter === 'оңдотуу керек') return Number(queue.needsRevisionCount || 0) > 0;
-    if (filter === 'кеч тапшырган') return Number(queue.lateCount || 0) > 0;
-    return item.stateMeta.label.toLowerCase() === filter;
+    if (filter === 'needsReview') return Number(queue.needsReviewCount || 0) > 0;
+    if (filter === 'missing') return Number(queue.missingCount || 0) > 0;
+    if (filter === 'needsRevision') return Number(queue.needsRevisionCount || 0) > 0;
+    if (filter === 'late') return Number(queue.lateCount || 0) > 0;
+    return item.stateMeta.key === filter;
 };
 
 const InstructorHomework = () => {
+    const { t, i18n } = useTranslation();
     const { user } = useContext(AuthContext);
     const [courses, setCourses] = useState([]);
     const [groups, setGroups] = useState([]);
@@ -296,12 +322,12 @@ const InstructorHomework = () => {
             );
         };
         loadCourses().catch((error) => {
-            const message = getHomeworkErrorMessage(error, 'Курстар жүктөлгөн жок.');
+            const message = getHomeworkErrorMessage(error, t('instructorHomework.errors.coursesLoad'), t);
             setCourses([]);
             setLoadError(message);
             toast.error(message);
         });
-    }, [user]);
+    }, [t, user]);
 
     useEffect(() => {
         if (!courseId) {
@@ -314,12 +340,12 @@ const InstructorHomework = () => {
             setGroups(toArray(response));
         };
         loadGroups().catch((error) => {
-            const message = getHomeworkErrorMessage(error, 'Группалар жүктөлгөн жок.');
+            const message = getHomeworkErrorMessage(error, t('instructorHomework.errors.groupsLoad'), t);
             setGroups([]);
             setLoadError(message);
             toast.error(message);
         });
-    }, [courseId]);
+    }, [courseId, t]);
 
     useEffect(() => {
         const load = async () => {
@@ -344,13 +370,13 @@ const InstructorHomework = () => {
             }
         };
         load().catch((error) => {
-            const message = getHomeworkErrorMessage(error, 'Үй тапшырмалар жүктөлгөн жок.');
+            const message = getHomeworkErrorMessage(error, t('instructorHomework.errors.homeworkLoad'), t);
             setSummary(null);
             setItems([]);
             setLoadError(message);
             toast.error(message);
         });
-    }, [courseId, groupId, limit]);
+    }, [courseId, groupId, limit, t]);
 
     const courseById = useMemo(
         () => new Map(courses.map((course) => [String(course.id), course])),
@@ -368,9 +394,9 @@ const InstructorHomework = () => {
                 })
                 .map((item) => ({
                     ...item,
-                    stateMeta: getHomeworkStateMeta(item),
+                    stateMeta: getHomeworkStateMeta(item, t),
                 })),
-        [courseById, items]
+        [courseById, items, t]
     );
 
     const filteredItems = useMemo(() => {
@@ -408,7 +434,7 @@ const InstructorHomework = () => {
             needsReview: summary?.needsReview ?? 0,
             missing: summary?.missing ?? 0,
             needsRevision: summary?.needsRevision ?? 0,
-            overdue: summary?.overdue ?? enrichedItems.filter((item) => item.stateMeta.label === 'Өтүп кеткен').length,
+            overdue: summary?.overdue ?? enrichedItems.filter((item) => item.stateMeta.key === 'overdue').length,
         }),
         [summary, items.length, enrichedItems]
     );
@@ -433,14 +459,13 @@ const InstructorHomework = () => {
                 <div className="grid gap-5 xl:grid-cols-[minmax(0,1.1fr),minmax(0,0.9fr)] xl:items-end">
                     <div className="space-y-4">
                         <div className="text-sm font-semibold uppercase tracking-[0.28em] text-edubot-orange">
-                            Homework Queue
+                            {t('instructorHomework.hero.eyebrow')}
                         </div>
                         <h1 className="text-3xl font-semibold tracking-tight text-edubot-ink dark:text-white md:text-5xl">
-                            Үй тапшырма кезеги
+                            {t('instructorHomework.hero.title')}
                         </h1>
                         <p className="max-w-3xl text-base leading-8 text-edubot-muted dark:text-slate-300 md:text-lg">
-                            Бул жерден кайсы курс, группа жана сессия боюнча иш бар экенин табыңыз.
-                            Толук текшерүү агымы тиешелүү сессиянын ичиндеги үй тапшырма бөлүгүндө ачылат.
+                            {t('instructorHomework.hero.description')}
                         </p>
                     </div>
                     <div className="grid gap-3 sm:grid-cols-2">
@@ -449,15 +474,15 @@ const InstructorHomework = () => {
                             onClick={() => setStatusFilter('all')}
                             className="text-left"
                         >
-                            <DashboardMetricCard label="Жалпы" value={stats.total} icon={FiBookOpen} />
+                            <DashboardMetricCard label={t('instructorHomework.metrics.total')} value={stats.total} icon={FiBookOpen} />
                         </button>
                         <button
                             type="button"
-                            onClick={() => applyQueueFilter('текшерүү керек')}
-                            className={`text-left ${metricCardClass(statusFilter === 'текшерүү керек')}`}
+                            onClick={() => applyQueueFilter('needsReview')}
+                            className={`text-left ${metricCardClass(statusFilter === 'needsReview')}`}
                         >
                             <DashboardMetricCard
-                                label="Аракет керек"
+                                label={t('instructorHomework.metrics.actionRequired')}
                                 value={stats.actionRequired}
                                 icon={FiClock}
                                 tone="amber"
@@ -465,11 +490,11 @@ const InstructorHomework = () => {
                         </button>
                         <button
                             type="button"
-                            onClick={() => applyQueueFilter('жөнөткөн жок')}
-                            className={`text-left ${metricCardClass(statusFilter === 'жөнөткөн жок')}`}
+                            onClick={() => applyQueueFilter('missing')}
+                            className={`text-left ${metricCardClass(statusFilter === 'missing')}`}
                         >
                             <DashboardMetricCard
-                                label="Жөнөткөн жок"
+                                label={t('instructorHomework.metrics.missing')}
                                 value={stats.missing}
                                 icon={FiAlertCircle}
                                 tone="red"
@@ -477,11 +502,11 @@ const InstructorHomework = () => {
                         </button>
                         <button
                             type="button"
-                            onClick={() => applyQueueFilter('оңдотуу керек')}
-                            className={`text-left ${metricCardClass(statusFilter === 'оңдотуу керек')}`}
+                            onClick={() => applyQueueFilter('needsRevision')}
+                            className={`text-left ${metricCardClass(statusFilter === 'needsRevision')}`}
                         >
                             <DashboardMetricCard
-                                label="Оңдотуу керек"
+                                label={t('instructorHomework.metrics.needsRevision')}
                                 value={stats.needsRevision}
                                 icon={FiCheckCircle}
                                 tone="amber"
@@ -492,22 +517,22 @@ const InstructorHomework = () => {
             </div>
 
             <DashboardInsetPanel
-                title="Фильтрлер"
-                description="Кезекти курс, группа, абал жана издөө боюнча тарылтыңыз. Метрика карточкаларын бассаңыз, тиешелүү абал автоматтык тандалат."
+                title={t('instructorHomework.filters.title')}
+                description={t('instructorHomework.filters.description')}
             >
                 {loadError ? (
                     <div className="mb-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200">
-                        <div className="font-semibold">Кезек жүктөлгөн жок</div>
+                        <div className="font-semibold">{t('instructorHomework.errors.queueLoadTitle')}</div>
                         <p className="mt-1">{loadError}</p>
                     </div>
                 ) : null}
 
                 <div className="mb-4 flex flex-wrap items-center gap-2 text-xs text-edubot-muted dark:text-slate-400">
                     <span className="rounded-full border border-edubot-line bg-white px-3 py-1.5 dark:border-slate-700 dark:bg-slate-900">
-                        Абал: <span className="font-semibold text-edubot-ink dark:text-white">{statusFilter === 'all' ? 'Баары' : statusFilter}</span>
+                        {t('instructorHomework.filters.status')}: <span className="font-semibold text-edubot-ink dark:text-white">{t(`instructorHomework.filterOptions.${statusFilter}`)}</span>
                     </span>
                     <span className="rounded-full border border-edubot-line bg-white px-3 py-1.5 dark:border-slate-700 dark:bg-slate-900">
-                        Жыйынтык: <span className="font-semibold text-edubot-ink dark:text-white">{filteredItems.length}</span>
+                        {t('instructorHomework.filters.results')}: <span className="font-semibold text-edubot-ink dark:text-white">{filteredItems.length}</span>
                     </span>
                 </div>
 
@@ -517,7 +542,7 @@ const InstructorHomework = () => {
                         onChange={(e) => setCourseId(e.target.value)}
                         className="dashboard-field dashboard-select"
                     >
-                        <option value="">Бардык курстар</option>
+                        <option value="">{t('instructorHomework.filters.allCourses')}</option>
                         {courses.map((course) => (
                             <option key={course.id} value={course.id}>
                                 {course.title || course.name}
@@ -531,7 +556,7 @@ const InstructorHomework = () => {
                         className="dashboard-field dashboard-select"
                         disabled={!courseId}
                     >
-                        <option value="">Бардык группалар</option>
+                        <option value="">{t('instructorHomework.filters.allGroups')}</option>
                         {groups.map((group) => (
                             <option key={group.id} value={group.id}>
                                 {group.name || group.code}
@@ -544,7 +569,7 @@ const InstructorHomework = () => {
                         <input
                             value={query}
                             onChange={(e) => setQuery(e.target.value)}
-                            placeholder="Издөө"
+                            placeholder={t('instructorHomework.filters.searchPlaceholder')}
                             className="dashboard-field dashboard-field-icon pl-10"
                         />
                     </div>
@@ -554,17 +579,11 @@ const InstructorHomework = () => {
                         onChange={(e) => setStatusFilter(e.target.value)}
                         className="dashboard-field dashboard-select"
                     >
-                        <option value="all">Баары</option>
-                        <option value="текшерүү керек">Текшерүү керек</option>
-                        <option value="жөнөткөн жок">Жөнөткөн жок</option>
-                        <option value="оңдотуу керек">Оңдотуу керек</option>
-                        <option value="кеч тапшырган">Кеч тапшырган</option>
-                        <option value="жарыялана элек">Жарыялана элек</option>
-                        <option value="активдүү">Активдүү</option>
-                        <option value="жакында бүтөт">Жакында бүтөт</option>
-                        <option value="өтүп кеткен">Өтүп кеткен</option>
-                        <option value="текшерилген">Текшерилген</option>
-                        <option value="мөөнөт жок">Мөөнөт жок</option>
+                        {HOMEWORK_QUEUE_FILTERS.map((filter) => (
+                            <option key={filter} value={filter}>
+                                {t(`instructorHomework.filterOptions.${filter}`)}
+                            </option>
+                        ))}
                     </select>
 
                     <input
@@ -574,7 +593,7 @@ const InstructorHomework = () => {
                         value={limit}
                         onChange={(e) => setLimit(Number(e.target.value || 20))}
                         className="dashboard-field"
-                        placeholder="Лимит"
+                        placeholder={t('instructorHomework.filters.limitPlaceholder')}
                     />
                 </div>
             </DashboardInsetPanel>
@@ -583,17 +602,17 @@ const InstructorHomework = () => {
 
             {!loading && nextActionItems.length > 0 ? (
                 <DashboardInsetPanel
-                    title="Кийинки аракеттер"
-                    description="Кезек шашылыштык боюнча сорттолду: текшерүү, жөнөтпөгөндөр, оңдотуулар жана кеч тапшыргандар биринчи чыгат."
+                    title={t('instructorHomework.nextActions.title')}
+                    description={t('instructorHomework.nextActions.description')}
                     action={
                         <span className="rounded-full border border-edubot-orange/30 bg-edubot-orange/10 px-3 py-1 text-xs font-semibold text-edubot-orange">
-                            {nextActionItems.length} приоритет
+                            {t('instructorHomework.nextActions.priorityCount', { count: nextActionItems.length })}
                         </span>
                     }
                 >
                     <div className="mt-4 grid gap-3 lg:grid-cols-3">
                         {nextActionItems.map((item) => {
-                            const action = getQueueAction(item);
+                            const action = getQueueAction(item, t);
                             return (
                                 <Link
                                     key={item.id || `${item.title}-${item.deadline || ''}-next`}
@@ -604,7 +623,7 @@ const InstructorHomework = () => {
                                         {action.label}
                                     </div>
                                     <div className="mt-2 font-semibold text-edubot-ink dark:text-white">
-                                        {item.title || item.name || 'Үй тапшырма'}
+                                        {item.title || item.name || t('instructorHomework.fallbacks.homework')}
                                     </div>
                                     <p className="mt-2 text-sm leading-6 text-edubot-muted dark:text-slate-400">
                                         {action.description}
@@ -618,23 +637,23 @@ const InstructorHomework = () => {
 
             {!loading && filteredItems.length === 0 ? (
                 <DashboardInsetPanel
-                    title="Тапшырмалар"
-                    description="Тандалган фильтрлер боюнча жыйынтык бул жерде чыгат."
+                    title={t('instructorHomework.tasks.title')}
+                    description={t('instructorHomework.tasks.description')}
                 >
                     <EmptyState
-                        title="Үй тапшырмалар табылган жок"
-                        subtitle="Курс же группа фильтрлерин өзгөртүп көрүңүз же издөө суроосун тазалаңыз."
+                        title={t('instructorHomework.empty.title')}
+                        subtitle={t('instructorHomework.empty.subtitle')}
                         icon={<FiLayers className="h-8 w-8 text-edubot-orange" />}
                         className="py-8"
                     />
                 </DashboardInsetPanel>
             ) : (
                 <DashboardInsetPanel
-                    title="Кезектеги тапшырмалар"
-                    description="Ар бир карточка тиешелүү сессияга өтүп, толук текшерүү агымын ачууга жардам берет."
+                    title={t('instructorHomework.queue.title')}
+                    description={t('instructorHomework.queue.description')}
                     action={
                         <span className="rounded-full border border-edubot-line bg-white px-3 py-1 text-xs font-semibold text-edubot-ink dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200">
-                            {filteredItems.length} жазуу
+                            {t('instructorHomework.queue.recordCount', { count: filteredItems.length })}
                         </span>
                     }
                 >
@@ -647,10 +666,10 @@ const InstructorHomework = () => {
                                 <div className="flex items-start justify-between gap-4">
                                     <div className="min-w-0">
                                         <h3 className="text-base font-semibold text-edubot-ink dark:text-white">
-                                            {item.title || item.name || 'Үй тапшырма'}
+                                            {item.title || item.name || t('instructorHomework.fallbacks.homework')}
                                         </h3>
                                         <div className="mt-2 flex flex-wrap gap-2">
-                                            {getHomeworkQueueBadges(item).map((badge) => (
+                                            {getHomeworkQueueBadges(item, t).map((badge) => (
                                                 <span
                                                     key={badge.key}
                                                     className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold ${badge.className}`}
@@ -662,7 +681,7 @@ const InstructorHomework = () => {
                                     </div>
                                     <div className="shrink-0 rounded-2xl border border-edubot-orange/20 bg-edubot-orange/10 px-3 py-2 text-right">
                                         <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-edubot-orange">
-                                            Аракет керек
+                                            {t('instructorHomework.card.actionRequired')}
                                         </div>
                                         <div className="mt-1 text-2xl font-semibold text-edubot-ink dark:text-white">
                                             {Number(item.queue?.needsReviewCount || 0) +
@@ -676,7 +695,7 @@ const InstructorHomework = () => {
                                     <div className="flex items-center gap-2 text-edubot-muted dark:text-slate-400">
                                         <FiClock className="h-4 w-4 text-edubot-orange" />
                                         <span className="font-medium text-edubot-ink dark:text-white">
-                                            {item.sessionTitle || item.session?.title || 'Сессия көрсөтүлгөн эмес'}
+                                            {item.sessionTitle || item.session?.title || t('instructorHomework.fallbacks.noSession')}
                                         </span>
                                     </div>
                                     <div className="flex flex-wrap gap-x-4 gap-y-2 text-edubot-muted dark:text-slate-400">
@@ -690,7 +709,11 @@ const InstructorHomework = () => {
                                         </span>
                                         <span className="inline-flex items-center gap-2">
                                             <FiCalendar className="h-4 w-4 text-edubot-orange" />
-                                            {formatDisplayDate(item.deadline)}
+                                            {formatDisplayDate(
+                                                item.deadline,
+                                                t('instructorHomework.fallbacks.noDeadline'),
+                                                i18n.language
+                                            )}
                                         </span>
                                     </div>
                                     {item.description ? (
@@ -702,20 +725,20 @@ const InstructorHomework = () => {
 
                                 <div className="mt-4 flex flex-wrap gap-2 text-xs">
                                     <span className="rounded-full border border-edubot-line/70 bg-white/70 px-3 py-1.5 text-edubot-muted dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300">
-                                        Текшерүү керек:{' '}
+                                        {t('instructorHomework.card.needsReview')}:{' '}
                                         <span className="font-semibold text-edubot-ink dark:text-white">{item.queue?.needsReviewCount || 0}</span>
                                     </span>
                                     <span className="rounded-full border border-edubot-line/70 bg-white/70 px-3 py-1.5 text-edubot-muted dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300">
-                                        Жөнөткөн жок:{' '}
+                                        {t('instructorHomework.card.missing')}:{' '}
                                         <span className="font-semibold text-edubot-ink dark:text-white">{item.queue?.missingCount || 0}</span>
                                     </span>
                                     <span className="rounded-full border border-edubot-line/70 bg-white/70 px-3 py-1.5 text-edubot-muted dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300">
-                                        Оңдотуу керек:{' '}
+                                        {t('instructorHomework.card.needsRevision')}:{' '}
                                         <span className="font-semibold text-edubot-ink dark:text-white">{item.queue?.needsRevisionCount || 0}</span>
                                     </span>
                                     {(item.queue?.lateCount || 0) > 0 && (
                                         <span className="rounded-full border border-edubot-line/70 bg-white/70 px-3 py-1.5 text-edubot-muted dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300">
-                                            Кеч тапшырган:{' '}
+                                            {t('instructorHomework.card.late')}:{' '}
                                             <span className="font-semibold text-edubot-ink dark:text-white">{item.queue?.lateCount || 0}</span>
                                         </span>
                                     )}
@@ -726,7 +749,7 @@ const InstructorHomework = () => {
                                         to={buildSessionHomeworkPath(item)}
                                         className="dashboard-button-secondary"
                                     >
-                                        Сессияда ачуу
+                                        {t('instructorHomework.actions.openSession')}
                                     </Link>
                                 </div>
                             </article>

@@ -45,6 +45,57 @@ export const ky = {
         qrAlt: '{{brand}} сайты үчүн QR',
         copyright: '© {{year}} EduBot Learning. Бардык укуктар сакталган.',
     },
+    chatRedirect: {
+        title: 'Чат бөлүмү табылган жок',
+        description:
+            'Учурдагы аккаунт үчүн түз чат багыты аныкталган эмес. Панелиңизге кайтып, жеткиликтүү билдирүү же колдоо бөлүмүн тандаңыз.',
+        actions: {
+            dashboard: 'Панелге кайтуу',
+            support: 'Колдоо',
+        },
+    },
+    unauthorized: {
+        eyebrow: 'Кирүү чектелген',
+        title: 'Бул баракчага кирүүгө укугуңуз жок',
+        signedInAs: 'Учурда сиз {{role}} катары кирип турасыз.',
+        signInPrompt: 'Улантуу үчүн аккаунтуңузга кириңиз же туура аккаунтту тандаңыз.',
+        reasons: {
+            role: 'Бул бөлүм башка роль үчүн ачылган болушу мүмкүн.',
+            enrollment: 'Курска же уюмга кирүү укугуңуз азырынча активдүү эмес болушу мүмкүн.',
+            session: 'Сессияңыз аяктап калган болсо, кайра кирүү керек болот.',
+            default: 'Сиз кирүүгө аракет кылган бөлүм учурдагы аккаунтуңуз үчүн жабык.',
+        },
+        roles: {
+            student: 'студент',
+            instructor: 'мугалим',
+            assistant: 'ассистент',
+            admin: 'администратор',
+            superadmin: 'суперадмин',
+            account: 'аккаунт',
+        },
+        actions: {
+            dashboard: 'Панелге кайтуу',
+            login: 'Кирүү',
+            courses: 'Курстарды көрүү',
+            back: 'Артка кайтуу',
+            support: 'Колдоо менен байланышуу',
+        },
+        guidance: {
+            title: 'Эмне кылса болот?',
+            role: {
+                title: 'Ролуңузду текшериңиз',
+                description: 'Бул бөлүм студент, мугалим, ассистент же админ ролдорунун бирине гана ачылган болушу мүмкүн.',
+            },
+            account: {
+                title: 'Аккаунтту алмаштырыңыз',
+                description: 'Эгер башка аккаунт менен иштесеңиз, чыгуу жасап туура аккаунт менен кайра кириңиз.',
+            },
+            access: {
+                title: 'Кирүү укугун сураңыз',
+                description: 'Курс, компания же админ панель боюнча укук керек болсо, администратор же колдоо тобу менен байланышыңыз.',
+            },
+        },
+    },
     errors: {
         generic: 'Сервер катасы болду.',
         CSRF_TOKEN_INVALID: 'Сессия коопсуздугу жаңыртылды. Кайра аракет кылыңыз.',
@@ -155,6 +206,155 @@ export const ky = {
             quickActions: 'Тез аракеттер',
         },
     },
+    ratings: {
+        card: {
+            fallbackInstructor: 'Инструктор',
+            fallbackTitle: 'Окутуучу',
+            fallbackSpecialty: 'Практикалык сабактар',
+            newRating: 'Жаңы рейтинг',
+            topInstructor: 'Топ окутуучу',
+            ratingAria: 'Рейтинг {{rating}}',
+            reviews: 'Пикирлер',
+            students: 'Студенттер',
+        },
+        comment: {
+            toasts: {
+                courseMissing: 'Курс табылган жок.',
+                ratingRequired: 'Алды менен баа коюңуз.',
+                commentTooShort: 'Сын-пикир кеминде 5 символ болушу керек.',
+                submitted: 'Сын-пикир ийгиликтүү жөнөтүлдү.',
+                submitError: 'Сын-пикир жөнөтүүдө ката кетти. Кайра аракет кылыңыз.',
+            },
+            starAria: '{{count}} жылдыз',
+            success: {
+                title: 'Сын-пикириңиз үчүн чоң рахмат!',
+                description:
+                    'Сиздин пикириңиз башка студенттерге курс тандоодо жардам берет. Биздин курстарды жакшыртууга кошкон салымыңыз үчүн ыраазычылык билдиребиз!',
+                yourRating: 'Сиздин бааңыз:',
+            },
+            form: {
+                title: 'Курс кандай өттү? Сын-пикир калтырыңыз',
+                descriptionLine1: 'Сиздин пикириңиз башка студенттерге курс тандоодо жардам берет.',
+                descriptionLine2: 'Сиздин пикир биз үчүн да абдан баалуу!',
+                placeholder: 'Сиздин тажрыйбаңыз тууралуу жазыңыз...',
+                minimum: 'Минималдуу: 5 символ. Сиз жаздыңыз: {{count}}.',
+                rating: 'Баа: {{rating}} / 5',
+            },
+            actions: {
+                sending: 'Жөнөтүлүүдө...',
+                submit: 'Жиберүү',
+            },
+        },
+    },
+    certificates: {
+        download: {
+            eyebrow: 'Сертификат PDF',
+            title: 'Сертификат жүктөлүүдө',
+            description:
+                'PDF файлын даярдап жатабыз. Эгер браузер жүктөөнү бөгөттөсө, бул беттен кайра аракет кылсаңыз болот.',
+            status: {
+                failed: 'Жүктөө ишке ашкан жок',
+                ready: 'Жүктөө башталды',
+                preparing: 'PDF даярдалып жатат',
+            },
+            messages: {
+                failedTitle: 'Сертификатты азыр жүктөй алган жокпуз',
+                readyTitle: 'Файл браузер аркылуу жүктөлүшү керек',
+                preparingTitle: 'Сертификат файлы даярдалууда',
+                readyDescription: 'Эгер файл көрүнбөсө, браузердин жүктөөлөр тизмесин текшериңиз же кайра жүктөп көрүңүз.',
+                preparingDescription: 'Бул адатта бир нече секунд гана алат. Бетти жаппай туруңуз.',
+            },
+            errors: {
+                missingId: 'Сертификат идентификатору табылган жок.',
+                downloadFailed:
+                    'PDF жүктөлгөн жок. Браузер жүктөөнү бөгөттөгөн болушу мүмкүн же сертификат азыр жеткиликсиз.',
+            },
+            actions: {
+                preparing: 'Даярдалып жатат',
+                retry: 'Кайра жүктөө',
+                openVerification: 'Текшерүү барагын ачуу',
+                home: 'Башкы бетке кайтуу',
+            },
+            labels: {
+                certificateId: 'Сертификат ID',
+            },
+        },
+        verification: {
+            hero: {
+                eyebrow: 'EduBot Learning реестри',
+                title: 'Сертификатты текшерүү',
+                description:
+                    'Бул бет сертификаттын EduBot Learning реестриндеги учурдагы абалын тышкы текшерүүчүгө түшүндүрөт.',
+            },
+            loading: 'Текшерүү маалыматы жүктөлүүдө...',
+            status: {
+                issued: {
+                    label: 'Тастыкталды',
+                    description: 'Бул сертификат EduBot Learning реестринде активдүү жана жарактуу болуп турат.',
+                    guidance: 'Үчүнчү тарап бул жазууну окуучунун курсту ийгиликтүү аяктаганын ырастоо үчүн колдоно алат.',
+                },
+                pending: {
+                    label: 'Кароодо',
+                    description: 'Сертификат жазуусу бар, бирок акыркы тастыктоо бүтө элек.',
+                    guidance: 'Бул абалда сертификатты акыркы расмий далил катары колдонбоңуз. Кийин кайра текшериңиз же EduBot колдоосуна кайрылыңыз.',
+                },
+                revoked: {
+                    label: 'Жокко чыгарылды',
+                    description: 'Бул сертификат мурда берилген, бирок азыр жарактуу эмес.',
+                    guidance: 'Жокко чыгарылган сертификатты окууну аяктаганын ырастаган документ катары кабыл албоо керек.',
+                },
+                rejected: {
+                    label: 'Четке кагылды',
+                    description: 'Бул сертификат сурамы четке кагылган жана жарактуу сертификат катары берилген эмес.',
+                    guidance: 'Бул жазуу расмий сертификат катары колдонулбайт. Маалымат туура эмес көрүнсө, EduBot колдоосуна кайрылыңыз.',
+                },
+            },
+            error: {
+                title: 'Сертификатты тастыктоо мүмкүн болгон жок',
+                description:
+                    'Шилтемени кайра текшериңиз. Эгер бул расмий сертификат болушу керек болсо, EduBot Learning колдоосуна кайрылыңыз.',
+            },
+            errors: {
+                missingId: 'Сертификат идентификатору табылган жок.',
+                notFound: 'Сертификат табылган жок же бул шилтеме аркылуу тастыктоо мүмкүн эмес.',
+            },
+            labels: {
+                certificateId: 'Сертификат ID',
+                partner: 'Өнөктөш тарап',
+                student: 'Окуучу',
+                course: 'Курс',
+                issuedAt: 'Берилген күнү',
+                signer: 'Кол коюучу',
+                verificationLink: 'Текшерүү шилтемеси',
+                registryOwner: 'Реестр ээси',
+                registryOwnerHelper: 'Бул сертификатты берген жана текшерген негизги тарап.',
+            },
+            official: {
+                title: 'Расмий текшерүү',
+                registry: 'EduBot Learning реестри',
+                description:
+                    'Бул жазуу QR же үчүнчү тарап кызматына эмес, EduBot Learning текшерүү реестрине таянат.',
+            },
+            actions: {
+                contactSupport: 'Колдоо менен байланышуу',
+                home: 'Башкы бетке кайтуу',
+                copyLink: 'Шилтемени көчүрүү',
+                copied: 'Көчүрүлдү',
+                open: 'Ачуу',
+            },
+            copy: {
+                missing: 'Текшерүү шилтемеси азыр көрсөтүлгөн эмес.',
+                unsupported: 'Бул браузер автоматтык көчүрүүнү колдобойт. Шилтемени төмөндөн кол менен көчүрүңүз.',
+                failed: 'Шилтемени көчүрүү мүмкүн болгон жок. Төмөндөгү текстти кол менен көчүрүңүз.',
+            },
+            fallbacks: {
+                notSpecified: 'Көрсөтүлгөн эмес',
+                certificate: 'Сертификат',
+                noLink: 'Шилтеме көрсөтүлгөн эмес',
+            },
+            revokedAt: '{{date}} күнү жокко чыгарылган.',
+        },
+    },
     groupSessions: {
         workspace: {
             tabs: {
@@ -195,6 +395,108 @@ export const ky = {
                     responseSaveError: 'Иш жообун сактоо мүмкүн болгон жок.',
                 },
             },
+            attendance: {
+                title: 'Катышуу',
+                description: 'Сессия боюнча катышууну белгилеп, bulk аракеттер менен тез өзгөртүп сактаңыз.',
+                sessionStatus: {
+                    present: 'Катышты',
+                    late: 'Кечикти',
+                    absent: 'Келген жок',
+                    excused: 'Уруксат менен',
+                },
+                sessionModes: {
+                    upcoming: 'Күтүүдө',
+                    live: 'Түз эфирде',
+                    completed: 'Аяктаган',
+                },
+                fallbacks: {
+                    session: 'Сессия #{{value}}',
+                    group: 'Группа',
+                    noTime: 'Убакыт жок',
+                },
+                actions: {
+                    importingZoom: 'Импорттолууда...',
+                    importZoom: 'Zoom импорттоо',
+                    saving: 'Сакталууда...',
+                    save: 'Катышууну сактоо',
+                    noChanges: 'Өзгөртүү жок',
+                },
+                filters: {
+                    searchPlaceholder: 'Студент издөө',
+                    all: 'Баары',
+                    unmarked: 'Белгилене элек',
+                    changed: 'Өзгөртүлгөндөр',
+                },
+                bulk: {
+                    present: 'Баары катышты',
+                    late: 'Баары кечикти',
+                    absent: 'Баары жок',
+                    clearVisible: 'Көрсөтүлгөндөрдү тазалоо',
+                },
+                counters: {
+                    visible: 'Көрсөтүлгөндөр: {{count}}',
+                    unmarked: 'Белгилене элек: {{count}}',
+                    unsaved: 'Сакталбаган: {{value}}',
+                    marked: 'Белгиленгендер: {{marked}}/{{total}}',
+                    presentRate: 'Катышуу үлүшү: {{value}}%',
+                },
+                values: {
+                    yes: 'ооба',
+                    no: 'жок',
+                },
+                unsavedMessage: 'Өзгөртүүлөр али сактала элек. Сактоо баскычы учурдагы сессия үчүн бардык белгилөөлөрдү сактайт.',
+                savedMessage: 'Катышуу абалы сакталган. Bulk аракеттер издөө жана фильтрден өткөн студенттерге гана колдонулат.',
+                empty: {
+                    selectSession: 'Катышууну белгилөө үчүн адегенде сессияны тандаңыз.',
+                    loadingStudents: 'Студенттер жүктөлүүдө...',
+                    noStudents: 'Студент табылган жок.',
+                    noFilteredStudents: 'Бул фильтр боюнча студент табылган жок.',
+                },
+                studentStatusHelper: 'Ушул сессия үчүн катышуу статусун тандаңыз.',
+                notesPlaceholder: 'Эскертүү',
+                toasts: {
+                    loadError: 'Сессия маалыматтарын жүктөө катасы.',
+                    selectSession: 'Катышууну сактоо үчүн сессияны тандаңыз.',
+                    noChanges: 'Өзгөртүү жок.',
+                    saved: 'Катышуу ушул сессия үчүн сакталды.',
+                    saveError: 'Катышууну сактоо катасы.',
+                },
+                notices: {
+                    noSessionTitle: 'Сессия тандалган эмес',
+                    noSessionMessage: 'Катышууну сактоо үчүн активдүү сессияны тандаңыз.',
+                    unmarkedTitle: 'Катышуу толук белгиленген эмес',
+                    unmarkedMessage: 'Адегенде {{count}} студент үчүн катышуу статусун тандаңыз.',
+                    noChangesTitle: 'Өзгөртүү жок',
+                    noChangesMessage: 'Катышуу тизмеси сакталган абал менен бирдей.',
+                    savedTitle: 'Катышуу сакталды',
+                    savedMessage: 'Катышуу ушул активдүү сессия үчүн жаңыртылды.',
+                    saveFailedTitle: 'Катышуу сакталган жок',
+                },
+            },
+            homework: {
+                deadlineStates: {
+                    noDeadline: 'Мөөнөт жок',
+                    unknown: 'Мөөнөт белгисиз',
+                    overdue: 'Өтүп кеткен',
+                    dueSoon: 'Жакында бүтөт',
+                    active: 'Активдүү',
+                },
+                validation: {
+                    titleRequired: 'Үй тапшырманын аталышын жазыңыз.',
+                    selectSessionFirst: 'Алгач сессия тандаңыз.',
+                },
+                toasts: {
+                    loadError: 'Үй тапшырмалар жүктөлгөн жок.',
+                    reviewRosterLoadError: 'Текшерүү тизмеси жүктөлгөн жок.',
+                    published: 'Үй тапшырма жарыяланды.',
+                    unpublished: 'Үй тапшырма жарыялоодон алынды.',
+                    publishError: 'Үй тапшырманы жарыялоо катасы.',
+                    updateError: 'Үй тапшырманы жаңыртуу катасы.',
+                    reviewUpdated: 'Тапшырма жооп статусу жаңыртылды.',
+                    reviewError: 'Тапшырма жоопун баалоо катасы.',
+                    statusError: 'Үй тапшырма статусун өзгөртүү катасы.',
+                },
+            },
             resources: {
                 fallbacks: {
                     lessonVideo: 'Сабак видеосу',
@@ -217,6 +519,18 @@ export const ky = {
                     zoomRecordingsSynced: 'Zoom recordings синхрондолду.',
                     recordingsSyncError: 'Жазууларды синхрондоо мүмкүн болгон жок.',
                     meetingLinkMissing: 'Жолугушуу шилтемеси табылган жок.',
+                },
+            },
+            selections: {
+                toasts: {
+                    coursesLoadError: 'Курстар жүктөлгөн жок.',
+                    groupsLoadError: 'Группаларды жүктөө мүмкүн болгон жок.',
+                    sessionsLoadError: 'Сессияларды жүктөө мүмкүн болгон жок.',
+                },
+                notices: {
+                    coursesLoadTitle: 'Курстар жүктөлгөн жок',
+                    groupsLoadTitle: 'Группалар жүктөлгөн жок',
+                    sessionsLoadTitle: 'Сессиялар жүктөлгөн жок',
                 },
             },
         },
@@ -858,6 +1172,214 @@ export const ky = {
             },
         },
     },
+    internalLeaderboard: {
+        trackSwitcherLabel: 'Рейтинг багыты',
+        currentView: 'Учурдагы көрүнүш',
+        tracks: {
+            all: {
+                label: 'Бардыгы',
+                helper: 'Жалпы активдүүлүк',
+            },
+            video: {
+                label: 'Видео',
+                helper: 'Өз алдынча окуу',
+            },
+            live: {
+                label: 'Жандуу',
+                helper: 'Сессиялык окуу',
+            },
+        },
+        roles: {
+            student: {
+                eyebrow: 'Student Ranking',
+                title: 'Менин ички рейтингим',
+                description: 'Орунуңузду, курстагы лидерлерди жана бул жумадагы активдүүлүктү салыштырып көрүңүз.',
+                courseLabel: 'Менин курстарым',
+                courseDescription: 'Катышып жаткан курстарыңыздагы лидерлерди салыштырыңыз.',
+            },
+            instructor: {
+                eyebrow: 'Instructor Ranking',
+                title: 'Окуучулардын рейтинги',
+                description: 'Курстарыңыздагы активдүү окуучуларды, аптанын студентин жана курс ичиндеги темпти көзөмөлдөңүз.',
+                courseLabel: 'Менин курстарым',
+                courseDescription: 'Курс тандап, ошол курс ичиндеги активдүү окуучуларды көрүңүз.',
+            },
+            admin: {
+                eyebrow: 'Admin Ranking',
+                title: 'Платформа рейтинги',
+                description: 'Платформа боюнча жумалык активдүүлүктү, башкы бет лидерлерин жана курс рейтингдерин караңыз.',
+                courseLabel: 'Платформа курстары',
+                courseDescription: 'Каалаган курс боюнча ички рейтингди текшериңиз.',
+            },
+            default: {
+                eyebrow: 'Leaderboard workspace',
+                title: 'Ички рейтинг',
+                description: 'Апталык лидерлерди, аптанын студентин жана курс ичиндеги орундарды ушул жерден көрүңүз.',
+                courseLabel: 'Курс такталары',
+                courseDescription: 'Тандалган курс ичиндеги мыктыларды салыштырыңыз.',
+            },
+        },
+        metrics: {
+            weekly: 'Апталык лидерлер',
+            homepage: 'Башкы бет мыктылары',
+            studentOfWeek: 'Аптанын студенти',
+        },
+        row: {
+            streakDays: '🔥 {{count}} күн',
+            quizCount: '{{count}} тест',
+        },
+        weekly: {
+            title: 'Апталык рейтинг',
+            description: 'Учурда эң активдүү окуучулар.',
+            emptyTitle: 'Лидерлер табылган жок',
+            emptySubtitle: 'Тандалган багыт боюнча азырынча рейтинг маалыматтары жок.',
+        },
+        studentOfWeek: {
+            title: 'Аптанын студенти',
+            description: 'Аптанын өзгөчөлөнгөн катышуучусу жана башкы беттеги мыктылар.',
+            emptyTitle: 'Аптанын студенти жок',
+            emptySubtitle: 'Бул багыт боюнча айырмаланган студент азырынча аныкталган жок.',
+        },
+        homepage: {
+            title: 'Башкы беттеги мыктылар',
+            emptyTitle: 'Башкы бет маалыматы жок',
+            emptySubtitle: 'Тандалган багыт боюнча башкы бет лидерлери жок.',
+        },
+        courseBoard: {
+            title: 'Курс рейтинги',
+            description: 'Тандалган курс ичиндеги мыктыларды салыштырыңыз.',
+            courseLabel: 'Курс',
+            selectCourse: 'Курс тандаңыз',
+            noCourseTitle: 'Курс тандалган жок',
+            noCourseSubtitle: 'Ички курс рейтингин көрүү үчүн жогортон курс тандаңыз.',
+            noDataTitle: 'Маалымат жок',
+            noDataSubtitle: 'Бул курс жана багыт айкалышы боюнча рейтинг азырынча жеткиликсиз.',
+        },
+        fallbacks: {
+            student: 'Студент',
+            course: 'Курс',
+        },
+        errors: {
+            coursesLoad: 'Курстарды жүктөө мүмкүн болгон жок.',
+            leaderboardLoad: 'Ички рейтинг маалыматтарын жүктөө мүмкүн болгон жок.',
+            courseBoardLoad: 'Курс рейтинги азыр жүктөлбөй жатат.',
+        },
+    },
+    instructorHomework: {
+        hero: {
+            eyebrow: 'Homework Queue',
+            title: 'Үй тапшырма кезеги',
+            description:
+                'Кайсы курс, группа жана сессия боюнча иш бар экенин табыңыз. Толук текшерүү агымы тиешелүү сессиянын үй тапшырма бөлүгүндө ачылат.',
+        },
+        metrics: {
+            total: 'Жалпы',
+            actionRequired: 'Аракет керек',
+            missing: 'Жөнөткөн жок',
+            needsRevision: 'Оңдотуу керек',
+        },
+        filters: {
+            title: 'Фильтрлер',
+            description:
+                'Кезекти курс, группа, абал жана издөө боюнча тарылтыңыз. Метрика карточкаларын бассаңыз, тиешелүү абал автоматтык тандалат.',
+            status: 'Абал',
+            results: 'Жыйынтык',
+            allCourses: 'Бардык курстар',
+            allGroups: 'Бардык группалар',
+            searchPlaceholder: 'Издөө',
+            limitPlaceholder: 'Лимит',
+        },
+        filterOptions: {
+            all: 'Баары',
+            needsReview: 'Текшерүү керек',
+            missing: 'Жөнөткөн жок',
+            needsRevision: 'Оңдотуу керек',
+            late: 'Кеч тапшырган',
+            draft: 'Жарыялана элек',
+            active: 'Активдүү',
+            dueSoon: 'Жакында бүтөт',
+            overdue: 'Өтүп кеткен',
+            checked: 'Текшерилген',
+            noDeadline: 'Мөөнөт жок',
+        },
+        states: {
+            draft: 'Жарыялана элек',
+            needsReview: 'Текшерүү керек',
+            missing: 'Жөнөткөн жок',
+            needsRevision: 'Оңдотуу керек',
+            late: 'Кеч тапшырган',
+            checked: 'Текшерилген',
+            noDeadline: 'Мөөнөт жок',
+            unknown: 'Белгисиз',
+            overdue: 'Өтүп кеткен',
+            dueSoon: 'Жакында бүтөт',
+            active: 'Активдүү',
+        },
+        nextActions: {
+            title: 'Кийинки аракеттер',
+            description:
+                'Кезек шашылыштык боюнча сорттолду: текшерүү, жөнөтпөгөндөр, оңдотуулар жана кеч тапшыргандар биринчи чыгат.',
+            priorityCount: '{{count}} приоритет',
+        },
+        queueActions: {
+            needsReview: {
+                label: 'Биринчи текшерүү керек',
+                description: '{{count}} жооп мугалимдин баасын күтүп турат.',
+            },
+            missing: {
+                label: 'Жөнөтпөгөндөрдү көзөмөлдөө',
+                description: '{{count}} студент тапшырма жөнөткөн жок.',
+            },
+            needsRevision: {
+                label: 'Оңдотууларды кайра караңыз',
+                description: '{{count}} жооп оңдотуудан кийин кайра күтүп турат.',
+            },
+            late: {
+                label: 'Кеч тапшырылган иштерди текшерүү',
+                description: '{{count}} жооп мөөнөттөн кийин келген.',
+            },
+            default: {
+                label: 'Көзөмөлдөө',
+                description: 'Бул тапшырмада азыр шашылыш аракет жок.',
+            },
+        },
+        tasks: {
+            title: 'Тапшырмалар',
+            description: 'Тандалган фильтрлер боюнча жыйынтык бул жерде чыгат.',
+        },
+        empty: {
+            title: 'Үй тапшырмалар табылган жок',
+            subtitle: 'Курс же группа фильтрлерин өзгөртүп көрүңүз же издөө суроосун тазалаңыз.',
+        },
+        queue: {
+            title: 'Кезектеги тапшырмалар',
+            description: 'Ар бир карточка тиешелүү сессияга өтүп, толук текшерүү агымын ачууга жардам берет.',
+            recordCount: '{{count}} жазуу',
+        },
+        card: {
+            actionRequired: 'Аракет керек',
+            needsReview: 'Текшерүү керек',
+            missing: 'Жөнөткөн жок',
+            needsRevision: 'Оңдотуу керек',
+            late: 'Кеч тапшырган',
+        },
+        actions: {
+            openSession: 'Сессияда ачуу',
+        },
+        fallbacks: {
+            homework: 'Үй тапшырма',
+            noSession: 'Сессия көрсөтүлгөн эмес',
+            noDeadline: 'Мөөнөт коюлган эмес',
+        },
+        errors: {
+            unauthorized: 'Сессия мөөнөтү бүттү. Кайра кириңиз.',
+            forbidden: 'Бул курс же группа сизге бекитилген эмес.',
+            coursesLoad: 'Курстар жүктөлгөн жок.',
+            groupsLoad: 'Группалар жүктөлгөн жок.',
+            homeworkLoad: 'Үй тапшырмалар жүктөлгөн жок.',
+            queueLoadTitle: 'Кезек жүктөлгөн жок',
+        },
+    },
     instructorDashboard: {
         deliveryCourseModal: {
             header: {
@@ -914,6 +1436,112 @@ export const ky = {
                 loadError: 'Инструктор маалыматын жүктөө мүмкүн болбоду.',
                 saveSuccess: 'Инструктор профили сакталды.',
                 saveError: 'Инструктор профилин сактоо мүмкүн болбоду.',
+            },
+        },
+        createCoursePage: {
+            title: 'Жаңы курс түзүү',
+            description: 'Курсту үч кадам менен түзүңүз: маалымат, мазмун жана финалдык текшерүү.',
+            steps: {
+                info: '1. Маалыматты так толтуруңуз',
+                lessons: '2. Сабактарды сактаңыз',
+                submit: '3. Карап чыгууга жөнөтүңүз',
+            },
+            draft: {
+                title: 'Draft автоматтык түрдө ушул браузерде сакталат.',
+                description: 'Маалымат жана учурдагы кадам сакталат; мазмунду серверге сактоо үчүн "Жалпы сактоо" баскычын колдонуңуз.',
+                restored: 'Калыбына келтирилген draft: {{time}}.',
+                lastSaved: 'Акыркы автоматтык сактоо: {{time}}.',
+            },
+            actions: {
+                clearDraft: 'Draft тазалоо',
+            },
+            toasts: {
+                savedForReview: 'Курс каралууга сакталды.',
+                saveBeforeApproval: 'Тастыктоого жөнөтүүдөн мурун өзгөрүүлөрдү сактаңыз.',
+                submittedForApproval: 'Курс тастыктоого жөнөтүлдү.',
+                submitError: 'Жөнөтүүдө ката кетти.',
+                localDraftClearedServerPreserved: 'Жергиликтүү draft тазаланды. Сервердеги курс draft сакталды.',
+                localDraftCleared: 'Жергиликтүү draft тазаланды.',
+                invalidLesson: 'Жөнөтүүдөн мурун текшерүү керек: {{issue}} (Бөлүм {{section}}, Сабак {{lesson}})',
+            },
+        },
+        editCoursePage: {
+            title: 'Курсту оңдоо',
+            description: 'Курсту үч кадам менен оңдоңуз: маалымат, мазмун жана финалдык текшерүү.',
+            notice: {
+                title: 'Оңдоолорду жарыялоодон мурун таасирин текшериңиз.',
+                description:
+                    'Сакталбаган өзгөрүүлөр preview жана тастыктоого жөнөтүү баскычтарын бөгөйт. Тастыктоого жөнөтүлгөн өзгөрүүлөр review процессинен кийин гана студенттерге көрүнүшү керек.',
+                unsaved: 'Азырынча сакталбаган өзгөрүүлөр бар.',
+            },
+            toasts: {
+                saveBeforeApproval: 'Тастыктоого жөнөтүүдөн мурун өзгөрүүлөрдү сактаңыз.',
+                submittedForApproval: 'Курс тастыктоого жөнөтүлдү.',
+                submitError: 'Жөнөтүүдө ката кетти.',
+                invalidLesson: 'Жөнөтүүдөн мурун текшерүү керек: {{issue}} (Бөлүм {{section}}, Сабак {{lesson}})',
+            },
+        },
+        coursesPage: {
+            title: 'Менин курстарым',
+            workflowSummaryLabel: 'Курс workflow абалы',
+            filtersLabel: 'Курс башкаруу чыпкалары',
+            workflows: {
+                video: 'Self-paced video',
+                delivery: 'Delivery / group',
+            },
+            workflowCards: {
+                videoDescription: 'Мазмун, preview жана approval аркылуу башкарылат.',
+                deliveryDescription: 'Группа, schedule жана катышуу workflow менен иштейт.',
+                lastUpdated: 'Акыркы жаңыртуу',
+            },
+            filters: {
+                all: 'Баары',
+                allWorkflows: 'Бардык workflow',
+                search: 'Курс издөө',
+                searchPlaceholder: 'Аталыш, окутуучу же түрү боюнча',
+                status: 'Статус',
+                workflow: 'Workflow',
+            },
+            lifecycle: {
+                draft: 'Черновик',
+                pending: 'Каралууда',
+                published: 'Жарыяланган',
+                rejected: 'Оңдоо керек',
+                aria: 'Курс статусу: {{status}}',
+            },
+            courseTypes: {
+                video: 'Видео',
+                offline: 'Offline',
+                onlineLive: 'Online Live',
+            },
+            price: {
+                label: 'Баасы',
+                value: '{{value}} сом',
+                missing: 'Баасы көрсөтүлгөн эмес',
+            },
+            actions: {
+                refresh: 'Жаңыртуу',
+                reload: 'Кайра жүктөө',
+                manage: 'Башкаруу',
+                review: 'Текшерүү',
+                fix: 'Оңдоо',
+                edit: 'Өзгөртүү',
+                unavailable: 'Өзгөртүү жеткиликсиз',
+                createFirst: 'Биринчи курсту түзүү',
+            },
+            errors: {
+                load: 'Курстарды алуу ишке ашкан жок.',
+            },
+            loading: 'Курстар жүктөлүүдө...',
+            empty: {
+                noCourses: 'Азырынча курстарыңыз жок.',
+                noFilteredCourses: 'Бул чыпкалар боюнча курс табылган жок.',
+            },
+            fallbacks: {
+                courseWithId: 'Курс {{id}}',
+                untitledCourse: 'Аталышы жок курс',
+                noInstructor: 'Инструктор көрсөтүлгөн эмес',
+                noImage: 'Курс сүрөтү жок',
             },
         },
         overview: {
@@ -4176,6 +4804,54 @@ export const ky = {
                     form: 'Кирүү үчүн email жана сырсөздү туура толтуруңуз.',
                     invalidCredentials: 'Email же сырсөз туура эмес. Кайра аракет кылыңыз.',
                 },
+            },
+            forgotPassword: {
+                eyebrow: 'Аккаунтка кирүү',
+                title: 'Сырсөздү калыбына келтирүү',
+                description: 'Кодду email же WhatsApp аркылуу алып, жаңы сырсөз коюңуз.',
+                close: 'Калыбына келтирүү терезесин жабуу',
+                methodLabel: 'Код алуу ыкмасы',
+                methodPlaceholder: 'Ыкманы тандаңыз',
+                emailLabel: 'Email дареги',
+                whatsappLabel: 'WhatsApp номери',
+                selectedChannel: 'тандалган канал',
+                otpSent: 'Код {{channel}} аркылуу жөнөтүлдү.',
+                otpPlaceholder: 'OTP код',
+                newPasswordPlaceholder: 'Жаңы сырсөз',
+                confirmPasswordPlaceholder: 'Сырсөздү кайталаңыз',
+                methods: {
+                    emailHint: 'Аккаунтка байланган email даректи жазыңыз.',
+                    whatsappHint: 'Өлкө коду менен телефон номерин жазыңыз.',
+                },
+                actions: {
+                    sending: 'Жөнөтүлүүдө...',
+                    sendOtp: 'OTP жөнөтүү',
+                    resetting: 'Кайра орнотууда...',
+                    resetPassword: 'Сырсөздү жаңыртуу',
+                    backToLogin: 'Кирүүгө кайтуу',
+                },
+                validation: {
+                    methodRequired: 'Калыбына келтирүү ыкмасын тандаңыз.',
+                    identifierRequired: 'Код жөнөтүлө турган маалыматты жазыңыз.',
+                    emailInvalid: 'Туура email дарегин жазыңыз.',
+                    whatsappInvalid: 'WhatsApp номери 9-16 цифрадан турушу керек.',
+                    otpInvalid: 'OTP код 4-8 цифрадан турушу керек.',
+                    passwordTooShort: 'Жаңы сырсөз кеминде 8 белгиден турушу керек.',
+                    passwordMismatch: 'Сырсөздөр дал келген жок.',
+                },
+                errors: {
+                    sendOtp: 'OTP жөнөтүлбөй калды. Маалыматты текшерип, кайра аракет кылыңыз.',
+                    resetPassword: 'Сырсөз жаңыртылган жок. Кодду текшерип, кайра аракет кылыңыз.',
+                },
+                success: {
+                    title: 'Сырсөз ийгиликтүү жаңыртылды.',
+                    description: 'Эми жаңы сырсөз менен кирсеңиз болот.',
+                },
+            },
+            postLogin: {
+                courseFallback: 'Курс {{id}}',
+                favouriteAdded: 'Курс тандалгандарга кошулду!',
+                cartAdded: 'Курс себетке кошулду!',
             },
             signup: {
                 sideTitle: 'Окуу аккаунтун түзүңүз',

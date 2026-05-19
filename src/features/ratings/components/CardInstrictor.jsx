@@ -1,9 +1,10 @@
 import PropTypes from 'prop-types';
+import { useTranslation } from 'react-i18next';
 import NoImage from '@assets/icons/noImage.svg';
 
 const CardInstructor = ({
     avatarUrl,
-    fullName = 'Инструктор',
+    fullName,
     title,
     position,
     specialty,
@@ -12,13 +13,14 @@ const CardInstructor = ({
     ratingAverage,
     ratingCount,
 }) => {
-    const instructorName = String(fullName || 'Инструктор');
+    const { t } = useTranslation();
+    const instructorName = String(fullName || t('ratings.card.fallbackInstructor'));
     const safeRatingAverage = Math.max(0, Math.min(5, Number(ratingAverage) || 0));
     const safeRatingCount = Number(ratingCount) || 0;
     const safeStudentCount = Number(totalStudents ?? studentsCount) || 0;
-    const displayTitle = title || position || specialty || 'Окутуучу';
-    const displaySpecialty = specialty && specialty !== displayTitle ? specialty : 'Практикалык сабактар';
-    const ratingLabel = safeRatingAverage ? `${safeRatingAverage.toFixed(1)} / 5` : 'Жаңы рейтинг';
+    const displayTitle = title || position || specialty || t('ratings.card.fallbackTitle');
+    const displaySpecialty = specialty && specialty !== displayTitle ? specialty : t('ratings.card.fallbackSpecialty');
+    const ratingLabel = safeRatingAverage ? `${safeRatingAverage.toFixed(1)} / 5` : t('ratings.card.newRating');
     const normalizedName = instructorName
         .toLowerCase()
         .replace(/[^a-z0-9а-яөүңё]+/gi, '-')
@@ -70,7 +72,7 @@ const CardInstructor = ({
                     className="h-full w-full object-cover"
                 />
                 <div className="absolute left-3 top-3 rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-gray-900 shadow-sm dark:bg-gray-950/85 dark:text-white">
-                    Топ окутуучу
+                    {t('ratings.card.topInstructor')}
                 </div>
             </div>
             <div className="flex flex-1 flex-col px-1 pb-2 pt-4">
@@ -80,7 +82,7 @@ const CardInstructor = ({
                 <h3 className="mt-2 text-lg font-semibold leading-tight">{instructorName}</h3>
                 <p className="mt-2 text-sm leading-6 text-gray-600 dark:text-[#a6adba]">{displayTitle}</p>
 
-                <div className="mt-4 flex items-center gap-2" aria-label={`Рейтинг ${ratingLabel}`}>
+                <div className="mt-4 flex items-center gap-2" aria-label={t('ratings.card.ratingAria', { rating: ratingLabel })}>
                     <div className="flex items-center gap-1">
                         {[1, 2, 3, 4, 5].map(renderStar)}
                     </div>
@@ -89,11 +91,11 @@ const CardInstructor = ({
 
                 <div className="mt-4 grid grid-cols-2 gap-2 text-sm">
                     <div className="rounded-2xl bg-gray-50 px-3 py-2 dark:bg-gray-900">
-                        <span className="block text-xs text-gray-500 dark:text-gray-400">Пикирлер</span>
+                        <span className="block text-xs text-gray-500 dark:text-gray-400">{t('ratings.card.reviews')}</span>
                         <strong className="mt-1 block text-gray-900 dark:text-white">{safeRatingCount}</strong>
                     </div>
                     <div className="rounded-2xl bg-gray-50 px-3 py-2 dark:bg-gray-900">
-                        <span className="block text-xs text-gray-500 dark:text-gray-400">Студенттер</span>
+                        <span className="block text-xs text-gray-500 dark:text-gray-400">{t('ratings.card.students')}</span>
                         <strong className="mt-1 block text-gray-900 dark:text-white">{safeStudentCount}</strong>
                     </div>
                 </div>

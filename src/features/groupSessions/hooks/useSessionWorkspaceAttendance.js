@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'react-hot-toast';
+import { useTranslation } from 'react-i18next';
 import { SESSION_ATTENDANCE_STATUS } from '@shared/contracts';
 import {
     fetchCourseAttendance,
@@ -9,6 +10,7 @@ import {
 import { fetchGroupRoster } from '@features/courseGroups/roster';
 import {
     getWorkspaceErrorMessage,
+    getWorkspaceErrorStatusMessages,
     toArray,
 } from '@features/groupSessions/utils/sessionWorkspace.helpers';
 
@@ -51,6 +53,8 @@ export const useSessionWorkspaceAttendance = ({
     onNotice,
     onRefreshInsights,
 }) => {
+    const { t } = useTranslation();
+    const workspaceErrorStatusMessages = useMemo(() => getWorkspaceErrorStatusMessages(t), [t]);
     const [students, setStudents] = useState([]);
     const [attendanceRows, setAttendanceRows] = useState({});
     const [initialAttendanceRows, setInitialAttendanceRows] = useState({});
@@ -97,7 +101,7 @@ export const useSessionWorkspaceAttendance = ({
                 setAttendanceHistory(attendanceRes?.items || []);
             } catch (error) {
                 console.error(error);
-                toast.error(getWorkspaceErrorMessage(error, 'Сессия маалыматтарын жүктөө катасы.'));
+                toast.error(getWorkspaceErrorMessage(error, t('groupSessions.workspace.attendance.toasts.loadError'), workspaceErrorStatusMessages));
                 setStudents([]);
                 setAttendanceRows({});
                 setInitialAttendanceRows({});
@@ -111,7 +115,7 @@ export const useSessionWorkspaceAttendance = ({
         return () => {
             cancelled = true;
         };
-    }, [selectedCourseId, selectedGroupId]);
+    }, [selectedCourseId, selectedGroupId, t, workspaceErrorStatusMessages]);
 
     useEffect(() => {
         const blankRows = buildBlankAttendanceRows(students);
@@ -254,10 +258,10 @@ export const useSessionWorkspaceAttendance = ({
         if (!selectedSessionId) {
             onNotice?.({
                 tone: 'warning',
-                title: 'Сессия тандалган эмес',
-                message: 'Катышууну сактоо үчүн активдүү сессияны тандаңыз.',
+                title: t('groupSessions.workspace.attendance.notices.noSessionTitle'),
+                message: t('groupSessions.workspace.attendance.notices.noSessionMessage'),
             });
-            toast.error('Катышууну сактоо үчүн сессияны тандаңыз.');
+            toast.error(t('groupSessions.workspace.attendance.toasts.selectSession'));
             return;
         }
 
@@ -265,10 +269,10 @@ export const useSessionWorkspaceAttendance = ({
             (row) => !row.status || row.status === UNMARKED_ATTENDANCE_STATUS
         ).length;
         if (unmarkedCount > 0) {
-            const message = `Адегенде ${unmarkedCount} студент үчүн катышуу статусун тандаңыз.`;
+            const message = t('groupSessions.workspace.attendance.notices.unmarkedMessage', { count: unmarkedCount });
             onNotice?.({
                 tone: 'warning',
-                title: 'Катышуу толук белгиленген эмес',
+                title: t('groupSessions.workspace.attendance.notices.unmarkedTitle'),
                 message,
             });
             toast.error(message);
@@ -278,10 +282,10 @@ export const useSessionWorkspaceAttendance = ({
         if (!hasAttendanceChanges) {
             onNotice?.({
                 tone: 'info',
-                title: 'Өзгөртүү жок',
-                message: 'Катышуу тизмеси сакталган абал менен бирдей.',
+                title: t('groupSessions.workspace.attendance.notices.noChangesTitle'),
+                message: t('groupSessions.workspace.attendance.notices.noChangesMessage'),
             });
-            toast('Өзгөртүү жок.');
+            toast(t('groupSessions.workspace.attendance.toasts.noChanges'));
             return;
         }
 
@@ -300,10 +304,10 @@ export const useSessionWorkspaceAttendance = ({
             });
             onNotice?.({
                 tone: 'success',
-                title: 'Катышуу сакталды',
-                message: 'Катышуу ушул активдүү сессия үчүн жаңыртылды.',
+                title: t('groupSessions.workspace.attendance.notices.savedTitle'),
+                message: t('groupSessions.workspace.attendance.notices.savedMessage'),
             });
-            toast.success('Катышуу ушул сессия үчүн сакталды.');
+            toast.success(t('groupSessions.workspace.attendance.toasts.saved'));
 
             const refreshed = await fetchCourseAttendance({
                 courseId: Number(selectedCourseId),
@@ -313,8 +317,8 @@ export const useSessionWorkspaceAttendance = ({
             setInitialAttendanceRows(attendanceRows);
             await onRefreshInsights?.();
         } catch (error) {
-            const message = getWorkspaceErrorMessage(error, 'Катышууну сактоо катасы');
-            onNotice?.({ tone: 'error', title: 'Катышуу сакталган жок', message });
+            const message = getWorkspaceErrorMessage(error, t('groupSessions.workspace.attendance.toasts.saveError'), workspaceErrorStatusMessages);
+            onNotice?.({ tone: 'error', title: t('groupSessions.workspace.attendance.notices.saveFailedTitle'), message });
             toast.error(message);
         } finally {
             setSavingAttendance(false);

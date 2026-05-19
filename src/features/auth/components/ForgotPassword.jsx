@@ -1,38 +1,40 @@
 import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { sendOtp, resetPassword } from '@services/api';
 import { IoClose } from 'react-icons/io5';
-
-const METHOD_OPTIONS = [
-    { value: 'email', label: 'Email', hint: 'Аккаунтка байланган email даректи жазыңыз.' },
-    { value: 'whatsapp', label: 'WhatsApp', hint: 'Өлкө коду менен телефон номерин жазыңыз.' },
-];
 
 const getApiError = (error, fallback) =>
     error?.response?.data?.message || error?.message || fallback;
 
-const validateIdentifier = ({ method, identifier }) => {
+const getMethodOptions = (t) => [
+    { value: 'email', label: 'Email', hint: t('pages.auth.forgotPassword.methods.emailHint') },
+    { value: 'whatsapp', label: 'WhatsApp', hint: t('pages.auth.forgotPassword.methods.whatsappHint') },
+];
+
+const validateIdentifier = ({ method, identifier, t }) => {
     const value = identifier.trim();
 
-    if (!method) return 'Калыбына келтирүү ыкмасын тандаңыз.';
-    if (!value) return 'Код жөнөтүлө турган маалыматты жазыңыз.';
+    if (!method) return t('pages.auth.forgotPassword.validation.methodRequired');
+    if (!value) return t('pages.auth.forgotPassword.validation.identifierRequired');
     if (method === 'email' && !/^[\w-.]+@([\w-]+\.)+[\w-]{2,}$/.test(value)) {
-        return 'Туура email дарегин жазыңыз.';
+        return t('pages.auth.forgotPassword.validation.emailInvalid');
     }
     if (method === 'whatsapp' && !/^\+?\d{9,16}$/.test(value)) {
-        return 'WhatsApp номери 9-16 цифрадан турушу керек.';
+        return t('pages.auth.forgotPassword.validation.whatsappInvalid');
     }
 
     return '';
 };
 
-const validatePasswordStep = ({ otp, newPassword, confirmPassword }) => {
-    if (!/^\d{4,8}$/.test(otp.trim())) return 'OTP код 4-8 цифрадан турушу керек.';
-    if (newPassword.length < 8) return 'Жаңы сырсөз кеминде 8 белгиден турушу керек.';
-    if (newPassword !== confirmPassword) return 'Сырсөздөр дал келген жок.';
+const validatePasswordStep = ({ otp, newPassword, confirmPassword, t }) => {
+    if (!/^\d{4,8}$/.test(otp.trim())) return t('pages.auth.forgotPassword.validation.otpInvalid');
+    if (newPassword.length < 8) return t('pages.auth.forgotPassword.validation.passwordTooShort');
+    if (newPassword !== confirmPassword) return t('pages.auth.forgotPassword.validation.passwordMismatch');
     return '';
 };
 
 const ForgotPassword = ({ onClose }) => {
+    const { t } = useTranslation();
     const [identifier, setIdentifier] = useState('');
     const [method, setMethod] = useState('');
     const [otpSent, setOtpSent] = useState(false);
@@ -43,8 +45,9 @@ const ForgotPassword = ({ onClose }) => {
     const [confirmPassword, setConfirmPassword] = useState('');
     const [passwordReset, setPasswordReset] = useState(false);
     const closeButtonRef = useRef(null);
+    const methodOptions = getMethodOptions(t);
 
-    const selectedMethod = METHOD_OPTIONS.find((item) => item.value === method);
+    const selectedMethod = methodOptions.find((item) => item.value === method);
 
     useEffect(() => {
         closeButtonRef.current?.focus();
@@ -59,7 +62,7 @@ const ForgotPassword = ({ onClose }) => {
 
     const handleSendOtp = async (e) => {
         e.preventDefault();
-        const validationError = validateIdentifier({ method, identifier });
+        const validationError = validateIdentifier({ method, identifier, t });
 
         if (validationError) {
             setError(validationError);
@@ -73,7 +76,7 @@ const ForgotPassword = ({ onClose }) => {
             await sendOtp({ identifier: identifier.trim(), method });
             setOtpSent(true);
         } catch (err) {
-            setError(getApiError(err, 'OTP жөнөтүлбөй калды. Маалыматты текшерип, кайра аракет кылыңыз.'));
+            setError(getApiError(err, t('pages.auth.forgotPassword.errors.sendOtp')));
         } finally {
             setLoading(false);
         }
@@ -81,7 +84,7 @@ const ForgotPassword = ({ onClose }) => {
 
     const handleResetPassword = async (e) => {
         e.preventDefault();
-        const validationError = validatePasswordStep({ otp, newPassword, confirmPassword });
+        const validationError = validatePasswordStep({ otp, newPassword, confirmPassword, t });
 
         if (validationError) {
             setError(validationError);
@@ -100,7 +103,7 @@ const ForgotPassword = ({ onClose }) => {
             });
             setPasswordReset(true);
         } catch (err) {
-            setError(getApiError(err, 'Сырсөз жаңыртылган жок. Кодду текшерип, кайра аракет кылыңыз.'));
+            setError(getApiError(err, t('pages.auth.forgotPassword.errors.resetPassword')));
         } finally {
             setLoading(false);
         }
@@ -120,19 +123,19 @@ const ForgotPassword = ({ onClose }) => {
                     type="button"
                     onClick={onClose}
                     className="absolute right-4 top-4 rounded-lg p-1 text-gray-600 transition hover:bg-gray-100 hover:text-black focus:outline-none focus:ring-2 focus:ring-orange-500 dark:text-[#a6adba] dark:hover:bg-white/10 dark:hover:text-white"
-                    aria-label="Калыбына келтирүү терезесин жабуу"
+                    aria-label={t('pages.auth.forgotPassword.close')}
                 >
                     <IoClose size={26} aria-hidden="true" />
                 </button>
 
                 <p className="text-sm font-semibold uppercase tracking-wide text-edubot-orange">
-                    Аккаунтка кирүү
+                    {t('pages.auth.forgotPassword.eyebrow')}
                 </p>
                 <h2 id="forgot-password-title" className="mt-2 text-2xl font-bold text-black dark:text-white">
-                    Сырсөздү калыбына келтирүү
+                    {t('pages.auth.forgotPassword.title')}
                 </h2>
                 <p id="forgot-password-description" className="mt-2 text-sm leading-6 text-gray-600 dark:text-[#a6adba]">
-                    Кодду email же WhatsApp аркылуу алып, жаңы сырсөз коюңуз.
+                    {t('pages.auth.forgotPassword.description')}
                 </p>
 
                 {error && (
@@ -145,7 +148,7 @@ const ForgotPassword = ({ onClose }) => {
                     <form onSubmit={handleSendOtp} className="mt-6 space-y-4">
                         <label className="block">
                             <span className="mb-1 block text-sm font-medium text-gray-800 dark:text-white">
-                                Код алуу ыкмасы
+                                {t('pages.auth.forgotPassword.methodLabel')}
                             </span>
                             <select
                                 value={method}
@@ -156,8 +159,8 @@ const ForgotPassword = ({ onClose }) => {
                                 className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-black focus:outline-none focus:ring-2 focus:ring-orange-500 dark:border-gray-700 dark:bg-[#222222] dark:text-white"
                                 required
                             >
-                                <option value="">Ыкманы тандаңыз</option>
-                                {METHOD_OPTIONS.map((item) => (
+                                <option value="">{t('pages.auth.forgotPassword.methodPlaceholder')}</option>
+                                {methodOptions.map((item) => (
                                     <option key={item.value} value={item.value}>{item.label}</option>
                                 ))}
                             </select>
@@ -165,7 +168,9 @@ const ForgotPassword = ({ onClose }) => {
 
                         <label className="block">
                             <span className="mb-1 block text-sm font-medium text-gray-800 dark:text-white">
-                                {method === 'whatsapp' ? 'WhatsApp номери' : 'Email дареги'}
+                                {method === 'whatsapp'
+                                    ? t('pages.auth.forgotPassword.whatsappLabel')
+                                    : t('pages.auth.forgotPassword.emailLabel')}
                             </span>
                             <input
                                 type={method === 'email' ? 'email' : 'text'}
@@ -192,18 +197,22 @@ const ForgotPassword = ({ onClose }) => {
                             disabled={loading}
                             aria-busy={loading}
                         >
-                            {loading ? 'Жөнөтүлүүдө...' : 'OTP жөнөтүү'}
+                            {loading
+                                ? t('pages.auth.forgotPassword.actions.sending')
+                                : t('pages.auth.forgotPassword.actions.sendOtp')}
                         </button>
                     </form>
                 ) : !passwordReset ? (
                     <form onSubmit={handleResetPassword} className="mt-6 space-y-4">
                         <p className="rounded-lg bg-orange-50 px-3 py-2 text-sm text-orange-800">
-                            Код {selectedMethod?.label || 'тандалган канал'} аркылуу жөнөтүлдү.
+                            {t('pages.auth.forgotPassword.otpSent', {
+                                channel: selectedMethod?.label || t('pages.auth.forgotPassword.selectedChannel'),
+                            })}
                         </p>
                         <input
                             type="text"
                             inputMode="numeric"
-                            placeholder="OTP код"
+                            placeholder={t('pages.auth.forgotPassword.otpPlaceholder')}
                             value={otp}
                             onChange={(e) => {
                                 setOtp(e.target.value);
@@ -214,7 +223,7 @@ const ForgotPassword = ({ onClose }) => {
                         />
                         <input
                             type="password"
-                            placeholder="Жаңы сырсөз"
+                            placeholder={t('pages.auth.forgotPassword.newPasswordPlaceholder')}
                             value={newPassword}
                             onChange={(e) => {
                                 setNewPassword(e.target.value);
@@ -226,7 +235,7 @@ const ForgotPassword = ({ onClose }) => {
                         />
                         <input
                             type="password"
-                            placeholder="Сырсөздү кайталаңыз"
+                            placeholder={t('pages.auth.forgotPassword.confirmPasswordPlaceholder')}
                             value={confirmPassword}
                             onChange={(e) => {
                                 setConfirmPassword(e.target.value);
@@ -243,19 +252,21 @@ const ForgotPassword = ({ onClose }) => {
                             disabled={loading}
                             aria-busy={loading}
                         >
-                            {loading ? 'Кайра орнотууда...' : 'Сырсөздү жаңыртуу'}
+                            {loading
+                                ? t('pages.auth.forgotPassword.actions.resetting')
+                                : t('pages.auth.forgotPassword.actions.resetPassword')}
                         </button>
                     </form>
                 ) : (
                     <div className="mt-6 rounded-xl border border-green-200 bg-green-50 p-4 text-green-800">
-                        <p className="font-semibold">Сырсөз ийгиликтүү жаңыртылды.</p>
-                        <p className="mt-1 text-sm">Эми жаңы сырсөз менен кирсеңиз болот.</p>
+                        <p className="font-semibold">{t('pages.auth.forgotPassword.success.title')}</p>
+                        <p className="mt-1 text-sm">{t('pages.auth.forgotPassword.success.description')}</p>
                         <button
                             type="button"
                             onClick={onClose}
                             className="mt-4 rounded-lg bg-green-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-green-800 focus:outline-none focus:ring-2 focus:ring-green-600 focus:ring-offset-2"
                         >
-                            Кирүүгө кайтуу
+                            {t('pages.auth.forgotPassword.actions.backToLogin')}
                         </button>
                     </div>
                 )}

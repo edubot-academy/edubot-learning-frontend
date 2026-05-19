@@ -2,6 +2,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import i18n from '../i18n';
 import CertificateVerification from './CertificateVerification';
 
 const apiMocks = vi.hoisted(() => ({
@@ -22,7 +23,8 @@ const renderPage = (initialEntry = '/certificates/cert-123/verify', routePath = 
 describe('CertificateVerification', () => {
     let clipboardWriteTextMock;
 
-    beforeEach(() => {
+    beforeEach(async () => {
+        await i18n.changeLanguage('ky');
         vi.clearAllMocks();
         clipboardWriteTextMock = vi.fn().mockResolvedValue(undefined);
         Object.defineProperty(navigator, 'clipboard', {

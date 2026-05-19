@@ -1,5 +1,6 @@
-import { useContext, useEffect, useMemo, useState } from 'react';
+import { useContext, useEffect, useMemo, useRef, useState } from 'react';
 import PropTypes from 'prop-types';
+import { useTranslation } from 'react-i18next';
 import {
     fetchCourses,
     fetchInternalCourseLeaderboard,
@@ -19,42 +20,7 @@ import {
 } from '@components/ui/dashboard';
 import { FiAward, FiBookOpen, FiStar, FiTrendingUp } from 'react-icons/fi';
 
-const TRACKS = [
-    { value: 'all', label: 'Бардыгы', helper: 'Жалпы активдүүлүк' },
-    { value: 'video', label: 'Видео', helper: 'Өз алдынча окуу' },
-    { value: 'live', label: 'Жандуу', helper: 'Сессиялык окуу' },
-];
-
-const ROLE_COPY = {
-    student: {
-        eyebrow: 'Student Ranking',
-        title: 'Менин ички рейтингим',
-        description: 'Орунуңузду, курстагы лидерлерди жана бул жумадагы активдүүлүктү салыштырып көрүңүз.',
-        courseLabel: 'Менин курстарым',
-        courseDescription: 'Катышып жаткан курстарыңыздагы лидерлерди салыштырыңыз.',
-    },
-    instructor: {
-        eyebrow: 'Instructor Ranking',
-        title: 'Окуучулардын рейтинги',
-        description: 'Курстарыңыздагы активдүү окуучуларды, аптанын студентин жана курс ичиндеги темпти көзөмөлдөңүз.',
-        courseLabel: 'Менин курстарым',
-        courseDescription: 'Курс тандап, ошол курс ичиндеги активдүү окуучуларды көрүңүз.',
-    },
-    admin: {
-        eyebrow: 'Admin Ranking',
-        title: 'Платформа рейтинги',
-        description: 'Платформа боюнча жумалык активдүүлүктү, башкы бет лидерлерин жана курс рейтингдерин караңыз.',
-        courseLabel: 'Платформа курстары',
-        courseDescription: 'Каалаган курс боюнча ички рейтингди текшериңиз.',
-    },
-    default: {
-        eyebrow: 'Leaderboard workspace',
-        title: 'Ички рейтинг',
-        description: 'Апталык лидерлерди, аптанын студентин жана курс ичиндеги орундарды ушул жерден көрүңүз.',
-        courseLabel: 'Курс такталары',
-        courseDescription: 'Тандалган курс ичиндеги мыктыларды салыштырыңыз.',
-    },
-};
+const TRACKS = ['all', 'video', 'live'];
 
 const Avatar = ({ src, name }) => {
     if (src) {
@@ -75,6 +41,7 @@ const Avatar = ({ src, name }) => {
 };
 
 const LeaderRow = ({ item, rank }) => {
+    const { t } = useTranslation();
     const quizCount = Number(item?.quizzesPassed);
 
     return (
@@ -84,16 +51,16 @@ const LeaderRow = ({ item, rank }) => {
             </div>
             <Avatar src={item?.avatarUrl} name={item?.fullName} />
             <div className="flex-1 min-w-0">
-                <p className="font-medium truncate text-gray-900 dark:text-white">{item?.fullName || 'Студент'}</p>
+                <p className="font-medium truncate text-gray-900 dark:text-white">{item?.fullName || t('internalLeaderboard.fallbacks.student')}</p>
                 <p className="text-xs text-gray-500 dark:text-gray-300">
                     {item?.xp || 0} XP
                     {item?.progressPercent ? ` · ${item.progressPercent}%` : ''}
-                    {item?.streakDays ? ` · 🔥 ${item.streakDays} күн` : ''}
+                    {item?.streakDays ? ` · ${t('internalLeaderboard.row.streakDays', { count: item.streakDays })}` : ''}
                 </p>
             </div>
             {quizCount > 0 ? (
                 <span className="text-xs bg-orange-50 text-orange-700 px-2 py-1 rounded-full">
-                    {quizCount} тест
+                    {t('internalLeaderboard.row.quizCount', { count: quizCount })}
                 </span>
             ) : null}
         </div>
@@ -108,7 +75,7 @@ const normalizeItems = (payload) => {
     return [];
 };
 
-const normalizeCourseOptions = (payload) =>
+const normalizeCourseOptions = (payload, fallbackTitle = 'Course') =>
     normalizeItems(payload)
         .map((item) => {
             const resolvedId =
@@ -125,7 +92,7 @@ const normalizeCourseOptions = (payload) =>
                     item?.courseTitle ||
                     item?.course?.title ||
                     item?.name ||
-                    'Курс',
+                    fallbackTitle,
             };
         })
         .filter((item) => Number.isFinite(Number(item?.id)));
@@ -136,6 +103,8 @@ const normalizeStudentOfWeek = (payload) => {
 };
 
 const InternalLeaderboard = () => {
+    const { t } = useTranslation();
+    const tRef = useRef(t);
     const { user } = useContext(AuthContext);
     const [track, setTrack] = useState('all');
 
@@ -153,30 +122,36 @@ const InternalLeaderboard = () => {
     const [leaderboardError, setLeaderboardError] = useState('');
     const [courseBoardError, setCourseBoardError] = useState('');
 
-    const roleCopy = ROLE_COPY[user?.role] || ROLE_COPY.default;
-    const selectedTrack = TRACKS.find((option) => option.value === track) || TRACKS[0];
+    const roleKey = ['student', 'instructor', 'admin'].includes(user?.role) ? user.role : 'default';
+    const selectedTrack = TRACKS.includes(track) ? track : TRACKS[0];
+
+    useEffect(() => {
+        tRef.current = t;
+    }, [t]);
 
     useEffect(() => {
         let cancelled = false;
         const loadCourses = async () => {
             setCoursesError('');
             try {
+                const translate = tRef.current;
                 const response = user?.role === 'instructor'
                     ? await fetchInstructorCourses({ status: 'approved' })
                     : user?.role === 'student'
                         ? await fetchStudentCourses(user.id)
                         : await fetchCourses();
                 if (cancelled) return;
-                const list = normalizeCourseOptions(response);
+                const list = normalizeCourseOptions(response, translate('internalLeaderboard.fallbacks.course'));
                 setCourses(list);
-                if (list.length) {
-                    setSelectedCourseId(String(list[0].id));
-                } else {
-                    setSelectedCourseId('');
-                }
+                setSelectedCourseId((previousCourseId) => {
+                    if (previousCourseId && list.some((course) => String(course.id) === String(previousCourseId))) {
+                        return previousCourseId;
+                    }
+                    return list.length ? String(list[0].id) : '';
+                });
             } catch {
                 if (!cancelled) {
-                    setCoursesError('Курстарды жүктөө мүмкүн болгон жок.');
+                    setCoursesError(tRef.current('internalLeaderboard.errors.coursesLoad'));
                     setCourses([]);
                     setSelectedCourseId('');
                 }
@@ -207,7 +182,7 @@ const InternalLeaderboard = () => {
                 setStudentOfWeek(normalizeStudentOfWeek(sowRes));
             } catch {
                 if (!cancelled) {
-                    setLeaderboardError('Ички рейтинг маалыматтарын жүктөө мүмкүн болгон жок.');
+                    setLeaderboardError(tRef.current('internalLeaderboard.errors.leaderboardLoad'));
                     setWeekly({ items: [], total: 0 });
                     setHomepage({ items: [] });
                     setStudentOfWeek(null);
@@ -245,7 +220,7 @@ const InternalLeaderboard = () => {
                 }
             } catch {
                 if (!cancelled) {
-                    setCourseBoardError('Курс рейтинги азыр жүктөлбөй жатат.');
+                    setCourseBoardError(tRef.current('internalLeaderboard.errors.courseBoardLoad'));
                     setCourseLeaders({ items: [], total: 0 });
                 }
             } finally {
@@ -266,25 +241,25 @@ const InternalLeaderboard = () => {
     return (
         <div className="space-y-6">
             <DashboardSectionHeader
-                eyebrow={roleCopy.eyebrow}
-                title={roleCopy.title}
-                description={roleCopy.description}
+                eyebrow={t(`internalLeaderboard.roles.${roleKey}.eyebrow`)}
+                title={t(`internalLeaderboard.roles.${roleKey}.title`)}
+                description={t(`internalLeaderboard.roles.${roleKey}.description`)}
                 action={(
-                    <div className="inline-flex flex-wrap rounded-2xl border border-edubot-line bg-white/90 p-1 dark:border-slate-700 dark:bg-slate-950" aria-label="Рейтинг багыты">
+                    <div className="inline-flex flex-wrap rounded-2xl border border-edubot-line bg-white/90 p-1 dark:border-slate-700 dark:bg-slate-950" aria-label={t('internalLeaderboard.trackSwitcherLabel')}>
                         {TRACKS.map((option) => (
                             <button
-                                key={option.value}
+                                key={option}
                                 type="button"
-                                onClick={() => setTrack(option.value)}
-                                aria-pressed={track === option.value}
-                                title={option.helper}
+                                onClick={() => setTrack(option)}
+                                aria-pressed={track === option}
+                                title={t(`internalLeaderboard.tracks.${option}.helper`)}
                                 className={`rounded-xl px-3 py-2 text-sm font-medium transition-all ${
-                                    track === option.value
+                                    track === option
                                         ? 'bg-edubot-orange text-white'
                                         : 'text-edubot-muted hover:text-edubot-ink dark:text-slate-300 dark:hover:text-white'
                                 }`}
                             >
-                                {option.label}
+                                {t(`internalLeaderboard.tracks.${option}.label`)}
                             </button>
                         ))}
                     </div>
@@ -293,24 +268,24 @@ const InternalLeaderboard = () => {
 
             <div className="grid gap-4 md:grid-cols-4">
                 <DashboardMetricCard
-                    label="Апталык лидерлер"
+                    label={t('internalLeaderboard.metrics.weekly')}
                     value={weeklyItems.length}
                     icon={FiTrendingUp}
                 />
                 <DashboardMetricCard
-                    label="Башкы бет мыктылары"
+                    label={t('internalLeaderboard.metrics.homepage')}
                     value={homepageItems.length}
                     icon={FiStar}
                     tone="blue"
                 />
                 <DashboardMetricCard
-                    label="Аптанын студенти"
+                    label={t('internalLeaderboard.metrics.studentOfWeek')}
                     value={studentOfWeek?.fullName ? '1' : '0'}
                     icon={FiAward}
                     tone="green"
                 />
                 <DashboardMetricCard
-                    label={roleCopy.courseLabel}
+                    label={t(`internalLeaderboard.roles.${roleKey}.courseLabel`)}
                     value={courses.length}
                     icon={FiBookOpen}
                     tone="amber"
@@ -320,12 +295,12 @@ const InternalLeaderboard = () => {
             <div className="rounded-3xl border border-edubot-line bg-white/90 p-5 shadow-sm dark:border-slate-700 dark:bg-slate-950">
                 <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                     <div>
-                        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-edubot-orange">Учурдагы көрүнүш</p>
-                        <h2 className="mt-2 text-lg font-semibold text-edubot-ink dark:text-white">{selectedTrack.label}</h2>
-                        <p className="mt-1 text-sm text-edubot-muted dark:text-slate-300">{selectedTrack.helper}</p>
+                        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-edubot-orange">{t('internalLeaderboard.currentView')}</p>
+                        <h2 className="mt-2 text-lg font-semibold text-edubot-ink dark:text-white">{t(`internalLeaderboard.tracks.${selectedTrack}.label`)}</h2>
+                        <p className="mt-1 text-sm text-edubot-muted dark:text-slate-300">{t(`internalLeaderboard.tracks.${selectedTrack}.helper`)}</p>
                     </div>
                     <p className="max-w-xl text-sm leading-6 text-edubot-muted dark:text-slate-300">
-                        {roleCopy.courseDescription}
+                        {t(`internalLeaderboard.roles.${roleKey}.courseDescription`)}
                     </p>
                 </div>
             </div>
@@ -345,7 +320,7 @@ const InternalLeaderboard = () => {
             {loading ? <Loader fullScreen={false} /> : null}
 
             <div className="grid gap-6 lg:grid-cols-2">
-                <DashboardInsetPanel title="Апталык рейтинг" description="Учурда эң активдүү окуучулар.">
+                <DashboardInsetPanel title={t('internalLeaderboard.weekly.title')} description={t('internalLeaderboard.weekly.description')}>
                     <div className="space-y-2">
                         {weeklyItems.length ? (
                             weeklyItems.map((item, idx) => (
@@ -353,26 +328,26 @@ const InternalLeaderboard = () => {
                             ))
                         ) : (
                             <DashboardEmptyState
-                                title="Лидерлер табылган жок"
-                                subtitle="Тандалган багыт боюнча азырынча рейтинг маалыматтары жок."
+                                title={t('internalLeaderboard.weekly.emptyTitle')}
+                                subtitle={t('internalLeaderboard.weekly.emptySubtitle')}
                                 className="py-8"
                             />
                         )}
                     </div>
                 </DashboardInsetPanel>
 
-                <DashboardInsetPanel title="Аптанын студенти" description="Аптанын өзгөчөлөнгөн катышуучусу жана башкы беттеги мыктылар.">
+                <DashboardInsetPanel title={t('internalLeaderboard.studentOfWeek.title')} description={t('internalLeaderboard.studentOfWeek.description')}>
                     {studentOfWeek ? (
                         <LeaderRow item={studentOfWeek} rank={1} />
                     ) : (
                         <DashboardEmptyState
-                            title="Аптанын студенти жок"
-                            subtitle="Бул багыт боюнча айырмаланган студент азырынча аныкталган жок."
+                            title={t('internalLeaderboard.studentOfWeek.emptyTitle')}
+                            subtitle={t('internalLeaderboard.studentOfWeek.emptySubtitle')}
                             className="py-8"
                         />
                     )}
 
-                    <h3 className="mb-3 mt-5 text-base font-semibold text-edubot-ink dark:text-white">Башкы беттеги мыктылар</h3>
+                    <h3 className="mb-3 mt-5 text-base font-semibold text-edubot-ink dark:text-white">{t('internalLeaderboard.homepage.title')}</h3>
                     <div className="space-y-2">
                         {homepageItems.length ? (
                             homepageItems.map((item, idx) => (
@@ -380,8 +355,8 @@ const InternalLeaderboard = () => {
                             ))
                         ) : (
                             <DashboardEmptyState
-                                title="Башкы бет маалыматы жок"
-                                subtitle="Тандалган багыт боюнча башкы бет лидерлери жок."
+                                title={t('internalLeaderboard.homepage.emptyTitle')}
+                                subtitle={t('internalLeaderboard.homepage.emptySubtitle')}
                                 className="py-8"
                             />
                         )}
@@ -389,16 +364,16 @@ const InternalLeaderboard = () => {
                 </DashboardInsetPanel>
             </div>
 
-            <DashboardInsetPanel title="Курс рейтинги" description="Тандалган курс ичиндеги мыктыларды салыштырыңыз.">
+            <DashboardInsetPanel title={t('internalLeaderboard.courseBoard.title')} description={t('internalLeaderboard.courseBoard.description')}>
                 <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
                     <label className="flex min-w-[260px] flex-col gap-2 text-sm font-medium text-edubot-ink dark:text-white">
-                        <span>Курс</span>
+                        <span>{t('internalLeaderboard.courseBoard.courseLabel')}</span>
                         <select
                             value={selectedCourseId}
                             onChange={(event) => setSelectedCourseId(event.target.value)}
                             className="appearance-none rounded-2xl border border-edubot-line/80 bg-white/95 px-4 py-3 text-sm font-medium text-edubot-ink shadow-sm outline-none transition-all focus:border-edubot-orange focus:ring-2 focus:ring-edubot-orange/20 dark:border-slate-700 dark:bg-slate-950 dark:text-white"
                         >
-                            <option value="">Курс тандаңыз</option>
+                            <option value="">{t('internalLeaderboard.courseBoard.selectCourse')}</option>
                             {courses.map((course) => (
                                 <option key={course.id} value={course.id}>
                                     {course.title}
@@ -418,8 +393,8 @@ const InternalLeaderboard = () => {
                 <div className="mt-4 space-y-2">
                     {!selectedCourseId ? (
                         <DashboardEmptyState
-                            title="Курс тандалган жок"
-                            subtitle="Ички курс рейтингин көрүү үчүн жогортон курс тандаңыз."
+                            title={t('internalLeaderboard.courseBoard.noCourseTitle')}
+                            subtitle={t('internalLeaderboard.courseBoard.noCourseSubtitle')}
                             className="py-8"
                         />
                     ) : courseItems.length ? (
@@ -428,8 +403,8 @@ const InternalLeaderboard = () => {
                         ))
                     ) : (
                         <DashboardEmptyState
-                            title="Маалымат жок"
-                            subtitle="Бул курс жана багыт айкалышы боюнча рейтинг азырынча жеткиликсиз."
+                            title={t('internalLeaderboard.courseBoard.noDataTitle')}
+                            subtitle={t('internalLeaderboard.courseBoard.noDataSubtitle')}
                             className="py-8"
                         />
                     )}

@@ -1,4 +1,5 @@
 import { useContext, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { useInstructorCourseListPage } from '@features/instructor-dashboard/hooks/useInstructorCourseListPage';
@@ -7,25 +8,25 @@ import {
     getCourseLifecycleMeta,
 } from '@features/instructor-dashboard/utils/courseLifecycle';
 
-const COURSE_FILTERS = [
-    { value: 'all', label: 'Баары' },
-    { value: COURSE_LIFECYCLE_STATES.DRAFT, label: 'Черновик' },
-    { value: COURSE_LIFECYCLE_STATES.PENDING, label: 'Каралууда' },
-    { value: COURSE_LIFECYCLE_STATES.PUBLISHED, label: 'Жарыяланган' },
-    { value: COURSE_LIFECYCLE_STATES.REJECTED, label: 'Оңдоо керек' },
+const getCourseFilters = (t) => [
+    { value: 'all', label: t('instructorDashboard.coursesPage.filters.all') },
+    { value: COURSE_LIFECYCLE_STATES.DRAFT, label: t('instructorDashboard.coursesPage.lifecycle.draft') },
+    { value: COURSE_LIFECYCLE_STATES.PENDING, label: t('instructorDashboard.coursesPage.lifecycle.pending') },
+    { value: COURSE_LIFECYCLE_STATES.PUBLISHED, label: t('instructorDashboard.coursesPage.lifecycle.published') },
+    { value: COURSE_LIFECYCLE_STATES.REJECTED, label: t('instructorDashboard.coursesPage.lifecycle.rejected') },
 ];
 
-const COURSE_TYPE_FILTERS = [
-    { value: 'all', label: 'Бардык workflow' },
-    { value: 'video', label: 'Self-paced video' },
-    { value: 'delivery', label: 'Delivery / group' },
+const getCourseTypeFilters = (t) => [
+    { value: 'all', label: t('instructorDashboard.coursesPage.filters.allWorkflows') },
+    { value: 'video', label: t('instructorDashboard.coursesPage.workflows.video') },
+    { value: 'delivery', label: t('instructorDashboard.coursesPage.workflows.delivery') },
 ];
 
-const courseTypeLabel = (type) => {
+const courseTypeLabel = (type, t) => {
     const normalized = String(type || 'video').toLowerCase();
-    if (normalized === 'offline') return 'Offline';
-    if (normalized === 'online_live') return 'Online Live';
-    return 'Video';
+    if (normalized === 'offline') return t('instructorDashboard.coursesPage.courseTypes.offline');
+    if (normalized === 'online_live') return t('instructorDashboard.coursesPage.courseTypes.onlineLive');
+    return t('instructorDashboard.coursesPage.courseTypes.video');
 };
 
 const getCourseWorkflow = (type) => {
@@ -33,28 +34,42 @@ const getCourseWorkflow = (type) => {
     return normalized === 'offline' || normalized === 'online_live' ? 'delivery' : 'video';
 };
 
-const getCourseDisplayData = (course, user) => {
+const getCourseDisplayData = (course, user, t) => {
     const courseId = course?.id ?? course?.courseId ?? '';
     const rawTitle = typeof course?.title === 'string' ? course.title.trim() : '';
-    const title = rawTitle || (courseId ? `Курс ${courseId}` : 'Аталышы жок курс');
-    const instructorName = course?.instructor?.fullName || user?.fullName || 'Инструктор көрсөтүлгөн эмес';
+    const title = rawTitle || (courseId
+        ? t('instructorDashboard.coursesPage.fallbacks.courseWithId', { id: courseId })
+        : t('instructorDashboard.coursesPage.fallbacks.untitledCourse'));
+    const instructorName = course?.instructor?.fullName || user?.fullName || t('instructorDashboard.coursesPage.fallbacks.noInstructor');
     const hasPrice = course?.price !== null && course?.price !== undefined && course?.price !== '';
     const price = hasPrice ? Number(course.price) : Number.NaN;
-    const lifecycle = getCourseLifecycleMeta(course);
+    const lifecycle = getCourseLifecycleMeta(course, {
+        published: t('instructorDashboard.coursesPage.lifecycle.published'),
+        pending: t('instructorDashboard.coursesPage.lifecycle.pending'),
+        rejected: t('instructorDashboard.coursesPage.lifecycle.rejected'),
+        draft: t('instructorDashboard.coursesPage.lifecycle.draft'),
+        manage: t('instructorDashboard.coursesPage.actions.manage'),
+        review: t('instructorDashboard.coursesPage.actions.review'),
+        fix: t('instructorDashboard.coursesPage.actions.fix'),
+        edit: t('instructorDashboard.coursesPage.actions.edit'),
+    });
 
     return {
         courseId,
         coverImageUrl: typeof course?.coverImageUrl === 'string' ? course.coverImageUrl.trim() : '',
         instructorName,
         lifecycle,
-        priceLabel: Number.isFinite(price) ? `${price} с` : 'Баасы көрсөтүлгөн эмес',
+        priceLabel: Number.isFinite(price)
+            ? t('instructorDashboard.coursesPage.price.value', { value: price })
+            : t('instructorDashboard.coursesPage.price.missing'),
         title,
         workflow: getCourseWorkflow(course?.courseType || course?.type),
-        typeLabel: courseTypeLabel(course?.courseType || course?.type),
+        typeLabel: courseTypeLabel(course?.courseType || course?.type, t),
     };
 };
 
 const InstructorCourses = () => {
+    const { t, i18n } = useTranslation();
     const { user } = useContext(AuthContext);
     const { courses, error, loading, refresh } = useInstructorCourseListPage(user);
     const [query, setQuery] = useState('');
@@ -71,9 +86,9 @@ const InstructorCourses = () => {
     const courseDisplayItems = useMemo(
         () => courses.map((course) => ({
             raw: course,
-            display: getCourseDisplayData(course, user),
+            display: getCourseDisplayData(course, user, t),
         })),
-        [courses, user]
+        [courses, user, t]
     );
 
     const lifecycleCounts = useMemo(
@@ -119,44 +134,46 @@ const InstructorCourses = () => {
     }, [courseDisplayItems, query, statusFilter, typeFilter]);
 
     const lastLoadedLabel = lastLoadedAt
-        ? lastLoadedAt.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })
-        : '—';
+        ? lastLoadedAt.toLocaleTimeString(i18n.language || undefined, { hour: '2-digit', minute: '2-digit' })
+        : '-';
+    const courseFilters = useMemo(() => getCourseFilters(t), [t]);
+    const courseTypeFilters = useMemo(() => getCourseTypeFilters(t), [t]);
 
     return (
         <div className="min-h-screen p-6 pt-24 max-w-6xl mx-auto">
-            <h1 className="text-4xl font-bold mb-8 text-center">Менин курстарым</h1>
+            <h1 className="text-4xl font-bold mb-8 text-center">{t('instructorDashboard.coursesPage.title')}</h1>
             <section
-                aria-label="Курс workflow абалы"
+                aria-label={t('instructorDashboard.coursesPage.workflowSummaryLabel')}
                 className="mb-6 grid gap-3 md:grid-cols-3"
             >
                 <div className="rounded border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-[#141619]">
                     <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                        Self-paced video
+                        {t('instructorDashboard.coursesPage.workflows.video')}
                     </p>
                     <p className="mt-2 text-2xl font-bold text-gray-900 dark:text-white">
                         {workflowCounts.video}
                     </p>
                     <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">
-                        Мазмун, preview жана approval аркылуу башкарылат.
+                        {t('instructorDashboard.coursesPage.workflowCards.videoDescription')}
                     </p>
                 </div>
                 <div className="rounded border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-[#141619]">
                     <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                        Delivery / group
+                        {t('instructorDashboard.coursesPage.workflows.delivery')}
                     </p>
                     <p className="mt-2 text-2xl font-bold text-gray-900 dark:text-white">
                         {workflowCounts.delivery}
                     </p>
                     <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">
-                        Группа, schedule жана катышуу workflow менен иштейт.
+                        {t('instructorDashboard.coursesPage.workflowCards.deliveryDescription')}
                     </p>
                 </div>
                 <div className="rounded border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-[#141619]">
                     <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                        Акыркы жаңыртуу
+                        {t('instructorDashboard.coursesPage.workflowCards.lastUpdated')}
                     </p>
                     <p className="mt-2 text-2xl font-bold text-gray-900 dark:text-white">
-                        {loading ? 'Жүктөлүүдө...' : lastLoadedLabel}
+                        {loading ? t('common.loading') : lastLoadedLabel}
                     </p>
                     <button
                         type="button"
@@ -164,36 +181,36 @@ const InstructorCourses = () => {
                         disabled={loading}
                         className="mt-2 rounded border border-gray-300 px-3 py-1 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
                     >
-                        Жаңыртуу
+                        {t('instructorDashboard.coursesPage.actions.refresh')}
                     </button>
                 </div>
             </section>
             {error && (
                 <div className="mb-6 rounded border border-red-200 bg-red-50 p-4 text-red-700 dark:border-red-900/40 dark:bg-red-950/20 dark:text-red-200">
-                    <p className="font-semibold">Курстарды алуу ишке ашкан жок.</p>
+                    <p className="font-semibold">{t('instructorDashboard.coursesPage.errors.load')}</p>
                     <button
                         type="button"
                         onClick={refresh}
                         className="mt-2 rounded bg-red-600 px-3 py-1 text-sm font-semibold text-white hover:bg-red-700"
                     >
-                        Кайра жүктөө
+                        {t('instructorDashboard.coursesPage.actions.reload')}
                     </button>
                 </div>
             )}
             {loading && (
                 <div className="mb-6 text-center text-gray-600 dark:text-gray-300" role="status">
-                    Курстар жүктөлүүдө...
+                    {t('instructorDashboard.coursesPage.loading')}
                 </div>
             )}
 
             <section
-                aria-label="Курс башкаруу чыпкалары"
+                aria-label={t('instructorDashboard.coursesPage.filtersLabel')}
                 className="mb-6 rounded border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-[#141619]"
             >
                 <div className="grid gap-3 md:grid-cols-[1fr_auto_auto] md:items-end">
                     <div>
                         <label htmlFor="instructor-course-search" className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200">
-                            Курс издөө
+                            {t('instructorDashboard.coursesPage.filters.search')}
                         </label>
                         <input
                             id="instructor-course-search"
@@ -201,13 +218,13 @@ const InstructorCourses = () => {
                             value={query}
                             onChange={(event) => setQuery(event.target.value)}
                             className="w-full rounded border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white"
-                            placeholder="Аталыш, окутуучу же түрү боюнча"
+                            placeholder={t('instructorDashboard.coursesPage.filters.searchPlaceholder')}
                         />
                     </div>
 
                     <div>
                         <label htmlFor="instructor-course-status" className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200">
-                            Статус
+                            {t('instructorDashboard.coursesPage.filters.status')}
                         </label>
                         <select
                             id="instructor-course-status"
@@ -215,7 +232,7 @@ const InstructorCourses = () => {
                             onChange={(event) => setStatusFilter(event.target.value)}
                             className="w-full rounded border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white md:min-w-48"
                         >
-                            {COURSE_FILTERS.map((filter) => (
+                            {courseFilters.map((filter) => (
                                 <option key={filter.value} value={filter.value}>
                                     {filter.label}
                                     {filter.value !== 'all' && lifecycleCounts[filter.value]
@@ -228,7 +245,7 @@ const InstructorCourses = () => {
 
                     <div>
                         <label htmlFor="instructor-course-type" className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200">
-                            Workflow
+                            {t('instructorDashboard.coursesPage.filters.workflow')}
                         </label>
                         <select
                             id="instructor-course-type"
@@ -236,7 +253,7 @@ const InstructorCourses = () => {
                             onChange={(event) => setTypeFilter(event.target.value)}
                             className="w-full rounded border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white md:min-w-48"
                         >
-                            {COURSE_TYPE_FILTERS.map((filter) => (
+                            {courseTypeFilters.map((filter) => (
                                 <option key={filter.value} value={filter.value}>
                                     {filter.label}
                                 </option>
@@ -264,7 +281,7 @@ const InstructorCourses = () => {
                                 />
                             ) : (
                                 <div className="mb-4 flex h-48 w-full items-center justify-center rounded bg-gray-100 text-sm font-medium text-gray-500 dark:bg-gray-800 dark:text-gray-300">
-                                    Курс сүрөтү жок
+                                    {t('instructorDashboard.coursesPage.fallbacks.noImage')}
                                 </div>
                             )}
                             <h2 id={`instructor-course-${display.courseId || index}`} className="text-xl font-semibold mb-2">{display.title}</h2>
@@ -274,9 +291,11 @@ const InstructorCourses = () => {
                             <p className="text-gray-700 dark:text-[#a6adba] mb-2">
                                 {display.instructorName}
                             </p>
-                            <p className="text-sm text-gray-500 dark:text-[#a6adba] mb-2">Баасы: {display.priceLabel}</p>
+                            <p className="text-sm text-gray-500 dark:text-[#a6adba] mb-2">
+                                {t('instructorDashboard.coursesPage.price.label')}: {display.priceLabel}
+                            </p>
                             <span
-                                aria-label={`Курс статусу: ${display.lifecycle.label}`}
+                                aria-label={t('instructorDashboard.coursesPage.lifecycle.aria', { status: display.lifecycle.label })}
                                 className={`absolute top-2 right-2 px-2 py-1 text-xs rounded ${display.lifecycle.badgeClass}`}
                             >
                                 {display.lifecycle.label}
@@ -290,7 +309,7 @@ const InstructorCourses = () => {
                                 </Link>
                             ) : (
                                 <span className="inline-block mt-4 rounded bg-gray-200 px-4 py-2 text-gray-500 dark:bg-gray-800 dark:text-gray-300">
-                                    Өзгөртүү жеткиликсиз
+                                    {t('instructorDashboard.coursesPage.actions.unavailable')}
                                 </span>
                             )}
                         </article>
@@ -299,20 +318,20 @@ const InstructorCourses = () => {
             </div>
             {!loading && !error && !courses.length && (
                 <div className="rounded border border-gray-200 p-6 text-center text-gray-600 dark:border-gray-800 dark:text-gray-300">
-                    Азырынча курстарыңыз жок.
+                    {t('instructorDashboard.coursesPage.empty.noCourses')}
                     <div className="mt-4">
                         <Link
                             to="/instructor/course/create"
                             className="inline-block rounded bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-500"
                         >
-                            Биринчи курсту түзүү
+                            {t('instructorDashboard.coursesPage.actions.createFirst')}
                         </Link>
                     </div>
                 </div>
             )}
             {!loading && !error && Boolean(courses.length) && !filteredCourses.length && (
                 <div className="rounded border border-gray-200 p-6 text-center text-gray-600 dark:border-gray-800 dark:text-gray-300">
-                    Бул чыпкалар боюнча курс табылган жок.
+                    {t('instructorDashboard.coursesPage.empty.noFilteredCourses')}
                 </div>
             )}
         </div>

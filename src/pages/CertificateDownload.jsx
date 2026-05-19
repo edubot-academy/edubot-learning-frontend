@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link, useParams } from 'react-router-dom';
 import {
     FiAlertTriangle,
@@ -11,6 +12,7 @@ import {
 import { downloadCourseCertificatePdf } from '@features/courses/api';
 
 const CertificateDownloadPage = () => {
+    const { t } = useTranslation();
     const { publicId } = useParams();
     const [status, setStatus] = useState('preparing');
     const [error, setError] = useState('');
@@ -21,7 +23,7 @@ const CertificateDownloadPage = () => {
     const runDownload = useCallback(async () => {
         if (!publicId) {
             setStatus('failed');
-            setError('Сертификат идентификатору табылган жок.');
+            setError(t('certificates.download.errors.missingId'));
             return;
         }
 
@@ -36,9 +38,9 @@ const CertificateDownloadPage = () => {
             setStatus('ready');
         } catch {
             setStatus('failed');
-            setError('PDF жүктөлгөн жок. Браузер жүктөөнү бөгөттөгөн болушу мүмкүн же сертификат азыр жеткиликсиз.');
+            setError(t('certificates.download.errors.downloadFailed'));
         }
-    }, [publicId]);
+    }, [publicId, t]);
 
     useEffect(() => {
         if (autoDownloadStartedRef.current) return;
@@ -60,13 +62,13 @@ const CertificateDownloadPage = () => {
                     <div className="bg-gradient-to-r from-teal-700 via-cyan-700 to-amber-500 px-8 py-8 text-white">
                         <div className="flex items-center gap-3 text-sm font-semibold uppercase tracking-[0.22em] text-white/80">
                             <FiShield className="h-4 w-4" />
-                            Сертификат PDF
+                            {t('certificates.download.eyebrow')}
                         </div>
                         <h1 id="certificate-download-title" className="mt-4 text-3xl font-bold">
-                            Сертификат жүктөлүүдө
+                            {t('certificates.download.title')}
                         </h1>
                         <p className="mt-3 max-w-2xl text-sm leading-6 text-white/80">
-                            PDF файлын даярдап жатабыз. Эгер браузер жүктөөнү бөгөттөсө, бул беттен кайра аракет кылсаңыз болот.
+                            {t('certificates.download.description')}
                         </p>
                     </div>
 
@@ -80,25 +82,29 @@ const CertificateDownloadPage = () => {
                                 </div>
                                 <div className="min-w-0">
                                     <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                                        {isFailed ? 'Жүктөө ишке ашкан жок' : status === 'ready' ? 'Жүктөө башталды' : 'PDF даярдалып жатат'}
+                                        {isFailed
+                                            ? t('certificates.download.status.failed')
+                                            : status === 'ready'
+                                                ? t('certificates.download.status.ready')
+                                                : t('certificates.download.status.preparing')}
                                     </p>
                                     <h2 className="mt-2 text-xl font-semibold text-slate-900">
                                         {isFailed
-                                            ? 'Сертификатты азыр жүктөй алган жокпуз'
+                                            ? t('certificates.download.messages.failedTitle')
                                             : status === 'ready'
-                                                ? 'Файл браузер аркылуу жүктөлүшү керек'
-                                                : 'Сертификат файлы даярдалууда'}
+                                                ? t('certificates.download.messages.readyTitle')
+                                                : t('certificates.download.messages.preparingTitle')}
                                     </h2>
                                     <p className="mt-2 text-sm leading-6 text-slate-600">
                                         {isFailed
                                             ? error
                                             : status === 'ready'
-                                                ? 'Эгер файл көрүнбөсө, браузердин жүктөөлөр тизмесин текшериңиз же кайра жүктөп көрүңүз.'
-                                                : 'Бул адатта бир нече секунд гана алат. Бетти жаппай туруңуз.'}
+                                                ? t('certificates.download.messages.readyDescription')
+                                                : t('certificates.download.messages.preparingDescription')}
                                     </p>
                                     {publicId ? (
                                         <p className="mt-3 break-all text-xs font-medium text-slate-500">
-                                            Certificate ID: {publicId}
+                                            {t('certificates.download.labels.certificateId')}: {publicId}
                                         </p>
                                     ) : null}
                                 </div>
@@ -113,21 +119,21 @@ const CertificateDownloadPage = () => {
                                 className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
                             >
                                 {isBusy ? <FiRefreshCw className="h-4 w-4 animate-spin" /> : <FiDownload className="h-4 w-4" />}
-                                {isBusy ? 'Даярдалып жатат' : 'Кайра жүктөө'}
+                                {isBusy ? t('certificates.download.actions.preparing') : t('certificates.download.actions.retry')}
                             </button>
                             <Link
                                 to={verificationPath}
                                 className="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-400"
                             >
                                 <FiShield className="h-4 w-4" />
-                                Текшерүү барагын ачуу
+                                {t('certificates.download.actions.openVerification')}
                             </Link>
                             <Link
                                 to="/"
                                 className="inline-flex items-center gap-2 rounded-full border border-slate-200 px-5 py-3 text-sm font-semibold text-slate-600 transition hover:border-slate-300 hover:text-slate-900"
                             >
                                 <FiArrowLeft className="h-4 w-4" />
-                                Башкы бетке кайтуу
+                                {t('certificates.download.actions.home')}
                             </Link>
                         </div>
                     </div>

@@ -3,6 +3,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import i18n from '../i18n';
 import CertificateDownload from './CertificateDownload';
 
 const apiMocks = vi.hoisted(() => ({
@@ -28,7 +29,8 @@ const renderPage = ({
 };
 
 describe('CertificateDownload', () => {
-    beforeEach(() => {
+    beforeEach(async () => {
+        await i18n.changeLanguage('ky');
         vi.clearAllMocks();
     });
 

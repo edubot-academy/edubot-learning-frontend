@@ -1,40 +1,16 @@
 import PropTypes from 'prop-types';
+import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { FiEdit3 } from 'react-icons/fi';
-import {
-    ATTENDANCE_STATUS,
-    SESSION_ATTENDANCE_STATUS,
-} from '@shared/contracts';
+import { SESSION_ATTENDANCE_STATUS } from '@shared/contracts';
 import { DashboardInsetPanel } from '../../../components/ui/dashboard';
-
-const statusMeta = {
-    [ATTENDANCE_STATUS.PRESENT]: { label: 'Катышты', className: 'bg-emerald-100 text-emerald-700' },
-    [ATTENDANCE_STATUS.LATE]: { label: 'Кечикти', className: 'bg-amber-100 text-amber-700' },
-    [ATTENDANCE_STATUS.ABSENT]: { label: 'Келген жок', className: 'bg-red-100 text-red-700' },
-};
-
-const sessionStatusLabels = {
-    [SESSION_ATTENDANCE_STATUS.PRESENT]: 'Катышты',
-    [SESSION_ATTENDANCE_STATUS.LATE]: 'Кечикти',
-    [SESSION_ATTENDANCE_STATUS.ABSENT]: 'Келген жок',
-    [SESSION_ATTENDANCE_STATUS.EXCUSED]: 'Уруксат менен',
-};
-
-const sessionStatusMap = {
-    [SESSION_ATTENDANCE_STATUS.PRESENT]: ATTENDANCE_STATUS.PRESENT,
-    [SESSION_ATTENDANCE_STATUS.LATE]: ATTENDANCE_STATUS.LATE,
-    [SESSION_ATTENDANCE_STATUS.ABSENT]: ATTENDANCE_STATUS.ABSENT,
-    [SESSION_ATTENDANCE_STATUS.EXCUSED]: ATTENDANCE_STATUS.ABSENT,
-};
 
 const UNMARKED_ATTENDANCE_STATUS = '__unmarked__';
 
-const statusOptions = [
-    { value: UNMARKED_ATTENDANCE_STATUS, label: 'Белгилене элек' },
-    ...Object.values(SESSION_ATTENDANCE_STATUS).map((status) => ({
-        value: status,
-        label: sessionStatusLabels[status] || statusMeta[sessionStatusMap[status] || ATTENDANCE_STATUS.ABSENT]?.label || status,
-    })),
-];
+const getSessionStatusLabel = (status, t) =>
+    t(`groupSessions.workspace.attendance.sessionStatus.${status}`, {
+        defaultValue: status,
+    });
 
 const SessionAttendanceTab = ({
     applyAttendanceStatus,
@@ -61,23 +37,43 @@ const SessionAttendanceTab = ({
     updateNotes,
     updateStatus,
     toSessionTime,
-}) => (
-    <>
-        <DashboardInsetPanel
-            title="Катышуу"
-            description="Сессия боюнча катышууну белгилеп, bulk аракеттер менен тез өзгөртүп сактаңыз."
-        >
+}) => {
+    const { t } = useTranslation();
+    const statusOptions = useMemo(
+        () => [
+            {
+                value: UNMARKED_ATTENDANCE_STATUS,
+                label: t('groupSessions.workspace.attendance.filters.unmarked'),
+            },
+            ...Object.values(SESSION_ATTENDANCE_STATUS).map((status) => ({
+                value: status,
+                label: getSessionStatusLabel(status, t),
+            })),
+        ],
+        [t]
+    );
+
+    const sessionModeLabel = selectedSessionMode
+        ? t(`groupSessions.workspace.attendance.sessionModes.${selectedSessionMode}`, { defaultValue: '' })
+        : '';
+
+    return (
+        <>
+            <DashboardInsetPanel
+                title={t('groupSessions.workspace.attendance.title')}
+                description={t('groupSessions.workspace.attendance.description')}
+            >
             <div className="mt-4 space-y-4">
                 <div className="grid gap-3 rounded-[1.25rem] border border-edubot-line/70 bg-white/80 p-4 dark:border-slate-700 dark:bg-slate-950/80 lg:grid-cols-[minmax(0,1fr),auto] lg:items-center">
                     <div className="min-w-0">
                         <p className="text-sm font-semibold text-edubot-ink dark:text-white">
-                            {selectedSession?.title || `Сессия #${selectedSession?.sessionIndex || selectedSession?.id || '—'}`}
+                            {selectedSession?.title || t('groupSessions.workspace.attendance.fallbacks.session', {
+                                value: selectedSession?.sessionIndex || selectedSession?.id || '-',
+                            })}
                         </p>
                         <p className="mt-1 text-xs text-edubot-muted dark:text-slate-400">
-                            {selectedGroup?.name || selectedGroup?.code || 'Группа'} • {selectedSession?.startsAt ? toSessionTime(selectedSession.startsAt) : 'Убакыт жок'}
-                            {selectedSessionMode === 'upcoming' ? ' • Күтүүдө' : ''}
-                            {selectedSessionMode === 'live' ? ' • Түз эфирде' : ''}
-                            {selectedSessionMode === 'completed' ? ' • Аяктаган' : ''}
+                            {selectedGroup?.name || selectedGroup?.code || t('groupSessions.workspace.attendance.fallbacks.group')} • {selectedSession?.startsAt ? toSessionTime(selectedSession.startsAt) : t('groupSessions.workspace.attendance.fallbacks.noTime')}
+                            {sessionModeLabel ? ` • ${sessionModeLabel}` : ''}
                         </p>
                     </div>
                     <div className="grid gap-2 sm:grid-flow-col sm:auto-cols-max sm:justify-start lg:justify-end">
@@ -88,7 +84,9 @@ const SessionAttendanceTab = ({
                                 disabled={importingAttendance || !selectedSessionId}
                                 className="inline-flex min-h-[48px] items-center justify-center whitespace-nowrap rounded-2xl border border-edubot-line bg-white px-4 py-3 text-sm font-semibold text-edubot-ink transition hover:border-edubot-orange/40 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200"
                             >
-                                {importingAttendance ? 'Импорттолууда...' : 'Zoom импорттоо'}
+                                {importingAttendance
+                                    ? t('groupSessions.workspace.attendance.actions.importingZoom')
+                                    : t('groupSessions.workspace.attendance.actions.importZoom')}
                             </button>
                         ) : null}
                         <button
@@ -103,10 +101,10 @@ const SessionAttendanceTab = ({
                             className="inline-flex min-h-[48px] items-center justify-center whitespace-nowrap rounded-2xl bg-edubot-orange px-4 py-3 text-sm font-semibold text-white shadow-[0_12px_30px_rgba(241,126,34,0.25)] transition hover:-translate-y-0.5 hover:bg-edubot-soft disabled:cursor-not-allowed disabled:opacity-60 dark:bg-edubot-orange dark:text-slate-950 dark:hover:bg-edubot-soft"
                         >
                             {savingAttendance
-                                ? 'Сакталууда...'
+                                ? t('groupSessions.workspace.attendance.actions.saving')
                                 : hasAttendanceChanges
-                                  ? 'Катышууну сактоо'
-                                  : 'Өзгөртүү жок'}
+                                  ? t('groupSessions.workspace.attendance.actions.save')
+                                  : t('groupSessions.workspace.attendance.actions.noChanges')}
                         </button>
                     </div>
                 </div>
@@ -116,7 +114,7 @@ const SessionAttendanceTab = ({
                         <input
                             value={attendanceQuery}
                             onChange={(e) => setAttendanceQuery(e.target.value)}
-                            placeholder="Студент издөө"
+                            placeholder={t('groupSessions.workspace.attendance.filters.searchPlaceholder')}
                             className="dashboard-field"
                         />
                         <select
@@ -124,13 +122,13 @@ const SessionAttendanceTab = ({
                             onChange={(e) => setAttendanceFilter(e.target.value)}
                             className="dashboard-field dashboard-select"
                         >
-                            <option value="all">Баары</option>
-                            <option value="unmarked">Белгилене элек</option>
-                            <option value={SESSION_ATTENDANCE_STATUS.PRESENT}>Катышты</option>
-                            <option value={SESSION_ATTENDANCE_STATUS.LATE}>Кечикти</option>
-                            <option value={SESSION_ATTENDANCE_STATUS.ABSENT}>Келген жок</option>
-                            <option value={SESSION_ATTENDANCE_STATUS.EXCUSED}>Уруксат менен</option>
-                            <option value="changed">Өзгөртүлгөндөр</option>
+                            <option value="all">{t('groupSessions.workspace.attendance.filters.all')}</option>
+                            <option value="unmarked">{t('groupSessions.workspace.attendance.filters.unmarked')}</option>
+                            <option value={SESSION_ATTENDANCE_STATUS.PRESENT}>{getSessionStatusLabel(SESSION_ATTENDANCE_STATUS.PRESENT, t)}</option>
+                            <option value={SESSION_ATTENDANCE_STATUS.LATE}>{getSessionStatusLabel(SESSION_ATTENDANCE_STATUS.LATE, t)}</option>
+                            <option value={SESSION_ATTENDANCE_STATUS.ABSENT}>{getSessionStatusLabel(SESSION_ATTENDANCE_STATUS.ABSENT, t)}</option>
+                            <option value={SESSION_ATTENDANCE_STATUS.EXCUSED}>{getSessionStatusLabel(SESSION_ATTENDANCE_STATUS.EXCUSED, t)}</option>
+                            <option value="changed">{t('groupSessions.workspace.attendance.filters.changed')}</option>
                         </select>
                     </div>
                     <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
@@ -145,7 +143,7 @@ const SessionAttendanceTab = ({
                             className="inline-flex min-h-[48px] w-full items-center justify-center rounded-2xl border border-edubot-line bg-white px-4 py-3 text-sm font-semibold text-edubot-ink transition hover:border-edubot-orange/40 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200"
                             disabled={!selectedSessionId}
                         >
-                            Баары катышты
+                            {t('groupSessions.workspace.attendance.bulk.present')}
                         </button>
                         <button
                             type="button"
@@ -158,7 +156,7 @@ const SessionAttendanceTab = ({
                             className="inline-flex min-h-[48px] w-full items-center justify-center rounded-2xl border border-edubot-line bg-white px-4 py-3 text-sm font-semibold text-edubot-ink transition hover:border-edubot-orange/40 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200"
                             disabled={!selectedSessionId}
                         >
-                            Баары кечикти
+                            {t('groupSessions.workspace.attendance.bulk.late')}
                         </button>
                         <button
                             type="button"
@@ -171,7 +169,7 @@ const SessionAttendanceTab = ({
                             className="inline-flex min-h-[48px] w-full items-center justify-center rounded-2xl border border-edubot-line bg-white px-4 py-3 text-sm font-semibold text-edubot-ink transition hover:border-edubot-orange/40 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200"
                             disabled={!selectedSessionId}
                         >
-                            Баары жок
+                            {t('groupSessions.workspace.attendance.bulk.absent')}
                         </button>
                         <button
                             type="button"
@@ -184,30 +182,37 @@ const SessionAttendanceTab = ({
                             className="inline-flex min-h-[48px] w-full items-center justify-center rounded-2xl border border-edubot-line bg-white px-4 py-3 text-sm font-semibold text-edubot-ink transition hover:border-edubot-orange/40 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200"
                             disabled={!selectedSessionId}
                         >
-                            Көрсөтүлгөндөрдү тазалоо
+                            {t('groupSessions.workspace.attendance.bulk.clearVisible')}
                         </button>
                     </div>
                 </div>
 
                 <div className="flex flex-wrap gap-2 text-xs text-edubot-muted dark:text-slate-400">
                     <span className="rounded-full bg-edubot-surface px-3 py-1 dark:bg-slate-900">
-                        Көрсөтүлгөндөр: {filteredStudents.length}
+                        {t('groupSessions.workspace.attendance.counters.visible', { count: filteredStudents.length })}
                     </span>
                     <span className="rounded-full bg-edubot-surface px-3 py-1 dark:bg-slate-900">
-                        Белгилене элек: {attendanceStats.unmarked}
+                        {t('groupSessions.workspace.attendance.counters.unmarked', { count: attendanceStats.unmarked })}
                     </span>
                     <span className="rounded-full bg-edubot-surface px-3 py-1 dark:bg-slate-900">
-                        Сакталбаган: {hasAttendanceChanges ? 'ооба' : 'жок'}
+                        {t('groupSessions.workspace.attendance.counters.unsaved', {
+                            value: hasAttendanceChanges
+                                ? t('groupSessions.workspace.attendance.values.yes')
+                                : t('groupSessions.workspace.attendance.values.no'),
+                        })}
                     </span>
                     <span className="rounded-full bg-edubot-surface px-3 py-1 dark:bg-slate-900">
-                        Белгиленгендер: {attendanceStats.marked}/{attendanceStats.total}
+                        {t('groupSessions.workspace.attendance.counters.marked', {
+                            marked: attendanceStats.marked,
+                            total: attendanceStats.total,
+                        })}
                     </span>
                     <span className="rounded-full bg-edubot-surface px-3 py-1 dark:bg-slate-900">
-                        Катышуу үлүшү: {attendanceStats.presentRate}%
+                        {t('groupSessions.workspace.attendance.counters.presentRate', { value: attendanceStats.presentRate })}
                     </span>
                 </div>
             </div>
-        </DashboardInsetPanel>
+            </DashboardInsetPanel>
 
         <div
             className={`rounded-[1.25rem] border px-4 py-3 text-sm ${
@@ -217,25 +222,25 @@ const SessionAttendanceTab = ({
             }`}
         >
             {hasAttendanceChanges
-                ? 'Өзгөртүүлөр али сактала элек. Сактоо баскычы учурдагы сессия үчүн бардык белгилөөлөрдү сактайт.'
-                : 'Катышуу абалы сакталган. Bulk аракеттер издөө жана фильтрден өткөн студенттерге гана колдонулат.'}
+                ? t('groupSessions.workspace.attendance.unsavedMessage')
+                : t('groupSessions.workspace.attendance.savedMessage')}
         </div>
 
         {!selectedSessionId ? (
             <div className="dashboard-panel-muted p-10 text-center text-sm text-edubot-muted dark:text-slate-400">
-                Катышууну белгилөө үчүн адегенде сессияны тандаңыз.
+                {t('groupSessions.workspace.attendance.empty.selectSession')}
             </div>
         ) : loadingStudents ? (
             <div className="dashboard-panel-muted p-10 text-center text-sm text-edubot-muted dark:text-slate-400">
-                Студенттер жүктөлүүдө...
+                {t('groupSessions.workspace.attendance.empty.loadingStudents')}
             </div>
         ) : students.length === 0 ? (
             <div className="dashboard-panel-muted p-10 text-center text-sm text-edubot-muted dark:text-slate-400">
-                Студент табылган жок.
+                {t('groupSessions.workspace.attendance.empty.noStudents')}
             </div>
         ) : filteredStudents.length === 0 ? (
             <div className="dashboard-panel-muted p-10 text-center text-sm text-edubot-muted dark:text-slate-400">
-                Бул фильтр боюнча студент табылган жок.
+                {t('groupSessions.workspace.attendance.empty.noFilteredStudents')}
             </div>
         ) : (
             <div className="space-y-3">
@@ -262,7 +267,7 @@ const SessionAttendanceTab = ({
                                             {student.fullName}
                                         </h3>
                                         <p className="mt-1 text-xs text-edubot-muted dark:text-slate-400">
-                                            Ушул сессия үчүн катышуу статусун тандаңыз.
+                                            {t('groupSessions.workspace.attendance.studentStatusHelper')}
                                         </p>
                                     </div>
                                 </div>
@@ -289,7 +294,7 @@ const SessionAttendanceTab = ({
                                         value={attendanceRows[student.id]?.notes || ''}
                                         onChange={(e) => updateNotes(student.id, e.target.value)}
                                         className="dashboard-field"
-                                        placeholder="Эскертүү"
+                                        placeholder={t('groupSessions.workspace.attendance.notesPlaceholder')}
                                     />
                                 </div>
                             </div>
@@ -298,8 +303,9 @@ const SessionAttendanceTab = ({
                 })}
             </div>
         )}
-    </>
-);
+        </>
+    );
+};
 
 SessionAttendanceTab.propTypes = {
     applyAttendanceStatus: PropTypes.func.isRequired,

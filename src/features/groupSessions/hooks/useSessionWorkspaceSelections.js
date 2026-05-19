@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'react-hot-toast';
+import { useTranslation } from 'react-i18next';
 import { COURSE_TYPE } from '@shared/contracts';
 import {
     fetchCourseGroups,
@@ -8,10 +9,15 @@ import {
 } from '@services/api';
 import {
     getWorkspaceErrorMessage,
+    getWorkspaceErrorStatusMessages,
     toArray,
 } from '@features/groupSessions/utils/sessionWorkspace.helpers';
 
 export const useSessionWorkspaceSelections = ({ user, pendingRouteSelectionRef, onNotice }) => {
+    const { t } = useTranslation();
+    const workspaceErrorStatusMessages = useMemo(() => getWorkspaceErrorStatusMessages(t), [t]);
+    const tRef = useRef(t);
+    const workspaceErrorStatusMessagesRef = useRef(workspaceErrorStatusMessages);
     const [courses, setCourses] = useState([]);
     const [sourceVideoCourses, setSourceVideoCourses] = useState([]);
     const [groups, setGroups] = useState([]);
@@ -22,6 +28,11 @@ export const useSessionWorkspaceSelections = ({ user, pendingRouteSelectionRef, 
     const [loadingCourses, setLoadingCourses] = useState(false);
     const [loadingGroups, setLoadingGroups] = useState(false);
     const [loadingSessions, setLoadingSessions] = useState(false);
+
+    useEffect(() => {
+        tRef.current = t;
+        workspaceErrorStatusMessagesRef.current = workspaceErrorStatusMessages;
+    }, [t, workspaceErrorStatusMessages]);
 
     useEffect(() => {
         if (!user?.id || user.role !== 'instructor') return;
@@ -73,10 +84,11 @@ export const useSessionWorkspaceSelections = ({ user, pendingRouteSelectionRef, 
                 });
             } catch (error) {
                 console.error(error);
-                const message = getWorkspaceErrorMessage(error, 'Курстар жүктөлгөн жок.');
+                const translate = tRef.current;
+                const message = getWorkspaceErrorMessage(error, translate('groupSessions.workspace.selections.toasts.coursesLoadError'), workspaceErrorStatusMessagesRef.current);
                 toast.error(message);
                 if (!cancelled) {
-                    onNotice?.({ tone: 'error', title: 'Курстар жүктөлгөн жок', message });
+                    onNotice?.({ tone: 'error', title: translate('groupSessions.workspace.selections.notices.coursesLoadTitle'), message });
                     setSourceVideoCourses([]);
                 }
             } finally {
@@ -127,10 +139,11 @@ export const useSessionWorkspaceSelections = ({ user, pendingRouteSelectionRef, 
                 });
             } catch (error) {
                 console.error(error);
-                const message = getWorkspaceErrorMessage(error, 'Группаларды жүктөө мүмкүн болгон жок.');
+                const translate = tRef.current;
+                const message = getWorkspaceErrorMessage(error, translate('groupSessions.workspace.selections.toasts.groupsLoadError'), workspaceErrorStatusMessagesRef.current);
                 toast.error(message);
                 if (!cancelled) {
-                    onNotice?.({ tone: 'error', title: 'Группалар жүктөлгөн жок', message });
+                    onNotice?.({ tone: 'error', title: translate('groupSessions.workspace.selections.notices.groupsLoadTitle'), message });
                     setGroups([]);
                     setSelectedGroupId('');
                 }
@@ -178,10 +191,11 @@ export const useSessionWorkspaceSelections = ({ user, pendingRouteSelectionRef, 
                 });
             } catch (error) {
                 console.error(error);
-                const message = getWorkspaceErrorMessage(error, 'Сессияларды жүктөө мүмкүн болгон жок.');
+                const translate = tRef.current;
+                const message = getWorkspaceErrorMessage(error, translate('groupSessions.workspace.selections.toasts.sessionsLoadError'), workspaceErrorStatusMessagesRef.current);
                 toast.error(message);
                 if (!cancelled) {
-                    onNotice?.({ tone: 'error', title: 'Сессиялар жүктөлгөн жок', message });
+                    onNotice?.({ tone: 'error', title: translate('groupSessions.workspace.selections.notices.sessionsLoadTitle'), message });
                     setSessions([]);
                     setSelectedSessionId('');
                 }

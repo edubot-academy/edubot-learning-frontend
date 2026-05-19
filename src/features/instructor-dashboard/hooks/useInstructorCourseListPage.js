@@ -25,7 +25,7 @@ export const useInstructorCourseListPage = (user) => {
             });
             setCourses(Array.isArray(response?.courses) ? response.courses : []);
         } catch (loadError) {
-            console.error('Курстарды алуу ишке ашкан жок', loadError);
+            console.error('Failed to load instructor courses', loadError);
             setCourses([]);
             setError(loadError);
         } finally {

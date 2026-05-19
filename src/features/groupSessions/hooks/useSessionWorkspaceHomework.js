@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'react-hot-toast';
+import { useTranslation } from 'react-i18next';
 import {
     createSessionHomework,
     deleteSessionHomework,
@@ -10,15 +11,16 @@ import {
 } from '@services/api';
 import {
     getWorkspaceErrorMessage,
+    getWorkspaceErrorStatusMessages,
     resolveHomeworkDeadline,
     toArray,
 } from '@features/groupSessions/utils/sessionWorkspace.helpers';
 
-const getHomeworkDeadlineMeta = (item, nowMs) => {
+const getHomeworkDeadlineMeta = (item, nowMs, t) => {
     const raw = resolveHomeworkDeadline(item);
     if (!raw) {
         return {
-            label: 'Мөөнөт жок',
+            label: t('groupSessions.workspace.homework.deadlineStates.noDeadline'),
             badgeClass:
                 'border-edubot-line bg-white text-edubot-muted dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300',
             sortValue: Number.MAX_SAFE_INTEGER,
@@ -30,7 +32,7 @@ const getHomeworkDeadlineMeta = (item, nowMs) => {
     const deadlineMs = new Date(normalized).getTime();
     if (Number.isNaN(deadlineMs)) {
         return {
-            label: 'Мөөнөт белгисиз',
+            label: t('groupSessions.workspace.homework.deadlineStates.unknown'),
             badgeClass:
                 'border-edubot-line bg-white text-edubot-muted dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300',
             sortValue: Number.MAX_SAFE_INTEGER - 1,
@@ -41,7 +43,7 @@ const getHomeworkDeadlineMeta = (item, nowMs) => {
     const daysLeft = Math.ceil((deadlineMs - nowMs) / (1000 * 60 * 60 * 24));
     if (deadlineMs < nowMs) {
         return {
-            label: 'Өтүп кеткен',
+            label: t('groupSessions.workspace.homework.deadlineStates.overdue'),
             badgeClass:
                 'border-red-200 bg-red-50 text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300',
             sortValue: deadlineMs,
@@ -50,7 +52,7 @@ const getHomeworkDeadlineMeta = (item, nowMs) => {
     }
     if (daysLeft <= 3) {
         return {
-            label: 'Жакында бүтөт',
+            label: t('groupSessions.workspace.homework.deadlineStates.dueSoon'),
             badgeClass:
                 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300',
             sortValue: deadlineMs,
@@ -59,7 +61,7 @@ const getHomeworkDeadlineMeta = (item, nowMs) => {
     }
 
     return {
-        label: 'Активдүү',
+        label: t('groupSessions.workspace.homework.deadlineStates.active'),
         badgeClass:
             'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300',
         sortValue: deadlineMs,
@@ -74,6 +76,8 @@ export const useSessionWorkspaceHomework = ({
     students,
     onRefreshInsights,
 }) => {
+    const { t } = useTranslation();
+    const workspaceErrorStatusMessages = useMemo(() => getWorkspaceErrorStatusMessages(t), [t]);
     const [publishedHomework, setPublishedHomework] = useState([]);
     const [homeworkLoadedSessionId, setHomeworkLoadedSessionId] = useState('');
     const [loadingHomework, setLoadingHomework] = useState(false);
@@ -132,7 +136,7 @@ export const useSessionWorkspaceHomework = ({
             } catch (error) {
                 if (cancelled) return;
                 console.error(error);
-                toast.error(getWorkspaceErrorMessage(error, 'Үй тапшырмалар жүктөлгөн жок.'));
+                toast.error(getWorkspaceErrorMessage(error, t('groupSessions.workspace.homework.toasts.loadError'), workspaceErrorStatusMessages));
                 setPublishedHomework([]);
                 setHomeworkLoadedSessionId('');
                 setSelectedHomeworkId('');
@@ -145,7 +149,7 @@ export const useSessionWorkspaceHomework = ({
         return () => {
             cancelled = true;
         };
-    }, [pendingRouteSelectionRef, selectedSessionId]);
+    }, [pendingRouteSelectionRef, selectedSessionId, t, workspaceErrorStatusMessages]);
 
     const selectedHomework = useMemo(
         () =>
@@ -176,7 +180,7 @@ export const useSessionWorkspaceHomework = ({
             } catch (error) {
                 if (cancelled) return;
                 console.error(error);
-                toast.error(getWorkspaceErrorMessage(error, 'Текшерүү тизмеси жүктөлгөн жок.'));
+                toast.error(getWorkspaceErrorMessage(error, t('groupSessions.workspace.homework.toasts.reviewRosterLoadError'), workspaceErrorStatusMessages));
                 setHomeworkSubmissions([]);
             } finally {
                 if (!cancelled) setLoadingHomeworkSubmissions(false);
@@ -187,17 +191,17 @@ export const useSessionWorkspaceHomework = ({
         return () => {
             cancelled = true;
         };
-    }, [homeworkLoadedSessionId, selectedHomework, selectedSessionId]);
+    }, [homeworkLoadedSessionId, selectedHomework, selectedSessionId, t, workspaceErrorStatusMessages]);
 
     const homeworkCards = useMemo(
         () =>
             publishedHomework
                 .map((item) => ({
                     ...item,
-                    deadlineMeta: getHomeworkDeadlineMeta(item, nowMs),
+                    deadlineMeta: getHomeworkDeadlineMeta(item, nowMs, t),
                 }))
                 .sort((a, b) => a.deadlineMeta.sortValue - b.deadlineMeta.sortValue),
-        [publishedHomework, nowMs]
+        [publishedHomework, nowMs, t]
     );
 
     const filteredHomework = useMemo(() => {
@@ -228,8 +232,8 @@ export const useSessionWorkspaceHomework = ({
     }, [homeworkCards]);
 
     const selectedHomeworkMeta = useMemo(
-        () => (selectedHomework ? getHomeworkDeadlineMeta(selectedHomework, nowMs) : null),
-        [selectedHomework, nowMs]
+        () => (selectedHomework ? getHomeworkDeadlineMeta(selectedHomework, nowMs, t) : null),
+        [selectedHomework, nowMs, t]
     );
 
     const submissionStats = useMemo(() => {
@@ -263,11 +267,11 @@ export const useSessionWorkspaceHomework = ({
         const description = String(homework.description || '').trim();
 
         if (!title) {
-            toast.error('Үй тапшырманын аталышын жазыңыз.');
+            toast.error(t('groupSessions.workspace.homework.validation.titleRequired'));
             return false;
         }
         if (!selectedSessionId) {
-            toast.error('Алгач сессия тандаңыз.');
+            toast.error(t('groupSessions.workspace.homework.validation.selectSessionFirst'));
             return false;
         }
 
@@ -284,11 +288,11 @@ export const useSessionWorkspaceHomework = ({
 
             await refreshHomeworkList();
             await onRefreshInsights?.();
-            toast.success('Үй тапшырма жарыяланды.');
+            toast.success(t('groupSessions.workspace.homework.toasts.published'));
             return true;
         } catch (error) {
             console.error(error);
-            toast.error(getWorkspaceErrorMessage(error, 'Үй тапшырманы жарыялоо катасы'));
+            toast.error(getWorkspaceErrorMessage(error, t('groupSessions.workspace.homework.toasts.publishError'), workspaceErrorStatusMessages));
             return false;
         } finally {
             setSavingHomework(false);
@@ -306,7 +310,7 @@ export const useSessionWorkspaceHomework = ({
             return true;
         } catch (error) {
             console.error(error);
-            toast.error(getWorkspaceErrorMessage(error, 'Үй тапшырманы жаңыртуу катасы'));
+            toast.error(getWorkspaceErrorMessage(error, t('groupSessions.workspace.homework.toasts.updateError'), workspaceErrorStatusMessages));
             throw error;
         } finally {
             setUpdatingHomework(false);
@@ -332,11 +336,11 @@ export const useSessionWorkspaceHomework = ({
             );
             setHomeworkSubmissions(toArray(refreshed?.items));
             await onRefreshInsights?.();
-            toast.success('Тапшырма жооп статусу жаңыртылды.');
+            toast.success(t('groupSessions.workspace.homework.toasts.reviewUpdated'));
             return true;
         } catch (error) {
             console.error(error);
-            toast.error(getWorkspaceErrorMessage(error, 'Тапшырма жоопун баалоо катасы'));
+            toast.error(getWorkspaceErrorMessage(error, t('groupSessions.workspace.homework.toasts.reviewError'), workspaceErrorStatusMessages));
             return false;
         } finally {
             setReviewingSubmissionId('');
@@ -353,11 +357,13 @@ export const useSessionWorkspaceHomework = ({
 
             await refreshHomeworkList();
             await onRefreshInsights?.();
-            toast.success(!currentStatus ? 'Үй тапшырма жарыяланды.' : 'Үй тапшырма жарыялоодон алынды.');
+            toast.success(!currentStatus
+                ? t('groupSessions.workspace.homework.toasts.published')
+                : t('groupSessions.workspace.homework.toasts.unpublished'));
             return true;
         } catch (error) {
             console.error(error);
-            toast.error(getWorkspaceErrorMessage(error, 'Үй тапшырма статусун өзгөртүү катасы'));
+            toast.error(getWorkspaceErrorMessage(error, t('groupSessions.workspace.homework.toasts.statusError'), workspaceErrorStatusMessages));
             return false;
         }
     };

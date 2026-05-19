@@ -1,6 +1,7 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import i18n from '../i18n';
 import { AuthContext } from '../context/AuthContext';
 import InternalLeaderboard from './InternalLeaderboard';
 
@@ -29,8 +30,9 @@ const defaultCourses = [
 ];
 
 describe('InternalLeaderboard', () => {
-    beforeEach(() => {
+    beforeEach(async () => {
         vi.clearAllMocks();
+        await i18n.changeLanguage('ky');
         apiMocks.fetchCourses.mockResolvedValue({ items: defaultCourses });
         apiMocks.fetchInstructorCourses.mockResolvedValue({ items: defaultCourses });
         apiMocks.fetchStudentCourses.mockResolvedValue({ items: defaultCourses });

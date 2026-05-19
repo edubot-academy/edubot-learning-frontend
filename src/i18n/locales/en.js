@@ -45,6 +45,57 @@ export const en = {
         qrAlt: 'QR code for {{brand}} website',
         copyright: '© {{year}} EduBot Learning. All rights reserved.',
     },
+    chatRedirect: {
+        title: 'Chat section was not found',
+        description:
+            'A direct chat route is not configured for this account. Return to your dashboard and choose an available messages or support section.',
+        actions: {
+            dashboard: 'Return to dashboard',
+            support: 'Support',
+        },
+    },
+    unauthorized: {
+        eyebrow: 'Access restricted',
+        title: 'You do not have permission to open this page',
+        signedInAs: 'You are currently signed in as {{role}}.',
+        signInPrompt: 'Sign in to continue or choose the correct account.',
+        reasons: {
+            role: 'This section may be available only for another role.',
+            enrollment: 'Your access to this course or organization may not be active yet.',
+            session: 'If your session expired, sign in again.',
+            default: 'The section you tried to open is closed for your current account.',
+        },
+        roles: {
+            student: 'student',
+            instructor: 'instructor',
+            assistant: 'assistant',
+            admin: 'administrator',
+            superadmin: 'super admin',
+            account: 'account',
+        },
+        actions: {
+            dashboard: 'Return to dashboard',
+            login: 'Log in',
+            courses: 'View courses',
+            back: 'Go back',
+            support: 'Contact support',
+        },
+        guidance: {
+            title: 'What can you do?',
+            role: {
+                title: 'Check your role',
+                description: 'This section may be open only to one of the student, instructor, assistant, or admin roles.',
+            },
+            account: {
+                title: 'Switch account',
+                description: 'If you use another account, log out and sign in again with the correct account.',
+            },
+            access: {
+                title: 'Request access',
+                description: 'If you need course, company, or admin-panel access, contact an administrator or support team.',
+            },
+        },
+    },
     errors: {
         generic: 'A server error occurred.',
         CSRF_TOKEN_INVALID: 'Session security was refreshed. Try again.',
@@ -155,6 +206,155 @@ export const en = {
             quickActions: 'Quick actions',
         },
     },
+    ratings: {
+        card: {
+            fallbackInstructor: 'Instructor',
+            fallbackTitle: 'Instructor',
+            fallbackSpecialty: 'Practical lessons',
+            newRating: 'New rating',
+            topInstructor: 'Top instructor',
+            ratingAria: 'Rating {{rating}}',
+            reviews: 'Reviews',
+            students: 'Students',
+        },
+        comment: {
+            toasts: {
+                courseMissing: 'Course was not found.',
+                ratingRequired: 'Choose a rating first.',
+                commentTooShort: 'Review must be at least 5 characters.',
+                submitted: 'Review submitted successfully.',
+                submitError: 'Could not submit the review. Try again.',
+            },
+            starAria: '{{count}} stars',
+            success: {
+                title: 'Thank you for your review.',
+                description:
+                    'Your feedback helps other students choose a course and helps us improve our courses.',
+                yourRating: 'Your rating:',
+            },
+            form: {
+                title: 'How was the course? Leave a review',
+                descriptionLine1: 'Your feedback helps other students choose a course.',
+                descriptionLine2: 'Your opinion is very valuable to us.',
+                placeholder: 'Write about your experience...',
+                minimum: 'Minimum: 5 characters. You wrote: {{count}}.',
+                rating: 'Rating: {{rating}} / 5',
+            },
+            actions: {
+                sending: 'Sending...',
+                submit: 'Submit',
+            },
+        },
+    },
+    certificates: {
+        download: {
+            eyebrow: 'Certificate PDF',
+            title: 'Certificate is downloading',
+            description:
+                'We are preparing the PDF file. If the browser blocks the download, you can try again from this page.',
+            status: {
+                failed: 'Download failed',
+                ready: 'Download started',
+                preparing: 'PDF is being prepared',
+            },
+            messages: {
+                failedTitle: 'We could not download the certificate right now',
+                readyTitle: 'The file should download through your browser',
+                preparingTitle: 'Certificate file is being prepared',
+                readyDescription: 'If the file is not visible, check your browser downloads or try downloading again.',
+                preparingDescription: 'This usually takes only a few seconds. Keep this page open.',
+            },
+            errors: {
+                missingId: 'Certificate identifier was not found.',
+                downloadFailed:
+                    'PDF did not download. The browser may have blocked the download or the certificate is unavailable right now.',
+            },
+            actions: {
+                preparing: 'Preparing',
+                retry: 'Download again',
+                openVerification: 'Open verification page',
+                home: 'Back to home',
+            },
+            labels: {
+                certificateId: 'Certificate ID',
+            },
+        },
+        verification: {
+            hero: {
+                eyebrow: 'EduBot Learning registry',
+                title: 'Certificate verification',
+                description:
+                    'This page explains the current status of a certificate in the EduBot Learning registry for external verification.',
+            },
+            loading: 'Loading verification information...',
+            status: {
+                issued: {
+                    label: 'Verified',
+                    description: 'This certificate is active and valid in the EduBot Learning registry.',
+                    guidance: 'A third party can use this record to confirm that the student successfully completed the course.',
+                },
+                pending: {
+                    label: 'Pending',
+                    description: 'A certificate record exists, but final approval is not complete yet.',
+                    guidance: 'Do not use this state as final official proof. Check again later or contact EduBot support.',
+                },
+                revoked: {
+                    label: 'Revoked',
+                    description: 'This certificate was previously issued, but it is no longer valid.',
+                    guidance: 'A revoked certificate should not be accepted as proof of completion.',
+                },
+                rejected: {
+                    label: 'Rejected',
+                    description: 'This certificate request was rejected and was not issued as a valid certificate.',
+                    guidance: 'This record is not an official certificate. Contact EduBot support if the information looks incorrect.',
+                },
+            },
+            error: {
+                title: 'Certificate could not be verified',
+                description:
+                    'Check the link again. If this should be an official certificate, contact EduBot Learning support.',
+            },
+            errors: {
+                missingId: 'Certificate identifier was not found.',
+                notFound: 'Certificate was not found or cannot be verified through this link.',
+            },
+            labels: {
+                certificateId: 'Certificate ID',
+                partner: 'Partner',
+                student: 'Student',
+                course: 'Course',
+                issuedAt: 'Issued date',
+                signer: 'Signer',
+                verificationLink: 'Verification link',
+                registryOwner: 'Registry owner',
+                registryOwnerHelper: 'The primary party that issued and verifies this certificate.',
+            },
+            official: {
+                title: 'Official verification',
+                registry: 'EduBot Learning registry',
+                description:
+                    'This record relies on the EduBot Learning verification registry, not a QR code or third-party service.',
+            },
+            actions: {
+                contactSupport: 'Contact support',
+                home: 'Back to home',
+                copyLink: 'Copy link',
+                copied: 'Copied',
+                open: 'Open',
+            },
+            copy: {
+                missing: 'The verification link is not shown right now.',
+                unsupported: 'This browser does not support automatic copying. Copy the link manually below.',
+                failed: 'Could not copy the link. Copy the text below manually.',
+            },
+            fallbacks: {
+                notSpecified: 'Not specified',
+                certificate: 'Certificate',
+                noLink: 'Link not shown',
+            },
+            revokedAt: 'Revoked on {{date}}.',
+        },
+    },
     groupSessions: {
         workspace: {
             tabs: {
@@ -195,6 +395,108 @@ export const en = {
                     responseSaveError: 'Could not save the activity response.',
                 },
             },
+            attendance: {
+                title: 'Attendance',
+                description: 'Mark session attendance and use bulk actions to update and save faster.',
+                sessionStatus: {
+                    present: 'Present',
+                    late: 'Late',
+                    absent: 'Absent',
+                    excused: 'Excused',
+                },
+                sessionModes: {
+                    upcoming: 'Upcoming',
+                    live: 'Live',
+                    completed: 'Completed',
+                },
+                fallbacks: {
+                    session: 'Session #{{value}}',
+                    group: 'Group',
+                    noTime: 'No time',
+                },
+                actions: {
+                    importingZoom: 'Importing...',
+                    importZoom: 'Import Zoom',
+                    saving: 'Saving...',
+                    save: 'Save attendance',
+                    noChanges: 'No changes',
+                },
+                filters: {
+                    searchPlaceholder: 'Search students',
+                    all: 'All',
+                    unmarked: 'Unmarked',
+                    changed: 'Changed',
+                },
+                bulk: {
+                    present: 'Mark all present',
+                    late: 'Mark all late',
+                    absent: 'Mark all absent',
+                    clearVisible: 'Clear visible',
+                },
+                counters: {
+                    visible: 'Visible: {{count}}',
+                    unmarked: 'Unmarked: {{count}}',
+                    unsaved: 'Unsaved: {{value}}',
+                    marked: 'Marked: {{marked}}/{{total}}',
+                    presentRate: 'Attendance rate: {{value}}%',
+                },
+                values: {
+                    yes: 'yes',
+                    no: 'no',
+                },
+                unsavedMessage: 'Changes are not saved yet. The save button stores all marks for the current session.',
+                savedMessage: 'Attendance is saved. Bulk actions only apply to students matching the current search and filter.',
+                empty: {
+                    selectSession: 'Select a session before marking attendance.',
+                    loadingStudents: 'Students are loading...',
+                    noStudents: 'No students found.',
+                    noFilteredStudents: 'No students found for this filter.',
+                },
+                studentStatusHelper: 'Choose the attendance status for this session.',
+                notesPlaceholder: 'Note',
+                toasts: {
+                    loadError: 'Could not load session data.',
+                    selectSession: 'Select a session before saving attendance.',
+                    noChanges: 'No changes.',
+                    saved: 'Attendance was saved for this session.',
+                    saveError: 'Could not save attendance.',
+                },
+                notices: {
+                    noSessionTitle: 'No session selected',
+                    noSessionMessage: 'Select an active session before saving attendance.',
+                    unmarkedTitle: 'Attendance is incomplete',
+                    unmarkedMessage: 'Select attendance status for {{count}} students first.',
+                    noChangesTitle: 'No changes',
+                    noChangesMessage: 'The attendance list matches the saved state.',
+                    savedTitle: 'Attendance saved',
+                    savedMessage: 'Attendance was updated for this active session.',
+                    saveFailedTitle: 'Attendance was not saved',
+                },
+            },
+            homework: {
+                deadlineStates: {
+                    noDeadline: 'No deadline',
+                    unknown: 'Deadline unknown',
+                    overdue: 'Overdue',
+                    dueSoon: 'Due soon',
+                    active: 'Active',
+                },
+                validation: {
+                    titleRequired: 'Enter the homework title.',
+                    selectSessionFirst: 'Select a session first.',
+                },
+                toasts: {
+                    loadError: 'Could not load homework.',
+                    reviewRosterLoadError: 'Could not load the review roster.',
+                    published: 'Homework published.',
+                    unpublished: 'Homework unpublished.',
+                    publishError: 'Could not publish homework.',
+                    updateError: 'Could not update homework.',
+                    reviewUpdated: 'Submission review status updated.',
+                    reviewError: 'Could not review the submission.',
+                    statusError: 'Could not update homework status.',
+                },
+            },
             resources: {
                 fallbacks: {
                     lessonVideo: 'Lesson video',
@@ -217,6 +519,18 @@ export const en = {
                     zoomRecordingsSynced: 'Zoom recordings synced.',
                     recordingsSyncError: 'Could not sync recordings.',
                     meetingLinkMissing: 'Meeting link was not found.',
+                },
+            },
+            selections: {
+                toasts: {
+                    coursesLoadError: 'Could not load courses.',
+                    groupsLoadError: 'Could not load groups.',
+                    sessionsLoadError: 'Could not load sessions.',
+                },
+                notices: {
+                    coursesLoadTitle: 'Courses did not load',
+                    groupsLoadTitle: 'Groups did not load',
+                    sessionsLoadTitle: 'Sessions did not load',
                 },
             },
         },
@@ -858,6 +1172,214 @@ export const en = {
             },
         },
     },
+    internalLeaderboard: {
+        trackSwitcherLabel: 'Choose leaderboard track',
+        currentView: 'Current view',
+        tracks: {
+            all: {
+                label: 'All',
+                helper: 'Overall activity',
+            },
+            video: {
+                label: 'Video',
+                helper: 'Self-paced learning',
+            },
+            live: {
+                label: 'Live',
+                helper: 'Session-based learning',
+            },
+        },
+        roles: {
+            student: {
+                eyebrow: 'Student Ranking',
+                title: 'My internal ranking',
+                description: 'Compare your place, course leaders, and this week’s activity.',
+                courseLabel: 'My courses',
+                courseDescription: 'Compare leaders in the courses you are taking.',
+            },
+            instructor: {
+                eyebrow: 'Instructor Ranking',
+                title: 'Student ranking',
+                description: 'Track active students, student of the week, and course pace in your courses.',
+                courseLabel: 'My courses',
+                courseDescription: 'Select a course to see active students inside that course.',
+            },
+            admin: {
+                eyebrow: 'Admin Ranking',
+                title: 'Platform ranking',
+                description: 'Review weekly platform activity, homepage leaders, and course rankings.',
+                courseLabel: 'Platform courses',
+                courseDescription: 'Check the internal ranking for any course.',
+            },
+            default: {
+                eyebrow: 'Leaderboard workspace',
+                title: 'Internal ranking',
+                description: 'See weekly leaders, student of the week, and course rankings here.',
+                courseLabel: 'Course boards',
+                courseDescription: 'Compare top students inside the selected course.',
+            },
+        },
+        metrics: {
+            weekly: 'Weekly leaders',
+            homepage: 'Homepage top students',
+            studentOfWeek: 'Student of the week',
+        },
+        row: {
+            streakDays: '🔥 {{count}} days',
+            quizCount: '{{count}} tests',
+        },
+        weekly: {
+            title: 'Weekly ranking',
+            description: 'Currently most active students.',
+            emptyTitle: 'No leaders found',
+            emptySubtitle: 'There is no ranking data for the selected track yet.',
+        },
+        studentOfWeek: {
+            title: 'Student of the week',
+            description: 'The highlighted participant of the week and homepage top students.',
+            emptyTitle: 'No student of the week',
+            emptySubtitle: 'No highlighted student has been determined for this track yet.',
+        },
+        homepage: {
+            title: 'Homepage top students',
+            emptyTitle: 'No homepage data',
+            emptySubtitle: 'There are no homepage leaders for the selected track.',
+        },
+        courseBoard: {
+            title: 'Course ranking',
+            description: 'Compare top students inside the selected course.',
+            courseLabel: 'Course',
+            selectCourse: 'Select course',
+            noCourseTitle: 'No course selected',
+            noCourseSubtitle: 'Select a course above to view its internal ranking.',
+            noDataTitle: 'No data',
+            noDataSubtitle: 'Ranking is not available for this course and track combination yet.',
+        },
+        fallbacks: {
+            student: 'Student',
+            course: 'Course',
+        },
+        errors: {
+            coursesLoad: 'Could not load courses.',
+            leaderboardLoad: 'Could not load internal leaderboard data.',
+            courseBoardLoad: 'Course ranking is not loading right now.',
+        },
+    },
+    instructorHomework: {
+        hero: {
+            eyebrow: 'Homework Queue',
+            title: 'Homework queue',
+            description:
+                'Find which course, group, and session need action. The full review workflow opens inside the related session homework tab.',
+        },
+        metrics: {
+            total: 'Total',
+            actionRequired: 'Needs action',
+            missing: 'Not submitted',
+            needsRevision: 'Needs revision',
+        },
+        filters: {
+            title: 'Filters',
+            description:
+                'Narrow the queue by course, group, status, and search. Click metric cards to select the related status automatically.',
+            status: 'Status',
+            results: 'Results',
+            allCourses: 'All courses',
+            allGroups: 'All groups',
+            searchPlaceholder: 'Search',
+            limitPlaceholder: 'Limit',
+        },
+        filterOptions: {
+            all: 'All',
+            needsReview: 'Needs review',
+            missing: 'Not submitted',
+            needsRevision: 'Needs revision',
+            late: 'Late',
+            draft: 'Draft',
+            active: 'Active',
+            dueSoon: 'Due soon',
+            overdue: 'Overdue',
+            checked: 'Checked',
+            noDeadline: 'No deadline',
+        },
+        states: {
+            draft: 'Draft',
+            needsReview: 'Needs review',
+            missing: 'Not submitted',
+            needsRevision: 'Needs revision',
+            late: 'Late',
+            checked: 'Checked',
+            noDeadline: 'No deadline',
+            unknown: 'Unknown',
+            overdue: 'Overdue',
+            dueSoon: 'Due soon',
+            active: 'Active',
+        },
+        nextActions: {
+            title: 'Next actions',
+            description:
+                'The queue is sorted by urgency: review, missing submissions, revisions, and late answers appear first.',
+            priorityCount: '{{count}} priority',
+        },
+        queueActions: {
+            needsReview: {
+                label: 'Review first',
+                description: '{{count}} answers are waiting for instructor review.',
+            },
+            missing: {
+                label: 'Follow up on missing submissions',
+                description: '{{count}} students have not submitted the task.',
+            },
+            needsRevision: {
+                label: 'Review revisions again',
+                description: '{{count}} answers are waiting after revision.',
+            },
+            late: {
+                label: 'Check late submissions',
+                description: '{{count}} answers arrived after the deadline.',
+            },
+            default: {
+                label: 'Monitor',
+                description: 'There is no urgent action for this task right now.',
+            },
+        },
+        tasks: {
+            title: 'Tasks',
+            description: 'Results for the selected filters appear here.',
+        },
+        empty: {
+            title: 'No homework found',
+            subtitle: 'Try changing the course or group filters, or clear the search query.',
+        },
+        queue: {
+            title: 'Queued homework',
+            description: 'Each card links to the related session and opens the full review workflow.',
+            recordCount: '{{count}} records',
+        },
+        card: {
+            actionRequired: 'Needs action',
+            needsReview: 'Needs review',
+            missing: 'Not submitted',
+            needsRevision: 'Needs revision',
+            late: 'Late',
+        },
+        actions: {
+            openSession: 'Open in session',
+        },
+        fallbacks: {
+            homework: 'Homework',
+            noSession: 'No session specified',
+            noDeadline: 'No deadline set',
+        },
+        errors: {
+            unauthorized: 'Your session expired. Sign in again.',
+            forbidden: 'This course or group is not assigned to you.',
+            coursesLoad: 'Could not load courses.',
+            groupsLoad: 'Could not load groups.',
+            homeworkLoad: 'Could not load homework.',
+            queueLoadTitle: 'Queue did not load',
+        },
+    },
     instructorDashboard: {
         deliveryCourseModal: {
             header: {
@@ -914,6 +1436,112 @@ export const en = {
                 loadError: 'Could not load instructor information.',
                 saveSuccess: 'Instructor profile saved.',
                 saveError: 'Could not save instructor profile.',
+            },
+        },
+        createCoursePage: {
+            title: 'Create new course',
+            description: 'Create a course in three steps: information, content, and final review.',
+            steps: {
+                info: '1. Complete the information carefully',
+                lessons: '2. Save the lessons',
+                submit: '3. Send for review',
+            },
+            draft: {
+                title: 'Draft is saved automatically in this browser.',
+                description: 'Information and the current step are saved; use the "Save all" button to save content to the server.',
+                restored: 'Restored draft: {{time}}.',
+                lastSaved: 'Last autosave: {{time}}.',
+            },
+            actions: {
+                clearDraft: 'Clear draft',
+            },
+            toasts: {
+                savedForReview: 'Course was saved for review.',
+                saveBeforeApproval: 'Save changes before sending for approval.',
+                submittedForApproval: 'Course was sent for approval.',
+                submitError: 'Could not submit the course.',
+                localDraftClearedServerPreserved: 'Local draft was cleared. The server course draft was preserved.',
+                localDraftCleared: 'Local draft was cleared.',
+                invalidLesson: 'Review before submitting: {{issue}} (Section {{section}}, Lesson {{lesson}})',
+            },
+        },
+        editCoursePage: {
+            title: 'Edit course',
+            description: 'Edit the course in three steps: information, content, and final review.',
+            notice: {
+                title: 'Review the impact before publishing changes.',
+                description:
+                    'Unsaved changes block preview and approval submission actions. Submitted changes should become visible to students only after the review process.',
+                unsaved: 'There are unsaved changes right now.',
+            },
+            toasts: {
+                saveBeforeApproval: 'Save changes before sending for approval.',
+                submittedForApproval: 'Course was sent for approval.',
+                submitError: 'Could not submit the course.',
+                invalidLesson: 'Review before submitting: {{issue}} (Section {{section}}, Lesson {{lesson}})',
+            },
+        },
+        coursesPage: {
+            title: 'My courses',
+            workflowSummaryLabel: 'Course workflow status',
+            filtersLabel: 'Course management filters',
+            workflows: {
+                video: 'Self-paced video',
+                delivery: 'Delivery / group',
+            },
+            workflowCards: {
+                videoDescription: 'Managed through content, preview, and approval.',
+                deliveryDescription: 'Works with group, schedule, and attendance workflows.',
+                lastUpdated: 'Last updated',
+            },
+            filters: {
+                all: 'All',
+                allWorkflows: 'All workflows',
+                search: 'Search course',
+                searchPlaceholder: 'By title, instructor, or type',
+                status: 'Status',
+                workflow: 'Workflow',
+            },
+            lifecycle: {
+                draft: 'Draft',
+                pending: 'In review',
+                published: 'Published',
+                rejected: 'Needs changes',
+                aria: 'Course status: {{status}}',
+            },
+            courseTypes: {
+                video: 'Video',
+                offline: 'Offline',
+                onlineLive: 'Online live',
+            },
+            price: {
+                label: 'Price',
+                value: '{{value}} KGS',
+                missing: 'Price is not specified',
+            },
+            actions: {
+                refresh: 'Refresh',
+                reload: 'Reload',
+                manage: 'Manage',
+                review: 'Review',
+                fix: 'Fix',
+                edit: 'Edit',
+                unavailable: 'Editing unavailable',
+                createFirst: 'Create first course',
+            },
+            errors: {
+                load: 'Could not load courses.',
+            },
+            loading: 'Courses are loading...',
+            empty: {
+                noCourses: 'You do not have courses yet.',
+                noFilteredCourses: 'No courses found for these filters.',
+            },
+            fallbacks: {
+                courseWithId: 'Course {{id}}',
+                untitledCourse: 'Untitled course',
+                noInstructor: 'Instructor is not specified',
+                noImage: 'No course image',
             },
         },
         overview: {
@@ -4156,6 +4784,54 @@ export const en = {
                     form: 'Enter a valid email and password to log in.',
                     invalidCredentials: 'Email or password is incorrect. Try again.',
                 },
+            },
+            forgotPassword: {
+                eyebrow: 'Account access',
+                title: 'Recover password',
+                description: 'Receive a code by email or WhatsApp and set a new password.',
+                close: 'Close recovery dialog',
+                methodLabel: 'Code delivery method',
+                methodPlaceholder: 'Select method',
+                emailLabel: 'Email address',
+                whatsappLabel: 'WhatsApp number',
+                selectedChannel: 'selected channel',
+                otpSent: 'The code was sent through {{channel}}.',
+                otpPlaceholder: 'OTP code',
+                newPasswordPlaceholder: 'New password',
+                confirmPasswordPlaceholder: 'Repeat password',
+                methods: {
+                    emailHint: 'Enter the email address linked to your account.',
+                    whatsappHint: 'Enter the phone number with country code.',
+                },
+                actions: {
+                    sending: 'Sending...',
+                    sendOtp: 'Send OTP',
+                    resetting: 'Resetting...',
+                    resetPassword: 'Update password',
+                    backToLogin: 'Return to login',
+                },
+                validation: {
+                    methodRequired: 'Select a recovery method.',
+                    identifierRequired: 'Enter where the code should be sent.',
+                    emailInvalid: 'Enter a valid email address.',
+                    whatsappInvalid: 'WhatsApp number must contain 9-16 digits.',
+                    otpInvalid: 'OTP code must contain 4-8 digits.',
+                    passwordTooShort: 'New password must be at least 8 characters.',
+                    passwordMismatch: 'Passwords do not match.',
+                },
+                errors: {
+                    sendOtp: 'OTP was not sent. Check the information and try again.',
+                    resetPassword: 'Password was not updated. Check the code and try again.',
+                },
+                success: {
+                    title: 'Password was updated successfully.',
+                    description: 'You can now sign in with the new password.',
+                },
+            },
+            postLogin: {
+                courseFallback: 'Course {{id}}',
+                favouriteAdded: 'Course was added to favourites.',
+                cartAdded: 'Course was added to cart.',
             },
             signup: {
                 sideTitle: 'Create a learning account',

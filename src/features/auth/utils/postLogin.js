@@ -1,4 +1,5 @@
 import toast from 'react-hot-toast';
+import i18n from '../../../i18n';
 import { getDashboardPath } from '@shared/utils/navigation';
 
 const MAX_PENDING_ACTION_AGE = 24 * 60 * 60 * 1000;
@@ -31,13 +32,15 @@ export const executePendingAuthAction = async ({ addToCart, toggleFavourite, nav
             const course = {
                 ...pendingAction.course,
                 id: pendingAction.courseId,
-                title: pendingAction.courseTitle || `Курс ${pendingAction.courseId}`,
+                title: pendingAction.courseTitle || i18n.t('pages.auth.postLogin.courseFallback', {
+                    id: pendingAction.courseId,
+                }),
             };
             const result = await toggleFavourite(course);
 
             if (result.success) {
                 localStorage.removeItem('pendingAction');
-                toast.success('Курс тандалгандарга кошулду!');
+                toast.success(i18n.t('pages.auth.postLogin.favouriteAdded'));
                 navigate('/favourites');
                 return true;
             }
@@ -47,13 +50,15 @@ export const executePendingAuthAction = async ({ addToCart, toggleFavourite, nav
             const course = {
                 ...pendingAction.course,
                 id: pendingAction.courseId,
-                title: pendingAction.courseTitle || `Курс ${pendingAction.courseId}`,
+                title: pendingAction.courseTitle || i18n.t('pages.auth.postLogin.courseFallback', {
+                    id: pendingAction.courseId,
+                }),
             };
             const result = await addToCart(course);
 
             if (result.success) {
                 localStorage.removeItem('pendingAction');
-                toast.success('Курс себетке кошулду!');
+                toast.success(i18n.t('pages.auth.postLogin.cartAdded'));
                 navigate('/cart');
                 return true;
             }

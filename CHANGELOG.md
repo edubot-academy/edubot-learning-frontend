@@ -2,6 +2,34 @@
 
 Version bumps are classified by delivery scale; see `VERSIONING.md`.
 
+## Unreleased
+
+---
+
+## [1.13.6] - 2026-05-20
+
+### Changed
+
+- Localized the instructor homework queue route, including filters, metrics, status badges, next-action cards, queue cards, date fallbacks, and load-error messages for `ky`, `ru`, and `en`.
+- Localized the internal leaderboard route, including role-specific headers, track switcher, metrics, weekly/homepage/student-of-week panels, course leaderboard states, row fallbacks, and load-error messages for `ky`, `ru`, and `en`.
+- Localized remaining group-session workspace hook feedback and attendance UI for homework deadlines/actions, attendance save/load notices, course/group/session selection load failures, attendance filters, bulk actions, counters, and empty states for `ky`, `ru`, and `en`.
+- Localized shared ratings instructor cards and course review submission feedback for `ky`, `ru`, and `en`.
+- Localized public certificate download and verification pages, including trust-status copy, recovery actions, copy-link feedback, date/fallback labels, and route-error states for `ky`, `ru`, and `en`.
+- Localized the chat redirect fallback and create/edit course page shells, including draft recovery copy, approval toasts, invalid-lesson submit feedback, edit-impact notices, and active-language draft timestamps for `ky`, `ru`, and `en`.
+- Localized the instructor course list route, including workflow summary cards, filters, lifecycle labels/actions, course fallbacks, price labels, refresh states, and empty/error states for `ky`, `ru`, and `en`.
+- Localized the unauthorized access fallback page, including reason-specific messages, signed-in role labels, recovery actions, and guidance cards for `ky`, `ru`, and `en`.
+- Localized the forgot-password modal, including recovery method hints, OTP/password validation, API fallback errors, success state, and recovery actions for `ky`, `ru`, and `en`.
+- Localized post-login pending favourite/cart action feedback and fallback course titles for `ky`, `ru`, and `en`.
+
+### Verification
+
+- `npm test -- --run src/pages/CertificateDownload.spec.jsx src/pages/CertificateVerification.spec.jsx src/pages/InternalLeaderboard.spec.jsx src/features/instructor-dashboard/utils/courseLifecycle.spec.js src/i18n/resources.spec.js src/i18n/locale.spec.js`
+- `npm run lint`
+- `git diff --check`
+- `npm run build`
+
+---
+
 ## [1.13.5] - 2026-05-20
 
 ### Changed

@@ -3,6 +3,7 @@
 // Maintains identical functionality to original EditInstructorCourse.jsx
 
 import { useParams, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
 import Loader from '../shared/ui/Loader';
 
@@ -22,6 +23,7 @@ import { isForbiddenError, parseApiError } from '../shared/api/error';
  * Maintains identical UX and functionality to original EditInstructorCourse.jsx
  */
 const EditInstructorCourse = () => {
+    const { t } = useTranslation();
     const navigate = useNavigate();
     const { id } = useParams();
 
@@ -94,13 +96,13 @@ const EditInstructorCourse = () => {
     // Handle submit for approval
     const handleSubmitForApproval = async () => {
         if (hasUnsavedChanges) {
-            toast.error('Тастыктоого жөнөтүүдөн мурун өзгөрүүлөрдү сактаңыз.');
+            toast.error(t('instructorDashboard.editCoursePage.toasts.saveBeforeApproval'));
             return;
         }
 
         try {
             await markCoursePending(courseId);
-            toast.success('Курс тастыктоого жөнөтүлдү');
+            toast.success(t('instructorDashboard.editCoursePage.toasts.submittedForApproval'));
             navigate('/instructor/courses');
         } catch (error) {
             console.error('Failed to submit for approval', error);
@@ -108,7 +110,7 @@ const EditInstructorCourse = () => {
                 navigate('/unauthorized');
                 return;
             }
-            toast.error(parseApiError(error, 'Жөнөтүүдө ката кетти').message);
+            toast.error(parseApiError(error, t('instructorDashboard.editCoursePage.toasts.submitError')).message);
         }
     };
 
@@ -137,7 +139,11 @@ const EditInstructorCourse = () => {
             const target = getFirstInvalidLessonTarget(curriculum);
             if (target) {
                 toast.error(
-                    `Жөнөтүүдөн мурун текшерүү керек: ${target.issue} (Бөлүм ${target.sIdx + 1}, Сабак ${target.lIdx + 1})`
+                    t('instructorDashboard.editCoursePage.toasts.invalidLesson', {
+                        issue: target.issue,
+                        section: target.sIdx + 1,
+                        lesson: target.lIdx + 1,
+                    })
                 );
                 openSection(target.sIdx);
                 setStep(2);
@@ -154,18 +160,20 @@ const EditInstructorCourse = () => {
         <div className="mx-auto max-w-5xl p-6 pt-24">
             {/* Header */}
             <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800 p-5 shadow-sm">
-                <h2 className="text-2xl font-bold text-edubot-dark dark:text-white">Курсду оңдоо</h2>
+                <h2 className="text-2xl font-bold text-edubot-dark dark:text-white">
+                    {t('instructorDashboard.editCoursePage.title')}
+                </h2>
                 <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-                    Курсту үч кадам менен оңдоңуз: маалымат, мазмун жана финалдык текшерүү.
+                    {t('instructorDashboard.editCoursePage.description')}
                 </p>
                 <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-800/70 dark:bg-amber-950/30 dark:text-amber-100">
-                    <p className="font-semibold">Оңдоолорду жарыялоодон мурун таасирин текшериңиз.</p>
+                    <p className="font-semibold">{t('instructorDashboard.editCoursePage.notice.title')}</p>
                     <p className="mt-1 text-amber-800 dark:text-amber-200">
-                        Сакталбаган өзгөрүүлөр preview жана тастыктоого жөнөтүү баскычтарын бөгөйт. Тастыктоого жөнөтүлгөн өзгөрүүлөр review процессинен кийин гана студенттерге көрүнүшү керек.
+                        {t('instructorDashboard.editCoursePage.notice.description')}
                     </p>
                     {hasUnsavedChanges && (
                         <p className="mt-2 font-medium text-amber-950 dark:text-amber-50">
-                            Азырынча сакталбаган өзгөрүүлөр бар.
+                            {t('instructorDashboard.editCoursePage.notice.unsaved')}
                         </p>
                     )}
                 </div>
