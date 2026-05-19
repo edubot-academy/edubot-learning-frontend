@@ -1,6 +1,7 @@
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import PropTypes from 'prop-types';
 import { toast } from 'react-hot-toast';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import {
     COURSE_SESSION_STATUS,
@@ -49,6 +50,7 @@ import {
     getSubmissionAttachmentUrl,
     getSubmissionPreview,
     getWorkspaceErrorMessage,
+    getWorkspaceErrorStatusMessages,
     isJoinWindowOpen,
     normalizeCourseType,
     resolveHomeworkDeadline,
@@ -128,13 +130,15 @@ const getCourseSessionStatusMeta = (status) =>
 const PRIMARY_WORKSPACE_TAB_IDS = new Set(['attendance', 'materials', 'homework']);
 const WORKSPACE_TAB_GROUPS = [
     {
-        label: 'Негизги workflow',
-        description: 'Сессия учурунда эң көп колдонулган аракеттер.',
+        id: 'primary',
+        labelKey: 'groupSessions.workspace.tabGroups.primary.label',
+        descriptionKey: 'groupSessions.workspace.tabGroups.primary.description',
         tabs: SESSION_WORKSPACE_TABS.filter((tab) => PRIMARY_WORKSPACE_TAB_IDS.has(tab.id)),
     },
     {
-        label: 'Кошумча workspace',
-        description: 'Рефлексия, activity жана engagement анализи.',
+        id: 'secondary',
+        labelKey: 'groupSessions.workspace.tabGroups.secondary.label',
+        descriptionKey: 'groupSessions.workspace.tabGroups.secondary.description',
         tabs: SESSION_WORKSPACE_TABS.filter((tab) => !PRIMARY_WORKSPACE_TAB_IDS.has(tab.id)),
     },
 ];
@@ -205,6 +209,7 @@ const getSubmissionStatusMeta = (status) => {
 
 const SessionWorkspace = () => {
     const navigate = useNavigate();
+    const { t } = useTranslation();
     const { user } = useContext(AuthContext);
     const {
         activeTab,
@@ -284,7 +289,11 @@ const SessionWorkspace = () => {
                 latestInsightsRequestRef.current === requestId &&
                 selectedSessionIdRef.current === requestedSessionId
             ) {
-                toast.error(getWorkspaceErrorMessage(error, 'Кийинки аракеттерди жүктөө катасы.'));
+                toast.error(getWorkspaceErrorMessage(
+                    error,
+                    t('groupSessions.engagement.loadError'),
+                    getWorkspaceErrorStatusMessages(t)
+                ));
                 setSessionInsights(null);
             }
             return null;
@@ -296,7 +305,7 @@ const SessionWorkspace = () => {
                 setLoadingSessionInsights(false);
             }
         }
-    }, [selectedSessionId]);
+    }, [selectedSessionId, t]);
 
     const selectedCourse = useMemo(
         () => courses.find((course) => String(course.id) === String(selectedCourseId)) || null,
@@ -988,13 +997,13 @@ const SessionWorkspace = () => {
 
                         <div className="grid gap-3 rounded-[1.5rem] border border-edubot-line/70 bg-edubot-surfaceAlt/70 p-3 dark:border-slate-700 dark:bg-slate-900/70 lg:grid-cols-[1.1fr,0.9fr]">
                             {WORKSPACE_TAB_GROUPS.map((group) => (
-                                <div key={group.label} className="min-w-0 rounded-[1.25rem] bg-white/80 p-3 dark:bg-slate-950/80">
+                                <div key={group.id} className="min-w-0 rounded-[1.25rem] bg-white/80 p-3 dark:bg-slate-950/80">
                                     <div className="mb-3">
                                         <div className="text-xs font-semibold uppercase tracking-[0.16em] text-edubot-muted dark:text-slate-400">
-                                            {group.label}
+                                            {t(group.labelKey)}
                                         </div>
                                         <p className="mt-1 text-xs leading-5 text-edubot-muted dark:text-slate-400">
-                                            {group.description}
+                                            {t(group.descriptionKey)}
                                         </p>
                                     </div>
                                     <div className="flex flex-wrap gap-2">
@@ -1007,7 +1016,7 @@ const SessionWorkspace = () => {
                                                     : 'border-transparent bg-white text-edubot-ink hover:border-edubot-line dark:bg-slate-900 dark:text-[#E8ECF3]'
                                                     }`}
                                             >
-                                                {tab.label}
+                                                {t(tab.labelKey)}
                                             </button>
                                         ))}
                                     </div>
@@ -1262,6 +1271,7 @@ const SessionHeaderContent = ({
     selectedSessionJoinUrl,
     selectedSessionMode,
 }) => {
+    const { t, i18n } = useTranslation();
     const SelectedModeIcon = selectedModeMeta.icon;
     const isOnlineLive = selectedDeliveryType === COURSE_TYPE.ONLINE_LIVE;
     const officialStatus = selectedSession?.status || COURSE_SESSION_STATUS.SCHEDULED;
@@ -1299,12 +1309,16 @@ const SessionHeaderContent = ({
                     {' • '}
                     {selectedGroup?.name || selectedGroup?.code || 'Группа тандаңыз'}
                     {selectedSession
-                        ? ` • ${formatDisplayDate(selectedSession.startsAt)} ${toSessionTime(selectedSession.startsAt)} - ${toSessionTime(selectedSession.endsAt)}`
+                        ? ` • ${formatDisplayDate(
+                            selectedSession.startsAt,
+                            t('groupSessions.homeworkTab.fallbacks.noDeadline'),
+                            i18n.language
+                        )} ${toSessionTime(selectedSession.startsAt)} - ${toSessionTime(selectedSession.endsAt)}`
                         : ''}
                 </div>
                 {selectedSession ? (
                     <div className="mt-2 text-xs font-medium text-edubot-muted dark:text-slate-400">
-                        {getCourseTypeLabel(selectedDeliveryType)}
+                        {getCourseTypeLabel(selectedDeliveryType, t)}
                         {selectedDeliveryType === COURSE_TYPE.OFFLINE && selectedGroup?.location
                             ? ` • ${selectedGroup.location}`
                             : ''}

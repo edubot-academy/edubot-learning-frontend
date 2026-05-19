@@ -1,5 +1,6 @@
 import PropTypes from 'prop-types';
 import { createPortal } from 'react-dom';
+import { useTranslation } from 'react-i18next';
 import { FiCalendar, FiEdit3, FiMapPin, FiPaperclip, FiVideo } from 'react-icons/fi';
 import { COURSE_SESSION_STATUS, COURSE_TYPE } from '@shared/contracts';
 
@@ -24,12 +25,19 @@ const SessionSetupModal = ({
     workspaceSaving,
     workspaceTitle,
 }) => {
+    const { t } = useTranslation();
+
     if (!isOpen || typeof document === 'undefined') return null;
 
     const deliveryType = String(selectedCourse?.courseType || selectedCourse?.type || '').trim().toLowerCase();
     const isOffline = deliveryType === COURSE_TYPE.OFFLINE;
     const isOnlineLive = deliveryType === COURSE_TYPE.ONLINE_LIVE;
     const sessionForm = isCreateWorkspace ? quickSession : editSession;
+    const sessionStatusLabels = {
+        [COURSE_SESSION_STATUS.SCHEDULED]: t('groupSessions.setup.status.scheduled'),
+        [COURSE_SESSION_STATUS.COMPLETED]: t('groupSessions.setup.status.completed'),
+        [COURSE_SESSION_STATUS.CANCELLED]: t('groupSessions.setup.status.cancelled'),
+    };
 
     return createPortal(
         <div
@@ -59,8 +67,8 @@ const SessionSetupModal = ({
                                 </p>
                                 <p className="mt-2 text-xs font-medium uppercase tracking-[0.14em] text-edubot-muted dark:text-slate-500">
                                     {isCreateWorkspace
-                                        ? 'Курс жана группа жогору жактагы picker аркылуу тандалат'
-                                        : 'Түзөтүү активдүү сессиянын контекстинде жүрөт'}
+                                        ? t('groupSessions.setup.modal.createContextHint')
+                                        : t('groupSessions.setup.modal.editContextHint')}
                                 </p>
                             </div>
                         </div>
@@ -69,7 +77,7 @@ const SessionSetupModal = ({
                             type="button"
                             onClick={onClose}
                             className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-edubot-line/80 bg-white/80 text-edubot-muted transition hover:border-edubot-orange/40 hover:text-edubot-orange dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-400"
-                            aria-label="Жабуу"
+                            aria-label={t('groupSessions.setup.actions.close')}
                         >
                             <span className="text-xl leading-none">×</span>
                         </button>
@@ -92,7 +100,7 @@ const SessionSetupModal = ({
                             <section className="rounded-[1.75rem] border border-edubot-line/70 bg-edubot-surfaceAlt/35 p-5 dark:border-slate-700 dark:bg-slate-900/35">
                                 <div className="flex items-center gap-2 text-sm font-semibold text-edubot-ink dark:text-white">
                                     <FiEdit3 className="h-4 w-4 text-edubot-orange" />
-                                    Негизги маалымат
+                                    {t('groupSessions.setup.sections.basic')}
                                 </div>
                                 <div className="mt-4 grid gap-3 md:grid-cols-2">
                                     <div className="space-y-2">
@@ -105,13 +113,13 @@ const SessionSetupModal = ({
                                                     ? setQuickSession((prev) => ({ ...prev, sessionIndex: e.target.value }))
                                                     : setEditSession((prev) => ({ ...prev, sessionIndex: e.target.value }))
                                             }
-                                            placeholder="Session index *"
+                                            placeholder={t('groupSessions.setup.fields.sessionIndex')}
                                             className="dashboard-field"
                                         />
                                         <p className="text-xs text-edubot-muted dark:text-slate-400">
                                             {isCreateWorkspace
-                                                ? `Кийинки жеткиликтүү номер: ${nextSessionIndex}. Зарыл болсо гана өзгөртүңүз.`
-                                                : 'Номер ушул группанын ичинде уникалдуу болушу керек.'}
+                                                ? t('groupSessions.setup.help.nextSessionIndex', { index: nextSessionIndex })
+                                                : t('groupSessions.setup.help.uniqueSessionIndex')}
                                         </p>
                                     </div>
                                     <select
@@ -125,7 +133,7 @@ const SessionSetupModal = ({
                                     >
                                         {[COURSE_SESSION_STATUS.SCHEDULED, COURSE_SESSION_STATUS.COMPLETED, COURSE_SESSION_STATUS.CANCELLED].map((status) => (
                                             <option key={status} value={status}>
-                                                {status}
+                                                {sessionStatusLabels[status] || status}
                                             </option>
                                         ))}
                                     </select>
@@ -136,7 +144,7 @@ const SessionSetupModal = ({
                                                 ? setQuickSession((prev) => ({ ...prev, title: e.target.value }))
                                                 : setEditSession((prev) => ({ ...prev, title: e.target.value }))
                                         }
-                                        placeholder="Session title *"
+                                        placeholder={t('groupSessions.setup.fields.sessionTitle')}
                                         className="dashboard-field md:col-span-2"
                                     />
                                 </div>
@@ -145,7 +153,7 @@ const SessionSetupModal = ({
                             <section className="rounded-[1.75rem] border border-edubot-line/70 bg-edubot-surfaceAlt/35 p-5 dark:border-slate-700 dark:bg-slate-900/35">
                                 <div className="flex items-center gap-2 text-sm font-semibold text-edubot-ink dark:text-white">
                                     <FiCalendar className="h-4 w-4 text-edubot-orange" />
-                                    Schedule
+                                    {t('groupSessions.setup.sections.schedule')}
                                 </div>
                                 <div className="mt-4 grid gap-3 md:grid-cols-2">
                                     <input
@@ -182,16 +190,20 @@ const SessionSetupModal = ({
                                     ) : (
                                         <FiPaperclip className="h-4 w-4 text-edubot-orange" />
                                     )}
-                                    {isOffline ? 'Location & materials' : isOnlineLive ? 'Materials & recording' : 'Materials'}
+                                    {isOffline
+                                        ? t('groupSessions.setup.sections.locationAndMaterials')
+                                        : isOnlineLive
+                                          ? t('groupSessions.setup.sections.materialsAndRecording')
+                                          : t('groupSessions.setup.sections.materials')}
                                 </div>
                                 <div className="mt-4 grid gap-3">
                                     {isOffline ? (
                                         <div className="rounded-2xl border border-edubot-line/70 bg-white/70 px-4 py-3 text-sm dark:border-slate-700 dark:bg-slate-950/60">
                                             <div className="font-medium text-edubot-ink dark:text-white">
-                                                Группанын локациясы
+                                                {t('groupSessions.setup.fields.groupLocation')}
                                             </div>
                                             <div className="mt-1 text-edubot-muted dark:text-slate-400">
-                                                {selectedGroup?.location || 'Локация көрсөтүлгөн эмес'}
+                                                {selectedGroup?.location || t('groupSessions.setup.fallbacks.noLocation')}
                                             </div>
                                         </div>
                                     ) : null}
@@ -203,7 +215,7 @@ const SessionSetupModal = ({
                                                     ? setQuickSession((prev) => ({ ...prev, recordingUrl: e.target.value }))
                                                     : setEditSession((prev) => ({ ...prev, recordingUrl: e.target.value }))
                                             }
-                                            placeholder="Жазуу шилтемеси"
+                                            placeholder={t('groupSessions.setup.fields.recordingUrl')}
                                             className="dashboard-field"
                                         />
                                     ) : null}
@@ -214,7 +226,7 @@ const SessionSetupModal = ({
                                                 onChange={(e) =>
                                                     setQuickSession((prev) => ({ ...prev, materialTitle: e.target.value }))
                                                 }
-                                                placeholder="Material title"
+                                                placeholder={t('groupSessions.setup.fields.materialTitle')}
                                                 className="dashboard-field"
                                             />
                                             <input
@@ -222,49 +234,49 @@ const SessionSetupModal = ({
                                                 onChange={(e) =>
                                                     setQuickSession((prev) => ({ ...prev, materialUrl: e.target.value }))
                                                 }
-                                                placeholder="Material URL"
+                                                placeholder={t('groupSessions.setup.fields.materialUrl')}
                                                 className="dashboard-field"
                                             />
                                         </>
                                     ) : (
                                         <div className="rounded-2xl border border-dashed border-edubot-line/70 px-4 py-4 text-sm text-edubot-muted dark:border-slate-700 dark:text-slate-400">
-                                            Материалдарды өзгөртүү үчүн сессияны түзөтүү режимин колдонуп, ресурстар табындагы сакталган шилтемелерди жаңыртыңыз.
+                                            {t('groupSessions.setup.help.editMaterialsInResources')}
                                         </div>
                                     )}
                                 </div>
                             </section>
 
                             <section className="rounded-[1.75rem] border border-edubot-line/70 bg-slate-900 px-5 py-5 text-white dark:border-slate-700 dark:bg-slate-800">
-                                <div className="text-sm font-semibold text-white">Контекст</div>
+                                <div className="text-sm font-semibold text-white">{t('groupSessions.setup.sections.context')}</div>
                                 <div className="mt-3 space-y-2 text-sm text-slate-300">
                                     <div>
-                                        <span className="font-semibold text-white">Курс:</span>{' '}
-                                        {selectedCourse?.title || selectedCourse?.name || 'Тандала элек'}
+                                        <span className="font-semibold text-white">{t('groupSessions.setup.context.course')}:</span>{' '}
+                                        {selectedCourse?.title || selectedCourse?.name || t('groupSessions.setup.fallbacks.notSelected')}
                                     </div>
                                     <div>
-                                        <span className="font-semibold text-white">Группа:</span>{' '}
-                                        {selectedGroup?.name || selectedGroup?.code || 'Тандала элек'}
+                                        <span className="font-semibold text-white">{t('groupSessions.setup.context.group')}:</span>{' '}
+                                        {selectedGroup?.name || selectedGroup?.code || t('groupSessions.setup.fallbacks.notSelected')}
                                     </div>
                                     <div>
-                                        <span className="font-semibold text-white">Формат:</span>{' '}
+                                        <span className="font-semibold text-white">{t('groupSessions.setup.context.format')}:</span>{' '}
                                         {isOffline
-                                            ? 'Оффлайн'
+                                            ? t('groupSessions.setup.delivery.offline')
                                             : isOnlineLive
-                                              ? 'Онлайн түз эфир'
-                                              : 'Видео курс'}
+                                              ? t('groupSessions.setup.delivery.onlineLive')
+                                              : t('groupSessions.setup.delivery.video')}
                                     </div>
                                     {isCreateWorkspace ? (
                                         <div>
-                                            <span className="font-semibold text-white">Жаңы сессия:</span>{' '}
-                                            Тандалган группага кошулат
+                                            <span className="font-semibold text-white">{t('groupSessions.setup.context.newSession')}:</span>{' '}
+                                            {t('groupSessions.setup.context.addedToSelectedGroup')}
                                         </div>
                                     ) : (
                                         <div>
-                                            <span className="font-semibold text-white">Сессия:</span>{' '}
+                                            <span className="font-semibold text-white">{t('groupSessions.setup.context.session')}:</span>{' '}
                                             {selectedSession?.title ||
                                                 (selectedSession
                                                     ? `Session #${selectedSession.sessionIndex || selectedSession.id}`
-                                                    : 'Тандала элек')}
+                                                    : t('groupSessions.setup.fallbacks.notSelected'))}
                                         </div>
                                     )}
                                 </div>
@@ -274,7 +286,7 @@ const SessionSetupModal = ({
 
                     <div className="flex flex-wrap items-center justify-between gap-3 border-t border-edubot-line/70 bg-white/95 px-6 py-4 sm:px-7 dark:border-slate-700 dark:bg-[#151922]/95">
                         <p className="text-sm text-edubot-muted dark:text-slate-400">
-                            {workspaceDisabled ? workspaceDisabledReason : 'Бардык өзгөртүүлөрдү ушул жерде сактаңыз.'}
+                            {workspaceDisabled ? workspaceDisabledReason : t('groupSessions.setup.help.saveChangesHere')}
                         </p>
                         <div className="flex flex-wrap gap-3">
                             <button
@@ -283,7 +295,7 @@ const SessionSetupModal = ({
                                 onClick={onClose}
                                 disabled={workspaceSaving}
                             >
-                                Жабуу
+                                {t('groupSessions.setup.actions.close')}
                             </button>
                             <button
                                 type="submit"
@@ -329,10 +341,13 @@ SessionSetupModal.propTypes = {
     selectedCourse: PropTypes.shape({
         title: PropTypes.string,
         name: PropTypes.string,
+        courseType: PropTypes.string,
+        type: PropTypes.string,
     }),
     selectedGroup: PropTypes.shape({
         name: PropTypes.string,
         code: PropTypes.string,
+        location: PropTypes.string,
     }),
     selectedSession: PropTypes.shape({
         id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),

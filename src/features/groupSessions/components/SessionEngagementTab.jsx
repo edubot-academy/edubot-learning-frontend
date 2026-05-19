@@ -1,4 +1,5 @@
 import PropTypes from 'prop-types';
+import { useTranslation } from 'react-i18next';
 import {
     FiAlertCircle,
     FiArrowRight,
@@ -66,12 +67,6 @@ const toneClasses = {
     blue: 'bg-sky-100 text-sky-700 dark:bg-sky-500/10 dark:text-sky-300',
 };
 
-const tabLabels = {
-    attendance: 'Катышуу',
-    homework: 'Үй тапшырма',
-    activities: 'Иштер',
-};
-
 const routeToReasonTarget = (reason, onOpenTab) => {
     if (!reason?.tab) return;
 
@@ -95,12 +90,19 @@ const routeToReasonTarget = (reason, onOpenTab) => {
 };
 
 const SessionEngagementTab = ({ insights, loading, onOpenTab }) => {
+    const { t } = useTranslation();
+    const tabLabels = {
+        attendance: t('groupSessions.engagement.tabs.attendance'),
+        homework: t('groupSessions.engagement.tabs.homework'),
+        activities: t('groupSessions.engagement.tabs.activities'),
+    };
+
     if (loading) {
         return (
             <div className="space-y-4">
                 <DashboardInsetPanel
-                    title="Кийинки аракеттер"
-                    description="Бул сессия үчүн ишенимдүү сигналдар жүктөлүп жатат."
+                    title={t('groupSessions.engagement.title')}
+                    description={t('groupSessions.engagement.loadingDescription')}
                 >
                     <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
                         {Array.from({ length: 4 }, (_, index) => (
@@ -127,44 +129,50 @@ const SessionEngagementTab = ({ insights, loading, onOpenTab }) => {
     return (
         <div className="space-y-4">
                 <DashboardInsetPanel
-                    title="Кийинки аракеттер"
-                    description="Катышуу, үй тапшырма жана иштерден чыккан приоритеттүү сигналдар."
+                    title={t('groupSessions.engagement.title')}
+                    description={t('groupSessions.engagement.description')}
                 >
                 <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
                     <SummaryCard
                         icon={FiUsers}
-                        label="Катышуу белгиленди"
+                        label={t('groupSessions.engagement.metrics.attendanceMarked')}
                         value={`${summary.attendanceMarked || 0}/${summary.rosterTotal || 0}`}
-                        helper={`${attendance.unmarked || 0} студент али белгилене элек`}
+                        helper={t('groupSessions.engagement.metrics.unmarkedHelper', {
+                            count: attendance.unmarked || 0,
+                        })}
                     />
                     <SummaryCard
                         icon={FiAlertCircle}
-                        label="Көзөмөл керек"
+                        label={t('groupSessions.engagement.metrics.needsAttention')}
                         tone="red"
                         value={summary.followUpStudents || 0}
-                        helper={`Алдыңкы ${meta.attentionLimit || attentionStudents.length || 0} студент көрсөтүлөт`}
+                        helper={t('groupSessions.engagement.metrics.attentionLimitHelper', {
+                            count: meta.attentionLimit || attentionStudents.length || 0,
+                        })}
                     />
                     <SummaryCard
                         icon={FiClock}
-                        label="Инструктор кезеги"
+                        label={t('groupSessions.engagement.metrics.teacherQueue')}
                         tone="amber"
                         value={summary.teacherQueue || 0}
-                        helper="Текшерүү же белгилөө күтүп турат"
+                        helper={t('groupSessions.engagement.metrics.teacherQueueHelper')}
                     />
                     <SummaryCard
                         icon={FiCheckCircle}
-                        label="Жакшы сигнал"
+                        label={t('groupSessions.engagement.metrics.positiveSignal')}
                         tone="green"
                         value={summary.positiveStudents || 0}
-                        helper={`Алдыңкы ${meta.positiveLimit || positiveStudents.length || 0} позитив студент`}
+                        helper={t('groupSessions.engagement.metrics.positiveLimitHelper', {
+                            count: meta.positiveLimit || positiveStudents.length || 0,
+                        })}
                     />
                 </div>
             </DashboardInsetPanel>
 
             <div className="grid gap-4 xl:grid-cols-[1.35fr_minmax(0,0.95fr)]">
                 <DashboardInsetPanel
-                    title="Кимге кайрылуу керек"
-                    description="Приоритет, себеп саны жана олуттуулугу боюнча иреттелген тизме."
+                    title={t('groupSessions.engagement.attention.title')}
+                    description={t('groupSessions.engagement.attention.description')}
                 >
                     <div className="mt-4 space-y-3">
                         {attentionStudents.length ? (
@@ -189,10 +197,10 @@ const SessionEngagementTab = ({ insights, loading, onOpenTab }) => {
                                                     }`}
                                                 >
                                                     {student.severity === 'high'
-                                                        ? 'Дароо көңүл буруу'
+                                                        ? t('groupSessions.engagement.severity.high')
                                                         : student.severity === 'medium'
-                                                          ? 'Жакын follow-up'
-                                                          : 'Эскертме'}
+                                                          ? t('groupSessions.engagement.severity.medium')
+                                                          : t('groupSessions.engagement.severity.low')}
                                                 </span>
                                             </div>
                                             <div className="mt-3 flex flex-wrap gap-2">
@@ -208,7 +216,9 @@ const SessionEngagementTab = ({ insights, loading, onOpenTab }) => {
                                                 ))}
                                                 {student.reasons.length > 3 ? (
                                                     <span className="rounded-full bg-edubot-surfaceAlt px-3 py-1 text-xs font-semibold text-edubot-muted dark:bg-slate-800 dark:text-slate-300">
-                                                        +{student.reasons.length - 3} дагы
+                                                        {t('groupSessions.engagement.attention.moreReasons', {
+                                                            count: student.reasons.length - 3,
+                                                        })}
                                                     </span>
                                                 ) : null}
                                             </div>
@@ -220,7 +230,7 @@ const SessionEngagementTab = ({ insights, loading, onOpenTab }) => {
                                                     onClick={() => routeToReasonTarget(student.recommendedAction, onOpenTab)}
                                                     className="inline-flex items-center gap-1 rounded-full bg-edubot-orange px-3 py-1.5 text-xs font-semibold text-white transition hover:brightness-105"
                                                 >
-                                                    Адегенде ачуу
+                                                    {t('groupSessions.engagement.actions.openFirst')}
                                                     <FiArrowRight className="h-3.5 w-3.5" />
                                                 </button>
                                             ) : null}
@@ -240,22 +250,22 @@ const SessionEngagementTab = ({ insights, loading, onOpenTab }) => {
                                 </div>
                             ))
                         ) : (
-                            <EmptyMessage>Бул сессия үчүн өзгөчө follow-up талап кылган студент көрүнгөн жок.</EmptyMessage>
+                            <EmptyMessage>{t('groupSessions.engagement.empty.noAttentionStudents')}</EmptyMessage>
                         )}
                     </div>
                 </DashboardInsetPanel>
 
                 <div className="space-y-4">
                     <DashboardInsetPanel
-                        title="Инструктор кезеги"
-                        description="Адегенде кайсы ишти ачуу керектигин ушул жерден тандаңыз."
+                        title={t('groupSessions.engagement.queue.title')}
+                        description={t('groupSessions.engagement.queue.description')}
                     >
                         <div className="mt-4 space-y-3">
                             <div className="flex items-center justify-between rounded-[1.25rem] border border-edubot-line/80 bg-white p-4 dark:border-slate-700 dark:bg-slate-950">
                                 <div>
-                                    <p className="font-semibold text-edubot-ink dark:text-white">Катышуу толук эмес</p>
+                                    <p className="font-semibold text-edubot-ink dark:text-white">{t('groupSessions.engagement.queue.attendanceTitle')}</p>
                                     <p className="mt-1 text-xs text-edubot-muted dark:text-slate-400">
-                                        Белгиленбей калган студенттер
+                                        {t('groupSessions.engagement.queue.attendanceDescription')}
                                     </p>
                                 </div>
                                 <button
@@ -268,9 +278,9 @@ const SessionEngagementTab = ({ insights, loading, onOpenTab }) => {
                             </div>
                             <div className="flex items-center justify-between rounded-[1.25rem] border border-edubot-line/80 bg-white p-4 dark:border-slate-700 dark:bg-slate-950">
                                 <div>
-                                    <p className="font-semibold text-edubot-ink dark:text-white">Үй тапшырма текшерүү</p>
+                                    <p className="font-semibold text-edubot-ink dark:text-white">{t('groupSessions.engagement.queue.homeworkTitle')}</p>
                                     <p className="mt-1 text-xs text-edubot-muted dark:text-slate-400">
-                                        Submitted абалындагы жооптор
+                                        {t('groupSessions.engagement.queue.homeworkDescription')}
                                     </p>
                                 </div>
                                 <button
@@ -283,9 +293,9 @@ const SessionEngagementTab = ({ insights, loading, onOpenTab }) => {
                             </div>
                             <div className="flex items-center justify-between rounded-[1.25rem] border border-edubot-line/80 bg-white p-4 dark:border-slate-700 dark:bg-slate-950">
                                 <div>
-                                    <p className="font-semibold text-edubot-ink dark:text-white">Иш текшерүү</p>
+                                    <p className="font-semibold text-edubot-ink dark:text-white">{t('groupSessions.engagement.queue.activitiesTitle')}</p>
                                     <p className="mt-1 text-xs text-edubot-muted dark:text-slate-400">
-                                        Activity submission карала элек
+                                        {t('groupSessions.engagement.queue.activitiesDescription')}
                                     </p>
                                 </div>
                                 <button
@@ -300,36 +310,50 @@ const SessionEngagementTab = ({ insights, loading, onOpenTab }) => {
                     </DashboardInsetPanel>
 
                     <DashboardInsetPanel
-                        title="Сигналдардын кыскача көрүнүшү"
-                        description={`Кайсы блоктон follow-up чыгып жатканын тез көрүңүз. "Жакында" = ${meta.dueSoonHours || 24} саат.`}
+                        title={t('groupSessions.engagement.signals.title')}
+                        description={t('groupSessions.engagement.signals.description', {
+                            hours: meta.dueSoonHours || 24,
+                        })}
                     >
                         <div className="mt-4 grid gap-3 md:grid-cols-2">
                             <SummaryCard
                                 icon={FiUsers}
-                                label="Катышуу"
-                                value={`${attendance.absent || 0} жок`}
-                                helper={`${attendance.late || 0} кечикти, ${attendance.excused || 0} уруксат`}
+                                label={t('groupSessions.engagement.signals.attendance')}
+                                value={t('groupSessions.engagement.signals.absentValue', {
+                                    count: attendance.absent || 0,
+                                })}
+                                helper={t('groupSessions.engagement.signals.attendanceHelper', {
+                                    late: attendance.late || 0,
+                                    excused: attendance.excused || 0,
+                                })}
                                 tone={(attendance.absent || 0) > 0 ? 'red' : 'default'}
                             />
                             <SummaryCard
                                 icon={FiFileText}
-                                label="ҮТ студент сигналдары"
+                                label={t('groupSessions.engagement.signals.homework')}
                                 value={homework.studentsMissing || 0}
-                                helper={`${homework.studentsNeedsRevision || 0} оңдотууда, ${homework.studentsDueSoon || 0} жакында бүтөт`}
+                                helper={t('groupSessions.engagement.signals.homeworkHelper', {
+                                    revision: homework.studentsNeedsRevision || 0,
+                                    dueSoon: homework.studentsDueSoon || 0,
+                                })}
                                 tone={(homework.studentsMissing || 0) > 0 ? 'red' : 'amber'}
                             />
                             <SummaryCard
                                 icon={FiLayers}
-                                label="Иш студент сигналдары"
+                                label={t('groupSessions.engagement.signals.activities')}
                                 value={activities.studentsFailedQuiz || 0}
-                                helper={`${activities.studentsNeedsRevision || 0} оңдотууда, ${activities.studentsMissingResponses || 0} жооп жок, ${activities.studentsNotStartedQuizzes || 0} баштай элек`}
+                                helper={t('groupSessions.engagement.signals.activitiesHelper', {
+                                    revision: activities.studentsNeedsRevision || 0,
+                                    missing: activities.studentsMissingResponses || 0,
+                                    notStarted: activities.studentsNotStartedQuizzes || 0,
+                                })}
                                 tone={(activities.studentsFailedQuiz || 0) > 0 ? 'red' : 'amber'}
                             />
                             <SummaryCard
                                 icon={FiCheckCircle}
-                                label="Жакшы жүрүп жаткандар"
+                                label={t('groupSessions.engagement.signals.positive')}
                                 value={positiveStudents.length}
-                                helper="Тобокелдиксиз позитив сигнал"
+                                helper={t('groupSessions.engagement.signals.positiveHelper')}
                                 tone="green"
                             />
                         </div>
@@ -338,8 +362,8 @@ const SessionEngagementTab = ({ insights, loading, onOpenTab }) => {
             </div>
 
             <DashboardInsetPanel
-                title="Жакшы жүрүп жаткан студенттер"
-                description="Follow-up жок жана туруктуу жакшы сигнал берген студенттер."
+                title={t('groupSessions.engagement.positive.title')}
+                description={t('groupSessions.engagement.positive.description')}
             >
                 <div className="mt-4 space-y-3">
                     {positiveStudents.length ? (
@@ -353,7 +377,9 @@ const SessionEngagementTab = ({ insights, loading, onOpenTab }) => {
                                         <p className="font-semibold text-edubot-ink dark:text-white">{student.fullName}</p>
                                         {student.streak > 0 ? (
                                             <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300">
-                                                {student.streak} ирет катар
+                                                {t('groupSessions.engagement.positive.streak', {
+                                                    count: student.streak,
+                                                })}
                                             </span>
                                         ) : null}
                                     </div>
@@ -371,7 +397,7 @@ const SessionEngagementTab = ({ insights, loading, onOpenTab }) => {
                             </div>
                         ))
                     ) : (
-                        <EmptyMessage>Азырынча өзүнчө positive momentum көрүнбөйт.</EmptyMessage>
+                        <EmptyMessage>{t('groupSessions.engagement.empty.noPositiveStudents')}</EmptyMessage>
                     )}
                 </div>
             </DashboardInsetPanel>

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { toast } from 'react-hot-toast';
+import { useTranslation } from 'react-i18next';
 import {
     createSessionActivity,
     deleteSessionActivity,
@@ -7,13 +8,18 @@ import {
     reviewSessionActivitySubmission,
     updateSessionActivity,
 } from '@services/api';
-import { getWorkspaceErrorMessage } from '@features/groupSessions/utils/sessionWorkspace.helpers';
+import {
+    getWorkspaceErrorMessage,
+    getWorkspaceErrorStatusMessages,
+} from '@features/groupSessions/utils/sessionWorkspace.helpers';
 
 export const useSessionWorkspaceActivities = ({
     selectedSessionId,
     onRefreshInsights,
     onRefreshSessions,
 }) => {
+    const { t } = useTranslation();
+    const workspaceErrorStatusMessages = getWorkspaceErrorStatusMessages(t);
     const [creatingSessionActivity, setCreatingSessionActivity] = useState(false);
     const [savingSessionActivityId, setSavingSessionActivityId] = useState(null);
     const [deletingSessionActivityId, setDeletingSessionActivityId] = useState(null);
@@ -29,7 +35,7 @@ export const useSessionWorkspaceActivities = ({
 
     const createActivityItem = async (activity) => {
         if (!selectedSessionId) {
-            toast.error('Сессия тандаңыз.');
+            toast.error(t('groupSessions.workspace.validation.selectSession'));
             return false;
         }
 
@@ -38,10 +44,10 @@ export const useSessionWorkspaceActivities = ({
             await createSessionActivity(Number(selectedSessionId), activity);
             await onRefreshSessions?.();
             await onRefreshInsights?.();
-            toast.success('Иш кошулду.');
+            toast.success(t('groupSessions.workspace.activities.toasts.created'));
             return true;
         } catch (error) {
-            toast.error(getWorkspaceErrorMessage(error, 'Ишти сактоо катасы'));
+            toast.error(getWorkspaceErrorMessage(error, t('groupSessions.workspace.activities.toasts.createError'), workspaceErrorStatusMessages));
             return false;
         } finally {
             setCreatingSessionActivity(false);
@@ -50,7 +56,7 @@ export const useSessionWorkspaceActivities = ({
 
     const updateActivityItem = async (activityId, activity) => {
         if (!selectedSessionId) {
-            toast.error('Сессия тандаңыз.');
+            toast.error(t('groupSessions.workspace.validation.selectSession'));
             return false;
         }
 
@@ -59,10 +65,10 @@ export const useSessionWorkspaceActivities = ({
             await updateSessionActivity(Number(selectedSessionId), Number(activityId), activity);
             await onRefreshSessions?.();
             await onRefreshInsights?.();
-            toast.success('Иш жаңыртылды.');
+            toast.success(t('groupSessions.workspace.activities.toasts.updated'));
             return true;
         } catch (error) {
-            toast.error(getWorkspaceErrorMessage(error, 'Ишти жаңыртуу катасы'));
+            toast.error(getWorkspaceErrorMessage(error, t('groupSessions.workspace.activities.toasts.updateError'), workspaceErrorStatusMessages));
             return false;
         } finally {
             setSavingSessionActivityId(null);
@@ -71,7 +77,7 @@ export const useSessionWorkspaceActivities = ({
 
     const deleteActivityItem = async (activityId) => {
         if (!selectedSessionId) {
-            toast.error('Сессия тандаңыз.');
+            toast.error(t('groupSessions.workspace.validation.selectSession'));
             return false;
         }
 
@@ -80,10 +86,10 @@ export const useSessionWorkspaceActivities = ({
             await deleteSessionActivity(Number(selectedSessionId), Number(activityId));
             await onRefreshSessions?.();
             await onRefreshInsights?.();
-            toast.success('Иш өчүрүлдү.');
+            toast.success(t('groupSessions.workspace.activities.toasts.deleted'));
             return true;
         } catch (error) {
-            toast.error(getWorkspaceErrorMessage(error, 'Ишти өчүрүү катасы'));
+            toast.error(getWorkspaceErrorMessage(error, t('groupSessions.workspace.activities.toasts.deleteError'), workspaceErrorStatusMessages));
             return false;
         } finally {
             setDeletingSessionActivityId(null);
@@ -99,7 +105,7 @@ export const useSessionWorkspaceActivities = ({
             setActivityResponses((prev) => ({ ...prev, [activityId]: payload }));
             return payload;
         } catch (error) {
-            toast.error(getWorkspaceErrorMessage(error, 'Иш жыйынтыгын жүктөө катасы'));
+            toast.error(getWorkspaceErrorMessage(error, t('groupSessions.workspace.activities.toasts.loadResponsesError'), workspaceErrorStatusMessages));
             return null;
         } finally {
             setLoadingActivityResponsesId(null);
@@ -119,10 +125,10 @@ export const useSessionWorkspaceActivities = ({
             await loadActivityResponses(activityId);
             await onRefreshSessions?.();
             await onRefreshInsights?.();
-            toast.success('Иш жообу жаңыртылды.');
+            toast.success(t('groupSessions.workspace.activities.toasts.responseUpdated'));
             return true;
         } catch (error) {
-            toast.error(getWorkspaceErrorMessage(error, 'Иш жообун сактоо катасы'));
+            toast.error(getWorkspaceErrorMessage(error, t('groupSessions.workspace.activities.toasts.responseSaveError'), workspaceErrorStatusMessages));
             return false;
         } finally {
             setReviewingActivitySubmissionId(null);

@@ -1,5 +1,7 @@
 import PropTypes from 'prop-types';
-import { createPortal, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { useTranslation } from 'react-i18next';
 import { FiCalendar, FiEdit3, FiFileText, FiPaperclip, FiX } from 'react-icons/fi';
 
 const HomeworkModal = ({
@@ -11,9 +13,14 @@ const HomeworkModal = ({
   loading,
   selectedSession,
 }) => {
+  const { t } = useTranslation();
   const isEdit = mode === 'edit';
-  const modalTitle = isEdit ? 'Үй тапшырманы өзгөртүү' : 'Жаңы үй тапшырма';
-  const submitButtonText = isEdit ? 'Өзгөртүү' : 'Түзүү';
+  const modalTitle = isEdit
+    ? t('groupSessions.homeworkModal.header.editTitle')
+    : t('groupSessions.homeworkModal.header.createTitle');
+  const submitButtonText = isEdit
+    ? t('groupSessions.homeworkModal.actions.update')
+    : t('groupSessions.homeworkModal.actions.create');
   const defaultValues = useMemo(() => ({
     title: homework?.title || '',
     description: homework?.description || '',
@@ -36,11 +43,11 @@ const HomeworkModal = ({
     const newErrors = {};
 
     if (!formData.title.trim()) {
-      newErrors.title = 'Тапшырма аталышын киргизиңиз';
+      newErrors.title = t('groupSessions.homeworkModal.validation.titleRequired');
     }
 
     if (!formData.description.trim()) {
-      newErrors.description = 'Тапшырма сүрөттөмөн киргизиңиз';
+      newErrors.description = t('groupSessions.homeworkModal.validation.descriptionRequired');
     }
 
     setErrors(newErrors);
@@ -96,7 +103,9 @@ const HomeworkModal = ({
             <div className="space-y-3">
               <div className="inline-flex items-center gap-2 rounded-full border border-edubot-orange/20 bg-white/80 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-edubot-orange dark:border-edubot-orange/25 dark:bg-slate-900/60">
                 <FiEdit3 className="h-3 w-3" />
-                {isEdit ? 'Edit' : 'Create'}
+                {isEdit
+                  ? t('groupSessions.homeworkModal.header.editEyebrow')
+                  : t('groupSessions.homeworkModal.header.createEyebrow')}
               </div>
               <div>
                 <h2 className="text-2xl font-semibold tracking-tight text-edubot-ink dark:text-white sm:text-[2rem]">
@@ -104,8 +113,8 @@ const HomeworkModal = ({
                 </h2>
                 <p className="mt-1 text-sm text-edubot-muted dark:text-slate-400">
                   {isEdit
-                    ? 'Тандалган үй тапшырманы өзгөртүңүз'
-                    : 'Жаңы үй тапшырма түзүп, студенттерге жөнөтүңүз'
+                    ? t('groupSessions.homeworkModal.header.editDescription')
+                    : t('groupSessions.homeworkModal.header.createDescription')
                   }
                 </p>
               </div>
@@ -115,7 +124,7 @@ const HomeworkModal = ({
               type="button"
               onClick={onClose}
               className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-edubot-line/80 bg-white/80 text-edubot-muted transition hover:border-edubot-orange/40 hover:text-edubot-orange dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-400"
-              aria-label="Жабуу"
+              aria-label={t('common.closeMenu')}
             >
               <FiX className="text-xl leading-none" />
             </button>
@@ -129,19 +138,19 @@ const HomeworkModal = ({
             <section className="rounded-[1.75rem] border border-edubot-line/70 bg-edubot-surfaceAlt/35 p-5 dark:border-slate-700 dark:bg-slate-900/35">
               <div className="flex items-center gap-2 text-sm font-semibold text-edubot-ink dark:text-white">
                 <FiFileText className="h-4 w-4 text-edubot-orange" />
-                Негизги маалымат
+                {t('groupSessions.homeworkModal.sections.basic')}
               </div>
 
               <div className="mt-4 space-y-4">
                 <div>
                   <label className="mb-2 block text-sm font-medium text-edubot-ink dark:text-white">
-                    Тапшырма аталышы *
+                    {t('groupSessions.homeworkModal.fields.title')} *
                   </label>
                   <input
                     type="text"
                     value={formData.title}
                     onChange={(e) => handleInputChange('title', e.target.value)}
-                    placeholder="Тапшырма аталышын киргизиңиз"
+                    placeholder={t('groupSessions.homeworkModal.placeholders.title')}
                     className={`dashboard-field ${errors.title ? 'border-red-300 focus:border-red-500' : ''}`}
                     disabled={loading}
                   />
@@ -152,12 +161,12 @@ const HomeworkModal = ({
 
                 <div>
                   <label className="mb-2 block text-sm font-medium text-edubot-ink dark:text-white">
-                    Тапшырма сүрөттөмө *
+                    {t('groupSessions.homeworkModal.fields.description')} *
                   </label>
                   <textarea
                     value={formData.description}
                     onChange={(e) => handleInputChange('description', e.target.value)}
-                    placeholder="Тапшырманы толук сүрөттөңүз..."
+                    placeholder={t('groupSessions.homeworkModal.placeholders.description')}
                     rows={4}
                     className={`dashboard-field resize-none ${errors.description ? 'border-red-300 focus:border-red-500' : ''}`}
                     disabled={loading}
@@ -173,12 +182,12 @@ const HomeworkModal = ({
             <section className="rounded-[1.75rem] border border-edubot-line/70 bg-edubot-surfaceAlt/35 p-5 dark:border-slate-700 dark:bg-slate-900/35">
               <div className="flex items-center gap-2 text-sm font-semibold text-edubot-ink dark:text-white">
                 <FiCalendar className="h-4 w-4 text-edubot-orange" />
-                Мөөнөт
+                {t('groupSessions.homeworkModal.sections.deadline')}
               </div>
 
               <div className="mt-4">
                 <label className="mb-2 block text-sm font-medium text-edubot-ink dark:text-white">
-                  Мөөнөт убактысы (ыктыярчы)
+                  {t('groupSessions.homeworkModal.fields.deadline')}
                 </label>
                 <input
                   type="datetime-local"
@@ -188,7 +197,7 @@ const HomeworkModal = ({
                   disabled={loading}
                 />
                 <p className="mt-1 text-xs text-edubot-muted dark:text-slate-400">
-                  Мөөнөт коюлбаса, студенттер каалаган убакта тапшырманы жөнөтө алышат
+                  {t('groupSessions.homeworkModal.deadlineHelp')}
                 </p>
               </div>
             </section>
@@ -197,7 +206,7 @@ const HomeworkModal = ({
             <section className="rounded-[1.75rem] border border-edubot-line/70 bg-edubot-surfaceAlt/35 p-5 dark:border-slate-700 dark:bg-slate-900/35">
               <div className="flex items-center gap-2 text-sm font-semibold text-edubot-ink dark:text-white">
                 <FiPaperclip className="h-4 w-4 text-edubot-orange" />
-                Жарыялоо опциялары
+                {t('groupSessions.homeworkModal.sections.publishing')}
               </div>
 
               <div className="mt-4">
@@ -210,13 +219,13 @@ const HomeworkModal = ({
                     disabled={loading}
                   />
                   <span className="text-sm font-medium text-edubot-ink dark:text-white">
-                    Дароо жарыялоо
+                    {t('groupSessions.homeworkModal.fields.publishNow')}
                   </span>
                 </label>
                 <p className="mt-2 text-xs text-edubot-muted dark:text-slate-400">
                   {formData.isPublished
-                    ? 'Үй тапшырма дароо студенттерге көрүнөт'
-                    : 'Үй тапшырма караңгы режимде сакталат, кийин жарыялай аласыз'
+                    ? t('groupSessions.homeworkModal.publishHelp.published')
+                    : t('groupSessions.homeworkModal.publishHelp.draft')
                   }
                 </p>
               </div>
@@ -225,11 +234,18 @@ const HomeworkModal = ({
             {/* Session Context */}
             {selectedSession && (
               <section className="rounded-[1.75rem] border border-edubot-line/70 bg-slate-900 px-5 py-5 text-white dark:border-slate-700 dark:bg-slate-800">
-                <div className="text-sm font-semibold text-white">Контекст</div>
+                <div className="text-sm font-semibold text-white">
+                  {t('groupSessions.homeworkModal.sections.context')}
+                </div>
                 <div className="mt-3 space-y-2 text-sm text-slate-300">
                   <div>
-                    <span className="font-semibold text-white">Сессия:</span>{' '}
-                    {selectedSession.title || `Session #${selectedSession.sessionIndex || selectedSession.id}`}
+                    <span className="font-semibold text-white">
+                      {t('groupSessions.homeworkModal.context.session')}:
+                    </span>{' '}
+                    {selectedSession.title ||
+                      t('groupSessions.homeworkModal.fallbacks.sessionWithId', {
+                        id: selectedSession.sessionIndex || selectedSession.id,
+                      })}
                   </div>
                 </div>
               </section>
@@ -239,7 +255,7 @@ const HomeworkModal = ({
           {/* Actions */}
           <div className="flex flex-wrap items-center justify-between gap-3 border-t border-edubot-line/70 bg-white/95 px-6 py-4 dark:border-slate-700 dark:bg-[#151922]/95">
             <p className="text-sm text-edubot-muted dark:text-slate-400">
-              Бардык өзгөртүүлөрдү сактап, жабуу үчүн Escape басыңыз.
+              {t('groupSessions.homeworkModal.escapeHint')}
             </p>
             <div className="flex flex-wrap gap-3">
               <button
@@ -248,14 +264,14 @@ const HomeworkModal = ({
                 onClick={onClose}
                 disabled={loading}
               >
-                Жокко чыгаруу
+                {t('groupSessions.homeworkModal.actions.cancel')}
               </button>
               <button
                 type="submit"
                 disabled={loading}
                 className="dashboard-button-primary disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {loading ? 'Сакталууда...' : submitButtonText}
+                {loading ? t('groupSessions.homeworkModal.actions.saving') : submitButtonText}
               </button>
             </div>
           </div>

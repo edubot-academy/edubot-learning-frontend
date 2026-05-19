@@ -2,6 +2,33 @@
 
 Version bumps are classified by delivery scale; see `VERSIONING.md`.
 
+## [1.13.5] - 2026-05-20
+
+### Changed
+
+- Localized the instructor analytics workspace header, filters, metrics, tables, charts, recommendations, fallbacks, date formatting, and load-error toast for `ky`, `ru`, and `en`.
+- Localized the group-session homework workflow, including the homework list, filters, metrics, publish/delete states, submission review queue, attachment preview, review/delete dialogs, create/edit modal, and homework toasts for `ky`, `ru`, and `en`.
+- Localized group-session notes, engagement next-action summaries, activity workflow toasts, and resource/meeting fallback toasts for `ky`, `ru`, and `en`.
+- Localized the group-session create/edit setup modal and editor feedback, including required-field validation, workspace actions, status labels, context summaries, and session status update toasts for `ky`, `ru`, and `en`.
+- Localized the group-session activities tab, including activity type/status labels, editor fields, quiz builder controls, insight filters, response review panels, attachment actions, and empty states for `ky`, `ru`, and `en`.
+- Localized the group-session resources tab, including material management, link/file/video actions, live meeting and recording panels, integration tools, course video reuse library, delete confirmation, and video preview loading copy for `ky`, `ru`, and `en`.
+
+### Fixed
+
+- Fixed the group-session homework modal portal import so opening the homework modal no longer crashes with `createPortal is not a function`.
+- Fixed localized group-session helper fallbacks so homework dates, uploaded answer text, attachment labels, workspace tab labels, course type labels, and 401/403 workspace errors follow the active UI language.
+- Fixed group-session activity submission timestamps so saved-at dates use the active UI language instead of the browser default locale.
+- Fixed course-video reuse section expansion state so translated fallback section labels no longer reset expanded sections after a language change.
+
+### Verification
+
+- `npm test -- --run src/i18n/resources.spec.js src/i18n/locale.spec.js`
+- `npm run lint`
+- `git diff --check`
+- `npm run build`
+
+---
+
 ## [1.13.4] - 2026-05-20
 
 ### Changed

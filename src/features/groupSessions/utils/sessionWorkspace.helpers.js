@@ -26,12 +26,12 @@ export const EDIT_SESSION_DEFAULT = {
 };
 
 export const SESSION_WORKSPACE_TABS = [
-    { id: 'attendance', label: 'Катышуу' },
-    { id: 'materials', label: 'Ресурстар' },
-    { id: 'homework', label: 'Үй тапшырма' },
-    { id: 'activities', label: 'Иштер' },
-    { id: 'notes', label: 'Жазуулар' },
-    { id: 'engagement', label: 'Кийинки аракеттер' },
+    { id: 'attendance', labelKey: 'groupSessions.workspace.tabs.attendance' },
+    { id: 'materials', labelKey: 'groupSessions.workspace.tabs.materials' },
+    { id: 'homework', labelKey: 'groupSessions.workspace.tabs.homework' },
+    { id: 'activities', labelKey: 'groupSessions.workspace.tabs.activities' },
+    { id: 'notes', labelKey: 'groupSessions.workspace.tabs.notes' },
+    { id: 'engagement', labelKey: 'groupSessions.workspace.tabs.engagement' },
 ];
 
 export const toLocalDateKey = (value) => {
@@ -138,13 +138,13 @@ export const formatCountdown = (targetMs, nowMs) => {
     ).padStart(2, '0')}`;
 };
 
-export const formatDisplayDate = (value, fallback = 'Мөөнөт коюлган эмес') => {
+export const formatDisplayDate = (value, fallback = 'No date set', language) => {
     if (!value) return fallback;
     const normalized =
         typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value) ? `${value}T12:00:00` : value;
     const date = new Date(normalized);
     if (Number.isNaN(date.getTime())) return fallback;
-    return date.toLocaleDateString('ky-KG', {
+    return date.toLocaleDateString(language || undefined, {
         day: '2-digit',
         month: 'short',
         year: 'numeric',
@@ -153,7 +153,7 @@ export const formatDisplayDate = (value, fallback = 'Мөөнөт коюлган
 
 export const resolveHomeworkDeadline = (item = {}) => item?.deadline || item?.dueAt || item?.dueDate || '';
 
-export const getSubmissionPreview = (submission) =>
+export const getSubmissionPreview = (submission, fallback = 'Answer uploaded for review.') =>
     submission?.content ||
     submission?.submissionText ||
     submission?.text ||
@@ -165,19 +165,19 @@ export const getSubmissionPreview = (submission) =>
     submission?.fileUrl ||
     submission?.attachmentUrl ||
     submission?.submissionUrl ||
-    'Жооп текшерүү үчүн жүктөлгөн.';
+    fallback;
 
 export const getSubmissionAttachmentUrl = (submission) =>
     submission?.attachmentUrl || submission?.fileUrl || submission?.submissionUrl || '';
 
-export const getAttachmentName = (value) => {
-    if (!value) return 'Тиркеме';
+export const getAttachmentName = (value, fallback = 'Attachment') => {
+    if (!value) return fallback;
     try {
         const withoutQuery = String(value).split('?')[0];
         const lastSegment = withoutQuery.split('/').pop() || withoutQuery;
-        return decodeURIComponent(lastSegment) || 'Тиркеме';
+        return decodeURIComponent(lastSegment) || fallback;
     } catch {
-        return 'Тиркеме';
+        return fallback;
     }
 };
 
@@ -195,16 +195,29 @@ export const normalizeCourseType = (course, session, group) =>
     group?.course?.courseType ||
     COURSE_TYPE.VIDEO;
 
-export const getCourseTypeLabel = (type) => {
-    if (type === COURSE_TYPE.OFFLINE) return 'Оффлайн';
-    if (type === COURSE_TYPE.ONLINE_LIVE) return 'Онлайн түз эфир';
-    return 'Видео курс';
+export const getCourseTypeLabel = (type, t) => {
+    if (typeof t === 'function') {
+        if (type === COURSE_TYPE.OFFLINE) return t('groupSessions.setup.delivery.offline');
+        if (type === COURSE_TYPE.ONLINE_LIVE) return t('groupSessions.setup.delivery.onlineLive');
+        return t('groupSessions.setup.delivery.video');
+    }
+    if (type === COURSE_TYPE.OFFLINE) return 'Offline';
+    if (type === COURSE_TYPE.ONLINE_LIVE) return 'Online live';
+    return 'Video course';
 };
 
-export const getWorkspaceErrorMessage = (error, fallback) => {
+export const getWorkspaceErrorMessage = (error, fallback, statusMessages = {}) => {
     const status = error?.response?.status;
-    if (status === 401) return 'Сессия мөөнөтү бүттү. Кайра кириңиз.';
-    if (status === 403) return 'Бул курс, группа же сессия сизге бекитилген эмес.';
+    if (status === 401) return statusMessages.unauthorized || 'Your session expired. Sign in again.';
+    if (status === 403) return statusMessages.forbidden || 'This course, group, or session is not assigned to you.';
     const message = error?.response?.data?.message || error?.message || fallback;
     return Array.isArray(message) ? message.join(', ') : message;
 };
+
+export const getWorkspaceErrorStatusMessages = (t) =>
+    typeof t === 'function'
+        ? {
+            unauthorized: t('groupSessions.workspace.errors.unauthorized'),
+            forbidden: t('groupSessions.workspace.errors.forbidden'),
+        }
+        : {};

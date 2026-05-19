@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import PropTypes from 'prop-types';
+import { useTranslation } from 'react-i18next';
 import {
     FiCheckCircle,
     FiClipboard,
@@ -16,16 +17,16 @@ import {
 import { DashboardInsetPanel } from '../../../components/ui/dashboard';
 
 const ACTIVITY_TYPE_OPTIONS = [
-    { value: 'discussion', label: 'Талкуу', icon: FiMessageSquare },
-    { value: 'exercise', label: 'Көнүгүү', icon: FiEdit3 },
-    { value: 'quiz', label: 'Квиз', icon: FiClipboard },
-    { value: 'group_work', label: 'Топтук иш', icon: FiUsers },
+    { value: 'discussion', labelKey: 'groupSessions.activities.types.discussion', icon: FiMessageSquare },
+    { value: 'exercise', labelKey: 'groupSessions.activities.types.exercise', icon: FiEdit3 },
+    { value: 'quiz', labelKey: 'groupSessions.activities.types.quiz', icon: FiClipboard },
+    { value: 'group_work', labelKey: 'groupSessions.activities.types.groupWork', icon: FiUsers },
 ];
 
 const ACTIVITY_STATUS_OPTIONS = [
-    { value: 'planned', label: 'Пландалды' },
-    { value: 'active', label: 'Азыр жүрүп жатат' },
-    { value: 'done', label: 'Аяктады' },
+    { value: 'planned', labelKey: 'groupSessions.activities.status.planned' },
+    { value: 'active', labelKey: 'groupSessions.activities.status.active' },
+    { value: 'done', labelKey: 'groupSessions.activities.status.done' },
 ];
 
 const typeMeta = Object.fromEntries(ACTIVITY_TYPE_OPTIONS.map((option) => [option.value, option]));
@@ -34,22 +35,22 @@ const typeTone = {
     discussion: {
         chip: 'border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-500/30 dark:bg-sky-500/10 dark:text-sky-300',
         panel: 'border-sky-200/80 bg-sky-50/40 dark:border-sky-500/20 dark:bg-sky-500/5',
-        helper: 'Окуучу текст же кыска жооп бере алат',
+        helperKey: 'groupSessions.activities.typeHelp.discussion',
     },
     exercise: {
         chip: 'border-violet-200 bg-violet-50 text-violet-700 dark:border-violet-500/30 dark:bg-violet-500/10 dark:text-violet-300',
         panel: 'border-violet-200/80 bg-violet-50/40 dark:border-violet-500/20 dark:bg-violet-500/5',
-        helper: 'Текст, файл же шилтеме менен аткарылат',
+        helperKey: 'groupSessions.activities.typeHelp.exercise',
     },
     quiz: {
         chip: 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300',
         panel: 'border-amber-200/80 bg-amber-50/40 dark:border-amber-500/20 dark:bg-amber-500/5',
-        helper: 'Авто бааланат, натыйжа дароо чыгат',
+        helperKey: 'groupSessions.activities.typeHelp.quiz',
     },
     group_work: {
         chip: 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300',
         panel: 'border-emerald-200/80 bg-emerald-50/40 dark:border-emerald-500/20 dark:bg-emerald-500/5',
-        helper: 'Ар бир студент өзүнчө жыйынтык же кыска отчет тапшырат',
+        helperKey: 'groupSessions.activities.typeHelp.groupWork',
     },
 };
 
@@ -57,36 +58,36 @@ const statusMeta = {
     planned: {
         className:
             'border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-500/30 dark:bg-sky-500/10 dark:text-sky-300',
-        helper: 'Студентке көрүнбөйт',
+        helperKey: 'groupSessions.activities.statusHelp.planned',
     },
     active: {
         className:
             'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300',
-        helper: 'Студентке көрүнөт',
+        helperKey: 'groupSessions.activities.statusHelp.active',
     },
     done: {
         className:
             'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300',
-        helper: 'Студентке көрүнөт, жабык',
+        helperKey: 'groupSessions.activities.statusHelp.done',
     },
 };
 
-const submissionStatusLabel = {
-    submitted: 'Текшерилүүдө',
-    approved: 'Бекитилди',
-    needs_revision: 'Оңдотуу керек',
-    rejected: 'Кайтарылды',
+const submissionStatusLabelKey = {
+    submitted: 'groupSessions.activities.submissionStatus.submitted',
+    approved: 'groupSessions.activities.submissionStatus.approved',
+    needs_revision: 'groupSessions.activities.submissionStatus.needsRevision',
+    rejected: 'groupSessions.activities.submissionStatus.rejected',
 };
 
 const activityResponseFilterMeta = {
-    all: { label: 'Баары', helper: 'Жалпы көрүнүш' },
-    pending: { label: 'Текшериле элек', helper: 'Submitted жоопторго көңүл буруңуз' },
-    reviewed: { label: 'Текшерилген', helper: 'Бүтүп калган жооптор' },
-    revision: { label: 'Оңдотуу/кайтаруу', helper: 'Кайра кароону талап кылгандар' },
-    passed: { label: 'Өткөн квиздер', helper: 'Ийгиликтүү бүткөн аракеттер' },
-    failed: { label: 'Өтпөгөн квиздер', helper: 'Кайра follow-up талап кылат' },
-    not_started: { label: 'Башталбаган квиздер', helper: 'Студент али аракет кылган жок' },
-    missing_response: { label: 'Жооп жок', helper: 'Ачык иштерге жооп бере элек' },
+    all: { labelKey: 'groupSessions.activities.filters.all', helperKey: 'groupSessions.activities.filterHelp.all' },
+    pending: { labelKey: 'groupSessions.activities.filters.pending', helperKey: 'groupSessions.activities.filterHelp.pending' },
+    reviewed: { labelKey: 'groupSessions.activities.filters.reviewed', helperKey: 'groupSessions.activities.filterHelp.reviewed' },
+    revision: { labelKey: 'groupSessions.activities.filters.revision', helperKey: 'groupSessions.activities.filterHelp.revision' },
+    passed: { labelKey: 'groupSessions.activities.filters.passed', helperKey: 'groupSessions.activities.filterHelp.passed' },
+    failed: { labelKey: 'groupSessions.activities.filters.failed', helperKey: 'groupSessions.activities.filterHelp.failed' },
+    not_started: { labelKey: 'groupSessions.activities.filters.notStarted', helperKey: 'groupSessions.activities.filterHelp.notStarted' },
+    missing_response: { labelKey: 'groupSessions.activities.filters.missingResponse', helperKey: 'groupSessions.activities.filterHelp.missingResponse' },
 };
 
 const createEmptyActivityOption = () => ({ text: '', isCorrect: false });
@@ -124,11 +125,11 @@ const cloneActivity = (activity = {}) => ({
             : [],
 });
 
-const formatSavedAt = (value) => {
+const formatSavedAt = (value, language) => {
     if (!value) return '';
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) return '';
-    return date.toLocaleString('ky-KG', {
+    return date.toLocaleString(language || undefined, {
         day: '2-digit',
         month: 'short',
         hour: '2-digit',
@@ -136,11 +137,11 @@ const formatSavedAt = (value) => {
     });
 };
 
-const formatSubmissionThreadLabel = (message = {}) => {
+const formatSubmissionThreadLabel = (message = {}, t) => {
     if (message.authorRole === 'student') {
-        return message.authorName || 'Студент';
+        return message.authorName || t('groupSessions.activities.fallbacks.student');
     }
-    return message.authorName || 'Мугалим';
+    return message.authorName || t('groupSessions.activities.fallbacks.instructor');
 };
 
 const ActivityEditor = ({
@@ -158,7 +159,11 @@ const ActivityEditor = ({
     saving,
     saveLabel,
 }) => {
+    const { t } = useTranslation();
     const meta = typeMeta[activity.type] || typeMeta.discussion;
+    const currentStatusOption =
+        ACTIVITY_STATUS_OPTIONS.find((option) => option.value === activity.status) ||
+        ACTIVITY_STATUS_OPTIONS[0];
 
     return (
         <div className="rounded-[1.5rem] border border-edubot-line/80 bg-white p-4 dark:border-slate-700 dark:bg-slate-950">
@@ -174,7 +179,7 @@ const ActivityEditor = ({
                         className="inline-flex min-h-11 items-center gap-2 rounded-full border border-edubot-line bg-white px-4 py-2.5 text-sm font-semibold text-edubot-ink transition hover:border-edubot-orange/40 hover:text-edubot-orange dark:border-slate-700 dark:bg-slate-950 dark:text-white"
                     >
                         <FiX className="h-4 w-4" />
-                        Жокко чыгаруу
+                        {t('groupSessions.activities.actions.cancel')}
                     </button>
                     <button
                         type="button"
@@ -183,7 +188,7 @@ const ActivityEditor = ({
                         className="inline-flex min-h-11 items-center gap-2 rounded-full bg-edubot-orange px-5 py-2.5 text-sm font-semibold text-white transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-60"
                     >
                         {saving ? <FiCheckCircle className="h-4 w-4 animate-pulse" /> : <FiSave className="h-4 w-4" />}
-                        {saving ? 'Сакталып жатат...' : saveLabel}
+                        {saving ? t('groupSessions.activities.actions.saving') : saveLabel}
                     </button>
                 </div>
             </div>
@@ -192,7 +197,7 @@ const ActivityEditor = ({
                 <input
                     value={activity.title}
                     onChange={(event) => onChange('title', event.target.value)}
-                    placeholder="Иштин аталышы"
+                    placeholder={t('groupSessions.activities.fields.title')}
                     className="dashboard-field"
                 />
                 <select
@@ -202,7 +207,7 @@ const ActivityEditor = ({
                 >
                     {ACTIVITY_TYPE_OPTIONS.map((option) => (
                         <option key={option.value} value={option.value}>
-                            {option.label}
+                            {t(option.labelKey)}
                         </option>
                     ))}
                 </select>
@@ -213,7 +218,7 @@ const ActivityEditor = ({
                 >
                     {ACTIVITY_STATUS_OPTIONS.map((option) => (
                         <option key={option.value} value={option.value}>
-                            {option.label}
+                            {t(option.labelKey)}
                         </option>
                     ))}
                 </select>
@@ -223,29 +228,29 @@ const ActivityEditor = ({
                 value={activity.description || ''}
                 onChange={(event) => onChange('description', event.target.value)}
                 rows={3}
-                placeholder="Кыскача түшүндүрмө же эмне кылыш керек экенин жазыңыз."
+                placeholder={t('groupSessions.activities.fields.description')}
                 className="dashboard-field mt-3 min-h-[96px]"
             />
 
             <div className="mt-3 flex flex-wrap gap-2">
                 <span className="rounded-full border border-edubot-line bg-edubot-surfaceAlt/70 px-3 py-1 text-xs font-semibold text-edubot-ink dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-200">
-                    {meta.label}
+                    {t(meta.labelKey)}
                 </span>
                 <span
                     className={`rounded-full border px-3 py-1 text-xs font-semibold ${
                         statusMeta[activity.status]?.className || statusMeta.planned.className
                     }`}
                 >
-                    {(ACTIVITY_STATUS_OPTIONS.find((option) => option.value === activity.status) || ACTIVITY_STATUS_OPTIONS[0]).label}
+                    {t(currentStatusOption.labelKey)}
                 </span>
                 <span className="rounded-full border border-edubot-line/80 bg-white px-3 py-1 text-xs font-semibold text-edubot-muted dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300">
-                    {statusMeta[activity.status]?.helper || statusMeta.planned.helper}
+                    {t(statusMeta[activity.status]?.helperKey || statusMeta.planned.helperKey)}
                 </span>
             </div>
 
             {activity.type !== 'quiz' ? (
                 <div className="mt-3 rounded-2xl border border-edubot-line/70 bg-edubot-surfaceAlt/60 px-4 py-3 text-xs leading-6 text-edubot-muted dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-300">
-                    Студентке пайдалуу жыйынтык көрсөтүү үчүн текшерүүдө жок дегенде пикир же баа калтырыңыз.
+                    {t('groupSessions.activities.editor.reviewHint')}
                 </div>
             ) : null}
 
@@ -254,14 +259,16 @@ const ActivityEditor = ({
                     <summary className="flex cursor-pointer list-none items-center justify-between gap-3">
                         <div>
                             <div className="text-sm font-semibold text-edubot-ink dark:text-white">
-                                Квиз суроолору
+                                {t('groupSessions.activities.quiz.questionsTitle')}
                             </div>
                             <div className="text-xs text-edubot-muted dark:text-slate-400">
-                                {(activity.questions || []).length} суроо. Ар бир суроо үчүн жок дегенде эки вариант жана бир туура жооп керек.
+                                {t('groupSessions.activities.quiz.questionsHelp', {
+                                    count: (activity.questions || []).length,
+                                })}
                             </div>
                         </div>
                         <span className="rounded-full border border-edubot-line bg-white px-3 py-1 text-xs font-semibold text-edubot-muted dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300">
-                            Ачуу/жабуу
+                            {t('groupSessions.activities.actions.toggle')}
                         </span>
                     </summary>
 
@@ -272,7 +279,7 @@ const ActivityEditor = ({
                             className="inline-flex items-center gap-2 rounded-full border border-edubot-line bg-white px-3 py-2 text-sm font-semibold text-edubot-ink transition hover:border-edubot-orange/40 hover:text-edubot-orange dark:border-slate-700 dark:bg-slate-950 dark:text-white"
                         >
                             <FiPlus className="h-4 w-4" />
-                            Суроо кошуу
+                            {t('groupSessions.activities.actions.addQuestion')}
                         </button>
                     </div>
 
@@ -284,7 +291,9 @@ const ActivityEditor = ({
                             >
                                 <div className="flex items-center justify-between gap-3">
                                     <div className="text-sm font-semibold text-edubot-ink dark:text-white">
-                                        Суроо #{questionIndex + 1}
+                                        {t('groupSessions.activities.quiz.questionNumber', {
+                                            number: questionIndex + 1,
+                                        })}
                                     </div>
                                     <button
                                         type="button"
@@ -292,7 +301,7 @@ const ActivityEditor = ({
                                         className="inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm font-medium text-rose-500 transition hover:bg-rose-50 dark:hover:bg-rose-500/10"
                                     >
                                         <FiTrash2 className="h-4 w-4" />
-                                        Өчүрүү
+                                        {t('groupSessions.activities.actions.delete')}
                                     </button>
                                 </div>
 
@@ -300,7 +309,7 @@ const ActivityEditor = ({
                                     value={question.prompt}
                                     onChange={(event) => onQuestionChange(questionIndex, 'prompt', event.target.value)}
                                     rows={2}
-                                    placeholder="Суроону жазыңыз"
+                                    placeholder={t('groupSessions.activities.quiz.questionPlaceholder')}
                                     className="dashboard-field mt-3"
                                 />
 
@@ -310,8 +319,8 @@ const ActivityEditor = ({
                                         onChange={(event) => onQuestionChange(questionIndex, 'questionMode', event.target.value)}
                                         className="dashboard-field dashboard-select max-w-[240px]"
                                     >
-                                        <option value="single_choice">Бир туура жооп</option>
-                                        <option value="multiple_choice">Бир нече туура жооп</option>
+                                        <option value="single_choice">{t('groupSessions.activities.quiz.singleChoice')}</option>
+                                        <option value="multiple_choice">{t('groupSessions.activities.quiz.multipleChoice')}</option>
                                     </select>
                                 </div>
 
@@ -330,12 +339,14 @@ const ActivityEditor = ({
                                                     }
                                                     className="h-4 w-4 rounded border-edubot-line text-edubot-orange focus:ring-edubot-orange/30"
                                                 />
-                                                Туура
+                                                {t('groupSessions.activities.quiz.correct')}
                                             </label>
                                             <input
                                                 value={option.text}
                                                 onChange={(event) => onOptionChange(questionIndex, optionIndex, 'text', event.target.value)}
-                                                placeholder={`Вариант ${optionIndex + 1}`}
+                                                placeholder={t('groupSessions.activities.quiz.optionPlaceholder', {
+                                                    number: optionIndex + 1,
+                                                })}
                                                 className="dashboard-field min-w-[220px] flex-1"
                                             />
                                             <button
@@ -344,7 +355,7 @@ const ActivityEditor = ({
                                                 className="inline-flex min-h-11 items-center gap-2 rounded-full px-3 py-2 text-sm font-medium text-rose-500 transition hover:bg-rose-50 dark:hover:bg-rose-500/10"
                                             >
                                                 <FiTrash2 className="h-4 w-4" />
-                                                Өчүрүү
+                                                {t('groupSessions.activities.actions.delete')}
                                             </button>
                                         </div>
                                     ))}
@@ -356,7 +367,7 @@ const ActivityEditor = ({
                                     className="mt-3 inline-flex items-center gap-2 rounded-full border border-edubot-line bg-white px-3 py-2 text-sm font-semibold text-edubot-ink transition hover:border-edubot-orange/40 hover:text-edubot-orange dark:border-slate-700 dark:bg-slate-950 dark:text-white"
                                 >
                                     <FiPlus className="h-4 w-4" />
-                                    Вариант кошуу
+                                    {t('groupSessions.activities.actions.addOption')}
                                 </button>
                             </div>
                         ))}
@@ -384,6 +395,7 @@ const SessionActivitiesTab = ({
     reviewingSubmissionId,
     activityResponseFilter,
 }) => {
+    const { i18n, t } = useTranslation();
     const [isCreating, setIsCreating] = useState(false);
     const [createDraft, setCreateDraft] = useState(createEmptyActivity());
     const [editingId, setEditingId] = useState(null);
@@ -586,37 +598,41 @@ const SessionActivitiesTab = ({
     return (
         <div className="space-y-4">
             <DashboardInsetPanel
-                title="Сессия иштери"
-                description="Бул бөлүм окуучу менен синхрондолот. Ар бир иш өзүнчө сакталат: пландалды — студентке көрүнбөйт, активдүү — көрүнөт, аяктады — көрүнөт бирок жабык."
+                title={t('groupSessions.activities.title')}
+                description={t('groupSessions.activities.description')}
             >
                 {activityResponseFilter && activityResponseFilter !== 'all' ? (
                     <div className="mt-4 rounded-[1.25rem] border border-amber-200 bg-amber-50 px-4 py-3 dark:border-amber-500/30 dark:bg-amber-500/10">
                         <div className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-700 dark:text-amber-300">
-                            Insight фокус
+                            {t('groupSessions.activities.insightFocus')}
                         </div>
                         <div className="mt-1 text-sm font-semibold text-amber-800 dark:text-amber-100">
-                            {activityResponseFilterMeta[activityResponseFilter]?.label || 'Фокус'}
+                            {activityResponseFilterMeta[activityResponseFilter]?.labelKey
+                                ? t(activityResponseFilterMeta[activityResponseFilter].labelKey)
+                                : t('groupSessions.activities.focusFallback')}
                         </div>
                         <div className="mt-1 text-xs text-amber-700/90 dark:text-amber-200/90">
-                            {activityResponseFilterMeta[activityResponseFilter]?.helper || 'Ушул багыттагы жоопторду биринчи караңыз.'}
+                            {activityResponseFilterMeta[activityResponseFilter]?.helperKey
+                                ? t(activityResponseFilterMeta[activityResponseFilter].helperKey)
+                                : t('groupSessions.activities.focusHelpFallback')}
                         </div>
                     </div>
                 ) : null}
                 <div className="mt-4 grid gap-3 md:grid-cols-4">
                     <div className="rounded-[1.25rem] border border-edubot-line/80 bg-white px-4 py-3 dark:border-slate-700 dark:bg-slate-950">
-                        <div className="text-xs font-semibold uppercase tracking-[0.22em] text-edubot-muted dark:text-slate-400">Жалпы</div>
+                        <div className="text-xs font-semibold uppercase tracking-[0.22em] text-edubot-muted dark:text-slate-400">{t('groupSessions.activities.metrics.total')}</div>
                         <div className="mt-2 text-2xl font-semibold text-edubot-ink dark:text-white">{activityStats.total}</div>
                     </div>
                     <div className="rounded-[1.25rem] border border-amber-200 bg-amber-50 px-4 py-3 dark:border-amber-500/30 dark:bg-amber-500/10">
-                        <div className="text-xs font-semibold uppercase tracking-[0.22em] text-amber-700 dark:text-amber-300">Көрүнөт</div>
+                        <div className="text-xs font-semibold uppercase tracking-[0.22em] text-amber-700 dark:text-amber-300">{t('groupSessions.activities.metrics.visible')}</div>
                         <div className="mt-2 text-2xl font-semibold text-amber-800 dark:text-amber-100">{activityStats.visible}</div>
                     </div>
                     <div className="rounded-[1.25rem] border border-sky-200 bg-sky-50 px-4 py-3 dark:border-sky-500/30 dark:bg-sky-500/10">
-                        <div className="text-xs font-semibold uppercase tracking-[0.22em] text-sky-700 dark:text-sky-300">Жашыруун</div>
+                        <div className="text-xs font-semibold uppercase tracking-[0.22em] text-sky-700 dark:text-sky-300">{t('groupSessions.activities.metrics.hidden')}</div>
                         <div className="mt-2 text-2xl font-semibold text-sky-800 dark:text-sky-100">{activityStats.hidden}</div>
                     </div>
                     <div className="rounded-[1.25rem] border border-edubot-line/80 bg-white px-4 py-3 dark:border-slate-700 dark:bg-slate-950">
-                        <div className="text-xs font-semibold uppercase tracking-[0.22em] text-edubot-muted dark:text-slate-400">Квиз</div>
+                        <div className="text-xs font-semibold uppercase tracking-[0.22em] text-edubot-muted dark:text-slate-400">{t('groupSessions.activities.metrics.quiz')}</div>
                         <div className="mt-2 text-2xl font-semibold text-edubot-ink dark:text-white">{activityStats.quiz}</div>
                     </div>
                 </div>
@@ -624,8 +640,10 @@ const SessionActivitiesTab = ({
                 <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-[1.25rem] border border-edubot-line/80 bg-white px-4 py-3 dark:border-slate-700 dark:bg-slate-950">
                     <div className="text-sm text-edubot-muted dark:text-slate-300">
                         {savedAt
-                            ? `Акыркы жаңыртуу: ${formatSavedAt(savedAt)}`
-                            : 'Иштер азырынча кошула элек.'}
+                            ? t('groupSessions.activities.lastUpdated', {
+                                date: formatSavedAt(savedAt, i18n.language),
+                            })
+                            : t('groupSessions.activities.empty.noActivitiesYet')}
                     </div>
                     {canEdit ? (
                         <button
@@ -634,7 +652,7 @@ const SessionActivitiesTab = ({
                             className="inline-flex min-h-11 items-center gap-2 rounded-full bg-edubot-orange px-5 py-2.5 text-sm font-semibold text-white transition hover:brightness-105"
                         >
                             <FiPlus className="h-4 w-4" />
-                            Иш кошуу
+                            {t('groupSessions.activities.actions.addActivity')}
                         </button>
                     ) : null}
                 </div>
@@ -643,7 +661,7 @@ const SessionActivitiesTab = ({
                     <div className="mt-4">
                         <ActivityEditor
                             activity={createDraft}
-                            label="Жаңы иш"
+                            label={t('groupSessions.activities.editor.newActivity')}
                             onChange={(field, value) => updateDraft(setCreateDraft, field, value)}
                             onQuestionChange={(questionIndex, field, value) => updateQuestion(setCreateDraft, questionIndex, field, value)}
                             onOptionChange={(questionIndex, optionIndex, field, value) => updateOption(setCreateDraft, questionIndex, optionIndex, field, value)}
@@ -657,7 +675,7 @@ const SessionActivitiesTab = ({
                             }}
                             onSave={saveCreate}
                             saving={creating}
-                            saveLabel="Ишти сактоо"
+                            saveLabel={t('groupSessions.activities.actions.saveActivity')}
                         />
                     </div>
                 ) : null}
@@ -675,7 +693,7 @@ const SessionActivitiesTab = ({
                                     <ActivityEditor
                                         key={`edit-${activity.id}`}
                                         activity={editDraft}
-                                        label={`Иш #${index + 1}`}
+                                        label={t('groupSessions.activities.editor.activityNumber', { number: index + 1 })}
                                         onChange={(field, value) => updateDraft(setEditDraft, field, value)}
                                         onQuestionChange={(questionIndex, field, value) => updateQuestion(setEditDraft, questionIndex, field, value)}
                                         onOptionChange={(questionIndex, optionIndex, field, value) => updateOption(setEditDraft, questionIndex, optionIndex, field, value)}
@@ -689,7 +707,7 @@ const SessionActivitiesTab = ({
                                         }}
                                         onSave={saveEdit}
                                         saving={String(savingActivityId) === String(activity.id)}
-                                        saveLabel="Өзгөртүүнү сактоо"
+                                        saveLabel={t('groupSessions.activities.actions.saveChanges')}
                                     />
                                 );
                             }
@@ -718,7 +736,7 @@ const SessionActivitiesTab = ({
                                                 className="inline-flex min-h-11 items-center gap-2 rounded-full border border-edubot-line bg-white px-4 py-2.5 text-sm font-semibold text-edubot-ink transition hover:border-edubot-orange/40 hover:text-edubot-orange dark:border-slate-700 dark:bg-slate-950 dark:text-white"
                                             >
                                                 <FiEye className="h-4 w-4" />
-                                                Жооптор
+                                                {t('groupSessions.activities.actions.responses')}
                                             </button>
                                             <button
                                                 type="button"
@@ -726,7 +744,7 @@ const SessionActivitiesTab = ({
                                                 className="inline-flex min-h-11 items-center gap-2 rounded-full border border-edubot-line bg-white px-4 py-2.5 text-sm font-semibold text-edubot-ink transition hover:border-edubot-orange/40 hover:text-edubot-orange dark:border-slate-700 dark:bg-slate-950 dark:text-white"
                                             >
                                                 <FiEdit3 className="h-4 w-4" />
-                                                Түзөтүү
+                                                {t('groupSessions.activities.actions.edit')}
                                             </button>
                                             <button
                                                 type="button"
@@ -735,30 +753,39 @@ const SessionActivitiesTab = ({
                                                 className="inline-flex min-h-11 items-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold text-rose-500 transition hover:bg-rose-50 disabled:opacity-60 dark:hover:bg-rose-500/10"
                                             >
                                                 <FiTrash2 className="h-4 w-4" />
-                                                {String(deletingActivityId) === String(activity.id) ? 'Өчүрүлүүдө...' : 'Өчүрүү'}
+                                                {String(deletingActivityId) === String(activity.id)
+                                                    ? t('groupSessions.activities.actions.deleting')
+                                                    : t('groupSessions.activities.actions.delete')}
                                             </button>
                                         </div>
                                     </div>
 
                                     <div className="mt-3 flex flex-wrap gap-2">
                                         <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${tone.chip}`}>
-                                            {meta.label}
+                                            {t(meta.labelKey)}
                                         </span>
                                         <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${statusMeta[activity.status]?.className || statusMeta.planned.className}`}>
-                                            {(ACTIVITY_STATUS_OPTIONS.find((option) => option.value === activity.status) || ACTIVITY_STATUS_OPTIONS[0]).label}
+                                            {t(
+                                                (
+                                                    ACTIVITY_STATUS_OPTIONS.find((option) => option.value === activity.status) ||
+                                                    ACTIVITY_STATUS_OPTIONS[0]
+                                                ).labelKey
+                                            )}
                                         </span>
                                         <span className="rounded-full border border-edubot-line/80 bg-white px-3 py-1 text-xs font-semibold text-edubot-muted dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300">
-                                            {statusMeta[activity.status]?.helper || statusMeta.planned.helper}
+                                            {t(statusMeta[activity.status]?.helperKey || statusMeta.planned.helperKey)}
                                         </span>
                                         {activity.type === 'quiz' ? (
                                             <span className="rounded-full border border-edubot-line/80 bg-white px-3 py-1 text-xs font-semibold text-edubot-muted dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300">
-                                                {(activity.questions || []).length} суроо
+                                                {t('groupSessions.activities.quiz.questionCount', {
+                                                    count: (activity.questions || []).length,
+                                                })}
                                             </span>
                                         ) : null}
                                     </div>
 
                                     <div className="mt-2 text-xs text-edubot-muted dark:text-slate-400">
-                                        {tone.helper}
+                                        {t(tone.helperKey)}
                                     </div>
 
                                     {activity.type === 'quiz' ? (
@@ -766,15 +793,15 @@ const SessionActivitiesTab = ({
                                             <div className="flex items-center justify-between gap-3">
                                                 <div>
                                                     <div className="text-sm font-semibold text-edubot-ink dark:text-white">
-                                                        Квиз кыскача көрүнүшү
+                                                        {t('groupSessions.activities.quiz.summaryTitle')}
                                                     </div>
                                                     <div className="text-xs text-edubot-muted dark:text-slate-400">
-                                                        Оң жооптор бул жерде көрсөтүлбөйт. Студентке статус боюнча көрүнөт.
+                                                        {t('groupSessions.activities.quiz.summaryDescription')}
                                                     </div>
                                                 </div>
                                                 <span className="inline-flex items-center gap-2 rounded-full border border-edubot-line/80 bg-white px-3 py-1 text-xs font-semibold text-edubot-muted dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300">
                                                     <FiEye className="h-3.5 w-3.5" />
-                                                    Көрүү режими
+                                                    {t('groupSessions.activities.quiz.viewMode')}
                                                 </span>
                                             </div>
                                         </div>
@@ -783,9 +810,9 @@ const SessionActivitiesTab = ({
                                     {String(expandedResponsesId) === String(activity.id) ? (
                                         <div className="mt-4 rounded-[1.25rem] border border-edubot-line/80 bg-edubot-surface/60 p-4 dark:border-slate-700 dark:bg-slate-900/70">
                                             {String(loadingResponsesId) === String(activity.id) && !responsesByActivity?.[activity.id] ? (
-                                                <div className="text-sm text-edubot-muted dark:text-slate-400">Жүктөлүүдө...</div>
+                                                <div className="text-sm text-edubot-muted dark:text-slate-400">{t('groupSessions.activities.loading')}</div>
                                             ) : !responsesByActivity?.[activity.id]?.items?.length ? (
-                                                <div className="text-sm text-edubot-muted dark:text-slate-400">Азырынча жооп жок.</div>
+                                                <div className="text-sm text-edubot-muted dark:text-slate-400">{t('groupSessions.activities.empty.noResponses')}</div>
                                             ) : responsesByActivity?.[activity.id]?.mode === 'quiz' ? (
                                                 (() => {
                                                     const activeFilter = responseFilters[activity.id] || 'all';
@@ -798,27 +825,27 @@ const SessionActivitiesTab = ({
                                                         <div className="space-y-3">
                                                             <div className="grid gap-3 md:grid-cols-3">
                                                                 <div className="rounded-2xl border border-edubot-line/80 bg-white px-4 py-3 dark:border-slate-700 dark:bg-slate-950">
-                                                                    <div className="text-xs font-semibold uppercase tracking-[0.18em] text-edubot-muted dark:text-slate-400">Студент</div>
+                                                                    <div className="text-xs font-semibold uppercase tracking-[0.18em] text-edubot-muted dark:text-slate-400">{t('groupSessions.activities.responses.student')}</div>
                                                                     <div className="mt-2 text-2xl font-semibold text-edubot-ink dark:text-white">{rows.length}</div>
                                                                 </div>
                                                                 <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 dark:border-emerald-500/30 dark:bg-emerald-500/10">
-                                                                    <div className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-300">Өткөндөр</div>
+                                                                    <div className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-300">{t('groupSessions.activities.responses.passed')}</div>
                                                                     <div className="mt-2 text-2xl font-semibold text-emerald-800 dark:text-emerald-100">{rows.filter((row) => row.passed).length}</div>
                                                                 </div>
                                                                 <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 dark:border-amber-500/30 dark:bg-amber-500/10">
-                                                                    <div className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-700 dark:text-amber-300">Өтпөгөндөр</div>
+                                                                    <div className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-700 dark:text-amber-300">{t('groupSessions.activities.responses.failed')}</div>
                                                                     <div className="mt-2 text-2xl font-semibold text-amber-800 dark:text-amber-100">{rows.filter((row) => !row.passed).length}</div>
                                                                 </div>
                                                             </div>
                                                             <div className="flex flex-wrap items-center justify-between gap-3">
                                                                 <div className="text-sm text-edubot-muted dark:text-slate-400">
-                                                                    {rows.length} студент көрсөтүлдү
+                                                                    {t('groupSessions.activities.responses.studentsShown', { count: rows.length })}
                                                                 </div>
                                                                 <div className="flex flex-wrap gap-2">
                                                                     {[
-                                                                        ['all', 'Баары'],
-                                                                        ['passed', 'Өткөндөр'],
-                                                                        ['failed', 'Өтпөгөндөр'],
+                                                                        ['all', t('groupSessions.activities.filters.all')],
+                                                                        ['passed', t('groupSessions.activities.filters.passed')],
+                                                                        ['failed', t('groupSessions.activities.filters.failed')],
                                                                     ].map(([value, label]) => (
                                                                         <button
                                                                             key={`${activity.id}-quiz-filter-${value}`}
@@ -837,10 +864,10 @@ const SessionActivitiesTab = ({
                                                             </div>
                                                             <div className="overflow-hidden rounded-2xl border border-edubot-line/80 bg-white dark:border-slate-700 dark:bg-slate-950">
                                                                 <div className="grid grid-cols-[minmax(0,1.5fr),120px,120px,120px] gap-3 border-b border-edubot-line/80 px-4 py-3 text-xs font-semibold uppercase tracking-[0.18em] text-edubot-muted dark:border-slate-700 dark:text-slate-400">
-                                                                    <span>Студент</span>
-                                                                    <span>Аракет</span>
-                                                                    <span>Жооп</span>
-                                                                    <span>Натыйжа</span>
+                                                                    <span>{t('groupSessions.activities.responses.student')}</span>
+                                                                    <span>{t('groupSessions.activities.responses.attempt')}</span>
+                                                                    <span>{t('groupSessions.activities.responses.answer')}</span>
+                                                                    <span>{t('groupSessions.activities.responses.result')}</span>
                                                                 </div>
                                                                 <div className="divide-y divide-edubot-line/80 dark:divide-slate-700">
                                                                     {rows.map((row) => (
@@ -855,7 +882,9 @@ const SessionActivitiesTab = ({
                                                                                     {row.score}%
                                                                                 </span>
                                                                                 <span className={`rounded-full border px-2.5 py-1 text-xs font-semibold ${row.passed ? statusMeta.done.className : statusMeta.active.className}`}>
-                                                                                    {row.passed ? 'Өттү' : 'Өткөн жок'}
+                                                                                    {row.passed
+                                                                                        ? t('groupSessions.activities.responses.passedShort')
+                                                                                        : t('groupSessions.activities.responses.failedShort')}
                                                                                 </span>
                                                                             </div>
                                                                         </div>
@@ -878,32 +907,32 @@ const SessionActivitiesTab = ({
                                                 <div className="space-y-3">
                                                     <div className="grid gap-3 md:grid-cols-4">
                                                         <div className="rounded-2xl border border-edubot-line/80 bg-white px-4 py-3 dark:border-slate-700 dark:bg-slate-950">
-                                                            <div className="text-xs font-semibold uppercase tracking-[0.18em] text-edubot-muted dark:text-slate-400">Жооп</div>
+                                                            <div className="text-xs font-semibold uppercase tracking-[0.18em] text-edubot-muted dark:text-slate-400">{t('groupSessions.activities.responses.response')}</div>
                                                             <div className="mt-2 text-2xl font-semibold text-edubot-ink dark:text-white">{rows.length}</div>
                                                         </div>
                                                         <div className="rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 dark:border-sky-500/30 dark:bg-sky-500/10">
-                                                            <div className="text-xs font-semibold uppercase tracking-[0.18em] text-sky-700 dark:text-sky-300">Текшериле элек</div>
+                                                            <div className="text-xs font-semibold uppercase tracking-[0.18em] text-sky-700 dark:text-sky-300">{t('groupSessions.activities.filters.pending')}</div>
                                                             <div className="mt-2 text-2xl font-semibold text-sky-800 dark:text-sky-100">{rows.filter((row) => row.status === 'submitted').length}</div>
                                                         </div>
                                                         <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 dark:border-emerald-500/30 dark:bg-emerald-500/10">
-                                                            <div className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-300">Бекитилди</div>
+                                                            <div className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-300">{t('groupSessions.activities.submissionStatus.approved')}</div>
                                                             <div className="mt-2 text-2xl font-semibold text-emerald-800 dark:text-emerald-100">{rows.filter((row) => row.status === 'approved').length}</div>
                                                         </div>
                                                         <div className="rounded-2xl border border-orange-200 bg-orange-50 px-4 py-3 dark:border-orange-500/30 dark:bg-orange-500/10">
-                                                            <div className="text-xs font-semibold uppercase tracking-[0.18em] text-orange-700 dark:text-orange-300">Оңдотуу/кайтаруу</div>
+                                                            <div className="text-xs font-semibold uppercase tracking-[0.18em] text-orange-700 dark:text-orange-300">{t('groupSessions.activities.filters.revision')}</div>
                                                             <div className="mt-2 text-2xl font-semibold text-orange-800 dark:text-orange-100">{rows.filter((row) => row.status === 'needs_revision' || row.status === 'rejected').length}</div>
                                                         </div>
                                                     </div>
                                                     <div className="flex flex-wrap items-center justify-between gap-3">
                                                         <div className="text-sm text-edubot-muted dark:text-slate-400">
-                                                            {rows.length} жооп көрсөтүлдү
+                                                            {t('groupSessions.activities.responses.responsesShown', { count: rows.length })}
                                                         </div>
                                                         <div className="flex flex-wrap gap-2">
                                                             {[
-                                                                ['all', 'Баары'],
-                                                                ['pending', 'Текшериле элек'],
-                                                                ['reviewed', 'Текшерилген'],
-                                                                ['revision', 'Оңдотуу/кайтаруу'],
+                                                                ['all', t('groupSessions.activities.filters.all')],
+                                                                ['pending', t('groupSessions.activities.filters.pending')],
+                                                                ['reviewed', t('groupSessions.activities.filters.reviewed')],
+                                                                ['revision', t('groupSessions.activities.filters.revision')],
                                                             ].map(([value, label]) => (
                                                                 <button
                                                                     key={`${activity.id}-submission-filter-${value}`}
@@ -938,26 +967,30 @@ const SessionActivitiesTab = ({
                                                                 <div className="flex flex-wrap items-center justify-between gap-3">
                                                                     <div>
                                                                         <div className="text-sm font-semibold text-edubot-ink dark:text-white">{row.studentName}</div>
-                                                                        <div className="text-xs text-edubot-muted dark:text-slate-400">{row.updatedAt ? formatSavedAt(row.updatedAt) : ''}</div>
+                                                                        <div className="text-xs text-edubot-muted dark:text-slate-400">{row.updatedAt ? formatSavedAt(row.updatedAt, i18n.language) : ''}</div>
                                                                     </div>
                                                                     <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${statusMeta[row.status]?.className || statusMeta.planned.className}`}>
-                                                                        {submissionStatusLabel[row.status] || row.status}
+                                                                        {submissionStatusLabelKey[row.status]
+                                                                            ? t(submissionStatusLabelKey[row.status])
+                                                                            : row.status}
                                                                     </span>
                                                                 </div>
                                                                 {hasSavedReview && !isEditingReview ? (
                                                                     <div className="mt-4 rounded-2xl border border-edubot-line/70 bg-edubot-surfaceAlt/60 p-4 text-sm dark:border-slate-700 dark:bg-slate-900/70">
                                                                         <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
                                                                             <span className="font-semibold text-edubot-ink dark:text-white">
-                                                                                Учурдагы жыйынтык
+                                                                                {t('groupSessions.activities.review.currentResult')}
                                                                             </span>
                                                                             {row.score !== null && row.score !== undefined ? (
                                                                                 <span className="font-semibold text-edubot-ink dark:text-white">
-                                                                                    Баа: {row.score}
+                                                                                    {t('groupSessions.activities.review.score', { score: row.score })}
                                                                                 </span>
                                                                             ) : null}
                                                                             {row.reviewedAt ? (
                                                                                 <span className="text-edubot-muted dark:text-slate-400">
-                                                                                    Текшерилген: {formatSavedAt(row.reviewedAt)}
+                                                                                    {t('groupSessions.activities.review.reviewedAt', {
+                                                                                        date: formatSavedAt(row.reviewedAt, i18n.language),
+                                                                                    })}
                                                                                 </span>
                                                                             ) : null}
                                                                         </div>
@@ -973,7 +1006,7 @@ const SessionActivitiesTab = ({
                                                                                 className="inline-flex min-h-10 items-center gap-2 rounded-full border border-edubot-line bg-white px-4 py-2 text-sm font-semibold text-edubot-ink transition hover:border-edubot-orange/40 hover:text-edubot-orange dark:border-slate-700 dark:bg-slate-950 dark:text-white"
                                                                             >
                                                                                 <FiEdit3 className="h-4 w-4" />
-                                                                                Review түзөтүү
+                                                                                {t('groupSessions.activities.review.editReview')}
                                                                             </button>
                                                                         </div>
                                                                     </div>
@@ -984,13 +1017,13 @@ const SessionActivitiesTab = ({
                                                                 {row.attachmentUrl ? (
                                                                     <a href={row.attachmentUrl} target="_blank" rel="noreferrer" className="mt-3 inline-flex items-center gap-2 rounded-xl border border-edubot-line px-3 py-2 text-sm font-medium text-edubot-ink transition hover:border-edubot-orange hover:text-edubot-orange dark:border-slate-700 dark:text-slate-200">
                                                                         <FiFileText className="h-4 w-4" />
-                                                                        Тиркемени ачуу
+                                                                        {t('groupSessions.activities.actions.openAttachment')}
                                                                     </a>
                                                                 ) : null}
                                                                 {historyThread.length ? (
                                                                     <div className="mt-4 space-y-3 border-t border-edubot-line/70 pt-4 dark:border-slate-700">
                                                                         <div className="text-xs font-semibold uppercase tracking-[0.18em] text-edubot-muted dark:text-slate-400">
-                                                                            Мурунку алмашуулар
+                                                                            {t('groupSessions.activities.review.previousThread')}
                                                                         </div>
                                                                         {historyThread.map((message) => {
                                                                             const isInstructor = message.authorRole !== 'student';
@@ -1005,21 +1038,23 @@ const SessionActivitiesTab = ({
                                                                                 >
                                                                                     <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs">
                                                                                         <span className="font-semibold text-edubot-ink dark:text-white">
-                                                                                            {formatSubmissionThreadLabel(message)}
+                                                                                            {formatSubmissionThreadLabel(message, t)}
                                                                                         </span>
                                                                                         {message.createdAt ? (
                                                                                             <span className="text-edubot-muted dark:text-slate-400">
-                                                                                                {formatSavedAt(message.createdAt)}
+                                                                                                {formatSavedAt(message.createdAt, i18n.language)}
                                                                                             </span>
                                                                                         ) : null}
                                                                                         {message.status && message.authorRole !== 'student' ? (
                                                                                             <span className={`rounded-full border px-2.5 py-1 font-semibold ${statusMeta[message.status]?.className || statusMeta.planned.className}`}>
-                                                                                                {submissionStatusLabel[message.status] || message.status}
+                                                                                                {submissionStatusLabelKey[message.status]
+                                                                                                    ? t(submissionStatusLabelKey[message.status])
+                                                                                                    : message.status}
                                                                                             </span>
                                                                                         ) : null}
                                                                                         {message.score !== null && message.score !== undefined ? (
                                                                                             <span className="font-semibold text-edubot-ink dark:text-white">
-                                                                                                Баа: {message.score}
+                                                                                                {t('groupSessions.activities.review.score', { score: message.score })}
                                                                                             </span>
                                                                                         ) : null}
                                                                                     </div>
@@ -1031,7 +1066,7 @@ const SessionActivitiesTab = ({
                                                                                     {message.attachmentUrl ? (
                                                                                         <a href={message.attachmentUrl} target="_blank" rel="noreferrer" className="mt-3 inline-flex items-center gap-2 rounded-xl border border-edubot-line px-3 py-2 text-sm font-medium text-edubot-ink transition hover:border-edubot-orange hover:text-edubot-orange dark:border-slate-700 dark:text-slate-200">
                                                                                             <FiFileText className="h-4 w-4" />
-                                                                                            Тиркемени ачуу
+                                                                                            {t('groupSessions.activities.actions.openAttachment')}
                                                                                         </a>
                                                                                     ) : null}
                                                                                 </div>
@@ -1046,10 +1081,10 @@ const SessionActivitiesTab = ({
                                                                             onChange={(event) => setReviewDrafts((prev) => ({ ...prev, [row.id]: { ...draft, status: event.target.value } }))}
                                                                             className="dashboard-field dashboard-select"
                                                                         >
-                                                                            <option value="submitted">Текшерилүүдө</option>
-                                                                            <option value="approved">Бекитүү</option>
-                                                                            <option value="needs_revision">Оңдотуу</option>
-                                                                            <option value="rejected">Кайтаруу</option>
+                                                                            <option value="submitted">{t('groupSessions.activities.submissionStatus.submitted')}</option>
+                                                                            <option value="approved">{t('groupSessions.activities.review.approve')}</option>
+                                                                            <option value="needs_revision">{t('groupSessions.activities.review.requestRevision')}</option>
+                                                                            <option value="rejected">{t('groupSessions.activities.review.reject')}</option>
                                                                         </select>
                                                                         <input
                                                                             type="number"
@@ -1057,13 +1092,13 @@ const SessionActivitiesTab = ({
                                                                             max="1000"
                                                                             value={draft.score}
                                                                             onChange={(event) => setReviewDrafts((prev) => ({ ...prev, [row.id]: { ...draft, score: event.target.value } }))}
-                                                                            placeholder="Баа"
+                                                                            placeholder={t('groupSessions.activities.review.scorePlaceholder')}
                                                                             className="dashboard-field"
                                                                         />
                                                                         <input
                                                                             value={draft.reviewComment}
                                                                             onChange={(event) => setReviewDrafts((prev) => ({ ...prev, [row.id]: { ...draft, reviewComment: event.target.value } }))}
-                                                                            placeholder="Пикир"
+                                                                            placeholder={t('groupSessions.activities.review.commentPlaceholder')}
                                                                             className="dashboard-field"
                                                                         />
                                                                         <div className="flex items-center gap-2">
@@ -1073,7 +1108,7 @@ const SessionActivitiesTab = ({
                                                                                     onClick={() => setReviewEditingIds((prev) => ({ ...prev, [row.id]: false }))}
                                                                                     className="inline-flex min-h-11 items-center justify-center rounded-full border border-edubot-line bg-white px-4 py-2.5 text-sm font-semibold text-edubot-ink transition hover:border-edubot-orange/40 hover:text-edubot-orange dark:border-slate-700 dark:bg-slate-950 dark:text-white"
                                                                                 >
-                                                                                    Жыйуу
+                                                                                    {t('groupSessions.activities.actions.collapse')}
                                                                                 </button>
                                                                             ) : null}
                                                                             <button
@@ -1082,14 +1117,16 @@ const SessionActivitiesTab = ({
                                                                                 disabled={String(reviewingSubmissionId) === String(row.id)}
                                                                                 className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-edubot-orange px-4 py-2.5 text-sm font-semibold text-white transition hover:brightness-105 disabled:opacity-60"
                                                                             >
-                                                                                {String(reviewingSubmissionId) === String(row.id) ? 'Сакталып жатат...' : 'Сактоо'}
+                                                                                {String(reviewingSubmissionId) === String(row.id)
+                                                                                    ? t('groupSessions.activities.actions.saving')
+                                                                                    : t('groupSessions.activities.actions.save')}
                                                                             </button>
                                                                         </div>
                                                                     </div>
                                                                 ) : null}
                                                                 {isEditingReview ? (
                                                                     <div className="mt-2 text-xs leading-5 text-edubot-muted dark:text-slate-400">
-                                                                        `Бекитилди`, `Оңдотуу керек`, `Кайтарылды` үчүн жок дегенде пикир же баа керек.
+                                                                        {t('groupSessions.activities.review.requireFeedback')}
                                                                     </div>
                                                                 ) : null}
                                                             </div>
@@ -1107,7 +1144,7 @@ const SessionActivitiesTab = ({
                     </div>
                 ) : (
                     <div className="mt-4 rounded-[1.25rem] border border-dashed border-edubot-line/80 bg-edubot-surface/60 p-4 text-sm text-edubot-muted dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-400">
-                        Азырынча сессия иштери жок. Мисалы, талкуу, көнүгүү, топтук иш же квиз кошсоңуз болот.
+                        {t('groupSessions.activities.empty.noActivities')}
                     </div>
                 )}
             </DashboardInsetPanel>

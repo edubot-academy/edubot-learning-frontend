@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'react-hot-toast';
+import { useTranslation } from 'react-i18next';
 import { COURSE_SESSION_STATUS } from '@shared/contracts';
 import {
     createCourseSession,
@@ -11,6 +12,7 @@ import {
     QUICK_SESSION_DEFAULT,
     getNextSessionIndex,
     getWorkspaceErrorMessage,
+    getWorkspaceErrorStatusMessages,
     toArray,
     toInputDateTime,
 } from '@features/groupSessions/utils/sessionWorkspace.helpers';
@@ -34,6 +36,8 @@ export const useSessionWorkspaceEditor = ({
     workspaceMode,
     onRefreshInsights,
 }) => {
+    const { t } = useTranslation();
+    const workspaceErrorStatusMessages = getWorkspaceErrorStatusMessages(t);
     const [quickSession, setQuickSession] = useState(QUICK_SESSION_DEFAULT);
     const [editSession, setEditSession] = useState(EDIT_SESSION_DEFAULT);
     const [savingSession, setSavingSession] = useState(false);
@@ -76,10 +80,10 @@ export const useSessionWorkspaceEditor = ({
         if (!selectedGroupId) {
             setWorkspaceFeedback({
                 tone: 'warning',
-                title: 'Группа тандалган эмес',
-                message: 'Жаңы сессия түзүү үчүн адегенде группа тандаңыз.',
+                title: t('groupSessions.setup.feedback.noGroupTitle'),
+                message: t('groupSessions.setup.feedback.noGroupMessage'),
             });
-            toast.error('Адегенде группаны тандаңыз.');
+            toast.error(t('groupSessions.setup.toasts.selectGroup'));
             return;
         }
         if (
@@ -90,10 +94,10 @@ export const useSessionWorkspaceEditor = ({
         ) {
             setWorkspaceFeedback({
                 tone: 'warning',
-                title: 'Сессия маалыматы толук эмес',
-                message: 'Сессия үчүн номер, аталыш, башталышы жана аягы милдеттүү.',
+                title: t('groupSessions.setup.feedback.incompleteTitle'),
+                message: t('groupSessions.setup.feedback.createIncompleteMessage'),
             });
-            toast.error('Сессия үчүн номер, аталыш, башталышы жана аягы милдеттүү.');
+            toast.error(t('groupSessions.setup.toasts.createIncomplete'));
             return;
         }
 
@@ -123,10 +127,10 @@ export const useSessionWorkspaceEditor = ({
             const created = await createCourseSession(payload);
             setWorkspaceFeedback({
                 tone: 'success',
-                title: 'Сессия түзүлдү',
-                message: `${payload.title} активдүү workspace ичинде ачылды.`,
+                title: t('groupSessions.setup.feedback.createdTitle'),
+                message: t('groupSessions.setup.feedback.createdMessage', { title: payload.title }),
             });
-            toast.success('Session түзүлдү.');
+            toast.success(t('groupSessions.setup.toasts.created'));
 
             const list = await refreshSelectedGroupSessions();
             if (created?.id) setSelectedSessionId(String(created.id));
@@ -138,8 +142,8 @@ export const useSessionWorkspaceEditor = ({
                 status: prev.status,
             }));
         } catch (error) {
-            const message = getWorkspaceErrorMessage(error, 'Сессия түзүү катасы');
-            setWorkspaceFeedback({ tone: 'error', title: 'Сессия түзүлгөн жок', message });
+            const message = getWorkspaceErrorMessage(error, t('groupSessions.setup.toasts.createError'), workspaceErrorStatusMessages);
+            setWorkspaceFeedback({ tone: 'error', title: t('groupSessions.setup.feedback.createFailedTitle'), message });
             toast.error(message);
         } finally {
             setSavingSession(false);
@@ -150,19 +154,19 @@ export const useSessionWorkspaceEditor = ({
         if (!selectedSessionId) {
             setWorkspaceFeedback({
                 tone: 'warning',
-                title: 'Сессия тандалган эмес',
-                message: 'Түзөтүү үчүн активдүү сессияны тандаңыз.',
+                title: t('groupSessions.setup.feedback.noSessionTitle'),
+                message: t('groupSessions.setup.feedback.noSessionMessage'),
             });
-            toast.error('Сессияны тандаңыз.');
+            toast.error(t('groupSessions.setup.toasts.selectSession'));
             return;
         }
         if (!editSession.title.trim() || !editSession.startsAt || !editSession.endsAt) {
             setWorkspaceFeedback({
                 tone: 'warning',
-                title: 'Сессия маалыматы толук эмес',
-                message: 'Сессия үчүн аталыш, башталышы жана аягы милдеттүү.',
+                title: t('groupSessions.setup.feedback.incompleteTitle'),
+                message: t('groupSessions.setup.feedback.updateIncompleteMessage'),
             });
-            toast.error('Сессия үчүн аталыш, башталышы жана аягы милдеттүү.');
+            toast.error(t('groupSessions.setup.toasts.updateIncomplete'));
             return;
         }
 
@@ -183,13 +187,13 @@ export const useSessionWorkspaceEditor = ({
             setIsSessionSetupOpen(false);
             setWorkspaceFeedback({
                 tone: 'success',
-                title: 'Сессия жаңыртылды',
-                message: `${editSession.title.trim()} үчүн өзгөртүүлөр сакталды.`,
+                title: t('groupSessions.setup.feedback.updatedTitle'),
+                message: t('groupSessions.setup.feedback.updatedMessage', { title: editSession.title.trim() }),
             });
-            toast.success('Session жаңыртылды.');
+            toast.success(t('groupSessions.setup.toasts.updated'));
         } catch (error) {
-            const message = getWorkspaceErrorMessage(error, 'Сессияны жаңыртуу катасы');
-            setWorkspaceFeedback({ tone: 'error', title: 'Сессия жаңырган жок', message });
+            const message = getWorkspaceErrorMessage(error, t('groupSessions.setup.toasts.updateError'), workspaceErrorStatusMessages);
+            setWorkspaceFeedback({ tone: 'error', title: t('groupSessions.setup.feedback.updateFailedTitle'), message });
             toast.error(message);
         } finally {
             setSavingSessionUpdate(false);
@@ -198,7 +202,7 @@ export const useSessionWorkspaceEditor = ({
 
     const updateSelectedSessionStatus = async (nextStatus) => {
         if (!selectedSessionId) {
-            toast.error('Сессия тандаңыз.');
+            toast.error(t('groupSessions.workspace.validation.selectSession'));
             return false;
         }
 
@@ -229,10 +233,10 @@ export const useSessionWorkspaceEditor = ({
                 status: normalizedStatus,
             }));
             await onRefreshInsights?.();
-            toast.success('Сессия статусу жаңыртылды.');
+            toast.success(t('groupSessions.setup.toasts.statusUpdated'));
             return true;
         } catch (error) {
-            toast.error(getWorkspaceErrorMessage(error, 'Сессия статусун жаңыртуу катасы'));
+            toast.error(getWorkspaceErrorMessage(error, t('groupSessions.setup.toasts.statusUpdateError'), workspaceErrorStatusMessages));
             return false;
         } finally {
             setSavingSessionStatus(false);
@@ -241,21 +245,23 @@ export const useSessionWorkspaceEditor = ({
 
     const nextSessionIndex = useMemo(() => getNextSessionIndex(sessions), [sessions]);
     const isCreateWorkspace = workspaceMode === 'create';
-    const workspaceTitle = isCreateWorkspace ? 'Жаңы сессия' : 'Сессияны түзөтүү';
+    const workspaceTitle = isCreateWorkspace
+        ? t('groupSessions.setup.workspace.createTitle')
+        : t('groupSessions.setup.workspace.editTitle');
     const workspaceDescription = isCreateWorkspace
-        ? 'Группанын кийинки сабагын түзүп, убакытын жана кошумча материалын кошуңуз.'
-        : 'Тандалган сессиянын убакытын, статусун жана жазуу шилтемесин жаңыртыңыз.';
+        ? t('groupSessions.setup.workspace.createDescription')
+        : t('groupSessions.setup.workspace.editDescription');
     const workspaceDisabled = isCreateWorkspace ? !selectedGroupId : !selectedSessionId;
     const workspaceDisabledReason = isCreateWorkspace
-        ? 'Сессия түзүү үчүн алгач группа тандаңыз.'
-        : 'Түзөтүү үчүн активдүү сессия тандаңыз.';
+        ? t('groupSessions.setup.workspace.createDisabledReason')
+        : t('groupSessions.setup.workspace.editDisabledReason');
     const workspaceActionLabel = isCreateWorkspace
         ? savingSession
-            ? 'Түзүлүүдө...'
-            : 'Сессия түзүү'
+            ? t('groupSessions.setup.workspace.creating')
+            : t('groupSessions.setup.workspace.createAction')
         : savingSessionUpdate
-            ? 'Сакталууда...'
-            : 'Өзгөртүүлөрдү сактоо';
+            ? t('groupSessions.setup.workspace.saving')
+            : t('groupSessions.setup.workspace.saveAction');
     const workspaceAction = isCreateWorkspace ? createQuickSession : updateSelectedSession;
     const workspaceSaving = isCreateWorkspace ? savingSession : savingSessionUpdate;
 

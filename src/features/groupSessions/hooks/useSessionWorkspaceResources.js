@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'react-hot-toast';
+import { useTranslation } from 'react-i18next';
 import { COURSE_TYPE, MEETING_PROVIDER } from '@shared/contracts';
 import {
     createSessionMeeting,
@@ -17,6 +18,7 @@ import {
 } from '@services/api';
 import {
     getWorkspaceErrorMessage,
+    getWorkspaceErrorStatusMessages,
     resolveSessionJoinUrl,
     toArray,
 } from '@features/groupSessions/utils/sessionWorkspace.helpers';
@@ -33,6 +35,8 @@ export const useSessionWorkspaceResources = ({
     setSessions,
     sourceVideoCourses,
 }) => {
+    const { t } = useTranslation();
+    const workspaceErrorStatusMessages = useMemo(() => getWorkspaceErrorStatusMessages(t), [t]);
     const [meetingProvider, setMeetingProvider] = useState(MEETING_PROVIDER.CUSTOM);
     const [meetingJoinUrl, setMeetingJoinUrl] = useState('');
     const [meetingId, setMeetingId] = useState('');
@@ -149,7 +153,7 @@ export const useSessionWorkspaceResources = ({
                                 lessonTitle: lesson.title,
                                 sectionTitle: section.title,
                                 assetType: 'video',
-                                title: lesson.title || 'Сабак видеосу',
+                                title: lesson.title || t('groupSessions.workspace.resources.fallbacks.lessonVideo'),
                                 url: lesson.videoUrl,
                                 storageKey: lesson.videoKey,
                             });
@@ -162,7 +166,7 @@ export const useSessionWorkspaceResources = ({
             } catch (error) {
                 if (!cancelled) {
                     setCourseResourceAssets([]);
-                    toast.error(getWorkspaceErrorMessage(error, 'Курстун материалдарын жүктөө катасы'));
+                    toast.error(getWorkspaceErrorMessage(error, t('groupSessions.workspace.resources.toasts.courseMaterialsLoadError'), workspaceErrorStatusMessages));
                 }
             } finally {
                 if (!cancelled) setLoadingCourseResourceAssets(false);
@@ -173,14 +177,14 @@ export const useSessionWorkspaceResources = ({
         return () => {
             cancelled = true;
         };
-    }, [selectedSourceVideoCourseId]);
+    }, [selectedSourceVideoCourseId, t, workspaceErrorStatusMessages]);
 
     const saveSessionMaterials = async (
         materials,
-        { successMessage = 'Материалдар жаңыртылды.', suppressSuccessToast = false } = {}
+        { successMessage = t('groupSessions.workspace.resources.toasts.materialsUpdated'), suppressSuccessToast = false } = {}
     ) => {
         if (!selectedSessionId) {
-            toast.error('Сессия тандаңыз.');
+            toast.error(t('groupSessions.workspace.validation.selectSession'));
             return false;
         }
 
@@ -198,7 +202,7 @@ export const useSessionWorkspaceResources = ({
             }
             return true;
         } catch (error) {
-            toast.error(getWorkspaceErrorMessage(error, 'Материалдарды жаңыртуу катасы'));
+            toast.error(getWorkspaceErrorMessage(error, t('groupSessions.workspace.resources.toasts.materialsUpdateError'), workspaceErrorStatusMessages));
             return false;
         } finally {
             setSavingMaterials(false);
@@ -207,7 +211,7 @@ export const useSessionWorkspaceResources = ({
 
     const uploadSessionMaterialFile = async (file) => {
         if (!selectedSessionId) {
-            toast.error('Сессия тандаңыз.');
+            toast.error(t('groupSessions.workspace.validation.selectSession'));
             return null;
         }
 
@@ -224,12 +228,12 @@ export const useSessionWorkspaceResources = ({
             ];
 
             const saved = await saveSessionMaterials(nextMaterials, {
-                successMessage: 'Файл материалдарга кошулду.',
+                successMessage: t('groupSessions.workspace.resources.toasts.fileAdded'),
             });
 
             return saved ? uploaded : null;
         } catch (error) {
-            toast.error(getWorkspaceErrorMessage(error, 'Файлды жүктөө катасы'));
+            toast.error(getWorkspaceErrorMessage(error, t('groupSessions.workspace.resources.toasts.fileUploadError'), workspaceErrorStatusMessages));
             return null;
         } finally {
             setUploadingMaterialFile(false);
@@ -241,7 +245,7 @@ export const useSessionWorkspaceResources = ({
             (item) => item.storageKey && item.storageKey === asset.storageKey
         );
         if (exists) {
-            toast.error('Бул материал сессияга мурунтан кошулган.');
+            toast.error(t('groupSessions.workspace.resources.toasts.materialAlreadyAdded'));
             return false;
         }
 
@@ -257,7 +261,7 @@ export const useSessionWorkspaceResources = ({
 
     const saveMeetingLink = async () => {
         if (!selectedSessionId) {
-            toast.error('Сессия тандаңыз.');
+            toast.error(t('groupSessions.workspace.validation.selectSession'));
             return;
         }
         setSavingMeeting(true);
@@ -271,9 +275,9 @@ export const useSessionWorkspaceResources = ({
                 : await createSessionMeeting(Number(selectedSessionId), payload);
             setMeetingJoinUrl(res?.joinUrl || '');
             setMeetingId(String(res?.meetingId || meetingId || ''));
-            toast.success('Жолугушуу шилтемеси жаңыртылды.');
+            toast.success(t('groupSessions.workspace.resources.toasts.meetingLinkUpdated'));
         } catch (error) {
-            toast.error(getWorkspaceErrorMessage(error, 'Жолугушуу шилтемесин сактоо катасы'));
+            toast.error(getWorkspaceErrorMessage(error, t('groupSessions.workspace.resources.toasts.meetingLinkSaveError'), workspaceErrorStatusMessages));
         } finally {
             setSavingMeeting(false);
         }
@@ -281,7 +285,7 @@ export const useSessionWorkspaceResources = ({
 
     const restoreMeetingState = async () => {
         if (!selectedSessionId) {
-            toast.error('Сессия тандаңыз.');
+            toast.error(t('groupSessions.workspace.validation.selectSession'));
             return;
         }
 
@@ -293,9 +297,9 @@ export const useSessionWorkspaceResources = ({
             setMeetingJoinUrl(res?.joinUrl || '');
             setMeetingId(String(res?.meetingId || ''));
             if (res?.provider) setMeetingProvider(res.provider);
-            toast.success('Жолугушуунун абалы жаңыртылды.');
+            toast.success(t('groupSessions.workspace.resources.toasts.meetingStateUpdated'));
         } catch (error) {
-            toast.error(getWorkspaceErrorMessage(error, 'Жолугушуу табылган жок'));
+            toast.error(getWorkspaceErrorMessage(error, t('groupSessions.workspace.resources.toasts.meetingNotFound'), workspaceErrorStatusMessages));
         } finally {
             setLoadingMeetingState(false);
         }
@@ -303,7 +307,7 @@ export const useSessionWorkspaceResources = ({
 
     const removeMeeting = async () => {
         if (!selectedSessionId) {
-            toast.error('Сессия тандаңыз.');
+            toast.error(t('groupSessions.workspace.validation.selectSession'));
             return;
         }
 
@@ -314,9 +318,9 @@ export const useSessionWorkspaceResources = ({
             });
             setMeetingJoinUrl('');
             setMeetingId('');
-            toast.success('Жолугушуу өчүрүлдү.');
+            toast.success(t('groupSessions.workspace.resources.toasts.meetingDeleted'));
         } catch (error) {
-            toast.error(getWorkspaceErrorMessage(error, 'Жолугушууну өчүрүү катасы'));
+            toast.error(getWorkspaceErrorMessage(error, t('groupSessions.workspace.resources.toasts.meetingDeleteError'), workspaceErrorStatusMessages));
         } finally {
             setDeletingMeeting(false);
         }
@@ -324,7 +328,7 @@ export const useSessionWorkspaceResources = ({
 
     const importZoomAttendanceToSession = async () => {
         if (!selectedSessionId) {
-            toast.error('Сессия тандаңыз.');
+            toast.error(t('groupSessions.workspace.validation.selectSession'));
             return;
         }
 
@@ -347,9 +351,9 @@ export const useSessionWorkspaceResources = ({
             setAttendanceHistory(refreshed?.items || []);
             await onRefreshInsights?.();
 
-            toast.success('Zoom attendance импорттолду.');
+            toast.success(t('groupSessions.workspace.resources.toasts.zoomAttendanceImported'));
         } catch (error) {
-            toast.error(getWorkspaceErrorMessage(error, 'Катышууну импорттоо катасы'));
+            toast.error(getWorkspaceErrorMessage(error, t('groupSessions.workspace.resources.toasts.attendanceImportError'), workspaceErrorStatusMessages));
         } finally {
             setImportingAttendance(false);
         }
@@ -357,7 +361,7 @@ export const useSessionWorkspaceResources = ({
 
     const syncZoomRecordingsToSession = async () => {
         if (!selectedSessionId) {
-            toast.error('Сессия тандаңыз.');
+            toast.error(t('groupSessions.workspace.validation.selectSession'));
             return;
         }
 
@@ -375,9 +379,9 @@ export const useSessionWorkspaceResources = ({
                     )
                 );
             }
-            toast.success('Zoom recordings синхрондолду.');
+            toast.success(t('groupSessions.workspace.resources.toasts.zoomRecordingsSynced'));
         } catch (error) {
-            toast.error(getWorkspaceErrorMessage(error, 'Жазууларды синхрондоо катасы'));
+            toast.error(getWorkspaceErrorMessage(error, t('groupSessions.workspace.resources.toasts.recordingsSyncError'), workspaceErrorStatusMessages));
         } finally {
             setSyncingRecordings(false);
         }
@@ -385,7 +389,7 @@ export const useSessionWorkspaceResources = ({
 
     const joinLiveSession = (joinUrl) => {
         if (!joinUrl) {
-            toast.error('Жолугушуу шилтемеси табылган жок.');
+            toast.error(t('groupSessions.workspace.resources.toasts.meetingLinkMissing'));
             return;
         }
         window.open(joinUrl, '_blank', 'noopener,noreferrer');
