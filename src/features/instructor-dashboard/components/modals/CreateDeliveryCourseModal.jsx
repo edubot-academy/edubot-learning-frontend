@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
+import { useTranslation } from 'react-i18next';
 import AdvancedModal from '@shared/ui/AdvancedModal';
+import { LOCALE_OPTIONS } from '../../../../i18n/locale';
 
 const DEFAULT_FORM_DATA = {
     courseType: 'offline',
@@ -18,12 +20,18 @@ const CreateDeliveryCourseModal = ({
     creatingDeliveryCourse,
     deliveryCategories,
     initialValues = null,
-    title = 'Жаңы курс түзүү',
-    subtitle = 'Оффлайн же онлайн курс түзүү үчүн формасы',
-    submitLabel = 'Курс түзүү',
+    title = null,
+    subtitle = null,
+    submitLabel = null,
 }) => {
+    const { t } = useTranslation();
     const [formData, setFormData] = useState(DEFAULT_FORM_DATA);
     const [errors, setErrors] = useState({});
+    const isEditMode = Boolean(initialValues);
+    const courseTypeDescriptions = {
+        offline: t('instructorDashboard.deliveryCourseModal.courseTypes.offline.description'),
+        online_live: t('instructorDashboard.deliveryCourseModal.courseTypes.onlineLive.description'),
+    };
 
     // Reset form when modal opens
     useEffect(() => {
@@ -62,15 +70,15 @@ const CreateDeliveryCourseModal = ({
         const newErrors = {};
 
         if (!formData.title.trim()) {
-            newErrors.title = 'Курс аталышын толтуруңуз';
+            newErrors.title = t('instructorDashboard.deliveryCourseModal.validation.titleRequired');
         }
 
         if (!formData.description.trim()) {
-            newErrors.description = 'Курс сүрөттөмөн толтуруңуз';
+            newErrors.description = t('instructorDashboard.deliveryCourseModal.validation.descriptionRequired');
         }
 
         if (!formData.categoryId) {
-            newErrors.categoryId = 'Категорияны тандаңыз';
+            newErrors.categoryId = t('instructorDashboard.deliveryCourseModal.validation.categoryRequired');
         }
 
         setErrors(newErrors);
@@ -106,8 +114,12 @@ const CreateDeliveryCourseModal = ({
         <AdvancedModal
             isOpen={isOpen}
             onClose={onClose}
-            title={title}
-            subtitle={subtitle}
+            title={title || t(isEditMode
+                ? 'instructorDashboard.deliveryCourseModal.header.editTitle'
+                : 'instructorDashboard.deliveryCourseModal.header.createTitle')}
+            subtitle={subtitle || t(isEditMode
+                ? 'instructorDashboard.deliveryCourseModal.header.editSubtitle'
+                : 'instructorDashboard.deliveryCourseModal.header.createSubtitle')}
             size="lg"
             loading={creatingDeliveryCourse}
             preventClose={creatingDeliveryCourse}
@@ -115,14 +127,16 @@ const CreateDeliveryCourseModal = ({
             actions={[
                 {
                     id: 'cancel',
-                    label: 'Жокко чыгаруу',
+                    label: t('instructorDashboard.deliveryCourseModal.actions.cancel'),
                     onClick: onClose,
                     variant: 'secondary',
                     disabled: creatingDeliveryCourse
                 },
                 {
                     id: 'submit',
-                    label: submitLabel,
+                    label: submitLabel || t(isEditMode
+                        ? 'instructorDashboard.deliveryCourseModal.actions.save'
+                        : 'instructorDashboard.deliveryCourseModal.actions.create'),
                     onClick: handleSubmit,
                     variant: 'primary',
                     loading: creatingDeliveryCourse
@@ -139,7 +153,7 @@ const CreateDeliveryCourseModal = ({
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                            Курс түрү *
+                            {t('instructorDashboard.deliveryCourseModal.fields.courseType')} *
                         </label>
                         <div className="relative">
                             <select
@@ -157,8 +171,12 @@ const CreateDeliveryCourseModal = ({
                                     msAppearance: 'none'
                                 }}
                             >
-                                <option value="offline">Оффлайн</option>
-                                <option value="online_live">Онлайн түз эфир</option>
+                                <option value="offline">
+                                    {t('instructorDashboard.deliveryCourseModal.courseTypes.offline.label')}
+                                </option>
+                                <option value="online_live">
+                                    {t('instructorDashboard.deliveryCourseModal.courseTypes.onlineLive.label')}
+                                </option>
                             </select>
                             <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
                                 <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -175,7 +193,7 @@ const CreateDeliveryCourseModal = ({
 
                     <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                            Сабак тили *
+                            {t('instructorDashboard.deliveryCourseModal.fields.language')} *
                         </label>
                         <div className="relative">
                             <select
@@ -193,9 +211,11 @@ const CreateDeliveryCourseModal = ({
                                     msAppearance: 'none'
                                 }}
                             >
-                                <option value="ky">Кыргызча</option>
-                                <option value="ru">Русский</option>
-                                <option value="en">English</option>
+                                {LOCALE_OPTIONS.map((locale) => (
+                                    <option key={locale.value} value={locale.value}>
+                                        {locale.nativeLabel}
+                                    </option>
+                                ))}
                             </select>
                             <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
                                 <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -214,7 +234,7 @@ const CreateDeliveryCourseModal = ({
                 {/* Course Title */}
                 <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Курс аталышы *
+                        {t('instructorDashboard.deliveryCourseModal.fields.title')} *
                     </label>
                     <input
                         type="text"
@@ -222,7 +242,7 @@ const CreateDeliveryCourseModal = ({
                         value={formData.title}
                         onChange={handleChange}
                         disabled={creatingDeliveryCourse}
-                        placeholder="Курсунун аталышын киргизиңиз"
+                        placeholder={t('instructorDashboard.deliveryCourseModal.placeholders.title')}
                         className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white transition-colors ${errors.title ? 'border-red-500' : 'border-gray-300'
                             }`}
                         aria-describedby="title-error"
@@ -234,21 +254,24 @@ const CreateDeliveryCourseModal = ({
                         </p>
                     )}
                     <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                        {formData.title.length}/100 белги
+                        {t('instructorDashboard.deliveryCourseModal.characterCount', {
+                            count: formData.title.length,
+                            max: 100,
+                        })}
                     </div>
                 </div>
 
                 {/* Course Description */}
                 <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Курс сүрөттөмө *
+                        {t('instructorDashboard.deliveryCourseModal.fields.description')} *
                     </label>
                     <textarea
                         name="description"
                         value={formData.description}
                         onChange={handleChange}
                         disabled={creatingDeliveryCourse}
-                        placeholder="Курс жөнүндө эмне экенин сүрөттөңүз"
+                        placeholder={t('instructorDashboard.deliveryCourseModal.placeholders.description')}
                         rows={4}
                         className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white resize-none transition-colors ${errors.description ? 'border-red-500' : 'border-gray-300'
                             }`}
@@ -261,7 +284,10 @@ const CreateDeliveryCourseModal = ({
                         </p>
                     )}
                     <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                        {formData.description.length}/500 белги
+                        {t('instructorDashboard.deliveryCourseModal.characterCount', {
+                            count: formData.description.length,
+                            max: 500,
+                        })}
                     </div>
                 </div>
 
@@ -269,7 +295,7 @@ const CreateDeliveryCourseModal = ({
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                            Категория *
+                            {t('instructorDashboard.deliveryCourseModal.fields.category')} *
                         </label>
                         <div className="relative">
                             <select
@@ -287,7 +313,7 @@ const CreateDeliveryCourseModal = ({
                                     msAppearance: 'none'
                                 }}
                             >
-                                <option value="">Тандаңыз</option>
+                                <option value="">{t('instructorDashboard.deliveryCourseModal.placeholders.select')}</option>
                                 {deliveryCategories.map((cat) => (
                                     <option key={cat.id} value={cat.id}>
                                         {cat.name}
@@ -309,11 +335,13 @@ const CreateDeliveryCourseModal = ({
 
                     <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                            Баасы (сом)
+                            {t('instructorDashboard.deliveryCourseModal.fields.price')}
                         </label>
                         <div className="relative">
                             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <span className="text-gray-500 text-sm">сом</span>
+                                <span className="text-gray-500 text-sm">
+                                    {t('instructorDashboard.deliveryCourseModal.currency')}
+                                </span>
                             </div>
                             <input
                                 type="text"
@@ -333,7 +361,7 @@ const CreateDeliveryCourseModal = ({
                             )}
                         </div>
                         <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                            Бош калса акысыз курс болот
+                            {t('instructorDashboard.deliveryCourseModal.priceHelp')}
                         </p>
                     </div>
                 </div>
@@ -348,13 +376,10 @@ const CreateDeliveryCourseModal = ({
                         </div>
                         <div>
                             <h4 className="text-sm font-semibold text-blue-900 dark:text-blue-100 mb-1">
-                                Курс түрү
+                                {t('instructorDashboard.deliveryCourseModal.fields.courseType')}
                             </h4>
                             <p className="text-sm text-blue-700 dark:text-blue-300">
-                                {formData.courseType === 'offline'
-                                    ? 'Офлайн тренинг – жайгашкан жерди көрсөтүңүз.'
-                                    : 'Zoom же Google Meet аркылуу жандуу сабак.'
-                                }
+                                {courseTypeDescriptions[formData.courseType] || courseTypeDescriptions.offline}
                             </p>
                         </div>
                     </div>

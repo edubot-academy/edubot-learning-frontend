@@ -1,17 +1,30 @@
 import { Link } from 'react-router-dom';
+import PropTypes from 'prop-types';
+import { useTranslation } from 'react-i18next';
 import { FiCalendar, FiGlobe } from 'react-icons/fi';
 
 const OfferingCard = ({ offering, onEdit, onEnroll }) => {
-    const title = offering.title || `${offering.course.title} Offering`;
-    const start = offering.startAt ? new Date(offering.startAt).toLocaleString() : 'Белгисиз';
-    const end = offering.endAt ? new Date(offering.endAt).toLocaleString() : null;
+    const { i18n, t } = useTranslation();
+    const title = offering.title || t('instructorDashboard.offerings.card.fallbackTitle', {
+        course: offering.course?.title || t('instructorDashboard.offerings.fallbacks.course'),
+    });
+    const start = offering.startAt
+        ? new Date(offering.startAt).toLocaleString(i18n.language || undefined)
+        : t('instructorDashboard.offerings.fallbacks.unknown');
+    const end = offering.endAt ? new Date(offering.endAt).toLocaleString(i18n.language || undefined) : null;
     const modality = offering.modality || 'ONLINE';
-    const modalityLabel =
-        modality === 'OFFLINE' ? 'Офлайн' : modality === 'HYBRID' ? 'Гибрид' : 'Онлайн';
-    const capacity = offering.capacity ? `${offering.capacity} орун` : 'Орун чектелбеген';
+    const modalityLabel = t(`instructorDashboard.offerings.modalities.${modality.toLowerCase()}`, {
+        defaultValue: t('instructorDashboard.offerings.modalities.online'),
+    });
+    const capacity = offering.capacity
+        ? t('instructorDashboard.offerings.card.capacity', { count: offering.capacity })
+        : t('instructorDashboard.offerings.card.unlimitedCapacity');
     const visibility = offering.visibility || 'PRIVATE';
     const companyName = offering.company?.name;
     const status = offering.status || 'DRAFT';
+    const statusLabel = t(`instructorDashboard.offerings.statuses.${status.toLowerCase()}`, {
+        defaultValue: status,
+    });
 
     const statusStyles = {
         ACTIVE: 'bg-green-100 text-green-700',
@@ -26,7 +39,9 @@ const OfferingCard = ({ offering, onEdit, onEnroll }) => {
                 <div>
                     <p className="text-lg font-semibold">{title}</p>
                     <p className="text-sm text-gray-500 dark:text-[#a6adba]">
-                        Курс: {offering.course.title}
+                        {t('instructorDashboard.offerings.card.course', {
+                            course: offering.course?.title || t('instructorDashboard.offerings.fallbacks.course'),
+                        })}
                     </p>
                 </div>
 
@@ -36,7 +51,9 @@ const OfferingCard = ({ offering, onEdit, onEnroll }) => {
                         : 'bg-gray-100 text-gray-600 dark:text-[#a6adba]'
                         }`}
                 >
-                    {visibility === 'PUBLIC' ? 'Публичный' : 'Жабык'}
+                    {visibility === 'PUBLIC'
+                        ? t('instructorDashboard.offerings.visibility.public')
+                        : t('instructorDashboard.offerings.visibility.private')}
                 </span>
             </div>
 
@@ -65,23 +82,35 @@ const OfferingCard = ({ offering, onEdit, onEnroll }) => {
                     className={`px-3 py-1 rounded-full font-semibold ${statusStyles[status] || 'bg-gray-200 text-gray-700'
                         }`}
                 >
-                    {status}
+                    {statusLabel}
                 </span>
                 {offering.isFeatured && (
                     <span className="px-3 py-1 rounded-full bg-yellow-100 text-yellow-700 font-semibold">
-                        Featured
+                        {t('instructorDashboard.offerings.card.featured')}
                     </span>
                 )}
             </div>
 
             <div className="flex flex-wrap gap-4 text-xs text-gray-600 dark:text-[#a6adba]">
-                <span>Катталган: {offering.enrolledCount ?? 0}</span>
-                {offering.seatsRemaining != null && <span>Калган орун: {offering.seatsRemaining}</span>}
+                <span>
+                    {t('instructorDashboard.offerings.card.enrolled', {
+                        count: offering.enrolledCount ?? 0,
+                    })}
+                </span>
+                {offering.seatsRemaining != null && (
+                    <span>
+                        {t('instructorDashboard.offerings.card.seatsRemaining', {
+                            count: offering.seatsRemaining,
+                        })}
+                    </span>
+                )}
             </div>
 
             {offering.scheduleBlocks?.length ? (
                 <div className="text-sm text-gray-600 dark:text-[#a6adba]">
-                    <p className="font-semibold text-gray-700 mb-1">Жүгүртмө:</p>
+                    <p className="font-semibold text-gray-700 mb-1">
+                        {t('instructorDashboard.offerings.card.schedule')}
+                    </p>
                     <ul className="space-y-1">
                         {offering.scheduleBlocks.map((block, idx) => (
                             <li key={idx}>
@@ -92,7 +121,9 @@ const OfferingCard = ({ offering, onEdit, onEnroll }) => {
                 </div>
             ) : offering.scheduleNote ? (
                 <p className="text-sm text-gray-600 dark:text-[#a6adba]">
-                    Белгилей кетүү: {offering.scheduleNote}
+                    {t('instructorDashboard.offerings.card.note', {
+                        note: offering.scheduleNote,
+                    })}
                 </p>
             ) : null}
 
@@ -101,7 +132,7 @@ const OfferingCard = ({ offering, onEdit, onEnroll }) => {
                     to={`/instructor/courses/edit/${offering.course.id}`}
                     className="px-4 py-2 rounded-full border text-sm"
                 >
-                    Курсту өзгөртүү
+                    {t('instructorDashboard.offerings.card.editCourse')}
                 </Link>
 
                 <button
@@ -109,7 +140,7 @@ const OfferingCard = ({ offering, onEdit, onEnroll }) => {
                     className="px-4 py-2 rounded-full border text-sm"
                     onClick={() => onEdit(offering)}
                 >
-                    Offeringди өзгөртүү
+                    {t('instructorDashboard.offerings.card.editOffering')}
                 </button>
 
                 <button
@@ -117,18 +148,45 @@ const OfferingCard = ({ offering, onEdit, onEnroll }) => {
                     className="px-4 py-2 rounded-full border text-sm text-green-700"
                     onClick={() => onEnroll(offering)}
                 >
-                    Студент кошуу
+                    {t('instructorDashboard.offerings.card.addStudent')}
                 </button>
 
                 <button
                     type="button"
                     className="px-4 py-2 rounded-full bg-blue-600 text-white text-sm"
                 >
-                    Шилтеме көчүрүү
+                    {t('instructorDashboard.offerings.card.copyLink')}
                 </button>
             </div>
         </div>
     );
+};
+
+OfferingCard.propTypes = {
+    offering: PropTypes.shape({
+        id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+        title: PropTypes.string,
+        startAt: PropTypes.string,
+        endAt: PropTypes.string,
+        modality: PropTypes.string,
+        capacity: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+        visibility: PropTypes.string,
+        status: PropTypes.string,
+        isFeatured: PropTypes.bool,
+        enrolledCount: PropTypes.number,
+        seatsRemaining: PropTypes.number,
+        scheduleBlocks: PropTypes.arrayOf(PropTypes.object),
+        scheduleNote: PropTypes.string,
+        course: PropTypes.shape({
+            id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+            title: PropTypes.string,
+        }),
+        company: PropTypes.shape({
+            name: PropTypes.string,
+        }),
+    }).isRequired,
+    onEdit: PropTypes.func.isRequired,
+    onEnroll: PropTypes.func.isRequired,
 };
 
 export default OfferingCard;

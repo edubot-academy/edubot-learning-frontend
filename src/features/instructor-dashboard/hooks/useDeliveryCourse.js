@@ -1,8 +1,18 @@
 import { useState, useCallback } from 'react';
 import { toast } from 'react-hot-toast';
+import { useTranslation } from 'react-i18next';
 import { createCourse, fetchCategories } from '@services/api';
+import { parseApiError } from '@shared/api/error';
+
+const toArray = (value) => {
+    if (Array.isArray(value)) return value;
+    if (Array.isArray(value?.items)) return value.items;
+    if (Array.isArray(value?.data)) return value.data;
+    return [];
+};
 
 export const useDeliveryCourse = () => {
+    const { t } = useTranslation();
     const [showDeliveryModal, setShowDeliveryModal] = useState(false);
     const [creatingDeliveryCourse, setCreatingDeliveryCourse] = useState(false);
     const [deliveryCategories, setDeliveryCategories] = useState([]);
@@ -36,18 +46,18 @@ export const useDeliveryCourse = () => {
         if (!deliveryCategories.length) {
             try {
                 const categories = await fetchCategories();
-                setDeliveryCategories(Array.isArray(categories) ? categories : []);
+                setDeliveryCategories(toArray(categories));
             } catch (error) {
                 console.error('Failed to load categories', error);
-                toast.error('Категориялар жүктөлгөн жок');
+                toast.error(parseApiError(error, t('instructorDashboard.deliveryCourseModal.toasts.categoriesLoadError')).message);
             }
         }
         setShowDeliveryModal(true);
-    }, [deliveryCategories.length]);
+    }, [deliveryCategories.length, t]);
 
     const handleCreateDeliveryCourse = useCallback(async (onSuccess) => {
         if (!deliveryCourse.title || !deliveryCourse.description || !deliveryCourse.categoryId) {
-            toast.error('Сураныч, аталыш, сүрөттөмө жана категорияны толтуруңуз.');
+            toast.error(t('instructorDashboard.deliveryCourseModal.validation.requiredFields'));
             return;
         }
 
@@ -64,16 +74,16 @@ export const useDeliveryCourse = () => {
                 isPaid: Number(deliveryCourse.price || 0) > 0,
             });
 
-            toast.success('Курс түзүлдү. Эми группа жана сессия түзө аласыз.');
+            toast.success(t('instructorDashboard.deliveryCourseModal.toasts.created'));
             closeDeliveryModal();
             if (onSuccess) onSuccess();
         } catch (error) {
             console.error('Failed to create delivery course', error);
-            toast.error('Курсту түзүүдө ката кетти.');
+            toast.error(parseApiError(error, t('instructorDashboard.deliveryCourseModal.toasts.createError')).message);
         } finally {
             setCreatingDeliveryCourse(false);
         }
-    }, [deliveryCourse, closeDeliveryModal]);
+    }, [closeDeliveryModal, deliveryCourse, t]);
 
     return {
         showDeliveryModal,

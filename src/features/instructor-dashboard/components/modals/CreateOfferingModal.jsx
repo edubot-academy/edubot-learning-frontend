@@ -1,7 +1,30 @@
 import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
+import { useTranslation } from 'react-i18next';
 import AdvancedModal from '@shared/ui/AdvancedModal';
-import toast from 'react-hot-toast';
+
+const toArray = (value) => {
+    if (Array.isArray(value)) return value;
+    if (Array.isArray(value?.items)) return value.items;
+    if (Array.isArray(value?.data)) return value.data;
+    return [];
+};
+
+const WEEKDAYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+const MODALITY_OPTIONS = ['ONLINE', 'OFFLINE', 'HYBRID'];
+
+const courseShape = PropTypes.shape({
+    id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    title: PropTypes.string,
+});
+
+const courseCollectionShape = PropTypes.oneOfType([
+    PropTypes.arrayOf(courseShape),
+    PropTypes.shape({
+        items: PropTypes.arrayOf(courseShape),
+        data: PropTypes.arrayOf(courseShape),
+    }),
+]);
 
 const CreateOfferingModal = ({
     courses,
@@ -12,16 +35,27 @@ const CreateOfferingModal = ({
     creating,
     mode
 }) => {
+    const { t } = useTranslation();
     const [currentStep, setCurrentStep] = useState(1);
     const [errors, setErrors] = useState({});
-
-    const modalityDescriptions = {
-        ONLINE: 'Zoom же Google Meet аркылуу жандуу сабак.',
-        OFFLINE: 'Офлайн тренинг – жайгашкан жерди көрсөтүңүз.',
-        HYBRID: 'Онлайн жана офлайн аралаш формат.',
+    const normalizedCourses = toArray(courses);
+    const modalityCopy = {
+        ONLINE: {
+            label: t('instructorDashboard.createOfferingModal.modalities.online.label'),
+            description: t('instructorDashboard.createOfferingModal.modalities.online.description'),
+        },
+        OFFLINE: {
+            label: t('instructorDashboard.createOfferingModal.modalities.offline.label'),
+            description: t('instructorDashboard.createOfferingModal.modalities.offline.description'),
+        },
+        HYBRID: {
+            label: t('instructorDashboard.createOfferingModal.modalities.hybrid.label'),
+            description: t('instructorDashboard.createOfferingModal.modalities.hybrid.description'),
+        },
     };
 
     const scheduleBlocks = form.scheduleBlocks || [];
+    const selectedCourse = normalizedCourses.find((course) => String(course.id) === String(form.courseId));
 
     // Reset form when modal opens
     useEffect(() => {
@@ -54,33 +88,33 @@ const CreateOfferingModal = ({
 
         if (step === 1) {
             if (!form.courseId) {
-                newErrors.courseId = 'Курс тандаңыз';
+                newErrors.courseId = t('instructorDashboard.createOfferingModal.validation.courseRequired');
             }
             if (!form.modality) {
-                newErrors.modality = 'Өткөрүү форматын тандаңыз';
+                newErrors.modality = t('instructorDashboard.createOfferingModal.validation.modalityRequired');
             }
             if (!form.price || form.price < 0) {
-                newErrors.price = 'Бааны киргизиңиз';
+                newErrors.price = t('instructorDashboard.createOfferingModal.validation.priceRequired');
             }
         }
 
         if (step === 2) {
             if (!scheduleBlocks || scheduleBlocks.length === 0) {
-                newErrors.schedule = 'Дарек кошуңуз';
+                newErrors.schedule = t('instructorDashboard.createOfferingModal.validation.scheduleRequired');
             }
 
             scheduleBlocks.forEach((block, index) => {
                 if (!block.day) {
-                    newErrors[`day_${index}`] = 'Күн тандаңыз';
+                    newErrors[`day_${index}`] = t('instructorDashboard.createOfferingModal.validation.dayRequired');
                 }
                 if (!block.startTime) {
-                    newErrors[`startTime_${index}`] = 'Башталыш убактысы';
+                    newErrors[`startTime_${index}`] = t('instructorDashboard.createOfferingModal.validation.startTimeRequired');
                 }
                 if (!block.endTime) {
-                    newErrors[`endTime_${index}`] = 'Аягы убактысы';
+                    newErrors[`endTime_${index}`] = t('instructorDashboard.createOfferingModal.validation.endTimeRequired');
                 }
                 if (block.startTime && block.endTime && block.startTime >= block.endTime) {
-                    newErrors[`time_${index}`] = 'Убакыт туура эмес';
+                    newErrors[`time_${index}`] = t('instructorDashboard.createOfferingModal.validation.timeInvalid');
                 }
             });
         }
@@ -101,14 +135,7 @@ const CreateOfferingModal = ({
 
     const handleSubmit = async () => {
         if (validateStep(currentStep)) {
-            try {
-                await onSubmit();
-                toast.success(mode === 'edit' ? 'Offering ийгиликтүү өзгөртүлдү!' : 'Offering ийгиликтүү түзүлдү!');
-                onClose();
-            } catch (error) {
-                console.error('Failed to create offering:', error);
-                toast.error('Ката кетти, кайра аракет кылыңыз');
-            }
+            await onSubmit();
         }
     };
 
@@ -120,7 +147,7 @@ const CreateOfferingModal = ({
                         {/* Course Selection */}
                         <div>
                             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                Курс *
+                                {t('instructorDashboard.createOfferingModal.fields.course')} *
                             </label>
                             <div className="relative">
                                 <select
@@ -131,8 +158,8 @@ const CreateOfferingModal = ({
                                         }`}
                                     aria-describedby="courseId-error"
                                 >
-                                    <option value="">Курс тандаңыз</option>
-                                    {courses.map((course) => (
+                                    <option value="">{t('instructorDashboard.createOfferingModal.placeholders.course')}</option>
+                                    {normalizedCourses.map((course) => (
                                         <option key={course.id} value={course.id}>
                                             {course.title}
                                         </option>
@@ -154,10 +181,10 @@ const CreateOfferingModal = ({
                         {/* Modality Selection */}
                         <div>
                             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                Өткөрүү форматы *
+                                {t('instructorDashboard.createOfferingModal.fields.modality')} *
                             </label>
                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                                {Object.entries(modalityDescriptions).map(([key, description]) => (
+                                {MODALITY_OPTIONS.map((key) => (
                                     <label
                                         key={key}
                                         className={`relative flex items-start p-4 border-2 rounded-lg cursor-pointer transition-all duration-200 ${form.modality === key
@@ -185,10 +212,10 @@ const CreateOfferingModal = ({
                                             </div>
                                             <div>
                                                 <div className="font-medium text-gray-900 dark:text-white">
-                                                    {key === 'ONLINE' ? 'Онлайн' : key === 'OFFLINE' ? 'Оффлайн' : 'Аралаш'}
+                                                    {modalityCopy[key].label}
                                                 </div>
                                                 <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                                                    {description}
+                                                    {modalityCopy[key].description}
                                                 </div>
                                             </div>
                                         </div>
@@ -205,11 +232,13 @@ const CreateOfferingModal = ({
                         {/* Price */}
                         <div>
                             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                Баасы (сом) *
+                                {t('instructorDashboard.createOfferingModal.fields.price')} *
                             </label>
                             <div className="relative">
                                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    <span className="text-gray-500 text-sm">сом</span>
+                                    <span className="text-gray-500 text-sm">
+                                        {t('instructorDashboard.createOfferingModal.currency')}
+                                    </span>
                                 </div>
                                 <input
                                     type="number"
@@ -230,7 +259,7 @@ const CreateOfferingModal = ({
                                 )}
                             </div>
                             <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                                Бош калса акысыз курс болот
+                                {t('instructorDashboard.createOfferingModal.priceHelp')}
                             </p>
                         </div>
                     </div>
@@ -241,14 +270,16 @@ const CreateOfferingModal = ({
                     <div className="space-y-6">
                         <div>
                             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">
-                                Дарек
+                                {t('instructorDashboard.createOfferingModal.fields.schedule')}
                             </label>
                             <div className="space-y-3">
                                 {scheduleBlocks.map((block, index) => (
                                     <div key={index} className="border border-gray-200 dark:border-gray-600 rounded-lg p-4">
                                         <div className="flex items-center justify-between mb-3">
                                             <h4 className="text-sm font-medium text-gray-900 dark:text-white">
-                                                Дарек #{index + 1}
+                                                {t('instructorDashboard.createOfferingModal.schedule.blockNumber', {
+                                                    number: index + 1,
+                                                })}
                                             </h4>
                                             {scheduleBlocks.length > 1 && (
                                                 <button
@@ -256,7 +287,9 @@ const CreateOfferingModal = ({
                                                     onClick={() => handleBlockRemove(index)}
                                                     disabled={creating}
                                                     className="text-red-500 hover:text-red-700 disabled:opacity-50"
-                                                    aria-label={`Дарек ${index + 1} өчүрүү`}
+                                                    aria-label={t('instructorDashboard.createOfferingModal.schedule.deleteAria', {
+                                                        number: index + 1,
+                                                    })}
                                                 >
                                                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116 21H8a2 2 0 01-2-2V7a2 2 0 012-2h4zM10 9v6m4-6v6" />
@@ -267,7 +300,7 @@ const CreateOfferingModal = ({
                                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                                             <div>
                                                 <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
-                                                    Күн *
+                                                    {t('instructorDashboard.createOfferingModal.schedule.day')} *
                                                 </label>
                                                 <select
                                                     value={block.day}
@@ -276,14 +309,12 @@ const CreateOfferingModal = ({
                                                     className={`w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white text-sm ${errors[`day_${index}`] ? 'border-red-500' : 'border-gray-300'
                                                         }`}
                                                 >
-                                                    <option value="">Тандаңыз</option>
-                                                    <option value="mon">Дүйшөмбү</option>
-                                                    <option value="tue">Шейшемби</option>
-                                                    <option value="wed">Шаршемби</option>
-                                                    <option value="thu">Бейшемби</option>
-                                                    <option value="fri">Жума</option>
-                                                    <option value="sat">Ишемби</option>
-                                                    <option value="sun">Жекшемби</option>
+                                                    <option value="">{t('instructorDashboard.createOfferingModal.placeholders.select')}</option>
+                                                    {WEEKDAYS.map((day) => (
+                                                        <option key={day} value={day}>
+                                                            {t(`instructorDashboard.createOfferingModal.weekdays.${day}`)}
+                                                        </option>
+                                                    ))}
                                                 </select>
                                                 {errors[`day_${index}`] && (
                                                     <p className="text-red-500 text-xs mt-1">
@@ -293,7 +324,7 @@ const CreateOfferingModal = ({
                                             </div>
                                             <div>
                                                 <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
-                                                    Башталыш убактысы *
+                                                    {t('instructorDashboard.createOfferingModal.schedule.startTime')} *
                                                 </label>
                                                 <input
                                                     type="time"
@@ -311,7 +342,7 @@ const CreateOfferingModal = ({
                                             </div>
                                             <div>
                                                 <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
-                                                    Аягы убактысы *
+                                                    {t('instructorDashboard.createOfferingModal.schedule.endTime')} *
                                                 </label>
                                                 <input
                                                     type="time"
@@ -350,7 +381,7 @@ const CreateOfferingModal = ({
                                 <svg className="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H8m8 0l-8 8" />
                                 </svg>
-                                Дарек кошуу
+                                {t('instructorDashboard.createOfferingModal.actions.addSchedule')}
                             </button>
                         </div>
                     </div>
@@ -361,37 +392,53 @@ const CreateOfferingModal = ({
                     <div className="space-y-6">
                         <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
                             <h3 className="text-lg font-semibold text-green-900 dark:text-green-100 mb-2">
-                                Өткөрүүн текшерүү
+                                {t('instructorDashboard.createOfferingModal.review.title')}
                             </h3>
                             <div className="space-y-3">
                                 <div className="flex items-center space-x-2">
                                     <div className="w-4 h-4 bg-green-500 rounded-full" />
                                     <span className="text-sm text-green-900 dark:text-green-100">
-                                        Курс: {courses.find(c => c.id === form.courseId)?.title || 'Тандалган эмес'}
+                                        {t('instructorDashboard.createOfferingModal.review.course', {
+                                            course: selectedCourse?.title || t('instructorDashboard.createOfferingModal.fallbacks.notSelected'),
+                                        })}
                                     </span>
                                 </div>
                                 <div className="flex items-center space-x-2">
                                     <div className="w-4 h-4 bg-green-500 rounded-full" />
                                     <span className="text-sm text-green-900 dark:text-green-100">
-                                        Формат: {form.modality === 'ONLINE' ? 'Онлайн' : form.modality === 'OFFLINE' ? 'Оффлайн' : 'Аралаш'}
+                                        {t('instructorDashboard.createOfferingModal.review.modality', {
+                                            modality: modalityCopy[form.modality]?.label || t('instructorDashboard.createOfferingModal.fallbacks.notSelected'),
+                                        })}
                                     </span>
                                 </div>
                                 <div className="flex items-center space-x-2">
                                     <div className="w-4 h-4 bg-green-500 rounded-full" />
                                     <span className="text-sm text-green-900 dark:text-green-100">
-                                        Баасы: {form.price ? `${form.price} сом` : 'Акысыз'}
+                                        {t('instructorDashboard.createOfferingModal.review.price', {
+                                            price: form.price
+                                                ? t('instructorDashboard.createOfferingModal.review.priceValue', {
+                                                    price: form.price,
+                                                })
+                                                : t('instructorDashboard.createOfferingModal.review.free'),
+                                        })}
                                     </span>
                                 </div>
                                 <div className="flex items-center space-x-2">
                                     <div className="w-4 h-4 bg-green-500 rounded-full" />
                                     <span className="text-sm text-green-900 dark:text-green-100">
-                                        Дарек саны: {scheduleBlocks.length}
+                                        {t('instructorDashboard.createOfferingModal.review.scheduleCount', {
+                                            count: scheduleBlocks.length,
+                                        })}
                                     </span>
                                 </div>
                             </div>
                         </div>
                         <div className="text-sm text-gray-600 dark:text-gray-400">
-                            Бардык маалыматты текшериңиз. Эгер бардык туура болсо, &quot;{mode === 'edit' ? 'Өзгөртүү' : 'Түзүү'}&quot; басыңыз.
+                            {t('instructorDashboard.createOfferingModal.review.confirm', {
+                                action: mode === 'edit'
+                                    ? t('instructorDashboard.createOfferingModal.actions.update')
+                                    : t('instructorDashboard.createOfferingModal.actions.create'),
+                            })}
                         </div>
                     </div>
                 );
@@ -403,9 +450,9 @@ const CreateOfferingModal = ({
 
     const getStepTitle = () => {
         switch (currentStep) {
-            case 1: return 'Негизги маалымат';
-            case 2: return 'Дарек';
-            case 3: return 'Текшерүү';
+            case 1: return t('instructorDashboard.createOfferingModal.steps.basic');
+            case 2: return t('instructorDashboard.createOfferingModal.steps.schedule');
+            case 3: return t('instructorDashboard.createOfferingModal.steps.review');
             default: return '';
         }
     };
@@ -416,14 +463,14 @@ const CreateOfferingModal = ({
                 return [
                     {
                         id: 'cancel',
-                        label: 'Жокко чыгаруу',
+                        label: t('instructorDashboard.createOfferingModal.actions.cancel'),
                         onClick: onClose,
                         variant: 'secondary',
                         disabled: creating
                     },
                     {
                         id: 'next',
-                        label: 'Кийинки кадам',
+                        label: t('instructorDashboard.createOfferingModal.actions.next'),
                         onClick: handleNext,
                         variant: 'primary',
                         disabled: creating
@@ -433,14 +480,14 @@ const CreateOfferingModal = ({
                 return [
                     {
                         id: 'previous',
-                        label: 'Артка',
+                        label: t('instructorDashboard.createOfferingModal.actions.back'),
                         onClick: handlePrevious,
                         variant: 'secondary',
                         disabled: creating
                     },
                     {
                         id: 'next',
-                        label: 'Текшерүү',
+                        label: t('instructorDashboard.createOfferingModal.actions.review'),
                         onClick: handleNext,
                         variant: 'primary',
                         disabled: creating
@@ -450,14 +497,16 @@ const CreateOfferingModal = ({
                 return [
                     {
                         id: 'previous',
-                        label: 'Артка',
+                        label: t('instructorDashboard.createOfferingModal.actions.back'),
                         onClick: handlePrevious,
                         variant: 'secondary',
                         disabled: creating
                     },
                     {
                         id: 'submit',
-                        label: mode === 'edit' ? 'Өзгөртүү' : 'Түзүү',
+                        label: mode === 'edit'
+                            ? t('instructorDashboard.createOfferingModal.actions.update')
+                            : t('instructorDashboard.createOfferingModal.actions.create'),
                         onClick: handleSubmit,
                         variant: 'primary',
                         loading: creating
@@ -472,7 +521,13 @@ const CreateOfferingModal = ({
         <AdvancedModal
             isOpen={!!form}
             onClose={onClose}
-            title={`${mode === 'edit' ? 'Offering өзгөртүү' : 'Жаңы offering'} - Кадам ${currentStep}/3`}
+            title={t('instructorDashboard.createOfferingModal.header.title', {
+                title: mode === 'edit'
+                    ? t('instructorDashboard.createOfferingModal.header.editTitle')
+                    : t('instructorDashboard.createOfferingModal.header.createTitle'),
+                step: currentStep,
+                total: 3,
+            })}
             subtitle={getStepTitle()}
             size="2xl"
             variant="default"
@@ -511,10 +566,7 @@ const CreateOfferingModal = ({
 };
 
 CreateOfferingModal.propTypes = {
-    courses: PropTypes.arrayOf(PropTypes.shape({
-        id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-        title: PropTypes.string,
-    })),
+    courses: courseCollectionShape,
     form: PropTypes.object,
     onChange: PropTypes.func,
     onClose: PropTypes.func,

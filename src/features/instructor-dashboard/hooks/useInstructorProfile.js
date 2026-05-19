@@ -1,11 +1,14 @@
 import { useState, useCallback, useMemo } from 'react';
 import { toast } from 'react-hot-toast';
+import { useTranslation } from 'react-i18next';
 import {
     fetchInstructorProfile,
     updateInstructorProfile,
 } from '@services/api';
+import { parseApiError } from '@shared/api/error';
 
 export const useInstructorProfile = (user) => {
+    const { t } = useTranslation();
     const [profile, setProfile] = useState(null);
     const [loadingProfile, setLoadingProfile] = useState(false);
     const [savingProfile, setSavingProfile] = useState(false);
@@ -19,11 +22,11 @@ export const useInstructorProfile = (user) => {
             setProfile(data);
         } catch (error) {
             console.error('Failed to load instructor profile', error);
-            toast.error('Инструктор маалыматын жүктөө мүмкүн болбоду');
+            toast.error(parseApiError(error, t('instructorDashboard.profile.toasts.loadError')).message);
         } finally {
             setLoadingProfile(false);
         }
-    }, [user]);
+    }, [t, user]);
 
     const saveProfile = useCallback(
         async (payload) => {
@@ -33,21 +36,17 @@ export const useInstructorProfile = (user) => {
             try {
                 const updated = await updateInstructorProfile(user.id, payload);
                 setProfile(updated);
-                toast.success('Инструктор профили сакталды');
+                toast.success(t('instructorDashboard.profile.toasts.saveSuccess'));
                 return true;
             } catch (error) {
                 console.error('Failed to save instructor profile', error);
-                const message =
-                    error?.response?.data?.message ||
-                    error?.message ||
-                    'Инструктор профилин сактоо мүмкүн болбоду';
-                toast.error(Array.isArray(message) ? message.join(', ') : message);
+                toast.error(parseApiError(error, t('instructorDashboard.profile.toasts.saveError')).message);
                 return false;
             } finally {
                 setSavingProfile(false);
             }
         },
-        [user?.id]
+        [t, user?.id]
     );
 
     const expertiseTags = useMemo(() => {

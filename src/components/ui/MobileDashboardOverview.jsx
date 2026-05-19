@@ -1,33 +1,35 @@
 import PropTypes from 'prop-types';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { getDashboardPath } from '@shared/utils/navigation';
 
 const MobileDashboardOverview = ({ user, profile, courses, studentCount, publishedCount, pendingCount, aiEnabledCount, analyticsLink }) => {
     const navigate = useNavigate();
+    const { t } = useTranslation();
     const quickStats = [
         {
-            label: 'Жарыяланган',
+            label: t('instructorDashboard.mobileOverview.stats.published'),
             value: publishedCount,
             icon: '✅',
             color: 'text-green-600 dark:text-green-400',
             bgColor: 'bg-green-100 dark:bg-green-900/20',
         },
         {
-            label: 'Күтүлүүдө',
+            label: t('instructorDashboard.mobileOverview.stats.pending'),
             value: pendingCount,
             icon: '⏳',
             color: 'text-yellow-600 dark:text-yellow-400',
             bgColor: 'bg-yellow-100 dark:bg-yellow-900/20',
         },
         {
-            label: 'AI Курстар',
+            label: t('instructorDashboard.mobileOverview.stats.aiCourses'),
             value: aiEnabledCount,
             icon: '🤖',
             color: 'text-blue-600 dark:text-blue-400',
             bgColor: 'bg-blue-100 dark:bg-blue-900/20',
         },
         {
-            label: 'Окуучулар',
+            label: t('instructorDashboard.mobileOverview.stats.students'),
             value: studentCount,
             icon: '👥',
             color: 'text-purple-600 dark:text-purple-400',
@@ -43,14 +45,19 @@ const MobileDashboardOverview = ({ user, profile, courses, studentCount, publish
             <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
                 <div className="flex items-center mb-4">
                     <div className="w-12 h-12 bg-edubot-orange rounded-full flex items-center justify-center text-white font-bold text-lg mr-4">
-                        {user?.firstName?.charAt(0) || 'И'}
+                        {user?.firstName?.charAt(0) || t('instructorDashboard.mobileOverview.fallbacks.instructorInitial')}
                     </div>
                     <div>
                         <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">
-                            Кош келиңиз, {user?.firstName || 'Инструктор'}!
+                            {t('instructorDashboard.mobileOverview.welcome', {
+                                name: user?.firstName || t('instructorDashboard.mobileOverview.fallbacks.instructor'),
+                            })}
                         </h1>
                         <p className="text-sm text-gray-600 dark:text-gray-400">
-                            {profile?.title || 'Инструктор'} • {courses.length} курс
+                            {t('instructorDashboard.mobileOverview.profileLine', {
+                                title: profile?.title || t('instructorDashboard.mobileOverview.fallbacks.instructor'),
+                                count: courses.length,
+                            })}
                         </p>
                     </div>
                 </div>
@@ -62,14 +69,14 @@ const MobileDashboardOverview = ({ user, profile, courses, studentCount, publish
                         className="flex items-center justify-center p-4 bg-edubot-orange text-white rounded-lg touch-manipulation active:scale-95 min-h-[48px]"
                     >
                         <span className="mr-2">➕</span>
-                        <span className="font-medium">Жаңы курс</span>
+                        <span className="font-medium">{t('instructorDashboard.mobileOverview.actions.newCourse')}</span>
                     </button>
                     <button
                         onClick={() => navigate(analyticsLink)}
                         className="flex items-center justify-center p-4 bg-edubot-teal text-white rounded-lg touch-manipulation active:scale-95 min-h-[48px]"
                     >
                         <span className="mr-2">📊</span>
-                        <span className="font-medium">Аналитика</span>
+                        <span className="font-medium">{t('instructorDashboard.mobileOverview.actions.analytics')}</span>
                     </button>
                 </div>
             </div>
@@ -92,13 +99,13 @@ const MobileDashboardOverview = ({ user, profile, courses, studentCount, publish
             <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
                 <div className="flex items-center justify-between mb-4">
                     <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                        Акыркы курстар
+                        {t('instructorDashboard.mobileOverview.recentCourses.title')}
                     </h2>
                     <button
                         onClick={() => navigate('/instructor/courses')}
                         className="text-edubot-orange hover:text-edubot-orange/80 font-medium text-sm touch-manipulation active:scale-95 min-h-[44px]"
                     >
-                        Бардыгы →
+                        {t('instructorDashboard.mobileOverview.recentCourses.viewAll')} →
                     </button>
                 </div>
 
@@ -109,14 +116,17 @@ const MobileDashboardOverview = ({ user, profile, courses, studentCount, publish
                             className="flex items-center p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600"
                         >
                             <div className="w-10 h-10 bg-edubot-orange rounded-lg flex items-center justify-center text-white font-bold text-sm mr-3">
-                                {course.title?.charAt(0) || 'К'}
+                                {course.title?.charAt(0) || t('instructorDashboard.mobileOverview.fallbacks.courseInitial')}
                             </div>
                             <div className="flex-1 min-w-0">
                                 <div className="font-medium text-gray-900 dark:text-gray-100 text-sm truncate">
                                     {course.title}
                                 </div>
                                 <div className="text-xs text-gray-600 dark:text-gray-400">
-                                    {course.studentsCount || 0} окуучу • {course.lessonsCount || 0} сабак
+                                    {t('instructorDashboard.mobileOverview.recentCourses.meta', {
+                                        students: course.studentsCount || 0,
+                                        lessons: course.lessonsCount || 0,
+                                    })}
                                 </div>
                             </div>
                         </div>
@@ -131,14 +141,14 @@ const MobileDashboardOverview = ({ user, profile, courses, studentCount, publish
                     className="flex items-center justify-center p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 touch-manipulation active:scale-95 min-h-[48px]"
                 >
                     <span className="mr-2">👥</span>
-                    <span className="font-medium text-gray-900 dark:text-gray-100">Окуучулар</span>
+                    <span className="font-medium text-gray-900 dark:text-gray-100">{t('instructorDashboard.mobileOverview.actions.students')}</span>
                 </button>
                 <button
                     onClick={() => navigate(getDashboardPath('instructor', 'profile'))}
                     className="flex items-center justify-center p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 touch-manipulation active:scale-95 min-h-[48px]"
                 >
                     <span className="mr-2">👤</span>
-                    <span className="font-medium text-gray-900 dark:text-gray-100">Профиль</span>
+                    <span className="font-medium text-gray-900 dark:text-gray-100">{t('instructorDashboard.mobileOverview.actions.profile')}</span>
                 </button>
             </div>
         </div>

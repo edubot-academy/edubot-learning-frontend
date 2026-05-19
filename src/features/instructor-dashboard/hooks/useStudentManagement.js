@@ -1,11 +1,21 @@
 import { useState, useCallback, useMemo } from 'react';
 import { toast } from 'react-hot-toast';
+import { useTranslation } from 'react-i18next';
 import {
     fetchInstructorStudentCourses,
     fetchCourseStudents,
 } from '@services/api';
+import { parseApiError } from '@shared/api/error';
+
+const toArray = (value) => {
+    if (Array.isArray(value)) return value;
+    if (Array.isArray(value?.items)) return value.items;
+    if (Array.isArray(value?.data)) return value.data;
+    return [];
+};
 
 export const useStudentManagement = (user) => {
+    const { t } = useTranslation();
     const [studentCourses, setStudentCourses] = useState([]);
     const [studentCoursesTotal, setStudentCoursesTotal] = useState(null);
     const [loadingStudentCourses, setLoadingStudentCourses] = useState(false);
@@ -27,7 +37,7 @@ export const useStudentManagement = (user) => {
 
         try {
             const data = await fetchInstructorStudentCourses();
-            const list = data?.courses || [];
+            const list = toArray(data?.courses || data);
 
             setStudentCourses(list);
             setStudentCoursesTotal(
@@ -49,14 +59,14 @@ export const useStudentManagement = (user) => {
         } catch (error) {
             console.error('Failed to load student courses', error);
             if (error?.response?.status === 403) {
-                setStudentsError('Бул курс сизге бекитилген эмес');
+                setStudentsError(t('instructorDashboard.data.errors.courseForbidden'));
             } else {
-                toast.error('Студенттер тизмесин жүктөө мүмкүн болбоду');
+                toast.error(parseApiError(error, t('instructorDashboard.data.toasts.studentCoursesLoadError')).message);
             }
         } finally {
             setLoadingStudentCourses(false);
         }
-    }, [user]);
+    }, [t, user]);
 
     const loadCourseStudents = useCallback(
         async (courseId) => {
@@ -78,7 +88,7 @@ export const useStudentManagement = (user) => {
                     progressLte: progressMax === '' ? undefined : Number(progressMax),
                 });
 
-                setCourseStudents(data?.students || []);
+                setCourseStudents(toArray(data?.students || data));
                 setCourseStudentsMeta({
                     ...(data?.course || {}),
                     page: data?.page,
@@ -92,15 +102,15 @@ export const useStudentManagement = (user) => {
                 setCourseStudentsMeta(null);
 
                 if (error?.response?.status === 403) {
-                    setStudentsError('Бул курс сизге бекитилген эмес');
+                    setStudentsError(t('instructorDashboard.data.errors.courseForbidden'));
                 } else {
-                    toast.error('Курс студенттерин жүктөө мүмкүн болбоду');
+                    toast.error(parseApiError(error, t('instructorDashboard.data.toasts.courseStudentsLoadError')).message);
                 }
             } finally {
                 setLoadingCourseStudents(false);
             }
         },
-        [studentsPage, studentSearch, progressMin, progressMax]
+        [progressMax, progressMin, studentSearch, studentsPage, t]
     );
 
     const handleSelectStudentCourse = useCallback((courseId) => {

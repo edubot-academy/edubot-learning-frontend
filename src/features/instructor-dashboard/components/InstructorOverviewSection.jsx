@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import PropTypes from 'prop-types';
+import { useTranslation } from 'react-i18next';
 import { FiActivity, FiBarChart2, FiBookOpen, FiCheckSquare, FiPlusCircle, FiUsers } from 'react-icons/fi';
 import NotificationsWidget from '@features/notifications/components/NotificationsWidget';
 import { DashboardInsetPanel, DashboardSectionHeader } from '@components/ui/dashboard';
@@ -16,27 +17,28 @@ const InstructorOverviewSection = ({
     aiEnabledCount,
     analyticsLink,
 }) => {
+    const { t } = useTranslation();
     const stats = [
         {
-            label: 'Жарыяланган курстар',
+            label: t('instructorDashboard.overview.stats.publishedCourses'),
             value: publishedCount,
             icon: FiBookOpen,
             tone: 'default',
         },
         {
-            label: 'Каралуудагы курстар',
+            label: t('instructorDashboard.overview.stats.pendingCourses'),
             value: pendingCount,
             icon: FiCheckSquare,
             tone: pendingCount > 0 ? 'amber' : 'default',
         },
         {
-            label: 'AI ассистент иштетилген',
+            label: t('instructorDashboard.overview.stats.aiEnabled'),
             value: aiEnabledCount,
             icon: FiActivity,
             tone: aiEnabledCount > 0 ? 'green' : 'default',
         },
         {
-            label: 'Катталуулар',
+            label: t('instructorDashboard.overview.stats.enrollments'),
             value: studentCount,
             icon: FiUsers,
             tone: 'blue',
@@ -45,31 +47,31 @@ const InstructorOverviewSection = ({
 
     const quickActions = [
         {
-            title: 'Курстарды башкаруу',
-            description: 'Бар болгон курстарыңызды карап чыгып, мазмунун жана статусун жаңыртыңыз.',
+            title: t('instructorDashboard.overview.quickActions.manageCourses.title'),
+            description: t('instructorDashboard.overview.quickActions.manageCourses.description'),
             link: '/instructor/courses',
-            buttonText: 'Курстар',
+            buttonText: t('instructorDashboard.overview.quickActions.manageCourses.button'),
             icon: FiBookOpen,
         },
         {
-            title: 'Жаңы курс түзүү',
-            description: 'Сабак, бөлүм жана тапшырмалар менен жаңы курс жарыялоого даярдаңыз.',
+            title: t('instructorDashboard.overview.quickActions.createCourse.title'),
+            description: t('instructorDashboard.overview.quickActions.createCourse.description'),
             link: '/instructor/course/create',
-            buttonText: 'Курс түзүү',
+            buttonText: t('instructorDashboard.overview.quickActions.createCourse.button'),
             icon: FiPlusCircle,
         },
         {
-            title: 'Катталуулар',
-            description: 'Студенттердин катталуусун, топторду жана катышуу агымын көзөмөлдөңүз.',
+            title: t('instructorDashboard.overview.quickActions.enrollments.title'),
+            description: t('instructorDashboard.overview.quickActions.enrollments.description'),
             link: getDashboardPath('instructor', 'students'),
-            buttonText: 'Катталгандар',
+            buttonText: t('instructorDashboard.overview.quickActions.enrollments.button'),
             icon: FiUsers,
         },
         {
-            title: 'Аналитика',
-            description: 'Attendance, homework жана risk метрикаларын бир жерден көрүңүз.',
+            title: t('instructorDashboard.overview.quickActions.analytics.title'),
+            description: t('instructorDashboard.overview.quickActions.analytics.description'),
             link: analyticsLink,
-            buttonText: 'Аналитика',
+            buttonText: t('instructorDashboard.overview.quickActions.analytics.button'),
             icon: FiBarChart2,
         },
     ];
@@ -94,9 +96,9 @@ const InstructorOverviewSection = ({
             <div className="hidden md:block">
                 <div className="dashboard-panel overflow-hidden">
                     <DashboardSectionHeader
-                        eyebrow="Instructor overview"
+                        eyebrow={t('instructorDashboard.overview.header.eyebrow')}
                         title={user.fullName || user.email}
-                        description="Профилди толтуруңуз, курстарды жаңыртыңыз жана студенттерге баалуулук тартуулаңыз."
+                        description={t('instructorDashboard.overview.header.description')}
                     />
 
                     <div className="grid gap-6 px-6 py-6 xl:grid-cols-[minmax(0,1.45fr)_minmax(320px,0.95fr)]">
@@ -109,17 +111,16 @@ const InstructorOverviewSection = ({
                                         </div>
                                         <div>
                                             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-edubot-soft/80">
-                                                Бүгүнкү фокус
+                                                {t('instructorDashboard.overview.focus.eyebrow')}
                                             </p>
                                             <h3 className="mt-1 text-2xl font-semibold md:text-3xl">
-                                                Инструктор панели даяр
+                                                {t('instructorDashboard.overview.focus.title')}
                                             </h3>
                                         </div>
                                     </div>
 
                                     <p className="mt-4 max-w-3xl text-sm leading-6 text-white/75 md:text-[15px]">
-                                        Курстарды, катталууларды жана аналитиканы бир жерден
-                                        башкаруу үчүн негизги кыска жолдор ушул блокто.
+                                        {t('instructorDashboard.overview.focus.description')}
                                     </p>
 
                                     <div className="mt-5 flex flex-wrap items-center gap-3">
@@ -128,14 +129,14 @@ const InstructorOverviewSection = ({
                                             className="dashboard-button-primary inline-flex min-h-[44px] items-center gap-2 px-4 py-2.5"
                                         >
                                             <FiPlusCircle className="h-4 w-4" />
-                                            Жаңы курс түзүү
+                                            {t('instructorDashboard.overview.actions.createCourse')}
                                         </Link>
                                         <Link
                                             to={analyticsLink}
                                             className="dashboard-button-secondary inline-flex min-h-[44px] items-center gap-2 border-white/20 bg-white/10 px-4 py-2.5 text-white hover:border-white/40 hover:bg-white/15 hover:text-white dark:border-white/20 dark:bg-white/10 dark:text-white"
                                         >
                                             <FiBarChart2 className="h-4 w-4" />
-                                            Аналитиканы ачуу
+                                            {t('instructorDashboard.overview.actions.openAnalytics')}
                                         </Link>
                                     </div>
 
@@ -170,8 +171,8 @@ const InstructorOverviewSection = ({
                             </div>
 
                             <DashboardInsetPanel
-                                title="Ыкчам аракеттер"
-                                description="Күндөлүк инструктор жумуш агымдарына түз өтүңүз."
+                                title={t('instructorDashboard.overview.quickActionsPanel.title')}
+                                description={t('instructorDashboard.overview.quickActionsPanel.description')}
                             >
                                 <div className="grid gap-4 lg:grid-cols-2">
                                     {quickActions.map((action) => {

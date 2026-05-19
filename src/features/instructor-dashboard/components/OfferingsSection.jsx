@@ -1,5 +1,6 @@
 
 import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
     FiActivity,
     FiArchive,
@@ -31,14 +32,26 @@ import CreateOfferingModal from './modals/CreateOfferingModal.jsx';
 import EnrollStudentModal from './modals/EnrollStudentModal.jsx';
 import { formatDateTimeForInput } from '../utils/instructorDashboard.constants.js';
 import { normalizeEnrollmentCourseType } from '@features/enrollments/policy';
+import { parseApiError } from '@shared/api/error';
+
+const toArray = (value) => {
+    if (Array.isArray(value)) return value;
+    if (Array.isArray(value?.items)) return value.items;
+    if (Array.isArray(value?.data)) return value.data;
+    return [];
+};
 
 const OfferingsSection = ({ courses = [], offerings = [], loading, refreshOfferings }) => {
+    const { t } = useTranslation();
+    const normalizedCourses = useMemo(() => toArray(courses), [courses]);
+    const normalizedOfferings = useMemo(() => toArray(offerings), [offerings]);
+
     const getInitialForm = useCallback(
         (base = null) => ({
             courseId: base?.courseId
                 ? String(base.courseId)
-                : courses[0]?.id
-                    ? String(courses[0].id)
+                : normalizedCourses[0]?.id
+                    ? String(normalizedCourses[0].id)
                     : '',
             title: base?.title || '',
             modality: base?.modality || 'ONLINE',
@@ -59,7 +72,7 @@ const OfferingsSection = ({ courses = [], offerings = [], loading, refreshOfferi
             status: base?.status || 'DRAFT',
             isFeatured: Boolean(base?.isFeatured),
         }),
-        [courses]
+        [normalizedCourses]
     );
 
     const [filterCourseId, setFilterCourseId] = useState('all');
@@ -80,6 +93,7 @@ const OfferingsSection = ({ courses = [], offerings = [], loading, refreshOfferi
     const [enrollUserSearch, setEnrollUserSearch] = useState('');
     const [enrollStudentOptions, setEnrollStudentOptions] = useState([]);
     const [loadingUserOptions, setLoadingUserOptions] = useState(false);
+    const [showEnrollDropdown, setShowEnrollDropdown] = useState(false);
 
     const updateCreateForm = useCallback((field, value) => {
         setCreateForm((prev) => ({
@@ -91,27 +105,27 @@ const OfferingsSection = ({ courses = [], offerings = [], loading, refreshOfferi
     useEffect(() => {
         setCreateForm((prev) => ({
             ...prev,
-            courseId: prev.courseId || (courses[0]?.id ? String(courses[0].id) : ''),
+            courseId: prev.courseId || (normalizedCourses[0]?.id ? String(normalizedCourses[0].id) : ''),
         }));
-    }, [courses]);
+    }, [normalizedCourses]);
 
     const summary = useMemo(() => {
         const now = Date.now();
 
-        const upcoming = offerings.filter(
+        const upcoming = normalizedOfferings.filter(
             (offering) => offering.startAt && new Date(offering.startAt).getTime() >= now
         );
-        const past = offerings.length - upcoming.length;
-        const company = offerings.filter((offering) => offering.companyId);
-        const publicOnes = offerings.filter((offering) => offering.visibility === 'PUBLIC');
-        const statusCounts = offerings.reduce((acc, offering) => {
+        const past = normalizedOfferings.length - upcoming.length;
+        const company = normalizedOfferings.filter((offering) => offering.companyId);
+        const publicOnes = normalizedOfferings.filter((offering) => offering.visibility === 'PUBLIC');
+        const statusCounts = normalizedOfferings.reduce((acc, offering) => {
             const key = offering.status || 'DRAFT';
             acc[key] = (acc[key] || 0) + 1;
             return acc;
         }, {});
 
         return {
-            total: offerings.length,
+            total: normalizedOfferings.length,
             upcoming: upcoming.length,
             past,
             company: company.length,
@@ -120,47 +134,47 @@ const OfferingsSection = ({ courses = [], offerings = [], loading, refreshOfferi
             draft: statusCounts.DRAFT || 0,
             completed: (statusCounts.COMPLETED || 0) + (statusCounts.ARCHIVED || 0),
         };
-    }, [offerings]);
+    }, [normalizedOfferings]);
 
     const overviewMetrics = [
         {
-            label: 'Бардык offeringдер',
+            label: t('instructorDashboard.offerings.metrics.total'),
             value: summary.total,
             icon: FiCalendar,
             tone: 'default',
         },
         {
-            label: 'Жакынкы offeringдер',
+            label: t('instructorDashboard.offerings.metrics.upcoming'),
             value: summary.upcoming,
             icon: FiActivity,
             tone: summary.upcoming > 0 ? 'blue' : 'default',
         },
         {
-            label: 'Компаниялар үчүн',
+            label: t('instructorDashboard.offerings.metrics.company'),
             value: summary.company,
             icon: FiBriefcase,
             tone: summary.company > 0 ? 'green' : 'default',
         },
         {
-            label: 'Публичный offeringдер',
+            label: t('instructorDashboard.offerings.metrics.public'),
             value: summary.public,
             icon: FiGlobe,
             tone: summary.public > 0 ? 'amber' : 'default',
         },
         {
-            label: 'Активдүү',
+            label: t('instructorDashboard.offerings.metrics.active'),
             value: summary.active,
             icon: FiActivity,
             tone: summary.active > 0 ? 'green' : 'default',
         },
         {
-            label: 'Долбоор',
+            label: t('instructorDashboard.offerings.metrics.draft'),
             value: summary.draft,
             icon: FiFilter,
             tone: summary.draft > 0 ? 'amber' : 'default',
         },
         {
-            label: 'Жабылган',
+            label: t('instructorDashboard.offerings.metrics.closed'),
             value: summary.completed,
             icon: FiArchive,
             tone: summary.completed > 0 ? 'blue' : 'default',
@@ -168,7 +182,7 @@ const OfferingsSection = ({ courses = [], offerings = [], loading, refreshOfferi
     ];
 
     const filteredOfferings = useMemo(() => {
-        return offerings.filter((offering) => {
+        return normalizedOfferings.filter((offering) => {
             if (filterCourseId !== 'all' && offering.course?.id !== Number(filterCourseId)) {
                 return false;
             }
@@ -191,7 +205,7 @@ const OfferingsSection = ({ courses = [], offerings = [], loading, refreshOfferi
 
             return true;
         });
-    }, [offerings, filterCourseId, statusFilter, search]);
+    }, [normalizedOfferings, filterCourseId, statusFilter, search]);
 
     const handleOpenModal = (mode, offering = null) => {
         setModalMode(mode);
@@ -202,7 +216,7 @@ const OfferingsSection = ({ courses = [], offerings = [], loading, refreshOfferi
 
     const handleCreateOffering = async () => {
         if (!createForm.courseId) {
-            toast.error('Курс тандаңыз');
+            toast.error(t('instructorDashboard.offerings.toasts.courseRequired'));
             return;
         }
 
@@ -234,10 +248,10 @@ const OfferingsSection = ({ courses = [], offerings = [], loading, refreshOfferi
                 const patch = { ...payload };
                 delete patch.courseId;
                 await updateOffering(editingOffering.id, patch);
-                toast.success('Offering жаңыртылды');
+                toast.success(t('instructorDashboard.offerings.toasts.updated'));
             } else {
                 await createOffering(payload);
-                toast.success('Offering ийгиликтүү түзүлдү');
+                toast.success(t('instructorDashboard.offerings.toasts.created'));
             }
 
             setShowCreateModal(false);
@@ -246,9 +260,7 @@ const OfferingsSection = ({ courses = [], offerings = [], loading, refreshOfferi
             refreshOfferings();
         } catch (error) {
             console.error('Failed to save offering', error);
-            const message =
-                error.response?.data?.message || error.message || 'Offering түзүүдө ката кетти';
-            toast.error(Array.isArray(message) ? message.join(', ') : message);
+            toast.error(parseApiError(error, t('instructorDashboard.offerings.toasts.saveError')).message);
         } finally {
             setCreating(false);
         }
@@ -268,7 +280,7 @@ const OfferingsSection = ({ courses = [], offerings = [], loading, refreshOfferi
                     ?.filter((student) => Number(student.offeringId) === Number(offering.id))
                     .map((student) => ({
                         id: student.id,
-                        name: student.fullName || student.email || 'Студент',
+                        name: student.fullName || student.email || t('instructorDashboard.offerings.fallbacks.student'),
                         email: student.email || '—',
                         enrolledAt: student.enrolledAt,
                     })) || [];
@@ -276,18 +288,19 @@ const OfferingsSection = ({ courses = [], offerings = [], loading, refreshOfferi
             setEnrollStudents(list);
         } catch (error) {
             console.error('Failed to load offering students', error);
-            toast.error('Студенттердин тизмесин жүктөө мүмкүн болбоду');
+            toast.error(parseApiError(error, t('instructorDashboard.offerings.toasts.studentsLoadError')).message);
             setEnrollStudents([]);
         } finally {
             setLoadingEnrollStudents(false);
         }
-    }, []);
+    }, [t]);
 
     const handleOpenEnrollModal = (offering) => {
         setEnrollOffering(offering);
         setEnrollForm({ userId: '', discountPercentage: '' });
         setEnrollUserSearch('');
         setEnrollStudentOptions([]);
+        setShowEnrollDropdown(false);
         setShowEnrollModal(true);
         loadOfferingStudents(offering);
     };
@@ -325,7 +338,7 @@ const OfferingsSection = ({ courses = [], offerings = [], loading, refreshOfferi
             .catch((error) => {
                 console.error('Failed to fetch users', error);
                 if (!cancelled) {
-                    toast.error('Студенттерди издөөдө ката кетти');
+                    toast.error(parseApiError(error, t('instructorDashboard.offerings.toasts.studentSearchError')).message);
                     setEnrollStudentOptions([]);
                 }
             })
@@ -336,14 +349,14 @@ const OfferingsSection = ({ courses = [], offerings = [], loading, refreshOfferi
         return () => {
             cancelled = true;
         };
-    }, [showEnrollModal, enrollUserSearch]);
+    }, [showEnrollModal, enrollUserSearch, t]);
 
     const handleEnrollStudent = async () => {
         if (!enrollOffering) return;
 
         const userIdValue = Number(enrollForm.userId);
         if (!userIdValue || Number.isNaN(userIdValue)) {
-            toast.error('Колдонуучу ID туура эмес');
+            toast.error(t('instructorDashboard.offerings.toasts.invalidUser'));
             return;
         }
 
@@ -360,21 +373,17 @@ const OfferingsSection = ({ courses = [], offerings = [], loading, refreshOfferi
                     : undefined,
             });
 
-            toast.success('Студент offeringге кошулду');
+            toast.success(t('instructorDashboard.offerings.toasts.studentAdded'));
             setShowEnrollModal(false);
             setEnrollOffering(null);
             setEnrollForm({ userId: '', discountPercentage: '' });
             setEnrollUserSearch('');
             setEnrollStudentOptions([]);
+            setShowEnrollDropdown(false);
             refreshOfferings();
         } catch (error) {
             console.error('Failed to enroll student', error);
-            const message =
-                error.response?.data?.message ||
-                error.message ||
-                'Студентти offeringге кошууда ката кетти';
-
-            toast.error(Array.isArray(message) ? message.join(', ') : message);
+            toast.error(parseApiError(error, t('instructorDashboard.offerings.toasts.studentAddError')).message);
         } finally {
             setEnrolling(false);
         }
@@ -384,9 +393,9 @@ const OfferingsSection = ({ courses = [], offerings = [], loading, refreshOfferi
         <div className="space-y-6">
             <DashboardWorkspaceHero
                 className="dashboard-panel"
-                    eyebrow="Offering башкаруу"
-                    title="Курс сунуштары"
-                    description="Курстарыңызга арналган корпоративдик, публичный жана атайын offering агымдарын бир жерден көзөмөлдөңүз."
+                    eyebrow={t('instructorDashboard.offerings.hero.eyebrow')}
+                    title={t('instructorDashboard.offerings.hero.title')}
+                    description={t('instructorDashboard.offerings.hero.description')}
                     action={(
                         <button
                             type="button"
@@ -394,7 +403,7 @@ const OfferingsSection = ({ courses = [], offerings = [], loading, refreshOfferi
                             onClick={() => handleOpenModal('create')}
                         >
                             <FiPlusCircle className="h-4 w-4" />
-                            Offering түзүү
+                            {t('instructorDashboard.offerings.actions.create')}
                         </button>
                     )}
                     metrics={(
@@ -415,8 +424,8 @@ const OfferingsSection = ({ courses = [], offerings = [], loading, refreshOfferi
                 <div className="space-y-6">
 
                     <DashboardInsetPanel
-                        title="Фильтр жана издөө"
-                        description="Курс, убакыт жана offering аталышы боюнча натыйжаларды тарытыңыз."
+                        title={t('instructorDashboard.offerings.filters.title')}
+                        description={t('instructorDashboard.offerings.filters.description')}
                     >
                         <DashboardFilterBar gridClassName="xl:grid-cols-[minmax(0,1fr)_280px]">
                             <div className="grid gap-3 md:grid-cols-2">
@@ -425,8 +434,8 @@ const OfferingsSection = ({ courses = [], offerings = [], loading, refreshOfferi
                                     onChange={(e) => setFilterCourseId(e.target.value)}
                                     className="dashboard-field dashboard-select"
                                 >
-                                    <option value="all">Бардык курстар</option>
-                                    {courses.map((course) => (
+                                    <option value="all">{t('instructorDashboard.offerings.filters.allCourses')}</option>
+                                    {normalizedCourses.map((course) => (
                                         <option key={course.id} value={course.id}>
                                             {course.title}
                                         </option>
@@ -438,9 +447,9 @@ const OfferingsSection = ({ courses = [], offerings = [], loading, refreshOfferi
                                     onChange={(e) => setStatusFilter(e.target.value)}
                                     className="dashboard-field dashboard-select"
                                 >
-                                    <option value="upcoming">Жакынкы</option>
-                                    <option value="past">Өткөн</option>
-                                    <option value="all">Баары</option>
+                                    <option value="upcoming">{t('instructorDashboard.offerings.filters.upcoming')}</option>
+                                    <option value="past">{t('instructorDashboard.offerings.filters.past')}</option>
+                                    <option value="all">{t('instructorDashboard.offerings.filters.all')}</option>
                                 </select>
                             </div>
 
@@ -451,7 +460,7 @@ const OfferingsSection = ({ courses = [], offerings = [], loading, refreshOfferi
                                     value={search}
                                     onChange={(e) => setSearch(e.target.value)}
                                     className="w-full bg-transparent text-sm text-edubot-ink outline-none placeholder:text-edubot-muted dark:text-white dark:placeholder:text-slate-500"
-                                    placeholder="Offering боюнча издөө..."
+                                    placeholder={t('instructorDashboard.offerings.filters.searchPlaceholder')}
                                 />
                             </label>
                         </DashboardFilterBar>
@@ -461,8 +470,10 @@ const OfferingsSection = ({ courses = [], offerings = [], loading, refreshOfferi
                         <DashboardCardSkeleton cards={4} />
                     ) : filteredOfferings.length ? (
                         <DashboardInsetPanel
-                            title="Offering тизмеси"
-                            description={`${filteredOfferings.length} offering табылды`}
+                            title={t('instructorDashboard.offerings.list.title')}
+                            description={t('instructorDashboard.offerings.list.description', {
+                                count: filteredOfferings.length,
+                            })}
                         >
                             <div className="space-y-4">
                                 {filteredOfferings.map((offering) => (
@@ -477,10 +488,10 @@ const OfferingsSection = ({ courses = [], offerings = [], loading, refreshOfferi
                         </DashboardInsetPanel>
                     ) : (
                         <EmptyState
-                            title="Offeringдер азырынча жок"
-                            subtitle="Биринчи offeringди түзүп, enrollment агымын баштаңыз."
+                            title={t('instructorDashboard.offerings.empty.title')}
+                            subtitle={t('instructorDashboard.offerings.empty.subtitle')}
                             action={{
-                                label: 'Offering түзүү',
+                                label: t('instructorDashboard.offerings.actions.create'),
                                 onClick: () => setShowCreateModal(true),
                             }}
                         />
@@ -490,7 +501,7 @@ const OfferingsSection = ({ courses = [], offerings = [], loading, refreshOfferi
 
             {showCreateModal ? (
                 <CreateOfferingModal
-                    courses={courses}
+                    courses={normalizedCourses}
                     form={createForm}
                     onChange={updateCreateForm}
                     onClose={() => {
@@ -519,6 +530,7 @@ const OfferingsSection = ({ courses = [], offerings = [], loading, refreshOfferi
                         setEnrollOffering(null);
                         setEnrollUserSearch('');
                         setEnrollStudentOptions([]);
+                        setShowEnrollDropdown(false);
                     }}
                     onSubmit={handleEnrollStudent}
                     enrolling={enrolling}
@@ -528,6 +540,8 @@ const OfferingsSection = ({ courses = [], offerings = [], loading, refreshOfferi
                     userSearch={enrollUserSearch}
                     onSearchChange={setEnrollUserSearch}
                     loadingUserOptions={loadingUserOptions}
+                    showDropdown={showEnrollDropdown}
+                    setShowDropdown={setShowEnrollDropdown}
                 />
             ) : null}
         </div>

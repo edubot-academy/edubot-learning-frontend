@@ -1,10 +1,19 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import { toast } from 'react-hot-toast';
+import { useTranslation } from 'react-i18next';
 import { fetchInstructorCourses } from '@services/api';
 import {
     isCourseFeatureEnabled,
     TENANT_FEATURES,
 } from '@shared/utils/tenantFeatures';
+import { parseApiError } from '@shared/api/error';
+
+const toArray = (value) => {
+    if (Array.isArray(value)) return value;
+    if (Array.isArray(value?.items)) return value.items;
+    if (Array.isArray(value?.data)) return value.data;
+    return [];
+};
 
 const getCourseFromResponse = (response) => {
     if (!response) return null;
@@ -14,6 +23,7 @@ const getCourseFromResponse = (response) => {
 };
 
 export const useInstructorCourses = (user, profile) => {
+    const { t } = useTranslation();
     const [courseList, setCourseList] = useState([]);
     const [loadingCourses, setLoadingCourses] = useState(false);
 
@@ -23,14 +33,14 @@ export const useInstructorCourses = (user, profile) => {
         setLoadingCourses(true);
         try {
             const data = await fetchInstructorCourses({ status: 'all' });
-            setCourseList(Array.isArray(data?.courses) ? data.courses : []);
+            setCourseList(toArray(data?.courses || data));
         } catch (error) {
             console.error('Failed to load instructor courses', error);
-            toast.error('Инструктор курстарын жүктөө мүмкүн болбоду');
+            toast.error(parseApiError(error, t('instructorDashboard.data.toasts.coursesLoadError')).message);
         } finally {
             setLoadingCourses(false);
         }
-    }, [user]);
+    }, [t, user]);
 
     useEffect(() => {
         loadCourses();

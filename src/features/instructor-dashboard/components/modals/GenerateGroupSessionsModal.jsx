@@ -1,11 +1,12 @@
 import PropTypes from 'prop-types';
+import { useTranslation } from 'react-i18next';
 import { FiCalendar, FiClock, FiRefreshCw, FiX } from 'react-icons/fi';
 
-const formatDateTime = (value, timeZone) => {
+const formatDateTime = (value, timeZone, language) => {
     if (!value) return '—';
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) return String(value);
-    return date.toLocaleString('ky-KG', {
+    return date.toLocaleString(language || undefined, {
         day: '2-digit',
         month: 'short',
         year: 'numeric',
@@ -15,11 +16,11 @@ const formatDateTime = (value, timeZone) => {
     });
 };
 
-const formatDateLabel = (value, timeZone) => {
+const formatDateLabel = (value, timeZone, language) => {
     if (!value) return '—';
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) return String(value);
-    return date.toLocaleDateString('ky-KG', {
+    return date.toLocaleDateString(language || undefined, {
         weekday: 'long',
         day: '2-digit',
         month: 'long',
@@ -39,11 +40,12 @@ const GenerateGroupSessionsModal = ({
     previewLoading,
     generating,
 }) => {
+    const { i18n, t } = useTranslation();
     const previewItems = Array.isArray(preview?.items) ? preview.items : [];
     const hasPreview = Boolean(preview);
     const canGenerate = previewItems.some((item) => item.kind === 'new');
     const groupedPreviewItems = previewItems.reduce((acc, item) => {
-        const key = formatDateLabel(item.startsAt, group?.timezone);
+        const key = formatDateLabel(item.startsAt, group?.timezone, i18n.language);
         const existing = acc.find((entry) => entry.label === key);
         if (existing) {
             existing.items.push(item);
@@ -61,14 +63,16 @@ const GenerateGroupSessionsModal = ({
                         <div className="space-y-3">
                             <div className="inline-flex items-center gap-2 rounded-full border border-edubot-orange/20 bg-white/80 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-edubot-orange dark:border-edubot-orange/25 dark:bg-slate-900/60">
                                 <FiCalendar className="h-3.5 w-3.5" />
-                                Session generation
+                                {t('instructorDashboard.generateSessions.eyebrow')}
                             </div>
                             <div>
                                 <h2 className="text-2xl font-semibold tracking-tight text-edubot-ink dark:text-white sm:text-[2rem]">
-                                    Сессияларды түзүү
+                                    {t('instructorDashboard.generateSessions.title')}
                                 </h2>
                                 <p className="mt-1 text-sm text-edubot-muted dark:text-slate-400">
-                                    {group?.name || 'Тандалган группа'} үчүн дефолт графиктен чыныгы сессияларды алдын ала көрүп, анан гана түзөсүз.
+                                    {t('instructorDashboard.generateSessions.description', {
+                                        group: group?.name || t('instructorDashboard.generateSessions.fallbacks.selectedGroup'),
+                                    })}
                                 </p>
                             </div>
                         </div>
@@ -77,7 +81,7 @@ const GenerateGroupSessionsModal = ({
                             type="button"
                             onClick={onClose}
                             className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-edubot-line/80 bg-white/80 text-edubot-muted transition hover:border-edubot-orange/40 hover:text-edubot-orange dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-400"
-                            aria-label="Жабуу"
+                            aria-label={t('common.closeMenu')}
                         >
                             <FiX className="h-5 w-5" />
                         </button>
@@ -89,15 +93,17 @@ const GenerateGroupSessionsModal = ({
                         <section className="rounded-[1.75rem] border border-edubot-line/70 bg-edubot-surfaceAlt/25 p-5 dark:border-slate-700 dark:bg-slate-900/30">
                             <div className="flex items-center gap-2 text-sm font-semibold text-edubot-ink dark:text-white">
                                 <FiClock className="h-4 w-4 text-edubot-orange" />
-                                Диапазон
+                                {t('instructorDashboard.generateSessions.range.title')}
                             </div>
                             <p className="mt-2 text-sm leading-6 text-edubot-muted dark:text-slate-400">
-                                Бул preview мурда бар сессияларды өткөрүп жиберет. Жаңы сессиялар гана түзүлөт.
+                                {t('instructorDashboard.generateSessions.range.description')}
                             </p>
 
                             <div className="mt-4 grid gap-3 sm:grid-cols-2">
                                 <label className="text-sm text-edubot-ink dark:text-white">
-                                    <span className="mb-1.5 inline-block font-medium">Башталышы</span>
+                                    <span className="mb-1.5 inline-block font-medium">
+                                        {t('instructorDashboard.generateSessions.range.from')}
+                                    </span>
                                     <input
                                         type="date"
                                         value={form.fromDate}
@@ -106,7 +112,9 @@ const GenerateGroupSessionsModal = ({
                                     />
                                 </label>
                                 <label className="text-sm text-edubot-ink dark:text-white">
-                                    <span className="mb-1.5 inline-block font-medium">Аягы</span>
+                                    <span className="mb-1.5 inline-block font-medium">
+                                        {t('instructorDashboard.generateSessions.range.to')}
+                                    </span>
                                     <input
                                         type="date"
                                         value={form.toDate}
@@ -119,7 +127,7 @@ const GenerateGroupSessionsModal = ({
                             <div className="mt-4 grid gap-3 sm:grid-cols-3">
                                 <div className="rounded-2xl border border-edubot-line/70 bg-white/70 px-4 py-3 dark:border-slate-700 dark:bg-slate-950/60">
                                     <p className="text-xs font-semibold uppercase tracking-[0.16em] text-edubot-muted dark:text-slate-400">
-                                        Блоктор
+                                        {t('instructorDashboard.generateSessions.metrics.blocks')}
                                     </p>
                                     <p className="mt-2 text-xl font-semibold text-edubot-ink dark:text-white">
                                         {Array.isArray(group?.scheduleBlocks) ? group.scheduleBlocks.length : 0}
@@ -127,7 +135,7 @@ const GenerateGroupSessionsModal = ({
                                 </div>
                                 <div className="rounded-2xl border border-edubot-line/70 bg-white/70 px-4 py-3 dark:border-slate-700 dark:bg-slate-950/60">
                                     <p className="text-xs font-semibold uppercase tracking-[0.16em] text-edubot-muted dark:text-slate-400">
-                                        Жаңы сессия
+                                        {t('instructorDashboard.generateSessions.metrics.newSessions')}
                                     </p>
                                     <p className="mt-2 text-xl font-semibold text-emerald-600 dark:text-emerald-300">
                                         {preview?.newCount ?? '—'}
@@ -135,7 +143,7 @@ const GenerateGroupSessionsModal = ({
                                 </div>
                                 <div className="rounded-2xl border border-edubot-line/70 bg-white/70 px-4 py-3 dark:border-slate-700 dark:bg-slate-950/60">
                                     <p className="text-xs font-semibold uppercase tracking-[0.16em] text-edubot-muted dark:text-slate-400">
-                                        Бар болгон
+                                        {t('instructorDashboard.generateSessions.metrics.existing')}
                                     </p>
                                     <p className="mt-2 text-xl font-semibold text-edubot-ink dark:text-white">
                                         {preview?.existingCount ?? '—'}
@@ -145,7 +153,7 @@ const GenerateGroupSessionsModal = ({
 
                             <div className="mt-5 flex flex-wrap items-center gap-3">
                                 <span className="rounded-full border border-edubot-line/70 bg-white/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-edubot-muted dark:border-slate-700 dark:bg-slate-950/70 dark:text-slate-400">
-                                    1. Алдын ала көрүү
+                                    {t('instructorDashboard.generateSessions.steps.preview')}
                                 </span>
                                 <button
                                     type="button"
@@ -154,14 +162,14 @@ const GenerateGroupSessionsModal = ({
                                     className="dashboard-button-secondary"
                                 >
                                     <FiRefreshCw className={`h-4 w-4 ${previewLoading ? 'animate-spin' : ''}`} />
-                                    Алдын ала көрүү
+                                    {t('instructorDashboard.generateSessions.actions.preview')}
                                 </button>
                                 <span className={`rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] ${
                                     hasPreview
                                         ? 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-300'
                                         : 'border-edubot-line/70 bg-white/80 text-edubot-muted dark:border-slate-700 dark:bg-slate-950/70 dark:text-slate-400'
                                 }`}>
-                                    2. Сессияларды түзүү
+                                    {t('instructorDashboard.generateSessions.steps.generate')}
                                 </span>
                                 <button
                                     type="button"
@@ -170,7 +178,9 @@ const GenerateGroupSessionsModal = ({
                                     className={hasPreview ? 'dashboard-button-primary' : 'dashboard-button-secondary'}
                                 >
                                     <FiCalendar className="h-4 w-4" />
-                                    {generating ? 'Түзүлүп жатат...' : 'Сессияларды түзүү'}
+                                    {generating
+                                        ? t('instructorDashboard.generateSessions.actions.generating')
+                                        : t('instructorDashboard.generateSessions.actions.generate')}
                                 </button>
                             </div>
                         </section>
@@ -179,15 +189,17 @@ const GenerateGroupSessionsModal = ({
                             <div className="flex items-center justify-between gap-3">
                                 <div>
                                     <h3 className="text-sm font-semibold text-edubot-ink dark:text-white">
-                                        Preview
+                                        {t('instructorDashboard.generateSessions.preview.title')}
                                     </h3>
                                     <p className="mt-1 text-sm text-edubot-muted dark:text-slate-400">
-                                        Диапазондогу сессиялар ушундай түзүлөт.
+                                        {t('instructorDashboard.generateSessions.preview.description')}
                                     </p>
                                 </div>
                                 {preview?.total ? (
                                     <span className="rounded-full border border-edubot-line/70 bg-white px-3 py-1 text-xs font-semibold text-edubot-ink dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200">
-                                        {preview.total} жазуу
+                                        {t('instructorDashboard.generateSessions.preview.recordCount', {
+                                            count: preview.total,
+                                        })}
                                     </span>
                                 ) : null}
                             </div>
@@ -195,19 +207,19 @@ const GenerateGroupSessionsModal = ({
                             <div className="mt-4 max-h-[420px] space-y-3 overflow-y-auto pr-1">
                                 {!preview && !previewLoading ? (
                                     <div className="rounded-2xl border border-dashed border-edubot-line/70 px-4 py-10 text-center text-sm text-edubot-muted dark:border-slate-700 dark:text-slate-400">
-                                        Диапазонду тандап, алдын ала көрүүнү басыңыз.
+                                        {t('instructorDashboard.generateSessions.preview.emptyBeforePreview')}
                                     </div>
                                 ) : null}
 
                                 {previewLoading ? (
                                     <div className="rounded-2xl border border-edubot-line/70 px-4 py-10 text-center text-sm text-edubot-muted dark:border-slate-700 dark:text-slate-400">
-                                        Preview даярдалып жатат...
+                                        {t('instructorDashboard.generateSessions.preview.loading')}
                                     </div>
                                 ) : null}
 
                                 {preview && !previewItems.length ? (
                                     <div className="rounded-2xl border border-edubot-line/70 px-4 py-10 text-center text-sm text-edubot-muted dark:border-slate-700 dark:text-slate-400">
-                                        Бул диапазондо сессия табылган жок.
+                                        {t('instructorDashboard.generateSessions.preview.empty')}
                                     </div>
                                 ) : null}
 
@@ -232,7 +244,7 @@ const GenerateGroupSessionsModal = ({
                                                                 {item.title}
                                                             </p>
                                                             <p className="mt-1 text-sm text-edubot-muted dark:text-slate-400">
-                                                                {formatDateTime(item.startsAt, group?.timezone)} - {formatDateTime(item.endsAt, group?.timezone)}
+                                                                {formatDateTime(item.startsAt, group?.timezone, i18n.language)} - {formatDateTime(item.endsAt, group?.timezone, i18n.language)}
                                                             </p>
                                                         </div>
                                                         <span
@@ -242,7 +254,9 @@ const GenerateGroupSessionsModal = ({
                                                                     : 'bg-slate-100 text-slate-700 dark:bg-slate-500/15 dark:text-slate-300'
                                                             }`}
                                                         >
-                                                            {item.kind === 'new' ? 'Жаңы' : 'Мурунтан бар'}
+                                                            {item.kind === 'new'
+                                                                ? t('instructorDashboard.generateSessions.preview.new')
+                                                                : t('instructorDashboard.generateSessions.preview.existing')}
                                                         </span>
                                                     </div>
                                                 </div>

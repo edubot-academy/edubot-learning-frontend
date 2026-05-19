@@ -1,9 +1,11 @@
 import { useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import PropTypes from 'prop-types';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { fetchStudentOverviewAnalytics } from '@services/api';
 import { AuthContext } from '../context/AuthContext';
 import { toast } from 'react-hot-toast';
+import { parseApiError } from '@shared/api/error';
 import {
     AnalyticsSection,
     ProgressList,
@@ -23,12 +25,20 @@ const metricNumber = (value, fallback = 0) => {
     return Number.isFinite(num) ? num : fallback;
 };
 
+const formatAnalyticsDate = (value, language, fallback) => {
+    if (!value) return fallback;
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return fallback;
+    return date.toLocaleString(language || undefined);
+};
+
 const StudentAnalyticsPage = ({
     embedded = false,
     courseId,
     showHeader = true,
     showFilters = true,
 }) => {
+    const { i18n, t } = useTranslation();
     const { user } = useContext(AuthContext);
     const navigate = useNavigate();
     const [filters, setFilters] = useState({ from: '', to: '' });
@@ -52,12 +62,11 @@ const StudentAnalyticsPage = ({
             setOverview(res || null);
         } catch (error) {
             console.error(error);
-            const message = error?.response?.data?.message || 'Student analytics loading error';
-            toast.error(Array.isArray(message) ? message.join(', ') : message);
+            toast.error(parseApiError(error, t('studentDashboard.analytics.toasts.loadError')).message);
         } finally {
             setLoading(false);
         }
-    }, [requestFilters]);
+    }, [requestFilters, t]);
 
     useEffect(() => {
         loadOverview();
@@ -76,6 +85,23 @@ const StudentAnalyticsPage = ({
     const continueLearning = overview?.blocks?.continueLearning;
     const recentActivity = overview?.blocks?.recentActivity || [];
     const myCourses = overview?.blocks?.myCourses || [];
+    const unknownDate = t('studentDashboard.analytics.fallbacks.unknownDate');
+    const unknownTime = t('studentDashboard.analytics.fallbacks.unknownTime');
+    const getCourseTitle = useCallback(
+        (course) =>
+            course?.courseTitle ||
+            t('studentDashboard.analytics.fallbacks.courseWithId', {
+                id: course?.courseId || '',
+            }),
+        [t]
+    );
+    const getActivityTypeLabel = useCallback(
+        (type = 'other') =>
+            t(`studentDashboard.analytics.activityTypes.${type}`, {
+                defaultValue: t('studentDashboard.analytics.activityTypes.other'),
+            }),
+        [t]
+    );
 
     return (
         <div
@@ -88,9 +114,9 @@ const StudentAnalyticsPage = ({
             <div className={embedded ? 'space-y-6' : 'max-w-4xl mx-auto px-4 lg:px-6 space-y-6'}>
                 {showHeader ? (
                     <DashboardSectionHeader
-                        eyebrow="Advanced Progress"
-                        title="Тереңирээк прогресс"
-                        description="Чыныгы окуу прогрессиңизди, акыркы активдүүлүгүңүздү жана кайсы курста улантуу керек экенин ушул жерден көрүңүз."
+                        eyebrow={t('studentDashboard.analytics.eyebrow')}
+                        title={t('studentDashboard.analytics.title')}
+                        description={t('studentDashboard.analytics.description')}
                         action={(
                             <button
                                 type="button"
@@ -98,7 +124,7 @@ const StudentAnalyticsPage = ({
                                 disabled={loading}
                                 className="dashboard-button-primary"
                             >
-                                {loading ? 'Жүктөлүүдө...' : 'Жаңылоо'}
+                                {loading ? t('common.loading') + '...' : t('analytics.common.refresh')}
                             </button>
                         )}
                     />
@@ -106,13 +132,13 @@ const StudentAnalyticsPage = ({
 
                 {courseId ? (
                     <DashboardInsetPanel
-                        title="Учурдагы контекст"
-                        description="Тереңирээк прогресс учурда тандалган курс чыпкасы менен шайкеш иштейт."
+                        title={t('studentDashboard.analytics.context.title')}
+                        description={t('studentDashboard.analytics.context.description')}
                     >
                         <div className="flex flex-wrap gap-2">
                             {courseId ? (
                                 <span className="rounded-full border border-edubot-line bg-white px-3 py-2 text-xs font-semibold text-edubot-ink dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200">
-                                    Курс чыпкасы активдүү
+                                    {t('studentDashboard.analytics.context.courseFilterActive')}
                                 </span>
                             ) : null}
                         </div>
@@ -121,8 +147,8 @@ const StudentAnalyticsPage = ({
 
                 {showFilters ? (
                     <DashboardInsetPanel
-                        title="Мезгил фильтри"
-                        description="Көрсөткүчтөрдү белгилүү күн аралыгы боюнча чыпкалоо."
+                        title={t('studentDashboard.analytics.filters.title')}
+                        description={t('studentDashboard.analytics.filters.description')}
                     >
                         <div className="mt-4 grid gap-3 sm:grid-cols-2">
                             <input
@@ -130,14 +156,14 @@ const StudentAnalyticsPage = ({
                                 value={filters.from || ''}
                                 onChange={(e) => setFilters((prev) => ({ ...prev, from: e.target.value }))}
                                 className="dashboard-field"
-                                placeholder="Башталган күнү"
+                                placeholder={t('studentDashboard.analytics.filters.fromPlaceholder')}
                             />
                             <input
                                 type="date"
                                 value={filters.to || ''}
                                 onChange={(e) => setFilters((prev) => ({ ...prev, to: e.target.value }))}
                                 className="dashboard-field"
-                                placeholder="Аягындашкан күнү"
+                                placeholder={t('studentDashboard.analytics.filters.toPlaceholder')}
                             />
                         </div>
                     </DashboardInsetPanel>
@@ -145,24 +171,24 @@ const StudentAnalyticsPage = ({
 
                 <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                     <DashboardMetricCard
-                        label="Катышкан курстар"
+                        label={t('studentDashboard.analytics.metrics.enrolledCourses')}
                         value={kpis.enrolledCourses}
                         icon={FiBookOpen}
                     />
                     <DashboardMetricCard
-                        label="Аякталган курстар"
+                        label={t('studentDashboard.analytics.metrics.completedCourses')}
                         value={kpis.completedCourses}
                         icon={FiAward}
                         tone="green"
                     />
                     <DashboardMetricCard
-                        label="Аякталган сабактар"
+                        label={t('studentDashboard.analytics.metrics.completedLessons')}
                         value={kpis.totalLessonsCompleted}
                         icon={FiZap}
                         tone="blue"
                     />
                     <DashboardMetricCard
-                        label="Орточо прогресс"
+                        label={t('studentDashboard.analytics.metrics.averageProgress')}
                         value={`${kpis.averageProgress}%`}
                         icon={FiTrendingUp}
                         tone="amber"
@@ -170,7 +196,10 @@ const StudentAnalyticsPage = ({
                 </div>
 
                 {continueLearning && (
-                    <AnalyticsSection title="Окууну улантуу" subtitle="Акыркы активдүү курс жана сабак">
+                    <AnalyticsSection
+                        title={t('studentDashboard.analytics.continueLearning.title')}
+                        subtitle={t('studentDashboard.analytics.continueLearning.subtitle')}
+                    >
                         <div className="rounded-3xl border border-edubot-line/80 bg-gradient-to-br from-edubot-orange via-edubot-soft to-edubot-orange p-6 text-white shadow-edubot-hover dark:border-edubot-soft/20">
                             <div className="flex items-start justify-between">
                                 <div className="flex-1">
@@ -178,7 +207,7 @@ const StudentAnalyticsPage = ({
                                     <p className="mb-4 text-white/80">{continueLearning.lessonTitle}</p>
                                     <div className="mb-4">
                                         <div className="flex justify-between text-sm mb-1">
-                                            <span>Прогресс</span>
+                                            <span>{t('studentDashboard.progress.progress')}</span>
                                             <span>{continueLearning.progress}%</span>
                                         </div>
                                         <div className="w-full bg-white/20 rounded-full h-2">
@@ -196,7 +225,7 @@ const StudentAnalyticsPage = ({
                                             }
                                         }}
                                     >
-                                        Окууну Улантуу
+                                        {t('studentDashboard.analytics.actions.continueLearning')}
                                     </button>
                                 </div>
                                 <div className="ml-6">
@@ -213,28 +242,36 @@ const StudentAnalyticsPage = ({
                 )}
 
                 <div className="grid lg:grid-cols-2 gap-6">
-                    <AnalyticsSection title="Курстар боюнча прогресс" subtitle="Катышып жаткан курстар жана алардын абалы">
+                    <AnalyticsSection
+                        title={t('studentDashboard.analytics.courseProgress.title')}
+                        subtitle={t('studentDashboard.analytics.courseProgress.subtitle')}
+                    >
                         <ProgressList
                             items={myCourses.map((course) => ({
-                                title: course.courseTitle || `Курс #${course.courseId}`,
-                                subtitle: `Катышкан күнү: ${course.enrolledAt ? new Date(course.enrolledAt).toLocaleDateString() : 'Белгисиз'}`,
+                                title: getCourseTitle(course),
+                                subtitle: t('studentDashboard.analytics.courseProgress.enrolledAt', {
+                                    date: formatAnalyticsDate(course.enrolledAt, i18n.language, unknownDate),
+                                }),
                                 progress: course.progress || 0,
                                 status: course.progress === 100 ? 'completed' : 'active',
                                 action: {
-                                    label: 'Улантуруу',
+                                    label: t('studentDashboard.analytics.actions.continue'),
                                     onClick: () => navigate(`/courses/${course.courseId}`),
                                 },
                             }))}
                             emptyState={{
-                                title: 'Азырынча курстар жок',
-                                subtitle: 'Биринчи курсуңузду баштоо үчүн каталогду караңыз',
-                                action: 'Курстарды Көрүү',
+                                title: t('studentDashboard.analytics.courseProgress.emptyTitle'),
+                                subtitle: t('studentDashboard.analytics.courseProgress.emptySubtitle'),
+                                action: t('studentDashboard.analytics.actions.viewCourses'),
                                 onAction: () => navigate('/courses'),
                             }}
                         />
                     </AnalyticsSection>
 
-                    <AnalyticsSection title="Акыркы активдүүлүк" subtitle="Сиздин акыркы окуу аракеттериңиз">
+                    <AnalyticsSection
+                        title={t('studentDashboard.analytics.recentActivity.title')}
+                        subtitle={t('studentDashboard.analytics.recentActivity.subtitle')}
+                    >
                         {recentActivity && recentActivity.length > 0 ? (
                             <div className="space-y-3">
                                 {recentActivity.slice(0, 10).map((activity, index) => (
@@ -267,10 +304,10 @@ const StudentAnalyticsPage = ({
                                         </div>
                                         <div className="flex-1">
                                             <p className="font-medium text-edubot-ink dark:text-gray-100">
-                                                {activity.title || 'Активдүүлүк'}
+                                                {activity.title || t('studentDashboard.analytics.fallbacks.activity')}
                                             </p>
                                             <p className="text-sm text-edubot-muted dark:text-slate-400">
-                                                {activity.timestamp ? new Date(activity.timestamp).toLocaleString() : 'Белгисиз убакыт'}
+                                                {formatAnalyticsDate(activity.timestamp, i18n.language, unknownTime)}
                                             </p>
                                         </div>
                                     </div>
@@ -278,8 +315,8 @@ const StudentAnalyticsPage = ({
                             </div>
                         ) : (
                             <EmptyAnalyticsState
-                                title="Активдүүлүк жок"
-                                subtitle="Азырынча аракеттериңиз жок"
+                                title={t('studentDashboard.analytics.recentActivity.emptyTitle')}
+                                subtitle={t('studentDashboard.analytics.recentActivity.emptySubtitle')}
                                 icon={
                                     <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -292,10 +329,10 @@ const StudentAnalyticsPage = ({
 
                 <div className="grid lg:grid-cols-2 gap-6">
                     <AnalyticsBarChart
-                        title="Курс прогресс көрүнүшү"
-                        subtitle="Катышкан курстардагы реалдуу прогрессиңиз"
+                        title={t('studentDashboard.analytics.charts.courseProgressTitle')}
+                        subtitle={t('studentDashboard.analytics.charts.courseProgressSubtitle')}
                         data={myCourses.map((course) => ({
-                            label: course.courseTitle || `Курс #${course.courseId}`,
+                            label: getCourseTitle(course),
                             value: metricNumber(course.progress || 0),
                         })) || []}
                         horizontal={true}
@@ -306,8 +343,8 @@ const StudentAnalyticsPage = ({
                     />
 
                     <AnalyticsDoughnutChart
-                        title="Активдүүлүк бөлүштүрүлүшү"
-                        subtitle="Акыркы аракеттериңиз кайсы типке көбүрөөк туура келет"
+                        title={t('studentDashboard.analytics.charts.activityDistributionTitle')}
+                        subtitle={t('studentDashboard.analytics.charts.activityDistributionSubtitle')}
                         data={recentActivity.reduce((acc, activity) => {
                             const type = activity.type || 'other';
                             const existing = acc.find(item => item.label === type);
@@ -318,7 +355,7 @@ const StudentAnalyticsPage = ({
                             }
                             return acc;
                         }, []).map((item) => ({
-                            label: item.label.charAt(0).toUpperCase() + item.label.slice(1),
+                            label: getActivityTypeLabel(item.label),
                             value: item.value,
                         }))}
                         colors={['rgb(59, 130, 246)', 'rgb(34, 197, 94)', 'rgb(251, 146, 60)', 'rgb(168, 85, 247)']}
@@ -328,35 +365,35 @@ const StudentAnalyticsPage = ({
                 </div>
 
                 <DashboardInsetPanel
-                    title="Студент workspace менен байланыш"
-                    description="Бул аналитика негизги студент dashboard ичиндеги окуу багытын деталдайт: кайсы курста улантуу, кайсы мезгилде активдүүлүк төмөндөдү жана жалпы прогресс эмнеден турат."
+                    title={t('studentDashboard.analytics.workspaceLink.title')}
+                    description={t('studentDashboard.analytics.workspaceLink.description')}
                 >
                     <div className="grid gap-3 sm:grid-cols-3">
                         <div className="rounded-2xl border border-edubot-line/70 bg-white/80 px-4 py-3 dark:border-slate-700 dark:bg-slate-900">
                             <div className="flex items-center gap-2 text-sm font-semibold text-edubot-ink dark:text-white">
                                 <FiBookOpen className="h-4 w-4" />
-                                Курстар
+                                {t('studentDashboard.analytics.workspaceLink.coursesTitle')}
                             </div>
                             <p className="mt-2 text-sm text-edubot-muted dark:text-slate-400">
-                                Dashboard көрсөткөн жалпы прогресстин кайсы курстардан турганын бул жерде бөлүп көрөсүз.
+                                {t('studentDashboard.analytics.workspaceLink.coursesDescription')}
                             </p>
                         </div>
                         <div className="rounded-2xl border border-edubot-line/70 bg-white/80 px-4 py-3 dark:border-slate-700 dark:bg-slate-900">
                             <div className="flex items-center gap-2 text-sm font-semibold text-edubot-ink dark:text-white">
                                 <FiCalendar className="h-4 w-4" />
-                                Убакыт
+                                {t('studentDashboard.analytics.workspaceLink.timeTitle')}
                             </div>
                             <p className="mt-2 text-sm text-edubot-muted dark:text-slate-400">
-                                Акыркы аракеттер жана мезгил фильтри окуу темпи качан өзгөргөнүн көрсөтөт.
+                                {t('studentDashboard.analytics.workspaceLink.timeDescription')}
                             </p>
                         </div>
                         <div className="rounded-2xl border border-edubot-line/70 bg-white/80 px-4 py-3 dark:border-slate-700 dark:bg-slate-900">
                             <div className="flex items-center gap-2 text-sm font-semibold text-edubot-ink dark:text-white">
                                 <FiTrendingUp className="h-4 w-4" />
-                                Прогресс
+                                {t('studentDashboard.analytics.workspaceLink.progressTitle')}
                             </div>
                             <p className="mt-2 text-sm text-edubot-muted dark:text-slate-400">
-                                Орточо көрсөткүчтөн тышкары конкреттүү курс, сабак жана активдүүлүк деталдары ачылат.
+                                {t('studentDashboard.analytics.workspaceLink.progressDescription')}
                             </p>
                         </div>
                     </div>

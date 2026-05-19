@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import CreateDeliveryCourseModal from './modals/CreateDeliveryCourseModal.jsx';
 
 const DeliveryCourseModalController = ({
@@ -11,31 +12,35 @@ const DeliveryCourseModalController = ({
     updatingDeliveryCourse,
     editingDeliveryCourse,
     deliveryCategories,
-}) => (
-    <>
-        {showDeliveryModal && (
-            <CreateDeliveryCourseModal
-                isOpen={showDeliveryModal}
-                onClose={onCloseDeliveryModal}
-                onCreateDeliveryCourse={onCreateDeliveryCourse}
-                creatingDeliveryCourse={creatingDeliveryCourse}
-                deliveryCategories={deliveryCategories}
-            />
-        )}
-        {showEditDeliveryModal && (
-            <CreateDeliveryCourseModal
-                isOpen={showEditDeliveryModal}
-                onClose={onCloseEditDeliveryModal}
-                onCreateDeliveryCourse={onUpdateDeliveryCourse}
-                creatingDeliveryCourse={updatingDeliveryCourse}
-                deliveryCategories={deliveryCategories}
-                initialValues={editingDeliveryCourse}
-                title="Delivery курсту өзгөртүү"
-                subtitle="Оффлайн же онлайн түз эфир курсунун негизги маалыматын жаңыртыңыз."
-                submitLabel="Сактоо"
-            />
-        )}
-    </>
-);
+}) => {
+    const { t } = useTranslation();
+
+    return (
+        <>
+            {showDeliveryModal && (
+                <CreateDeliveryCourseModal
+                    isOpen={showDeliveryModal}
+                    onClose={onCloseDeliveryModal}
+                    onCreateDeliveryCourse={onCreateDeliveryCourse}
+                    creatingDeliveryCourse={creatingDeliveryCourse}
+                    deliveryCategories={deliveryCategories}
+                />
+            )}
+            {showEditDeliveryModal && (
+                <CreateDeliveryCourseModal
+                    isOpen={showEditDeliveryModal}
+                    onClose={onCloseEditDeliveryModal}
+                    onCreateDeliveryCourse={onUpdateDeliveryCourse}
+                    creatingDeliveryCourse={updatingDeliveryCourse}
+                    deliveryCategories={deliveryCategories}
+                    initialValues={editingDeliveryCourse}
+                    title={t('instructorDashboard.deliveryCourseModal.header.editTitle')}
+                    subtitle={t('instructorDashboard.deliveryCourseModal.header.editSubtitle')}
+                    submitLabel={t('instructorDashboard.deliveryCourseModal.actions.save')}
+                />
+            )}
+        </>
+    );
+};
 
 export default DeliveryCourseModalController;

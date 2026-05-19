@@ -1,4 +1,5 @@
 import PropTypes from 'prop-types';
+import { useTranslation } from 'react-i18next';
 import {
     FiCheckCircle,
     FiCalendar,
@@ -17,13 +18,13 @@ import { COURSE_GROUP_STATUS, COURSE_TYPE, MEETING_PROVIDER } from '@shared/cont
 import Loader from '@shared/ui/Loader';
 
 const WEEKDAY_OPTIONS = [
-    { value: 'mon', label: 'Дүйшөмбү' },
-    { value: 'tue', label: 'Шейшемби' },
-    { value: 'wed', label: 'Шаршемби' },
-    { value: 'thu', label: 'Бейшемби' },
-    { value: 'fri', label: 'Жума' },
-    { value: 'sat', label: 'Ишемби' },
-    { value: 'sun', label: 'Жекшемби' },
+    { value: 'mon', labelKey: 'instructorDashboard.groupForm.weekdays.mon' },
+    { value: 'tue', labelKey: 'instructorDashboard.groupForm.weekdays.tue' },
+    { value: 'wed', labelKey: 'instructorDashboard.groupForm.weekdays.wed' },
+    { value: 'thu', labelKey: 'instructorDashboard.groupForm.weekdays.thu' },
+    { value: 'fri', labelKey: 'instructorDashboard.groupForm.weekdays.fri' },
+    { value: 'sat', labelKey: 'instructorDashboard.groupForm.weekdays.sat' },
+    { value: 'sun', labelKey: 'instructorDashboard.groupForm.weekdays.sun' },
 ];
 
 const getInitials = (value = '') =>
@@ -33,6 +34,13 @@ const getInitials = (value = '') =>
         .slice(0, 2)
         .map((part) => part[0]?.toUpperCase())
         .join('') || 'S';
+
+const toArray = (value) => {
+    if (Array.isArray(value)) return value;
+    if (Array.isArray(value?.items)) return value.items;
+    if (Array.isArray(value?.data)) return value.data;
+    return [];
+};
 
 const GroupFormModal = ({
     mode,
@@ -50,25 +58,33 @@ const GroupFormModal = ({
     showDropdown,
     setShowDropdown,
 }) => {
+    const { t } = useTranslation();
     const isEdit = mode === 'edit';
     const deliveryType = String(course?.courseType || course?.type || '').trim().toLowerCase();
     const isOffline = deliveryType === COURSE_TYPE.OFFLINE;
     const isOnlineLive = deliveryType === COURSE_TYPE.ONLINE_LIVE;
-    const deliveryLabel = isOffline ? 'Оффлайн группа' : isOnlineLive ? 'Онлайн live группа' : 'Delivery группа';
-    const modeLabel = form.deliveryMode === 'individual' ? 'Жеке курс' : 'Группа';
+    const deliveryLabel = isOffline
+        ? t('instructorDashboard.groupForm.delivery.offlineGroup')
+        : isOnlineLive
+          ? t('instructorDashboard.groupForm.delivery.onlineLiveGroup')
+          : t('instructorDashboard.groupForm.delivery.deliveryGroup');
+    const modeLabel = form.deliveryMode === 'individual'
+        ? t('instructorDashboard.groupForm.deliveryModes.individual.label')
+        : t('instructorDashboard.groupForm.deliveryModes.group.label');
     const scheduleBlocks = Array.isArray(form.scheduleBlocks) ? form.scheduleBlocks : [];
     const isIndividual = form.deliveryMode === 'individual';
-    const selectedStudent = studentOptions.find((student) => String(student.id) === String(form.studentId));
+    const normalizedStudentOptions = toArray(studentOptions);
+    const selectedStudent = normalizedStudentOptions.find((student) => String(student.id) === String(form.studentId));
     const deliveryModeOptions = [
         {
             value: 'group',
-            label: 'Группа',
-            description: 'Бир нече студент үчүн cohort.',
+            label: t('instructorDashboard.groupForm.deliveryModes.group.label'),
+            description: t('instructorDashboard.groupForm.deliveryModes.group.description'),
         },
         {
             value: 'individual',
-            label: 'Жеке курс',
-            description: 'Бир студентке арналган жеке агым.',
+            label: t('instructorDashboard.groupForm.deliveryModes.individual.label'),
+            description: t('instructorDashboard.groupForm.deliveryModes.individual.description'),
         },
     ];
 
@@ -98,14 +114,20 @@ const GroupFormModal = ({
                         <div className="space-y-3">
                             <div className="inline-flex items-center gap-2 rounded-full border border-edubot-orange/20 bg-white/80 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-edubot-orange dark:border-edubot-orange/25 dark:bg-slate-900/60">
                                 {isEdit ? <FiEdit3 className="h-3.5 w-3.5" /> : <FiPlus className="h-3.5 w-3.5" />}
-                                {isEdit ? 'Edit Group' : 'Create Group'}
+                                {isEdit
+                                    ? t('instructorDashboard.groupForm.header.editEyebrow')
+                                    : t('instructorDashboard.groupForm.header.createEyebrow')}
                             </div>
                             <div>
                                 <h2 className="text-2xl font-semibold tracking-tight text-edubot-ink dark:text-white sm:text-[2rem]">
-                                    {isEdit ? form.name || 'Группаны түзөтүү' : 'Жаңы группа'}
+                                    {isEdit
+                                        ? form.name || t('instructorDashboard.groupForm.header.editTitle')
+                                        : t('instructorDashboard.groupForm.header.createTitle')}
                                 </h2>
                                 <p className="mt-1 text-sm text-edubot-muted dark:text-slate-400">
-                                    {course?.title || 'Delivery course'} үчүн академиялык группа метамаалыматын башкаруу.
+                                    {t('instructorDashboard.groupForm.header.description', {
+                                        course: course?.title || t('instructorDashboard.groupForm.fallbacks.deliveryCourse'),
+                                    })}
                                 </p>
                             </div>
                         </div>
@@ -114,7 +136,7 @@ const GroupFormModal = ({
                             type="button"
                             onClick={onClose}
                             className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-edubot-line/80 bg-white/80 text-edubot-muted transition hover:border-edubot-orange/40 hover:text-edubot-orange dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-400"
-                            aria-label="Жабуу"
+                            aria-label={t('common.closeMenu')}
                         >
                             <FiX className="h-5 w-5" />
                         </button>
@@ -133,7 +155,7 @@ const GroupFormModal = ({
                             <section className="rounded-[1.75rem] border border-edubot-line/70 bg-edubot-surfaceAlt/25 p-5 dark:border-slate-700 dark:bg-slate-900/25">
                                 <div className="flex items-center gap-2 text-sm font-semibold text-edubot-ink dark:text-white">
                                     <FiLayers className="h-4 w-4 text-edubot-orange" />
-                                    Негизги маалымат
+                                    {t('instructorDashboard.groupForm.sections.basic')}
                                 </div>
                                 <div className="mt-4 grid gap-3 sm:grid-cols-2">
                                     {deliveryModeOptions.map((option) => {
@@ -164,7 +186,11 @@ const GroupFormModal = ({
                                     <input
                                         value={form.name}
                                         onChange={(e) => onChange('name', e.target.value)}
-                                        placeholder={isIndividual ? 'Жеке курстун аты *' : 'Group name *'}
+                                        placeholder={
+                                            isIndividual
+                                                ? t('instructorDashboard.groupForm.fields.individualName')
+                                                : t('instructorDashboard.groupForm.fields.groupName')
+                                        }
                                         className="dashboard-field md:col-span-2"
                                     />
                                     {!isIndividual ? (
@@ -172,18 +198,18 @@ const GroupFormModal = ({
                                         <input
                                             value={form.code}
                                             onChange={(e) => onChange('code', e.target.value)}
-                                            placeholder="Group code *"
+                                            placeholder={t('instructorDashboard.groupForm.fields.groupCode')}
                                             className="dashboard-field"
                                         />
                                         <div className="flex items-center justify-between text-xs text-edubot-muted dark:text-slate-400">
-                                            <span>Код cohort үчүн уникалдуу идентификатор.</span>
+                                            <span>{t('instructorDashboard.groupForm.help.groupCode')}</span>
                                             <button
                                                 type="button"
                                                 onClick={onRegenerateCode}
                                                 className="inline-flex items-center gap-1 font-medium text-edubot-orange"
                                             >
                                                 <FiRefreshCw className="h-3.5 w-3.5" />
-                                                Кайра түзүү
+                                                {t('instructorDashboard.groupForm.actions.regenerate')}
                                             </button>
                                         </div>
                                     </div>
@@ -196,7 +222,9 @@ const GroupFormModal = ({
                                         >
                                             {Object.values(COURSE_GROUP_STATUS).map((status) => (
                                                 <option key={status} value={status}>
-                                                    {status}
+                                                    {t(`instructorDashboard.groupForm.statuses.${status}`, {
+                                                        defaultValue: status,
+                                                    })}
                                                 </option>
                                             ))}
                                         </select>
@@ -204,7 +232,7 @@ const GroupFormModal = ({
                                     <input
                                         value={form.instructorId}
                                         onChange={(e) => onChange('instructorId', e.target.value)}
-                                        placeholder="Instructor ID"
+                                        placeholder={t('instructorDashboard.groupForm.fields.instructorId')}
                                         className="dashboard-field"
                                     />
                                 </div>
@@ -213,7 +241,7 @@ const GroupFormModal = ({
                             <section className="rounded-[1.75rem] border border-edubot-line/70 bg-edubot-surfaceAlt/25 p-5 dark:border-slate-700 dark:bg-slate-900/25">
                                 <div className="flex items-center gap-2 text-sm font-semibold text-edubot-ink dark:text-white">
                                     <FiCalendar className="h-4 w-4 text-edubot-orange" />
-                                    Период жана орундар
+                                    {t('instructorDashboard.groupForm.sections.period')}
                                 </div>
                                 <div className="mt-4 grid gap-3 md:grid-cols-2">
                                     <input
@@ -233,14 +261,14 @@ const GroupFormModal = ({
                                         min="1"
                                         value={form.seatLimit}
                                         onChange={(e) => onChange('seatLimit', e.target.value)}
-                                        placeholder="Seat limit"
+                                        placeholder={t('instructorDashboard.groupForm.fields.seatLimit')}
                                         className="dashboard-field"
                                         disabled={isIndividual}
                                     />
                                     <input
                                         value={form.timezone}
                                         onChange={(e) => onChange('timezone', e.target.value)}
-                                        placeholder="Timezone"
+                                        placeholder={t('instructorDashboard.groupForm.fields.timezone')}
                                         className="dashboard-field"
                                     />
                                 </div>
@@ -250,10 +278,10 @@ const GroupFormModal = ({
                                 <section className="rounded-[1.75rem] border border-edubot-line/70 bg-edubot-surfaceAlt/25 p-5 dark:border-slate-700 dark:bg-slate-900/25">
                                     <div className="flex items-center gap-2 text-sm font-semibold text-edubot-ink dark:text-white">
                                         <FiSearch className="h-4 w-4 text-edubot-orange" />
-                                        Студент тандоо
+                                        {t('instructorDashboard.groupForm.sections.student')}
                                     </div>
                                     <p className="mt-1 text-sm text-edubot-muted dark:text-slate-400">
-                                        Жеке курс бир студентке байланып түзүлөт.
+                                        {t('instructorDashboard.groupForm.student.description')}
                                     </p>
 
                                     <div className="relative mt-4">
@@ -266,14 +294,14 @@ const GroupFormModal = ({
                                                 onChange('studentId', '');
                                             }}
                                             className="dashboard-field pl-11"
-                                            placeholder="Аты же email (кеминде 2 тамга)"
+                                            placeholder={t('instructorDashboard.groupForm.student.searchPlaceholder')}
                                             onFocus={() => setShowDropdown(true)}
                                         />
                                         <FiSearch className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-edubot-muted" />
 
-                                        {showDropdown && studentOptions?.length > 0 ? (
+                                        {showDropdown && normalizedStudentOptions.length > 0 ? (
                                             <div className="absolute z-20 mt-2 max-h-64 w-full overflow-auto rounded-[1.25rem] border border-edubot-line/80 bg-white p-2 shadow-2xl dark:border-slate-700 dark:bg-[#141619]">
-                                                {studentOptions.map((student) => {
+                                                {normalizedStudentOptions.map((student) => {
                                                     const active = String(student.id) === String(form.studentId);
                                                     return (
                                                         <button
@@ -294,7 +322,9 @@ const GroupFormModal = ({
                                                                 {getInitials(student.name || student.email)}
                                                             </div>
                                                             <div className="min-w-0">
-                                                                <div className="font-medium">{student.name || 'Белгисиз студент'}</div>
+                                                                <div className="font-medium">
+                                                                    {student.name || t('instructorDashboard.groupForm.fallbacks.unknownStudent')}
+                                                                </div>
                                                                 {student.email ? (
                                                                     <div className="truncate text-xs text-edubot-muted dark:text-slate-400">
                                                                         {student.email}
@@ -310,9 +340,9 @@ const GroupFormModal = ({
 
                                     <div className="mt-3 min-h-[24px]">
                                         {loadingUserOptions ? <Loader fullScreen={false} /> : null}
-                                        {!studentOptions?.length && userSearch.length >= 2 && !loadingUserOptions ? (
+                                        {!normalizedStudentOptions.length && userSearch.length >= 2 && !loadingUserOptions ? (
                                             <p className="text-xs text-edubot-muted dark:text-slate-400">
-                                                Студент табылган жок.
+                                                {t('instructorDashboard.groupForm.student.notFound')}
                                             </p>
                                         ) : null}
                                     </div>
@@ -325,16 +355,23 @@ const GroupFormModal = ({
                                                 </div>
                                                 <div className="min-w-0">
                                                     <div className="text-sm font-semibold text-edubot-ink dark:text-white">
-                                                        {selectedStudent?.name || userSearch || `Student #${form.studentId}`}
+                                                        {selectedStudent?.name ||
+                                                            userSearch ||
+                                                            t('instructorDashboard.groupForm.fallbacks.studentWithId', {
+                                                                id: form.studentId,
+                                                            })}
                                                     </div>
                                                     <div className="mt-1 text-xs text-edubot-muted dark:text-slate-400">
-                                                        {selectedStudent?.email || `Тандалган студент ID: ${form.studentId}`}
+                                                        {selectedStudent?.email ||
+                                                            t('instructorDashboard.groupForm.student.selectedId', {
+                                                                id: form.studentId,
+                                                            })}
                                                     </div>
                                                 </div>
                                             </div>
                                         ) : (
                                             <p className="text-sm text-edubot-muted dark:text-slate-400">
-                                                Кеминде эки тамга жазыңыз жана студентти тизмеден тандаңыз.
+                                                {t('instructorDashboard.groupForm.student.pickHint')}
                                             </p>
                                         )}
                                     </div>
@@ -348,10 +385,10 @@ const GroupFormModal = ({
                                         />
                                         <span>
                                             <span className="block font-semibold text-edubot-ink dark:text-white">
-                                                Биринчи сессияны кошо түзүү
+                                                {t('instructorDashboard.groupForm.firstSession.title')}
                                             </span>
                                             <span className="mt-1 block text-xs leading-5">
-                                                График блогу толтурулса, жеке курс үчүн баштапкы session workflow даярдалат.
+                                                {t('instructorDashboard.groupForm.firstSession.description')}
                                             </span>
                                         </span>
                                     </label>
@@ -367,20 +404,22 @@ const GroupFormModal = ({
                                     ) : (
                                         <FiVideo className="h-4 w-4 text-edubot-orange" />
                                     )}
-                                    Delivery
+                                    {t('instructorDashboard.groupForm.sections.delivery')}
                                 </div>
                                 <div className="mt-3 rounded-2xl border border-edubot-line/70 bg-white/70 px-4 py-3 text-sm text-edubot-muted dark:border-slate-700 dark:bg-slate-950/60 dark:text-slate-400">
-                                    Бул курс форматы: <span className="font-semibold text-edubot-ink dark:text-white">{deliveryLabel}</span>
+                                    {t('instructorDashboard.groupForm.delivery.courseFormat')}{' '}
+                                    <span className="font-semibold text-edubot-ink dark:text-white">{deliveryLabel}</span>
                                 </div>
                                 <div className="mt-3 rounded-2xl border border-edubot-line/70 bg-white/70 px-4 py-3 text-sm text-edubot-muted dark:border-slate-700 dark:bg-slate-950/60 dark:text-slate-400">
-                                    Окутуу форматы: <span className="font-semibold text-edubot-ink dark:text-white">{modeLabel}</span>
+                                    {t('instructorDashboard.groupForm.delivery.learningFormat')}{' '}
+                                    <span className="font-semibold text-edubot-ink dark:text-white">{modeLabel}</span>
                                 </div>
                                 <div className="mt-4 grid gap-3">
                                     {isOffline && (
                                         <input
                                             value={form.location}
                                             onChange={(e) => onChange('location', e.target.value)}
-                                            placeholder="Location"
+                                            placeholder={t('instructorDashboard.groupForm.fields.location')}
                                             className="dashboard-field"
                                         />
                                     )}
@@ -391,7 +430,7 @@ const GroupFormModal = ({
                                                 onChange={(e) => onChange('meetingProvider', e.target.value)}
                                                 className="dashboard-field dashboard-select"
                                             >
-                                                <option value="">Meeting provider</option>
+                                                <option value="">{t('instructorDashboard.groupForm.fields.meetingProvider')}</option>
                                                 {Object.values(MEETING_PROVIDER).map((provider) => (
                                                     <option key={provider} value={provider}>
                                                         {provider}
@@ -401,14 +440,14 @@ const GroupFormModal = ({
                                             <input
                                                 value={form.meetingUrl}
                                                 onChange={(e) => onChange('meetingUrl', e.target.value)}
-                                                placeholder="Meeting URL"
+                                                placeholder={t('instructorDashboard.groupForm.fields.meetingUrl')}
                                                 className="dashboard-field"
                                             />
                                         </>
                                     )}
                                     {!isOffline && !isOnlineLive && (
                                         <div className="rounded-2xl border border-dashed border-edubot-line/70 px-4 py-4 text-sm text-edubot-muted dark:border-slate-700 dark:text-slate-400">
-                                            Бул курс үчүн кошумча delivery талаалары талап кылынбайт.
+                                            {t('instructorDashboard.groupForm.delivery.noExtraFields')}
                                         </div>
                                     )}
                                 </div>
@@ -423,14 +462,14 @@ const GroupFormModal = ({
                                     ) : (
                                         <FiVideo className="h-4 w-4 text-edubot-orange" />
                                     )}
-                                    Эскертүү
+                                    {t('instructorDashboard.groupForm.notice.title')}
                                 </div>
                                 <p className="mt-3 text-sm leading-6 text-slate-300">
                                     {isOffline
-                                        ? 'Бул группа оффлайн окутулат. Локацияны так кармаңыз, ал session workspace контекстинде көрсөтүлөт.'
+                                        ? t('instructorDashboard.groupForm.notice.offline')
                                         : isOnlineLive
-                                          ? 'Бул группа онлайн live окутулат. Meeting provider жана URL session workflow үчүн негизги дефолт болуп калат.'
-                                          : 'Группа enrollment үчүн контейнер. Session, attendance, homework жана meeting workflow өзүнчө session workspace\'те калат.'}
+                                          ? t('instructorDashboard.groupForm.notice.onlineLive')
+                                          : t('instructorDashboard.groupForm.notice.delivery')}
                                 </p>
                             </section>
                         </div>
@@ -440,14 +479,14 @@ const GroupFormModal = ({
                                 <div>
                                     <div className="inline-flex items-center gap-2 rounded-full border border-edubot-orange/20 bg-white/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-edubot-orange dark:border-edubot-orange/20 dark:bg-slate-950/60">
                                         <FiClock className="h-4 w-4 text-edubot-orange" />
-                                        Пландоо блогу
+                                        {t('instructorDashboard.groupForm.schedule.eyebrow')}
                                     </div>
                                     <div className="mt-3 flex items-center gap-2 text-sm font-semibold text-edubot-ink dark:text-white">
                                         <FiClock className="h-4 w-4 text-edubot-orange" />
-                                        Жумалык дефолт график
+                                        {t('instructorDashboard.groupForm.schedule.title')}
                                     </div>
                                     <p className="mt-2 max-w-2xl text-sm text-edubot-muted dark:text-slate-400">
-                                        Бул сессияларды автоматтык түзбөйт. Бирок группа үчүн кадимки жумалык графикти сактап, кийинки сессияларды пландаштырууну жеңилдетет.
+                                        {t('instructorDashboard.groupForm.schedule.description')}
                                     </p>
                                 </div>
                                 <button
@@ -456,7 +495,7 @@ const GroupFormModal = ({
                                     className="dashboard-button-secondary shrink-0"
                                 >
                                     <FiPlus className="h-4 w-4" />
-                                    Блок кошуу
+                                    {t('instructorDashboard.groupForm.actions.addBlock')}
                                 </button>
                             </div>
 
@@ -464,12 +503,12 @@ const GroupFormModal = ({
                                 {isEdit || !isIndividual ? (
                                     <div className="rounded-2xl border border-edubot-line/70 bg-white/70 p-4 dark:border-slate-700 dark:bg-slate-950/60">
                                         <label className="block text-xs font-semibold uppercase tracking-[0.16em] text-edubot-muted dark:text-slate-400">
-                                            Кыскача эскертүү
+                                            {t('instructorDashboard.groupForm.schedule.noteLabel')}
                                         </label>
                                         <textarea
                                             value={form.scheduleNote}
                                             onChange={(e) => onChange('scheduleNote', e.target.value)}
-                                            placeholder="Мисалы: Дүйшөмбү, Шаршемби · 19:00–21:00"
+                                            placeholder={t('instructorDashboard.groupForm.schedule.notePlaceholder')}
                                             rows={3}
                                             className="dashboard-field mt-3 min-h-[104px]"
                                         />
@@ -478,9 +517,9 @@ const GroupFormModal = ({
 
                                 <div className="rounded-2xl border border-edubot-line/70 bg-white/70 p-4 dark:border-slate-700 dark:bg-slate-950/60">
                                     <div className="hidden items-center gap-3 border-b border-edubot-line/70 pb-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-edubot-muted dark:border-slate-700 dark:text-slate-400 xl:grid xl:grid-cols-[minmax(0,1fr),minmax(160px,180px),minmax(160px,180px)]">
-                                        <span className="truncate">Күн</span>
-                                        <span className="truncate">Башталышы</span>
-                                        <span className="truncate">Аягы</span>
+                                        <span className="truncate">{t('instructorDashboard.groupForm.schedule.day')}</span>
+                                        <span className="truncate">{t('instructorDashboard.groupForm.schedule.start')}</span>
+                                        <span className="truncate">{t('instructorDashboard.groupForm.schedule.end')}</span>
                                     </div>
 
                                     <div className="mt-3 space-y-3">
@@ -491,7 +530,9 @@ const GroupFormModal = ({
                                             >
                                                 <div className="mb-2 flex items-center justify-between md:hidden">
                                                     <p className="text-sm font-semibold text-edubot-ink dark:text-white">
-                                                        Блок #{index + 1}
+                                                        {t('instructorDashboard.groupForm.schedule.blockNumber', {
+                                                            number: index + 1,
+                                                        })}
                                                     </p>
                                                     {scheduleBlocks.length > 1 ? (
                                                         <button
@@ -499,7 +540,7 @@ const GroupFormModal = ({
                                                             onClick={() => handleScheduleBlockRemove(index)}
                                                             className="text-xs font-semibold text-rose-500"
                                                         >
-                                                            Өчүрүү
+                                                            {t('instructorDashboard.groupForm.actions.delete')}
                                                         </button>
                                                     ) : null}
                                                 </div>
@@ -509,12 +550,14 @@ const GroupFormModal = ({
                                                         value={block.day}
                                                         onChange={(e) => handleScheduleBlockChange(index, 'day', e.target.value)}
                                                         className="dashboard-field dashboard-select min-w-0"
-                                                        aria-label={`Блок ${index + 1} күнү`}
+                                                        aria-label={t('instructorDashboard.groupForm.schedule.dayAria', {
+                                                            number: index + 1,
+                                                        })}
                                                     >
-                                                        <option value="">Күн</option>
+                                                        <option value="">{t('instructorDashboard.groupForm.schedule.day')}</option>
                                                         {WEEKDAY_OPTIONS.map((option) => (
                                                             <option key={option.value} value={option.value}>
-                                                                {option.label}
+                                                                {t(option.labelKey)}
                                                             </option>
                                                         ))}
                                                     </select>
@@ -524,14 +567,18 @@ const GroupFormModal = ({
                                                             value={block.startTime}
                                                             onChange={(e) => handleScheduleBlockChange(index, 'startTime', e.target.value)}
                                                             className="dashboard-field min-w-0"
-                                                            aria-label={`Блок ${index + 1} башталышы`}
+                                                            aria-label={t('instructorDashboard.groupForm.schedule.startAria', {
+                                                                number: index + 1,
+                                                            })}
                                                         />
                                                         <input
                                                             type="time"
                                                             value={block.endTime}
                                                             onChange={(e) => handleScheduleBlockChange(index, 'endTime', e.target.value)}
                                                             className="dashboard-field min-w-0"
-                                                            aria-label={`Блок ${index + 1} аягы`}
+                                                            aria-label={t('instructorDashboard.groupForm.schedule.endAria', {
+                                                                number: index + 1,
+                                                            })}
                                                         />
                                                     </div>
                                                 </div>
@@ -543,11 +590,11 @@ const GroupFormModal = ({
                                                             onClick={() => handleScheduleBlockRemove(index)}
                                                             className="rounded-full px-2 py-2 text-[11px] font-semibold text-rose-500 transition hover:bg-rose-50 dark:hover:bg-rose-500/10"
                                                         >
-                                                            Өчүрүү
+                                                            {t('instructorDashboard.groupForm.actions.delete')}
                                                         </button>
                                                     ) : (
                                                         <span className="px-1 py-2 text-[11px] font-medium text-edubot-muted dark:text-slate-500">
-                                                            Негизги блок
+                                                            {t('instructorDashboard.groupForm.schedule.primaryBlock')}
                                                         </span>
                                                     )}
                                                 </div>
@@ -566,7 +613,7 @@ const GroupFormModal = ({
                             onClick={onClose}
                             disabled={saving}
                         >
-                            Жабуу
+                            {t('instructorDashboard.groupForm.actions.close')}
                         </button>
                         <button
                             type="submit"
@@ -575,12 +622,12 @@ const GroupFormModal = ({
                         >
                             {isEdit ? <FiEdit3 className="h-4 w-4" /> : <FiPlus className="h-4 w-4" />}
                             {saving
-                                ? 'Сакталууда...'
+                                ? t('instructorDashboard.groupForm.actions.saving')
                                 : isEdit
-                                  ? 'Группаны жаңыртуу'
+                                  ? t('instructorDashboard.groupForm.actions.updateGroup')
                                   : isIndividual
-                                    ? 'Жеке курс түзүү'
-                                    : 'Группа түзүү'}
+                                    ? t('instructorDashboard.groupForm.actions.createIndividual')
+                                    : t('instructorDashboard.groupForm.actions.createGroup')}
                         </button>
                     </div>
                 </form>

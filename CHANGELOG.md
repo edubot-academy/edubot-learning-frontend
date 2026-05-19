@@ -2,7 +2,7 @@
 
 Version bumps are classified by delivery scale; see `VERSIONING.md`.
 
-## Unreleased
+## [1.13.4] - 2026-05-20
 
 ### Changed
 
@@ -14,15 +14,27 @@ Version bumps are classified by delivery scale; see `VERSIONING.md`.
 - Localized the student certificates tab statuses, metrics, registry copy, course fallback, PDF/download actions, verification action, dates, and empty state for `ky`, `ru`, and `en`.
 - Localized student profile workspace copy, account/security form labels, notification settings, profile validation, and profile/notification load-save toasts for `ky`, `ru`, and `en`.
 - Localized the student progress tab hero, metrics, progress labels, course cards, next-action panels, lesson/quiz statuses, certificate readiness, session-format guidance, advanced analytics heading, and empty states for `ky`, `ru`, and `en`.
+- Localized the student advanced analytics page metrics, filters, course progress list, activity feed, charts, workspace context panel, date fallbacks, and load-error toast for `ky`, `ru`, and `en`.
 - Localized student task submission validation, success, attachment, and fallback error toasts for `ky`, `ru`, and `en`.
 - Localized the student task workspace UI, including status labels, filters, metrics, review/submission summaries, quiz states, draft helpers, attachment preview copy, and unavailable/empty states for `ky`, `ru`, and `en`.
 - Localized student resource tab hero, filters, metrics, material/recording panels, activity context, preview states, and open-error toasts for `ky`, `ru`, and `en`.
+- Localized instructor delivery-course and group-management modals, including delivery course create/edit, offering create/edit, course group form, group enrollment, offering enrollment, and session generation headings, fields, student picker, delivery notices, weekly schedule controls, statuses, preview states, and actions for `ky`, `ru`, and `en`.
+- Localized instructor overview dashboard copy, mobile summary, stats, focus card, recent-course metadata, and quick actions for `ky`, `ru`, and `en`.
+- Localized instructor AI workspace dashboard copy, metrics, course list states, setup steps, and active-language update dates for `ky`, `ru`, and `en`.
+- Localized instructor offering management dashboard copy, cards, filters, metrics, visibility/status labels, dates, empty states, and offering/student enrollment toasts for `ky`, `ru`, and `en`.
+- Localized instructor course and student list load-error messages for `ky`, `ru`, and `en`.
+- Localized instructor delivery-course creation feedback and profile load/save toasts for `ky`, `ru`, and `en`.
 
 ### Fixed
 
 - Hardened student instructor chat list normalization so chat selection and newly created chat lookup do not crash when chat/course APIs return wrapped response objects instead of raw arrays.
 - Fixed student chat attachment forwarding so `ChatWorkspace` passes file type and file data to the send handler in the expected order.
 - Fixed localized student course, schedule, and resource session dates so unknown-time fallbacks and date formatting follow the active language.
+- Hardened instructor group/enrollment modals so missing or wrapped student option payloads do not crash individual-course creation or offering enrollment.
+- Removed duplicate success/error handling from the offering create/edit modal so the parent offering workflow remains the single source for save feedback.
+- Hardened instructor offering management so wrapped course/offering payloads and missing enrollment dropdown state do not break offering filtering or student search.
+- Hardened instructor course and student management hooks so wrapped course/student response payloads do not clear valid lists.
+- Hardened instructor delivery-course category loading so wrapped category response payloads still populate the create/edit modal.
 
 ### Verification
 
