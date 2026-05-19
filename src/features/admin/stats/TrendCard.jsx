@@ -1,6 +1,6 @@
 import Sparkline from './Sparkline';
 
-const TrendCard = ({ title, series, color }) => {
+const TrendCard = ({ title, series, color, periodLabel }) => {
     const safeSeries = Array.isArray(series) && series.length ? series : [{ date: '—', count: 0 }];
     const latest = safeSeries[safeSeries.length - 1];
 
@@ -26,7 +26,7 @@ const TrendCard = ({ title, series, color }) => {
                         </p>
                     </div>
                     <span className="text-xs text-slate-400 bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded-full">
-                        7 күн
+                        {periodLabel}
                     </span>
                 </div>
 

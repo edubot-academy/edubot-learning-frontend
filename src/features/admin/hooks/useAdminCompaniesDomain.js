@@ -12,7 +12,8 @@ import {
     updateCompany,
     uploadCompanyLogo,
 } from '@services/api';
-import { isForbiddenError } from '@shared/api/error';
+import { isForbiddenError, parseApiError } from '@shared/api/error';
+import { useTranslation } from 'react-i18next';
 
 const defaultCompanyForm = {
     name: '',
@@ -54,6 +55,7 @@ const splitTenantPayload = (payload = {}) => {
 };
 
 export const useAdminCompaniesDomain = ({ loadCoursesAndCategories, requestConfirmation }) => {
+    const { t } = useTranslation();
     const [companies, setCompanies] = useState([]);
     const [, setCompaniesTotalPages] = useState(1);
     const [companySearch, setCompanySearch] = useState('');
@@ -71,10 +73,10 @@ export const useAdminCompaniesDomain = ({ loadCoursesAndCategories, requestConfi
             setCompaniesTotalPages(res?.totalPages || 1);
         } catch (error) {
             if (!isForbiddenError(error)) {
-                toast.error('Компанияларды жүктөөдө ката кетти');
+                toast.error(parseApiError(error, t('company.list.toasts.loadError')).message);
             }
         }
-    }, [companyPage, companySearch]);
+    }, [companyPage, companySearch, t]);
 
     const handleCreateCompany = useCallback(
         async (payload) => {
@@ -99,14 +101,14 @@ export const useAdminCompaniesDomain = ({ loadCoursesAndCategories, requestConfi
                 const nextCompany = { ...created, ...crmUpdate };
                 setCompanies((prev) => [...prev, nextCompany]);
                 setNewCompanyForm({ ...defaultCompanyForm });
-                toast.success('Tenant ийгиликтүү кошулду');
+                toast.success(t('company.adminCompanies.toasts.created'));
                 return created;
-            } catch {
-                toast.error('Tenant кошууда ката кетти');
+            } catch (error) {
+                toast.error(parseApiError(error, t('company.list.toasts.createError')).message);
                 return null;
             }
         },
-        [newCompanyForm]
+        [newCompanyForm, t]
     );
 
     const handleUpdateCompany = useCallback(
@@ -145,101 +147,115 @@ export const useAdminCompaniesDomain = ({ loadCoursesAndCategories, requestConfi
                       : {};
                 setCompanies((prev) =>
                     prev.map((company) =>
-                        company.id === companyId ? { ...company, ...updated, ...crmUpdate } : company
+                        company.id === companyId
+                            ? { ...company, ...updated, ...crmUpdate }
+                            : company
                     )
                 );
-                toast.success('Tenant ийгиликтүү жаңыртылды');
-            } catch {
-                toast.error('Tenant жаңыртууда ката кетти');
+                toast.success(t('company.adminCompanies.toasts.updated'));
+            } catch (error) {
+                toast.error(
+                    parseApiError(error, t('company.platformTenant.toasts.saveError')).message
+                );
             }
         },
-        [companies]
+        [companies, t]
     );
 
     const handleDeleteCompany = useCallback(
         async (companyId) => {
+            const company = companies.find((item) => item.id === companyId);
             requestConfirmation({
-                title: 'Компанияны өчүрүү',
-                message: 'Бул компанияны өчүрүүгө ишенимдүүсүзбү?',
-                confirmLabel: 'Өчүрүү',
+                title: t('company.settings.deleteTitle'),
+                message: t('company.settings.deleteMessage', { name: company?.name || '' }),
+                confirmLabel: t('company.settings.deleteCompany'),
                 confirmVariant: 'danger',
                 onConfirm: async () => {
                     try {
                         await deleteCompany(companyId);
                         setCompanies((prev) => prev.filter((company) => company.id !== companyId));
-                        toast.success('Компания ийгиликтүү өчүрүлдү');
-                    } catch {
-                        toast.error('Компанияны өчүрүүдө ката кетти');
+                        toast.success(t('company.settings.toasts.deleted'));
+                    } catch (error) {
+                        toast.error(
+                            parseApiError(error, t('company.settings.toasts.deleteError')).message
+                        );
                     }
                 },
             });
         },
-        [requestConfirmation]
+        [companies, requestConfirmation, t]
     );
 
     const handleAssignCourseToCompany = useCallback(
         async (courseId, companyId) => {
             try {
                 await assignCourseToCompany(courseId, companyId);
-                toast.success('Курс компанияга ийгиликтүү таанды');
+                toast.success(t('company.courses.toasts.attached'));
                 loadCoursesAndCategories();
-            } catch {
-                toast.error('Курс таандоодо ката кетти');
+            } catch (error) {
+                toast.error(parseApiError(error, t('company.courses.toasts.attachError')).message);
             }
         },
-        [loadCoursesAndCategories]
+        [loadCoursesAndCategories, t]
     );
 
     const handleUnassignCourseFromCompany = useCallback(
         async (courseId, companyId) => {
             try {
                 await unassignCourseFromCompany(courseId, companyId);
-                toast.success('Курс компаниядан ийгиликтүү алынды');
+                toast.success(t('company.courses.toasts.detached'));
                 loadCoursesAndCategories();
-            } catch {
-                toast.error('Курс алындоодо ката кетти');
+            } catch (error) {
+                toast.error(parseApiError(error, t('company.courses.toasts.detachError')).message);
             }
         },
-        [loadCoursesAndCategories]
+        [loadCoursesAndCategories, t]
     );
 
     const handleClearCourseCompany = useCallback(
         async (courseId) => {
             requestConfirmation({
-                title: 'Компания байланыштарын тазалоо',
-                message: 'Бул курстун бардык компания таандоолорун алырга ишенимдүүсүзбү?',
-                confirmLabel: 'Тазалоо',
+                title: t('company.adminCompanies.confirm.clearCourseTitle'),
+                message: t('company.adminCompanies.confirm.clearCourseMessage'),
+                confirmLabel: t('company.adminCompanies.confirm.clearCourseConfirm'),
                 confirmVariant: 'danger',
                 onConfirm: async () => {
                     try {
                         await clearCourseCompany(courseId);
-                        toast.success('Курстун компания таандоолору тазаланды');
+                        toast.success(t('company.adminCompanies.toasts.courseLinksCleared'));
                         loadCoursesAndCategories();
-                    } catch {
-                        toast.error('Компания таандоолорду тазалоодо ката кетти');
+                    } catch (error) {
+                        toast.error(
+                            parseApiError(
+                                error,
+                                t('company.adminCompanies.toasts.courseLinksClearError')
+                            ).message
+                        );
                     }
                 },
             });
         },
-        [loadCoursesAndCategories, requestConfirmation]
+        [loadCoursesAndCategories, requestConfirmation, t]
     );
 
     const handleUploadCompanyLogo = useCallback(
         async (companyId, file) => {
             if (!file) {
-                toast.error('Файл тандаңыз');
+                toast.error(t('company.adminCompanies.toasts.selectFile'));
                 return;
             }
 
             try {
                 await uploadCompanyLogo(companyId, file);
-                toast.success('Компания логотипи ийгиликтүү жүктөлдү');
+                toast.success(t('company.settings.toasts.logoUploaded'));
                 loadCompanies();
-            } catch {
-                toast.error('Логотип жүктөөдө ката кетти');
+            } catch (error) {
+                toast.error(
+                    parseApiError(error, t('company.settings.toasts.logoUploadError')).message
+                );
             }
         },
-        [loadCompanies]
+        [loadCompanies, t]
     );
 
     return {

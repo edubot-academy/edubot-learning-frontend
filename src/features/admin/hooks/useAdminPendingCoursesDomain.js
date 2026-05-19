@@ -1,9 +1,11 @@
 import { useCallback, useState } from 'react';
 import toast from 'react-hot-toast';
+import { useTranslation } from 'react-i18next';
 import { getPendingCourses, markCourseApproved, markCourseRejected } from '@services/api';
-import { isForbiddenError } from '@shared/api/error';
+import { isForbiddenError, parseApiError } from '@shared/api/error';
 
 export const useAdminPendingCoursesDomain = ({ requestConfirmation } = {}) => {
+    const { t } = useTranslation();
     const [pendingCourses, setPendingCourses] = useState([]);
 
     const loadPendingCourses = useCallback(async () => {
@@ -12,26 +14,30 @@ export const useAdminPendingCoursesDomain = ({ requestConfirmation } = {}) => {
             setPendingCourses(res || []);
         } catch (error) {
             if (!isForbiddenError(error)) {
-                toast.error('Каралуудагы курстарды жүктөөдө ката кетти');
+                toast.error(
+                    parseApiError(error, t('adminPendingCourses.toasts.loadError')).message
+                );
             }
         }
-    }, []);
+    }, [t]);
 
     const handleApprovePendingCourse = useCallback(
         async (targetCourse) => {
             const courseId = typeof targetCourse === 'object' ? targetCourse.id : targetCourse;
             const courseTitle =
                 typeof targetCourse === 'object'
-                    ? targetCourse.title || `Курс #${courseId}`
-                    : `Курс #${courseId}`;
+                    ? targetCourse.title || t('adminPendingCourses.courseFallback', { id: courseId })
+                    : t('adminPendingCourses.courseFallback', { id: courseId });
 
             const approve = async () => {
                 try {
                     await markCourseApproved(courseId);
                     setPendingCourses((prev) => prev.filter((course) => course.id !== courseId));
-                    toast.success('Курс ийгиликтүү бекитилди');
-                } catch {
-                    toast.error('Курсту бекитүүдө ката кетти');
+                    toast.success(t('adminPendingCourses.toasts.approved'));
+                } catch (error) {
+                    toast.error(
+                        parseApiError(error, t('adminPendingCourses.toasts.approveError')).message
+                    );
                 }
             };
 
@@ -41,14 +47,14 @@ export const useAdminPendingCoursesDomain = ({ requestConfirmation } = {}) => {
             }
 
             requestConfirmation({
-                title: 'Курсту бекитүү',
-                message: `"${courseTitle}" курсун бекитесизби? Бекитилгенден кийин курс студенттерге жана каталог агымдарына жеткиликтүү болушу мүмкүн.`,
-                confirmLabel: 'Бекитүү',
+                title: t('adminPendingCourses.confirm.approveTitle'),
+                message: t('adminPendingCourses.confirm.approveMessage', { title: courseTitle }),
+                confirmLabel: t('adminPendingCourses.actions.approve'),
                 confirmVariant: 'success',
                 onConfirm: approve,
             });
         },
-        [requestConfirmation]
+        [requestConfirmation, t]
     );
 
     const handleRejectPendingCourse = useCallback(
@@ -56,16 +62,18 @@ export const useAdminPendingCoursesDomain = ({ requestConfirmation } = {}) => {
             const courseId = typeof targetCourse === 'object' ? targetCourse.id : targetCourse;
             const courseTitle =
                 typeof targetCourse === 'object'
-                    ? targetCourse.title || `Курс #${courseId}`
-                    : `Курс #${courseId}`;
+                    ? targetCourse.title || t('adminPendingCourses.courseFallback', { id: courseId })
+                    : t('adminPendingCourses.courseFallback', { id: courseId });
 
             const reject = async () => {
                 try {
                     await markCourseRejected(courseId);
                     setPendingCourses((prev) => prev.filter((course) => course.id !== courseId));
-                    toast.success('Курс баш тартылган тизмеге жылдырылды');
-                } catch {
-                    toast.error('Курстан баш тартууда ката кетти');
+                    toast.success(t('adminPendingCourses.toasts.rejected'));
+                } catch (error) {
+                    toast.error(
+                        parseApiError(error, t('adminPendingCourses.toasts.rejectError')).message
+                    );
                 }
             };
 
@@ -75,14 +83,14 @@ export const useAdminPendingCoursesDomain = ({ requestConfirmation } = {}) => {
             }
 
             requestConfirmation({
-                title: 'Курстан баш тартуу',
-                message: `"${courseTitle}" курсун четке кагасызбы? Инструктор курсун оңдоп кайра жөнөтүшү керек болот.`,
-                confirmLabel: 'Баш тартуу',
+                title: t('adminPendingCourses.confirm.rejectTitle'),
+                message: t('adminPendingCourses.confirm.rejectMessage', { title: courseTitle }),
+                confirmLabel: t('adminPendingCourses.actions.reject'),
                 confirmVariant: 'danger',
                 onConfirm: reject,
             });
         },
-        [requestConfirmation]
+        [requestConfirmation, t]
     );
 
     return {

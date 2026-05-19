@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react';
 import toast from 'react-hot-toast';
+import { useTranslation } from 'react-i18next';
 import {
     deleteUser,
     enrollUserInCourse,
@@ -7,7 +8,7 @@ import {
     updateUserRole,
 } from '@services/api';
 import { normalizeEnrollmentCourseType } from '@features/enrollments/policy';
-import { isForbiddenError } from '@shared/api/error';
+import { isForbiddenError, parseApiError } from '@shared/api/error';
 
 export const useAdminUsersDomain = ({
     courses,
@@ -19,6 +20,7 @@ export const useAdminUsersDomain = ({
     selectedEnrollmentGroupIds,
     usersPage,
 }) => {
+    const { t } = useTranslation();
     const [users, setUsers] = useState([]);
     const [usersTotalPages, setUsersTotalPages] = useState(1);
     const [usersTotal, setUsersTotal] = useState(0);
@@ -38,10 +40,10 @@ export const useAdminUsersDomain = ({
             setUsersTotalPages(res?.totalPages || 1);
         } catch (error) {
             if (!isForbiddenError(error)) {
-                toast.error('Колдонуучуларды жүктөөдө ката кетти');
+                toast.error(parseApiError(error, t('adminUsers.toasts.loadError')).message);
             }
         }
-    }, [dateFrom, dateTo, roleFilter, search, usersPage]);
+    }, [dateFrom, dateTo, roleFilter, search, t, usersPage]);
 
     const loadUsersForEnrollment = useCallback(async () => {
         try {
@@ -49,36 +51,38 @@ export const useAdminUsersDomain = ({
             setUsers(res?.data || []);
         } catch (error) {
             if (!isForbiddenError(error)) {
-                toast.error('Студенттерди жүктөөдө ката кетти');
+                toast.error(
+                    parseApiError(error, t('adminUsers.toasts.loadStudentsError')).message
+                );
             }
         }
-    }, []);
+    }, [t]);
 
     const handleDeleteUser = useCallback(
         async (targetUser) => {
             const id = typeof targetUser === 'object' ? targetUser.id : targetUser;
             const userLabel =
                 typeof targetUser === 'object'
-                    ? `${targetUser.fullName || 'Аты жок'} (${targetUser.email || 'email жок'})`
+                    ? `${targetUser.fullName || t('adminUsers.fallbacks.noName')} (${targetUser.email || t('adminUsers.fallbacks.noEmail')})`
                     : `ID ${id}`;
 
             requestConfirmation({
-                title: 'Колдонуучуну өчүрүү',
-                message: `${userLabel} колдонуучусун өчүрүүгө ишенимдүүсүзбү? Бул аракет аккаунтка кирүүнү токтотот.`,
-                confirmLabel: 'Өчүрүү',
+                title: t('adminUsers.confirm.deleteTitle'),
+                message: t('adminUsers.confirm.deleteMessage', { user: userLabel }),
+                confirmLabel: t('adminUsers.actions.delete'),
                 confirmVariant: 'danger',
                 onConfirm: async () => {
                     try {
                         await deleteUser(id);
                         setUsers((prev) => prev.filter((user) => user.id !== id));
-                        toast.success('Колдонуучу ийгиликтүү өчүрүлдү');
-                    } catch {
-                        toast.error('Колдонуучуну өчүрүүдө ката кетти');
+                        toast.success(t('adminUsers.toasts.deleted'));
+                    } catch (error) {
+                        toast.error(parseApiError(error, t('adminUsers.toasts.deleteError')).message);
                     }
                 },
             });
         },
-        [requestConfirmation]
+        [requestConfirmation, t]
     );
 
     const handleRoleChange = useCallback(
@@ -90,13 +94,21 @@ export const useAdminUsersDomain = ({
 
             const userLabel =
                 typeof targetUser === 'object'
-                    ? `${targetUser.fullName || 'Аты жок'} (${targetUser.email || 'email жок'})`
+                    ? `${targetUser.fullName || t('adminUsers.fallbacks.noName')} (${targetUser.email || t('adminUsers.fallbacks.noEmail')})`
                     : `ID ${userId}`;
+            const currentRoleLabel = currentRole
+                ? t(`adminUsers.roles.${currentRole}`, { defaultValue: currentRole })
+                : t('adminUsers.roles.unknown');
+            const newRoleLabel = t(`adminUsers.roles.${newRole}`, { defaultValue: newRole });
 
             requestConfirmation({
-                title: 'Ролду өзгөртүү',
-                message: `${userLabel} колдонуучусунун ролун "${currentRole || 'белгисиз'}" → "${newRole}" кылып өзгөртөсүзбү? Бул кирүү укуктарына дароо таасир берет.`,
-                confirmLabel: 'Ролду өзгөртүү',
+                title: t('adminUsers.confirm.roleTitle'),
+                message: t('adminUsers.confirm.roleMessage', {
+                    user: userLabel,
+                    currentRole: currentRoleLabel,
+                    newRole: newRoleLabel,
+                }),
+                confirmLabel: t('adminUsers.actions.changeRole'),
                 confirmVariant: ['admin', 'superadmin'].includes(newRole) ? 'danger' : 'primary',
                 onConfirm: async () => {
                     try {
@@ -104,14 +116,14 @@ export const useAdminUsersDomain = ({
                         setUsers((prev) =>
                             prev.map((user) => (user.id === userId ? { ...user, role: newRole } : user))
                         );
-                        toast.success('Роль ийгиликтүү өзгөртүлдү');
-                    } catch {
-                        toast.error('Ролду өзгөртүүдө ката кетти');
+                        toast.success(t('adminUsers.toasts.roleChanged'));
+                    } catch (error) {
+                        toast.error(parseApiError(error, t('adminUsers.toasts.roleError')).message);
                     }
                 },
             });
         },
-        [requestConfirmation]
+        [requestConfirmation, t]
     );
 
     const handleEnrollUser = useCallback(
@@ -127,7 +139,7 @@ export const useAdminUsersDomain = ({
                     ['offline', 'online_live'].includes(normalizedCourseType) &&
                     (!selectedGroupId || Number.isNaN(Number(selectedGroupId)))
                 ) {
-                    toast.error('Delivery курс үчүн адегенде группаны тандаңыз');
+                    toast.error(t('adminUsers.toasts.selectGroup'));
                     return;
                 }
 
@@ -138,12 +150,12 @@ export const useAdminUsersDomain = ({
                             ? Number(selectedGroupId)
                             : undefined,
                 });
-                toast.success('Студент курска ийгиликтүү катталды');
-            } catch {
-                toast.error('Каттоодо ката кетти');
+                toast.success(t('adminUsers.toasts.enrolled'));
+            } catch (error) {
+                toast.error(parseApiError(error, t('adminUsers.toasts.enrollError')).message);
             }
         },
-        [courses, selectedEnrollmentGroupIds]
+        [courses, selectedEnrollmentGroupIds, t]
     );
 
     return {

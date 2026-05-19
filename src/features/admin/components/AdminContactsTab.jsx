@@ -6,33 +6,35 @@ import {
     EmptyState,
 } from '@components/ui/dashboard';
 import { FiCheck, FiClock, FiMail, FiTrash2 } from 'react-icons/fi';
+import { useTranslation } from 'react-i18next';
 
 const AdminContactsTab = ({ contacts, onMarkRead, onDelete }) => {
+    const { t } = useTranslation();
     const unreadContacts = contacts.filter((contact) => !contact.isRead && !contact.readAt).length;
     const contactsWithMessage = contacts.filter((contact) => contact.message?.trim()).length;
 
     return (
         <div className="space-y-6">
             <DashboardSectionHeader
-                eyebrow="Inbox"
-                title="Байланыштар"
-                description="Колдонуучулардын байланыш билдирүүлөрүн көрүп, иштетилгенин белгилеңиз."
+                eyebrow={t('adminContacts.eyebrow')}
+                title={t('adminContacts.title')}
+                description={t('adminContacts.description')}
             />
 
             <div className="grid gap-4 md:grid-cols-3">
                 <DashboardMetricCard
-                    label="Бардык билдирүүлөр"
+                    label={t('adminContacts.metrics.total')}
                     value={contacts.length}
                     icon={FiMail}
                 />
                 <DashboardMetricCard
-                    label="Окула элек"
+                    label={t('adminContacts.metrics.unread')}
                     value={unreadContacts}
                     icon={FiClock}
                     tone={unreadContacts ? 'amber' : 'default'}
                 />
                 <DashboardMetricCard
-                    label="Толук билдирүү менен"
+                    label={t('adminContacts.metrics.withMessage')}
                     value={contactsWithMessage}
                     icon={FiCheck}
                     tone={contactsWithMessage ? 'green' : 'default'}
@@ -40,8 +42,8 @@ const AdminContactsTab = ({ contacts, onMarkRead, onDelete }) => {
             </div>
 
             <DashboardInsetPanel
-                title="Кирген билдирүүлөр"
-                description="Форма жана байланыш каналдары аркылуу келген суроолор."
+                title={t('adminContacts.inbox.title')}
+                description={t('adminContacts.inbox.description')}
             >
                 {contacts.length ? (
                     <div className="mt-4 space-y-4">
@@ -67,7 +69,9 @@ const AdminContactsTab = ({ contacts, onMarkRead, onDelete }) => {
                                                             : 'bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300'
                                                     }`}
                                                 >
-                                                    {isRead ? 'Окулган' : 'Жаңы'}
+                                                    {isRead
+                                                        ? t('adminContacts.status.read')
+                                                        : t('adminContacts.status.new')}
                                                 </span>
                                             </div>
                                             <p className="mt-2 text-sm text-edubot-muted dark:text-slate-400">
@@ -88,7 +92,7 @@ const AdminContactsTab = ({ contacts, onMarkRead, onDelete }) => {
                                                     className="dashboard-button-primary"
                                                 >
                                                     <FiCheck className="h-4 w-4" />
-                                                    Окулган деп белгилөө
+                                                    {t('adminContacts.actions.markRead')}
                                                 </button>
                                             ) : null}
                                             <button
@@ -97,7 +101,7 @@ const AdminContactsTab = ({ contacts, onMarkRead, onDelete }) => {
                                                 className="dashboard-button-secondary"
                                             >
                                                 <FiTrash2 className="h-4 w-4" />
-                                                Өчүрүү
+                                                {t('adminContacts.actions.delete')}
                                             </button>
                                         </div>
                                     </div>
@@ -108,8 +112,8 @@ const AdminContactsTab = ({ contacts, onMarkRead, onDelete }) => {
                 ) : (
                     <div className="mt-4">
                         <EmptyState
-                            title="Байланыштар табылган жок"
-                            subtitle="Азырынча байланыш билдирүүлөрү жок."
+                            title={t('adminContacts.empty.title')}
+                            subtitle={t('adminContacts.empty.subtitle')}
                         />
                     </div>
                 )}

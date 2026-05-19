@@ -10,31 +10,34 @@ import { AuthContext } from '../../context/AuthContext';
 import Loader from '@shared/ui/Loader';
 import { isPlatformAdmin } from '@shared/utils/roles';
 import { EmptyState } from '@components/ui/dashboard';
+import { useTranslation } from 'react-i18next';
+import { parseApiError } from '@shared/api/error';
 
 const TABS = [
     {
         id: 'settings',
-        label: 'Company profile',
-        description: 'Brand, contacts, address, and legal information',
+        labelKey: 'company.detail.tabs.settings.label',
+        descriptionKey: 'company.detail.tabs.settings.description',
     },
     {
         id: 'members',
-        label: 'Members',
-        description: 'Roles, invites, and workspace access',
+        labelKey: 'company.detail.tabs.members.label',
+        descriptionKey: 'company.detail.tabs.members.description',
     },
     {
         id: 'courses',
-        label: 'Courses',
-        description: 'Course assignments for this tenant',
+        labelKey: 'company.detail.tabs.courses.label',
+        descriptionKey: 'company.detail.tabs.courses.description',
     },
 ];
 
-const formatValue = (value) => {
-    if (value === null || value === undefined || value === '') return 'Not set';
+const formatValue = (value, t) => {
+    if (value === null || value === undefined || value === '') return t('company.detail.notSet');
     return value;
 };
 
 export default function CompanyDetail() {
+    const { t } = useTranslation();
     const { id } = useParams();
     const [searchParams, setSearchParams] = useSearchParams();
     const companyId = Number(id);
@@ -58,13 +61,13 @@ export default function CompanyDetail() {
         setLoadError(false);
         try {
             setCompany(await getCompany(companyId));
-        } catch {
+        } catch (error) {
             setLoadError(true);
-            toast.error('Could not load company details.');
+            toast.error(parseApiError(error, t('company.detail.toasts.loadError')).message);
         } finally {
             setLoading(false);
         }
-    }, [companyId]);
+    }, [companyId, t]);
 
     React.useEffect(() => {
         loadCompany();
@@ -89,16 +92,16 @@ export default function CompanyDetail() {
             <div className="mx-auto max-w-4xl p-4">
                 <EmptyState
                     variant="error"
-                    title="Company could not be loaded"
-                    subtitle="The tenant may be unavailable or you may not have access. Try loading it again."
-                    action={{ label: 'Retry', onClick: loadCompany }}
+                    title={t('company.detail.loadErrorTitle')}
+                    subtitle={t('company.detail.loadErrorSubtitle')}
+                    action={{ label: t('company.detail.retry'), onClick: loadCompany }}
                 />
                 <div className="mt-4 text-center">
                     <Link
                         to="/companies"
                         className="text-sm font-semibold text-edubot-orange hover:underline"
                     >
-                        Back to companies
+                        {t('company.detail.backToCompanies')}
                     </Link>
                 </div>
             </div>
@@ -114,37 +117,50 @@ export default function CompanyDetail() {
                             to="/companies"
                             className="text-sm font-semibold text-edubot-orange hover:underline"
                         >
-                            Back to companies
+                            {t('company.detail.backToCompanies')}
                         </Link>
                         <h1 className="mt-2 break-words text-2xl font-bold text-edubot-ink dark:text-white">
                             {company.name}
                         </h1>
                         <p className="mt-2 max-w-3xl text-sm text-edubot-muted dark:text-slate-400">
-                            Manage this tenant profile, users, and course availability from one
-                            workspace.
+                            {t('company.detail.subtitle')}
                         </p>
                     </div>
                     <div className="inline-flex self-start rounded-full border border-edubot-line bg-edubot-surfaceAlt px-3 py-1 text-xs font-semibold text-edubot-muted dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
-                        {canManageCompany ? 'Management access' : 'Read-only access'}
+                        {canManageCompany
+                            ? t('company.detail.managementAccess')
+                            : t('company.detail.readOnlyAccess')}
                     </div>
                 </div>
 
                 <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                    <SummaryItem label="Role" value={formatValue(company.role)} />
-                    <SummaryItem label="Email" value={formatValue(company.email)} />
-                    <SummaryItem label="Phone" value={formatValue(company.phone)} />
-                    <SummaryItem label="City" value={formatValue(company.city)} />
+                    <SummaryItem
+                        label={t('company.detail.summary.role')}
+                        value={formatValue(company.role, t)}
+                    />
+                    <SummaryItem
+                        label={t('company.detail.summary.email')}
+                        value={formatValue(company.email, t)}
+                    />
+                    <SummaryItem
+                        label={t('company.detail.summary.phone')}
+                        value={formatValue(company.phone, t)}
+                    />
+                    <SummaryItem
+                        label={t('company.detail.summary.city')}
+                        value={formatValue(company.city, t)}
+                    />
                 </div>
             </div>
 
-            <nav aria-label="Company workspace sections" className="grid gap-2 md:grid-cols-3">
+            <nav aria-label={t('company.detail.tabsLabel')} className="grid gap-2 md:grid-cols-3">
                 {TABS.map((item) => (
                     <Tab
                         key={item.id}
                         active={tab === item.id}
                         onClick={() => updateTab(item.id)}
-                        label={item.label}
-                        description={item.description}
+                        label={t(item.labelKey)}
+                        description={t(item.descriptionKey)}
                     />
                 ))}
             </nav>

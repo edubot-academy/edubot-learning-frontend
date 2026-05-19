@@ -44,31 +44,90 @@ import CompanyMembers from '../../../pages/company/CompanyMembers';
 import Loader from '@shared/ui/Loader';
 import { AuthContext } from '../../../context/AuthContext';
 import ConfirmationModal from '@shared/ui/ConfirmationModal';
-import {
-    getCourseTypeTenantDisabledMessage,
-    isCourseTypeAllowedForTenant,
-} from '@shared/utils/tenantFeatures';
+import { isCourseTypeAllowedForTenant } from '@shared/utils/tenantFeatures';
 import { getDashboardPath } from '@shared/utils/navigation';
 import { LOCALE_OPTIONS, getLocaleLabel, normalizeLocale } from '../../../i18n/locale';
+import { useTranslation } from 'react-i18next';
+import { parseApiError } from '@shared/api/error';
 
 const TABS = [
-    { id: 'overview', label: 'Overview', icon: FiBriefcase, category: 'primary', priority: 1 },
-    { id: 'profile', label: 'Profile', icon: FiSettings, category: 'primary', priority: 2 },
-    { id: 'domain', label: 'Domain', icon: FiGlobe, category: 'primary', priority: 3 },
+    {
+        id: 'overview',
+        labelKey: 'company.platformTenant.tabs.overview',
+        icon: FiBriefcase,
+        category: 'primary',
+        priority: 1,
+    },
+    {
+        id: 'profile',
+        labelKey: 'company.platformTenant.tabs.profile',
+        icon: FiSettings,
+        category: 'primary',
+        priority: 2,
+    },
+    {
+        id: 'domain',
+        labelKey: 'company.platformTenant.tabs.domain',
+        icon: FiGlobe,
+        category: 'primary',
+        priority: 3,
+    },
     {
         id: 'billing',
-        label: 'Plan/Billing',
+        labelKey: 'company.platformTenant.tabs.billing',
         icon: FiCreditCard,
         category: 'secondary',
         priority: 1,
     },
-    { id: 'crm', label: 'CRM Link', icon: FiLink, category: 'secondary', priority: 2 },
-    { id: 'members', label: 'Owners & Admins', icon: FiUsers, category: 'secondary', priority: 3 },
-    { id: 'courses', label: 'Courses', icon: FiBookOpen, category: 'secondary', priority: 4 },
-    { id: 'branding', label: 'Branding', icon: FiImage, category: 'secondary', priority: 5 },
-    { id: 'settings', label: 'Settings', icon: FiSliders, category: 'secondary', priority: 6 },
-    { id: 'flags', label: 'Feature Flags', icon: FiFlag, category: 'secondary', priority: 7 },
-    { id: 'activity', label: 'Activity', icon: FiClock, category: 'secondary', priority: 8 },
+    {
+        id: 'crm',
+        labelKey: 'company.platformTenant.tabs.crm',
+        icon: FiLink,
+        category: 'secondary',
+        priority: 2,
+    },
+    {
+        id: 'members',
+        labelKey: 'company.platformTenant.tabs.members',
+        icon: FiUsers,
+        category: 'secondary',
+        priority: 3,
+    },
+    {
+        id: 'courses',
+        labelKey: 'company.platformTenant.tabs.courses',
+        icon: FiBookOpen,
+        category: 'secondary',
+        priority: 4,
+    },
+    {
+        id: 'branding',
+        labelKey: 'company.platformTenant.tabs.branding',
+        icon: FiImage,
+        category: 'secondary',
+        priority: 5,
+    },
+    {
+        id: 'settings',
+        labelKey: 'company.platformTenant.tabs.settings',
+        icon: FiSliders,
+        category: 'secondary',
+        priority: 6,
+    },
+    {
+        id: 'flags',
+        labelKey: 'company.platformTenant.tabs.flags',
+        icon: FiFlag,
+        category: 'secondary',
+        priority: 7,
+    },
+    {
+        id: 'activity',
+        labelKey: 'company.platformTenant.tabs.activity',
+        icon: FiClock,
+        category: 'secondary',
+        priority: 8,
+    },
 ];
 
 const adminCompaniesPath = getDashboardPath('admin', 'companies');
@@ -95,43 +154,43 @@ const BLANK_FEATURE_FLAG = { key: '', value: true };
 const FEATURE_FLAG_DEFINITIONS = [
     {
         key: 'courses.video.enabled',
-        label: 'Video course creation',
-        description: 'Allow this tenant to create private video courses.',
+        labelKey: 'company.platformTenant.featureFlags.video.label',
+        descriptionKey: 'company.platformTenant.featureFlags.video.description',
     },
     {
         key: 'courses.offline.enabled',
-        label: 'Offline courses',
-        description: 'Allow this tenant to run in-person course delivery.',
+        labelKey: 'company.platformTenant.featureFlags.offline.label',
+        descriptionKey: 'company.platformTenant.featureFlags.offline.description',
     },
     {
         key: 'courses.onlineLive.enabled',
-        label: 'Online live courses',
-        description: 'Allow this tenant to run scheduled live online delivery.',
+        labelKey: 'company.platformTenant.featureFlags.onlineLive.label',
+        descriptionKey: 'company.platformTenant.featureFlags.onlineLive.description',
     },
     {
         key: 'certificates.enabled',
-        label: 'Certificates',
-        description: 'Enable certificate issuing and certificate configuration.',
+        labelKey: 'company.platformTenant.featureFlags.certificates.label',
+        descriptionKey: 'company.platformTenant.featureFlags.certificates.description',
     },
     {
         key: 'attendance.enabled',
-        label: 'Attendance',
-        description: 'Enable attendance workflows for live or offline sessions.',
+        labelKey: 'company.platformTenant.featureFlags.attendance.label',
+        descriptionKey: 'company.platformTenant.featureFlags.attendance.description',
     },
     {
         key: 'homework.enabled',
-        label: 'Homework',
-        description: 'Enable homework and submission workflows.',
+        labelKey: 'company.platformTenant.featureFlags.homework.label',
+        descriptionKey: 'company.platformTenant.featureFlags.homework.description',
     },
     {
         key: 'crmSync.enabled',
-        label: 'CRM sync',
-        description: 'Enable LMS tenant sync with a linked CRM tenant.',
+        labelKey: 'company.platformTenant.featureFlags.crmSync.label',
+        descriptionKey: 'company.platformTenant.featureFlags.crmSync.description',
     },
     {
         key: 'aiAssistant.enabled',
-        label: 'AI assistant',
-        description: 'Enable AI chat and course assistant capabilities.',
+        labelKey: 'company.platformTenant.featureFlags.aiAssistant.label',
+        descriptionKey: 'company.platformTenant.featureFlags.aiAssistant.description',
     },
 ];
 const PREDEFINED_FEATURE_FLAG_KEYS = new Set(FEATURE_FLAG_DEFINITIONS.map((flag) => flag.key));
@@ -161,10 +220,10 @@ const splitTenantPayload = (payload = {}) => {
     return { tenantPatch, crmPatch };
 };
 
-const tenantDomain = (company) => {
+const tenantDomain = (company, t) => {
     if (company?.customDomain) return company.customDomain;
     if (company?.subdomain) return `${company.subdomain}.lms.edubot.it.com`;
-    return 'Not configured';
+    return t('company.platformTenant.notConfigured');
 };
 
 const buildForm = (company) => ({
@@ -235,39 +294,89 @@ const normalizePagedItems = (response) => {
     return response?.items ?? response?.courses ?? response?.data ?? [];
 };
 
-const courseStatusLabel = (course) => {
-    if (course?.status) return course.status;
-    if (course?.isPublished || course?.published) return 'published';
-    if (course?.approved) return 'approved';
-    return 'draft';
+const courseStatusLabel = (course, t) => {
+    const status = course?.status
+        ? String(course.status).toLowerCase()
+        : course?.isPublished || course?.published
+          ? 'published'
+          : course?.approved
+            ? 'approved'
+            : 'draft';
+    return t(`company.courses.status.${status}`, {
+        defaultValue: status.replace(/_/g, ' '),
+    });
+};
+
+const courseTypeLabel = (courseType, t) => {
+    const type = String(courseType || 'course').toLowerCase();
+    return t(`company.courses.types.${type}`, {
+        defaultValue: t('company.courses.types.course'),
+    });
+};
+
+const disabledCourseTypeMessage = (courseType, t) => {
+    const type = String(courseType || '').toLowerCase();
+    if (type === 'offline') return t('company.courses.disabled.offline');
+    if (type === 'online_live' || type === 'onlinelive') {
+        return t('company.courses.disabled.onlineLive');
+    }
+    return t('company.courses.disabled.generic');
+};
+
+const courseFallbackTitle = (course, t) =>
+    course?.title || t('company.courses.platform.courseNumber', { id: course?.id });
+
+const companyStatusLabel = (status, t) => {
+    const normalizedStatus = String(status || 'active').toLowerCase();
+    return t(`company.platformTenant.status.${normalizedStatus}`, {
+        defaultValue: normalizedStatus.replace(/_/g, ' '),
+    });
+};
+
+const courseVisibilityLabel = (visibility, t) => {
+    const normalizedVisibility = String(visibility || 'PUBLIC').toUpperCase();
+    return t(`company.platformTenant.courseVisibility.${normalizedVisibility}`, {
+        defaultValue: normalizedVisibility.replace(/_/g, ' '),
+    });
 };
 
 const ACTIVITY_LABELS = {
-    'tenant.created': 'Tenant created',
-    'tenant.updated': 'Tenant updated',
-    'tenant.logo_updated': 'Logo updated',
-    'member.role_added': 'Role added',
-    'member.role_removed': 'Role removed',
-    'member.removed': 'Member removed',
-    'member.role_set': 'Role changed',
-    'course.attached': 'Course attached',
-    'course.removed': 'Course removed',
+    'tenant.created': 'company.platformTenant.activity.actions.tenantCreated',
+    'tenant.updated': 'company.platformTenant.activity.actions.tenantUpdated',
+    'tenant.logo_updated': 'company.platformTenant.activity.actions.logoUpdated',
+    'member.role_added': 'company.platformTenant.activity.actions.roleAdded',
+    'member.role_removed': 'company.platformTenant.activity.actions.roleRemoved',
+    'member.removed': 'company.platformTenant.activity.actions.memberRemoved',
+    'member.role_set': 'company.platformTenant.activity.actions.roleChanged',
+    'course.attached': 'company.platformTenant.activity.actions.courseAttached',
+    'course.removed': 'company.platformTenant.activity.actions.courseRemoved',
 };
 
-const formatActivitySummary = (activity) => {
+const formatActivitySummary = (activity, t) => {
     const metadata = activity?.metadata || {};
     if (metadata.courseTitle) return metadata.courseTitle;
-    if (metadata.role) return `Role: ${metadata.role}`;
-    if (metadata.userId) return `User #${metadata.userId}`;
+    if (metadata.role) {
+        return t('company.platformTenant.activity.roleSummary', { role: metadata.role });
+    }
+    if (metadata.userId) {
+        return t('company.platformTenant.activity.userNumber', { id: metadata.userId });
+    }
     if (metadata.changes) return Object.keys(metadata.changes).join(', ');
     return activity?.targetId
-        ? `${activity.targetType || 'target'} #${activity.targetId}`
-        : 'No details';
+        ? t('company.platformTenant.activity.targetNumber', {
+              type: activity.targetType || t('company.platformTenant.activity.target'),
+              id: activity.targetId,
+          })
+        : t('company.platformTenant.activity.noDetails');
 };
 
-const displayValue = (value) => {
-    if (value === undefined || value === null || value === '') return 'Not set';
-    if (typeof value === 'boolean') return value ? 'Enabled' : 'Disabled';
+const displayValue = (value, t) => {
+    if (value === undefined || value === null || value === '') return t('company.detail.notSet');
+    if (typeof value === 'boolean') {
+        return value
+            ? t('company.platformTenant.values.enabled')
+            : t('company.platformTenant.values.disabled');
+    }
     return value;
 };
 
@@ -314,50 +423,59 @@ const TextareaField = ({ label, value, onChange }) => (
     </label>
 );
 
-const ReadField = ({ label, value }) => (
-    <div className="rounded-2xl border border-edubot-line/70 bg-white/70 p-4 dark:border-slate-700 dark:bg-slate-950">
-        <p className="text-xs font-semibold uppercase tracking-wide text-edubot-muted dark:text-slate-400">
-            {label}
-        </p>
-        <p className="mt-2 break-words text-sm font-medium text-edubot-ink dark:text-white">
-            {displayValue(value)}
-        </p>
-    </div>
-);
+const ReadField = ({ label, value }) => {
+    const { t } = useTranslation();
+    return (
+        <div className="rounded-2xl border border-edubot-line/70 bg-white/70 p-4 dark:border-slate-700 dark:bg-slate-950">
+            <p className="text-xs font-semibold uppercase tracking-wide text-edubot-muted dark:text-slate-400">
+                {label}
+            </p>
+            <p className="mt-2 break-words text-sm font-medium text-edubot-ink dark:text-white">
+                {displayValue(value, t)}
+            </p>
+        </div>
+    );
+};
 
-const SaveButton = ({ onClick, loading = false }) => (
-    <button
-        type="button"
-        onClick={onClick}
-        disabled={loading}
-        className="dashboard-button-primary disabled:cursor-not-allowed disabled:opacity-60"
-    >
-        <FiSave className="h-4 w-4" />
-        {loading ? 'Saving...' : 'Save'}
-    </button>
-);
+const SaveButton = ({ onClick, loading = false }) => {
+    const { t } = useTranslation();
+    return (
+        <button
+            type="button"
+            onClick={onClick}
+            disabled={loading}
+            className="dashboard-button-primary disabled:cursor-not-allowed disabled:opacity-60"
+        >
+            <FiSave className="h-4 w-4" />
+            {loading ? t('company.settings.saving') : t('company.settings.saveChanges')}
+        </button>
+    );
+};
 
-const SectionActions = ({ isEditing, onEdit, onCancel, onSave, loading = false }) => (
-    <div className="mt-4 flex flex-wrap gap-2">
-        {isEditing ? (
-            <>
-                <SaveButton onClick={onSave} loading={loading} />
-                <button
-                    type="button"
-                    onClick={onCancel}
-                    disabled={loading}
-                    className="dashboard-button-secondary disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                    Cancel
+const SectionActions = ({ isEditing, onEdit, onCancel, onSave, loading = false }) => {
+    const { t } = useTranslation();
+    return (
+        <div className="mt-4 flex flex-wrap gap-2">
+            {isEditing ? (
+                <>
+                    <SaveButton onClick={onSave} loading={loading} />
+                    <button
+                        type="button"
+                        onClick={onCancel}
+                        disabled={loading}
+                        className="dashboard-button-secondary disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                        {t('company.settings.cancel')}
+                    </button>
+                </>
+            ) : (
+                <button type="button" onClick={onEdit} className="dashboard-button-secondary">
+                    {t('company.settings.editProfile')}
                 </button>
-            </>
-        ) : (
-            <button type="button" onClick={onEdit} className="dashboard-button-secondary">
-                Edit
-            </button>
-        )}
-    </div>
-);
+            )}
+        </div>
+    );
+};
 
 const SwitchControl = ({ checked, onChange, label }) => (
     <button
@@ -381,6 +499,7 @@ const SwitchControl = ({ checked, onChange, label }) => (
 );
 
 export default function PlatformTenantDetail() {
+    const { t } = useTranslation();
     const { id } = useParams();
     const { user } = useContext(AuthContext);
     const tenantId = Number(id);
@@ -424,12 +543,12 @@ export default function PlatformTenantDetail() {
             setBrandingForm(buildBrandingForm(data?.branding));
             setSettingsForm(buildSettingsForm(data?.settings));
             setFeatureFlagRows(buildFeatureFlagRows(data?.featureFlags));
-        } catch {
-            toast.error('Tenant жүктөлгөн жок');
+        } catch (error) {
+            toast.error(parseApiError(error, t('company.platformTenant.toasts.loadError')).message);
         } finally {
             setLoading(false);
         }
-    }, [tenantId]);
+    }, [t, tenantId]);
 
     useEffect(() => {
         loadCompany();
@@ -444,12 +563,12 @@ export default function PlatformTenantDetail() {
                 q: courseSearch,
             });
             setTenantCourses(normalizePagedItems(response));
-        } catch {
-            toast.error('Tenant курстары жүктөлгөн жок');
+        } catch (error) {
+            toast.error(parseApiError(error, t('company.courses.toasts.loadError')).message);
         } finally {
             setTenantCoursesLoading(false);
         }
-    }, [courseSearch, tenantId]);
+    }, [courseSearch, t, tenantId]);
 
     useEffect(() => {
         if (activeTab === 'courses') {
@@ -462,12 +581,14 @@ export default function PlatformTenantDetail() {
         try {
             const response = await listCompanyActivity(tenantId, { page: 1, limit: 50 });
             setActivityItems(normalizePagedItems(response));
-        } catch {
-            toast.error('Tenant activity жүктөлгөн жок');
+        } catch (error) {
+            toast.error(
+                parseApiError(error, t('company.platformTenant.toasts.activityLoadError')).message
+            );
         } finally {
             setActivityLoading(false);
         }
-    }, [tenantId]);
+    }, [t, tenantId]);
 
     useEffect(() => {
         if (activeTab === 'activity') {
@@ -543,9 +664,9 @@ export default function PlatformTenantDetail() {
             setSettingsForm(buildSettingsForm(nextCompany.settings));
             setFeatureFlagRows(buildFeatureFlagRows(nextCompany.featureFlags));
             setEditSection(null);
-            toast.success('Tenant жаңыртылды');
-        } catch {
-            toast.error('Tenant жаңыртууда ката кетти');
+            toast.success(t('company.platformTenant.toasts.saved'));
+        } catch (error) {
+            toast.error(parseApiError(error, t('company.platformTenant.toasts.saveError')).message);
         } finally {
             setSavingSection(false);
         }
@@ -566,12 +687,12 @@ export default function PlatformTenantDetail() {
         setUploadingLogo(true);
         try {
             const logoUrl = await uploadCompanyLogo(tenantId, file);
-            if (!logoUrl) throw new Error('Missing logo URL');
+            if (!logoUrl) throw new Error(t('company.settings.toasts.logoUploadMissingUrl'));
             setCompany((prev) => ({ ...prev, logoUrl }));
             setForm((prev) => ({ ...prev, logoUrl }));
-            toast.success('Logo uploaded');
-        } catch {
-            toast.error('Logo upload failed');
+            toast.success(t('company.settings.toasts.logoUploaded'));
+        } catch (error) {
+            toast.error(parseApiError(error, t('company.settings.toasts.logoUploadError')).message);
         } finally {
             setUploadingLogo(false);
             event.target.value = '';
@@ -605,9 +726,11 @@ export default function PlatformTenantDetail() {
 
     const confirmStatusPatch = (status) => {
         setConfirmation({
-            title: 'Change tenant status',
-            message: `Change tenant status to ${status}?`,
-            confirmLabel: 'Change status',
+            title: t('company.platformTenant.lifecycle.changeTitle'),
+            message: t('company.platformTenant.lifecycle.changeMessage', {
+                status: companyStatusLabel(status, t),
+            }),
+            confirmLabel: t('company.platformTenant.lifecycle.changeConfirm'),
             confirmVariant: status === 'active' ? 'primary' : 'danger',
             onConfirm: async () => {
                 setConfirmationLoading(true);
@@ -621,19 +744,19 @@ export default function PlatformTenantDetail() {
     const attachCourse = async (courseId) => {
         const course = attachOptions.find((item) => item.id === courseId);
         if (course && !isCourseTypeAllowedForTenant(company, course.courseType)) {
-            toast.error(getCourseTypeTenantDisabledMessage(course.courseType));
+            toast.error(disabledCourseTypeMessage(course.courseType, t));
             return;
         }
 
         try {
             setAttachingCourseId(courseId);
             await assignCourseToCompany(courseId, tenantId);
-            toast.success('Course attached');
+            toast.success(t('company.courses.toasts.attached'));
             setAttachSearch('');
             setAttachOptions([]);
             await loadTenantCourses();
-        } catch {
-            toast.error('Course attach failed');
+        } catch (error) {
+            toast.error(parseApiError(error, t('company.courses.toasts.attachError')).message);
         } finally {
             setAttachingCourseId(null);
         }
@@ -641,19 +764,21 @@ export default function PlatformTenantDetail() {
 
     const detachCourse = async (courseId) => {
         setConfirmation({
-            title: 'Remove course',
-            message: 'Remove this course from the tenant?',
-            confirmLabel: 'Remove',
+            title: t('company.courses.detachModal.title'),
+            message: t('company.courses.detachModal.message'),
+            confirmLabel: t('company.courses.detach'),
             confirmVariant: 'danger',
             onConfirm: async () => {
                 setConfirmationLoading(true);
                 try {
                     await unassignCourseFromCompany(courseId, tenantId);
-                    toast.success('Course removed');
+                    toast.success(t('company.courses.toasts.detached'));
                     await loadTenantCourses();
                     setConfirmation(null);
-                } catch {
-                    toast.error('Course removal failed');
+                } catch (error) {
+                    toast.error(
+                        parseApiError(error, t('company.courses.toasts.detachError')).message
+                    );
                 } finally {
                     setConfirmationLoading(false);
                 }
@@ -662,12 +787,13 @@ export default function PlatformTenantDetail() {
     };
 
     const adminUser = {
-        fullName: user?.fullName || 'Админ',
+        fullName: user?.fullName || t('company.platformTenant.adminFallback'),
         email: user?.email || 'admin@edubot.kg',
     };
 
     const dashboardNavItems = TABS.map((item) => ({
         ...item,
+        label: t(item.labelKey),
         isActive: item.id === activeTab,
         onSelect: (id) => setActiveTab(id),
     }));
@@ -676,15 +802,17 @@ export default function PlatformTenantDetail() {
         <DashboardHeader
             user={adminUser}
             role="admin"
-            subtitle="Платформа tenant профилин, доменин, планын жана байланыштарын башкарыңыз."
+            subtitle={t('company.platformTenant.headerSubtitle')}
             actions={[
                 {
-                    label: sidebarOpen ? 'Менюну жашыруу' : 'Менюну көрсөтүү',
+                    label: sidebarOpen
+                        ? t('company.platformTenant.hideMenu')
+                        : t('company.platformTenant.showMenu'),
                     onClick: () => setSidebarOpen((prev) => !prev),
                     variant: 'secondary',
                 },
                 {
-                    label: 'Tenant registry',
+                    label: t('company.platformTenant.tenantRegistry'),
                     to: adminCompaniesPath,
                     variant: 'secondary',
                 },
@@ -728,8 +856,8 @@ export default function PlatformTenantDetail() {
                 headerContent={headerContent}
             >
                 <EmptyState
-                    title="Tenant not found"
-                    subtitle="Return to the platform tenant registry."
+                    title={t('company.platformTenant.notFoundTitle')}
+                    subtitle={t('company.platformTenant.notFoundSubtitle')}
                 />
             </DashboardLayout>
         );
@@ -753,13 +881,13 @@ export default function PlatformTenantDetail() {
             <div className="space-y-6">
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                     <DashboardSectionHeader
-                        eyebrow="Platform tenant"
+                        eyebrow={t('company.platformTenant.eyebrow')}
                         title={company.name}
-                        description={`${company.status || 'active'} · ${tenantDomain(company)}`}
+                        description={`${companyStatusLabel(company.status, t)} · ${tenantDomain(company, t)}`}
                     />
                     <Link to={adminCompaniesPath} className="dashboard-button-secondary self-start">
                         <FiArrowLeft className="h-4 w-4" />
-                        Tenants
+                        {t('company.platformTenant.tenants')}
                     </Link>
                 </div>
 
@@ -767,23 +895,23 @@ export default function PlatformTenantDetail() {
                     <div className="space-y-6">
                         <div className="grid gap-4 md:grid-cols-4">
                             <DashboardMetricCard
-                                label="Status"
-                                value={company.status || 'active'}
+                                label={t('company.platformTenant.metrics.status')}
+                                value={companyStatusLabel(company.status, t)}
                                 icon={FiBriefcase}
                             />
                             <DashboardMetricCard
-                                label="Plan"
-                                value={company.plan || 'Not set'}
+                                label={t('company.platformTenant.metrics.plan')}
+                                value={company.plan || t('company.detail.notSet')}
                                 icon={FiCreditCard}
                             />
                             <DashboardMetricCard
-                                label="Owners"
+                                label={t('company.platformTenant.metrics.owners')}
                                 value={ownerCount}
                                 icon={FiUsers}
                                 tone={ownerCount ? 'green' : 'amber'}
                             />
                             <DashboardMetricCard
-                                label="Admins"
+                                label={t('company.platformTenant.metrics.admins')}
                                 value={adminCount}
                                 icon={FiUsers}
                                 tone={adminCount ? 'blue' : 'amber'}
@@ -791,47 +919,80 @@ export default function PlatformTenantDetail() {
                         </div>
                         <div className="grid gap-4 md:grid-cols-4">
                             <DashboardMetricCard
-                                label="Courses"
+                                label={t('company.platformTenant.metrics.courses')}
                                 value={tenantCourses.length}
                                 icon={FiBookOpen}
                             />
                             <DashboardMetricCard
-                                label="Students"
+                                label={t('company.platformTenant.metrics.students')}
                                 value={studentCount}
                                 icon={FiUsers}
                             />
                             <DashboardMetricCard
-                                label="Flags"
+                                label={t('company.platformTenant.metrics.flags')}
                                 value={configuredFlagCount}
                                 icon={FiFlag}
                             />
                             <DashboardMetricCard
-                                label="CRM"
-                                value={company.crmTenantSlug || company.crmTenantId || 'Not linked'}
+                                label={t('company.platformTenant.metrics.crm')}
+                                value={
+                                    company.crmTenantSlug ||
+                                    company.crmTenantId ||
+                                    t('company.platformTenant.notLinked')
+                                }
                                 icon={FiLink}
                             />
                         </div>
-                        <DashboardInsetPanel title="Tenant Snapshot">
+                        <DashboardInsetPanel title={t('company.platformTenant.snapshot.title')}>
                             <div className="grid gap-3 text-sm text-edubot-muted dark:text-slate-400 md:grid-cols-2">
-                                <p>Name: {company.name}</p>
-                                <p>Locale: {getLocaleLabel(company.locale)}</p>
-                                <p>Timezone: {company.timezone || 'Asia/Bishkek'}</p>
-                                <p>Billing: {company.billingStatus || 'Not set'}</p>
-                                <p>Subdomain: {company.subdomain || 'Not set'}</p>
-                                <p>Custom domain: {company.customDomain || 'Not set'}</p>
-                                <p>CRM tenant ID: {company.crmTenantId || 'Not set'}</p>
-                                <p>CRM primary domain: {company.crmPrimaryDomain || 'Not set'}</p>
-                                <p>Domain: {tenantDomain(company)}</p>
-                                <p>Owner/admin rows: {ownerCount + adminCount}</p>
+                                <p>{t('company.platformTenant.snapshot.name')}: {company.name}</p>
+                                <p>
+                                    {t('company.platformTenant.snapshot.locale')}:{' '}
+                                    {getLocaleLabel(company.locale)}
+                                </p>
+                                <p>
+                                    {t('company.platformTenant.snapshot.timezone')}:{' '}
+                                    {company.timezone || 'Asia/Bishkek'}
+                                </p>
+                                <p>
+                                    {t('company.platformTenant.snapshot.billing')}:{' '}
+                                    {company.billingStatus || t('company.detail.notSet')}
+                                </p>
+                                <p>
+                                    {t('company.platformTenant.snapshot.subdomain')}:{' '}
+                                    {company.subdomain || t('company.detail.notSet')}
+                                </p>
+                                <p>
+                                    {t('company.platformTenant.snapshot.customDomain')}:{' '}
+                                    {company.customDomain || t('company.detail.notSet')}
+                                </p>
+                                <p>
+                                    {t('company.platformTenant.snapshot.crmTenantId')}:{' '}
+                                    {company.crmTenantId || t('company.detail.notSet')}
+                                </p>
+                                <p>
+                                    {t('company.platformTenant.snapshot.crmPrimaryDomain')}:{' '}
+                                    {company.crmPrimaryDomain || t('company.detail.notSet')}
+                                </p>
+                                <p>
+                                    {t('company.platformTenant.snapshot.domain')}:{' '}
+                                    {tenantDomain(company, t)}
+                                </p>
+                                <p>
+                                    {t('company.platformTenant.snapshot.ownerAdminRows')}:{' '}
+                                    {ownerCount + adminCount}
+                                </p>
                             </div>
                         </DashboardInsetPanel>
                         <DashboardInsetPanel
-                            title="Lifecycle"
-                            description="Use status changes for tenant access control before considering destructive cleanup."
+                            title={t('company.platformTenant.lifecycle.title')}
+                            description={t('company.platformTenant.lifecycle.description')}
                         >
                             <div className="mt-4 flex flex-wrap items-center gap-3">
                                 <span className="rounded-full border border-edubot-line px-3 py-1 text-sm font-semibold text-edubot-ink dark:border-slate-700 dark:text-white">
-                                    Current: {company.status || 'active'}
+                                    {t('company.platformTenant.lifecycle.current', {
+                                        status: companyStatusLabel(company.status, t),
+                                    })}
                                 </span>
                                 <button
                                     type="button"
@@ -841,7 +1002,7 @@ export default function PlatformTenantDetail() {
                                     }
                                     className="dashboard-button-secondary disabled:cursor-not-allowed disabled:opacity-50"
                                 >
-                                    Activate
+                                    {t('company.platformTenant.lifecycle.activate')}
                                 </button>
                                 <button
                                     type="button"
@@ -849,7 +1010,7 @@ export default function PlatformTenantDetail() {
                                     disabled={savingSection || company.status === 'suspended'}
                                     className="dashboard-button-secondary disabled:cursor-not-allowed disabled:opacity-50"
                                 >
-                                    Suspend
+                                    {t('company.platformTenant.lifecycle.suspend')}
                                 </button>
                                 <button
                                     type="button"
@@ -857,7 +1018,7 @@ export default function PlatformTenantDetail() {
                                     disabled={savingSection || company.status === 'archived'}
                                     className="dashboard-button-secondary disabled:cursor-not-allowed disabled:opacity-50"
                                 >
-                                    Archive
+                                    {t('company.platformTenant.lifecycle.archive')}
                                 </button>
                             </div>
                         </DashboardInsetPanel>
@@ -865,23 +1026,25 @@ export default function PlatformTenantDetail() {
                 )}
 
                 {activeTab === 'profile' && (
-                    <DashboardInsetPanel title="Profile">
+                    <DashboardInsetPanel title={t('company.platformTenant.tabs.profile')}>
                         {editSection === 'profile' ? (
                             <div className="mt-4 grid gap-4 md:grid-cols-2">
                                 <div className="rounded-2xl border border-edubot-line/70 bg-white/70 p-4 dark:border-slate-700 dark:bg-slate-950 md:col-span-2">
                                     <p className="text-xs font-semibold uppercase tracking-wide text-edubot-muted dark:text-slate-400">
-                                        Logo
+                                        {t('company.fields.logo')}
                                     </p>
                                     <div className="mt-3 flex flex-wrap items-center gap-4">
                                         {form.logoUrl ? (
                                             <img
                                                 src={form.logoUrl}
-                                                alt={`${form.name || 'Tenant'} logo`}
+                                                alt={t('company.platformTenant.logoAlt', {
+                                                    name: form.name || t('company.platformTenant.tenant'),
+                                                })}
                                                 className="h-16 w-32 rounded-lg border border-edubot-line object-contain p-2 dark:border-slate-700"
                                             />
                                         ) : (
                                             <div className="flex h-16 w-32 items-center justify-center rounded-lg border border-dashed border-edubot-line text-xs text-edubot-muted dark:border-slate-700">
-                                                No logo
+                                                {t('company.settings.noLogo')}
                                             </div>
                                         )}
                                         <input
@@ -898,82 +1061,84 @@ export default function PlatformTenantDetail() {
                                             className="dashboard-button-secondary"
                                         >
                                             <FiUpload className="h-4 w-4" />
-                                            {uploadingLogo ? 'Uploading...' : 'Upload logo'}
+                                            {uploadingLogo
+                                                ? t('company.platformTenant.uploadingLogo')
+                                                : t('company.settings.uploadLogoFile')}
                                         </button>
                                     </div>
                                 </div>
                                 <Field
-                                    label="Name"
+                                    label={t('company.fields.name')}
                                     value={form.name}
                                     onChange={(value) => updateField('name', value)}
                                 />
                                 <Field
-                                    label="Website"
+                                    label={t('company.fields.website')}
                                     value={form.website}
                                     onChange={(value) => updateField('website', value)}
                                 />
                                 <Field
-                                    label="Email"
+                                    label={t('company.fields.email')}
                                     value={form.email}
                                     onChange={(value) => updateField('email', value)}
                                 />
                                 <Field
-                                    label="Phone"
+                                    label={t('company.fields.phone')}
                                     value={form.phone}
                                     onChange={(value) => updateField('phone', value)}
                                 />
                                 <Field
-                                    label="Contact name"
+                                    label={t('company.fields.contactName')}
                                     value={form.contactName}
                                     onChange={(value) => updateField('contactName', value)}
                                 />
                                 <Field
-                                    label="Contact email"
+                                    label={t('company.fields.contactEmail')}
                                     value={form.contactEmail}
                                     onChange={(value) => updateField('contactEmail', value)}
                                 />
                                 <Field
-                                    label="Contact phone"
+                                    label={t('company.fields.contactPhone')}
                                     value={form.contactPhone}
                                     onChange={(value) => updateField('contactPhone', value)}
                                 />
                                 <Field
-                                    label="Tax ID"
+                                    label={t('company.fields.taxId')}
                                     value={form.taxId}
                                     onChange={(value) => updateField('taxId', value)}
                                 />
                                 <Field
-                                    label="Address"
+                                    label={t('company.fields.address')}
                                     value={form.address}
                                     onChange={(value) => updateField('address', value)}
                                 />
                                 <Field
-                                    label="City"
+                                    label={t('company.fields.city')}
                                     value={form.city}
                                     onChange={(value) => updateField('city', value)}
                                 />
                                 <Field
-                                    label="Country"
+                                    label={t('company.fields.country')}
                                     value={form.country}
                                     onChange={(value) => updateField('country', value)}
                                 />
                                 <Field
-                                    label="Telegram"
+                                    label={t('company.fields.telegram')}
                                     value={form.telegram}
                                     onChange={(value) => updateField('telegram', value)}
                                 />
                                 <Field
-                                    label="WhatsApp"
+                                    label={t('company.fields.whatsapp')}
                                     value={form.whatsapp}
                                     onChange={(value) => updateField('whatsapp', value)}
                                 />
                                 <Field
-                                    label="Instagram"
+                                    label={t('company.fields.instagram')}
                                     value={form.instagram}
                                     onChange={(value) => updateField('instagram', value)}
                                 />
                                 <TextareaField
-                                    label="Notes"
+                                    label={t('company.fields.notes')}
                                     value={form.notes}
                                     onChange={(value) => updateField('notes', value)}
                                 />
@@ -982,35 +1147,64 @@ export default function PlatformTenantDetail() {
                             <div className="mt-4 grid gap-4 md:grid-cols-2">
                                 <div className="rounded-2xl border border-edubot-line/70 bg-white/70 p-4 dark:border-slate-700 dark:bg-slate-950 md:col-span-2">
                                     <p className="text-xs font-semibold uppercase tracking-wide text-edubot-muted dark:text-slate-400">
-                                        Logo
+                                        {t('company.fields.logo')}
                                     </p>
                                     {company.logoUrl ? (
                                         <img
                                             src={company.logoUrl}
-                                            alt={`${company.name || 'Tenant'} logo`}
+                                            alt={t('company.platformTenant.logoAlt', {
+                                                name: company.name || t('company.platformTenant.tenant'),
+                                            })}
                                             className="mt-3 h-16 w-32 rounded-lg border border-edubot-line object-contain p-2 dark:border-slate-700"
                                         />
                                     ) : (
                                         <p className="mt-2 text-sm font-medium text-edubot-ink dark:text-white">
-                                            Not set
+                                            {t('company.detail.notSet')}
                                         </p>
                                     )}
                                 </div>
-                                <ReadField label="Name" value={company.name} />
-                                <ReadField label="Website" value={company.website} />
-                                <ReadField label="Email" value={company.email} />
-                                <ReadField label="Phone" value={company.phone} />
-                                <ReadField label="Contact name" value={company.contactName} />
-                                <ReadField label="Contact email" value={company.contactEmail} />
-                                <ReadField label="Contact phone" value={company.contactPhone} />
-                                <ReadField label="Tax ID" value={company.taxId} />
-                                <ReadField label="Address" value={company.address} />
-                                <ReadField label="City" value={company.city} />
-                                <ReadField label="Country" value={company.country} />
-                                <ReadField label="Telegram" value={company.telegram} />
-                                <ReadField label="WhatsApp" value={company.whatsapp} />
-                                <ReadField label="Instagram" value={company.instagram} />
-                                <ReadField label="Notes" value={company.notes} />
+                                <ReadField label={t('company.fields.name')} value={company.name} />
+                                <ReadField
+                                    label={t('company.fields.website')}
+                                    value={company.website}
+                                />
+                                <ReadField label={t('company.fields.email')} value={company.email} />
+                                <ReadField label={t('company.fields.phone')} value={company.phone} />
+                                <ReadField
+                                    label={t('company.fields.contactName')}
+                                    value={company.contactName}
+                                />
+                                <ReadField
+                                    label={t('company.fields.contactEmail')}
+                                    value={company.contactEmail}
+                                />
+                                <ReadField
+                                    label={t('company.fields.contactPhone')}
+                                    value={company.contactPhone}
+                                />
+                                <ReadField label={t('company.fields.taxId')} value={company.taxId} />
+                                <ReadField
+                                    label={t('company.fields.address')}
+                                    value={company.address}
+                                />
+                                <ReadField label={t('company.fields.city')} value={company.city} />
+                                <ReadField
+                                    label={t('company.fields.country')}
+                                    value={company.country}
+                                />
+                                <ReadField
+                                    label={t('company.fields.telegram')}
+                                    value={company.telegram}
+                                />
+                                <ReadField
+                                    label={t('company.fields.whatsapp')}
+                                    value={company.whatsapp}
+                                />
+                                <ReadField
+                                    label={t('company.fields.instagram')}
+                                    value={company.instagram}
+                                />
+                                <ReadField label={t('company.fields.notes')} value={company.notes} />
                             </div>
                         )}
                         <SectionActions
@@ -1042,30 +1236,30 @@ export default function PlatformTenantDetail() {
                 )}
 
                 {activeTab === 'domain' && (
-                    <DashboardInsetPanel title="Domain">
+                    <DashboardInsetPanel title={t('company.platformTenant.tabs.domain')}>
                         {editSection === 'domain' ? (
                             <div className="mt-4 grid gap-4 md:grid-cols-2">
                                 <Field
-                                    label="Subdomain"
+                                    label={t('company.platformTenant.fields.subdomain')}
                                     value={form.subdomain}
                                     onChange={(value) =>
                                         updateField('subdomain', value.toLowerCase())
                                     }
                                 />
                                 <Field
-                                    label="Custom domain"
+                                    label={t('company.platformTenant.fields.customDomain')}
                                     value={form.customDomain}
                                     onChange={(value) =>
                                         updateField('customDomain', value.toLowerCase())
                                     }
                                 />
                                 <Field
-                                    label="Timezone"
+                                    label={t('company.platformTenant.fields.timezone')}
                                     value={form.timezone}
                                     onChange={(value) => updateField('timezone', value)}
                                 />
                                 <SelectField
-                                    label="Locale"
+                                    label={t('company.platformTenant.fields.locale')}
                                     value={normalizeLocale(form.locale)}
                                     onChange={(value) => updateField('locale', value)}
                                 >
@@ -1078,14 +1272,26 @@ export default function PlatformTenantDetail() {
                             </div>
                         ) : (
                             <div className="mt-4 grid gap-4 md:grid-cols-2">
-                                <ReadField label="Subdomain" value={company.subdomain} />
-                                <ReadField label="Custom domain" value={company.customDomain} />
-                                <ReadField label="Effective domain" value={tenantDomain(company)} />
                                 <ReadField
-                                    label="Timezone"
+                                    label={t('company.platformTenant.fields.subdomain')}
+                                    value={company.subdomain}
+                                />
+                                <ReadField
+                                    label={t('company.platformTenant.fields.customDomain')}
+                                    value={company.customDomain}
+                                />
+                                <ReadField
+                                    label={t('company.platformTenant.fields.effectiveDomain')}
+                                    value={tenantDomain(company, t)}
+                                />
+                                <ReadField
+                                    label={t('company.platformTenant.fields.timezone')}
                                     value={company.timezone || 'Asia/Bishkek'}
                                 />
-                                <ReadField label="Locale" value={getLocaleLabel(company.locale)} />
+                                <ReadField
+                                    label={t('company.platformTenant.fields.locale')}
+                                    value={getLocaleLabel(company.locale)}
+                                />
                             </div>
                         )}
                         <SectionActions
@@ -1106,36 +1312,45 @@ export default function PlatformTenantDetail() {
                 )}
 
                 {activeTab === 'billing' && (
-                    <DashboardInsetPanel title="Plan/Billing">
+                    <DashboardInsetPanel title={t('company.platformTenant.tabs.billing')}>
                         {editSection === 'billing' ? (
                             <div className="mt-4 grid gap-4 md:grid-cols-3">
                                 <SelectField
-                                    label="Status"
+                                    label={t('company.platformTenant.fields.status')}
                                     value={form.status}
                                     onChange={(value) => updateField('status', value)}
                                 >
                                     {COMPANY_STATUSES.map((status) => (
                                         <option key={status} value={status}>
-                                            {status}
+                                            {companyStatusLabel(status, t)}
                                         </option>
                                     ))}
                                 </SelectField>
                                 <Field
-                                    label="Plan"
+                                    label={t('company.platformTenant.fields.plan')}
                                     value={form.plan}
                                     onChange={(value) => updateField('plan', value)}
                                 />
                                 <Field
-                                    label="Billing status"
+                                    label={t('company.platformTenant.fields.billingStatus')}
                                     value={form.billingStatus}
                                     onChange={(value) => updateField('billingStatus', value)}
                                 />
                             </div>
                         ) : (
                             <div className="mt-4 grid gap-4 md:grid-cols-3">
-                                <ReadField label="Status" value={company.status || 'active'} />
-                                <ReadField label="Plan" value={company.plan} />
-                                <ReadField label="Billing status" value={company.billingStatus} />
+                                <ReadField
+                                    label={t('company.platformTenant.fields.status')}
+                                    value={companyStatusLabel(company.status, t)}
+                                />
+                                <ReadField
+                                    label={t('company.platformTenant.fields.plan')}
+                                    value={company.plan}
+                                />
+                                <ReadField
+                                    label={t('company.platformTenant.fields.billingStatus')}
+                                    value={company.billingStatus}
+                                />
                             </div>
                         )}
                         <SectionActions
@@ -1155,21 +1370,21 @@ export default function PlatformTenantDetail() {
                 )}
 
                 {activeTab === 'crm' && (
-                    <DashboardInsetPanel title="CRM Link">
+                    <DashboardInsetPanel title={t('company.platformTenant.tabs.crm')}>
                         {editSection === 'crm' ? (
                             <div className="mt-4 grid gap-4 md:grid-cols-3">
                                 <Field
-                                    label="CRM tenant ID"
+                                    label={t('company.platformTenant.fields.crmTenantId')}
                                     value={form.crmTenantId}
                                     onChange={(value) => updateField('crmTenantId', value)}
                                 />
                                 <Field
-                                    label="CRM slug"
+                                    label={t('company.platformTenant.fields.crmSlug')}
                                     value={form.crmTenantSlug}
                                     onChange={(value) => updateField('crmTenantSlug', value)}
                                 />
                                 <Field
-                                    label="CRM primary domain"
+                                    label={t('company.platformTenant.fields.crmPrimaryDomain')}
                                     value={form.crmPrimaryDomain}
                                     onChange={(value) =>
                                         updateField('crmPrimaryDomain', value.toLowerCase())
@@ -1178,10 +1393,16 @@ export default function PlatformTenantDetail() {
                             </div>
                         ) : (
                             <div className="mt-4 grid gap-4 md:grid-cols-3">
-                                <ReadField label="CRM tenant ID" value={company.crmTenantId} />
-                                <ReadField label="CRM slug" value={company.crmTenantSlug} />
                                 <ReadField
-                                    label="CRM primary domain"
+                                    label={t('company.platformTenant.fields.crmTenantId')}
+                                    value={company.crmTenantId}
+                                />
+                                <ReadField
+                                    label={t('company.platformTenant.fields.crmSlug')}
+                                    value={company.crmTenantSlug}
+                                />
+                                <ReadField
+                                    label={t('company.platformTenant.fields.crmPrimaryDomain')}
                                     value={company.crmPrimaryDomain}
                                 />
                             </div>
@@ -1206,39 +1427,39 @@ export default function PlatformTenantDetail() {
                     <CompanyMembers
                         companyId={tenantId}
                         currentUser={user}
-                        title="Owners & Admins"
-                        description="Manage only tenant owner and admin authority from the platform tenant detail view."
+                        title={t('company.members.platformTitle')}
+                        description={t('company.members.platformDescription')}
                         allowedRoles={['owner', 'company_admin']}
                     />
                 )}
 
                 {activeTab === 'courses' && (
                     <DashboardInsetPanel
-                        title="Courses"
-                        description="Attach existing courses to this tenant and remove tenant links when needed."
+                        title={t('company.courses.platform.title')}
+                        description={t('company.courses.platform.description')}
                     >
                         <div className="mt-4 space-y-5">
                             <div className="grid gap-3 lg:grid-cols-2">
                                 <label className="space-y-1">
                                     <span className="text-xs font-semibold uppercase tracking-wide text-edubot-muted dark:text-slate-400">
-                                        Search tenant courses
+                                        {t('company.courses.platform.searchTenantCourses')}
                                     </span>
                                     <input
                                         value={courseSearch}
                                         onChange={(event) => setCourseSearch(event.target.value)}
                                         className="dashboard-field w-full"
-                                        placeholder="Search attached courses"
+                                        placeholder={t('company.courses.filterPlaceholder')}
                                     />
                                 </label>
                                 <label className="relative space-y-1">
                                     <span className="text-xs font-semibold uppercase tracking-wide text-edubot-muted dark:text-slate-400">
-                                        Attach course
+                                        {t('company.courses.attach')}
                                     </span>
                                     <input
                                         value={attachSearch}
                                         onChange={(event) => setAttachSearch(event.target.value)}
                                         className="dashboard-field w-full"
-                                        placeholder="Search existing course"
+                                        placeholder={t('company.courses.platform.attachPlaceholder')}
                                     />
                                     {(attachOptions.length > 0 ||
                                         attachLoading ||
@@ -1246,7 +1467,7 @@ export default function PlatformTenantDetail() {
                                         <div className="absolute z-20 mt-1 max-h-80 w-full overflow-auto rounded-2xl border border-edubot-line bg-white shadow-edubot-card dark:border-slate-700 dark:bg-slate-900">
                                             {attachLoading ? (
                                                 <div className="px-3 py-2 text-sm text-edubot-muted">
-                                                    Searching...
+                                                    {t('common.searching')}
                                                 </div>
                                             ) : attachOptions.length ? (
                                                 attachOptions.map((course) => {
@@ -1266,8 +1487,9 @@ export default function PlatformTenantDetail() {
                                                             }
                                                             title={
                                                                 courseTypeDisabled
-                                                                    ? getCourseTypeTenantDisabledMessage(
-                                                                          course.courseType
+                                                                    ? disabledCourseTypeMessage(
+                                                                          course.courseType,
+                                                                          t
                                                                       )
                                                                     : undefined
                                                             }
@@ -1275,17 +1497,28 @@ export default function PlatformTenantDetail() {
                                                         >
                                                             <span className="block truncate text-sm font-medium text-edubot-ink dark:text-white">
                                                                 {attachingCourseId === course.id
-                                                                    ? 'Attaching...'
-                                                                    : course.title ||
-                                                                      `Course #${course.id}`}
+                                                                    ? t(
+                                                                          'company.courses.platform.attaching'
+                                                                      )
+                                                                    : courseFallbackTitle(
+                                                                          course,
+                                                                          t
+                                                                      )}
                                                             </span>
                                                             <span className="block truncate text-xs text-edubot-muted dark:text-slate-400">
                                                                 {course.instructor?.fullName ||
                                                                     course.instructor?.email ||
-                                                                    'No instructor'}{' '}
-                                                                · {course.courseType || 'course'}
+                                                                    t(
+                                                                        'company.courses.platform.noInstructor'
+                                                                    )}{' '}
+                                                                · {courseTypeLabel(
+                                                                    course.courseType,
+                                                                    t
+                                                                )}
                                                                 {courseTypeDisabled
-                                                                    ? ' · disabled by feature flags'
+                                                                    ? ` · ${t(
+                                                                          'company.courses.platform.disabledByFeatureFlags'
+                                                                      )}`
                                                                     : ''}
                                                             </span>
                                                         </button>
@@ -1293,7 +1526,7 @@ export default function PlatformTenantDetail() {
                                                 })
                                             ) : (
                                                 <div className="px-3 py-2 text-sm text-edubot-muted">
-                                                    No matching courses found.
+                                                    {t('company.courses.platform.noMatchingCourses')}
                                                 </div>
                                             )}
                                         </div>
@@ -1305,11 +1538,21 @@ export default function PlatformTenantDetail() {
                                 <table className="min-w-[44rem] w-full text-left text-sm">
                                     <thead className="bg-edubot-surfaceAlt/70 text-xs uppercase tracking-wide text-edubot-muted dark:bg-slate-900 dark:text-slate-400">
                                         <tr>
-                                            <th className="px-4 py-3 font-semibold">Course</th>
-                                            <th className="px-4 py-3 font-semibold">Instructor</th>
-                                            <th className="px-4 py-3 font-semibold">Type</th>
-                                            <th className="px-4 py-3 font-semibold">Status</th>
-                                            <th className="px-4 py-3 font-semibold">Actions</th>
+                                            <th className="px-4 py-3 font-semibold">
+                                                {t('company.courses.table.course')}
+                                            </th>
+                                            <th className="px-4 py-3 font-semibold">
+                                                {t('company.courses.table.instructor')}
+                                            </th>
+                                            <th className="px-4 py-3 font-semibold">
+                                                {t('company.courses.table.type')}
+                                            </th>
+                                            <th className="px-4 py-3 font-semibold">
+                                                {t('company.courses.table.status')}
+                                            </th>
+                                            <th className="px-4 py-3 font-semibold">
+                                                {t('company.courses.table.actions')}
+                                            </th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-edubot-line/70 bg-white dark:divide-slate-700 dark:bg-slate-950">
@@ -1319,7 +1562,7 @@ export default function PlatformTenantDetail() {
                                                     colSpan="5"
                                                     className="px-4 py-6 text-center text-edubot-muted"
                                                 >
-                                                    Loading courses...
+                                                    {t('company.courses.platform.loadingCourses')}
                                                 </td>
                                             </tr>
                                         ) : tenantCourses.length ? (
@@ -1330,7 +1573,7 @@ export default function PlatformTenantDetail() {
                                                 >
                                                     <td className="px-4 py-3">
                                                         <div className="font-medium text-edubot-ink dark:text-white">
-                                                            {course.title || `Course #${course.id}`}
+                                                            {courseFallbackTitle(course, t)}
                                                         </div>
                                                         <div className="text-xs text-edubot-muted dark:text-slate-400">
                                                             #{course.id}
@@ -1339,14 +1582,14 @@ export default function PlatformTenantDetail() {
                                                     <td className="px-4 py-3 text-edubot-muted dark:text-slate-400">
                                                         {course.instructor?.fullName ||
                                                             course.instructor?.email ||
-                                                            'Not set'}
+                                                            t('company.detail.notSet')}
                                                     </td>
                                                     <td className="px-4 py-3 text-edubot-muted dark:text-slate-400">
-                                                        {course.courseType || 'video'}
+                                                        {courseTypeLabel(course.courseType, t)}
                                                     </td>
                                                     <td className="px-4 py-3">
                                                         <span className="rounded-full border border-edubot-line px-2.5 py-1 text-xs font-semibold text-edubot-ink dark:border-slate-700 dark:text-white">
-                                                            {courseStatusLabel(course)}
+                                                            {courseStatusLabel(course, t)}
                                                         </span>
                                                     </td>
                                                     <td className="px-4 py-3">
@@ -1356,7 +1599,7 @@ export default function PlatformTenantDetail() {
                                                             disabled={confirmationLoading}
                                                             className="dashboard-button-secondary text-red-600 disabled:cursor-not-allowed disabled:opacity-60"
                                                         >
-                                                            Remove
+                                                            {t('company.courses.platform.remove')}
                                                         </button>
                                                     </td>
                                                 </tr>
@@ -1367,7 +1610,7 @@ export default function PlatformTenantDetail() {
                                                     colSpan="5"
                                                     className="px-4 py-6 text-center text-edubot-muted"
                                                 >
-                                                    No courses attached to this tenant.
+                                                    {t('company.courses.platform.empty')}
                                                 </td>
                                             </tr>
                                         )}
@@ -1379,35 +1622,35 @@ export default function PlatformTenantDetail() {
                 )}
 
                 {activeTab === 'branding' && (
-                    <DashboardInsetPanel title="Branding">
+                    <DashboardInsetPanel title={t('company.platformTenant.tabs.branding')}>
                         {editSection === 'branding' ? (
                             <div className="mt-4 grid gap-4 md:grid-cols-2">
                                 <Field
-                                    label="Display name"
+                                    label={t('company.platformTenant.branding.displayName')}
                                     value={brandingForm.displayName}
                                     onChange={(value) => updateBranding('displayName', value)}
                                 />
                                 <Field
-                                    label="Certificate logo URL"
+                                    label={t('company.platformTenant.branding.certificateLogoUrl')}
                                     value={brandingForm.certificateLogoUrl}
                                     onChange={(value) =>
                                         updateBranding('certificateLogoUrl', value)
                                     }
                                 />
                                 <Field
-                                    label="Primary color"
+                                    label={t('company.platformTenant.branding.primaryColor')}
                                     type="color"
                                     value={brandingForm.primaryColor}
                                     onChange={(value) => updateBranding('primaryColor', value)}
                                 />
                                 <Field
-                                    label="Secondary color"
+                                    label={t('company.platformTenant.branding.secondaryColor')}
                                     type="color"
                                     value={brandingForm.secondaryColor}
                                     onChange={(value) => updateBranding('secondaryColor', value)}
                                 />
                                 <Field
-                                    label="Accent color"
+                                    label={t('company.platformTenant.branding.accentColor')}
                                     type="color"
                                     value={brandingForm.accentColor || '#111827'}
                                     onChange={(value) => updateBranding('accentColor', value)}
@@ -1416,23 +1659,23 @@ export default function PlatformTenantDetail() {
                         ) : (
                             <div className="mt-4 grid gap-4 md:grid-cols-2">
                                 <ReadField
-                                    label="Display name"
+                                    label={t('company.platformTenant.branding.displayName')}
                                     value={company.branding?.displayName}
                                 />
                                 <ReadField
-                                    label="Certificate logo URL"
+                                    label={t('company.platformTenant.branding.certificateLogoUrl')}
                                     value={company.branding?.certificateLogoUrl}
                                 />
                                 <ReadField
-                                    label="Primary color"
+                                    label={t('company.platformTenant.branding.primaryColor')}
                                     value={company.branding?.primaryColor}
                                 />
                                 <ReadField
-                                    label="Secondary color"
+                                    label={t('company.platformTenant.branding.secondaryColor')}
                                     value={company.branding?.secondaryColor}
                                 />
                                 <ReadField
-                                    label="Accent color"
+                                    label={t('company.platformTenant.branding.accentColor')}
                                     value={company.branding?.accentColor}
                                 />
                             </div>
@@ -1455,16 +1698,16 @@ export default function PlatformTenantDetail() {
                 )}
 
                 {activeTab === 'settings' && (
-                    <DashboardInsetPanel title="Settings">
+                    <DashboardInsetPanel title={t('company.platformTenant.tabs.settings')}>
                         {editSection === 'settings' ? (
                             <div className="mt-4 grid gap-4 md:grid-cols-2">
                                 <Field
-                                    label="Support email"
+                                    label={t('company.platformTenant.settings.supportEmail')}
                                     value={settingsForm.supportEmail}
                                     onChange={(value) => updateSettings('supportEmail', value)}
                                 />
                                 <SelectField
-                                    label="Default course visibility"
+                                    label={t('company.platformTenant.settings.defaultCourseVisibility')}
                                     value={settingsForm.defaultCourseVisibility}
                                     onChange={(value) =>
                                         updateSettings('defaultCourseVisibility', value)
@@ -1472,22 +1715,22 @@ export default function PlatformTenantDetail() {
                                 >
                                     {COURSE_VISIBILITY_OPTIONS.map((option) => (
                                         <option key={option} value={option}>
-                                            {option}
+                                            {courseVisibilityLabel(option, t)}
                                         </option>
                                     ))}
                                 </SelectField>
                                 <SelectField
-                                    label="Allow self enrollment"
+                                    label={t('company.platformTenant.settings.allowSelfEnrollment')}
                                     value={String(settingsForm.allowSelfEnrollment)}
                                     onChange={(value) =>
                                         updateSettings('allowSelfEnrollment', value === 'true')
                                     }
                                 >
-                                    <option value="true">Enabled</option>
-                                    <option value="false">Disabled</option>
+                                    <option value="true">{t('company.platformTenant.values.enabled')}</option>
+                                    <option value="false">{t('company.platformTenant.values.disabled')}</option>
                                 </SelectField>
                                 <SelectField
-                                    label="Require enrollment approval"
+                                    label={t('company.platformTenant.settings.requireEnrollmentApproval')}
                                     value={String(settingsForm.requireEnrollmentApproval)}
                                     onChange={(value) =>
                                         updateSettings(
@@ -1496,26 +1739,29 @@ export default function PlatformTenantDetail() {
                                         )
                                     }
                                 >
-                                    <option value="true">Enabled</option>
-                                    <option value="false">Disabled</option>
+                                    <option value="true">{t('company.platformTenant.values.enabled')}</option>
+                                    <option value="false">{t('company.platformTenant.values.disabled')}</option>
                                 </SelectField>
                             </div>
                         ) : (
                             <div className="mt-4 grid gap-4 md:grid-cols-2">
                                 <ReadField
-                                    label="Support email"
+                                    label={t('company.platformTenant.settings.supportEmail')}
                                     value={company.settings?.supportEmail}
                                 />
                                 <ReadField
-                                    label="Default course visibility"
-                                    value={company.settings?.defaultCourseVisibility}
+                                    label={t('company.platformTenant.settings.defaultCourseVisibility')}
+                                    value={courseVisibilityLabel(
+                                        company.settings?.defaultCourseVisibility,
+                                        t
+                                    )}
                                 />
                                 <ReadField
-                                    label="Allow self enrollment"
+                                    label={t('company.platformTenant.settings.allowSelfEnrollment')}
                                     value={company.settings?.allowSelfEnrollment}
                                 />
                                 <ReadField
-                                    label="Require enrollment approval"
+                                    label={t('company.platformTenant.settings.requireEnrollmentApproval')}
                                     value={company.settings?.requireEnrollmentApproval}
                                 />
                             </div>
@@ -1538,7 +1784,7 @@ export default function PlatformTenantDetail() {
                 )}
 
                 {activeTab === 'flags' && (
-                    <DashboardInsetPanel title="Feature Flags">
+                    <DashboardInsetPanel title={t('company.platformTenant.tabs.flags')}>
                         {editSection === 'flags' ? (
                             <div className="mt-4 space-y-5">
                                 <div className="grid gap-3 md:grid-cols-2">
@@ -1555,10 +1801,10 @@ export default function PlatformTenantDetail() {
                                                 >
                                                     <div className="min-w-0">
                                                         <p className="font-medium text-edubot-ink dark:text-white">
-                                                            {row.label}
+                                                            {t(row.labelKey)}
                                                         </p>
                                                         <p className="mt-1 text-sm text-edubot-muted dark:text-slate-400">
-                                                            {row.description}
+                                                            {t(row.descriptionKey)}
                                                         </p>
                                                         <p className="mt-2 text-xs text-edubot-muted dark:text-slate-500">
                                                             {row.key}
@@ -1567,7 +1813,7 @@ export default function PlatformTenantDetail() {
                                                     <div className="flex shrink-0 flex-col items-end gap-2">
                                                         <SwitchControl
                                                             checked={row.value}
-                                                            label={row.label}
+                                                            label={t(row.labelKey)}
                                                             onChange={(value) =>
                                                                 updateFeatureFlagRow(index, {
                                                                     value,
@@ -1575,7 +1821,9 @@ export default function PlatformTenantDetail() {
                                                             }
                                                         />
                                                         <span className="text-xs font-semibold text-edubot-muted dark:text-slate-400">
-                                                            {row.value ? 'Enabled' : 'Disabled'}
+                                                            {row.value
+                                                                ? t('company.platformTenant.values.enabled')
+                                                                : t('company.platformTenant.values.disabled')}
                                                         </span>
                                                     </div>
                                                 </div>
@@ -1586,14 +1834,14 @@ export default function PlatformTenantDetail() {
                                 <div className="space-y-3">
                                     <div className="flex items-center justify-between gap-3">
                                         <h3 className="text-sm font-semibold text-edubot-ink dark:text-white">
-                                            Custom flags
+                                            {t('company.platformTenant.featureFlags.customFlags')}
                                         </h3>
                                         <button
                                             type="button"
                                             onClick={addCustomFeatureFlagRow}
                                             className="dashboard-button-secondary"
                                         >
-                                            Add custom flag
+                                            {t('company.platformTenant.featureFlags.addCustomFlag')}
                                         </button>
                                     </div>
                                     {customFeatureFlagRows(featureFlagRows).length ? (
@@ -1604,7 +1852,7 @@ export default function PlatformTenantDetail() {
                                                     className="grid gap-3 rounded-2xl border border-edubot-line/70 bg-white/70 p-4 dark:border-slate-700 dark:bg-slate-950 md:grid-cols-[1fr_180px_auto]"
                                                 >
                                                     <Field
-                                                        label="Flag key"
+                                                        label={t('company.platformTenant.featureFlags.flagKey')}
                                                         value={row.key}
                                                         onChange={(value) =>
                                                             updateFeatureFlagRow(index, {
@@ -1615,13 +1863,16 @@ export default function PlatformTenantDetail() {
                                                     />
                                                     <div className="self-end">
                                                         <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-edubot-muted dark:text-slate-400">
-                                                            Value
+                                                            {t('company.platformTenant.featureFlags.value')}
                                                         </p>
                                                         <div className="flex items-center gap-3">
                                                             <SwitchControl
                                                                 checked={row.value}
                                                                 label={
-                                                                    row.key || 'Custom feature flag'
+                                                                    row.key ||
+                                                                    t(
+                                                                        'company.platformTenant.featureFlags.customFeatureFlag'
+                                                                    )
                                                                 }
                                                                 onChange={(value) =>
                                                                     updateFeatureFlagRow(index, {
@@ -1630,7 +1881,9 @@ export default function PlatformTenantDetail() {
                                                                 }
                                                             />
                                                             <span className="text-xs font-semibold text-edubot-muted dark:text-slate-400">
-                                                                {row.value ? 'Enabled' : 'Disabled'}
+                                                                {row.value
+                                                                    ? t('company.platformTenant.values.enabled')
+                                                                    : t('company.platformTenant.values.disabled')}
                                                             </span>
                                                         </div>
                                                     </div>
@@ -1638,7 +1891,9 @@ export default function PlatformTenantDetail() {
                                                         type="button"
                                                         onClick={() => removeFeatureFlagRow(index)}
                                                         className="dashboard-button-secondary self-end"
-                                                        aria-label="Remove feature flag"
+                                                        aria-label={t(
+                                                            'company.platformTenant.featureFlags.removeFeatureFlag'
+                                                        )}
                                                     >
                                                         <FiTrash2 className="h-4 w-4" />
                                                     </button>
@@ -1647,7 +1902,7 @@ export default function PlatformTenantDetail() {
                                         )
                                     ) : (
                                         <p className="text-sm text-edubot-muted dark:text-slate-400">
-                                            No custom flags configured.
+                                            {t('company.platformTenant.featureFlags.noCustomFlags')}
                                         </p>
                                     )}
                                 </div>
@@ -1657,7 +1912,7 @@ export default function PlatformTenantDetail() {
                                 {FEATURE_FLAG_DEFINITIONS.map((flag) => (
                                     <ReadField
                                         key={flag.key}
-                                        label={flag.label}
+                                        label={t(flag.labelKey)}
                                         value={company.featureFlags?.[flag.key] !== false}
                                     />
                                 ))}
@@ -1684,17 +1939,25 @@ export default function PlatformTenantDetail() {
 
                 {activeTab === 'activity' && (
                     <DashboardInsetPanel
-                        title="Activity"
-                        description="Recent tenant changes recorded by the backend."
+                        title={t('company.platformTenant.tabs.activity')}
+                        description={t('company.platformTenant.activity.description')}
                     >
                         <div className="mt-4 overflow-x-auto rounded-2xl border border-edubot-line/80 dark:border-slate-700">
                             <table className="min-w-[48rem] w-full text-left text-sm">
                                 <thead className="bg-edubot-surfaceAlt/70 text-xs uppercase tracking-wide text-edubot-muted dark:bg-slate-900 dark:text-slate-400">
                                     <tr>
-                                        <th className="px-4 py-3 font-semibold">Action</th>
-                                        <th className="px-4 py-3 font-semibold">Details</th>
-                                        <th className="px-4 py-3 font-semibold">Actor</th>
-                                        <th className="px-4 py-3 font-semibold">Time</th>
+                                        <th className="px-4 py-3 font-semibold">
+                                            {t('company.platformTenant.activity.table.action')}
+                                        </th>
+                                        <th className="px-4 py-3 font-semibold">
+                                            {t('company.platformTenant.activity.table.details')}
+                                        </th>
+                                        <th className="px-4 py-3 font-semibold">
+                                            {t('company.platformTenant.activity.table.actor')}
+                                        </th>
+                                        <th className="px-4 py-3 font-semibold">
+                                            {t('company.platformTenant.activity.table.time')}
+                                        </th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-edubot-line/70 bg-white dark:divide-slate-700 dark:bg-slate-950">
@@ -1704,7 +1967,7 @@ export default function PlatformTenantDetail() {
                                                 colSpan="4"
                                                 className="px-4 py-6 text-center text-edubot-muted"
                                             >
-                                                Loading activity...
+                                                {t('company.platformTenant.activity.loading')}
                                             </td>
                                         </tr>
                                     ) : activityItems.length ? (
@@ -1715,29 +1978,35 @@ export default function PlatformTenantDetail() {
                                             >
                                                 <td className="px-4 py-3">
                                                     <div className="font-medium text-edubot-ink dark:text-white">
-                                                        {ACTIVITY_LABELS[activity.action] ||
-                                                            activity.action}
+                                                        {ACTIVITY_LABELS[activity.action]
+                                                            ? t(ACTIVITY_LABELS[activity.action])
+                                                            : activity.action}
                                                     </div>
                                                     <div className="text-xs text-edubot-muted dark:text-slate-400">
                                                         {activity.action}
                                                     </div>
                                                 </td>
                                                 <td className="px-4 py-3 text-edubot-muted dark:text-slate-400">
-                                                    {formatActivitySummary(activity)}
+                                                    {formatActivitySummary(activity, t)}
                                                 </td>
                                                 <td className="px-4 py-3 text-edubot-muted dark:text-slate-400">
                                                     {activity.actorFullName ||
                                                         activity.actorEmail ||
                                                         (activity.actorUserId
-                                                            ? `User #${activity.actorUserId}`
-                                                            : 'System')}
+                                                            ? t(
+                                                                  'company.platformTenant.activity.userNumber',
+                                                                  { id: activity.actorUserId }
+                                                              )
+                                                            : t(
+                                                                  'company.platformTenant.activity.system'
+                                                              ))}
                                                 </td>
                                                 <td className="px-4 py-3 text-edubot-muted dark:text-slate-400">
                                                     {activity.createdAt
                                                         ? new Date(
                                                               activity.createdAt
                                                           ).toLocaleString()
-                                                        : 'Not set'}
+                                                        : t('company.detail.notSet')}
                                                 </td>
                                             </tr>
                                         ))
@@ -1747,7 +2016,7 @@ export default function PlatformTenantDetail() {
                                                 colSpan="4"
                                                 className="px-4 py-6 text-center text-edubot-muted"
                                             >
-                                                No tenant activity recorded yet.
+                                                {t('company.platformTenant.activity.empty')}
                                             </td>
                                         </tr>
                                     )}
@@ -1763,9 +2032,9 @@ export default function PlatformTenantDetail() {
                     if (!confirmationLoading) setConfirmation(null);
                 }}
                 onConfirm={confirmation?.onConfirm || (() => {})}
-                title={confirmation?.title || 'Confirm action'}
+                title={confirmation?.title || t('company.platformTenant.confirmAction')}
                 message={confirmation?.message || ''}
-                confirmLabel={confirmation?.confirmLabel || 'Confirm'}
+                confirmLabel={confirmation?.confirmLabel || t('company.platformTenant.confirm')}
                 confirmVariant={confirmation?.confirmVariant || 'danger'}
                 loading={confirmationLoading}
             />

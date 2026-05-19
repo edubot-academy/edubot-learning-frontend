@@ -6,14 +6,9 @@ import {
     EmptyState,
 } from '@components/ui/dashboard';
 import { FiCalendar, FiShield, FiTrash2, FiUser, FiUsers } from 'react-icons/fi';
+import { useTranslation } from 'react-i18next';
 
-const roleLabelMap = {
-    student: 'Студент',
-    instructor: 'Окутуучу',
-    assistant: 'Ассистент',
-    admin: 'Admin',
-    superadmin: 'Super Admin',
-};
+const ROLE_OPTIONS = ['student', 'instructor', 'assistant', 'admin', 'superadmin'];
 
 const roleToneMap = {
     superadmin: 'red',
@@ -42,38 +37,45 @@ const AdminUsersTab = ({
     renderUserPageButtons,
     currentUser,
 }) => {
+    const { t } = useTranslation();
     const instructors = users.filter((user) => user.role === 'instructor').length;
     const admins = users.filter((user) => user.role === 'admin' || user.role === 'superadmin').length;
     const canManageSuperadmin = currentUser?.role === 'superadmin';
+    const pageDescription = t('adminUsers.pagination.summary', {
+        page: usersPage,
+        totalPages: usersTotalPages,
+        total: usersTotal,
+    });
+    const getRoleLabel = (role) => t(`adminUsers.roles.${role}`, { defaultValue: role });
 
     return (
         <div className="space-y-6">
             <DashboardSectionHeader
-                eyebrow="People and access"
-                title="Колдонуучулар"
-                description="Колдонуучуларды издеп, ролдорун өзгөртүп жана аккаунттарды башкарыңыз."
+                eyebrow={t('adminUsers.eyebrow')}
+                title={t('adminUsers.title')}
+                description={t('adminUsers.description')}
             />
 
             <div className="grid gap-4 md:grid-cols-4">
                 <DashboardMetricCard
-                    label="Ушул баракта"
+                    label={t('adminUsers.metrics.currentPage')}
                     value={users.length}
                     icon={FiUsers}
                 />
                 <DashboardMetricCard
-                    label="Жалпы колдонуучу"
+                    label={t('adminUsers.metrics.total')}
                     value={usersTotal}
                     icon={FiUser}
                     tone={usersTotal ? 'blue' : 'default'}
                 />
                 <DashboardMetricCard
-                    label="Окутуучулар"
+                    label={t('adminUsers.metrics.instructors')}
                     value={instructors}
                     icon={FiShield}
                     tone={instructors ? 'amber' : 'default'}
                 />
                 <DashboardMetricCard
-                    label="Админдер"
+                    label={t('adminUsers.metrics.admins')}
                     value={admins}
                     icon={FiCalendar}
                     tone={admins ? 'red' : 'default'}
@@ -81,13 +83,13 @@ const AdminUsersTab = ({
             </div>
 
             <DashboardInsetPanel
-                title="Фильтрлер"
-                description="Издөө жана роль боюнча тизмени тактаңыз."
+                title={t('adminUsers.filters.title')}
+                description={t('adminUsers.filters.description')}
             >
                 <div className="mt-4 grid gap-3 md:grid-cols-4">
                     <input
                         type="text"
-                        placeholder="Ат же Email боюнча издөө"
+                        placeholder={t('adminUsers.filters.searchPlaceholder')}
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                         className="dashboard-field"
@@ -97,12 +99,12 @@ const AdminUsersTab = ({
                         onChange={(e) => setRoleFilter(e.target.value)}
                         className="dashboard-select"
                     >
-                        <option value="">Бардык ролдор</option>
-                        <option value="student">Студент</option>
-                        <option value="instructor">Окутуучу</option>
-                        <option value="assistant">Ассистент</option>
-                        <option value="admin">Admin</option>
-                        <option value="superadmin">Super Admin</option>
+                        <option value="">{t('adminUsers.filters.allRoles')}</option>
+                        {ROLE_OPTIONS.map((role) => (
+                            <option key={role} value={role}>
+                                {getRoleLabel(role)}
+                            </option>
+                        ))}
                     </select>
                     <input
                         type="date"
@@ -120,8 +122,8 @@ const AdminUsersTab = ({
             </DashboardInsetPanel>
 
             <DashboardInsetPanel
-                title="Колдонуучулар тизмеси"
-                description={`Баракча ${usersPage} / ${usersTotalPages} · Бардыгы: ${usersTotal}`}
+                title={t('adminUsers.list.title')}
+                description={pageDescription}
             >
                 {users.length ? (
                     <div className="mt-4 space-y-3">
@@ -137,7 +139,7 @@ const AdminUsersTab = ({
                                         <div className="min-w-0">
                                             <div className="flex flex-wrap items-center gap-2">
                                                 <p className="font-semibold text-edubot-ink dark:text-white">
-                                                    {user.fullName || 'Аты жок'}
+                                                    {user.fullName || t('adminUsers.fallbacks.noName')}
                                                 </p>
                                                 <span
                                                     className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${
@@ -152,7 +154,7 @@ const AdminUsersTab = ({
                                                                         : 'bg-slate-100 text-slate-700 dark:bg-slate-500/15 dark:text-slate-300'
                                                     }`}
                                                 >
-                                                    {roleLabelMap[user.role] || user.role}
+                                                    {getRoleLabel(user.role)}
                                                 </span>
                                             </div>
                                             <p className="mt-2 text-sm text-edubot-muted dark:text-slate-400">
@@ -166,14 +168,17 @@ const AdminUsersTab = ({
                                                 onChange={(e) => handleRoleChange(user, e.target.value)}
                                                 className="dashboard-select min-w-[180px]"
                                                 disabled={user.role === 'superadmin' && !canManageSuperadmin}
-                                                aria-label={`${user.fullName || user.email || 'Колдонуучу'} ролун өзгөртүү`}
+                                                aria-label={t('adminUsers.actions.changeRoleAria', {
+                                                    user: user.fullName || user.email || t('common.userFallback'),
+                                                })}
                                             >
-                                                <option value="student">Студент</option>
-                                                <option value="instructor">Окутуучу</option>
-                                                <option value="assistant">Ассистент</option>
-                                                <option value="admin">Admin</option>
+                                                {ROLE_OPTIONS.filter((role) => role !== 'superadmin').map((role) => (
+                                                    <option key={role} value={role}>
+                                                        {getRoleLabel(role)}
+                                                    </option>
+                                                ))}
                                                 {(canManageSuperadmin || user.role === 'superadmin') && (
-                                                    <option value="superadmin">Super Admin</option>
+                                                    <option value="superadmin">{getRoleLabel('superadmin')}</option>
                                                 )}
                                             </select>
                                             <button
@@ -181,10 +186,10 @@ const AdminUsersTab = ({
                                                 onClick={() => handleDeleteUser(user)}
                                                 className="dashboard-button-secondary"
                                                 disabled={currentUser?.id === user.id}
-                                                title={currentUser?.id === user.id ? 'Өз аккаунтуңузду өчүрүүгө болбойт' : undefined}
+                                                title={currentUser?.id === user.id ? t('adminUsers.actions.deleteSelfTitle') : undefined}
                                             >
                                                 <FiTrash2 className="h-4 w-4" />
-                                                Өчүрүү
+                                                {t('adminUsers.actions.delete')}
                                             </button>
                                         </div>
                                     </div>
@@ -195,15 +200,15 @@ const AdminUsersTab = ({
                 ) : (
                     <div className="mt-4">
                         <EmptyState
-                            title="Колдонуучулар табылган жок"
-                            subtitle="Фильтрлерди өзгөртүп же жаңы колдонуучуларды күтүңүз."
+                            title={t('adminUsers.empty.title')}
+                            subtitle={t('adminUsers.empty.subtitle')}
                         />
                     </div>
                 )}
 
                 <div className="mt-5 flex flex-wrap items-center justify-between gap-3 text-sm">
                     <span className="text-edubot-muted dark:text-slate-400">
-                        Баракча {usersPage} / {usersTotalPages} · Бардыгы: {usersTotal}
+                        {pageDescription}
                     </span>
                     <div className="flex items-center gap-2">
                         <button
@@ -212,7 +217,7 @@ const AdminUsersTab = ({
                             disabled={usersPage <= 1}
                             className="dashboard-button-secondary disabled:cursor-not-allowed disabled:opacity-50"
                         >
-                            Алдыңкы
+                            {t('adminUsers.pagination.previous')}
                         </button>
                         <div className="flex items-center gap-1">{renderUserPageButtons()}</div>
                         <button
@@ -221,7 +226,7 @@ const AdminUsersTab = ({
                             disabled={usersPage >= usersTotalPages}
                             className="dashboard-button-secondary disabled:cursor-not-allowed disabled:opacity-50"
                         >
-                            Кийинки
+                            {t('adminUsers.pagination.next')}
                         </button>
                     </div>
                 </div>

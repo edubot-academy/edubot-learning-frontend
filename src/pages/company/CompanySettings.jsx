@@ -3,6 +3,8 @@ import React from 'react';
 import toast from 'react-hot-toast';
 import { updateCompany, deleteCompany, uploadCompanyLogo } from '@services/api';
 import ConfirmationModal from '@shared/ui/ConfirmationModal';
+import { useTranslation } from 'react-i18next';
+import { parseApiError } from '@shared/api/error';
 
 // ---- Stable defaults (do NOT inline arrays in props/defaults) ----
 const DEFAULT_KEYS = [
@@ -27,58 +29,58 @@ const DEFAULT_KEYS = [
 
 /** Extendable field registry */
 const FIELD_META = {
-    name: { label: 'Company name', type: 'text', required: true },
-    about: { label: 'Description', type: 'textarea' },
-    logoUrl: { label: 'Logo', type: 'image' },
-    website: { label: 'Website', type: 'url', placeholder: 'https://example.com' },
-    email: { label: 'Email', type: 'email' },
-    phone: { label: 'Phone', type: 'tel', placeholder: '+996 555 123 456' },
+    name: { labelKey: 'company.fields.name', type: 'text', required: true },
+    about: { labelKey: 'company.fields.about', type: 'textarea' },
+    logoUrl: { labelKey: 'company.fields.logo', type: 'image' },
+    website: { labelKey: 'company.fields.website', type: 'url', placeholder: 'https://example.com' },
+    email: { labelKey: 'company.fields.email', type: 'email' },
+    phone: { labelKey: 'company.fields.phone', type: 'tel', placeholder: '+996 555 123 456' },
     // Contact person
-    contactName: { label: 'Contact person', type: 'text' },
-    contactEmail: { label: 'Contact email', type: 'email' },
-    contactPhone: { label: 'Contact phone', type: 'tel' },
+    contactName: { labelKey: 'company.fields.contactName', type: 'text' },
+    contactEmail: { labelKey: 'company.fields.contactEmail', type: 'email' },
+    contactPhone: { labelKey: 'company.fields.contactPhone', type: 'tel' },
     // Address
-    address: { label: 'Address', type: 'textarea' },
-    city: { label: 'City', type: 'text' },
-    country: { label: 'Country', type: 'text' },
+    address: { labelKey: 'company.fields.address', type: 'textarea' },
+    city: { labelKey: 'company.fields.city', type: 'text' },
+    country: { labelKey: 'company.fields.country', type: 'text' },
     // Socials
-    telegram: { label: 'Telegram', type: 'text', placeholder: '@company' },
-    whatsapp: { label: 'WhatsApp', type: 'tel' },
-    instagram: { label: 'Instagram', type: 'text' },
+    telegram: { labelKey: 'company.fields.telegram', type: 'text', placeholder: '@company' },
+    whatsapp: { labelKey: 'company.fields.whatsapp', type: 'tel' },
+    instagram: { labelKey: 'company.fields.instagram', type: 'text' },
     // Legal
-    taxId: { label: 'Tax ID', type: 'text' },
-    notes: { label: 'Internal notes', type: 'textarea' },
+    taxId: { labelKey: 'company.fields.taxId', type: 'text' },
+    notes: { labelKey: 'company.fields.notes', type: 'textarea' },
 };
 
 const FIELD_SECTIONS = [
     {
         id: 'brand',
-        title: 'Brand profile',
-        description: 'Core tenant identity shown across management screens.',
+        titleKey: 'company.settings.sections.brand.title',
+        descriptionKey: 'company.settings.sections.brand.description',
         fields: ['logoUrl', 'name', 'about', 'website'],
     },
     {
         id: 'contact',
-        title: 'Contact',
-        description: 'Primary support and responsible contact details.',
+        titleKey: 'company.settings.sections.contact.title',
+        descriptionKey: 'company.settings.sections.contact.description',
         fields: ['email', 'phone', 'contactName', 'contactEmail', 'contactPhone'],
     },
     {
         id: 'location',
-        title: 'Location',
-        description: 'Address information used for tenant records and communication.',
+        titleKey: 'company.settings.sections.location.title',
+        descriptionKey: 'company.settings.sections.location.description',
         fields: ['address', 'city', 'country'],
     },
     {
         id: 'channels',
-        title: 'Channels',
-        description: 'Public social and messaging channels.',
+        titleKey: 'company.settings.sections.channels.title',
+        descriptionKey: 'company.settings.sections.channels.description',
         fields: ['telegram', 'whatsapp', 'instagram'],
     },
     {
         id: 'legal',
-        title: 'Legal and notes',
-        description: 'Internal legal identifiers and operational notes.',
+        titleKey: 'company.settings.sections.legal.title',
+        descriptionKey: 'company.settings.sections.legal.description',
         fields: ['taxId', 'notes'],
     },
 ];
@@ -97,6 +99,7 @@ export default function CompanySettings({
     editableKeys, // pass if you want to restrict; otherwise we use DEFAULT_KEYS
     allowDelete = true,
 }) {
+    const { t } = useTranslation();
     // ---- FIX: make keys stable (avoid default [] recreation) ----
     const keys = React.useMemo(() => {
         const k = (editableKeys && editableKeys.length ? editableKeys : DEFAULT_KEYS).filter(
@@ -132,16 +135,18 @@ export default function CompanySettings({
 
     const validate = () => {
         const v = {};
-        if (keys.includes('name') && !form.name?.trim()) v.name = 'Company name is required.';
+        if (keys.includes('name') && !form.name?.trim()) {
+            v.name = t('company.settings.validation.nameRequired');
+        }
         if (keys.includes('email') && form.email?.trim()) {
             const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            if (!re.test(form.email.trim())) v.email = 'Enter a valid email address.';
+            if (!re.test(form.email.trim())) v.email = t('company.settings.validation.email');
         }
         if (keys.includes('website') && form.website?.trim()) {
             try {
                 new URL(form.website.trim());
             } catch {
-                v.website = 'Enter a valid website URL.';
+                v.website = t('company.settings.validation.website');
             }
         }
         return v;
@@ -152,7 +157,7 @@ export default function CompanySettings({
         const v = validate();
         setErrors(v);
         if (Object.keys(v).length) {
-            toast.error('Review the highlighted fields.');
+            toast.error(t('company.settings.toasts.reviewFields'));
             return;
         }
         if (!dirty) {
@@ -165,11 +170,11 @@ export default function CompanySettings({
             const payload = {};
             for (const k of keys) payload[k] = form[k];
             const updated = await updateCompany(company.id, payload);
-            toast.success('Company profile saved.');
+            toast.success(t('company.settings.toasts.saved'));
             setEdit(false);
             onSaved?.(updated);
-        } catch {
-            toast.error('Could not save company profile.');
+        } catch (error) {
+            toast.error(parseApiError(error, t('company.settings.toasts.saveError')).message);
         } finally {
             setSaving(false);
         }
@@ -192,10 +197,10 @@ export default function CompanySettings({
         try {
             setDeleting(true);
             await deleteCompany(company.id);
-            toast.success('Company deleted.');
+            toast.success(t('company.settings.toasts.deleted'));
             window.location.href = '/companies';
-        } catch {
-            toast.error('Could not delete company.');
+        } catch (error) {
+            toast.error(parseApiError(error, t('company.settings.toasts.deleteError')).message);
         } finally {
             setDeleting(false);
         }
@@ -210,12 +215,12 @@ export default function CompanySettings({
             const logoUrl = await uploadCompanyLogo(company.id, file);
             if (logoUrl) {
                 setForm((s) => ({ ...s, logoUrl }));
-                toast.success('Logo uploaded.');
+                toast.success(t('company.settings.toasts.logoUploaded'));
             } else {
-                toast.error('Logo upload failed.');
+                toast.error(t('company.settings.toasts.logoUploadFailed'));
             }
-        } catch {
-            toast.error('Could not upload logo.');
+        } catch (error) {
+            toast.error(parseApiError(error, t('company.settings.toasts.logoUploadError')).message);
         } finally {
             setSaving(false);
             e.target.value = '';
@@ -225,19 +230,20 @@ export default function CompanySettings({
     // ---------- Read-only item renderer (improved UI) ----------
     const ViewCell = ({ k }) => {
         const meta = FIELD_META[k];
+        const label = t(meta.labelKey);
         const val = company?.[k]; // use source of truth for read-only
         if (k === 'logoUrl') {
             const url = val || '';
             return (
                 <div className="border rounded p-3 flex items-center gap-3">
                     <div className="text-xs text-gray-500 dark:text-[#a6adba] w-40 shrink-0">
-                        {meta.label}
+                        {label}
                     </div>
                     {url ? (
                         /^https?:\/\//i.test(String(url)) ? (
                             <img
                                 src={url}
-                                alt="Logo"
+                                alt={t('company.settings.logoAlt')}
                                 className="h-14 w-auto object-contain rounded"
                             />
                         ) : (
@@ -256,7 +262,7 @@ export default function CompanySettings({
             return (
                 <div className="border rounded p-3 flex items-center gap-3">
                     <div className="text-xs text-gray-500 dark:text-[#a6adba] w-40 shrink-0">
-                        {meta.label}
+                        {label}
                     </div>
                     <a
                         href={href}
@@ -273,7 +279,7 @@ export default function CompanySettings({
             return (
                 <div className="border rounded p-3 flex items-center gap-3">
                     <div className="text-xs text-gray-500 dark:text-[#a6adba] w-40 shrink-0">
-                        {meta.label}
+                        {label}
                     </div>
                     <a href={`mailto:${val}`} className="text-blue-600 hover:underline break-all">
                         {val}
@@ -286,7 +292,7 @@ export default function CompanySettings({
             return (
                 <div className="border rounded p-3 flex items-center gap-3">
                     <div className="text-xs text-gray-500 dark:text-[#a6adba] w-40 shrink-0">
-                        {meta.label}
+                        {label}
                     </div>
                     <a href={`tel:${phone}`} className="text-blue-600 hover:underline">
                         {phone}
@@ -300,7 +306,7 @@ export default function CompanySettings({
             return (
                 <div className="border rounded p-3 flex items-center gap-3">
                     <div className="text-xs text-gray-500 dark:text-[#a6adba] w-40 shrink-0">
-                        {meta.label}
+                        {label}
                     </div>
                     <a
                         href={href}
@@ -321,7 +327,7 @@ export default function CompanySettings({
             return (
                 <div className="border rounded p-3 flex items-center gap-3">
                     <div className="text-xs text-gray-500 dark:text-[#a6adba] w-40 shrink-0">
-                        {meta.label}
+                        {label}
                     </div>
                     <a
                         href={href}
@@ -340,7 +346,7 @@ export default function CompanySettings({
             return (
                 <div className="border rounded p-3 md:col-span-2">
                     <div className="text-xs text-gray-500 dark:text-[#a6adba] mb-1">
-                        {meta.label}
+                        {label}
                     </div>
                     <div className="whitespace-pre-wrap break-words text-sm">
                         {val || <span className="text-gray-400">—</span>}
@@ -352,7 +358,7 @@ export default function CompanySettings({
         // Default text cell
         return (
             <div className="border rounded p-3">
-                <div className="text-xs text-gray-500 dark:text-[#a6adba] mb-1">{meta.label}</div>
+                <div className="text-xs text-gray-500 dark:text-[#a6adba] mb-1">{label}</div>
                 <div className="break-words text-sm">
                     {val || <span className="text-gray-400">—</span>}
                 </div>
@@ -362,6 +368,7 @@ export default function CompanySettings({
 
     const renderField = (k) => {
         const meta = FIELD_META[k];
+        const label = t(meta.labelKey);
         const invalid = !!errors[k];
         const fieldId = getFieldId(company?.id, k);
         const errorId = `${fieldId}-error`;
@@ -373,7 +380,7 @@ export default function CompanySettings({
                         htmlFor={fieldId}
                         className="text-sm font-medium text-gray-700 dark:text-slate-200"
                     >
-                        {meta.label}
+                        {label}
                         {meta.required && ' *'}
                     </label>
                     <textarea
@@ -398,18 +405,18 @@ export default function CompanySettings({
             return (
                 <div key={k} className="md:col-span-2">
                     <span className="text-sm font-medium text-gray-700 dark:text-slate-200">
-                        {meta.label}
+                        {label}
                     </span>
                     <div className="mt-2 grid gap-3 rounded-xl border border-edubot-line/80 bg-edubot-surfaceAlt/40 p-3 dark:border-slate-700 dark:bg-slate-900/60 md:grid-cols-[8rem_1fr]">
                         <div className="flex h-24 items-center justify-center rounded-lg border border-edubot-line bg-white dark:border-slate-700 dark:bg-slate-950">
                             {form.logoUrl ? (
                                 <img
                                     src={form.logoUrl}
-                                    alt="Company logo preview"
+                                    alt={t('company.settings.logoPreviewAlt')}
                                     className="max-h-20 max-w-full rounded object-contain"
                                 />
                             ) : (
-                                <span className="text-gray-400">No logo</span>
+                                <span className="text-gray-400">{t('company.settings.noLogo')}</span>
                             )}
                         </div>
                         <div className="space-y-2">
@@ -417,7 +424,7 @@ export default function CompanySettings({
                                 htmlFor={`${fieldId}-file`}
                                 className="block text-xs font-semibold text-edubot-muted dark:text-slate-400"
                             >
-                                Upload logo file
+                                {t('company.settings.uploadLogoFile')}
                             </label>
                             <input
                                 id={`${fieldId}-file`}
@@ -430,7 +437,7 @@ export default function CompanySettings({
                                 htmlFor={fieldId}
                                 className="block text-xs font-semibold text-edubot-muted dark:text-slate-400"
                             >
-                                Or paste logo URL
+                                {t('company.settings.pasteLogoUrl')}
                             </label>
                             <input
                                 id={fieldId}
@@ -454,7 +461,7 @@ export default function CompanySettings({
                     htmlFor={fieldId}
                     className="text-sm font-medium text-gray-700 dark:text-slate-200"
                 >
-                    {meta.label}
+                    {label}
                     {meta.required && ' *'}
                 </label>
                 <input
@@ -483,11 +490,10 @@ export default function CompanySettings({
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <div>
                         <h2 className="text-lg font-semibold text-edubot-ink dark:text-white">
-                            Company profile
+                            {t('company.settings.title')}
                         </h2>
                         <p className="mt-1 text-sm text-edubot-muted dark:text-slate-400">
-                            Keep tenant identity, contact, address, and legal details grouped by
-                            purpose.
+                            {t('company.settings.subtitle')}
                         </p>
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
@@ -498,7 +504,7 @@ export default function CompanySettings({
                                     onClick={onCancel}
                                     className="dashboard-button-secondary"
                                 >
-                                    Cancel
+                                    {t('company.settings.cancel')}
                                 </button>
                                 <button
                                     type="button"
@@ -506,7 +512,9 @@ export default function CompanySettings({
                                     disabled={saving}
                                     className="dashboard-button-primary disabled:cursor-not-allowed disabled:opacity-60"
                                 >
-                                    {saving ? 'Saving...' : 'Save changes'}
+                                    {saving
+                                        ? t('company.settings.saving')
+                                        : t('company.settings.saveChanges')}
                                 </button>
                             </>
                         ) : (
@@ -516,7 +524,7 @@ export default function CompanySettings({
                                     onClick={() => setEdit(true)}
                                     className="dashboard-button-secondary"
                                 >
-                                    Edit profile
+                                    {t('company.settings.editProfile')}
                                 </button>
                             </>
                         )}
@@ -536,10 +544,10 @@ export default function CompanySettings({
                                         id={`company-section-${section.id}`}
                                         className="text-sm font-semibold text-edubot-ink dark:text-white"
                                     >
-                                        {section.title}
+                                        {t(section.titleKey)}
                                     </h3>
                                     <p className="text-xs text-edubot-muted dark:text-slate-400">
-                                        {section.description}
+                                        {t(section.descriptionKey)}
                                     </p>
                                 </div>
                                 <div className="grid gap-3 md:grid-cols-2">
@@ -566,10 +574,10 @@ export default function CompanySettings({
                                         id={`company-edit-section-${section.id}`}
                                         className="text-sm font-semibold text-edubot-ink dark:text-white"
                                     >
-                                        {section.title}
+                                        {t(section.titleKey)}
                                     </h3>
                                     <p className="text-xs text-edubot-muted dark:text-slate-400">
-                                        {section.description}
+                                        {t(section.descriptionKey)}
                                     </p>
                                 </div>
                                 <div className="grid gap-4 md:grid-cols-2">
@@ -584,14 +592,16 @@ export default function CompanySettings({
                                 onClick={onCancel}
                                 className="dashboard-button-secondary"
                             >
-                                Cancel
+                                {t('company.settings.cancel')}
                             </button>
                             <button
                                 type="submit"
                                 disabled={saving}
                                 className="dashboard-button-primary disabled:cursor-not-allowed disabled:opacity-60"
                             >
-                                {saving ? 'Saving...' : 'Save changes'}
+                                {saving
+                                    ? t('company.settings.saving')
+                                    : t('company.settings.saveChanges')}
                             </button>
                         </div>
                     </form>
@@ -602,11 +612,10 @@ export default function CompanySettings({
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                         <div>
                             <h3 className="text-sm font-semibold text-red-800 dark:text-red-100">
-                                Danger zone
+                                {t('company.settings.dangerTitle')}
                             </h3>
                             <p className="mt-1 max-w-2xl text-sm text-red-700 dark:text-red-200">
-                                Delete this company only when the tenant should be removed from the
-                                platform. This action requires confirmation.
+                                {t('company.settings.dangerSubtitle')}
                             </p>
                         </div>
                         <button
@@ -615,7 +624,9 @@ export default function CompanySettings({
                             disabled={deleting || edit}
                             className="dashboard-button-secondary border-red-300 text-red-700 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-red-500/40 dark:text-red-200 dark:hover:bg-red-500/10"
                         >
-                            {deleting ? 'Deleting...' : 'Delete company'}
+                            {deleting
+                                ? t('company.settings.deleting')
+                                : t('company.settings.deleteCompany')}
                         </button>
                     </div>
                 </section>
@@ -624,10 +635,10 @@ export default function CompanySettings({
                 isOpen={deleteConfirmOpen}
                 onClose={() => setDeleteConfirmOpen(false)}
                 onConfirm={confirmDelete}
-                title="Delete company"
-                message={`Delete "${company?.name || ''}"? This removes the company workspace from the platform.`}
-                confirmLabel="Delete company"
-                cancelLabel="Cancel"
+                title={t('company.settings.deleteTitle')}
+                message={t('company.settings.deleteMessage', { name: company?.name || '' })}
+                confirmLabel={t('company.settings.deleteCompany')}
+                cancelLabel={t('company.settings.cancel')}
                 confirmVariant="danger"
                 loading={deleting}
             />

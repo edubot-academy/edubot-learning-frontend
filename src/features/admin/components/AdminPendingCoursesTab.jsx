@@ -1,5 +1,6 @@
 
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import {
     DashboardInsetPanel,
@@ -10,39 +11,40 @@ import {
 import { FiBookOpen, FiCheckCircle, FiClock, FiEye, FiUser, FiXCircle } from 'react-icons/fi';
 import DeliveryCourseDetailsModal from './DeliveryCourseDetailsModal';
 
-const getCourseTypeLabel = (courseType) => {
-    if (courseType === 'offline') return 'Оффлайн';
-    if (courseType === 'online_live') return 'Онлайн түз эфир';
-    return 'Видео';
+const getCourseTypeLabel = (courseType, t) => {
+    if (courseType === 'offline') return t('adminPendingCourses.courseTypes.offline');
+    if (courseType === 'online_live') return t('adminPendingCourses.courseTypes.onlineLive');
+    return t('adminPendingCourses.courseTypes.video');
 };
 
 const AdminPendingCoursesTab = ({ pendingCourses, onApprove, onReject }) => {
+    const { i18n, t } = useTranslation();
     const [detailCourse, setDetailCourse] = useState(null);
     const deliveryCount = pendingCourses.filter(
         (course) => course.courseType === 'offline' || course.courseType === 'online_live'
     ).length;
     const paidCount = pendingCourses.filter((course) => Number(course.price || 0) > 0).length;
     const newestDate = pendingCourses[0]?.createdAt
-        ? new Date(pendingCourses[0].createdAt).toLocaleDateString()
+        ? new Date(pendingCourses[0].createdAt).toLocaleDateString(i18n.language)
         : '—';
 
     return (
         <div className="space-y-6">
             <DashboardSectionHeader
-                eyebrow="Approval queue"
-                title="Каралуудагы курстар"
-                description="Инструкторлор жөнөткөн жаңы курстарды ушул жерден текшерип, бекитиңиз же четке кагыңыз."
+                eyebrow={t('adminPendingCourses.eyebrow')}
+                title={t('adminPendingCourses.title')}
+                description={t('adminPendingCourses.description')}
             />
 
             <div className="grid gap-4 md:grid-cols-4">
                 <DashboardMetricCard
-                    label="Күтүүдөгү курстар"
+                    label={t('adminPendingCourses.metrics.pending')}
                     value={pendingCourses.length}
                     icon={FiClock}
                     tone={pendingCourses.length ? 'amber' : 'default'}
                 />
                 <DashboardMetricCard
-                    label="Окутуучулар"
+                    label={t('adminPendingCourses.metrics.instructors')}
                     value={new Set(pendingCourses.map((course) => course.instructor?.id || course.instructor?.fullName || course.id)).size}
                     icon={FiUser}
                     tone="blue"
@@ -54,17 +56,17 @@ const AdminPendingCoursesTab = ({ pendingCourses, onApprove, onReject }) => {
                     tone={deliveryCount ? 'green' : 'default'}
                 />
                 <DashboardMetricCard
-                    label="Акы төлөнүүчү"
+                    label={t('adminPendingCourses.metrics.paid')}
                     value={paidCount}
                     icon={FiCheckCircle}
                     tone={paidCount ? 'blue' : 'default'}
-                    helper={newestDate !== '—' ? `Акыркысы: ${newestDate}` : undefined}
+                    helper={newestDate !== '—' ? t('adminPendingCourses.metrics.newest', { date: newestDate }) : undefined}
                 />
             </div>
 
             <DashboardInsetPanel
-                title="Бекитүү тизмеси"
-                description="Ар бир курс боюнча түрүн, баасын, инструкторун жана алдын ала көрүү шилтемесин текшериңиз."
+                title={t('adminPendingCourses.queue.title')}
+                description={t('adminPendingCourses.queue.description')}
             >
                 {pendingCourses.length ? (
                     <div className="mt-4 space-y-4">
@@ -83,19 +85,19 @@ const AdminPendingCoursesTab = ({ pendingCourses, onApprove, onReject }) => {
                                                 <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-700 dark:bg-amber-500/15 dark:text-amber-300">
                                                     <span className="inline-flex items-center gap-1">
                                                         <FiClock className="h-3.5 w-3.5" />
-                                                        Каралууда
+                                                        {t('adminPendingCourses.status.pending')}
                                                     </span>
                                                 </span>
                                                 <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700 dark:bg-slate-800 dark:text-slate-200">
-                                                    {getCourseTypeLabel(course.courseType)}
+                                                    {getCourseTypeLabel(course.courseType, t)}
                                                 </span>
                                                 <span className="rounded-full bg-edubot-orange/10 px-2.5 py-1 text-xs font-medium text-edubot-orange dark:bg-edubot-orange/20">
-                                                    {course.category?.name || 'Категориясыз'}
+                                                    {course.category?.name || t('adminPendingCourses.uncategorized')}
                                                 </span>
                                             </div>
 
                                             <p className="mt-3 text-sm text-edubot-muted dark:text-slate-400">
-                                                Окутуучу: {course.instructor?.fullName || '—'}
+                                                {t('adminPendingCourses.instructor')}: {course.instructor?.fullName || '—'}
                                                 {course.instructor?.email ? ` · ${course.instructor.email}` : ''}
                                             </p>
 
@@ -114,7 +116,7 @@ const AdminPendingCoursesTab = ({ pendingCourses, onApprove, onReject }) => {
                                                     className="dashboard-button-secondary"
                                                 >
                                                     <FiEye className="h-4 w-4" />
-                                                    Ички маалымат
+                                                    {t('adminPendingCourses.actions.details')}
                                                 </button>
                                             ) : (
                                                 <Link
@@ -122,7 +124,7 @@ const AdminPendingCoursesTab = ({ pendingCourses, onApprove, onReject }) => {
                                                     className="dashboard-button-secondary"
                                                 >
                                                     <FiEye className="h-4 w-4" />
-                                                    Алдын ала көрүү
+                                                    {t('adminPendingCourses.actions.preview')}
                                                 </Link>
                                             )}
                                             <button
@@ -131,7 +133,7 @@ const AdminPendingCoursesTab = ({ pendingCourses, onApprove, onReject }) => {
                                                 className="dashboard-button-primary"
                                             >
                                                 <FiCheckCircle className="h-4 w-4" />
-                                                Бекитүү
+                                                {t('adminPendingCourses.actions.approve')}
                                             </button>
                                             <button
                                                 type="button"
@@ -139,7 +141,7 @@ const AdminPendingCoursesTab = ({ pendingCourses, onApprove, onReject }) => {
                                                 className="dashboard-button-secondary"
                                             >
                                                 <FiXCircle className="h-4 w-4" />
-                                                Баш тартуу
+                                                {t('adminPendingCourses.actions.reject')}
                                             </button>
                                         </div>
                                     </div>
@@ -147,26 +149,28 @@ const AdminPendingCoursesTab = ({ pendingCourses, onApprove, onReject }) => {
                                     <div className="grid gap-3 sm:grid-cols-3">
                                         <div className="rounded-2xl border border-edubot-line/70 bg-edubot-surfaceAlt/40 px-4 py-3 dark:border-slate-700 dark:bg-slate-900/60">
                                             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-edubot-muted dark:text-slate-400">
-                                                Баасы
+                                                {t('adminPendingCourses.fields.price')}
                                             </p>
                                             <p className="mt-2 text-sm font-semibold text-edubot-ink dark:text-white">
-                                                {Number(course.price || 0) > 0 ? `${course.price} сом` : 'Акысыз'}
+                                                {Number(course.price || 0) > 0
+                                                    ? t('adminPendingCourses.currency.kgs', { amount: course.price })
+                                                    : t('adminPendingCourses.free')}
                                             </p>
                                         </div>
                                         <div className="rounded-2xl border border-edubot-line/70 bg-edubot-surfaceAlt/40 px-4 py-3 dark:border-slate-700 dark:bg-slate-900/60">
                                             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-edubot-muted dark:text-slate-400">
-                                                Түзүлгөн күнү
+                                                {t('adminPendingCourses.fields.createdAt')}
                                             </p>
                                             <p className="mt-2 text-sm font-semibold text-edubot-ink dark:text-white">
-                                                {course.createdAt ? new Date(course.createdAt).toLocaleDateString() : '—'}
+                                                {course.createdAt ? new Date(course.createdAt).toLocaleDateString(i18n.language) : '—'}
                                             </p>
                                         </div>
                                         <div className="rounded-2xl border border-edubot-line/70 bg-edubot-surfaceAlt/40 px-4 py-3 dark:border-slate-700 dark:bg-slate-900/60">
                                             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-edubot-muted dark:text-slate-400">
-                                                Статус
+                                                {t('adminPendingCourses.fields.status')}
                                             </p>
                                             <p className="mt-2 text-sm font-semibold text-edubot-ink dark:text-white">
-                                                Pending approval
+                                                {t('adminPendingCourses.status.pendingApproval')}
                                             </p>
                                         </div>
                                     </div>
@@ -177,8 +181,8 @@ const AdminPendingCoursesTab = ({ pendingCourses, onApprove, onReject }) => {
                 ) : (
                     <div className="mt-4">
                         <EmptyState
-                            title="Каралуудагы курстар жок"
-                            subtitle="Азырынча бекитүүнү күткөн курс табылган жок."
+                            title={t('adminPendingCourses.empty.title')}
+                            subtitle={t('adminPendingCourses.empty.subtitle')}
                         />
                     </div>
                 )}

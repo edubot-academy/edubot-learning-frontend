@@ -40,8 +40,11 @@ import { useAdminStatsDomain } from '../hooks/useAdminStatsDomain';
 import { useAdminTranscodeDomain } from '../hooks/useAdminTranscodeDomain';
 import { useAdminCoursesDomain } from '../hooks/useAdminCoursesDomain';
 import { useAdminCertificatesDomain } from '../hooks/useAdminCertificatesDomain';
+import { useTranslation } from 'react-i18next';
+import { parseApiError } from '@shared/api/error';
 
 const AdminPanel = () => {
+    const { t } = useTranslation();
     const { user } = useContext(AuthContext);
 
     const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -258,24 +261,28 @@ const AdminPanel = () => {
     const markNotificationRead = async (notificationId) => {
         try {
             await markNotificationReadApi(notificationId);
-            toast.success('Билдирүү окулган деп белгиленди');
-        } catch {
-            toast.error('Билдирүүнү окулган деп белгилөөдө ката кетти');
+            toast.success(t('adminPanel.notifications.markReadSuccess'));
+        } catch (error) {
+            toast.error(
+                parseApiError(error, t('adminPanel.notifications.markReadError')).message
+            );
         }
     };
 
     const deleteNotification = async (notificationId) => {
         requestConfirmation({
-            title: 'Билдирүүнү өчүрүү',
-            message: 'Бул билдирүүнү өчүрүүгө ишенимдүүсүзбү?',
-            confirmLabel: 'Өчүрүү',
+            title: t('adminPanel.notifications.deleteTitle'),
+            message: t('adminPanel.notifications.deleteMessage'),
+            confirmLabel: t('adminPanel.notifications.deleteConfirm'),
             confirmVariant: 'danger',
             onConfirm: async () => {
                 try {
                     removeContact(notificationId);
-                    toast.success('Билдирүү ийгиликтүү өчүрүлдү');
-                } catch {
-                    toast.error('Билдирүүнү өчүрүүдө ката кетти');
+                    toast.success(t('adminPanel.notifications.deleteSuccess'));
+                } catch (error) {
+                    toast.error(
+                        parseApiError(error, t('adminPanel.notifications.deleteError')).message
+                    );
                 }
             },
         });
@@ -351,7 +358,7 @@ const AdminPanel = () => {
                             <div className="flex items-center gap-3">
                                 <div className="animate-spin rounded-full border-2 border-gray-300 border-t-edubot-orange w-5 h-5"></div>
                                 <span className="text-sm text-gray-600 dark:text-gray-400">
-                                    Жүктөлүүдө...
+                                    {t('common.loading')}
                                 </span>
                             </div>
                         </div>
@@ -575,6 +582,7 @@ const AdminPanel = () => {
     // Prepare navigation items for the standardized layout
     const dashboardNavItems = NAV_ITEMS.map((item) => ({
         ...item,
+        label: t(item.labelKey, { defaultValue: item.label }),
         isActive: item.id === activeTab,
         onSelect: handleTabSelect,
     }));
@@ -584,15 +592,15 @@ const AdminPanel = () => {
         ? dashboardNavItems.filter((item) => activeWorkspaceGroup.tabs.includes(item.id))
         : [];
     const activeTabStatus = [
-        adminStatsLoading && 'Статистика жаңыланууда',
-        aiPromptsLoading && 'AI промпттар жүктөлүүдө',
-        transcodeLoading && 'Транскоддоо жүрүп жатат',
+        adminStatsLoading && t('adminPanel.status.statsUpdating'),
+        aiPromptsLoading && t('adminPanel.status.aiPromptsLoading'),
+        transcodeLoading && t('adminPanel.status.transcodeRunning'),
     ].filter(Boolean);
 
     // Prepare header actions
     const headerActions = [
         {
-            label: sidebarOpen ? 'Менюну жашыруу' : 'Менюну көрсөтүү',
+            label: sidebarOpen ? t('adminPanel.hideMenu') : t('adminPanel.showMenu'),
             onClick: () => setSidebarOpen((prev) => !prev),
             variant: 'secondary',
         },
@@ -600,7 +608,7 @@ const AdminPanel = () => {
 
     // Prepare header content
     const adminUser = {
-        fullName: user?.fullName || 'Админ',
+        fullName: user?.fullName || t('company.platformTenant.adminFallback'),
         email: user?.email || 'admin@edubot.kg',
     };
 
@@ -608,7 +616,7 @@ const AdminPanel = () => {
         <DashboardHeader
             user={adminUser}
             role="admin"
-            subtitle="Платформаны башкаруу жана көзөмөлдөө"
+            subtitle={t('adminPanel.subtitle')}
             actions={headerActions}
         />
     );
@@ -633,13 +641,21 @@ const AdminPanel = () => {
                     <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                         <div>
                             <p className="text-xs font-semibold uppercase tracking-wide text-edubot-muted dark:text-slate-400">
-                                Админ бөлүмү
+                                {t('adminPanel.workspaceSection')}
                             </p>
                             <h2 className="mt-1 text-base font-semibold text-edubot-ink dark:text-white">
-                                {activeWorkspaceGroup.label}
+                                {t(activeWorkspaceGroup.labelKey, {
+                                    defaultValue: activeWorkspaceGroup.label,
+                                })}
                             </h2>
                             <p className="mt-1 text-sm text-edubot-muted dark:text-slate-400">
-                                {activeTabStatus.length ? activeTabStatus.join(' · ') : `${activeNavItem?.label || 'Бөлүм'} ачылды`}
+                                {activeTabStatus.length
+                                    ? activeTabStatus.join(' · ')
+                                    : t('adminPanel.status.sectionOpened', {
+                                          section:
+                                              activeNavItem?.label ||
+                                              t('adminPanel.status.sectionFallback'),
+                                      })}
                             </p>
                         </div>
                         <div className="flex flex-wrap gap-2">
@@ -669,9 +685,9 @@ const AdminPanel = () => {
                 isOpen={!!confirmation}
                 onClose={closeConfirmation}
                 onConfirm={confirmAndRun}
-                title={confirmation?.title || 'Аракетти ырастоо'}
+                title={confirmation?.title || t('company.platformTenant.confirmAction')}
                 message={confirmation?.message || ''}
-                confirmLabel={confirmation?.confirmLabel || 'Ырастоо'}
+                confirmLabel={confirmation?.confirmLabel || t('company.platformTenant.confirm')}
                 confirmVariant={confirmation?.confirmVariant || 'danger'}
             />
         </DashboardLayout>

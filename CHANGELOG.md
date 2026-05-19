@@ -6,6 +6,23 @@ Version bumps are classified by delivery scale; see `VERSIONING.md`.
 
 ---
 
+## [1.13.2] - 2026-05-19
+
+### Changed
+
+- Localized company directory, detail shell, members, courses, and profile settings copy for `ky`, `ru`, and `en`.
+- Localized admin workspace navigation, tenant registry/detail, platform stats, contacts, skills, pending course approvals, AI prompts, users, and shared delivery-course details for `ky`, `ru`, and `en`.
+- Routed localized admin and company action feedback through shared backend error parsing so stable API error codes can override fallback messages.
+
+### Verification
+
+- `npm test -- --run`
+- `npm run lint`
+- `git diff --check`
+- `npm run build`
+
+---
+
 ## [1.13.1] - 2026-05-16
 
 ### Added

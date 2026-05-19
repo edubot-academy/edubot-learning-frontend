@@ -1,14 +1,16 @@
 import { useCallback, useState } from 'react';
 import toast from 'react-hot-toast';
+import { useTranslation } from 'react-i18next';
 import {
     addCourseAiPrompt,
     deleteCourseAiPrompt,
     fetchCourseAiPrompts,
     updateCourseAiPrompt,
 } from '@services/api';
-import { isForbiddenError } from '@shared/api/error';
+import { isForbiddenError, parseApiError } from '@shared/api/error';
 
 export const useAdminAiPromptsDomain = ({ requestConfirmation }) => {
+    const { t } = useTranslation();
     const [aiPromptCourseId, setAiPromptCourseId] = useState(null);
     const [aiPrompts, setAiPrompts] = useState([]);
     const [aiPromptsLoading, setAiPromptsLoading] = useState(false);
@@ -29,17 +31,17 @@ export const useAdminAiPromptsDomain = ({ requestConfirmation }) => {
             setAiPrompts(res || []);
         } catch (error) {
             if (!isForbiddenError(error)) {
-                toast.error('AI промпттарды жүктөөдө ката кетти');
+                toast.error(parseApiError(error, t('adminAiPrompts.toasts.loadError')).message);
             }
         } finally {
             setAiPromptsLoading(false);
         }
-    }, []);
+    }, [t]);
 
     const handleCreatePrompt = useCallback(async () => {
         if (!newPromptText.trim()) return;
         if (!aiPromptCourseId) {
-            toast.error('AI промпт кошуу үчүн курс тандаңыз');
+            toast.error(t('adminAiPrompts.toasts.selectCourse'));
             return;
         }
 
@@ -54,10 +56,10 @@ export const useAdminAiPromptsDomain = ({ requestConfirmation }) => {
             setNewPromptLanguage('ky');
             setNewPromptOrder(0);
             setNewPromptIsActive(true);
-            toast.success('AI промпт ийгиликтүү кошулду');
+            toast.success(t('adminAiPrompts.toasts.created'));
             loadPromptsForCourse(aiPromptCourseId);
-        } catch {
-            toast.error('AI промпт кошууда ката кетти');
+        } catch (error) {
+            toast.error(parseApiError(error, t('adminAiPrompts.toasts.createError')).message);
         }
     }, [
         aiPromptCourseId,
@@ -66,6 +68,7 @@ export const useAdminAiPromptsDomain = ({ requestConfirmation }) => {
         newPromptLanguage,
         newPromptOrder,
         newPromptText,
+        t,
     ]);
 
     const handleUpdatePrompt = useCallback(async (promptId, updates) => {
@@ -74,31 +77,33 @@ export const useAdminAiPromptsDomain = ({ requestConfirmation }) => {
             setAiPrompts((prev) =>
                 prev.map((prompt) => (prompt.id === promptId ? { ...prompt, ...updates } : prompt))
             );
-            toast.success('AI промпт ийгиликтүү жаңыртылды');
-        } catch {
-            toast.error('AI промптти жаңыртууда ката кетти');
+            toast.success(t('adminAiPrompts.toasts.updated'));
+        } catch (error) {
+            toast.error(parseApiError(error, t('adminAiPrompts.toasts.updateError')).message);
         }
-    }, []);
+    }, [t]);
 
     const handleDeletePrompt = useCallback(
         async (promptId) => {
             requestConfirmation({
-                title: 'AI промптти өчүрүү',
-                message: 'Бул AI промптти өчүрүүгө ишенимдүүсүзбү?',
-                confirmLabel: 'Өчүрүү',
+                title: t('adminAiPrompts.confirm.deleteTitle'),
+                message: t('adminAiPrompts.confirm.deleteMessage'),
+                confirmLabel: t('adminAiPrompts.actions.delete'),
                 confirmVariant: 'danger',
                 onConfirm: async () => {
                     try {
                         await deleteCourseAiPrompt(promptId);
                         setAiPrompts((prev) => prev.filter((prompt) => prompt.id !== promptId));
-                        toast.success('AI промпт ийгиликтүү өчүрүлдү');
-                    } catch {
-                        toast.error('AI промптти өчүрүүдө ката кетти');
+                        toast.success(t('adminAiPrompts.toasts.deleted'));
+                    } catch (error) {
+                        toast.error(
+                            parseApiError(error, t('adminAiPrompts.toasts.deleteError')).message
+                        );
                     }
                 },
             });
         },
-        [requestConfirmation]
+        [requestConfirmation, t]
     );
 
     return {

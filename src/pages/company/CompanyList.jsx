@@ -4,6 +4,8 @@ import { Link, useSearchParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import Loader from '@shared/ui/Loader';
 import { EmptyState } from '@components/ui/dashboard';
+import { useTranslation } from 'react-i18next';
+import { parseApiError } from '@shared/api/error';
 
 const PAGE_SIZE = 12;
 
@@ -36,6 +38,7 @@ const getCompanyMeta = (company) =>
     ].filter(Boolean);
 
 export default function CompanyList() {
+    const { t } = useTranslation();
     const [searchParams, setSearchParams] = useSearchParams();
     const queryFromUrl = searchParams.get('q') || '';
     const pageFromUrl = Math.max(1, Number(searchParams.get('page')) || 1);
@@ -87,17 +90,17 @@ export default function CompanyList() {
             if (requestSeqRef.current === requestSeq) {
                 setData(nextData || { items: [], totalPages: 1, total: 0 });
             }
-        } catch {
+        } catch (error) {
             if (requestSeqRef.current === requestSeq) {
                 setLoadError(true);
-                toast.error('Could not load companies.');
+                toast.error(parseApiError(error, t('company.list.toasts.loadError')).message);
             }
         } finally {
             if (requestSeqRef.current === requestSeq) {
                 setLoading(false);
             }
         }
-    }, [pageFromUrl, queryFromUrl]);
+    }, [pageFromUrl, queryFromUrl, t]);
 
     React.useEffect(() => {
         loadCompanies();
@@ -116,7 +119,7 @@ export default function CompanyList() {
         e.preventDefault();
         const name = newName.trim();
         if (!name) {
-            toast.error('Company name is required.');
+            toast.error(t('company.list.toasts.nameRequired'));
             return;
         }
 
@@ -126,10 +129,10 @@ export default function CompanyList() {
             setNewName('');
             setQInput('');
             setSearchParams(new URLSearchParams());
-            toast.success('Company created.');
+            toast.success(t('company.list.toasts.created'));
             refreshCompanies();
-        } catch {
-            toast.error('Could not create company.');
+        } catch (error) {
+            toast.error(parseApiError(error, t('company.list.toasts.createError')).message);
         } finally {
             setCreating(false);
         }
@@ -146,16 +149,15 @@ export default function CompanyList() {
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                     <div>
                         <h1 className="text-2xl font-bold text-edubot-ink dark:text-white">
-                            Tenant companies
+                            {t('company.list.title')}
                         </h1>
                         <p className="mt-2 max-w-3xl text-sm text-edubot-muted dark:text-slate-400">
-                            Manage tenant workspaces, open company operations, and create new
-                            tenants with clear ownership.
+                            {t('company.list.subtitle')}
                         </p>
                     </div>
                     <div className="rounded-xl border border-edubot-line bg-edubot-surfaceAlt px-4 py-3 text-sm dark:border-slate-700 dark:bg-slate-900">
                         <div className="text-xs font-semibold uppercase tracking-wide text-edubot-muted dark:text-slate-400">
-                            Results
+                            {t('company.list.results')}
                         </div>
                         <div className="mt-1 text-lg font-bold text-edubot-ink dark:text-white">
                             {data.total ?? companies.length}
@@ -172,13 +174,13 @@ export default function CompanyList() {
                                 htmlFor="company-list-search"
                                 className="text-sm font-semibold text-edubot-ink dark:text-white"
                             >
-                                Search companies
+                                {t('company.list.searchLabel')}
                             </label>
                             <input
                                 id="company-list-search"
                                 value={qInput}
                                 onChange={(e) => setQInput(e.target.value)}
-                                placeholder="Search by company name"
+                                placeholder={t('company.list.searchPlaceholder')}
                                 className="dashboard-field mt-2"
                             />
                         </div>
@@ -191,12 +193,12 @@ export default function CompanyList() {
                                     setSearchParams(new URLSearchParams());
                                 }}
                             >
-                                Clear
+                                {t('company.list.clear')}
                             </button>
                         ) : null}
                     </div>
                     <p className="mt-2 text-xs text-edubot-muted dark:text-slate-400">
-                        Search is saved in the URL so this filtered view can be reopened.
+                        {t('company.list.searchHint')}
                     </p>
                 </div>
 
@@ -205,19 +207,18 @@ export default function CompanyList() {
                     className="rounded-2xl border border-edubot-line bg-white p-4 dark:border-slate-700 dark:bg-slate-950"
                 >
                     <h2 className="text-sm font-semibold text-edubot-ink dark:text-white">
-                        Create tenant
+                        {t('company.list.createTitle')}
                     </h2>
                     <p className="mt-1 text-xs text-edubot-muted dark:text-slate-400">
-                        Create the company first, then configure contacts, members, courses, and CRM
-                        links inside the workspace.
+                        {t('company.list.createHint')}
                     </p>
                     <label htmlFor="company-create-name" className="sr-only">
-                        Company name
+                        {t('company.fields.name')}
                     </label>
                     <input
                         id="company-create-name"
                         className="dashboard-field mt-3"
-                        placeholder="Company name"
+                        placeholder={t('company.fields.name')}
                         value={newName}
                         onChange={(e) => setNewName(e.target.value)}
                         disabled={creating}
@@ -226,7 +227,7 @@ export default function CompanyList() {
                         className="dashboard-button-primary mt-3 w-full disabled:cursor-not-allowed disabled:opacity-60"
                         disabled={creating || !newName.trim()}
                     >
-                        {creating ? 'Creating...' : 'Create company'}
+                        {creating ? t('company.list.creating') : t('company.list.createAction')}
                     </button>
                 </form>
             </section>
@@ -235,16 +236,16 @@ export default function CompanyList() {
                 <div className="mb-4 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
                     <div>
                         <h2 className="text-lg font-semibold text-edubot-ink dark:text-white">
-                            Company directory
+                            {t('company.list.directoryTitle')}
                         </h2>
                         <p className="text-sm text-edubot-muted dark:text-slate-400">
                             {hasSearch
-                                ? `Filtered by "${queryFromUrl}".`
-                                : 'All tenant workspaces available to your role.'}
+                                ? t('company.list.filteredBy', { query: queryFromUrl })
+                                : t('company.list.directorySubtitle')}
                         </p>
                     </div>
                     <div className="text-sm text-edubot-muted dark:text-slate-400">
-                        Page {pageFromUrl} of {totalPages}
+                        {t('company.list.pageOf', { page: pageFromUrl, totalPages })}
                     </div>
                 </div>
 
@@ -253,9 +254,9 @@ export default function CompanyList() {
                 ) : loadError ? (
                     <EmptyState
                         variant="error"
-                        title="Companies could not be loaded"
-                        subtitle="The tenant directory is unavailable. Retry the request before creating or opening tenants."
-                        action={{ label: 'Retry', onClick: loadCompanies }}
+                        title={t('company.list.loadErrorTitle')}
+                        subtitle={t('company.list.loadErrorSubtitle')}
+                        action={{ label: t('company.list.retry'), onClick: loadCompanies }}
                     />
                 ) : companies.length ? (
                     <ul className="grid gap-3 md:grid-cols-2">
@@ -277,7 +278,7 @@ export default function CompanyList() {
                                                 </p>
                                             ) : (
                                                 <p className="mt-1 text-sm text-edubot-muted dark:text-slate-400">
-                                                    No description yet.
+                                                    {t('company.list.noDescription')}
                                                 </p>
                                             )}
                                         </div>
@@ -304,7 +305,7 @@ export default function CompanyList() {
                                             to={`/companies/${company.id}`}
                                             className="dashboard-button-secondary"
                                         >
-                                            Open workspace
+                                            {t('company.list.openWorkspace')}
                                         </Link>
                                     </div>
                                 </li>
@@ -314,15 +315,22 @@ export default function CompanyList() {
                 ) : (
                     <EmptyState
                         variant={hasSearch ? 'discovery' : 'default'}
-                        title={hasSearch ? 'No companies match this search' : 'No companies yet'}
+                        title={
+                            hasSearch
+                                ? t('company.list.emptySearchTitle')
+                                : t('company.list.emptyTitle')
+                        }
                         subtitle={
                             hasSearch
-                                ? 'Clear the search or try a different company name.'
-                                : 'Create the first tenant company to start assigning members and courses.'
+                                ? t('company.list.emptySearchSubtitle')
+                                : t('company.list.emptySubtitle')
                         }
                         action={
                             hasSearch
-                                ? { label: 'Clear search', onClick: () => setQInput('') }
+                                ? {
+                                      label: t('company.list.clearSearch'),
+                                      onClick: () => setQInput(''),
+                                  }
                                 : undefined
                         }
                     />
@@ -331,7 +339,7 @@ export default function CompanyList() {
                 {!loading && !loadError && totalPages > 1 ? (
                     <nav
                         className="mt-6 flex items-center justify-center gap-2"
-                        aria-label="Company pages"
+                        aria-label={t('company.list.paginationLabel')}
                     >
                         <button
                             type="button"
@@ -339,7 +347,7 @@ export default function CompanyList() {
                             disabled={pageFromUrl <= 1}
                             className="dashboard-button-secondary disabled:cursor-not-allowed disabled:opacity-50"
                         >
-                            Previous
+                            {t('company.list.previous')}
                         </button>
                         {pageNumbers.map((pageNumber, index) => {
                             const previous = pageNumbers[index - 1];
@@ -378,7 +386,7 @@ export default function CompanyList() {
                             disabled={pageFromUrl >= totalPages}
                             className="dashboard-button-secondary disabled:cursor-not-allowed disabled:opacity-50"
                         >
-                            Next
+                            {t('company.list.next')}
                         </button>
                     </nav>
                 ) : null}

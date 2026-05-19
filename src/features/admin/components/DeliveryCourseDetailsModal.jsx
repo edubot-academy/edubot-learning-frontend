@@ -1,33 +1,36 @@
 
 import AdvancedModal from '@shared/ui/AdvancedModal';
 import { FiBookOpen, FiClock, FiLayers, FiMapPin, FiUser } from 'react-icons/fi';
+import { useTranslation } from 'react-i18next';
 
-const getCourseTypeLabel = (courseType) => {
-    if (courseType === 'offline') return 'Оффлайн';
-    if (courseType === 'online_live') return 'Онлайн түз эфир';
-    return 'Видео';
+const getCourseTypeLabel = (courseType, t) => {
+    if (courseType === 'offline') return t('adminPendingCourses.courseTypes.offline');
+    if (courseType === 'online_live') return t('adminPendingCourses.courseTypes.onlineLive');
+    return t('adminPendingCourses.courseTypes.video');
 };
 
-const formatDate = (value) => {
+const formatDate = (value, locale) => {
     if (!value) return '—';
     const date = new Date(value);
-    return Number.isNaN(date.getTime()) ? '—' : date.toLocaleDateString();
+    return Number.isNaN(date.getTime()) ? '—' : date.toLocaleDateString(locale);
 };
 
 const DeliveryCourseDetailsModal = ({ course, isOpen, onClose }) => {
+    const { i18n, t } = useTranslation();
+
     if (!course) return null;
 
     return (
         <AdvancedModal
             isOpen={isOpen}
             onClose={onClose}
-            title="Delivery курс маалыматы"
-            subtitle="Бул курс коомдук видео-баракчага эмес, ички башкаруу агымдарына тиешелүү."
+            title={t('adminDeliveryCourseDetails.title')}
+            subtitle={t('adminDeliveryCourseDetails.subtitle')}
             size="md"
             actions={[
                 {
                     id: 'close',
-                    label: 'Жабуу',
+                    label: t('adminDeliveryCourseDetails.close'),
                     onClick: onClose,
                     variant: 'primary',
                 },
@@ -40,7 +43,7 @@ const DeliveryCourseDetailsModal = ({ course, isOpen, onClose }) => {
                             {course.title}
                         </h3>
                         <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700 dark:bg-slate-800 dark:text-slate-200">
-                            {getCourseTypeLabel(course.courseType)}
+                            {getCourseTypeLabel(course.courseType, t)}
                         </span>
                     </div>
                     {course.description ? (
@@ -54,16 +57,16 @@ const DeliveryCourseDetailsModal = ({ course, isOpen, onClose }) => {
                     <div className="rounded-2xl border border-edubot-line/70 bg-white/80 p-4 dark:border-slate-700 dark:bg-slate-950/70">
                         <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-edubot-muted dark:text-slate-400">
                             <FiLayers className="h-4 w-4" />
-                            Категория
+                            {t('adminDeliveryCourseDetails.fields.category')}
                         </p>
                         <p className="mt-2 text-sm font-semibold text-edubot-ink dark:text-white">
-                            {course.category?.name || 'Категориясыз'}
+                            {course.category?.name || t('adminPendingCourses.uncategorized')}
                         </p>
                     </div>
                     <div className="rounded-2xl border border-edubot-line/70 bg-white/80 p-4 dark:border-slate-700 dark:bg-slate-950/70">
                         <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-edubot-muted dark:text-slate-400">
                             <FiUser className="h-4 w-4" />
-                            Окутуучу
+                            {t('adminPendingCourses.instructor')}
                         </p>
                         <p className="mt-2 text-sm font-semibold text-edubot-ink dark:text-white">
                             {course.instructor?.fullName || '—'}
@@ -72,28 +75,30 @@ const DeliveryCourseDetailsModal = ({ course, isOpen, onClose }) => {
                     <div className="rounded-2xl border border-edubot-line/70 bg-white/80 p-4 dark:border-slate-700 dark:bg-slate-950/70">
                         <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-edubot-muted dark:text-slate-400">
                             <FiBookOpen className="h-4 w-4" />
-                            Баасы
+                            {t('adminPendingCourses.fields.price')}
                         </p>
                         <p className="mt-2 text-sm font-semibold text-edubot-ink dark:text-white">
-                            {Number(course.price || 0) > 0 ? `${course.price} сом` : 'Акысыз'}
+                            {Number(course.price || 0) > 0
+                                ? t('adminPendingCourses.currency.kgs', { amount: course.price })
+                                : t('adminPendingCourses.free')}
                         </p>
                     </div>
                     <div className="rounded-2xl border border-edubot-line/70 bg-white/80 p-4 dark:border-slate-700 dark:bg-slate-950/70">
                         <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-edubot-muted dark:text-slate-400">
                             <FiClock className="h-4 w-4" />
-                            Түзүлгөн күнү
+                            {t('adminPendingCourses.fields.createdAt')}
                         </p>
                         <p className="mt-2 text-sm font-semibold text-edubot-ink dark:text-white">
-                            {formatDate(course.createdAt)}
+                            {formatDate(course.createdAt, i18n.language)}
                         </p>
                     </div>
                     <div className="rounded-2xl border border-edubot-line/70 bg-white/80 p-4 dark:border-slate-700 dark:bg-slate-950/70 sm:col-span-2">
                         <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-edubot-muted dark:text-slate-400">
                             <FiMapPin className="h-4 w-4" />
-                            Эскертүү
+                            {t('adminDeliveryCourseDetails.fields.note')}
                         </p>
                         <p className="mt-2 text-sm text-edubot-muted dark:text-slate-400">
-                            Delivery курстар үчүн деталдуу башкаруу группа, сессия жана enrollment табдары аркылуу жүргүзүлөт.
+                            {t('adminDeliveryCourseDetails.note')}
                         </p>
                     </div>
                 </div>

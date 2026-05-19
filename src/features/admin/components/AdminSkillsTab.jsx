@@ -7,6 +7,7 @@ import {
     EmptyState,
 } from '@components/ui/dashboard';
 import { FiCheckCircle, FiEdit3, FiPlus, FiSave, FiTag, FiTrash2, FiX } from 'react-icons/fi';
+import { useTranslation } from 'react-i18next';
 
 const AdminSkillsTab = ({
     skills,
@@ -16,6 +17,7 @@ const AdminSkillsTab = ({
     onUpdateSkill,
     onDeleteSkill,
 }) => {
+    const { t } = useTranslation();
     const [editingSkillId, setEditingSkillId] = useState(null);
     const [editingSkillName, setEditingSkillName] = useState('');
 
@@ -32,25 +34,25 @@ const AdminSkillsTab = ({
     return (
         <div className="space-y-6">
             <DashboardSectionHeader
-                eyebrow="Skills catalog"
-                title="Скиллдер"
-                description="Курс жана талант маалыматтарында колдонулуучу скиллдерди ушул жерден башкарыңыз."
+                eyebrow={t('adminSkills.eyebrow')}
+                title={t('adminSkills.title')}
+                description={t('adminSkills.description')}
             />
 
             <div className="grid gap-4 md:grid-cols-3">
                 <DashboardMetricCard
-                    label="Бардык скиллдер"
+                    label={t('adminSkills.metrics.total')}
                     value={normalizedSkills.length}
                     icon={FiTag}
                 />
                 <DashboardMetricCard
-                    label="Топтолгон баш тамгалар"
+                    label={t('adminSkills.metrics.initials')}
                     value={uniqueInitials}
                     icon={FiCheckCircle}
                     tone={uniqueInitials ? 'green' : 'default'}
                 />
                 <DashboardMetricCard
-                    label="Редакция режиминде"
+                    label={t('adminSkills.metrics.editMode')}
                     value={editingSkillId ? '1' : '0'}
                     icon={FiEdit3}
                     tone={editingSkillId ? 'blue' : 'default'}
@@ -58,26 +60,30 @@ const AdminSkillsTab = ({
             </div>
 
             <DashboardInsetPanel
-                title="Жаңы скилл"
-                description="Кыска, стандартташкан аталыш колдонуңуз."
+                title={t('adminSkills.create.title')}
+                description={t('adminSkills.create.description')}
             >
                 <div className="mt-4 flex flex-col gap-3 sm:flex-row">
                     <input
                         value={newSkillName}
                         onChange={(e) => setNewSkillName(e.target.value)}
                         className="dashboard-field flex-1"
-                        placeholder="Жаңы скиллдин аталышы"
+                        placeholder={t('adminSkills.create.placeholder')}
                     />
-                    <button type="button" onClick={onCreateSkill} className="dashboard-button-primary self-start">
+                    <button
+                        type="button"
+                        onClick={onCreateSkill}
+                        className="dashboard-button-primary self-start"
+                    >
                         <FiPlus className="h-4 w-4" />
-                        Кошуу
+                        {t('adminSkills.actions.add')}
                     </button>
                 </div>
             </DashboardInsetPanel>
 
             <DashboardInsetPanel
-                title="Скилл тизмеси"
-                description="Бардык активдүү скиллдер."
+                title={t('adminSkills.list.title')}
+                description={t('adminSkills.list.description')}
             >
                 {normalizedSkills.length ? (
                     <div className="mt-4 grid gap-3">
@@ -92,7 +98,7 @@ const AdminSkillsTab = ({
                                             value={editingSkillName}
                                             onChange={(e) => setEditingSkillName(e.target.value)}
                                             className="dashboard-field flex-1"
-                                            placeholder="Скиллдин аталышы"
+                                            placeholder={t('adminSkills.create.placeholder')}
                                         />
                                         <div className="flex flex-wrap gap-2">
                                             <button
@@ -105,7 +111,7 @@ const AdminSkillsTab = ({
                                                 className="dashboard-button-primary"
                                             >
                                                 <FiSave className="h-4 w-4" />
-                                                Сактоо
+                                                {t('company.settings.saveChanges')}
                                             </button>
                                             <button
                                                 type="button"
@@ -116,14 +122,16 @@ const AdminSkillsTab = ({
                                                 className="dashboard-button-secondary"
                                             >
                                                 <FiX className="h-4 w-4" />
-                                                Жокко чыгаруу
+                                                {t('company.settings.cancel')}
                                             </button>
                                         </div>
                                     </div>
                                 ) : (
                                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                                         <div className="min-w-0">
-                                            <span className="font-medium text-edubot-ink dark:text-white">{skill.name}</span>
+                                            <span className="font-medium text-edubot-ink dark:text-white">
+                                                {skill.name}
+                                            </span>
                                         </div>
                                         <div className="flex flex-wrap gap-2">
                                             <button
@@ -135,7 +143,7 @@ const AdminSkillsTab = ({
                                                 className="dashboard-button-secondary"
                                             >
                                                 <FiEdit3 className="h-4 w-4" />
-                                                Өзгөртүү
+                                                {t('company.settings.editProfile')}
                                             </button>
                                             <button
                                                 type="button"
@@ -143,7 +151,7 @@ const AdminSkillsTab = ({
                                                 className="dashboard-button-secondary"
                                             >
                                                 <FiTrash2 className="h-4 w-4" />
-                                                Өчүрүү
+                                                {t('adminSkills.actions.delete')}
                                             </button>
                                         </div>
                                     </div>
@@ -154,8 +162,8 @@ const AdminSkillsTab = ({
                 ) : (
                     <div className="mt-4">
                         <EmptyState
-                            title="Скиллдер жок"
-                            subtitle="Азырынча скилл каталогу бош."
+                            title={t('adminSkills.empty.title')}
+                            subtitle={t('adminSkills.empty.subtitle')}
                         />
                     </div>
                 )}

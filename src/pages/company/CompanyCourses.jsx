@@ -13,55 +13,73 @@ import {
     getCompany,
 } from '@services/api';
 import { DashboardInsetPanel, EmptyState } from '@components/ui/dashboard';
-import {
-    getCourseTypeTenantDisabledMessage,
-    isCourseTypeAllowedForTenant,
-} from '@shared/utils/tenantFeatures';
+import { isCourseTypeAllowedForTenant } from '@shared/utils/tenantFeatures';
 import { isPlatformAdmin } from '@shared/utils/roles';
+import { useTranslation } from 'react-i18next';
+import { parseApiError } from '@shared/api/error';
 
 const PAGE_SIZE = 20;
 const ATTACH_SEARCH_LIMIT = 25;
 
-const COURSE_TYPE_LABELS = {
-    video: 'Video',
-    online_live: 'Online live',
-    offline: 'Offline',
-};
-
-const getCourseTypeLabel = (course) => {
+const getCourseTypeLabel = (course, t) => {
     const type = String(course?.courseType || course?.type || '').toLowerCase();
-    return COURSE_TYPE_LABELS[type] || 'Course';
+    return t(`company.courses.types.${type}`, {
+        defaultValue: t('company.courses.types.course'),
+    });
 };
 
-const getCourseStatusLabel = (course) => {
-    if (course?.status) return String(course.status).replace(/_/g, ' ');
-    if (typeof course?.isPublished === 'boolean') return course.isPublished ? 'Published' : 'Draft';
-    return 'Status unknown';
+const getCourseStatusLabel = (course, t) => {
+    if (course?.status) {
+        const status = String(course.status).toLowerCase();
+        const fallback = status.replace(/_/g, ' ');
+        return t(`company.courses.status.${status}`, { defaultValue: fallback });
+    }
+    if (typeof course?.isPublished === 'boolean') {
+        return course.isPublished
+            ? t('company.courses.status.published')
+            : t('company.courses.status.draft');
+    }
+    return t('company.courses.status.unknown');
 };
 
-const getCoursePriceLabel = (course) => {
-    if (course?.isPaid === false) return 'Free';
+const getCoursePriceLabel = (course, t, language) => {
+    if (course?.isPaid === false) return t('company.courses.price.free');
     const price = course?.price;
-    if (price === null || price === undefined || price === '') return 'Price not set';
+    if (price === null || price === undefined || price === '') {
+        return t('company.courses.price.notSet');
+    }
     const numericPrice = Number(price);
-    if (Number.isFinite(numericPrice)) return numericPrice > 0 ? `${numericPrice} KGS` : 'Free';
+    if (Number.isFinite(numericPrice)) {
+        return numericPrice > 0
+            ? t('company.courses.price.kgs', {
+                  amount: new Intl.NumberFormat(language).format(numericPrice),
+              })
+            : t('company.courses.price.free');
+    }
     return String(price);
 };
 
-const CourseMeta = ({ course, restricted = false }) => (
+const getDisabledMessage = (courseType, t) => {
+    const normalizedType = String(courseType || '').toLowerCase();
+    if (normalizedType === 'offline') return t('company.courses.disabled.offline');
+    if (normalizedType === 'online_live') return t('company.courses.disabled.onlineLive');
+    return t('company.courses.disabled.generic');
+};
+
+const CourseMeta = ({ course, restricted = false, t, language }) => (
     <div className="mt-1 flex flex-wrap gap-1.5 text-xs">
         <span className="rounded-full bg-edubot-surfaceAlt px-2 py-0.5 text-edubot-muted dark:bg-slate-800 dark:text-slate-300">
-            {getCourseTypeLabel(course)}
+            {getCourseTypeLabel(course, t)}
         </span>
         <span className="rounded-full bg-edubot-surfaceAlt px-2 py-0.5 text-edubot-muted dark:bg-slate-800 dark:text-slate-300">
-            {getCourseStatusLabel(course)}
+            {getCourseStatusLabel(course, t)}
         </span>
         <span className="rounded-full bg-edubot-surfaceAlt px-2 py-0.5 text-edubot-muted dark:bg-slate-800 dark:text-slate-300">
-            {getCoursePriceLabel(course)}
+            {getCoursePriceLabel(course, t, language)}
         </span>
         {restricted ? (
             <span className="rounded-full bg-red-50 px-2 py-0.5 text-red-700 dark:bg-red-500/10 dark:text-red-200">
-                Disabled for tenant
+                {t('company.courses.disabled.badge')}
             </span>
         ) : null}
     </div>
@@ -89,6 +107,7 @@ const getPageNumbers = (current, total) => {
 };
 
 export default function CompanyCourses({ company, companyId, canManage }) {
+    const { t, i18n } = useTranslation();
     const { user } = React.useContext(AuthContext);
     const { id: routeCompanyId } = useParams();
     const resolvedCompanyId = companyId ?? Number(routeCompanyId);
@@ -165,17 +184,17 @@ export default function CompanyCourses({ company, companyId, canManage }) {
             if (courseListRequestSeqRef.current === requestSeq) {
                 setData(res || { items: [], totalPages: 1, total: 0 });
             }
-        } catch {
+        } catch (error) {
             if (courseListRequestSeqRef.current === requestSeq) {
                 setLoadError(true);
-                toast.error('Could not load tenant courses.');
+                toast.error(parseApiError(error, t('company.courses.toasts.loadError')).message);
             }
         } finally {
             if (courseListRequestSeqRef.current === requestSeq) {
                 setLoading(false);
             }
         }
-    }, [resolvedCompanyId, page, q]);
+    }, [resolvedCompanyId, page, q, t]);
 
     React.useEffect(() => {
         loadCompanyCourses();
@@ -191,11 +210,11 @@ export default function CompanyCourses({ company, companyId, canManage }) {
         try {
             setDetachingId(pendingDetachId);
             await unassignCourseFromCompany(pendingDetachId, resolvedCompanyId);
-            toast.success('Course detached from tenant.');
+            toast.success(t('company.courses.toasts.detached'));
             setPendingDetachId(null);
             await loadCompanyCourses();
-        } catch {
-            toast.error('Could not detach course.');
+        } catch (error) {
+            toast.error(parseApiError(error, t('company.courses.toasts.detachError')).message);
         } finally {
             setDetachingId(null);
         }
@@ -206,18 +225,18 @@ export default function CompanyCourses({ company, companyId, canManage }) {
 
         const course = results.find((item) => item.id === courseId);
         if (course && !isCourseTypeAllowedForTenant(effectiveCompany, course.courseType)) {
-            toast.error(getCourseTypeTenantDisabledMessage(course.courseType));
+            toast.error(getDisabledMessage(course.courseType, t));
             return;
         }
 
         try {
             setAttachingId(courseId);
             await assignCourseToCompany(courseId, resolvedCompanyId);
-            toast.success('Course attached to tenant.');
+            toast.success(t('company.courses.toasts.attached'));
             setResults((prev) => prev.filter((c) => c.id !== courseId));
             await loadCompanyCourses();
-        } catch {
-            toast.error('Could not attach course.');
+        } catch (error) {
+            toast.error(parseApiError(error, t('company.courses.toasts.attachError')).message);
         } finally {
             setAttachingId(null);
         }
@@ -264,23 +283,23 @@ export default function CompanyCourses({ company, companyId, canManage }) {
 
     return (
         <DashboardInsetPanel
-            title="Tenant courses"
-            description="Review assigned courses first. Open add mode only when you need to attach another course to this tenant."
+            title={t('company.courses.title')}
+            description={t('company.courses.description')}
         >
             <div className="mt-4 space-y-4">
                 <div className="rounded-2xl border border-edubot-line/80 bg-edubot-surfaceAlt/40 p-4 dark:border-slate-700 dark:bg-slate-900/60">
                     <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                         <div>
                             <div className="text-sm font-semibold text-edubot-ink dark:text-white">
-                                Assigned courses: {totalCourses}
+                                {t('company.courses.assignedCount', { count: totalCourses })}
                             </div>
                             <p className="mt-1 text-xs text-edubot-muted dark:text-slate-400">
-                                Search below filters courses already attached to this tenant.
+                                {t('company.courses.filterHelp')}
                             </p>
                         </div>
                         <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
                             <label htmlFor="company-course-filter" className="sr-only">
-                                Filter assigned courses
+                                {t('company.courses.filterLabel')}
                             </label>
                             <input
                                 id="company-course-filter"
@@ -289,7 +308,7 @@ export default function CompanyCourses({ company, companyId, canManage }) {
                                     setQInput(e.target.value);
                                     setPage(1);
                                 }}
-                                placeholder="Filter assigned courses"
+                                placeholder={t('company.courses.filterPlaceholder')}
                                 className="dashboard-field"
                             />
                             {effectiveCanManage && (
@@ -309,7 +328,9 @@ export default function CompanyCourses({ company, companyId, canManage }) {
                                     aria-expanded={adding}
                                     aria-controls="company-course-attach-panel"
                                 >
-                                    {adding ? 'Close add mode' : 'Add course'}
+                                    {adding
+                                        ? t('company.courses.closeAddMode')
+                                        : t('company.courses.addCourse')}
                                 </button>
                             )}
                         </div>
@@ -323,55 +344,55 @@ export default function CompanyCourses({ company, companyId, canManage }) {
                     >
                         <div>
                             <div className="font-medium text-edubot-ink dark:text-white">
-                                Attach a new course
+                                {t('company.courses.attachTitle')}
                             </div>
                             <p className="mt-1 text-sm text-edubot-muted dark:text-slate-400">
-                                This search finds courses that are not already attached to this
-                                tenant.
+                                {t('company.courses.attachSubtitle')}
                             </p>
                         </div>
                         <label htmlFor="company-course-attach-search" className="sr-only">
-                            Search course to attach
+                            {t('company.courses.attachSearchLabel')}
                         </label>
                         <input
                             id="company-course-attach-search"
                             value={searchQ}
                             onChange={(e) => setSearchQ(e.target.value)}
-                            placeholder="Search course title to attach"
+                            placeholder={t('company.courses.attachSearchPlaceholder')}
                             className="dashboard-field w-full"
                         />
                         {results.length ? (
                             <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-edubot-muted dark:text-slate-400">
                                 <span>
-                                    Showing up to {ATTACH_SEARCH_LIMIT} matching courses. Narrow the
-                                    search for more precise assignment.
+                                    {t('company.courses.showingLimit', {
+                                        count: ATTACH_SEARCH_LIMIT,
+                                    })}
                                 </span>
-                                <span>{results.length} results</span>
+                                <span>{t('company.courses.resultCount', { count: results.length })}</span>
                             </div>
                         ) : null}
                         {searching ? (
                             <div className="text-sm text-edubot-muted dark:text-slate-400">
-                                Searching...
+                                {t('common.searching')}
                             </div>
                         ) : searchError ? (
                             <EmptyState
                                 variant="error"
-                                title="Course search failed"
-                                subtitle="Try the search again or refresh the tenant course list."
+                                title={t('company.courses.searchFailedTitle')}
+                                subtitle={t('company.courses.searchFailedSubtitle')}
                                 action={{
-                                    label: 'Retry search',
+                                    label: t('company.courses.retrySearch'),
                                     onClick: () => setSearchRetryKey((value) => value + 1),
                                 }}
                             />
                         ) : results.length === 0 ? (
                             searchQ.trim() ? (
                                 <EmptyState
-                                    title="No courses found"
-                                    subtitle="Try a different search term."
+                                    title={t('company.courses.noCoursesFoundTitle')}
+                                    subtitle={t('company.courses.noCoursesFoundSubtitle')}
                                 />
                             ) : (
                                 <p className="text-sm text-edubot-muted dark:text-slate-400">
-                                    Search for a course title to attach it to this tenant.
+                                    {t('company.courses.searchToAttach')}
                                 </p>
                             )
                         ) : (
@@ -379,10 +400,14 @@ export default function CompanyCourses({ company, companyId, canManage }) {
                                 <table className="min-w-[42rem] w-full text-left text-sm">
                                     <thead className="bg-white/70 text-xs uppercase tracking-wide text-edubot-muted dark:bg-slate-950 dark:text-slate-400">
                                         <tr>
-                                            <th className="px-4 py-3 font-semibold">Course</th>
-                                            <th className="px-4 py-3 font-semibold">Instructor</th>
+                                            <th className="px-4 py-3 font-semibold">
+                                                {t('company.courses.table.course')}
+                                            </th>
+                                            <th className="px-4 py-3 font-semibold">
+                                                {t('company.courses.table.instructor')}
+                                            </th>
                                             <th className="px-4 py-3 font-semibold text-right">
-                                                Action
+                                                {t('company.courses.table.action')}
                                             </th>
                                         </tr>
                                     </thead>
@@ -407,6 +432,8 @@ export default function CompanyCourses({ company, companyId, canManage }) {
                                                         <CourseMeta
                                                             course={c}
                                                             restricted={courseTypeDisabled}
+                                                            t={t}
+                                                            language={i18n.language}
                                                         />
                                                     </td>
                                                     <td className="px-4 py-3 text-edubot-muted dark:text-slate-400">
@@ -418,8 +445,9 @@ export default function CompanyCourses({ company, companyId, canManage }) {
                                                             disabled={disabled}
                                                             title={
                                                                 courseTypeDisabled
-                                                                    ? getCourseTypeTenantDisabledMessage(
-                                                                          c.courseType
+                                                                    ? getDisabledMessage(
+                                                                          c.courseType,
+                                                                          t
                                                                       )
                                                                     : undefined
                                                             }
@@ -428,8 +456,8 @@ export default function CompanyCourses({ company, companyId, canManage }) {
                                                             {attachingId === c.id
                                                                 ? '...'
                                                                 : courseTypeDisabled
-                                                                  ? 'Disabled'
-                                                                  : 'Attach'}
+                                                                  ? t('company.courses.disabled.action')
+                                                                  : t('company.courses.attach')}
                                                         </button>
                                                     </td>
                                                 </tr>
@@ -447,9 +475,9 @@ export default function CompanyCourses({ company, companyId, canManage }) {
                 ) : loadError ? (
                     <EmptyState
                         variant="error"
-                        title="Could not load tenant courses"
-                        subtitle="The assignments list is unavailable. Retry before changing course links."
-                        action={{ label: 'Retry', onClick: loadCompanyCourses }}
+                        title={t('company.courses.loadErrorTitle')}
+                        subtitle={t('company.courses.loadErrorSubtitle')}
+                        action={{ label: t('company.courses.retry'), onClick: loadCompanyCourses }}
                     />
                 ) : (
                     <>
@@ -458,10 +486,14 @@ export default function CompanyCourses({ company, companyId, canManage }) {
                                 <table className="min-w-[42rem] w-full text-left text-sm">
                                     <thead className="bg-edubot-surfaceAlt/70 text-xs uppercase tracking-wide text-edubot-muted dark:bg-slate-900 dark:text-slate-400">
                                         <tr>
-                                            <th className="px-4 py-3 font-semibold">Course</th>
-                                            <th className="px-4 py-3 font-semibold">Instructor</th>
+                                            <th className="px-4 py-3 font-semibold">
+                                                {t('company.courses.table.course')}
+                                            </th>
+                                            <th className="px-4 py-3 font-semibold">
+                                                {t('company.courses.table.instructor')}
+                                            </th>
                                             <th className="px-4 py-3 font-semibold text-right">
-                                                Actions
+                                                {t('company.courses.table.actions')}
                                             </th>
                                         </tr>
                                     </thead>
@@ -475,7 +507,11 @@ export default function CompanyCourses({ company, companyId, canManage }) {
                                                     <div className="font-medium text-edubot-ink dark:text-white">
                                                         {c.title}
                                                     </div>
-                                                    <CourseMeta course={c} />
+                                                    <CourseMeta
+                                                        course={c}
+                                                        t={t}
+                                                        language={i18n.language}
+                                                    />
                                                 </td>
                                                 <td className="px-4 py-3 text-edubot-muted dark:text-slate-400">
                                                     {c.instructor?.fullName || '-'}
@@ -486,7 +522,7 @@ export default function CompanyCourses({ company, companyId, canManage }) {
                                                             to={`/courses/${c.id}`}
                                                             className="dashboard-button-secondary"
                                                         >
-                                                            View
+                                                            {t('company.courses.view')}
                                                         </Link>
                                                         {effectiveCanManage && (
                                                             <button
@@ -495,8 +531,8 @@ export default function CompanyCourses({ company, companyId, canManage }) {
                                                                 className="dashboard-button-secondary text-red-600 disabled:cursor-not-allowed disabled:opacity-60"
                                                             >
                                                                 {detachingId === c.id
-                                                                    ? 'Detaching...'
-                                                                    : 'Detach'}
+                                                                    ? t('company.courses.detaching')
+                                                                    : t('company.courses.detach')}
                                                             </button>
                                                         )}
                                                     </div>
@@ -508,11 +544,11 @@ export default function CompanyCourses({ company, companyId, canManage }) {
                             </div>
                         ) : (
                             <EmptyState
-                                title="No linked courses"
+                                title={t('company.courses.emptyTitle')}
                                 subtitle={
                                     effectiveCanManage
-                                        ? 'Attach a course to make it available for this tenant.'
-                                        : 'No courses are linked to this tenant yet.'
+                                        ? t('company.courses.emptyManageSubtitle')
+                                        : t('company.courses.emptyReadOnlySubtitle')
                                 }
                             />
                         )}
@@ -520,7 +556,7 @@ export default function CompanyCourses({ company, companyId, canManage }) {
                         {totalPages > 1 ? (
                             <nav
                                 className="mt-4 flex flex-wrap items-center justify-center gap-2"
-                                aria-label="Tenant course pages"
+                                aria-label={t('company.courses.paginationLabel')}
                             >
                                 <button
                                     type="button"
@@ -528,7 +564,7 @@ export default function CompanyCourses({ company, companyId, canManage }) {
                                     disabled={page <= 1}
                                     className="dashboard-button-secondary disabled:cursor-not-allowed disabled:opacity-50"
                                 >
-                                    Previous
+                                    {t('company.list.previous')}
                                 </button>
                                 {pageNumbers.map((pageNumber, index) => {
                                     const previous = pageNumbers[index - 1];
@@ -567,7 +603,7 @@ export default function CompanyCourses({ company, companyId, canManage }) {
                                     disabled={page >= totalPages}
                                     className="dashboard-button-secondary disabled:cursor-not-allowed disabled:opacity-50"
                                 >
-                                    Next
+                                    {t('company.list.next')}
                                 </button>
                             </nav>
                         ) : null}
@@ -578,10 +614,10 @@ export default function CompanyCourses({ company, companyId, canManage }) {
                 isOpen={Boolean(pendingDetachId)}
                 onClose={() => setPendingDetachId(null)}
                 onConfirm={confirmDetach}
-                title="Detach course"
-                message="Detach this course from the tenant? Current students may lose tenant-level access depending on backend policy."
-                confirmLabel="Detach"
-                cancelLabel="Cancel"
+                title={t('company.courses.detachModal.title')}
+                message={t('company.courses.detachModal.message')}
+                confirmLabel={t('company.courses.detach')}
+                cancelLabel={t('company.settings.cancel')}
                 confirmVariant="danger"
                 loading={Boolean(detachingId)}
             />

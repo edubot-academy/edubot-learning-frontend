@@ -16,36 +16,26 @@ import { isPlatformAdmin } from '@shared/utils/roles';
 import { DashboardInsetPanel } from '@components/ui/dashboard';
 import BasicModal from '@shared/ui/BasicModal';
 import ConfirmationModal from '@shared/ui/ConfirmationModal';
+import { parseApiError } from '@shared/api/error';
+import { useTranslation } from 'react-i18next';
 
-const MANAGEABLE_ROLES = [
-    { value: 'company_admin', label: 'Tenant admin' },
-    { value: 'instructor', label: 'Instructor' },
-    { value: 'assistant', label: 'Assistant' },
-    { value: 'student', label: 'Student' },
-];
+const MANAGEABLE_ROLES = ['company_admin', 'instructor', 'assistant', 'student'];
+const PLATFORM_ROLES = ['owner', ...MANAGEABLE_ROLES];
 
-const PLATFORM_ROLES = [{ value: 'owner', label: 'Owner' }, ...MANAGEABLE_ROLES];
-
-const ROLE_LABELS = PLATFORM_ROLES.reduce(
-    (acc, role) => ({ ...acc, [role.value]: role.label }),
-    {}
-);
-
-const ROLE_DESCRIPTIONS = {
-    owner: 'Platform-managed tenant owner with full ownership visibility.',
-    company_admin: 'Manages tenant users, courses, and workspace settings.',
-    instructor: 'Runs courses, sessions, homework, certificates, and student learning work.',
-    assistant: 'Supports attendance, enrollment, and day-to-day tenant operations.',
-    student: 'Learns inside assigned courses and receives onboarding setup links.',
-};
+const getRoleLabel = (role, t) => t(`company.members.roles.${role}.label`);
+const getRoleDescription = (role, t) =>
+    t(`company.members.roles.${role}.description`, {
+        defaultValue: t('company.members.roles.fallbackDescription'),
+    });
 
 export default function CompanyMembers({
     companyId,
     currentUser,
-    title = 'Tenant members',
-    description = 'Manage tenant roles. Owner is platform-managed and only visible to platform admins.',
+    title,
+    description,
     allowedRoles,
 }) {
+    const { t } = useTranslation();
     const [items, setItems] = React.useState([]);
     const [role, setRole] = React.useState('instructor');
     const canManageOwner = isPlatformAdmin(currentUser);
@@ -56,7 +46,7 @@ export default function CompanyMembers({
     const roleOptions = React.useMemo(() => {
         const options = canManageOwner ? PLATFORM_ROLES : MANAGEABLE_ROLES;
         return allowedRoleSet
-            ? options.filter((option) => allowedRoleSet.has(option.value))
+            ? options.filter((option) => allowedRoleSet.has(option))
             : options;
     }, [allowedRoleSet, canManageOwner]);
     const visibleItems = React.useMemo(
@@ -83,17 +73,17 @@ export default function CompanyMembers({
     const [inviteForm, setInviteForm] = React.useState({
         fullName: '',
         email: '',
-        role: roleOptions[0]?.value || 'instructor',
+        role: roleOptions[0] || 'instructor',
         sendEmail: false,
     });
 
     const load = React.useCallback(async () => {
         try {
             setItems(await listCompanyMembers(companyId));
-        } catch {
-            toast.error('Could not load tenant members.');
+        } catch (error) {
+            toast.error(parseApiError(error, t('company.members.toasts.loadError')).message);
         }
-    }, [companyId]);
+    }, [companyId, t]);
 
     React.useEffect(() => {
         load();
@@ -151,25 +141,25 @@ export default function CompanyMembers({
     const resetPicker = () => {
         setSelected(null);
         setQ('');
-        setRole(roleOptions[0]?.value || 'instructor');
+        setRole(roleOptions[0] || 'instructor');
     };
 
     React.useEffect(() => {
-        if (!roleOptions.some((option) => option.value === role)) {
-            setRole(roleOptions[0]?.value || 'instructor');
+        if (!roleOptions.includes(role)) {
+            setRole(roleOptions[0] || 'instructor');
         }
     }, [role, roleOptions]);
 
     React.useEffect(() => {
-        if (!roleOptions.some((option) => option.value === inviteForm.role)) {
-            setInviteForm((prev) => ({ ...prev, role: roleOptions[0]?.value || 'instructor' }));
+        if (!roleOptions.includes(inviteForm.role)) {
+            setInviteForm((prev) => ({ ...prev, role: roleOptions[0] || 'instructor' }));
         }
     }, [inviteForm.role, roleOptions]);
 
     const onAdd = async (e) => {
         e?.preventDefault?.();
         const userId = selected?.id;
-        if (!userId) return toast.error('Select a user first.');
+        if (!userId) return toast.error(t('company.members.toasts.selectUser'));
         try {
             setAddingMember(true);
             if (role === 'owner') {
@@ -177,11 +167,11 @@ export default function CompanyMembers({
             } else {
                 await addCompanyMember(companyId, { userId, role });
             }
-            toast.success('Member added.');
+            toast.success(t('company.members.toasts.added'));
             resetPicker();
             await load();
-        } catch {
-            toast.error('Could not add member.');
+        } catch (error) {
+            toast.error(parseApiError(error, t('company.members.toasts.addError')).message);
         } finally {
             setAddingMember(false);
         }
@@ -203,11 +193,11 @@ export default function CompanyMembers({
             } else {
                 await removeCompanyMember(companyId, member.userId, member.role);
             }
-            toast.success('Member removed.');
+            toast.success(t('company.members.toasts.removed'));
             setPendingRemoveMember(null);
             await load();
-        } catch {
-            toast.error('Could not remove member.');
+        } catch (error) {
+            toast.error(parseApiError(error, t('company.members.toasts.removeError')).message);
         } finally {
             setRemovingKey(null);
         }
@@ -220,9 +210,9 @@ export default function CompanyMembers({
             setUpdatingRoleKey(key);
             await setCompanyMemberRole(companyId, member.userId, newRole, 'replace', member.role);
             await load();
-            toast.success('Role updated.');
-        } catch {
-            toast.error('Could not update role.');
+            toast.success(t('company.members.toasts.roleUpdated'));
+        } catch (error) {
+            toast.error(parseApiError(error, t('company.members.toasts.roleUpdateError')).message);
         } finally {
             setUpdatingRoleKey(null);
         }
@@ -235,7 +225,7 @@ export default function CompanyMembers({
         setInviteForm({
             fullName: '',
             email: '',
-            role: roleOptions[0]?.value || 'instructor',
+            role: roleOptions[0] || 'instructor',
             sendEmail: false,
         });
     };
@@ -252,10 +242,14 @@ export default function CompanyMembers({
                 sendEmail: inviteForm.sendEmail,
             });
             setInviteResult(result);
-            toast.success(result.created ? 'User created and added.' : 'User added to tenant.');
+            toast.success(
+                result.created
+                    ? t('company.members.toasts.userCreated')
+                    : t('company.members.toasts.userAdded')
+            );
             await load();
         } catch (error) {
-            toast.error(error?.response?.data?.message || 'Invite/create failed.');
+            toast.error(parseApiError(error, t('company.members.toasts.inviteError')).message);
         } finally {
             setInviteSaving(false);
         }
@@ -266,9 +260,9 @@ export default function CompanyMembers({
         if (!link) return;
         try {
             await navigator.clipboard.writeText(link);
-            toast.success('Setup link copied.');
+            toast.success(t('company.members.toasts.linkCopied'));
         } catch {
-            toast.error('Could not copy setup link.');
+            toast.error(t('company.members.toasts.copyError'));
         }
     };
 
@@ -282,10 +276,12 @@ export default function CompanyMembers({
             setInviteResult(result);
             setInviteLinkOpen(true);
             toast.success(
-                result?.onboarding?.emailSent ? 'Invite resent.' : 'Invite link regenerated.'
+                result?.onboarding?.emailSent
+                    ? t('company.members.toasts.inviteResent')
+                    : t('company.members.toasts.linkRegenerated')
             );
         } catch (error) {
-            toast.error(error?.response?.data?.message || 'Could not resend invite.');
+            toast.error(parseApiError(error, t('company.members.toasts.resendError')).message);
         } finally {
             setResendingKey(null);
         }
@@ -313,19 +309,22 @@ export default function CompanyMembers({
     };
 
     return (
-        <DashboardInsetPanel title={title} description={description}>
+        <DashboardInsetPanel
+            title={title || t('company.members.title')}
+            description={description || t('company.members.description')}
+        >
             <div className="mt-4 space-y-4">
                 <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
                     {roleOptions.map((option) => (
                         <div
-                            key={option.value}
+                            key={option}
                             className="rounded-2xl border border-edubot-line/80 bg-edubot-surfaceAlt/40 p-3 dark:border-slate-700 dark:bg-slate-900/60"
                         >
                             <div className="text-sm font-semibold text-edubot-ink dark:text-white">
-                                {option.label}
+                                {getRoleLabel(option, t)}
                             </div>
                             <p className="mt-1 text-xs leading-5 text-edubot-muted dark:text-slate-400">
-                                {ROLE_DESCRIPTIONS[option.value]}
+                                {getRoleDescription(option, t)}
                             </p>
                         </div>
                     ))}
@@ -336,14 +335,14 @@ export default function CompanyMembers({
                         id={memberSearchHelpId}
                         className="text-sm text-edubot-muted dark:text-slate-400"
                     >
-                        Search an existing user and assign the role they should hold in this tenant.
+                        {t('company.members.searchHelp')}
                     </p>
                     <button
                         type="button"
                         className="dashboard-button-secondary"
                         onClick={() => setInviteOpen(true)}
                     >
-                        Invite/create member
+                        {t('company.members.inviteAction')}
                     </button>
                 </div>
 
@@ -351,12 +350,12 @@ export default function CompanyMembers({
                     <div className="grid gap-2 md:grid-cols-[minmax(0,1fr)_14rem_auto]">
                         <div className="relative">
                             <label htmlFor="tenant-member-search" className="sr-only">
-                                Search existing users
+                                {t('company.members.searchExistingUsers')}
                             </label>
                             <input
                                 id="tenant-member-search"
                                 className="dashboard-field w-full"
-                                placeholder="Search by name or email..."
+                                placeholder={t('company.members.searchPlaceholder')}
                                 value={q}
                                 onChange={(e) => {
                                     setQ(e.target.value);
@@ -389,7 +388,7 @@ export default function CompanyMembers({
                                 <div
                                     id={memberSearchListId}
                                     role="listbox"
-                                    aria-label="User search results"
+                                    aria-label={t('company.members.searchResultsLabel')}
                                     className="absolute z-10 mt-1 max-h-72 w-full overflow-auto rounded-2xl border border-edubot-line bg-white shadow-edubot-card dark:border-slate-700 dark:bg-slate-900"
                                 >
                                     {searching && (
@@ -397,7 +396,7 @@ export default function CompanyMembers({
                                             className="px-3 py-2 text-sm text-gray-500"
                                             role="status"
                                         >
-                                            Изделүүдө...
+                                            {t('common.searching')}
                                         </div>
                                     )}
                                     {!searching &&
@@ -433,7 +432,7 @@ export default function CompanyMembers({
                                         ))}
                                     {!searching && results.length === 0 && (
                                         <div className="px-3 py-2 text-sm text-gray-500">
-                                            Туура келген колдонуучу жок.
+                                            {t('company.members.noMatchingUsers')}
                                         </div>
                                     )}
                                 </div>
@@ -441,7 +440,7 @@ export default function CompanyMembers({
                         </div>
 
                         <label className="sr-only" htmlFor="tenant-member-role">
-                            Tenant role
+                            {t('company.members.tenantRole')}
                         </label>
                         <select
                             id="tenant-member-role"
@@ -450,8 +449,8 @@ export default function CompanyMembers({
                             onChange={(e) => setRole(e.target.value)}
                         >
                             {roleOptions.map((r) => (
-                                <option key={r.value} value={r.value}>
-                                    {r.label}
+                                <option key={r} value={r}>
+                                    {getRoleLabel(r, t)}
                                 </option>
                             ))}
                         </select>
@@ -460,7 +459,9 @@ export default function CompanyMembers({
                             className="dashboard-button-primary disabled:cursor-not-allowed disabled:opacity-50"
                             disabled={!selected || addingMember}
                         >
-                            {addingMember ? 'Adding...' : 'Add member'}
+                            {addingMember
+                                ? t('company.members.adding')
+                                : t('company.members.addMember')}
                         </button>
                     </div>
                 </form>
@@ -469,10 +470,18 @@ export default function CompanyMembers({
                     <table className="min-w-[42rem] w-full text-left text-sm">
                         <thead className="bg-edubot-surfaceAlt/70 text-xs uppercase tracking-wide text-edubot-muted dark:bg-slate-900 dark:text-slate-400">
                             <tr>
-                                <th className="px-4 py-3 font-semibold">User</th>
-                                <th className="px-4 py-3 font-semibold">Email</th>
-                                <th className="px-4 py-3 font-semibold">Role</th>
-                                <th className="px-4 py-3 font-semibold">Actions</th>
+                                <th className="px-4 py-3 font-semibold">
+                                    {t('company.members.table.user')}
+                                </th>
+                                <th className="px-4 py-3 font-semibold">
+                                    {t('company.members.table.email')}
+                                </th>
+                                <th className="px-4 py-3 font-semibold">
+                                    {t('company.members.table.role')}
+                                </th>
+                                <th className="px-4 py-3 font-semibold">
+                                    {t('company.members.table.actions')}
+                                </th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-edubot-line/70 bg-white dark:divide-slate-700 dark:bg-slate-950">
@@ -483,7 +492,7 @@ export default function CompanyMembers({
                                 const rowRoleOptions =
                                     canManageOwner || m.role !== 'owner'
                                         ? roleOptions
-                                        : [{ value: 'owner', label: ROLE_LABELS.owner }];
+                                        : ['owner'];
                                 return (
                                     <tr
                                         key={m.id || `${m.userId}-${m.role}`}
@@ -519,14 +528,13 @@ export default function CompanyMembers({
                                                     }
                                                 >
                                                     {rowRoleOptions.map((r) => (
-                                                        <option key={r.value} value={r.value}>
-                                                            {r.label}
+                                                        <option key={r} value={r}>
+                                                            {getRoleLabel(r, t)}
                                                         </option>
                                                     ))}
                                                 </select>
                                                 <div className="text-xs text-edubot-muted dark:text-slate-400">
-                                                    {ROLE_DESCRIPTIONS[m.role] ||
-                                                        'Tenant workspace access.'}
+                                                    {getRoleDescription(m.role, t)}
                                                 </div>
                                             </div>
                                         </td>
@@ -544,8 +552,8 @@ export default function CompanyMembers({
                                                         }
                                                     >
                                                         {resendingKey === rowKey
-                                                            ? 'Sending...'
-                                                            : 'Resend invite'}
+                                                            ? t('company.members.sending')
+                                                            : t('company.members.resendInvite')}
                                                     </button>
                                                 ) : null}
                                                 <button
@@ -560,8 +568,8 @@ export default function CompanyMembers({
                                                     }
                                                 >
                                                     {removingKey === rowKey
-                                                        ? 'Removing...'
-                                                        : 'Remove'}
+                                                        ? t('company.members.removing')
+                                                        : t('company.members.remove')}
                                                 </button>
                                             </div>
                                         </td>
@@ -571,7 +579,7 @@ export default function CompanyMembers({
                             {visibleItems.length === 0 && (
                                 <tr>
                                     <td colSpan="4" className="p-4 text-center text-gray-500">
-                                        No tenant members found.
+                                        {t('company.members.empty')}
                                     </td>
                                 </tr>
                             )}
@@ -582,14 +590,14 @@ export default function CompanyMembers({
             <BasicModal
                 isOpen={inviteOpen}
                 onClose={closeInvite}
-                title="Invite/create member"
-                subtitle="Create a platform user if needed, then attach the tenant role."
+                title={t('company.members.inviteModal.title')}
+                subtitle={t('company.members.inviteModal.subtitle')}
                 size="md"
             >
                 <form onSubmit={onInvite} className="space-y-4">
                     <label className="block space-y-1">
                         <span className="text-xs font-semibold uppercase tracking-wide text-edubot-muted dark:text-slate-400">
-                            Full name
+                            {t('company.members.inviteModal.fullName')}
                         </span>
                         <input
                             className="dashboard-field w-full"
@@ -603,7 +611,7 @@ export default function CompanyMembers({
                     </label>
                     <label className="block space-y-1">
                         <span className="text-xs font-semibold uppercase tracking-wide text-edubot-muted dark:text-slate-400">
-                            Email
+                            {t('company.members.inviteModal.email')}
                         </span>
                         <input
                             className="dashboard-field w-full"
@@ -617,7 +625,7 @@ export default function CompanyMembers({
                     </label>
                     <label className="block space-y-1">
                         <span className="text-xs font-semibold uppercase tracking-wide text-edubot-muted dark:text-slate-400">
-                            Tenant role
+                            {t('company.members.tenantRole')}
                         </span>
                         <select
                             className="dashboard-select w-full"
@@ -627,8 +635,8 @@ export default function CompanyMembers({
                             }
                         >
                             {roleOptions.map((option) => (
-                                <option key={option.value} value={option.value}>
-                                    {option.label}
+                                <option key={option} value={option}>
+                                    {getRoleLabel(option, t)}
                                 </option>
                             ))}
                         </select>
@@ -644,13 +652,13 @@ export default function CompanyMembers({
                                 }))
                             }
                         />
-                        Send setup email
+                        {t('company.members.inviteModal.sendSetupEmail')}
                     </label>
 
                     {inviteResult?.onboarding?.setupLink && (
                         <div className="rounded-xl border border-edubot-line bg-edubot-surfaceAlt/60 p-3 text-sm dark:border-slate-700 dark:bg-slate-900">
                             <div className="font-semibold text-edubot-ink dark:text-white">
-                                Setup link
+                                {t('company.members.inviteModal.setupLink')}
                             </div>
                             <div className="mt-1 break-all text-edubot-muted dark:text-slate-400">
                                 {inviteResult.onboarding.setupLink}
@@ -660,7 +668,7 @@ export default function CompanyMembers({
                                 className="dashboard-button-secondary mt-3"
                                 onClick={copySetupLink}
                             >
-                                Copy link
+                                {t('company.members.inviteModal.copyLink')}
                             </button>
                         </div>
                     )}
@@ -671,13 +679,15 @@ export default function CompanyMembers({
                             className="dashboard-button-secondary"
                             onClick={closeInvite}
                         >
-                            Close
+                            {t('company.members.inviteModal.close')}
                         </button>
                         <button
                             className="dashboard-button-primary disabled:cursor-not-allowed disabled:opacity-50"
                             disabled={inviteSaving}
                         >
-                            {inviteSaving ? 'Saving...' : 'Create/invite'}
+                            {inviteSaving
+                                ? t('company.members.inviteModal.saving')
+                                : t('company.members.inviteModal.createInvite')}
                         </button>
                     </div>
                 </form>
@@ -685,22 +695,28 @@ export default function CompanyMembers({
             <BasicModal
                 isOpen={inviteLinkOpen}
                 onClose={() => setInviteLinkOpen(false)}
-                title="Invite setup link"
-                subtitle="Copy and share this link if the user did not receive the setup email."
+                title={t('company.members.inviteLinkModal.title')}
+                subtitle={t('company.members.inviteLinkModal.subtitle')}
                 size="md"
             >
                 {inviteResult?.onboarding?.setupLink ? (
                     <div className="space-y-4">
                         <div className="rounded-xl border border-edubot-line bg-edubot-surfaceAlt/60 p-3 text-sm dark:border-slate-700 dark:bg-slate-900">
                             <div className="font-semibold text-edubot-ink dark:text-white">
-                                Setup link
+                                {t('company.members.inviteModal.setupLink')}
                             </div>
                             <div className="mt-1 break-all text-edubot-muted dark:text-slate-400">
                                 {inviteResult.onboarding.setupLink}
                             </div>
                             <div className="mt-2 text-xs text-edubot-muted dark:text-slate-400">
-                                {inviteResult.onboarding.emailSent ? 'Email sent. ' : ''}
-                                Expires: {inviteResult.onboarding.expiresAt || 'soon'}.
+                                {inviteResult.onboarding.emailSent
+                                    ? t('company.members.inviteLinkModal.emailSent')
+                                    : ''}
+                                {t('company.members.inviteLinkModal.expires', {
+                                    value:
+                                        inviteResult.onboarding.expiresAt ||
+                                        t('company.members.inviteLinkModal.soon'),
+                                })}
                             </div>
                         </div>
                         <div className="flex justify-end gap-2">
@@ -709,21 +725,20 @@ export default function CompanyMembers({
                                 className="dashboard-button-secondary"
                                 onClick={() => setInviteLinkOpen(false)}
                             >
-                                Close
+                                {t('company.members.inviteModal.close')}
                             </button>
                             <button
                                 type="button"
                                 className="dashboard-button-primary"
                                 onClick={copySetupLink}
                             >
-                                Copy link
+                                {t('company.members.inviteModal.copyLink')}
                             </button>
                         </div>
                     </div>
                 ) : (
                     <div className="text-sm text-edubot-muted dark:text-slate-400">
-                        No setup link is available for this member. The account may already be
-                        active.
+                        {t('company.members.inviteLinkModal.noSetupLink')}
                     </div>
                 )}
             </BasicModal>
@@ -731,10 +746,15 @@ export default function CompanyMembers({
                 isOpen={Boolean(pendingRemoveMember)}
                 onClose={() => setPendingRemoveMember(null)}
                 onConfirm={confirmRemove}
-                title="Remove member"
-                message={`Remove ${pendingRemoveMember?.fullName || pendingRemoveMember?.email || 'this member'} from this tenant?`}
-                confirmLabel="Remove"
-                cancelLabel="Cancel"
+                title={t('company.members.removeModal.title')}
+                message={t('company.members.removeModal.message', {
+                    name:
+                        pendingRemoveMember?.fullName ||
+                        pendingRemoveMember?.email ||
+                        t('company.members.removeModal.thisMember'),
+                })}
+                confirmLabel={t('company.members.remove')}
+                cancelLabel={t('company.settings.cancel')}
                 confirmVariant="danger"
                 loading={Boolean(removingKey)}
             />
