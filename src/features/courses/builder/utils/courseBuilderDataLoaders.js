@@ -10,9 +10,10 @@ import { fetchSkills } from '../../../skills/api';
 import { createEmptyQuiz, mapQuizFromApi } from '../../../../utils/quizUtils';
 import { createEmptyChallenge, mapChallengeFromApi } from '../../../../utils/challengeUtils';
 
-export const DEFAULT_SKILL_OPTION = { value: '', label: 'Skill тандаңыз (опция)' };
+export const DEFAULT_SKILL_OPTION_LABEL = 'Skill тандаңыз (опция)';
+export const DEFAULT_SKILL_OPTION = { value: '', label: DEFAULT_SKILL_OPTION_LABEL };
 
-export const mapSkillsToOptions = (skillsData) => {
+export const mapSkillsToOptions = (skillsData, optionalSkillLabel = DEFAULT_SKILL_OPTION_LABEL) => {
     const mappedSkillOptions = Array.isArray(skillsData) && skillsData.length
         ? skillsData
             .filter((skill) => skill.slug || skill.id)
@@ -22,7 +23,7 @@ export const mapSkillsToOptions = (skillsData) => {
             }))
         : [];
 
-    return [DEFAULT_SKILL_OPTION, ...mappedSkillOptions];
+    return [{ ...DEFAULT_SKILL_OPTION, label: optionalSkillLabel }, ...mappedSkillOptions];
 };
 
 export const hydrateCourseInfo = (courseData) => {
@@ -124,7 +125,7 @@ const loadSectionLessons = async ({ courseId, section, warnings }) => {
     };
 };
 
-export const loadCreateCourseBuilderData = async () => {
+export const loadCreateCourseBuilderData = async ({ optionalSkillLabel } = {}) => {
     const [categories, skillsData] = await Promise.all([
         fetchCategories(),
         fetchSkills().catch(() => []),
@@ -132,11 +133,11 @@ export const loadCreateCourseBuilderData = async () => {
 
     return {
         categories,
-        skillOptions: mapSkillsToOptions(skillsData),
+        skillOptions: mapSkillsToOptions(skillsData, optionalSkillLabel),
     };
 };
 
-export const loadEditCourseBuilderData = async (courseId) => {
+export const loadEditCourseBuilderData = async (courseId, { optionalSkillLabel } = {}) => {
     const [courseData, categories, sections, skillsData] = await Promise.all([
         fetchCourseDetails(courseId),
         fetchCategories(),
@@ -160,6 +161,6 @@ export const loadEditCourseBuilderData = async (courseId) => {
         courseInfo: hydrateCourseInfo(courseData),
         curriculum,
         lessonExtraWarnings,
-        skillOptions: mapSkillsToOptions(skillsData),
+        skillOptions: mapSkillsToOptions(skillsData, optionalSkillLabel),
     };
 };

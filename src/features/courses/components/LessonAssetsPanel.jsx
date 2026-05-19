@@ -1,3 +1,5 @@
+import { useTranslation } from 'react-i18next';
+
 const LessonAssetsPanel = ({
     kind,
     onVideoFile,
@@ -13,15 +15,17 @@ const LessonAssetsPanel = ({
     onResourceNameChange,
     resourceNameDisabled,
 }) => {
+    const { t } = useTranslation();
+
     return (
         <details className="mb-2 overflow-hidden rounded-lg border border-slate-200 bg-white/70 dark:border-slate-700 dark:bg-[#1b1b1b]">
             <summary className="cursor-pointer select-none px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-200">
-                Файлдар жана материалдар
+                {t('instructorDashboard.courseBuilder.assets.title')}
             </summary>
             <div className="space-y-3 px-3 pb-3 pt-1">
                 {kind === 'video' && (
                     <>
-                        <label className="mb-1 block font-medium">Видео жүктөө</label>
+                        <label className="mb-1 block font-medium">{t('instructorDashboard.courseBuilder.assets.videoUpload')}</label>
                         <div className="flex items-center justify-between gap-2">
                             <input
                                 type="file"
@@ -31,7 +35,7 @@ const LessonAssetsPanel = ({
                             />
                             {videoExists && (
                                 <span className="whitespace-nowrap text-xs text-blue-500">
-                                    Видео файл бар
+                                    {t('instructorDashboard.courseBuilder.assets.videoExists')}
                                 </span>
                             )}
                         </div>
@@ -44,7 +48,9 @@ const LessonAssetsPanel = ({
                                     ></div>
                                 </div>
                                 <p className="mb-2 text-xs text-gray-500 dark:text-[#a6adba]">
-                                    {videoProgress}% жүктөлдү
+                                    {t('instructorDashboard.courseBuilder.assets.uploadedPercent', {
+                                        percent: videoProgress,
+                                    })}
                                 </p>
                             </>
                         )}
@@ -59,7 +65,7 @@ const LessonAssetsPanel = ({
                     </>
                 )}
 
-                <label className="mb-1 mt-1 block font-medium">Материал жүктөө (PDF, ZIP)</label>
+                <label className="mb-1 mt-1 block font-medium">{t('instructorDashboard.courseBuilder.assets.resourceUpload')}</label>
                 <div className="flex items-center justify-between gap-2">
                     <input
                         type="file"
@@ -69,7 +75,7 @@ const LessonAssetsPanel = ({
                     />
                     {resourceExists && (
                         <span className="whitespace-nowrap text-xs text-purple-500">
-                            Материал файл бар
+                            {t('instructorDashboard.courseBuilder.assets.resourceExists')}
                         </span>
                     )}
                 </div>
@@ -82,21 +88,23 @@ const LessonAssetsPanel = ({
                             />
                         </div>
                         <p className="mb-2 text-xs text-gray-500 dark:text-[#a6adba]">
-                            {resourceProgress}% жүктөлдү
+                            {t('instructorDashboard.courseBuilder.assets.uploadedPercent', {
+                                percent: resourceProgress,
+                            })}
                         </p>
                     </>
                 )}
 
-                <label className="block text-sm font-medium">Материалдын аталышы</label>
+                <label className="block text-sm font-medium">{t('instructorDashboard.courseBuilder.assets.resourceName')}</label>
                 <input
                     type="text"
                     className="mb-2 w-full rounded border bg-white p-2 dark:bg-[#222222] dark:text-white"
                     value={resourceName || ''}
                     onChange={(e) => onResourceNameChange(e.target.value)}
-                    placeholder="мисалы: Практикалык тапшырмалар.pdf"
+                    placeholder={t('instructorDashboard.courseBuilder.placeholders.resourceName')}
                     disabled={resourceNameDisabled}
                 />
-                <p className="mb-1 text-xs text-gray-500">Бул аталыш студенттерге көрсөтүлөт.</p>
+                <p className="mb-1 text-xs text-gray-500">{t('instructorDashboard.courseBuilder.assets.resourceNameHelp')}</p>
             </div>
         </details>
     );

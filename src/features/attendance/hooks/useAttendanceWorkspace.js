@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'react-hot-toast';
+import { useTranslation } from 'react-i18next';
 import { SESSION_ATTENDANCE_STATUS } from '@shared/contracts';
 import {
     fetchSessionAttendance,
@@ -60,18 +61,18 @@ const isAttendanceCourseType = (course = {}) => {
     return type === 'offline' || type === 'online_live';
 };
 
-const getAttendanceErrorMessage = (error) => {
+const getAttendanceErrorMessage = (error, t) => {
     const status = error?.response?.status;
-    if (status === 401) return 'Сессия мөөнөтү бүттү. Кайра кириңиз.';
-    if (status === 403) return 'Бул аракетке уруксатыңыз жок.';
-    if (status === 404) return 'Тандалган группа же сессия табылган жок.';
+    if (status === 401) return t('attendance.errors.sessionExpired');
+    if (status === 403) return t('attendance.errors.forbidden');
+    if (status === 404) return t('attendance.errors.notFound');
     if (status === 400) {
         const message = error?.response?.data?.message;
         if (Array.isArray(message)) return message.join(', ');
-        return message || 'Текшерүү катасы болду.';
+        return message || t('attendance.errors.validation');
     }
 
-    const fallback = error?.response?.data?.message || 'Сервер катасы болду.';
+    const fallback = error?.response?.data?.message || t('attendance.errors.server');
     return Array.isArray(fallback) ? fallback.join(', ') : fallback;
 };
 
@@ -81,6 +82,8 @@ const cloneRowsMap = (map) =>
     );
 
 export const useAttendanceWorkspace = (user) => {
+    const { t } = useTranslation();
+    const tRef = useRef(t);
     const [courses, setCourses] = useState([]);
     const [groups, setGroups] = useState([]);
     const [sessions, setSessions] = useState([]);
@@ -98,6 +101,10 @@ export const useAttendanceWorkspace = (user) => {
     const [reportFilter, setReportFilter] = useState('all');
     const [adminEditMode, setAdminEditMode] = useState(false);
     const [viewMode, setViewMode] = useState('table');
+
+    useEffect(() => {
+        tRef.current = t;
+    }, [t]);
 
     useEffect(() => {
         if (!user?.id) return;
@@ -130,10 +137,11 @@ export const useAttendanceWorkspace = (user) => {
                 });
             } catch (error) {
                 console.error('Failed to load attendance courses', error);
-                const message = 'Катышуу үчүн курстар жүктөлгөн жок.';
+                const translate = tRef.current;
+                const message = translate('attendance.toasts.coursesLoadError');
                 toast.error(message);
                 if (!cancelled) {
-                    setWorkspaceNotice({ tone: 'error', title: 'Курстар жүктөлгөн жок', message });
+                    setWorkspaceNotice({ tone: 'error', title: translate('attendance.notices.coursesLoadErrorTitle'), message });
                     setCourses([]);
                     setSelectedCourseId('');
                 }
@@ -174,10 +182,11 @@ export const useAttendanceWorkspace = (user) => {
                 });
             } catch (error) {
                 console.error('Failed to load attendance groups', error);
-                const message = 'Группалар жүктөлгөн жок.';
+                const translate = tRef.current;
+                const message = translate('attendance.toasts.groupsLoadError');
                 toast.error(message);
                 if (!cancelled) {
-                    setWorkspaceNotice({ tone: 'error', title: 'Группалар жүктөлгөн жок', message });
+                    setWorkspaceNotice({ tone: 'error', title: translate('attendance.notices.groupsLoadErrorTitle'), message });
                     setGroups([]);
                     setSelectedGroupId('');
                 }
@@ -220,10 +229,11 @@ export const useAttendanceWorkspace = (user) => {
                 });
             } catch (error) {
                 console.error('Failed to load attendance sessions', error);
-                const message = 'Сессиялар жүктөлгөн жок.';
+                const translate = tRef.current;
+                const message = translate('attendance.toasts.sessionsLoadError');
                 toast.error(message);
                 if (!cancelled) {
-                    setWorkspaceNotice({ tone: 'error', title: 'Сессиялар жүктөлгөн жок', message });
+                    setWorkspaceNotice({ tone: 'error', title: translate('attendance.notices.sessionsLoadErrorTitle'), message });
                     setSessions([]);
                     setSelectedSessionId('');
                 }
@@ -240,6 +250,7 @@ export const useAttendanceWorkspace = (user) => {
     }, [selectedGroupId]);
 
     const loadRosterAndAttendance = useCallback(async () => {
+        const translate = tRef.current;
         if (!selectedGroupId) {
             setRowsMap({});
             setInitialRowsMap({});
@@ -296,9 +307,9 @@ export const useAttendanceWorkspace = (user) => {
             setWorkspaceNotice(null);
         } catch (error) {
             console.error('Failed to load session attendance workspace', error);
-            const message = getAttendanceErrorMessage(error);
+            const message = getAttendanceErrorMessage(error, translate);
             toast.error(message);
-            setWorkspaceNotice({ tone: 'error', title: 'Катышуу тизмеси жүктөлгөн жок', message });
+            setWorkspaceNotice({ tone: 'error', title: translate('attendance.notices.rosterLoadErrorTitle'), message });
             setRowsMap({});
             setInitialRowsMap({});
         } finally {
@@ -379,8 +390,8 @@ export const useAttendanceWorkspace = (user) => {
     const handleStatusChange = (studentId, status) => {
         setWorkspaceNotice({
             tone: 'warning',
-            title: 'Сакталбаган өзгөртүү бар',
-            message: 'Катышуу статусун өзгөрттүңүз. Сактоо баскычын басмайынча өзгөрүү серверге кетпейт.',
+            title: t('attendance.notices.unsavedTitle'),
+            message: t('attendance.notices.statusChanged'),
         });
         setRowsMap((prev) => ({
             ...prev,
@@ -391,8 +402,8 @@ export const useAttendanceWorkspace = (user) => {
     const handleNotesChange = (studentId, notes) => {
         setWorkspaceNotice({
             tone: 'warning',
-            title: 'Сакталбаган өзгөртүү бар',
-            message: 'Эскертүү өзгөрдү. Сактоо баскычын басмайынча өзгөрүү серверге кетпейт.',
+            title: t('attendance.notices.unsavedTitle'),
+            message: t('attendance.notices.notesChanged'),
         });
         setRowsMap((prev) => ({
             ...prev,
@@ -404,45 +415,45 @@ export const useAttendanceWorkspace = (user) => {
         if (!selectedCourseId || !selectedSessionId) {
             setWorkspaceNotice({
                 tone: 'warning',
-                title: 'Толук тандоо керек',
-                message: 'Катышууну сактоо үчүн курс, группа жана сессия тандаңыз.',
+                title: t('attendance.notices.selectionRequiredTitle'),
+                message: t('attendance.notices.selectionRequired'),
             });
-            toast.error('Курс, группа жана сессия тандаңыз.');
+            toast.error(t('attendance.toasts.selectionRequired'));
             return;
         }
 
         if (isAdminOverrideMode && !adminEditMode) {
             setWorkspaceNotice({
                 tone: 'warning',
-                title: 'Өзгөртүү режими жабык',
-                message: 'Админ катары катышууну өзгөртүү үчүн адегенде өзгөртүү режимин ачыңыз.',
+                title: t('attendance.notices.editModeClosedTitle'),
+                message: t('attendance.notices.editModeClosed'),
             });
-            toast('Адегенде өзгөртүү режимин ачыңыз.');
+            toast(t('attendance.toasts.openEditModeFirst'));
             return;
         }
 
         if (attendanceDisabled) {
-            toast.error('Attendance is disabled for this tenant.');
+            toast.error(t('attendance.toasts.disabled'));
             return;
         }
 
         if (!hasAttendanceChanges) {
             setWorkspaceNotice({
                 tone: 'info',
-                title: 'Өзгөртүү жок',
-                message: 'Учурдагы катышуу тизмеси сакталган абал менен бирдей.',
+                title: t('attendance.notices.noChangesTitle'),
+                message: t('attendance.notices.noChanges'),
             });
-            toast('Өзгөртүү жок.');
+            toast(t('attendance.toasts.noChanges'));
             return;
         }
 
         if (students.length === 0) {
             setWorkspaceNotice({
                 tone: 'warning',
-                title: 'Студент жок',
-                message: 'Бул группа үчүн сактай турган катышуу тизмеси бош.',
+                title: t('attendance.notices.noStudentsTitle'),
+                message: t('attendance.notices.noStudentsToSave'),
             });
-            toast.error('Бул группа үчүн студент табылган жок.');
+            toast.error(t('attendance.toasts.noStudents'));
             return;
         }
 
@@ -462,13 +473,13 @@ export const useAttendanceWorkspace = (user) => {
             });
 
             setInitialRowsMap(cloneRowsMap(rowsMap));
-            const message = response?.message || 'Катышуу ийгиликтүү сакталды.';
-            setWorkspaceNotice({ tone: 'success', title: 'Катышуу сакталды', message });
+            const message = response?.message || t('attendance.toasts.saved');
+            setWorkspaceNotice({ tone: 'success', title: t('attendance.notices.savedTitle'), message });
             toast.success(message);
         } catch (error) {
             console.error('Failed to save session attendance', error);
-            const message = getAttendanceErrorMessage(error);
-            setWorkspaceNotice({ tone: 'error', title: 'Катышуу сакталган жок', message });
+            const message = getAttendanceErrorMessage(error, t);
+            setWorkspaceNotice({ tone: 'error', title: t('attendance.notices.saveErrorTitle'), message });
             toast.error(message);
         } finally {
             setSavingAttendance(false);
@@ -476,13 +487,13 @@ export const useAttendanceWorkspace = (user) => {
     };
 
     const loadingStage = loadingCourses
-        ? 'Курстар жүктөлүүдө...'
+        ? t('attendance.loading.courses')
         : loadingGroups
-            ? 'Группалар жүктөлүүдө...'
+            ? t('attendance.loading.groups')
             : loadingSessions
-                ? 'Сессиялар жүктөлүүдө...'
+                ? t('attendance.loading.sessions')
                 : loadingStudents
-                    ? 'Катышуу тизмеси жүктөлүүдө...'
+                    ? t('attendance.loading.roster')
                     : '';
 
     return {

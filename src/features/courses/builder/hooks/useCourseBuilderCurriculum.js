@@ -3,6 +3,7 @@
 
 import { useCallback, useRef } from 'react';
 import toast from 'react-hot-toast';
+import { useTranslation } from 'react-i18next';
 
 import {
     getFirstInvalidLessonTarget,
@@ -48,6 +49,7 @@ import { isForbiddenError, parseApiError } from '../../../../shared/api/error';
  * @returns {Object} - Curriculum operations
  */
 export const useCourseBuilderCurriculum = (courseBuilderState) => {
+    const { t } = useTranslation();
     const {
         curriculum,
         setCurriculum,
@@ -109,7 +111,7 @@ export const useCourseBuilderCurriculum = (courseBuilderState) => {
     const handleDeleteSection = useCallback((sectionIndex) => {
         // Validation: must have at least one section
         if (curriculum.length === 1) {
-            toast.error('Кеминде бир бөлүм болушу керек.');
+            toast.error(t('instructorDashboard.courseBuilder.validation.sectionRequired'));
             return;
         }
 
@@ -140,7 +142,7 @@ export const useCourseBuilderCurriculum = (courseBuilderState) => {
         }
 
         setCurriculum(removeSection(curriculum, sectionIndex));
-    }, [curriculum, setCurriculum, setDeletedLessons, setDeletedSections]);
+    }, [curriculum, setCurriculum, setDeletedLessons, setDeletedSections, t]);
 
     // Lesson operations
     const handleAddLesson = useCallback((sectionIndex) => {
@@ -170,7 +172,7 @@ export const useCourseBuilderCurriculum = (courseBuilderState) => {
     const handleDeleteLesson = useCallback((sectionIndex, lessonIndex) => {
         // Validation: first section must have at least one lesson
         if (sectionIndex === 0 && curriculum[sectionIndex].lessons.length === 1) {
-            toast.error('Кеминде бир сабак болушу керек.');
+            toast.error(t('instructorDashboard.courseBuilder.validation.lessonRequired'));
             return;
         }
 
@@ -190,7 +192,7 @@ export const useCourseBuilderCurriculum = (courseBuilderState) => {
             markSectionDirtyByIndex(sectionIndex, updated);
             return updated;
         });
-    }, [curriculum, setCurriculum, mode, setDeletedLessons, markSectionDirtyByIndex]);
+    }, [curriculum, setCurriculum, mode, setDeletedLessons, markSectionDirtyByIndex, t]);
 
     // Quiz and challenge operations
     const handleQuizChange = useCallback((sectionIndex, lessonIndex, newQuiz) => {
@@ -321,7 +323,11 @@ export const useCourseBuilderCurriculum = (courseBuilderState) => {
         if (!sectionId) {
             try {
                 const sectionPayload = {
-                    title: curriculum[sectionIndex].sectionTitle || `Бөлүм ${sectionIndex + 1}`,
+                    title:
+                        curriculum[sectionIndex].sectionTitle ||
+                        t('instructorDashboard.courseBuilder.fallbacks.section', {
+                            number: sectionIndex + 1,
+                        }),
                     order: sectionIndex,
                     skillId: normalizeSkillValue(curriculum[sectionIndex].skillId),
                 };
@@ -336,10 +342,10 @@ export const useCourseBuilderCurriculum = (courseBuilderState) => {
                     return updated;
                 });
 
-                toast.success('Бөлүм автоматтык түрдө сакталды');
+                toast.success(t('instructorDashboard.courseBuilder.toasts.sectionAutoSaved'));
             } catch (error) {
                 console.error('Failed to create section:', error);
-                toast.error('Бөлүмдү түзүүдө ката кетти. Адегенде кол менен сактаңыз.');
+                toast.error(t('instructorDashboard.courseBuilder.toasts.sectionAutoSaveError'));
                 return;
             }
         }
@@ -389,7 +395,7 @@ export const useCourseBuilderCurriculum = (courseBuilderState) => {
                 handleUpdateLesson(sectionIndex, lessonIndex, 'resourceName', file.name);
             }
         } catch (err) {
-            toast.error(err.message || 'Файл жүктөөдө ката кетти.');
+            toast.error(err.message || t('instructorDashboard.courseBuilder.toasts.fileUploadError'));
         } finally {
             // Clear uploading state
             setCurriculum((prev) => {
@@ -398,7 +404,7 @@ export const useCourseBuilderCurriculum = (courseBuilderState) => {
                 return updated;
             });
         }
-    }, [curriculum, setCurriculum, handleUpdateLesson]);
+    }, [curriculum, setCurriculum, handleUpdateLesson, t]);
 
     // UI operations
     const openSection = useCallback((sectionIdx) => {
@@ -423,9 +429,9 @@ export const useCourseBuilderCurriculum = (courseBuilderState) => {
     }, [setExpandedSections]);
 
     const jumpToNextInvalidLesson = useCallback(() => {
-        const target = getFirstInvalidLessonTarget(curriculum);
+        const target = getFirstInvalidLessonTarget(curriculum, t);
         if (!target) {
-            toast.success('Текшериле турган ката жок.');
+            toast.success(t('instructorDashboard.courseBuilder.toasts.noValidationIssues'));
             return;
         }
         openSection(target.sIdx);
@@ -434,8 +440,8 @@ export const useCourseBuilderCurriculum = (courseBuilderState) => {
                 .getElementById(`lesson-${target.sIdx}-${target.lIdx}`)
                 ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
         });
-        toast.error(`Текшерүү керек: ${target.issue}`);
-    }, [curriculum, openSection]);
+        toast.error(t('instructorDashboard.courseBuilder.toasts.validationIssue', { issue: target.issue }));
+    }, [curriculum, openSection, t]);
 
     const expandAllSections = useCallback((count) => {
         const next = {};
@@ -453,12 +459,12 @@ export const useCourseBuilderCurriculum = (courseBuilderState) => {
     const handleCurriculumSubmit = useCallback(async () => {
         setSaving(true);
         try {
-            const { errors, invalidSectionIndexes } = validateCurriculumStructure(curriculum);
+            const { errors, invalidSectionIndexes } = validateCurriculumStructure(curriculum, t);
             const savedCurriculum = JSON.parse(JSON.stringify(curriculum));
 
             if (errors.length > 0) {
                 expandInvalidSections(invalidSectionIndexes);
-                const target = getFirstInvalidLessonTarget(curriculum);
+                const target = getFirstInvalidLessonTarget(curriculum, t);
                 if (target) {
                     openSection(target.sIdx);
                     requestAnimationFrame(() => {
@@ -466,9 +472,9 @@ export const useCourseBuilderCurriculum = (courseBuilderState) => {
                             .getElementById(`lesson-${target.sIdx}-${target.lIdx}`)
                             ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
                     });
-                    toast.error(`Текшерүү керек: ${target.issue}`);
+                    toast.error(t('instructorDashboard.courseBuilder.toasts.validationIssue', { issue: target.issue }));
                 } else {
-                    toast.error('Айрым сабактар толук эмес.');
+                    toast.error(t('instructorDashboard.courseBuilder.toasts.someLessonsIncomplete'));
                 }
                 return false;
             }
@@ -481,7 +487,12 @@ export const useCourseBuilderCurriculum = (courseBuilderState) => {
 
                     // Create section
                     sec = await createSection(courseId, {
-                        title: section.sectionTitle || section.title || `Бөлүм ${sIdx + 1}`,
+                        title:
+                            section.sectionTitle ||
+                            section.title ||
+                            t('instructorDashboard.courseBuilder.fallbacks.section', {
+                                number: sIdx + 1,
+                            }),
                         order: sIdx,
                         skillId: normalizeSkillValue(section.skillId),
                     });
@@ -564,7 +575,12 @@ export const useCourseBuilderCurriculum = (courseBuilderState) => {
                     } else if (!section.id) {
                         // Create new section
                         sec = await createSection(courseId, {
-                            title: section.sectionTitle || section.title || `Бөлүм ${sIdx + 1}`,
+                            title:
+                                section.sectionTitle ||
+                                section.title ||
+                                t('instructorDashboard.courseBuilder.fallbacks.section', {
+                                    number: sIdx + 1,
+                                }),
                             order: sIdx,
                             skillId: normalizeSkillValue(section.skillId),
                         });
@@ -683,7 +699,11 @@ export const useCourseBuilderCurriculum = (courseBuilderState) => {
             dirtyLessonIdsRef.current.clear();
             setOriginalSections(savedCurriculum);
 
-            toast.success(mode === 'create' ? 'Мазмун сакталды!' : 'Бардык өзгөрүүлөр сакталды!');
+            toast.success(
+                mode === 'create'
+                    ? t('instructorDashboard.courseBuilder.toasts.contentSaved')
+                    : t('instructorDashboard.courseBuilder.toasts.changesSaved')
+            );
             return true; // Indicate success
         } catch (err) {
             console.error(err);
@@ -691,7 +711,14 @@ export const useCourseBuilderCurriculum = (courseBuilderState) => {
                 navigate('/unauthorized');
                 return false;
             }
-            toast.error(parseApiError(err, mode === 'create' ? 'Мазмунду сактоодо ката кетти.' : 'Өзгөрүүлөрдү сактоодо ката кетти.').message);
+            toast.error(
+                parseApiError(
+                    err,
+                    mode === 'create'
+                        ? t('instructorDashboard.courseBuilder.toasts.contentSaveError')
+                        : t('instructorDashboard.courseBuilder.toasts.changesSaveError')
+                ).message
+            );
             return false;
         } finally {
             setSaving(false);
@@ -711,22 +738,23 @@ export const useCourseBuilderCurriculum = (courseBuilderState) => {
         deleteSection,
         expandInvalidSections,
         openSection,
+        t,
     ]);
 
     // Validation
     const validateCurriculum = useCallback(() => {
-        const { errors, invalidSectionIndexes } = validateCurriculumStructure(curriculum);
+        const { errors, invalidSectionIndexes } = validateCurriculumStructure(curriculum, t);
         return {
             isValid: errors.length === 0,
             errors,
             invalidSectionIndexes,
         };
-    }, [curriculum]);
+    }, [curriculum, t]);
 
     // Get curriculum statistics
     const getStats = useCallback(() => {
-        return getCurriculumStats(curriculum);
-    }, [curriculum]);
+        return getCurriculumStats(curriculum, t);
+    }, [curriculum, t]);
 
     return {
         // Section operations

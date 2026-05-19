@@ -1,7 +1,9 @@
 import InlineRichText from '@shared/ui/InlineRichText';
 import { createEmptyQuestion, createEmptyQuiz, cloneQuiz } from '@utils/quizUtils';
+import { useTranslation } from 'react-i18next';
 
 const LessonQuizEditor = ({ quiz, onChange, disabled = false }) => {
+    const { t } = useTranslation();
     const safeQuiz = quiz ?? createEmptyQuiz();
 
     const updateQuiz = (updater) => {
@@ -106,7 +108,7 @@ const LessonQuizEditor = ({ quiz, onChange, disabled = false }) => {
         <div className={`space-y-4 ${disabled ? 'opacity-70 pointer-events-none' : ''}`}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                    <label className="block text-sm font-medium mb-1">Өтүү упайы (%)</label>
+                    <label className="block text-sm font-medium mb-1">{t('instructorDashboard.courseBuilder.quiz.passingScore')}</label>
                     <input
                         type="number"
                         min="0"
@@ -119,7 +121,7 @@ const LessonQuizEditor = ({ quiz, onChange, disabled = false }) => {
                 </div>
                 <div>
                     <label className="block text-sm font-medium mb-1">
-                        Убакыт лимити (мүнөт, бош болсо чексиз)
+                        {t('instructorDashboard.courseBuilder.quiz.timeLimit')}
                     </label>
                     <input
                         type="number"
@@ -137,8 +139,9 @@ const LessonQuizEditor = ({ quiz, onChange, disabled = false }) => {
             </div>
 
             <p className="text-xs text-slate-500">
-                Текст форматтоо: <code>**калың**</code> жана <code>`код`</code>. Төмөндө алдын ала
-                көрүү чыгат.
+                {t('instructorDashboard.courseBuilder.quiz.formattingHelp')}{' '}
+                <code>**{t('instructorDashboard.courseBuilder.quiz.boldSample')}**</code>{' '}
+                {t('instructorDashboard.courseBuilder.quiz.and')} <code>`{t('instructorDashboard.courseBuilder.quiz.codeSample')}`</code>.
             </p>
 
             <div className="space-y-6">
@@ -148,21 +151,21 @@ const LessonQuizEditor = ({ quiz, onChange, disabled = false }) => {
                         className="border border-edubot-teal rounded p-4 bg-white dark:bg-gray-800 space-y-3"
                     >
                         <div className="flex justify-between items-center gap-3">
-                            <h4 className="font-semibold">Суроо {qIdx + 1}</h4>
+                            <h4 className="font-semibold">{t('instructorDashboard.courseBuilder.quiz.question', { number: qIdx + 1 })}</h4>
                             <button
                                 type="button"
                                 className="text-sm text-red-600 hover:underline disabled:text-gray-400"
                                 onClick={() => removeQuestion(qIdx)}
                                 disabled={disabled || safeQuiz.questions.length <= 1}
                             >
-                                Өчүрүү
+                                {t('instructorDashboard.courseBuilder.actions.delete')}
                             </button>
                         </div>
 
                         <div className="space-y-2">
                             <textarea
                                 className="w-full border rounded p-2 min-h-20 bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                                placeholder="Суроонун тексти"
+                                placeholder={t('instructorDashboard.courseBuilder.quiz.questionPlaceholder')}
                                 value={question.prompt}
                                 onChange={(e) => handleQuestionPromptChange(qIdx, e.target.value)}
                                 disabled={disabled}
@@ -175,7 +178,7 @@ const LessonQuizEditor = ({ quiz, onChange, disabled = false }) => {
                                     onClick={() => addPromptFormatting(qIdx, 'bold')}
                                     disabled={disabled}
                                 >
-                                    + **калың**
+                                        + **{t('instructorDashboard.courseBuilder.quiz.boldSample')}**
                                 </button>
                                 <button
                                     type="button"
@@ -183,14 +186,14 @@ const LessonQuizEditor = ({ quiz, onChange, disabled = false }) => {
                                     onClick={() => addPromptFormatting(qIdx, 'code')}
                                     disabled={disabled}
                                 >
-                                    + `код`
+                                        + `{t('instructorDashboard.courseBuilder.quiz.codeSample')}`
                                 </button>
                             </div>
 
                             {question.prompt?.trim() && (
                                 <div className="text-sm rounded border border-slate-200 bg-slate-50 p-2 dark:border-gray-600 dark:bg-gray-700">
                                     <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-gray-400 mb-1">
-                                        Алдын ала көрүү
+                                        {t('instructorDashboard.courseBuilder.quiz.preview')}
                                     </p>
                                     <InlineRichText text={question.prompt} />
                                 </div>
@@ -218,7 +221,9 @@ const LessonQuizEditor = ({ quiz, onChange, disabled = false }) => {
                                     <div className="flex-1 space-y-2" onClick={(e) => e.stopPropagation()}>
                                         <input
                                             className="w-full border rounded p-2 bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                                            placeholder={`Вариант ${oIdx + 1}`}
+                                            placeholder={t('instructorDashboard.courseBuilder.quiz.option', {
+                                                number: oIdx + 1,
+                                            })}
                                             value={option.text}
                                             onChange={(e) =>
                                                 handleOptionTextChange(qIdx, oIdx, e.target.value)
@@ -236,7 +241,7 @@ const LessonQuizEditor = ({ quiz, onChange, disabled = false }) => {
                                                 }}
                                                 disabled={disabled}
                                             >
-                                                + **калың**
+                                                + **{t('instructorDashboard.courseBuilder.quiz.boldSample')}**
                                             </button>
                                             <button
                                                 type="button"
@@ -247,7 +252,7 @@ const LessonQuizEditor = ({ quiz, onChange, disabled = false }) => {
                                                 }}
                                                 disabled={disabled}
                                             >
-                                                + `код`
+                                                + `{t('instructorDashboard.courseBuilder.quiz.codeSample')}`
                                             </button>
                                         </div>
 
@@ -268,7 +273,7 @@ const LessonQuizEditor = ({ quiz, onChange, disabled = false }) => {
                                         }}
                                         disabled={disabled || question.options.length <= 2}
                                     >
-                                        Өчүрүү
+                                        {t('instructorDashboard.courseBuilder.actions.delete')}
                                     </button>
                                 </label>
                             ))}
@@ -280,7 +285,7 @@ const LessonQuizEditor = ({ quiz, onChange, disabled = false }) => {
                             onClick={() => addOption(qIdx)}
                             disabled={disabled || question.options.length >= 6}
                         >
-                            + Вариант кошуу
+                            {t('instructorDashboard.courseBuilder.quiz.addOption')}
                         </button>
                     </div>
                 ))}
@@ -292,7 +297,7 @@ const LessonQuizEditor = ({ quiz, onChange, disabled = false }) => {
                 onClick={addQuestion}
                 disabled={disabled}
             >
-                + Жаңы суроо кошуу
+                {t('instructorDashboard.courseBuilder.quiz.addQuestion')}
             </button>
         </div>
     );

@@ -11,13 +11,7 @@ import {
 } from 'react-icons/fi';
 import { formatReadTime } from '@utils/lessonUtils';
 import { formatDuration } from '@utils/timeUtils';
-
-const LESSON_KIND_LABELS = {
-    video: 'Видео',
-    article: 'Макала',
-    quiz: 'Квиз',
-    code: 'Код',
-};
+import { useTranslation } from 'react-i18next';
 
 const LESSON_KIND_COLORS = {
     video: 'bg-sky-100 text-sky-700',
@@ -32,12 +26,12 @@ const stripHtml = (value = '') =>
         .replace(/\s+/g, ' ')
         .trim();
 
-const getLessonDurationLabel = (lesson) => {
+const getLessonDurationLabel = (lesson, t) => {
     if (!lesson) return null;
     if (lesson.kind === 'article') return formatReadTime(lesson.duration);
     if (lesson.kind === 'video') return formatDuration(lesson.duration);
-    if (lesson.kind === 'quiz') return 'Тест';
-    if (lesson.kind === 'code') return 'Практика';
+    if (lesson.kind === 'quiz') return t('instructorDashboard.courseBuilder.lessonKinds.quiz');
+    if (lesson.kind === 'code') return t('instructorDashboard.courseBuilder.preview.practice');
     return null;
 };
 
@@ -49,6 +43,7 @@ const CoursePreviewPanel = ({
     actions = [],
     coverAlt = 'cover',
 }) => {
+    const { t } = useTranslation();
     const [openSections, setOpenSections] = useState({});
 
     const normalizedSections = useMemo(() => sections || [], [sections]);
@@ -70,72 +65,77 @@ const CoursePreviewPanel = ({
             sectionCount: normalizedSections.length,
             lessonCount,
             previewCount,
-            mixLabel: `${videoCount} видео · ${articleCount} макала · ${quizCount} квиз · ${codeCount} код`,
+            mixLabel: t('instructorDashboard.courseBuilder.preview.mixLabel', {
+                video: videoCount,
+                article: articleCount,
+                quiz: quizCount,
+                code: codeCount,
+            }),
             totalDurationLabel: formatDuration(totalDurationSeconds) || '—',
         };
-    }, [normalizedSections]);
+    }, [normalizedSections, t]);
 
     const warnings = useMemo(() => {
         const items = [];
 
-        if (!course?.title?.trim()) items.push('Курс аталышы жок.');
-        if (!stripHtml(course?.description || '').trim()) items.push('Курс сүрөттөмөсү толтурулган эмес.');
-        if (!course?.coverImageUrl) items.push('Cover сүрөт кошула элек.');
-        if (normalizedSections.length === 0) items.push('Курста бир да бөлүм жок.');
+        if (!course?.title?.trim()) items.push(t('instructorDashboard.courseBuilder.preview.warnings.missingCourseTitle'));
+        if (!stripHtml(course?.description || '').trim()) items.push(t('instructorDashboard.courseBuilder.preview.warnings.missingDescription'));
+        if (!course?.coverImageUrl) items.push(t('instructorDashboard.courseBuilder.preview.warnings.missingCover'));
+        if (normalizedSections.length === 0) items.push(t('instructorDashboard.courseBuilder.preview.warnings.noSections'));
 
         if (stats.previewCount === 0) {
-            items.push('Бир да превью сабак белгиленген эмес (видеолор үчүн сунушталат).');
+            items.push(t('instructorDashboard.courseBuilder.preview.warnings.noPreviewLessons'));
         }
 
         normalizedSections.forEach((section, sIdx) => {
             const sectionTitle = getSectionTitle(section, sIdx);
             if (!String(sectionTitle || '').trim()) {
-                items.push(`Бөлүм ${sIdx + 1}: аталышы жок.`);
+                items.push(t('instructorDashboard.courseBuilder.preview.warnings.sectionMissingTitle', { section: sIdx + 1 }));
             }
 
             const lessonList = section.lessons || [];
             if (lessonList.length === 0) {
-                items.push(`Бөлүм ${sIdx + 1}: сабактар жок.`);
+                items.push(t('instructorDashboard.courseBuilder.preview.warnings.sectionNoLessons', { section: sIdx + 1 }));
             }
 
             lessonList.forEach((lesson, lIdx) => {
-                const prefix = `Бөлүм ${sIdx + 1}, Сабак ${lIdx + 1}`;
+                const params = { section: sIdx + 1, lesson: lIdx + 1 };
                 if (!lesson?.title?.trim()) {
-                    items.push(`${prefix}: аталышы жок.`);
+                    items.push(t('instructorDashboard.courseBuilder.preview.warnings.lessonMissingTitle', params));
                 }
 
                 if (lesson?.kind === 'video' && !lesson?.videoKey && !lesson?.videoUrl) {
-                    items.push(`${prefix}: видео жүктөлгөн эмес.`);
+                    items.push(t('instructorDashboard.courseBuilder.preview.warnings.lessonMissingVideo', params));
                 }
 
                 if (lesson?.kind === 'video' || lesson?.kind === 'article') {
                     if (!lesson?.duration || Number(lesson.duration) <= 0) {
-                        items.push(`${prefix}: узактыгы/окуу убактысы көрсөтүлгөн эмес.`);
+                        items.push(t('instructorDashboard.courseBuilder.preview.warnings.lessonMissingDuration', params));
                     }
                 }
 
                 if (lesson?.kind === 'article' && !stripHtml(lesson?.content || '').trim()) {
-                    items.push(`${prefix}: макала тексти жок.`);
+                    items.push(t('instructorDashboard.courseBuilder.preview.warnings.lessonMissingArticleText', params));
                 }
 
                 if (lesson?.kind === 'quiz') {
                     const qCount = lesson?.quiz?.questions?.length || 0;
                     if (qCount === 0) {
-                        items.push(`${prefix}: квиз суроолору кошулган эмес.`);
+                        items.push(t('instructorDashboard.courseBuilder.preview.warnings.lessonMissingQuizQuestions', params));
                     }
                 }
 
                 if (lesson?.kind === 'code') {
                     const tests = lesson?.challenge?.tests || [];
                     if (!lesson?.challenge || tests.length === 0) {
-                        items.push(`${prefix}: код тапшырма тесттери толук эмес.`);
+                        items.push(t('instructorDashboard.courseBuilder.preview.warnings.lessonMissingCodeTests', params));
                     }
                 }
             });
         });
 
         return items;
-    }, [course, getSectionTitle, normalizedSections, stats.previewCount]);
+    }, [course, getSectionTitle, normalizedSections, stats.previewCount, t]);
 
     const hasBlockingWarnings = warnings.length > 0;
 
@@ -162,10 +162,10 @@ const CoursePreviewPanel = ({
                     <div>
                         <p className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700 dark:bg-slate-800 dark:text-slate-300">
                             <FiBookOpen className="h-3.5 w-3.5" />
-                            Финалдык алдын ала көрүү
+                            {t('instructorDashboard.courseBuilder.preview.eyebrow')}
                         </p>
                         <h3 className="mt-3 text-2xl font-bold text-slate-900 dark:text-slate-100">
-                            {course?.title || 'Курс аталышы жок'}
+                            {course?.title || t('instructorDashboard.courseBuilder.preview.fallbacks.courseTitle')}
                         </h3>
                         {course?.subtitle && (
                             <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
@@ -173,21 +173,23 @@ const CoursePreviewPanel = ({
                             </p>
                         )}
                         <p className="mt-3 text-sm leading-6 text-slate-700 dark:text-slate-300">
-                            {course?.description || 'Сүрөттөмө али кошула элек.'}
+                            {course?.description || t('instructorDashboard.courseBuilder.preview.fallbacks.description')}
                         </p>
 
                         <div className="mt-4 flex flex-wrap gap-2 text-xs">
                             <span className="rounded-full bg-slate-100 px-2.5 py-1 text-slate-700 dark:bg-slate-800 dark:text-slate-300">
-                                {course?.isPaid ? `Баасы: ${course?.price || 0} сом` : 'Акысыз курс'}
+                                {course?.isPaid
+                                    ? t('instructorDashboard.courseBuilder.preview.price', { price: course?.price || 0 })
+                                    : t('instructorDashboard.courseBuilder.preview.freeCourse')}
                             </span>
                             {course?.level && (
                                 <span className="rounded-full bg-slate-100 px-2.5 py-1 text-slate-700 dark:bg-slate-800 dark:text-slate-300">
-                                    Деңгээл: {course.level}
+                                    {t('instructorDashboard.courseBuilder.preview.level', { level: course.level })}
                                 </span>
                             )}
                             {course?.languageCode && (
                                 <span className="rounded-full bg-slate-100 px-2.5 py-1 text-slate-700 dark:bg-slate-800 dark:text-slate-300">
-                                    Тил: {course.languageCode.toUpperCase()}
+                                    {t('instructorDashboard.courseBuilder.preview.language', { language: course.languageCode.toUpperCase() })}
                                 </span>
                             )}
                         </div>
@@ -202,7 +204,7 @@ const CoursePreviewPanel = ({
                             />
                         ) : (
                             <div className="flex h-48 w-full items-center justify-center rounded-xl border border-dashed border-slate-300 text-sm text-slate-500 dark:border-slate-600 dark:text-slate-400">
-                                Cover сүрөт кошула элек
+                                {t('instructorDashboard.courseBuilder.preview.fallbacks.cover')}
                             </div>
                         )}
                     </div>
@@ -211,21 +213,21 @@ const CoursePreviewPanel = ({
 
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-[#111111]">
-                    <p className="text-xs text-slate-500 dark:text-slate-400">Бөлүмдөр</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">{t('instructorDashboard.courseBuilder.preview.stats.sections')}</p>
                     <p className="mt-1 text-2xl font-bold text-slate-900 dark:text-slate-100">{stats.sectionCount}</p>
                 </div>
                 <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-[#111111]">
-                    <p className="text-xs text-slate-500 dark:text-slate-400">Сабактар</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">{t('instructorDashboard.courseBuilder.preview.stats.lessons')}</p>
                     <p className="mt-1 text-2xl font-bold text-slate-900 dark:text-slate-100">{stats.lessonCount}</p>
                 </div>
                 <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-[#111111]">
-                    <p className="text-xs text-slate-500 dark:text-slate-400">Жалпы убакыт</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">{t('instructorDashboard.courseBuilder.preview.stats.totalTime')}</p>
                     <p className="mt-1 text-xl font-bold text-slate-900 dark:text-slate-100">
                         {stats.totalDurationLabel}
                     </p>
                 </div>
                 <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-[#111111]">
-                    <p className="text-xs text-slate-500 dark:text-slate-400">Превью сабактар</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">{t('instructorDashboard.courseBuilder.preview.stats.previewLessons')}</p>
                     <p className="mt-1 text-2xl font-bold text-slate-900 dark:text-slate-100">{stats.previewCount}</p>
                 </div>
             </div>
@@ -236,7 +238,7 @@ const CoursePreviewPanel = ({
                         <FiAlertTriangle className="mt-0.5 h-5 w-5 text-amber-700 dark:text-amber-300" />
                         <div className="w-full">
                             <p className="font-semibold text-amber-800 dark:text-amber-200">
-                                Жөнөтүүдөн мурун текшерүү керек: {warnings.length}
+                                {t('instructorDashboard.courseBuilder.preview.warningTitle', { count: warnings.length })}
                             </p>
                             <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-amber-900 dark:text-amber-100">
                                 {warnings.slice(0, 8).map((warning, idx) => (
@@ -245,7 +247,7 @@ const CoursePreviewPanel = ({
                             </ul>
                             {warnings.length > 8 && (
                                 <p className="mt-2 text-xs text-amber-700 dark:text-amber-300">
-                                    Дагы {warnings.length - 8} маселе бар. Мазмун кадамына кайтып оңдоңуз.
+                                    {t('instructorDashboard.courseBuilder.preview.moreWarnings', { count: warnings.length - 8 })}
                                 </p>
                             )}
                         </div>
@@ -256,7 +258,7 @@ const CoursePreviewPanel = ({
             <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-[#111111]">
                 <div className="flex items-center justify-between gap-2">
                     <h4 className="text-base font-semibold text-slate-900 dark:text-slate-100">
-                        Курстун түзүмү
+                        {t('instructorDashboard.courseBuilder.preview.structure')}
                     </h4>
                     <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-600 dark:bg-slate-800 dark:text-slate-300">
                         <FiLayers className="h-3.5 w-3.5" />
@@ -284,10 +286,11 @@ const CoursePreviewPanel = ({
                                 >
                                     <div>
                                         <p className="font-semibold text-slate-900 dark:text-slate-100">
-                                            {getSectionTitle(section, sIdx) || `Бөлүм ${sIdx + 1}`}
+                                            {getSectionTitle(section, sIdx) ||
+                                                t('instructorDashboard.courseBuilder.fallbacks.section', { number: sIdx + 1 })}
                                         </p>
                                         <p className="text-xs text-slate-500 dark:text-slate-400">
-                                            {lessonList.length} сабак
+                                            {t('instructorDashboard.courseBuilder.preview.lessonCount', { count: lessonList.length })}
                                         </p>
                                     </div>
                                     <FiChevronDown
@@ -302,7 +305,7 @@ const CoursePreviewPanel = ({
                                     >
                                         {lessonList.map((lesson, lIdx) => {
                                             const kind = lesson.kind || 'video';
-                                            const durationLabel = getLessonDurationLabel(lesson);
+                                            const durationLabel = getLessonDurationLabel(lesson, t);
 
                                             return (
                                                 <div
@@ -311,13 +314,14 @@ const CoursePreviewPanel = ({
                                                 >
                                                     <div className="min-w-0">
                                                         <p className="truncate font-medium text-slate-900 dark:text-slate-100">
-                                                            {lesson.title || `Сабак ${lIdx + 1}`}
+                                                            {lesson.title ||
+                                                                t('instructorDashboard.courseBuilder.fallbacks.lesson', { number: lIdx + 1 })}
                                                         </p>
                                                         <div className="mt-1 flex flex-wrap items-center gap-2 text-xs">
                                                             <span
                                                                 className={`rounded-full px-2 py-0.5 ${LESSON_KIND_COLORS[kind] || 'bg-slate-100 text-slate-700'}`}
                                                             >
-                                                                {LESSON_KIND_LABELS[kind] || kind}
+                                                                {t(`instructorDashboard.courseBuilder.lessonKinds.${kind}`, { defaultValue: kind })}
                                                             </span>
                                                             {durationLabel && (
                                                                 <span className="inline-flex items-center gap-1 text-slate-500 dark:text-slate-400">
@@ -328,7 +332,7 @@ const CoursePreviewPanel = ({
                                                             {lesson.previewVideo && (
                                                                 <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-amber-700">
                                                                     <FiEye className="h-3.5 w-3.5" />
-                                                                    Превью
+                                                                    {t('instructorDashboard.courseBuilder.preview.previewBadge')}
                                                                 </span>
                                                             )}
                                                         </div>
@@ -347,7 +351,7 @@ const CoursePreviewPanel = ({
 
                                         {lessonList.length === 0 && (
                                             <p className="rounded-lg bg-white px-3 py-2 text-sm text-slate-500 dark:bg-[#101010] dark:text-slate-400">
-                                                Бул бөлүмдө азырынча сабак жок.
+                                                {t('instructorDashboard.courseBuilder.preview.emptySection')}
                                             </p>
                                         )}
                                     </div>
@@ -358,7 +362,7 @@ const CoursePreviewPanel = ({
 
                     {normalizedSections.length === 0 && (
                         <p className="rounded-lg border border-dashed border-slate-300 px-3 py-4 text-sm text-slate-500 dark:border-slate-600 dark:text-slate-400">
-                            Азырынча бөлүм кошула элек.
+                            {t('instructorDashboard.courseBuilder.preview.emptyCourse')}
                         </p>
                     )}
                 </div>
@@ -367,7 +371,7 @@ const CoursePreviewPanel = ({
             {learningOutcomes.length > 0 && (
                 <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-[#111111]">
                     <h4 className="mb-3 font-semibold text-slate-900 dark:text-slate-100">
-                        Бул курста эмнени үйрөнөсүз
+                        {t('instructorDashboard.courseBuilder.preview.learningOutcomes')}
                     </h4>
                     <div className="flex flex-wrap gap-2">
                         {learningOutcomes.map((line, idx) => (
@@ -388,7 +392,7 @@ const CoursePreviewPanel = ({
                     onClick={onBack}
                     className="rounded-lg bg-slate-200 px-4 py-2 text-sm font-medium text-slate-800 hover:bg-slate-300 dark:bg-slate-700 dark:text-slate-100"
                 >
-                    Артка
+                    {t('instructorDashboard.courseBuilder.actions.back')}
                 </button>
                 {actions.map((action, idx) => (
                     <button
@@ -400,7 +404,7 @@ const CoursePreviewPanel = ({
                         aria-disabled={action.disabled || (action.requiresClean && hasBlockingWarnings)}
                         title={
                             action.requiresClean && hasBlockingWarnings
-                                ? 'Алгач превьюдагы каталарды оңдоңуз'
+                                ? t('instructorDashboard.courseBuilder.preview.fixWarningsTitle')
                                 : action.title
                         }
                         className={

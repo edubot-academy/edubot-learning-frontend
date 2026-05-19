@@ -6,6 +6,31 @@ Version bumps are classified by delivery scale; see `VERSIONING.md`.
 
 ---
 
+## [1.13.7] - 2026-05-20
+
+### Changed
+
+- Localized the course builder workflow for `ky`, `ru`, and `en`, including course info fields, curriculum controls, validation messages, preview panel copy, lesson metadata, quiz/challenge editors and players, asset upload labels, delete confirmations, save/load toasts, and fallback labels.
+- Localized the session attendance workspace for `ky`, `ru`, and `en`, including course/group/session filters, view toggles, metrics, status labels, notices, empty states, admin edit controls, load/save feedback, and active-language session date formatting.
+- Added shared translation namespaces for course builder, course learning quiz/challenge playback, and attendance strings across all supported locales.
+- Updated course builder validation helpers and curriculum statistics to resolve messages through the active translation function.
+
+### Fixed
+
+- Prevented active-language changes from refetching and resetting unsaved attendance edits.
+- Prevented active-language changes from rehydrating and overwriting unsaved course builder state.
+- Localized the course builder skill placeholder after skills load and refresh, instead of falling back to the Kyrgyz default in other languages.
+- Wired the lesson preview-video checkbox in the curriculum asset panel so toggling it no longer calls an undefined handler.
+
+### Verification
+
+- `npm test -- --run src/i18n/resources.spec.js src/i18n/locale.spec.js`
+- `npm run lint`
+- `git diff --check`
+- `npm run build`
+
+---
+
 ## [1.13.6] - 2026-05-20
 
 ### Changed

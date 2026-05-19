@@ -1,6 +1,7 @@
 // Course Info Step component
 // Shared between CreateCourse and EditInstructorCourse
 // Extracted from Step 1 JSX in both components
+import { useTranslation } from 'react-i18next';
 
 /**
  * Course Info Step component
@@ -26,6 +27,7 @@ export const CourseInfoStep = ({
     handleCourseSubmit,
     disabled = false,
 }) => {
+    const { t } = useTranslation();
     const fieldIds = {
         title: 'course-info-title',
         subtitle: 'course-info-subtitle',
@@ -44,26 +46,26 @@ export const CourseInfoStep = ({
         <div className="space-y-5">
             {mode === 'edit' && (
                 <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-800/70 dark:bg-amber-950/30 dark:text-amber-100">
-                    <p className="font-semibold">Оңдоо режими</p>
+                    <p className="font-semibold">{t('instructorDashboard.courseBuilder.info.editMode.title')}</p>
                     <p className="mt-1">
-                        Курс маалыматын өзгөрткөндөн кийин сактоо керек. Категория сыяктуу агымга таасир берген талаалар бул экранда бекитилген бойдон калат.
+                        {t('instructorDashboard.courseBuilder.info.editMode.description')}
                     </p>
                 </div>
             )}
 
             {/* Basic Information */}
             <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800 p-5 shadow-sm">
-                <h3 className="mb-4 text-lg font-semibold">Негизги маалымат</h3>
+                <h3 className="mb-4 text-lg font-semibold">{t('instructorDashboard.courseBuilder.info.sections.basic')}</h3>
                 <div className="space-y-4">
                     {/* Title */}
                     <div>
-                        <label htmlFor={fieldIds.title} className="mb-1 block text-sm font-medium">Курс аталышы</label>
+                        <label htmlFor={fieldIds.title} className="mb-1 block text-sm font-medium">{t('instructorDashboard.courseBuilder.info.fields.title')}</label>
                         <input
                             id={fieldIds.title}
                             name="title"
                             value={courseInfo.title || ''}
                             onChange={handleCourseInfoChange}
-                            placeholder="Курс аталышы"
+                            placeholder={t('instructorDashboard.courseBuilder.info.placeholders.title')}
                             disabled={disabled}
                             aria-invalid={Boolean(getError('title'))}
                             aria-describedby={getDescribedBy(`${fieldIds.title}-error`, `${fieldIds.title}-count`)}
@@ -81,13 +83,13 @@ export const CourseInfoStep = ({
 
                     {/* Subtitle */}
                     <div>
-                        <label htmlFor={fieldIds.subtitle} className="mb-1 block text-sm font-medium">Кыскача аталыш</label>
+                        <label htmlFor={fieldIds.subtitle} className="mb-1 block text-sm font-medium">{t('instructorDashboard.courseBuilder.info.fields.subtitle')}</label>
                         <input
                             id={fieldIds.subtitle}
                             name="subtitle"
                             value={courseInfo.subtitle || ''}
                             onChange={handleCourseInfoChange}
-                            placeholder="Кыскача сүрөттөмө"
+                            placeholder={t('instructorDashboard.courseBuilder.info.placeholders.subtitle')}
                             disabled={disabled}
                             aria-invalid={Boolean(getError('subtitle'))}
                             aria-describedby={getDescribedBy(`${fieldIds.subtitle}-error`, `${fieldIds.subtitle}-count`)}
@@ -105,13 +107,13 @@ export const CourseInfoStep = ({
 
                     {/* Description */}
                     <div>
-                        <label htmlFor={fieldIds.description} className="mb-1 block text-sm font-medium">Курс сүрөттөмөсү</label>
+                        <label htmlFor={fieldIds.description} className="mb-1 block text-sm font-medium">{t('instructorDashboard.courseBuilder.info.fields.description')}</label>
                         <textarea
                             id={fieldIds.description}
                             name="description"
                             value={courseInfo.description || ''}
                             onChange={handleCourseInfoChange}
-                            placeholder="Курс сүрөттөмөсү"
+                            placeholder={t('instructorDashboard.courseBuilder.info.placeholders.description')}
                             disabled={disabled}
                             aria-invalid={Boolean(getError('description'))}
                             aria-describedby={`${fieldIds.description}-error`}
@@ -124,7 +126,7 @@ export const CourseInfoStep = ({
 
                     {/* Category */}
                     <div>
-                        <label htmlFor={fieldIds.categoryId} className="mb-1 block text-sm font-medium">Категория</label>
+                        <label htmlFor={fieldIds.categoryId} className="mb-1 block text-sm font-medium">{t('instructorDashboard.courseBuilder.info.fields.category')}</label>
                         <select
                             id={fieldIds.categoryId}
                             name="categoryId"
@@ -138,7 +140,7 @@ export const CourseInfoStep = ({
                             )}
                             className="w-full p-2 border rounded bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white disabled:opacity-50"
                         >
-                            <option value="">Категорияны тандаңыз</option>
+                            <option value="">{t('instructorDashboard.courseBuilder.info.placeholders.category')}</option>
                             {categories.map((cat) => (
                                 <option key={cat.id} value={cat.id}>
                                     {cat.name}
@@ -150,7 +152,7 @@ export const CourseInfoStep = ({
                         </p>
                         {mode === 'edit' && (
                             <p id={`${fieldIds.categoryId}-helper`} className="mt-1 text-xs text-slate-500">
-                                Категория жарыяланган курс агымына таасир берет, ошондуктан бул жерде өзгөртүлбөйт.
+                                {t('instructorDashboard.courseBuilder.info.helpers.categoryLocked')}
                             </p>
                         )}
                     </div>
@@ -160,20 +162,20 @@ export const CourseInfoStep = ({
             {/* Settings */}
             <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800 p-5 shadow-sm">
                 <h3 className="mb-4 text-lg font-semibold">
-                    Орнотуулар
+                    {t('instructorDashboard.courseBuilder.info.sections.settings')}
                 </h3>
                 <div className="space-y-4">
                     {/* Price */}
                     <div className="flex flex-col sm:flex-row gap-4">
                         <div className="flex-1">
-                            <label htmlFor={fieldIds.price} className="block text-sm mb-1 font-medium">Курс баасы (сом)</label>
+                            <label htmlFor={fieldIds.price} className="block text-sm mb-1 font-medium">{t('instructorDashboard.courseBuilder.info.fields.price')}</label>
                             <input
                                 id={fieldIds.price}
                                 name="price"
                                 type="number"
                                 value={courseInfo.isPaid ? (courseInfo.price || '') : '0'}
                                 onChange={handleCourseInfoChange}
-                                placeholder="Курс баасы"
+                                placeholder={t('instructorDashboard.courseBuilder.info.placeholders.price')}
                                 disabled={disabled || !courseInfo.isPaid}
                                 aria-invalid={Boolean(getError('price'))}
                                 aria-describedby={`${fieldIds.price}-error`}
@@ -194,7 +196,7 @@ export const CourseInfoStep = ({
                                 className="disabled:opacity-50"
                             />
                             <label htmlFor="isPaid" className="text-sm">
-                                Бул курс акы төлөнүүчү
+                                {t('instructorDashboard.courseBuilder.info.fields.isPaid')}
                             </label>
                         </div>
                     </div>
@@ -211,14 +213,14 @@ export const CourseInfoStep = ({
                             className="disabled:opacity-50"
                         />
                         <label htmlFor="aiAssistantEnabled" className="text-sm">
-                            EDU AI ассистенттин бул курста иштешине уруксат берүү
+                            {t('instructorDashboard.courseBuilder.info.fields.aiAssistantEnabled')}
                         </label>
                     </div>
 
                     {/* Language */}
                     <div>
                         <label htmlFor={fieldIds.languageCode} className="block text-sm mb-1 font-medium">
-                            Сабак тили
+                            {t('instructorDashboard.courseBuilder.info.fields.language')}
                         </label>
                         <select
                             id={fieldIds.languageCode}
@@ -242,7 +244,7 @@ export const CourseInfoStep = ({
                     {/* Learning Outcomes */}
                     <div>
                         <label htmlFor={fieldIds.learningOutcomesText} className="block text-sm mb-1 font-medium">
-                            Бул курстан эмнени үйрөнөсүз? (ар бир сапка бир пункт)
+                            {t('instructorDashboard.courseBuilder.info.fields.learningOutcomes')}
                         </label>
                         <textarea
                             id={fieldIds.learningOutcomesText}
@@ -250,7 +252,7 @@ export const CourseInfoStep = ({
                             value={courseInfo.learningOutcomesText || ''}
                             onChange={handleCourseInfoChange}
                             placeholder={
-                                'Мисалы:\n- UX негиздери\n- Figma менен иштөө\n- UI китепкана түзүү'
+                                t('instructorDashboard.courseBuilder.info.placeholders.learningOutcomes')
                             }
                             disabled={disabled}
                             className="w-full p-2 border rounded bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white min-h-[110px] disabled:opacity-50"
@@ -261,15 +263,15 @@ export const CourseInfoStep = ({
 
             {/* Cover Image */}
             <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800 p-5 shadow-sm">
-                <h3 className="mb-3 text-lg font-semibold">Курс сүрөтү</h3>
+                <h3 className="mb-3 text-lg font-semibold">{t('instructorDashboard.courseBuilder.info.sections.cover')}</h3>
                 {courseInfo.coverImageUrl && (
                     <img
                         src={courseInfo.coverImageUrl}
-                        alt="Курс сүрөтү"
+                        alt={t('instructorDashboard.courseBuilder.info.coverAlt')}
                         className="mb-3 max-h-52 w-full max-w-lg rounded-lg object-cover"
                     />
                 )}
-                <label htmlFor={fieldIds.cover} className="sr-only">Курс сүрөт файлы</label>
+                <label htmlFor={fieldIds.cover} className="sr-only">{t('instructorDashboard.courseBuilder.info.fields.coverFile')}</label>
                 <input
                     id={fieldIds.cover}
                     type="file"
@@ -285,10 +287,12 @@ export const CourseInfoStep = ({
                 />
                 {!courseInfo.coverImageUrl && courseInfo.pendingCoverName && (
                     <p id={`${fieldIds.cover}-pending`} className="mt-2 text-xs text-amber-600 dark:text-amber-300">
-                        Тандалган сүрөт браузерде сакталбайт: {courseInfo.pendingCoverName}. Сураныч, файлды кайра тандаңыз.
+                        {t('instructorDashboard.courseBuilder.info.helpers.pendingCover', {
+                            file: courseInfo.pendingCoverName,
+                        })}
                     </p>
                 )}
-                <p id={`${fieldIds.cover}-helper`} className="mt-1 text-xs text-slate-500">PNG/JPG, максимум 5MB</p>
+                <p id={`${fieldIds.cover}-helper`} className="mt-1 text-xs text-slate-500">{t('instructorDashboard.courseBuilder.info.helpers.coverFormat')}</p>
             </div>
 
             {/* Submit Button */}
@@ -296,8 +300,8 @@ export const CourseInfoStep = ({
                 <div className="sticky bottom-4 z-10 flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white/95 p-3 shadow-sm backdrop-blur dark:border-slate-700 dark:bg-slate-900/95 sm:flex-row sm:items-center sm:justify-between">
                     <p className="text-sm text-slate-600 dark:text-slate-300">
                         {Object.keys(courseInfoErrors).length > 0
-                            ? 'Улантуу үчүн белгиленген маалымат талааларын оңдоңуз.'
-                            : 'Негизги маалымат даяр. Сактап, мазмун кадамына өтсөңүз болот.'}
+                            ? t('instructorDashboard.courseBuilder.info.footer.fixErrors')
+                            : t('instructorDashboard.courseBuilder.info.footer.ready')}
                     </p>
                     <div className="flex justify-end gap-3">
                     {mode === 'edit' && (
@@ -306,7 +310,7 @@ export const CourseInfoStep = ({
                             onClick={() => window.history.back()}
                             className="rounded-xl border border-gray-200 bg-white px-6 py-2.5 dark:border-gray-600 dark:bg-gray-700"
                         >
-                            Артка
+                            {t('instructorDashboard.courseBuilder.actions.back')}
                         </button>
                     )}
                     <button
@@ -317,7 +321,7 @@ export const CourseInfoStep = ({
                         disabled={Object.keys(courseInfoErrors).length > 0}
                         className="rounded-xl bg-slate-900 px-6 py-2.5 text-white disabled:opacity-50 dark:bg-blue-950"
                     >
-                        Сактоо жана улантуу
+                        {t('instructorDashboard.courseBuilder.actions.saveAndContinue')}
                     </button>
                     </div>
                 </div>

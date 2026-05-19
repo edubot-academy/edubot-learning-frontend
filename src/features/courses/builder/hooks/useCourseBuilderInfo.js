@@ -3,6 +3,7 @@
 
 import { useCallback } from 'react';
 import toast from 'react-hot-toast';
+import { useTranslation } from 'react-i18next';
 
 import { getCourseInfoErrors, getAllCourseInfoFieldsTouched } from '../validation';
 import { prepareCourseInfoForApi, validateCoverImage, createFilePreviewUrl } from '../utils';
@@ -15,6 +16,7 @@ import { createCourse, updateCourse, uploadCourseImage } from '../../api';
  * @returns {Object} - Course info operations
  */
 export const useCourseBuilderInfo = (courseBuilderState) => {
+    const { t } = useTranslation();
     const {
         courseInfo,
         setCourseInfo,
@@ -67,12 +69,12 @@ export const useCourseBuilderInfo = (courseBuilderState) => {
 
     // Validate course info
     const validateCourseInfo = useCallback(() => {
-        const errors = getCourseInfoErrors(courseInfo);
+        const errors = getCourseInfoErrors(courseInfo, t);
         return {
             isValid: Object.keys(errors).length === 0,
             errors,
         };
-    }, [courseInfo]);
+    }, [courseInfo, t]);
 
     // Handle course submission (create or update)
     const handleCourseSubmit = useCallback(async () => {
@@ -80,7 +82,7 @@ export const useCourseBuilderInfo = (courseBuilderState) => {
 
         if (!isValid) {
             setInfoTouched(getAllCourseInfoFieldsTouched());
-            toast.error('Маалымат табындагы каталарды оңдоңуз.');
+            toast.error(t('instructorDashboard.courseBuilder.toasts.fixInfoErrors'));
             return;
         }
 
@@ -105,7 +107,10 @@ export const useCourseBuilderInfo = (courseBuilderState) => {
                 await uploadCourseImage(targetCourseId, courseInfo.cover);
             }
 
-            const successMessage = mode === 'create' ? 'Курс ийгиликтүү түзүлдү!' : 'Курс ийгиликтүү сакталды!';
+            const successMessage =
+                mode === 'create'
+                    ? t('instructorDashboard.courseBuilder.toasts.courseCreated')
+                    : t('instructorDashboard.courseBuilder.toasts.courseSaved');
             toast.success(successMessage);
 
             setOriginalCourse(savedCourse);
@@ -113,10 +118,13 @@ export const useCourseBuilderInfo = (courseBuilderState) => {
             setStep(2);
         } catch (err) {
             console.error(err);
-            const errorMessage = mode === 'create' ? 'Курс түзүүдө ката кетти.' : 'Курс сактоодо ката кетти.';
+            const errorMessage =
+                mode === 'create'
+                    ? t('instructorDashboard.courseBuilder.toasts.courseCreateError')
+                    : t('instructorDashboard.courseBuilder.toasts.courseSaveError');
             toast.error(errorMessage);
         }
-    }, [courseInfo, courseId, mode, setCourseInfo, setOriginalCourse, setStep, validateCourseInfo, setInfoTouched, setCourseId]);
+    }, [courseInfo, courseId, mode, setCourseInfo, setOriginalCourse, setStep, t, validateCourseInfo, setInfoTouched, setCourseId]);
 
     // Reset course info to defaults
     const resetCourseInfo = useCallback(() => {
@@ -154,9 +162,9 @@ export const useCourseBuilderInfo = (courseBuilderState) => {
 
     // Check if course info is valid
     const isCourseInfoValid = useCallback(() => {
-        const errors = getCourseInfoErrors(courseInfo);
+        const errors = getCourseInfoErrors(courseInfo, t);
         return Object.keys(errors).length === 0;
-    }, [courseInfo]);
+    }, [courseInfo, t]);
 
     return {
         // Operations
@@ -166,7 +174,7 @@ export const useCourseBuilderInfo = (courseBuilderState) => {
         resetCourseInfo,
 
         // Computed values
-        courseInfoErrors: getCourseInfoErrors(courseInfo),
+        courseInfoErrors: getCourseInfoErrors(courseInfo, t),
         isCourseInfoValid,
         hasCourseInfoChanges,
 

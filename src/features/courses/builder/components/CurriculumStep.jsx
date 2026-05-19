@@ -12,6 +12,7 @@ import LessonAssetsPanel from '../../components/LessonAssetsPanel';
 import ConfirmationModal from '../../../../shared/ui/ConfirmationModal';
 import { CURRICULUM_WORKSPACE_SECTIONS } from '../constants';
 import { minutesInputToSeconds, secondsToMinutesInput } from '../../../../utils/timeUtils';
+import { useTranslation } from 'react-i18next';
 
 /**
  * Curriculum Step component
@@ -94,18 +95,26 @@ export const CurriculumStep = ({
     disabled = false,
     saving = false,
 }) => {
+    const { t } = useTranslation();
+    const lessonKindOptions = LESSON_KIND_OPTIONS.map((option) => ({
+        ...option,
+        label: t(`instructorDashboard.courseBuilder.lessonKinds.${option.value}`, {
+            defaultValue: option.label,
+        }),
+    }));
+
     const getLessonIssue = (lesson) => {
-        if (!lesson.title?.trim()) return 'Аталыш жок';
+        if (!lesson.title?.trim()) return t('instructorDashboard.courseBuilder.lessonIssues.missingTitle');
 
         // Check for video using multiple possible property names
         const hasVideo = lesson.videoKey || lesson.videoUrl || lesson.video || lesson.videoFile || lesson.videoPath || lesson.videoSrc;
-        if (lesson.kind === 'video' && !hasVideo) return 'Видео жүктөлгөн эмес.';
+        if (lesson.kind === 'video' && !hasVideo) return t('instructorDashboard.courseBuilder.lessonIssues.missingVideo');
 
         if (
             lesson.kind === 'article' &&
             (!lesson.content?.trim() || !lesson.duration || lesson.duration <= 0)
         ) {
-            return 'Макала толук эмес';
+            return t('instructorDashboard.courseBuilder.lessonIssues.incompleteArticle');
         }
 
         if (lesson.kind === 'quiz') {
@@ -162,7 +171,10 @@ export const CurriculumStep = ({
     const generateSectionChips = (sections) => {
         return sections.map((section, sIdx) => {
             const hasIssues = getSectionIssueCount(section) > 0;
-            const label = section.sectionTitle?.trim() || section.title?.trim() || `Бөлүм ${sIdx + 1}`;
+            const label =
+                section.sectionTitle?.trim() ||
+                section.title?.trim() ||
+                t('instructorDashboard.courseBuilder.fallbacks.section', { number: sIdx + 1 });
             return {
                 id: sIdx,
                 label,
@@ -195,12 +207,19 @@ export const CurriculumStep = ({
             >
                 <div className="grid gap-4 lg:grid-cols-[1fr_auto] lg:items-center">
                     <div className="space-y-1">
-                        <p className="text-xs uppercase tracking-wide text-gray-600 dark:text-gray-400">Курулуш режими</p>
+                        <p className="text-xs uppercase tracking-wide text-gray-600 dark:text-gray-400">{t('instructorDashboard.courseBuilder.curriculum.workspaceMode')}</p>
                         <p className="text-sm font-semibold text-gray-900 dark:text-white">
-                            Бөлүмдөр: {curriculumStats.totalSections} • Сабактар: {curriculumStats.totalLessons}
+                            {t('instructorDashboard.courseBuilder.curriculum.stats.sectionsLessons', {
+                                sections: curriculumStats.totalSections,
+                                lessons: curriculumStats.totalLessons,
+                            })}
                         </p>
                         <p className="text-xs text-gray-600 dark:text-gray-400">
-                            Даярдык: {curriculumStats.readyLessons}/{curriculumStats.totalLessons} ({curriculumStats.completionPercent}%)
+                            {t('instructorDashboard.courseBuilder.curriculum.stats.readiness', {
+                                ready: curriculumStats.readyLessons,
+                                total: curriculumStats.totalLessons,
+                                percent: curriculumStats.completionPercent,
+                            })}
                         </p>
                     </div>
                     <div className="flex flex-wrap items-center gap-2 lg:justify-end">
@@ -209,14 +228,14 @@ export const CurriculumStep = ({
                             disabled={disabled}
                             className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
                         >
-                            Баарын ачуу
+                            {t('instructorDashboard.courseBuilder.actions.expandAll')}
                         </button>
                         <button
                             onClick={() => collapseAllSections(curriculum.length)}
                             disabled={disabled}
                             className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
                         >
-                            Баарын жабуу
+                            {t('instructorDashboard.courseBuilder.actions.collapseAll')}
                         </button>
                         <button
                             onClick={() => {
@@ -240,13 +259,15 @@ export const CurriculumStep = ({
                                 : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600'
                                 }`}
                         >
-                            {singleSectionFocus ? 'Бир бөлүм режими: күйүк' : 'Бир бөлүм режими: өчүк'}
+                            {singleSectionFocus
+                                ? t('instructorDashboard.courseBuilder.actions.singleSectionOn')
+                                : t('instructorDashboard.courseBuilder.actions.singleSectionOff')}
                         </button>
                     </div>
                 </div>
                 <div className="mt-3 flex flex-col gap-3 border-t border-slate-200 pt-3 dark:border-slate-700 sm:flex-row sm:items-center sm:justify-between">
                     <p className="text-xs text-slate-600 dark:text-slate-400">
-                        Адегенде бөлүм жана сабактарды толтуруңуз, андан соң каталарды текшерип жалпы сактаңыз.
+                        {t('instructorDashboard.courseBuilder.curriculum.saveHint')}
                     </p>
                     <div className="flex flex-wrap items-center gap-2 sm:justify-end">
                         <button
@@ -254,21 +275,23 @@ export const CurriculumStep = ({
                             disabled={disabled}
                             className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700"
                         >
-                            + Бөлүм кошуу
+                            {t('instructorDashboard.courseBuilder.actions.addSection')}
                         </button>
                         <button
                             onClick={jumpToNextInvalidLesson}
                             disabled={disabled}
                             className="rounded-lg border border-rose-300 bg-rose-50 px-4 py-2 text-sm font-medium text-rose-700 hover:bg-rose-100 dark:border-rose-800 dark:bg-rose-900/30 dark:text-rose-200"
                         >
-                            Кийинки катаны табуу
+                            {t('instructorDashboard.courseBuilder.actions.findNextIssue')}
                         </button>
                         <button
                             onClick={handleCurriculumSubmit}
                             disabled={isUploading || saving || disabled}
                             className="rounded-lg bg-slate-900 px-5 py-2 text-sm font-medium text-white disabled:opacity-60 dark:bg-blue-950"
                         >
-                            {saving ? 'Сакталууда...' : 'Сактоо жана улантуу'}
+                            {saving
+                                ? t('instructorDashboard.courseBuilder.actions.saving')
+                                : t('instructorDashboard.courseBuilder.actions.saveAndContinue')}
                         </button>
                     </div>
                 </div>
@@ -291,10 +314,10 @@ export const CurriculumStep = ({
             </div>
 
             {/* Curriculum Sections */}
-            <h3 className="text-xl font-semibold mb-4">Окуу мазмуну</h3>
+            <h3 className="text-xl font-semibold mb-4">{t('instructorDashboard.courseBuilder.curriculum.title')}</h3>
             {validationIssues.length > 0 && (
                 <div className="mb-5 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-700/60 dark:bg-amber-950/30 dark:text-amber-100">
-                    <p className="font-semibold">Preview кадамына өтүүдөн мурун оңдоого тийиш болгон сабактар</p>
+                    <p className="font-semibold">{t('instructorDashboard.courseBuilder.curriculum.validationTitle')}</p>
                     <div className="mt-3 flex flex-wrap gap-2">
                         {validationIssues.slice(0, 6).map((item) => (
                             <a
@@ -303,7 +326,11 @@ export const CurriculumStep = ({
                                 onClick={(event) => scrollToLessonIssue(event, item)}
                                 className="rounded-full border border-amber-300 bg-white/70 px-3 py-1.5 text-xs font-semibold text-amber-900 hover:bg-amber-100 dark:border-amber-700 dark:bg-amber-950/50 dark:text-amber-100"
                             >
-                                Б{item.sectionIndex + 1} / С{item.lessonIndex + 1}: {item.issue}
+                                {t('instructorDashboard.courseBuilder.curriculum.issueChip', {
+                                    section: item.sectionIndex + 1,
+                                    lesson: item.lessonIndex + 1,
+                                    issue: item.issue,
+                                })}
                             </a>
                         ))}
                     </div>
@@ -336,17 +363,27 @@ export const CurriculumStep = ({
                     <summary className="flex cursor-pointer list-none items-center justify-between gap-3 bg-gradient-to-r from-slate-50 to-white px-4 py-3 dark:from-slate-800 dark:to-slate-700">
                         <div>
                             <p className="text-sm font-semibold text-gray-900 dark:text-white">
-                                {section.sectionTitle || section.title || `Бөлүм ${sIdx + 1}`}
+                                {section.sectionTitle ||
+                                    section.title ||
+                                    t('instructorDashboard.courseBuilder.fallbacks.section', {
+                                        number: sIdx + 1,
+                                    })}
                             </p>
                             <p className="text-xs text-slate-500 dark:text-slate-400">
-                                {section.lessons.length} сабак · {getSectionReadyCount(section)}/{section.lessons.length} даяр
+                                {t('instructorDashboard.courseBuilder.curriculum.sectionSummary', {
+                                    lessons: section.lessons.length,
+                                    ready: getSectionReadyCount(section),
+                                    total: section.lessons.length,
+                                })}
                                 {getSectionIssueCount(section) > 0 ? (
                                     <span className="ml-2 rounded-full bg-rose-100 px-2 py-0.5 text-[10px] font-medium text-rose-700 dark:bg-rose-900/40 dark:text-rose-200">
-                                        {getSectionIssueCount(section)} маселе
+                                        {t('instructorDashboard.courseBuilder.curriculum.issueCount', {
+                                            count: getSectionIssueCount(section),
+                                        })}
                                     </span>
                                 ) : (
                                     <span className="ml-2 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-medium text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-200">
-                                        Даяр
+                                        {t('instructorDashboard.courseBuilder.status.ready')}
                                     </span>
                                 )}
                             </p>
@@ -361,9 +398,16 @@ export const CurriculumStep = ({
                                 }}
                                 disabled={disabled || sIdx === 0}
                                 className="rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-40 dark:border-slate-700 dark:bg-[#1f1f1f] dark:text-slate-300"
-                                aria-label={`${section.sectionTitle || section.title || `Бөлүм ${sIdx + 1}`} бөлүмүн өйдө жылдыруу`}
+                                aria-label={t('instructorDashboard.courseBuilder.aria.moveSectionUp', {
+                                    title:
+                                        section.sectionTitle ||
+                                        section.title ||
+                                        t('instructorDashboard.courseBuilder.fallbacks.section', {
+                                            number: sIdx + 1,
+                                        }),
+                                })}
                             >
-                                Өйдө
+                                {t('instructorDashboard.courseBuilder.actions.up')}
                             </button>
                             <button
                                 type="button"
@@ -374,9 +418,16 @@ export const CurriculumStep = ({
                                 }}
                                 disabled={disabled || sIdx === curriculum.length - 1}
                                 className="rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-40 dark:border-slate-700 dark:bg-[#1f1f1f] dark:text-slate-300"
-                                aria-label={`${section.sectionTitle || section.title || `Бөлүм ${sIdx + 1}`} бөлүмүн ылдый жылдыруу`}
+                                aria-label={t('instructorDashboard.courseBuilder.aria.moveSectionDown', {
+                                    title:
+                                        section.sectionTitle ||
+                                        section.title ||
+                                        t('instructorDashboard.courseBuilder.fallbacks.section', {
+                                            number: sIdx + 1,
+                                        }),
+                                })}
                             >
-                                Ылдый
+                                {t('instructorDashboard.courseBuilder.actions.down')}
                             </button>
                             <button
                                 type="button"
@@ -390,8 +441,8 @@ export const CurriculumStep = ({
                                 }}
                                 disabled={disabled}
                                 className="group relative cursor-grab rounded-lg border border-slate-300 bg-white p-2 text-slate-600 hover:bg-slate-50 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed dark:border-slate-700 dark:bg-[#1f1f1f] dark:text-slate-300"
-                                title="Бөлүмдү жылдыруу"
-                                aria-label="Бөлүмдү жылдыруу"
+                                title={t('instructorDashboard.courseBuilder.aria.dragSection')}
+                                aria-label={t('instructorDashboard.courseBuilder.aria.dragSection')}
                             >
                                 <svg
                                     aria-hidden="true"
@@ -407,10 +458,10 @@ export const CurriculumStep = ({
                                     <circle cx="11" cy="12" r="1.1" />
                                 </svg>
                                 <span className="pointer-events-none absolute left-1/2 top-full z-10 mt-2 -translate-x-1/2 whitespace-nowrap rounded bg-slate-900 px-2 py-1 text-[10px] font-medium text-white opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100 dark:bg-slate-100 dark:text-slate-900">
-                                    Бөлүмдү жылдыруу
+                                    {t('instructorDashboard.courseBuilder.aria.dragSection')}
                                 </span>
                             </button>
-                            <span className="text-xs text-slate-500 dark:text-slate-400">Ачуу/жабуу</span>
+                            <span className="text-xs text-slate-500 dark:text-slate-400">{t('instructorDashboard.courseBuilder.actions.toggle')}</span>
                         </div>
                     </summary>
                     <div className="p-4">
@@ -420,7 +471,7 @@ export const CurriculumStep = ({
                                     className="w-full p-3 border rounded-lg bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white disabled:opacity-50"
                                     value={section.sectionTitle || section.title || ''}
                                     onChange={(e) => handleUpdateSectionTitle(sIdx, e.target.value)}
-                                    placeholder="Бөлүм аталышы"
+                                    placeholder={t('instructorDashboard.courseBuilder.placeholders.sectionTitle')}
                                     disabled={disabled}
                                 />
                                 <div className="flex flex-col sm:flex-row gap-2 items-start">
@@ -442,11 +493,11 @@ export const CurriculumStep = ({
                                         disabled={disabled || skillsLoading}
                                         className="px-4 py-3 text-sm rounded-lg border bg-white dark:bg-[#222222] disabled:opacity-50"
                                     >
-                                        {skillsLoading ? '...' : 'Жаңыртуу'}
+                                        {skillsLoading ? '...' : t('instructorDashboard.courseBuilder.actions.refresh')}
                                     </button>
                                 </div>
                                 <p className="text-xs text-gray-500 dark:text-gray-400">
-                                    Көндүм тандаңыз — ушул бөлүмгө байланышкан прогресс жана рейтинг эсептелет.
+                                    {t('instructorDashboard.courseBuilder.curriculum.skillHelper')}
                                 </p>
                             </div>
                             <div className="flex md:flex-col gap-2 md:items-end">
@@ -461,7 +512,7 @@ export const CurriculumStep = ({
                                     disabled={disabled}
                                     className="px-4 py-3 bg-red-100 text-red-700 border border-red-300 rounded-lg hover:bg-red-200 text-sm disabled:opacity-50 disabled:cursor-not-allowed dark:bg-red-900/30 dark:text-red-300 dark:border-red-600 dark:hover:bg-red-900/50 transition-colors"
                                 >
-                                    Өчүрүү
+                                    {t('instructorDashboard.courseBuilder.actions.delete')}
                                 </button>
                             </div>
                         </div>
@@ -500,31 +551,43 @@ export const CurriculumStep = ({
                                     />
                                     <div className="mb-3 flex flex-wrap items-center gap-2">
                                         <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
-                                            Сабак тартиби
+                                            {t('instructorDashboard.courseBuilder.curriculum.lessonOrder')}
                                         </span>
                                         <button
                                             type="button"
                                             onClick={() => handleMoveLesson?.(sIdx, lIdx, 'up')}
                                             disabled={disabled || lIdx === 0}
                                             className="rounded-lg border border-slate-300 bg-white px-2.5 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-40 dark:border-slate-700 dark:bg-[#1f1f1f] dark:text-slate-300"
-                                            aria-label={`${lesson.title || `Сабак ${lIdx + 1}`} сабагын өйдө жылдыруу`}
+                                            aria-label={t('instructorDashboard.courseBuilder.aria.moveLessonUp', {
+                                                title:
+                                                    lesson.title ||
+                                                    t('instructorDashboard.courseBuilder.fallbacks.lesson', {
+                                                        number: lIdx + 1,
+                                                    }),
+                                            })}
                                         >
-                                            Өйдө
+                                            {t('instructorDashboard.courseBuilder.actions.up')}
                                         </button>
                                         <button
                                             type="button"
                                             onClick={() => handleMoveLesson?.(sIdx, lIdx, 'down')}
                                             disabled={disabled || lIdx === section.lessons.length - 1}
                                             className="rounded-lg border border-slate-300 bg-white px-2.5 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-40 dark:border-slate-700 dark:bg-[#1f1f1f] dark:text-slate-300"
-                                            aria-label={`${lesson.title || `Сабак ${lIdx + 1}`} сабагын ылдый жылдыруу`}
+                                            aria-label={t('instructorDashboard.courseBuilder.aria.moveLessonDown', {
+                                                title:
+                                                    lesson.title ||
+                                                    t('instructorDashboard.courseBuilder.fallbacks.lesson', {
+                                                        number: lIdx + 1,
+                                                    }),
+                                            })}
                                         >
-                                            Ылдый
+                                            {t('instructorDashboard.courseBuilder.actions.down')}
                                         </button>
                                     </div>
                                     <LessonMetaFields
                                         title={lesson.title}
                                         kind={lesson.kind || 'video'}
-                                        kindOptions={LESSON_KIND_OPTIONS}
+                                        kindOptions={lessonKindOptions}
                                         onTitleChange={(value) => handleUpdateLesson(sIdx, lIdx, 'title', value)}
                                         onKindChange={(value) => handleUpdateLesson(sIdx, lIdx, 'kind', value)}
                                         disabled={disabled}
@@ -534,18 +597,18 @@ export const CurriculumStep = ({
                                     {lesson.kind === 'article' && (
                                         <>
                                             <label className="block mb-1 font-medium">
-                                                Макала тексти
+                                                {t('instructorDashboard.courseBuilder.curriculum.articleText')}
                                             </label>
                                             <ArticleEditor
                                                 value={lesson.content || ''}
                                                 onChange={(val) =>
                                                     handleUpdateLesson(sIdx, lIdx, 'content', val)
                                                 }
-                                                placeholder="Сабактын негизги тексти"
+                                                placeholder={t('instructorDashboard.courseBuilder.placeholders.articleText')}
                                                 disabled={disabled}
                                             />
                                             <label className="block mb-1 font-medium">
-                                                Окуу убактысы (мүнөт)
+                                                {t('instructorDashboard.courseBuilder.curriculum.readingTime')}
                                             </label>
                                             <input
                                                 type="number"
@@ -561,7 +624,7 @@ export const CurriculumStep = ({
                                                         minutesInputToSeconds(e.target.value)
                                                     );
                                                 }}
-                                                placeholder="мисалы: 5"
+                                                placeholder={t('instructorDashboard.courseBuilder.placeholders.minutesExample')}
                                                 disabled={disabled}
                                             />
                                         </>
@@ -598,7 +661,11 @@ export const CurriculumStep = ({
                                         videoExists={Boolean(lesson.videoUrl || lesson.videoKey)}
                                         videoProgress={lesson.uploadProgress?.video || 0}
                                         onVideoDelete={() => handleDeleteAsset(sIdx, lIdx, 'video')}
-                                        previewLabel="Превью видеосун белгилөө"
+                                        previewVideo={Boolean(lesson.previewVideo)}
+                                        onPreviewVideoChange={(checked) =>
+                                            handleUpdateLesson(sIdx, lIdx, 'previewVideo', checked)
+                                        }
+                                        previewLabel={t('instructorDashboard.courseBuilder.assets.previewVideo')}
                                         onResourceFile={(file) => {
                                             handleFileUpload(courseId, sIdx, lIdx, 'resource', file);
                                         }}
@@ -613,7 +680,10 @@ export const CurriculumStep = ({
                         <div className="sticky bottom-4 mt-6 flex items-center justify-between gap-4 rounded-xl border border-slate-200 bg-white/95 px-4 py-3 backdrop-blur dark:border-slate-700 dark:bg-[#151515]/95">
                             <div className="flex-1">
                                 <p className="text-sm text-slate-600 dark:text-slate-300">
-                                    Даяр сабактар: {getSectionReadyCount(section)}/{section.lessons.length}. Өзгөрүүлөрдү сактап, анан улантыңыз.
+                                    {t('instructorDashboard.courseBuilder.curriculum.sectionFooter', {
+                                        ready: getSectionReadyCount(section),
+                                        total: section.lessons.length,
+                                    })}
                                 </p>
                             </div>
                             <div className="flex items-center gap-3">
@@ -622,14 +692,14 @@ export const CurriculumStep = ({
                                     disabled={disabled}
                                     className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-white hover:bg-amber-600 disabled:opacity-50 transition-colors"
                                 >
-                                    + Сабак кошуу
+                                    {t('instructorDashboard.courseBuilder.actions.addLesson')}
                                 </button>
                                 <button
                                     onClick={handleCurriculumSubmit}
                                     disabled={disabled || isUploading}
                                     className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50 dark:border-slate-700 dark:bg-[#1f1f1f] dark:text-slate-200 transition-colors"
                                 >
-                                    Жалпы сактоо
+                                    {t('instructorDashboard.courseBuilder.actions.saveAll')}
                                 </button>
                             </div>
                         </div>
@@ -641,13 +711,29 @@ export const CurriculumStep = ({
                 isOpen={Boolean(confirmDelete.type)}
                 onClose={() => setConfirmDelete({ type: null, sectionIndex: null, lessonIndex: null, title: '' })}
                 onConfirm={handleConfirmedDelete}
-                title={confirmDelete.type === 'section' ? 'Бөлүмдү өчүрүү' : 'Сабакты өчүрүү'}
+                title={
+                    confirmDelete.type === 'section'
+                        ? t('instructorDashboard.courseBuilder.confirmDelete.sectionTitle')
+                        : t('instructorDashboard.courseBuilder.confirmDelete.lessonTitle')
+                }
                 message={
                     confirmDelete.type === 'section'
-                        ? `"${confirmDelete.title || `Бөлүм ${confirmDelete.sectionIndex + 1}`}" бөлүмүн жана андагы бардык сабактарды өчүрөсүзбү? Бул аракет кайтарылбайт.`
-                        : `"${confirmDelete.title || `Сабак ${confirmDelete.lessonIndex + 1}`}" сабагын өчүрөсүзбү? Бул аракет кайтарылбайт.`
+                        ? t('instructorDashboard.courseBuilder.confirmDelete.sectionMessage', {
+                            title:
+                                confirmDelete.title ||
+                                t('instructorDashboard.courseBuilder.fallbacks.section', {
+                                    number: confirmDelete.sectionIndex + 1,
+                                }),
+                        })
+                        : t('instructorDashboard.courseBuilder.confirmDelete.lessonMessage', {
+                            title:
+                                confirmDelete.title ||
+                                t('instructorDashboard.courseBuilder.fallbacks.lesson', {
+                                    number: confirmDelete.lessonIndex + 1,
+                                }),
+                        })
                 }
-                confirmLabel="Ооба, өчүрүү"
+                confirmLabel={t('instructorDashboard.courseBuilder.confirmDelete.confirm')}
                 confirmVariant="danger"
             />
         </div>

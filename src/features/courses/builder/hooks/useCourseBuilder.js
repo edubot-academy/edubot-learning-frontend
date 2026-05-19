@@ -5,6 +5,7 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
+import { useTranslation } from 'react-i18next';
 
 // Import our shared modules
 import {
@@ -33,6 +34,22 @@ import {
     mapSkillsToOptions,
 } from '../utils/courseBuilderDataLoaders';
 
+const getOptionalSkillLabel = (t) =>
+    t('instructorDashboard.courseBuilder.placeholders.optionalSkill');
+
+const localizeSkillOptions = (options = [], t) => {
+    const placeholder = getOptionalSkillLabel(t);
+    const mappedOptions = (Array.isArray(options) ? options : []).map((option) =>
+        String(option.value) === ''
+            ? { ...option, label: placeholder }
+            : option
+    );
+
+    return mappedOptions.some((option) => String(option.value) === '')
+        ? mappedOptions
+        : [{ value: '', label: placeholder }, ...mappedOptions];
+};
+
 /**
  * Main course builder hook
  * @param {Object} options - Hook options
@@ -42,6 +59,8 @@ import {
  */
 export const useCourseBuilder = ({ mode = 'create', courseId: initialCourseId = null } = {}) => {
     const navigate = useNavigate();
+    const { t } = useTranslation();
+    const tRef = useRef(t);
     const [courseId, setCourseId] = useState(initialCourseId);
     const lastCoverPreviewUrlRef = useRef('');
     const pendingCoverNameRef = useRef('');
@@ -71,7 +90,9 @@ export const useCourseBuilder = ({ mode = 'create', courseId: initialCourseId = 
     const [deletedSections, setDeletedSections] = useState([]);
     // Data state
     const [categories, setCategories] = useState([]);
-    const [skillOptions, setSkillOptions] = useState([{ value: '', label: 'Skill тандаңыз (опция)' }]);
+    const [skillOptions, setSkillOptions] = useState([
+        { value: '', label: getOptionalSkillLabel(t) },
+    ]);
     const [skillsLoading, setSkillsLoading] = useState(false);
     const [draftLoadedAt, setDraftLoadedAt] = useState('');
     const [lastDraftSavedAt, setLastDraftSavedAt] = useState('');
@@ -133,13 +154,15 @@ export const useCourseBuilder = ({ mode = 'create', courseId: initialCourseId = 
 
     // Load initial data
     const loadInitialData = useCallback(async () => {
+        const translate = tRef.current;
+        const optionalSkillLabel = getOptionalSkillLabel(translate);
         if (mode === 'create') {
             // Create mode - load categories and skills
             try {
                 const { categories: categoriesData, skillOptions: loadedSkillOptions } =
-                    await loadCreateCourseBuilderData();
+                    await loadCreateCourseBuilderData({ optionalSkillLabel });
                 setCategories(categoriesData);
-                setSkillOptions(loadedSkillOptions);
+                setSkillOptions(localizeSkillOptions(loadedSkillOptions, translate));
 
                 // Load saved draft if exists
                 const saved = localStorage.getItem('draftCourse');
@@ -187,7 +210,12 @@ export const useCourseBuilder = ({ mode = 'create', courseId: initialCourseId = 
                     navigate('/unauthorized');
                     return;
                 }
-                toast.error(parseApiError(error, 'Маалымат жүктөлбөдү').message);
+                toast.error(
+                    parseApiError(
+                        error,
+                        translate('instructorDashboard.courseBuilder.toasts.dataLoadError')
+                    ).message
+                );
             } finally {
                 setDraftHydrated(true);
             }
@@ -202,18 +230,20 @@ export const useCourseBuilder = ({ mode = 'create', courseId: initialCourseId = 
                     curriculum: loadedCurriculum,
                     lessonExtraWarnings,
                     skillOptions: loadedSkillOptions,
-                } = await loadEditCourseBuilderData(courseId);
+                } = await loadEditCourseBuilderData(courseId, { optionalSkillLabel });
 
                 setCourseInfo(loadedCourseInfo);
                 setOriginalCourse(loadedCourseInfo);
                 setCategories(categoriesData);
-                setSkillOptions(loadedSkillOptions);
+                setSkillOptions(localizeSkillOptions(loadedSkillOptions, translate));
                 setCurriculum(loadedCurriculum);
                 setOriginalSections(JSON.parse(JSON.stringify(loadedCurriculum)));
 
                 if (lessonExtraWarnings.length) {
                     toast(
-                        `${lessonExtraWarnings.length} сабактын кошумча материалы жүктөлгөн жок. Курс ачылды, бирок ошол сабактарды текшериңиз.`
+                        translate('instructorDashboard.courseBuilder.toasts.lessonExtraWarnings', {
+                            count: lessonExtraWarnings.length,
+                        })
                     );
                 }
             } catch (err) {
@@ -222,7 +252,12 @@ export const useCourseBuilder = ({ mode = 'create', courseId: initialCourseId = 
                     navigate('/unauthorized');
                     return;
                 }
-                toast.error(parseApiError(err, 'Маалыматты жүктөө катасы').message);
+                toast.error(
+                    parseApiError(
+                        err,
+                        translate('instructorDashboard.courseBuilder.toasts.dataLoadError')
+                    ).message
+                );
             } finally {
                 setLoading(false);
             }
@@ -235,11 +270,14 @@ export const useCourseBuilder = ({ mode = 'create', courseId: initialCourseId = 
         try {
             const skillsData = await fetchSkills().catch(() => []);
             if (Array.isArray(skillsData) && skillsData.length) {
-                setSkillOptions(mapSkillsToOptions(skillsData));
+                setSkillOptions(localizeSkillOptions(
+                    mapSkillsToOptions(skillsData, getOptionalSkillLabel(tRef.current)),
+                    tRef.current
+                ));
             }
         } catch (error) {
             console.error('Skills load failed', error);
-            toast.error('Skills жүктөлгөн жок.');
+            toast.error(tRef.current('instructorDashboard.courseBuilder.toasts.skillsLoadError'));
         } finally {
             setSkillsLoading(false);
         }
@@ -292,6 +330,11 @@ export const useCourseBuilder = ({ mode = 'create', courseId: initialCourseId = 
     }, [courseId, mode]);
 
     // Effects
+    useEffect(() => {
+        tRef.current = t;
+        setSkillOptions((prev) => localizeSkillOptions(prev, t));
+    }, [t]);
+
     useEffect(() => {
         loadInitialData();
     }, [loadInitialData]);
@@ -348,11 +391,11 @@ export const useCourseBuilder = ({ mode = 'create', courseId: initialCourseId = 
     const stepItems = getStepItems(step, courseInfo, curriculum);
 
     // Curriculum statistics
-    const curriculumStats = getCurriculumStats(curriculum);
+    const curriculumStats = getCurriculumStats(curriculum, t);
     const isUploading = isAnyLessonUploading(curriculum);
 
     // Course info validation
-    const courseInfoErrors = getCourseInfoErrors(courseInfo);
+    const courseInfoErrors = getCourseInfoErrors(courseInfo, t);
     const hasCurriculumChanges = useMemo(() => {
         const baseline =
             mode === 'edit' || originalSections.length > 0

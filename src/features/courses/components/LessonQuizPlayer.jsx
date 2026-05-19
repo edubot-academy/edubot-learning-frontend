@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 import { FiCheckCircle, FiClock, FiXCircle } from 'react-icons/fi';
 import { IoIosArrowDown, IoIosArrowUp } from 'react-icons/io';
+import { useTranslation } from 'react-i18next';
 import grade_A from '../../../assets/images/grade_A.png';
 import grade_B from '../../../assets/images/grade_B.png';
 import grade_C from '../../../assets/images/grade_C.png';
@@ -20,6 +21,7 @@ const LessonQuizPlayer = ({
     result = null,
     loading = false,
 }) => {
+    const { t } = useTranslation();
     const [activeQuestionIndex, setActiveQuestionIndex] = useState(0);
     const [startQuiz, setStartQuiz] = useState(false);
     const [isShowAnswers, setIsShowAnswers] = useState(false);
@@ -94,7 +96,7 @@ const LessonQuizPlayer = ({
         const allQuestionsCovered = preparedAnswers.length === quiz?.questions?.length;
 
         if (!allQuestionsCovered) {
-            toast.error('Все вопросы должны быть обработаны');
+            toast.error(t('courseLearning.quiz.toasts.allQuestionsRequired'));
             return;
         }
 
@@ -139,7 +141,7 @@ const LessonQuizPlayer = ({
     if (!quiz) {
         return (
             <div className="mb-6 rounded-lg shadow-md p-6 bg-white dark:bg-gray-800">
-                <p className="text-gray-500 dark:text-gray-400">Квиз табылган жок.</p>
+                <p className="text-gray-500 dark:text-gray-400">{t('courseLearning.quiz.notFound')}</p>
             </div>
         );
     }
@@ -148,11 +150,11 @@ const LessonQuizPlayer = ({
         return (
             <div className="mb-6 rounded-lg shadow-md py-[20%] text-center bg-white dark:bg-gray-800">
                 <h2 className="font-bold text-[200%] leading-[44px] tracking-[0.01em] mb-[5%] text-gray-900 dark:text-white">
-                    Тестти баштайбыз! Даярсыңбы?
+                    {t('courseLearning.quiz.startTitle')}
                 </h2>
                 <div className="flex justify-center gap-[16px]">
-                    <Button variant="secondary">Артка</Button>
-                    <Button onClick={() => setStartQuiz(true)}>Тестти баштоо</Button>
+                    <Button variant="secondary">{t('courseLearning.actions.back')}</Button>
+                    <Button onClick={() => setStartQuiz(true)}>{t('courseLearning.quiz.startAction')}</Button>
                 </div>
             </div>
         );
@@ -171,20 +173,24 @@ const LessonQuizPlayer = ({
                     )}
 
                     <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                        {result.score}% ({result.correctAnswers}/{result.totalQuestions}) туура
+                        {t('courseLearning.quiz.scoreSummary', {
+                            score: result.score,
+                            correct: result.correctAnswers,
+                            total: result.totalQuestions,
+                        })}
                     </p>
 
                     <p className="text-gray-600 dark:text-gray-400">
                         {result.passed
-                            ? 'Сиз терең билим көрсөттүңүз!'
-                            : 'Өтө албай калдыңыз. Кайра аракет кылуу.'}
+                            ? t('courseLearning.quiz.passedMessage')
+                            : t('courseLearning.quiz.failedMessage')}
                     </p>
 
                     <div className="flex gap-4">
                         <Button onClick={handleRetake} variant="secondary">
-                            Кайрадан өтүү.
+                            {t('courseLearning.quiz.retake')}
                         </Button>
-                        <Button>Башкы бетке кайтуу</Button>
+                        <Button>{t('courseLearning.actions.home')}</Button>
                     </div>
                 </div>
 
@@ -192,7 +198,7 @@ const LessonQuizPlayer = ({
                     onClick={() => setIsShowAnswers(!isShowAnswers)}
                     className="flex items-center gap-1 cursor-pointer mt-6 text-lg font-medium text-gray-900 dark:text-white"
                 >
-                    <span>Жоопторун көрүү</span>
+                    <span>{t('courseLearning.quiz.viewAnswers')}</span>
                     {isShowAnswers ? <IoIosArrowUp /> : <IoIosArrowDown />}
                 </div>
 
@@ -226,7 +232,7 @@ const LessonQuizPlayer = ({
 
                                     <div className="mt-2">
                                         <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-gray-400 mb-1">
-                                            Сиздин жооп
+                                            {t('courseLearning.quiz.yourAnswer')}
                                         </p>
                                         <div
                                             className={`rounded border px-2 py-1 ${selected
@@ -237,7 +243,7 @@ const LessonQuizPlayer = ({
                                             {selected ? (
                                                 <InlineRichText text={selected.text} />
                                             ) : (
-                                                'Калтырылды'
+                                                t('courseLearning.quiz.skipped')
                                             )}
                                         </div>
                                     </div>
@@ -246,7 +252,7 @@ const LessonQuizPlayer = ({
                                         correctOptions.length > 0 && (
                                             <div className="text-sm text-green-700 mt-2">
                                                 <p className="text-xs uppercase tracking-wide mb-1 text-green-800">
-                                                    Туура жооп
+                                                    {t('courseLearning.quiz.correctAnswer')}
                                                 </p>
                                                 <ul className="space-y-1">
                                                     {correctOptions.map((opt) => (
@@ -313,16 +319,16 @@ const LessonQuizPlayer = ({
                     {isLastQuestion ? (
                         <div className="flex gap-4">
                             <Button variant="secondary" onClick={handleSkipQuestion}>
-                                Өткөрүү
+                                {t('courseLearning.quiz.skip')}
                             </Button>
                             <Button onClick={handleSubmit} disabled={submitting}>
-                                {submitting ? <Loader fullScreen={false} /> : 'Жыйынтыктоо'}
+                                {submitting ? <Loader fullScreen={false} /> : t('courseLearning.quiz.submit')}
                             </Button>
                         </div>
                     ) : (
                         <div className="flex gap-4">
                             <Button variant="secondary" onClick={handleSkipQuestion}>
-                                Өткөрүү
+                                {t('courseLearning.quiz.skip')}
                             </Button>
                             <Button
                                 onClick={() =>
@@ -332,18 +338,20 @@ const LessonQuizPlayer = ({
                                 }
                                 disabled={!selectedOption}
                             >
-                                Кийинкиси
+                                {t('courseLearning.quiz.next')}
                             </Button>
                         </div>
                     )}
 
                     <div className="text-sm text-gray-500 dark:text-gray-400 mt-2">
-                        Калтырылкан суроолор: {skippedQuestions.length} из{' '}
-                        {quiz.questions?.length || 0}
+                        {t('courseLearning.quiz.skippedCount', {
+                            skipped: skippedQuestions.length,
+                            total: quiz.questions?.length || 0,
+                        })}
                     </div>
                 </div>
             ) : (
-                <p>Суроолор табылган жок.</p>
+                <p>{t('courseLearning.quiz.noQuestions')}</p>
             )}
         </div>
     );

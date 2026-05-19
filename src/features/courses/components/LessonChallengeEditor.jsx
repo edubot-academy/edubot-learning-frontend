@@ -4,6 +4,7 @@ import {
     createEmptyChallengeTest,
     cloneChallenge,
 } from '@utils/challengeUtils';
+import { useTranslation } from 'react-i18next';
 
 const InfoTooltip = ({ text }) => (
     <span className="relative group inline-flex items-center">
@@ -15,6 +16,7 @@ const InfoTooltip = ({ text }) => (
 );
 
 const LessonChallengeEditor = ({ challenge, onChange, disabled = false }) => {
+    const { t } = useTranslation();
     const safeChallenge = challenge ?? createEmptyChallenge();
 
     const updateChallenge = (updater) => {
@@ -53,8 +55,8 @@ const LessonChallengeEditor = ({ challenge, onChange, disabled = false }) => {
         <div className={`space-y-4 ${disabled ? 'opacity-60 pointer-events-none' : ''}`}>
             <div>
                 <label className="block text-sm font-medium mb-1 flex items-center gap-1">
-                    Инструкциялар
-                    <InfoTooltip text="Мисалы: 'solution функциясы жуп сандардын суммасын кайтарсын'. Студентке тапшырма эмне экенин түшүндүрүңүз." />
+                    {t('instructorDashboard.courseBuilder.challenge.instructions')}
+                    <InfoTooltip text={t('instructorDashboard.courseBuilder.challenge.instructionsTooltip')} />
                 </label>
                 <textarea
                     className="w-full border rounded p-2 min-h-[120px] bg-[#0f172a] text-gray-100 border-[#1f2937] font-mono"
@@ -62,18 +64,17 @@ const LessonChallengeEditor = ({ challenge, onChange, disabled = false }) => {
                     onChange={(e) =>
                         updateChallenge((next) => (next.instructions = e.target.value))
                     }
-                    placeholder="Тапшырма боюнча толук нускама"
+                    placeholder={t('instructorDashboard.courseBuilder.challenge.instructionsPlaceholder')}
                 />
                 <p className="text-xs text-gray-500 mt-1">
-                    Студенттерге эмне кылуу керек экенин жана кайсы нерселер текшерилерин
-                    түшүндүрүңүз. Каалаган JS кодго уруксат берилет.
+                    {t('instructorDashboard.courseBuilder.challenge.instructionsHelp')}
                 </p>
             </div>
 
             <div>
                 <label className="block text-sm font-medium mb-1 flex items-center gap-1">
-                    Убакыт лимити (миллисекунд)
-                    <InfoTooltip text="Код канча убакытта иштеши керек. Мисалы 5000 = 5 секунд. Негизги мааниси 5000." />
+                    {t('instructorDashboard.courseBuilder.challenge.timeLimit')}
+                    <InfoTooltip text={t('instructorDashboard.courseBuilder.challenge.timeLimitTooltip')} />
                 </label>
                 <input
                     type="number"
@@ -86,10 +87,10 @@ const LessonChallengeEditor = ({ challenge, onChange, disabled = false }) => {
 
             <div>
                 <label className="block text-sm font-medium mb-1 flex items-center gap-1">
-                    Баштапкы код
+                    {t('instructorDashboard.courseBuilder.challenge.starterCode')}
                     <FiInfo
                         className="text-gray-500 cursor-help"
-                        title="Студенттер көрө турган баштапкы шаблон. Бош калтырсаңыз да болот."
+                        title={t('instructorDashboard.courseBuilder.challenge.starterCodeTooltip')}
                     />
                 </label>
                 <textarea
@@ -99,19 +100,19 @@ const LessonChallengeEditor = ({ challenge, onChange, disabled = false }) => {
                     placeholder={'function solution() {\n  // ...\n}'}
                 />
                 <p className="text-xs text-gray-500 mt-1">
-                    Кааласаңыз, бош калтырып студенттерге өз кодун толук жазууга шарт түзүңүз.
+                    {t('instructorDashboard.courseBuilder.challenge.starterCodeHelp')}
                 </p>
             </div>
 
             <div className="space-y-4">
                 <div className="flex justify-between items-center">
-                    <h4 className="font-semibold">Тесттер</h4>
+                    <h4 className="font-semibold">{t('instructorDashboard.courseBuilder.challenge.tests')}</h4>
                     <button
                         type="button"
                         onClick={addTest}
                         className="text-sm text-edubot-orange hover:underline"
                     >
-                        + Тест кошуу
+                        {t('instructorDashboard.courseBuilder.challenge.addTest')}
                     </button>
                 </div>
 
@@ -123,8 +124,8 @@ const LessonChallengeEditor = ({ challenge, onChange, disabled = false }) => {
                         <div className="flex justify-between items-center gap-3">
                             <div className="flex-1">
                                 <label className="block text-sm font-medium flex items-center gap-1">
-                                    Тест аталышы
-                                    <InfoTooltip text="Мисалы: 'Мисал тест', 'Жашыруун тест'. Инструктор гана көрөт." />
+                                    {t('instructorDashboard.courseBuilder.challenge.testTitle')}
+                                    <InfoTooltip text={t('instructorDashboard.courseBuilder.challenge.testTitleTooltip')} />
                                 </label>
                                 <input
                                     className="w-full border rounded p-2"
@@ -132,7 +133,9 @@ const LessonChallengeEditor = ({ challenge, onChange, disabled = false }) => {
                                     onChange={(e) =>
                                         handleTestChange(index, 'title', e.target.value)
                                     }
-                                    placeholder={`Тест ${index + 1}`}
+                                    placeholder={t('instructorDashboard.courseBuilder.challenge.testPlaceholder', {
+                                        number: index + 1,
+                                    })}
                                 />
                             </div>
                             <label className="flex items-center gap-2 text-sm mt-6">
@@ -143,7 +146,7 @@ const LessonChallengeEditor = ({ challenge, onChange, disabled = false }) => {
                                         handleTestChange(index, 'isHidden', e.target.checked)
                                     }
                                 />
-                                Жашыруун
+                                {t('instructorDashboard.courseBuilder.challenge.hidden')}
                             </label>
                             <button
                                 type="button"
@@ -151,16 +154,16 @@ const LessonChallengeEditor = ({ challenge, onChange, disabled = false }) => {
                                 className="text-sm text-red-600 hover:underline disabled:text-gray-400"
                                 disabled={safeChallenge.tests.length <= 1}
                             >
-                                Өчүрүү
+                                {t('instructorDashboard.courseBuilder.actions.delete')}
                             </button>
                         </div>
 
                         <div>
                             <label className="block text-sm font-medium flex items-center gap-1">
-                                Аргументтер (JSON)
+                                {t('instructorDashboard.courseBuilder.challenge.args')}
                                 <InfoTooltip
                                     text={
-                                        'Функциянын параметрлери. Бир параметр массив болсо: [[1,2,3]]. Эки параметр: [5,3]. Объект: [{"name":"Aida"}].'
+                                        t('instructorDashboard.courseBuilder.challenge.argsTooltip')
                                     }
                                 />
                             </label>
@@ -177,10 +180,10 @@ const LessonChallengeEditor = ({ challenge, onChange, disabled = false }) => {
 
                         <div>
                             <label className="block text-sm font-medium flex items-center gap-1">
-                                Күтүлгөн жыйынтык (JSON)
+                                {t('instructorDashboard.courseBuilder.challenge.expected')}
                                 <InfoTooltip
                                     text={
-                                        'solution(...) кайтаруусу керек болгон мааниси. Мисалы: 6, "Hello", {"ok":true}'
+                                        t('instructorDashboard.courseBuilder.challenge.expectedTooltip')
                                     }
                                 />
                             </label>
