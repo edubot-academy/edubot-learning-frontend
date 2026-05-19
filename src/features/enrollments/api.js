@@ -1,4 +1,3 @@
-import toast from 'react-hot-toast';
 import api from '../../shared/api/client';
 import { validateManualEnrollmentContext } from './policy';
 
@@ -16,9 +15,6 @@ export const enrollUserInCourse = async (userId, courseId, options = {}) => {
         return response.data;
     } catch (error) {
         console.error('Error enrolling user:', error);
-        const message =
-            error.response?.data?.message || error.message || 'Failed to enroll user in course';
-        toast.error(Array.isArray(message) ? message.join(', ') : message);
         throw error;
     }
 };
@@ -29,7 +25,6 @@ export const unenrollUserFromCourse = async (userId, courseId) => {
         return response.data;
     } catch (error) {
         console.error('Error enrolling user:', error);
-        toast.error('Failed to enroll user in course');
         throw error;
     }
 };

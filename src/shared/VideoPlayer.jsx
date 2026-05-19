@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import VideoPlayerUI from './ui/Play.jsx';
 import VideoErrorBoundary from './VideoErrorBoundary.jsx';
 import toast from 'react-hot-toast';
+import { useTranslation } from 'react-i18next';
 
 const MAX_HLS_NETWORK_RECOVERIES = 2;
 const MAX_HLS_MEDIA_RECOVERIES = 2;
@@ -56,6 +57,7 @@ const VideoPlayerInner = ({
     autoPlay = false,
     defaultFitMode = 'contain',
 }) => {
+    const { t } = useTranslation();
     const hlsRef = useRef(null);
     const internalVideoRef = useRef(null);
     const [hasError, setHasError] = useState(false);
@@ -143,7 +145,7 @@ const VideoPlayerInner = ({
             if (signal.aborted) return;
             setHasError(true);
             setIsLoading(false);
-            toast.error('Тилекке каршы, видео ойнотулбай калды.');
+            toast.error(t('media.video.playbackFailed'));
         };
 
         let hls = null;
@@ -162,7 +164,7 @@ const VideoPlayerInner = ({
                     }
 
                     failPlayback();
-                    toast.error('Браузер HLS форматын колдобойт. MP4 форматындагы видеону колдонууңузду суранабыз.');
+                    toast.error(t('media.video.hlsUnsupported'));
                     return;
                 }
 
@@ -243,7 +245,7 @@ const VideoPlayerInner = ({
                 videoEl.load();
             }
         };
-    }, [allowPlay, autoPlay, reloadToken, videoUrl]);
+    }, [allowPlay, autoPlay, reloadToken, t, videoUrl]);
 
     useEffect(() => {
         const video = internalVideoRef.current;
@@ -328,7 +330,7 @@ const VideoPlayerInner = ({
                     }`}
                     preload="metadata"
                     playsInline
-                    aria-label="Видео окуу"
+                    aria-label={t('media.video.ariaLabel')}
                     aria-describedby="video-description"
                     controlsList="nodownload"
                     onError={() => {
@@ -346,18 +348,18 @@ const VideoPlayerInner = ({
 
             {!allowPlay && (
                 <div className="absolute inset-0 bg-black/70 z-20 flex items-center justify-center text-white">
-                    Видео табылган жок
+                    {t('media.video.notFound')}
                 </div>
             )}
 
             {hasError && (
                 <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/70 z-20 text-white">
-                    <p>Видео жүктөлбөй калды.</p>
+                    <p>{t('media.video.loadFailed')}</p>
                     <button
                         className="mt-4 px-4 py-2 bg-orange-500 rounded hover:bg-orange-600"
                         onClick={retryLoad}
                     >
-                        Кайра аракет кылуу
+                        {t('media.video.retry')}
                     </button>
                 </div>
             )}

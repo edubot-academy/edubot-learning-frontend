@@ -22,7 +22,7 @@ export const getApiErrorMessage = (code, fallbackMessage = i18n.t('errors.generi
     return translated || fallbackMessage;
 };
 
-export const parseApiError = (error, fallbackMessage = 'Сервер катасы болду.') => {
+export const parseApiError = (error, fallbackMessage = i18n.t('errors.generic')) => {
     const payload = error?.response?.data || {};
     const stableError = payload?.error || {};
     const status = error?.response?.status ?? null;

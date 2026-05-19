@@ -14,8 +14,10 @@ import {
     EmptyState,
 } from '@components/ui/dashboard';
 import { FiBell, FiCheckCircle, FiInbox, FiLink2 } from 'react-icons/fi';
+import { useTranslation } from 'react-i18next';
 
 const NotificationsTab = () => {
+    const { i18n, t } = useTranslation();
     const [items, setItems] = useState([]);
     const [page, setPage] = useState(1);
     const [hasMore, setHasMore] = useState(true);
@@ -26,12 +28,12 @@ const NotificationsTab = () => {
         const groups = {};
         items.forEach((notif) => {
             const date = notif.createdAt ? new Date(notif.createdAt) : new Date();
-            const label = date.toLocaleDateString();
+            const label = date.toLocaleDateString(i18n.language);
             if (!groups[label]) groups[label] = [];
             groups[label].push(notif);
         });
         return groups;
-    }, [items]);
+    }, [i18n.language, items]);
 
     const load = async (nextPage = 1) => {
         setLoading(true);
@@ -80,9 +82,9 @@ const NotificationsTab = () => {
     return (
         <div className="space-y-6">
             <DashboardSectionHeader
-                eyebrow="Notifications center"
-                title="Билдирүүлөр"
-                description="Акыркы активдүүлүк, эскертмелер жана окула элек жаңыртуулар ушул жерде топтолот."
+                eyebrow={t('notifications.center.eyebrow')}
+                title={t('notifications.center.title')}
+                description={t('notifications.center.description')}
                 action={(
                     <button
                         type="button"
@@ -90,25 +92,25 @@ const NotificationsTab = () => {
                         className="dashboard-button-secondary"
                     >
                         <FiCheckCircle className="h-4 w-4" />
-                        Баарын окулган деп белгилөө
+                        {t('notifications.actions.markAllRead')}
                     </button>
                 )}
             />
 
             <div className="grid gap-4 md:grid-cols-3">
                 <DashboardMetricCard
-                    label="Бардык билдирүүлөр"
+                    label={t('notifications.metrics.total')}
                     value={items.length}
                     icon={FiInbox}
                 />
                 <DashboardMetricCard
-                    label="Окула элек"
+                    label={t('notifications.metrics.unread')}
                     value={unreadCount}
                     icon={FiBell}
                     tone={unreadCount > 0 ? 'amber' : 'green'}
                 />
                 <DashboardMetricCard
-                    label="Жүктөлгөн барак"
+                    label={t('notifications.metrics.loadedPage')}
                     value={page}
                     icon={FiCheckCircle}
                     tone="blue"
@@ -116,8 +118,8 @@ const NotificationsTab = () => {
             </div>
 
             <DashboardInsetPanel
-                title="Билдирүү тасмасы"
-                description="Жаңы эскертмелер жогору жагында, эскилери күн боюнча топтолуп көрсөтүлөт."
+                title={t('notifications.feed.title')}
+                description={t('notifications.feed.description')}
             >
                 <div className="mt-4">
                     {loading && items.length === 0 ? (
@@ -126,8 +128,8 @@ const NotificationsTab = () => {
                         </div>
                     ) : items.length === 0 ? (
                         <EmptyState
-                            title="Билдирүүлөр жок"
-                            subtitle="Жаңы окуя же жаңыртуу болгондо билдирүүлөр ушул жерде көрүнөт."
+                            title={t('notifications.empty.feedTitle')}
+                            subtitle={t('notifications.empty.feedSubtitle')}
                             icon={<FiBell className="h-8 w-8 text-edubot-orange" />}
                             className="py-10"
                         />
@@ -160,7 +162,7 @@ const NotificationsTab = () => {
                                                             <div className="flex items-start justify-between gap-3">
                                                                 <div className="min-w-0">
                                                                     <p className="text-sm font-semibold text-edubot-ink dark:text-white">
-                                                                        {notif.title || notif.subject || 'Билдирүү'}
+                                                                        {notif.title || notif.subject || t('notifications.fallbackTitle')}
                                                                     </p>
                                                                     {notif.message ? (
                                                                         <p className="mt-1 text-sm text-edubot-muted dark:text-slate-300">
@@ -175,7 +177,7 @@ const NotificationsTab = () => {
                                                                         className="shrink-0 text-xs font-semibold text-edubot-orange hover:underline"
                                                                         onClick={() => handleMarkAsRead(notif.id)}
                                                                     >
-                                                                        Окулду
+                                                                        {t('notifications.actions.markRead')}
                                                                     </button>
                                                                 ) : null}
                                                             </div>
@@ -183,7 +185,7 @@ const NotificationsTab = () => {
                                                             <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-edubot-muted dark:text-slate-400">
                                                                 <span>
                                                                     {notif.createdAt
-                                                                        ? new Date(notif.createdAt).toLocaleString()
+                                                                        ? new Date(notif.createdAt).toLocaleString(i18n.language)
                                                                         : ''}
                                                                 </span>
                                                                 {notif.link ? (
@@ -192,7 +194,7 @@ const NotificationsTab = () => {
                                                                         className="inline-flex items-center gap-1 font-semibold text-edubot-orange hover:underline"
                                                                     >
                                                                         <FiLink2 className="h-3.5 w-3.5" />
-                                                                        Карап чыгуу
+                                                                        {t('notifications.actions.review')}
                                                                     </Link>
                                                                 ) : null}
                                                             </div>
@@ -212,7 +214,7 @@ const NotificationsTab = () => {
                                     disabled={loading}
                                     className="dashboard-button-secondary w-full justify-center"
                                 >
-                                    {loading ? <Loader size={20} /> : 'Дагы билдирүүлөрдү жүктөө'}
+                                    {loading ? <Loader size={20} /> : t('notifications.actions.loadMore')}
                                 </button>
                             ) : null}
                         </div>

@@ -1,6 +1,6 @@
 # Main Frontend Localization Plan
 
-Last updated: 2026-05-15.
+Last updated: 2026-05-19.
 
 This plan defines the localization work needed in the main EduBot Learning frontend.
 
@@ -46,11 +46,13 @@ Partially addressed:
 - The main header and mobile drawer have a language switcher and localized navigation/search labels.
 - Public-facing pages are localized for the first release slice: home, courses, course details, about, contact, login, and signup.
 - API error parsing now prefers stable backend error codes for known high-frequency errors while preserving backend message fallback.
+- Admin/company management surfaces have been expanded beyond locale controls: company list/detail/settings/members/courses, platform tenant detail, admin shell, admin stats, users, companies, contacts, AI prompts, skills, pending courses, courses/categories/enrollment/transcode, certificate admin actions, and notification center/widget now read common UI copy from translation resources.
+- Shared reusable surfaces have localized fallback copy: analytics cards/charts/tables/progress states, media/video fallback states, skip navigation, setup account, generic progress label, and student dashboard course-opening toasts.
 
 Remaining gaps:
 
-- Error handling still needs broader adoption in feature-specific toast paths.
-- Dashboard/admin/internal feature copy still has hardcoded strings outside the current public-page release scope.
+- Error handling still needs broader adoption in feature-specific toast paths, especially instructor, student chat/task/resource, attendance, group-session, and course-builder flows.
+- Dashboard/admin/internal localization is partially complete, but large surfaces still have hardcoded strings outside the current completed slice.
 - Translation key parity tests exist for current resources; they need to scale as feature namespaces are added.
 
 ## Locale Contract
@@ -149,7 +151,7 @@ Acceptance criteria:
 
 ### Phase 4. Error Code Translation
 
-Status: Partially complete. Shared API error parsing now extracts stable codes and maps the first high-frequency backend codes to localized messages. CSRF retry detection prefers `CSRF_TOKEN_INVALID` while preserving the old message fallback. Remaining work is replacing feature-specific direct `error.response.data.message` usage with the shared helper.
+Status: Partially complete. Shared API error parsing now extracts stable codes, maps the first high-frequency backend codes to localized messages, and uses the localized generic fallback. CSRF retry detection prefers `CSRF_TOKEN_INVALID` while preserving the old message fallback. Several admin, company, certificate, category, user, enrollment, and transcode paths now call `parseApiError`. Remaining work is replacing feature-specific direct `error.response.data.message` usage with the shared helper.
 
 Estimated effort: 1 day for high-frequency errors; ongoing for full coverage.
 
@@ -168,7 +170,7 @@ Acceptance criteria:
 
 ### Phase 5. Incremental UI Copy Localization
 
-Status: Partially complete. The public-facing release slice is localized: homepage, courses, course details, about, contact, login, signup, header navigation, desktop user menu, and mobile drawer. Remaining dashboard/admin/internal feature screens can be localized incrementally.
+Status: Partially complete. The public-facing release slice is localized: homepage, courses, course details, about, contact, login, signup, header navigation, desktop user menu, and mobile drawer. Admin/company localization has also advanced through company pages, platform tenant detail, admin shell, admin stats/users/companies/contacts/AI prompts/skills/pending courses, admin courses/categories/enrollment/transcode, certificate admin toasts, and notification center/widget. Shared analytics, media/video fallback states, skip navigation, setup account, and generic progress copy are localized. Remaining dashboard/internal feature screens can be localized incrementally.
 
 Estimated effort: several days to 1-2+ weeks depending on depth.
 
@@ -177,11 +179,12 @@ Recommended order:
 1. Auth/login/onboarding surfaces. Done for login/signup.
 2. App shell navigation and shared UI. Done for header, user menu, mobile drawer, and language switcher.
 3. Public marketing and catalog pages. Done for home, courses, course details, about, and contact.
-4. Platform admin tenant/company settings. Partially done for locale controls.
-5. Student dashboard and learning flows.
-6. Course/player flows beyond public course details.
-7. Attendance, homework, certificates, and reporting.
-8. Remaining low-traffic admin and edge-case screens.
+4. Platform admin tenant/company settings. Mostly done for current company and tenant-management surfaces.
+5. Admin operations. Partially done for stats, users, companies, contacts, AI prompts, skills, pending courses, courses/categories/enrollment/transcode, certificates, and notifications.
+6. Student dashboard and learning flows. Started for course-opening toasts; remaining student tabs/chat/tasks/resources still need coverage.
+7. Course/player flows beyond public course details. Started for shared video fallback states; course builder and review/comment flows still need coverage.
+8. Attendance, homework, certificates, and reporting. Admin certificate toasts are partly done; attendance/group-session/homework surfaces still need coverage.
+9. Remaining low-traffic admin and edge-case screens.
 
 Tasks:
 
@@ -235,10 +238,14 @@ Recommended smoke QA before deploy:
 - Visit homepage, courses, course details, about, contact, login, and signup in all three languages.
 - Check desktop user menu and mobile drawer labels in all three languages.
 - Submit invalid contact/signup/login forms and verify localized validation messages.
+- Visit company list/detail/settings/members/courses and platform tenant detail in all three languages.
+- Visit admin stats, users, companies, contacts, AI prompts, skills, pending courses, courses, certificates, and notifications in all three languages.
+- Trigger common admin course/category/enrollment/transcode/certificate API errors and verify localized fallback behavior.
+- Check shared analytics empty/loading/error states, setup account, video fallback states, and skip navigation labels.
 
 Known release caveats:
 
-- Admin/internal dashboard localization remains outside this release slice.
+- Admin/internal dashboard localization is incomplete. Remaining high-volume gaps include instructor dashboard sections/modals, attendance, group-session workspace, student chat/tasks/resources, course builder validation/curriculum flows, ratings/comments, and internal leaderboard.
 - Translation files are still monolithic and should be split by namespace later.
 - Build currently reports the existing large main chunk warning.
 

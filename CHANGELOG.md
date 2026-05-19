@@ -6,6 +6,28 @@ Version bumps are classified by delivery scale; see `VERSIONING.md`.
 
 ---
 
+## [1.13.3] - 2026-05-19
+
+### Changed
+
+- Localized admin course catalog, enrollment, category, HLS transcode, certificate action, and notification center/widget copy for `ky`, `ru`, and `en`.
+- Localized shared analytics loading/empty/error states, setup-account copy, skip navigation labels, generic progress labels, student dashboard course-opening toasts, and shared video fallback states.
+- Updated the frontend localization plan with the completed admin/shared surfaces and remaining dashboard/internal gaps.
+
+### Fixed
+
+- Prevented duplicate user notifications by keeping category, user, and enrollment API helpers data-only while leaving localized success/error toasts in the caller/domain layers.
+- Switched shared API error parsing to use the localized generic fallback message when no backend error code or message is available.
+
+### Verification
+
+- `npm test -- --run src/i18n/resources.spec.js src/shared/api/error.spec.js src/i18n/locale.spec.js`
+- `npm run lint`
+- `git diff --check`
+- `npm run build`
+
+---
+
 ## [1.13.2] - 2026-05-19
 
 ### Changed

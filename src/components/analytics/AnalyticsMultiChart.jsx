@@ -1,4 +1,5 @@
 import PropTypes from 'prop-types';
+import { useTranslation } from 'react-i18next';
 import {
     Chart as ChartJS,
     CategoryScale,
@@ -58,8 +59,11 @@ const AnalyticsMultiChart = ({
     height = '300px',
     loading = false,
     error = false,
-    errorText = 'Failed to load chart data',
+    errorText = '',
 }) => {
+    const { t } = useTranslation();
+    const resolvedErrorText = errorText || t('analytics.common.chartDataLoadError');
+
     // EduBot color palette
     const colorPalette = [
         {
@@ -102,7 +106,7 @@ const AnalyticsMultiChart = ({
             const datasetData = data.map(item => item[dataset.dataKey] || item.value || 0);
 
             return {
-                label: dataset.label || `Dataset ${index + 1}`,
+                label: dataset.label || t('analytics.common.datasetLabel', { number: index + 1 }),
                 data: datasetData,
                 borderColor: dataset.borderColor || color.border,
                 backgroundColor: dataset.backgroundColor ||
@@ -211,7 +215,7 @@ const AnalyticsMultiChart = ({
                 <div className="flex items-center justify-center h-full bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
                     <div className="text-center">
                         <div className="animate-spin rounded-full border-2 border-gray-300 border-t-edubot-orange w-8 h-8 mx-auto mb-3"></div>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">Жүктөлүүдө...</p>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">{t('common.loading')}...</p>
                     </div>
                 </div>
             </div>
@@ -227,7 +231,7 @@ const AnalyticsMultiChart = ({
                         <svg className="w-12 h-12 text-gray-400 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z" />
                         </svg>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">{errorText}</p>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">{resolvedErrorText}</p>
                     </div>
                 </div>
             </div>
@@ -243,7 +247,7 @@ const AnalyticsMultiChart = ({
                         <svg className="w-12 h-12 text-gray-400 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                         </svg>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">Маалымат жок</p>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">{t('analytics.common.noData')}</p>
                     </div>
                 </div>
             </div>

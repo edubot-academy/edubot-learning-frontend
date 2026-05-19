@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
+import { useTranslation } from 'react-i18next';
 import {
     approveCertificate,
     fetchCourseCertificates,
@@ -13,8 +14,10 @@ import {
     updateCourseCertificateSettings,
     uploadCourseCertificateSecondaryLogo,
 } from '@features/courses/api';
+import { parseApiError } from '@shared/api/error';
 
 export const useAdminCertificatesDomain = ({ activeTab }) => {
+    const { t } = useTranslation();
     const [selectedCertificateCourseId, setSelectedCertificateCourseId] = useState(null);
     const [certificateStudents, setCertificateStudents] = useState([]);
     const [certificateCourseMeta, setCertificateCourseMeta] = useState(null);
@@ -64,12 +67,14 @@ export const useAdminCertificatesDomain = ({ activeTab }) => {
                 console.error('Failed to load admin certificate students', error);
                 setCertificateStudents([]);
                 setCertificateCourseMeta(null);
-                setCertificateError('Курс студенттерин жүктөө мүмкүн болбоду');
+                setCertificateError(
+                    parseApiError(error, t('adminCertificates.errors.loadStudents')).message
+                );
             } finally {
                 setLoadingCertificateStudents(false);
             }
         },
-        [certificateProgressMax, certificateProgressMin, certificateSearch, certificateStudentsPage]
+        [certificateProgressMax, certificateProgressMin, certificateSearch, certificateStudentsPage, t]
     );
 
     const handleSelectCertificateCourse = useCallback((courseId) => {
@@ -91,15 +96,17 @@ export const useAdminCertificatesDomain = ({ activeTab }) => {
                     approvalMode: enabled ? 'instructor' : 'none',
                 });
                 setCertificateSettings(updated);
-                toast.success('Сертификат эрежеси жаңыртылды');
+                toast.success(t('adminCertificates.toasts.ruleUpdated'));
             } catch (error) {
                 console.error('Failed to update certificate settings', error);
-                toast.error('Сертификат эрежесин жаңыртуу мүмкүн болбоду');
+                toast.error(
+                    parseApiError(error, t('adminCertificates.toasts.ruleUpdateError')).message
+                );
             } finally {
                 setSavingCertificateSettings(false);
             }
         },
-        [certificateSettings, selectedCertificateCourseId]
+        [certificateSettings, selectedCertificateCourseId, t]
     );
 
     const handleSaveCertificateSettings = useCallback(
@@ -112,17 +119,19 @@ export const useAdminCertificatesDomain = ({ activeTab }) => {
                     payload
                 );
                 setCertificateSettings(updated);
-                toast.success('Сертификат шаблону сакталды');
+                toast.success(t('adminCertificates.toasts.templateSaved'));
                 return true;
             } catch (error) {
                 console.error('Failed to save certificate settings', error);
-                toast.error('Сертификат шаблонун сактоо мүмкүн болбоду');
+                toast.error(
+                    parseApiError(error, t('adminCertificates.toasts.templateSaveError')).message
+                );
                 return false;
             } finally {
                 setSavingCertificateSettings(false);
             }
         },
-        [selectedCertificateCourseId]
+        [selectedCertificateCourseId, t]
     );
 
     const handleRegenerateCertificates = useCallback(async () => {
@@ -135,18 +144,22 @@ export const useAdminCertificatesDomain = ({ activeTab }) => {
             setCourseCertificates(Array.isArray(certificatesData) ? certificatesData : []);
             toast.success(
                 result?.regeneratedCount
-                    ? `${result.regeneratedCount} сертификат жаңыртылды`
-                    : 'Жаңыртууга сертификат табылган жок'
+                    ? t('adminCertificates.toasts.regenerated', {
+                          count: result.regeneratedCount,
+                      })
+                    : t('adminCertificates.toasts.noneRegenerated')
             );
             return true;
         } catch (error) {
             console.error('Failed to regenerate certificates', error);
-            toast.error('Сертификат PDF файлдарын жаңыртуу мүмкүн болбоду');
+            toast.error(
+                parseApiError(error, t('adminCertificates.toasts.regenerateError')).message
+            );
             return false;
         } finally {
             setRegeneratingCertificates(false);
         }
-    }, [loadCertificateStudents, selectedCertificateCourseId]);
+    }, [loadCertificateStudents, selectedCertificateCourseId, t]);
 
     const handleSaveCertificateAsset = useCallback(
         async (kind, file) => {
@@ -165,22 +178,27 @@ export const useAdminCertificatesDomain = ({ activeTab }) => {
                           );
                 setCertificateSettings(updated);
                 toast.success(
-                    kind === 'signature' ? 'Кол коюу сакталды' : 'Экинчи бренд логотиби жүктөлдү'
+                    kind === 'signature'
+                        ? t('adminCertificates.toasts.signatureSaved')
+                        : t('adminCertificates.toasts.secondaryLogoUploaded')
                 );
                 return updated;
             } catch (error) {
                 console.error('Failed to save certificate asset', error);
                 toast.error(
-                    kind === 'signature'
-                        ? 'Кол коюуну сактоо мүмкүн болбоду'
-                        : 'Сертификат активин жүктөө мүмкүн болбоду'
+                    parseApiError(
+                        error,
+                        kind === 'signature'
+                            ? t('adminCertificates.toasts.signatureSaveError')
+                            : t('adminCertificates.toasts.assetUploadError')
+                    ).message
                 );
                 return null;
             } finally {
                 setSavingCertificateAssetKind(null);
             }
         },
-        [selectedCertificateCourseId]
+        [selectedCertificateCourseId, t]
     );
 
     const handleCertificateAction = useCallback(
@@ -204,15 +222,18 @@ export const useAdminCertificatesDomain = ({ activeTab }) => {
                 await loadCertificateStudents(selectedCertificateCourseId);
                 const certificatesData = await fetchCourseCertificates(selectedCertificateCourseId);
                 setCourseCertificates(Array.isArray(certificatesData) ? certificatesData : []);
-                toast.success('Сертификат жаңыртылды');
+                toast.success(t('adminCertificates.toasts.certificateUpdated'));
             } catch (error) {
                 console.error('Failed to update certificate', error);
-                toast.error('Сертификат аракетин аткаруу мүмкүн болбоду');
+                toast.error(
+                    parseApiError(error, t('adminCertificates.toasts.certificateActionError'))
+                        .message
+                );
             } finally {
                 setCertificateActionStudentId(null);
             }
         },
-        [loadCertificateStudents, selectedCertificateCourseId]
+        [loadCertificateStudents, selectedCertificateCourseId, t]
     );
 
     useEffect(() => {

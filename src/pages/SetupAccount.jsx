@@ -1,6 +1,7 @@
 import { useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
+import { useTranslation } from 'react-i18next';
 import { completeAccountSetup } from '@services/api';
 import { setStoredToken } from '@shared/api/client';
 import { AuthContext } from '../context/AuthContext';
@@ -8,6 +9,7 @@ import LabelPassword from '@shared-ui/forms/LabelPassword';
 import SignUpImg from '../assets/images/edubot-signup.png';
 
 const SetupAccountPage = () => {
+    const { t } = useTranslation();
     const { login } = useContext(AuthContext);
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
@@ -22,17 +24,17 @@ const SetupAccountPage = () => {
     const hasToken = Boolean(token);
     const setupComplete = status.type === 'success';
     const passwordRules = useMemo(() => [
-        {
-            id: 'length',
-            label: 'Кеминде 8 белги',
-            isMet: formData.password.length >= 8,
-        },
-        {
-            id: 'match',
-            label: 'Кайталоо сырсөз менен дал келет',
-            isMet: Boolean(formData.confirmPassword) && formData.password === formData.confirmPassword,
-        },
-    ], [formData.confirmPassword, formData.password]);
+            {
+                id: 'length',
+                label: t('setupAccount.passwordRules.length'),
+                isMet: formData.password.length >= 8,
+            },
+            {
+                id: 'match',
+                label: t('setupAccount.passwordRules.match'),
+                isMet: Boolean(formData.confirmPassword) && formData.password === formData.confirmPassword,
+            },
+    ], [formData.confirmPassword, formData.password, t]);
     const hasPasswordMismatch =
         Boolean(formData.confirmPassword) && formData.password !== formData.confirmPassword;
 
@@ -52,17 +54,17 @@ const SetupAccountPage = () => {
         setStatus({ type: '', message: '' });
 
         if (!hasToken) {
-            setStatus({ type: 'error', message: 'Аккаунтту даярдоо шилтемеси табылган жок.' });
+            setStatus({ type: 'error', message: t('setupAccount.errors.missingToken') });
             return;
         }
 
         if (formData.password.length < 8) {
-            setStatus({ type: 'error', message: 'Сырсөз кеминде 8 белгиден турушу керек.' });
+            setStatus({ type: 'error', message: t('setupAccount.errors.passwordTooShort') });
             return;
         }
 
         if (formData.password !== formData.confirmPassword) {
-            setStatus({ type: 'error', message: 'Сырсөздөр дал келген жок.' });
+            setStatus({ type: 'error', message: t('setupAccount.errors.passwordMismatch') });
             return;
         }
 
@@ -76,9 +78,9 @@ const SetupAccountPage = () => {
 
             setStatus({
                 type: 'success',
-                message: 'Аккаунт даяр болду. LMSке өткөрүлүп жатасыз.',
+                message: t('setupAccount.success.redirecting'),
             });
-            toast.success('Аккаунт даяр болду. Эми LMSке кире аласыз.');
+            toast.success(t('setupAccount.success.ready'));
             if (redirectTimerRef.current) {
                 window.clearTimeout(redirectTimerRef.current);
             }
@@ -88,7 +90,7 @@ const SetupAccountPage = () => {
                 type: 'error',
                 message:
                     setupError?.response?.data?.message ||
-                    'Шилтеме жараксыз же мөөнөтү өтүп кеткен. Жаңы шилтеме сураныңыз.',
+                    t('setupAccount.errors.invalidOrExpired'),
             });
         } finally {
             setLoading(false);
@@ -100,7 +102,7 @@ const SetupAccountPage = () => {
             <div className="hidden md:flex md:w-1/2 bg-[linear-gradient(151.1deg,#FFCBA5_3.26%,#E64D26_96.74%)] flex-col justify-center items-center text-white px-6">
                 <img
                     src={SignUpImg}
-                    alt="Account setup"
+                    alt={t('setupAccount.imageAlt')}
                     className="object-contain mb-6 w-[400px] h-[300px]"
                 />
                 <h2 className="font-bold text-center text-[50px]">
@@ -110,29 +112,29 @@ const SetupAccountPage = () => {
 
             <div className="flex-1 flex items-center justify-center px-6">
                 <div className="w-full max-w-md">
-                    <h2 className="text-2xl font-bold text-black dark:text-white mb-3">Аккаунтту даярдоо</h2>
+                    <h2 className="text-2xl font-bold text-black dark:text-white mb-3">{t('setupAccount.title')}</h2>
                     <p className="text-sm text-gray-600 dark:text-[#a6adba] mb-6">
-                        Бир жолу сырсөз коюңуз. Кийинки кирүүлөрдө email жана ушул сырсөз менен киресиз.
+                        {t('setupAccount.description')}
                     </p>
 
                     {!hasToken && (
                         <div className="mb-5 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-700/60 dark:bg-amber-950/30 dark:text-amber-100">
-                            <p className="font-semibold">Аккаунт даярдоо шилтемеси жок.</p>
+                            <p className="font-semibold">{t('setupAccount.missingToken.title')}</p>
                             <p className="mt-1">
-                                Бул барак бир жолку чакыруу шилтемеси менен иштейт. CRM менеджерден жаңы чакыруу сураңыз же кирүү барагына кайтыңыз.
+                                {t('setupAccount.missingToken.description')}
                             </p>
                             <div className="mt-3 flex flex-wrap gap-2">
                                 <Link
                                     to="/login"
                                     className="rounded bg-amber-700 px-3 py-2 text-xs font-semibold text-white hover:bg-amber-800"
                                 >
-                                    Кирүү барагына өтүү
+                                    {t('setupAccount.actions.goToLogin')}
                                 </Link>
                                 <Link
                                     to="/contact"
                                     className="rounded border border-amber-300 px-3 py-2 text-xs font-semibold text-amber-900 hover:bg-amber-100 dark:border-amber-700 dark:text-amber-100 dark:hover:bg-amber-900/40"
                                 >
-                                    Жардам суроо
+                                    {t('setupAccount.actions.askForHelp')}
                                 </Link>
                             </div>
                         </div>
@@ -150,7 +152,7 @@ const SetupAccountPage = () => {
                             <p>{status.message}</p>
                             {hasToken && status.type === 'error' && (
                                 <p className="mt-2">
-                                    Эгер шилтеменин мөөнөтү өтсө, CRM менеджерден жаңы чакыруу сураңыз.
+                                    {t('setupAccount.errors.requestNewInvite')}
                                 </p>
                             )}
                         </div>
@@ -158,7 +160,7 @@ const SetupAccountPage = () => {
 
                     <form onSubmit={handleSubmit} className="space-y-3">
                         <LabelPassword
-                            label="Жаңы сырсөз"
+                            label={t('setupAccount.fields.newPassword')}
                             name="password"
                             value={formData.password}
                             onChange={updateField('password')}
@@ -168,7 +170,7 @@ const SetupAccountPage = () => {
                         />
 
                         <div className="rounded-lg border border-gray-200 bg-gray-50 p-3 text-xs text-gray-700 dark:border-gray-700 dark:bg-gray-900/60 dark:text-gray-300">
-                            <p className="font-semibold">Сырсөз эрежелери</p>
+                            <p className="font-semibold">{t('setupAccount.passwordRules.title')}</p>
                             <ul className="mt-2 space-y-1">
                                 {passwordRules.map((rule) => (
                                     <li
@@ -182,7 +184,7 @@ const SetupAccountPage = () => {
                         </div>
 
                         <LabelPassword
-                            label="Сырсөздү кайталаңыз"
+                            label={t('setupAccount.fields.confirmPassword')}
                             name="confirmPassword"
                             value={formData.confirmPassword}
                             onChange={updateField('confirmPassword')}
@@ -192,7 +194,7 @@ const SetupAccountPage = () => {
                         />
                         {hasPasswordMismatch && (
                             <p className="text-xs font-medium text-red-600 dark:text-red-300">
-                                Сырсөздөр азырынча дал келген жок.
+                                {t('setupAccount.errors.passwordMismatchLive')}
                             </p>
                         )}
 
@@ -201,14 +203,14 @@ const SetupAccountPage = () => {
                             disabled={loading || !hasToken || setupComplete}
                             className="w-full mt-4 shadow-[0px_5px_21.3px_0px_#E14219BF] bg-[linear-gradient(180deg,#FF8C6E_0%,#E14219_100%)] text-white py-3 rounded text-lg font-semibold hover:opacity-90 transition disabled:opacity-60"
                         >
-                            {loading ? 'Даярдалууда...' : 'Аккаунтту иштетүү'}
+                            {loading ? t('setupAccount.actions.activating') : t('setupAccount.actions.activate')}
                         </button>
                     </form>
 
                     <p className="mt-4 text-sm text-gray-600 dark:text-[#a6adba] text-center">
-                        Шилтеме иштебей калса, CRM менеджерден жаңысың сураңыз же{' '}
+                        {t('setupAccount.footer.prefix')}{' '}
                         <Link to="/login" className="text-blue-500 hover:underline">
-                            кирүү барагына өтүңүз
+                            {t('setupAccount.footer.loginLink')}
                         </Link>
                         .
                     </p>

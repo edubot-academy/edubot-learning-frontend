@@ -11,8 +11,10 @@ import {
     EmptyState,
 } from '@components/ui/dashboard';
 import { FiBell, FiCheckCircle } from 'react-icons/fi';
+import { useTranslation } from 'react-i18next';
 
-const NotificationsWidget = ({ title = 'Билдирүүлөр', limit = 5, link = '/notifications' }) => {
+const NotificationsWidget = ({ title, limit = 5, link = '/notifications' }) => {
+    const { i18n, t } = useTranslation();
     const [items, setItems] = useState([]);
     const [unreadCount, setUnreadCount] = useState(0);
     const [loading, setLoading] = useState(false);
@@ -48,20 +50,20 @@ const NotificationsWidget = ({ title = 'Билдирүүлөр', limit = 5, link
 
     return (
         <DashboardInsetPanel
-            title={title}
-            description="Жаңылык жана эскертмелер"
+            title={title || t('notifications.widget.title')}
+            description={t('notifications.widget.description')}
         >
             <div className="mt-4 flex items-center justify-between gap-2 mb-3">
                 <div>
                     <div className="inline-flex items-center gap-2 text-sm text-edubot-muted dark:text-slate-400">
                         <FiBell className="h-4 w-4 text-edubot-orange" />
-                        Акыркы жаңыртуулар
+                        {t('notifications.widget.latest')}
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
                     {unreadCount > 0 && (
                         <span className="px-2 py-1 text-xs rounded-full bg-orange-100 dark:bg-orange-900/40 text-gray-700 dark:text-[#E8ECF3]">
-                            {unreadCount} жаңы
+                            {t('notifications.unreadBadge', { count: unreadCount })}
                         </span>
                     )}
                     <button
@@ -70,7 +72,7 @@ const NotificationsWidget = ({ title = 'Билдирүүлөр', limit = 5, link
                         className="dashboard-button-secondary"
                     >
                         <FiCheckCircle className="h-4 w-4" />
-                        Баарын окулган деп белгилөө
+                        {t('notifications.actions.markAllRead')}
                     </button>
                 </div>
             </div>
@@ -79,8 +81,8 @@ const NotificationsWidget = ({ title = 'Билдирүүлөр', limit = 5, link
                 <Loader fullScreen={false} />
             ) : items.length === 0 ? (
                 <EmptyState
-                    title="Азырынча билдирүүлөр жок"
-                    subtitle="Жаңы окуялар болгондо бул жерден көрүнө баштайт."
+                    title={t('notifications.empty.widgetTitle')}
+                    subtitle={t('notifications.empty.widgetSubtitle')}
                 />
             ) : (
                 <ul className="divide-y divide-edubot-line/70 dark:divide-slate-800">
@@ -90,7 +92,7 @@ const NotificationsWidget = ({ title = 'Билдирүүлөр', limit = 5, link
                                 {item.message || item.subject}
                             </p>
                             <p className="text-xs text-edubot-muted dark:text-[#a6adba] mt-1">
-                                {item.createdAt ? new Date(item.createdAt).toLocaleString() : ''}
+                                {item.createdAt ? new Date(item.createdAt).toLocaleString(i18n.language) : ''}
                             </p>
                         </li>
                     ))}
@@ -99,7 +101,7 @@ const NotificationsWidget = ({ title = 'Билдирүүлөр', limit = 5, link
 
             <div className="mt-4 text-right">
                 <Link to={link} className="text-sm font-semibold text-edubot-orange hover:underline">
-                    Бардыгын көрүү
+                    {t('notifications.actions.viewAll')}
                 </Link>
             </div>
         </DashboardInsetPanel>

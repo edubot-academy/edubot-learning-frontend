@@ -1,5 +1,6 @@
 import { Component } from 'react';
 import PropTypes from 'prop-types';
+import { useTranslation } from 'react-i18next';
 
 // Sentry integration for error tracking (lazy loaded, optional)
 let SentryModule = null;
@@ -65,13 +66,13 @@ class VideoErrorBoundary extends Component {
         if (this.state.hasError) {
             return (
                 <div className="playerBox relative w-full aspect-video bg-black rounded-xl overflow-hidden flex flex-col items-center justify-center text-white">
-                    <p>Видео ойнотууда ката кетти.</p>
+                    <p>{this.props.labels.playbackError}</p>
                     <p className="text-sm text-gray-400 mt-2">{this.state.error?.message}</p>
                     <button
                         className="mt-4 px-4 py-2 bg-orange-500 rounded hover:bg-orange-600"
                         onClick={this.handleReset}
                     >
-                        Кайра аракет кылуу
+                        {this.props.labels.retry}
                     </button>
                 </div>
             );
@@ -83,6 +84,29 @@ class VideoErrorBoundary extends Component {
 
 VideoErrorBoundary.propTypes = {
     children: PropTypes.node.isRequired,
+    labels: PropTypes.shape({
+        playbackError: PropTypes.string.isRequired,
+        retry: PropTypes.string.isRequired,
+    }).isRequired,
 };
 
-export default VideoErrorBoundary;
+const TranslatedVideoErrorBoundary = ({ children }) => {
+    const { t } = useTranslation();
+
+    return (
+        <VideoErrorBoundary
+            labels={{
+                playbackError: t('media.video.playbackError'),
+                retry: t('media.video.retry'),
+            }}
+        >
+            {children}
+        </VideoErrorBoundary>
+    );
+};
+
+TranslatedVideoErrorBoundary.propTypes = {
+    children: PropTypes.node.isRequired,
+};
+
+export default TranslatedVideoErrorBoundary;

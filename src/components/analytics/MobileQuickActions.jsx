@@ -1,5 +1,6 @@
 import PropTypes from 'prop-types';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 /**
  * MobileQuickActions - Floating action buttons for mobile users
@@ -12,12 +13,13 @@ const MobileQuickActions = ({
     onFilter,
     loading = false,
 }) => {
+    const { t } = useTranslation();
     const [isOpen, setIsOpen] = useState(false);
 
     const actions = [
         {
             id: 'refresh',
-            label: 'Жаңылоо',
+            label: t('analytics.common.refresh'),
             icon: (
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -29,7 +31,7 @@ const MobileQuickActions = ({
         },
         {
             id: 'filter',
-            label: 'Фильтр',
+            label: t('analytics.common.filter'),
             icon: (
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V19a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
@@ -40,7 +42,7 @@ const MobileQuickActions = ({
         },
         {
             id: 'export',
-            label: 'Экспорт',
+            label: t('analytics.common.export'),
             icon: (
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -51,7 +53,7 @@ const MobileQuickActions = ({
         },
         {
             id: 'share',
-            label: 'Бөлүшүү',
+            label: t('analytics.common.share'),
             icon: (
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z" />
@@ -77,7 +79,7 @@ const MobileQuickActions = ({
             <button
                 onClick={toggleMenu}
                 className={`w-14 h-14 rounded-full bg-edubot-orange text-white shadow-lg transition-all duration-300 transform hover:scale-110 active:scale-95 touch-manipulation ${isOpen ? 'rotate-45' : ''}`}
-                aria-label="Quick actions"
+                aria-label={t('analytics.common.quickActions')}
             >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />

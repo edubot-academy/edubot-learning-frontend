@@ -7,6 +7,7 @@ import {
     EmptyState,
 } from '@components/ui/dashboard';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import Loader from '@shared/ui/Loader';
 import { FiBookOpen, FiEye, FiFolder, FiLayers, FiTrash2, FiUploadCloud, FiUsers } from 'react-icons/fi';
 import DeliveryCourseDetailsModal from './DeliveryCourseDetailsModal';
@@ -19,33 +20,36 @@ import { ADMIN_COURSES_TAB_SECTIONS } from '../utils/adminPanel.constants';
 const COURSE_WORKFLOWS = Object.freeze([
     {
         id: 'catalog',
-        label: 'Каталог',
-        description: 'Курстарды жана категорияларды башкаруу.',
+        labelKey: 'adminCourses.workflows.catalog.label',
+        descriptionKey: 'adminCourses.workflows.catalog.description',
     },
     {
         id: 'enrollment',
-        label: 'Жаздыруу',
-        description: 'Колдонуучуларды видео курстарга же оффлайн/live группаларга кошуу.',
+        labelKey: 'adminCourses.workflows.enrollment.label',
+        descriptionKey: 'adminCourses.workflows.enrollment.description',
     },
     {
         id: 'media',
-        label: 'Медиа операциялар',
-        description: 'HLS транскоддоо жана техникалык видео аракеттери.',
+        labelKey: 'adminCourses.workflows.media.label',
+        descriptionKey: 'adminCourses.workflows.media.description',
     },
 ]);
 
-const getCourseTypeLabel = (courseType) => {
+const getCourseTypeLabel = (courseType, t) => {
     switch (courseType) {
         case 'offline':
-            return 'Оффлайн';
+            return t('adminPendingCourses.courseTypes.offline');
         case 'online_live':
-            return 'Онлайн түз эфир';
+            return t('adminPendingCourses.courseTypes.onlineLive');
         default:
-            return 'Видео';
+            return t('adminPendingCourses.courseTypes.video');
     }
 };
 
-const getDeliveryModeLabel = (value) => (value === 'individual' ? 'Жеке' : 'Группа');
+const getDeliveryModeLabel = (value, t) =>
+    value === 'individual'
+        ? t('adminCourses.deliveryModes.individual')
+        : t('adminCourses.deliveryModes.group');
 
 const getDeliveryModeClass = (value) =>
     value === 'individual'
@@ -80,6 +84,7 @@ const AdminCoursesTab = ({
     handleUpdateCategory,
     handleDeleteCategory,
 }) => {
+    const { i18n, t } = useTranslation();
     const [detailCourse, setDetailCourse] = useState(null);
     const [sections, setSections] = useState([]);
     const [lessons, setLessons] = useState([]);
@@ -124,8 +129,8 @@ const AdminCoursesTab = ({
                         console.error('[AdminCoursesTab] Transcode API error:', err);
                         recordTranscodeEvent({
                             type: 'error',
-                            label: 'Бир сабакты транскоддоо башталбай калды',
-                            detail: err?.message || 'Белгисиз ката',
+                            label: t('adminCourses.transcode.history.singleStartFailed'),
+                            detail: err?.message || t('adminCourses.fallback.unknownError'),
                         });
                     }
                 })();
@@ -142,8 +147,8 @@ const AdminCoursesTab = ({
                         console.error('[AdminCoursesTab] Bulk transcode API error:', err);
                         recordTranscodeEvent({
                             type: 'error',
-                            label: 'Топтук транскоддоо башталбай калды',
-                            detail: err?.message || 'Белгисиз ката',
+                            label: t('adminCourses.transcode.history.bulkStartFailed'),
+                            detail: err?.message || t('adminCourses.fallback.unknownError'),
                         });
                     }
                 })();
@@ -151,7 +156,7 @@ const AdminCoursesTab = ({
 
             setPendingTranscodeAction(null);
         }
-    }, [pendingTranscodeAction, lastTranscodedLessonId, recordTranscodeEvent, transcodingContextCourseId, transcodingContextSectionId]);
+    }, [pendingTranscodeAction, lastTranscodedLessonId, recordTranscodeEvent, t, transcodingContextCourseId, transcodingContextSectionId]);
 
     const publishedCourses = courses.filter((course) => course.isPublished).length;
     const deliveryCourses = courses.filter((course) => course.courseType !== 'video').length;
@@ -241,10 +246,10 @@ const AdminCoursesTab = ({
     useEffect(() => {
         if (lastTranscodedLessonId && status === 'ready') {
             if (lastReadyRecordedRef.current !== lastTranscodedLessonId) {
-                const lessonTitle = lessons.find(l => l.id === lastTranscodedLessonId)?.title || `Сабак #${lastTranscodedLessonId}`;
+                const lessonTitle = lessons.find(l => l.id === lastTranscodedLessonId)?.title || t('adminCourses.fallback.lesson', { id: lastTranscodedLessonId });
                 recordTranscodeEvent({
                     type: 'success',
-                    label: 'Транскоддоо аяктады',
+                    label: t('adminCourses.transcode.history.completed'),
                     detail: lessonTitle,
                 });
                 lastReadyRecordedRef.current = lastTranscodedLessonId;
@@ -262,7 +267,7 @@ const AdminCoursesTab = ({
                 loadLessons();
             }
         }
-    }, [lastTranscodedLessonId, lessons, recordTranscodeEvent, status, transcodingContextCourseId, transcodingContextSectionId]);
+    }, [lastTranscodedLessonId, lessons, recordTranscodeEvent, status, t, transcodingContextCourseId, transcodingContextSectionId]);
 
     // Get selected course, section, lesson names for display
     const selectedCourse = courses.find((c) => String(c.id) === String(transcodeCourseId));
@@ -276,22 +281,22 @@ const AdminCoursesTab = ({
     return (
         <div className="space-y-6">
             <DashboardSectionHeader
-                eyebrow="Catalog operations"
-                title="Курстар жана категориялар"
-                description="Курстарды, категорияларды жана техникалык курс операцияларын ушул жерден башкарыңыз."
+                eyebrow={t('adminCourses.eyebrow')}
+                title={t('adminCourses.title')}
+                description={t('adminCourses.description')}
             />
 
             <div className="grid gap-4 md:grid-cols-4">
-                <DashboardMetricCard label="Курстар" value={courses.length} icon={FiBookOpen} />
+                <DashboardMetricCard label={t('adminCourses.metrics.courses')} value={courses.length} icon={FiBookOpen} />
                 <DashboardMetricCard
-                    label="Жарыяланган"
+                    label={t('adminCourses.metrics.published')}
                     value={publishedCourses}
                     icon={FiLayers}
                     tone={publishedCourses ? 'green' : 'default'}
                 />
-                <DashboardMetricCard label="Категориялар" value={categories.length} icon={FiFolder} />
+                <DashboardMetricCard label={t('adminCourses.metrics.categories')} value={categories.length} icon={FiFolder} />
                 <DashboardMetricCard
-                    label="Delivery курстар"
+                    label={t('adminCourses.metrics.delivery')}
                     value={deliveryCourses}
                     icon={FiUsers}
                     tone={deliveryCourses ? 'blue' : 'default'}
@@ -302,10 +307,10 @@ const AdminCoursesTab = ({
                 <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                     <div>
                         <p className="text-xs font-semibold uppercase tracking-wide text-edubot-muted dark:text-slate-400">
-                            Курс операциялары
+                            {t('adminCourses.operations')}
                         </p>
                         <p className="mt-1 text-sm text-edubot-muted dark:text-slate-400">
-                            {activeWorkflowMeta?.description}
+                            {activeWorkflowMeta ? t(activeWorkflowMeta.descriptionKey) : ''}
                         </p>
                     </div>
                     <div className="flex flex-wrap gap-2">
@@ -320,7 +325,7 @@ const AdminCoursesTab = ({
                                         : 'border-edubot-line bg-white text-edubot-muted hover:border-edubot-orange hover:text-edubot-orange dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300'
                                 }`}
                             >
-                                {workflow.label}
+                                {t(workflow.labelKey)}
                             </button>
                         ))}
                     </div>
@@ -330,11 +335,11 @@ const AdminCoursesTab = ({
             <div className="grid gap-6 xl:grid-cols-[1.35fr_0.95fr]">
                 {(showCatalogWorkflow || showEnrollmentWorkflow) && (
                     <DashboardInsetPanel
-                        title={showEnrollmentWorkflow ? 'Курска жаздыруу' : 'Курстар'}
+                        title={showEnrollmentWorkflow ? t('adminCourses.enrollment.title') : t('adminCourses.catalog.title')}
                         description={
                             showEnrollmentWorkflow
-                                ? 'Студенттерди туура курс же delivery группа контекстине кошуңуз.'
-                                : 'Курс карталарын карап чыгып, алдын ала көрүп жана каталогду тазалаңыз.'
+                                ? t('adminCourses.enrollment.description')
+                                : t('adminCourses.catalog.description')
                         }
                         data-workspace-section={
                             showEnrollmentWorkflow
@@ -361,20 +366,20 @@ const AdminCoursesTab = ({
                                                     <div className="flex flex-wrap items-center gap-2">
                                                         <p className="font-semibold text-edubot-ink dark:text-white">{course.title}</p>
                                                         <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700 dark:bg-slate-500/15 dark:text-slate-300">
-                                                            {getCourseTypeLabel(course.courseType)}
+                                                            {getCourseTypeLabel(course.courseType, t)}
                                                         </span>
                                                         {course.isPublished ? (
                                                             <span className="inline-flex items-center rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300">
-                                                                Жарыяланган
+                                                                {t('adminCourses.status.published')}
                                                             </span>
                                                         ) : (
                                                             <span className="inline-flex items-center rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-700 dark:bg-amber-500/15 dark:text-amber-300">
-                                                                Даярдалууда
+                                                                {t('adminCourses.status.draft')}
                                                             </span>
                                                         )}
                                                     </div>
                                                     <p className="mt-2 text-sm text-edubot-muted dark:text-slate-400">
-                                                        Окутуучу: {course.instructor?.fullName || '—'}
+                                                        {t('adminPendingCourses.instructor')}: {course.instructor?.fullName || '—'}
                                                     </p>
                                                     {course.shortDescription ? (
                                                         <p className="mt-2 line-clamp-2 text-sm text-edubot-muted dark:text-slate-400">
@@ -392,12 +397,12 @@ const AdminCoursesTab = ({
                                                                 className="dashboard-button-secondary"
                                                             >
                                                                 <FiEye className="h-4 w-4" />
-                                                                Ички маалымат
+                                                                {t('adminPendingCourses.actions.details')}
                                                             </button>
                                                         ) : (
                                                             <Link to={`/courses/${course.id}`} className="dashboard-button-secondary">
                                                                 <FiEye className="h-4 w-4" />
-                                                                Көрүү
+                                                                {t('adminCourses.actions.view')}
                                                             </Link>
                                                         )}
                                                         <button
@@ -406,7 +411,7 @@ const AdminCoursesTab = ({
                                                             className="dashboard-button-secondary"
                                                         >
                                                             <FiTrash2 className="h-4 w-4" />
-                                                            Өчүрүү
+                                                            {t('adminCourses.actions.delete')}
                                                         </button>
                                                     </div>
                                                 ) : null}
@@ -417,7 +422,7 @@ const AdminCoursesTab = ({
                                                 {isDeliveryCourse ? (
                                                     <div className="mb-3">
                                                         <label className="mb-2 block text-sm font-medium text-edubot-muted dark:text-slate-400">
-                                                            Группа тандаңыз
+                                                            {t('adminCourses.enrollment.selectGroup')}
                                                         </label>
                                                         <select
                                                             value={selectedGroupId}
@@ -429,11 +434,11 @@ const AdminCoursesTab = ({
                                                             }
                                                             className="dashboard-select w-full"
                                                         >
-                                                            <option value="">Группа тандаңыз</option>
+                                                            <option value="">{t('adminCourses.enrollment.selectGroup')}</option>
                                                             {groupOptions.map((group) => (
                                                                 <option key={group.id} value={group.id}>
-                                                                    {(group.name || `Group #${group.id}`) +
-                                                                        ` (${group.code || '—'}) · ${getDeliveryModeLabel(group.deliveryMode)}`}
+                                                                    {(group.name || t('adminCourses.fallback.group', { id: group.id })) +
+                                                                        ` (${group.code || '—'}) · ${getDeliveryModeLabel(group.deliveryMode, t)}`}
                                                                 </option>
                                                             ))}
                                                         </select>
@@ -444,7 +449,7 @@ const AdminCoursesTab = ({
                                                                         key={group.id}
                                                                         className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${getDeliveryModeClass(group.deliveryMode)}`}
                                                                     >
-                                                                        {(group.name || `Group #${group.id}`)} · {getDeliveryModeLabel(group.deliveryMode)}
+                                                                        {(group.name || t('adminCourses.fallback.group', { id: group.id }))} · {getDeliveryModeLabel(group.deliveryMode, t)}
                                                                     </span>
                                                                 ))}
                                                             </div>
@@ -454,8 +459,8 @@ const AdminCoursesTab = ({
 
                                                 <label className="mb-2 block text-sm font-medium text-edubot-muted dark:text-slate-400">
                                                     {isDeliveryCourse
-                                                        ? 'Колдонуучуну группага жазуу'
-                                                        : 'Колдонуучуну курска жазуу'}
+                                                        ? t('adminCourses.enrollment.enrollInGroup')
+                                                        : t('adminCourses.enrollment.enrollInCourse')}
                                                 </label>
                                                 <select
                                                     onChange={(e) => handleEnrollUser(e.target.value, course.id)}
@@ -465,8 +470,8 @@ const AdminCoursesTab = ({
                                                 >
                                                     <option value="" disabled>
                                                         {isDeliveryCourse && !selectedGroupId
-                                                            ? 'Адегенде группа тандаңыз'
-                                                            : 'Колдонуучуну тандаңыз'}
+                                                            ? t('adminCourses.enrollment.selectGroupFirst')
+                                                            : t('adminCourses.enrollment.selectUser')}
                                                     </option>
                                                     {users.map((u) => (
                                                         <option key={u.id} value={u.id}>
@@ -484,8 +489,8 @@ const AdminCoursesTab = ({
                     ) : (
                         <div className="mt-4">
                             <EmptyState
-                                title="Системада курстар жок"
-                                subtitle="Платформада курстар жазылган эмес"
+                                title={t('adminCourses.empty.title')}
+                                subtitle={t('adminCourses.empty.subtitle')}
                             />
                         </div>
                     )}
@@ -496,8 +501,8 @@ const AdminCoursesTab = ({
                 <div className="space-y-6">
                     {showCatalogWorkflow && (
                     <DashboardInsetPanel
-                        title="Категориялар"
-                        description="Категорияларды кошуп, атын өзгөртүп жана тазалаңыз."
+                        title={t('adminCourses.categories.title')}
+                        description={t('adminCourses.categories.description')}
                         data-workspace-section={ADMIN_COURSES_TAB_SECTIONS.CATALOG_GOVERNANCE}
                     >
                         <div className="mt-4 flex flex-col gap-3 sm:flex-row">
@@ -505,14 +510,14 @@ const AdminCoursesTab = ({
                                 value={newCategory || ''}
                                 onChange={(e) => setNewCategory(e.target.value)}
                                 className="dashboard-field flex-1"
-                                placeholder="Жаңы категориянын аталышы"
+                                placeholder={t('adminCourses.categories.placeholder')}
                             />
                             <button
                                 type="button"
                                 onClick={handleAddCategory}
                                 className="dashboard-button-primary self-start"
                             >
-                                Кошуу
+                                {t('adminCourses.actions.add')}
                             </button>
                         </div>
 
@@ -535,7 +540,7 @@ const AdminCoursesTab = ({
                                                     onClick={() => handleUpdateCategory(category.id)}
                                                     className="dashboard-button-primary"
                                                 >
-                                                    Сактоо
+                                                    {t('adminCourses.actions.save')}
                                                 </button>
                                                 <button
                                                     type="button"
@@ -545,7 +550,7 @@ const AdminCoursesTab = ({
                                                     }}
                                                     className="dashboard-button-secondary"
                                                 >
-                                                    Жокко чыгаруу
+                                                    {t('adminCourses.actions.cancel')}
                                                 </button>
                                             </div>
                                         </div>
@@ -563,14 +568,14 @@ const AdminCoursesTab = ({
                                                     }}
                                                     className="dashboard-button-secondary"
                                                 >
-                                                    Өзгөртүү
+                                                    {t('adminCourses.actions.edit')}
                                                 </button>
                                                 <button
                                                     type="button"
                                                     onClick={() => handleDeleteCategory(category)}
                                                     className="dashboard-button-secondary"
                                                 >
-                                                    Өчүрүү
+                                                    {t('adminCourses.actions.delete')}
                                                 </button>
                                             </div>
                                         </div>
@@ -583,20 +588,20 @@ const AdminCoursesTab = ({
 
                     {showMediaWorkflow && (
                     <DashboardInsetPanel
-                        title="HLS транс коддоо"
-                        description="Видеолор азыр автоматтык түрдө HLSке транскоддолот. Бул жерде тек ката кеткен же эски видеолор үчүн колдонуңуз."
+                        title={t('adminCourses.transcode.title')}
+                        description={t('adminCourses.transcode.description')}
                         data-workspace-section={ADMIN_COURSES_TAB_SECTIONS.MEDIA_OPERATIONS}
                     >
                         <div className="mt-4 rounded-lg bg-blue-50 dark:bg-blue-900/20 p-3 text-sm text-blue-700 dark:text-blue-300">
-                            <p>Авто-транскоддоо иштейет: жаңы видеолор жүктөлгөндө автоматтык түрдө HLSке айланат.</p>
+                            <p>{t('adminCourses.transcode.autoNotice')}</p>
                         </div>
 
                         {/* Selection summary */}
                         {(selectedCourse || selectedSection) && (
                             <div className="mt-3 rounded-lg bg-slate-100 dark:bg-slate-800 p-2 text-sm">
-                                {selectedCourse && <p className="text-slate-700 dark:text-slate-300">Курс: <span className="font-medium">{selectedCourse.title}</span></p>}
-                                {selectedSection && <p className="text-slate-700 dark:text-slate-300">Секция: <span className="font-medium">{selectedSection.title}</span></p>}
-                                {selectedLesson && <p className="text-slate-700 dark:text-slate-300">Сабак: <span className="font-medium">{selectedLesson.title}</span></p>}
+                                {selectedCourse && <p className="text-slate-700 dark:text-slate-300">{t('adminCourses.transcode.labels.course')}: <span className="font-medium">{selectedCourse.title}</span></p>}
+                                {selectedSection && <p className="text-slate-700 dark:text-slate-300">{t('adminCourses.transcode.labels.section')}: <span className="font-medium">{selectedSection.title}</span></p>}
+                                {selectedLesson && <p className="text-slate-700 dark:text-slate-300">{t('adminCourses.transcode.labels.lesson')}: <span className="font-medium">{selectedLesson.title}</span></p>}
                             </div>
                         )}
 
@@ -604,7 +609,7 @@ const AdminCoursesTab = ({
                             {/* Course selector */}
                             <div>
                                 <label className="mb-1 block text-sm font-medium text-edubot-muted dark:text-slate-400">
-                                    Курс тандаңыз
+                                    {t('adminCourses.transcode.selectCourse')}
                                 </label>
                                 <select
                                     value={transcodeCourseId || ''}
@@ -615,7 +620,7 @@ const AdminCoursesTab = ({
                                     }}
                                     className="dashboard-select w-full"
                                 >
-                                    <option value="">Курс тандаңыз</option>
+                                    <option value="">{t('adminCourses.transcode.selectCourse')}</option>
                                     {courses.filter(c => c.courseType === 'video').map((course) => (
                                         <option key={course.id} value={course.id}>
                                             {course.title}
@@ -627,7 +632,7 @@ const AdminCoursesTab = ({
                             {/* Section selector */}
                             <div>
                                 <label className="mb-1 block text-sm font-medium text-edubot-muted dark:text-slate-400">
-                                    Секция тандаңыз
+                                    {t('adminCourses.transcode.selectSection')}
                                 </label>
                                 <select
                                     value={transcodeSectionId || ''}
@@ -638,10 +643,10 @@ const AdminCoursesTab = ({
                                     disabled={!transcodeCourseId || sectionsLoading}
                                     className="dashboard-select w-full disabled:opacity-50"
                                 >
-                                    <option value="">{sectionsLoading ? 'Жүктөлүүдө...' : 'Секция тандаңыз'}</option>
+                                    <option value="">{sectionsLoading ? t('common.loading') : t('adminCourses.transcode.selectSection')}</option>
                                     {sections.map((section) => (
                                         <option key={section.id} value={section.id}>
-                                            {section.title || `Секция #${section.id}`}
+                                            {section.title || t('adminCourses.fallback.section', { id: section.id })}
                                         </option>
                                     ))}
                                 </select>
@@ -650,7 +655,7 @@ const AdminCoursesTab = ({
                             {/* Lesson selector */}
                             <div>
                                 <label className="mb-1 block text-sm font-medium text-edubot-muted dark:text-slate-400">
-                                    Сабак тандаңыз (же бош калтырыңыз бардыгы үчүн)
+                                    {t('adminCourses.transcode.selectLesson')}
                                 </label>
                                 <select
                                     value={transcodeLessonId || ''}
@@ -658,10 +663,10 @@ const AdminCoursesTab = ({
                                     disabled={!transcodeSectionId || lessonsLoading}
                                     className="dashboard-select w-full disabled:opacity-50"
                                 >
-                                    <option value="">{lessonsLoading ? 'Жүктөлүүдө...' : 'Бардык видео сабактар'}</option>
+                                    <option value="">{lessonsLoading ? t('common.loading') : t('adminCourses.transcode.allVideoLessons')}</option>
                                     {lessons.map((lesson) => (
                                         <option key={lesson.id} value={lesson.id}>
-                                            {lesson.title || `Сабак #${lesson.id}`} {lesson.playbackStatus === 'processing' ? '(транскоддолууда)' : ''}
+                                            {lesson.title || t('adminCourses.fallback.lesson', { id: lesson.id })} {lesson.playbackStatus === 'processing' ? t('adminCourses.transcode.processingSuffix') : ''}
                                         </option>
                                     ))}
                                 </select>
@@ -670,11 +675,11 @@ const AdminCoursesTab = ({
                             {/* Lesson IDs input for specific lessons */}
                             <div>
                                 <label className="mb-1 block text-sm font-medium text-edubot-muted dark:text-slate-400">
-                                    Же ID ларды киргизиңиз (бөлүүчү: 61,62,63)
+                                    {t('adminCourses.transcode.lessonIdsLabel')}
                                 </label>
                                 <input
                                     type="text"
-                                    placeholder="Lesson IDs (топтук үчүн)"
+                                    placeholder={t('adminCourses.transcode.lessonIdsPlaceholder')}
                                     value={transcodeLessonIds || ''}
                                     onChange={(e) => setTranscodeLessonIds(e.target.value)}
                                     disabled={transcodeLessonId}
@@ -694,11 +699,13 @@ const AdminCoursesTab = ({
                                         const selectedLesson = lessons.find(l => l.id === transcodeLessonId);
                                         if (selectedLesson?.playbackStatus === 'ready' && selectedLesson?.playbackType === 'hls') {
                                             // Already transcoded - show message
-                                            setAlreadyTranscodedMessage(`"${selectedLesson.title || `Сабак #${selectedLesson.id}`}" альпача HLSке транскоддолгон.`);
+                                            setAlreadyTranscodedMessage(t('adminCourses.transcode.alreadySingle', {
+                                                title: selectedLesson.title || t('adminCourses.fallback.lesson', { id: selectedLesson.id }),
+                                            }));
                                             recordTranscodeEvent({
                                                 type: 'skipped',
-                                                label: 'Транскоддоо өткөрүлдү',
-                                                detail: selectedLesson.title || `Сабак #${selectedLesson.id}`,
+                                                label: t('adminCourses.transcode.history.skipped'),
+                                                detail: selectedLesson.title || t('adminCourses.fallback.lesson', { id: selectedLesson.id }),
                                             });
                                             return;
                                         }
@@ -718,11 +725,11 @@ const AdminCoursesTab = ({
 
                                         if (untranscodedLessons.length === 0) {
                                             // All lessons already transcoded - show message
-                                            setAlreadyTranscodedMessage(`Бардык видео сабактар альпача HLSке транскоддолгон.`);
+                                            setAlreadyTranscodedMessage(t('adminCourses.transcode.alreadyBulk'));
                                             recordTranscodeEvent({
                                                 type: 'skipped',
-                                                label: 'Топтук транскоддоо өткөрүлдү',
-                                                detail: 'Бул секциядагы бардык видеолор даяр.',
+                                                label: t('adminCourses.transcode.history.bulkSkipped'),
+                                                detail: t('adminCourses.transcode.history.allReady'),
                                             });
                                             return;
                                         }
@@ -739,8 +746,10 @@ const AdminCoursesTab = ({
                                         });
                                         recordTranscodeEvent({
                                             type: 'started',
-                                            label: 'Топтук транскоддоо башталды',
-                                            detail: `${untranscodedLessons.length} видео сабак`,
+                                            label: t('adminCourses.transcode.history.bulkStarted'),
+                                            detail: t('adminCourses.transcode.history.videoLessonCount', {
+                                                count: untranscodedLessons.length,
+                                            }),
                                         });
                                     }
                                 }}
@@ -748,10 +757,10 @@ const AdminCoursesTab = ({
                                 className="dashboard-button-primary disabled:cursor-not-allowed disabled:opacity-60"
                             >
                                 <FiUploadCloud className="h-4 w-4" />
-                                {transcodeLoading ? <Loader fullScreen={false} /> : transcodeLessonId ? 'Кайра транскоддоо' : 'Топтук транскоддоо'}
+                                {transcodeLoading ? <Loader fullScreen={false} /> : transcodeLessonId ? t('adminCourses.transcode.actions.retry') : t('adminCourses.transcode.actions.bulk')}
                             </button>
                             <p className="text-xs text-edubot-muted dark:text-slate-400">
-                                Курс жана секция милдеттүү. Даяр HLS видеолор өткөрүлөт; транскоддоо бир нече мүнөт созулушу мүмкүн.
+                                {t('adminCourses.transcode.help')}
                             </p>
 
                             {/* Already Transcoded Message */}
@@ -767,15 +776,15 @@ const AdminCoursesTab = ({
                             <div className="mt-6 space-y-3 border-t border-edubot-line/50 dark:border-slate-700 pt-4">
                                 <div className="flex items-center justify-between gap-3">
                                     <div className="text-sm text-edubot-muted dark:text-slate-400">
-                                        Транскоддоо статусу: <span className="font-medium">{lessons.find(l => l.id === lastTranscodedLessonId)?.title || `Сабак #${lastTranscodedLessonId}`}</span>
+                                        {t('adminCourses.transcode.statusLabel')}: <span className="font-medium">{lessons.find(l => l.id === lastTranscodedLessonId)?.title || t('adminCourses.fallback.lesson', { id: lastTranscodedLessonId })}</span>
                                     </div>
                                     <button
                                         type="button"
                                         onClick={manualRefresh}
                                         disabled={isPolling}
-                                        aria-label="Транскоддоо статусун кайра текшеңиз"
+                                        aria-label={t('adminCourses.transcode.actions.refreshStatus')}
                                         className="text-xs px-2 py-1 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 disabled:text-gray-400 transition-colors"
-                                        title="Статусун кайра текшеңиз"
+                                        title={t('adminCourses.transcode.actions.refreshStatus')}
                                     >
                                         <span aria-hidden="true">🔄</span>
                                     </button>
@@ -815,7 +824,7 @@ const AdminCoursesTab = ({
                                 {status === 'failed' && error && (
                                     <div className="mt-3 space-y-2" role="alert">
                                         <div className="px-3 py-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900/50 rounded-md">
-                                            <p className="text-xs font-medium text-red-700 dark:text-red-300 mb-1">Трансформация ката</p>
+                                            <p className="text-xs font-medium text-red-700 dark:text-red-300 mb-1">{t('adminCourses.transcode.errorTitle')}</p>
                                             <p className="text-xs text-red-600 dark:text-red-400">{error}</p>
                                         </div>
                                         <RetryTranscodeButton
@@ -838,13 +847,13 @@ const AdminCoursesTab = ({
 
                                 {status === 'ready' && (
                                     <div className="px-3 py-2 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-900/50 rounded-md">
-                                        <p className="text-xs text-green-700 dark:text-green-300">✅ Транскоддоо ийгиликтүү аякталды. Видео ойнотууга даяр!</p>
+                                        <p className="text-xs text-green-700 dark:text-green-300">{t('adminCourses.transcode.readyMessage')}</p>
                                     </div>
                                 )}
 
                                 {(status === 'starting' || status === 'processing') && (
                                     <div className="px-3 py-2 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-900/50 rounded-md">
-                                        <p className="text-xs text-blue-700 dark:text-blue-300">⏳ Видеонун HLS форматына айларын күтүүдө...</p>
+                                        <p className="text-xs text-blue-700 dark:text-blue-300">{t('adminCourses.transcode.processingMessage')}</p>
                                     </div>
                                 )}
 
@@ -857,7 +866,7 @@ const AdminCoursesTab = ({
                                     }}
                                     className="text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
                                 >
-                                    Жабуу
+                                    {t('adminDeliveryCourseDetails.close')}
                                 </button>
                             </div>
                         )}
@@ -866,11 +875,11 @@ const AdminCoursesTab = ({
                         {isBulkTranscoding && (
                             <div className="mt-6 space-y-3 border-t border-edubot-line/50 dark:border-slate-700 pt-4">
                                 <div className="text-sm text-edubot-muted dark:text-slate-400">
-                                    Топтук транскоддоо статусу: <span className="font-medium">{courses.find(c => c.id === transcodingContextCourseId)?.title || 'Курс'} - {sections.find(s => s.id === transcodingContextSectionId)?.title || 'Секция'}</span>
+                                    {t('adminCourses.transcode.bulkStatusLabel')}: <span className="font-medium">{courses.find(c => c.id === transcodingContextCourseId)?.title || t('adminCourses.fallback.courseGeneric')} - {sections.find(s => s.id === transcodingContextSectionId)?.title || t('adminCourses.fallback.sectionGeneric')}</span>
                                 </div>
 
                                 <div className="px-3 py-2 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-900/50 rounded-md">
-                                    <p className="text-xs text-blue-700 dark:text-blue-300">⏳ Бул секциядагы бардык видеолор HLS форматына айланып жатат. Бул процесс бир нече мүнөт мүмкүн. Статусун көрүү үчүн секцияны кайра жүктөңүз.</p>
+                                    <p className="text-xs text-blue-700 dark:text-blue-300">{t('adminCourses.transcode.bulkProcessingMessage')}</p>
                                 </div>
 
                                 <button
@@ -882,7 +891,7 @@ const AdminCoursesTab = ({
                                     }}
                                     className="text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
                                 >
-                                    Жабуу
+                                    {t('adminDeliveryCourseDetails.close')}
                                 </button>
                             </div>
                         )}
@@ -890,7 +899,7 @@ const AdminCoursesTab = ({
                         {transcodeHistory.length > 0 && (
                             <div className="mt-6 border-t border-edubot-line/50 pt-4 dark:border-slate-700">
                                 <p className="text-sm font-semibold text-edubot-ink dark:text-white">
-                                    Акыркы транскоддоо аракеттери
+                                    {t('adminCourses.transcode.history.title')}
                                 </p>
                                 <div className="mt-3 space-y-2">
                                     {transcodeHistory.map((event) => (
@@ -903,7 +912,7 @@ const AdminCoursesTab = ({
                                                     {event.label}
                                                 </span>
                                                 <span className="text-edubot-muted dark:text-slate-400">
-                                                    {new Date(event.createdAt).toLocaleTimeString('ru-RU', {
+                                                    {new Date(event.createdAt).toLocaleTimeString(i18n.language, {
                                                         hour: '2-digit',
                                                         minute: '2-digit',
                                                     })}

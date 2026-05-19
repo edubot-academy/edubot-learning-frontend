@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react';
 import toast from 'react-hot-toast';
+import { useTranslation } from 'react-i18next';
 import {
     createCategory,
     deleteCategory,
@@ -10,9 +11,10 @@ import {
     updateCategory,
 } from '@services/api';
 import { normalizeEnrollmentCourseType } from '@features/enrollments/policy';
-import { isForbiddenError } from '@shared/api/error';
+import { isForbiddenError, parseApiError } from '@shared/api/error';
 
 export const useAdminCoursesDomain = ({ requestConfirmation }) => {
+    const { t } = useTranslation();
     const [courses, setCourses] = useState([]);
     const [categories, setCategories] = useState([]);
     const [newCategory, setNewCategory] = useState('');
@@ -64,36 +66,38 @@ export const useAdminCoursesDomain = ({ requestConfirmation }) => {
             setCourseGroupsByCourseId(Object.fromEntries(groupEntries));
         } catch (error) {
             if (!isForbiddenError(error)) {
-                toast.error('Курстарды жана категорияларды жүктөөдө ката кетти');
+                toast.error(parseApiError(error, t('adminCourses.toasts.loadError')).message);
             }
         }
-    }, []);
+    }, [t]);
 
     const handleDeleteCourse = useCallback(
         async (targetCourse) => {
             const id = typeof targetCourse === 'object' ? targetCourse.id : targetCourse;
             const courseLabel =
                 typeof targetCourse === 'object'
-                    ? targetCourse.title || `Курс #${id}`
-                    : `Курс #${id}`;
+                    ? targetCourse.title || t('adminCourses.fallback.course', { id })
+                    : t('adminCourses.fallback.course', { id });
 
             requestConfirmation({
-                title: 'Курсту өчүрүү',
-                message: `"${courseLabel}" курсун өчүрүүгө ишенимдүүсүзбү? Бул аракет каталогдон жана студенттердин окуу агымынан курсту алып салышы мүмкүн.`,
-                confirmLabel: 'Өчүрүү',
+                title: t('adminCourses.confirm.deleteCourseTitle'),
+                message: t('adminCourses.confirm.deleteCourseMessage', { title: courseLabel }),
+                confirmLabel: t('adminCourses.actions.delete'),
                 confirmVariant: 'danger',
                 onConfirm: async () => {
                     try {
                         await deleteCourse(id);
                         setCourses((prev) => prev.filter((course) => course.id !== id));
-                        toast.success('Курс ийгиликтүү өчүрүлдү');
-                    } catch {
-                        toast.error('Курсту өчүрүүдө ката кетти');
+                        toast.success(t('adminCourses.toasts.courseDeleted'));
+                    } catch (error) {
+                        toast.error(
+                            parseApiError(error, t('adminCourses.toasts.courseDeleteError')).message
+                        );
                     }
                 },
             });
         },
-        [requestConfirmation]
+        [requestConfirmation, t]
     );
 
     const handleAddCategory = useCallback(async () => {
@@ -103,11 +107,11 @@ export const useAdminCoursesDomain = ({ requestConfirmation }) => {
             const created = await createCategory({ name: newCategory.trim() });
             setCategories((prev) => [...prev, created]);
             setNewCategory('');
-            toast.success('Категория ийгиликтүү кошулду');
-        } catch {
-            toast.error('Категория кошууда ката кетти');
+            toast.success(t('adminCourses.toasts.categoryCreated'));
+        } catch (error) {
+            toast.error(parseApiError(error, t('adminCourses.toasts.categoryCreateError')).message);
         }
-    }, [newCategory]);
+    }, [newCategory, t]);
 
     const handleUpdateCategory = useCallback(
         async (id) => {
@@ -124,12 +128,12 @@ export const useAdminCoursesDomain = ({ requestConfirmation }) => {
                 );
                 setEditingCategoryId(null);
                 setEditingCategoryName('');
-                toast.success('Категория ийгиликтүү жаңыртылды');
-            } catch {
-                toast.error('Категорияны жаңыртууда ката кетти');
+                toast.success(t('adminCourses.toasts.categoryUpdated'));
+            } catch (error) {
+                toast.error(parseApiError(error, t('adminCourses.toasts.categoryUpdateError')).message);
             }
         },
-        [editingCategoryName]
+        [editingCategoryName, t]
     );
 
     const handleDeleteCategory = useCallback(
@@ -137,26 +141,28 @@ export const useAdminCoursesDomain = ({ requestConfirmation }) => {
             const id = typeof targetCategory === 'object' ? targetCategory.id : targetCategory;
             const categoryLabel =
                 typeof targetCategory === 'object'
-                    ? targetCategory.name || `Категория #${id}`
-                    : `Категория #${id}`;
+                    ? targetCategory.name || t('adminCourses.fallback.category', { id })
+                    : t('adminCourses.fallback.category', { id });
 
             requestConfirmation({
-                title: 'Категорияны өчүрүү',
-                message: `"${categoryLabel}" категориясын өчүрүүгө ишенимдүүсүзбү? Бул категорияга байланган курстарды кайра текшерүү керек болушу мүмкүн.`,
-                confirmLabel: 'Өчүрүү',
+                title: t('adminCourses.confirm.deleteCategoryTitle'),
+                message: t('adminCourses.confirm.deleteCategoryMessage', { name: categoryLabel }),
+                confirmLabel: t('adminCourses.actions.delete'),
                 confirmVariant: 'danger',
                 onConfirm: async () => {
                     try {
                         await deleteCategory(id);
                         setCategories((prev) => prev.filter((category) => category.id !== id));
-                        toast.success('Категория ийгиликтүү өчүрүлдү');
-                    } catch {
-                        toast.error('Категорияны өчүрүүдө ката кетти');
+                        toast.success(t('adminCourses.toasts.categoryDeleted'));
+                    } catch (error) {
+                        toast.error(
+                            parseApiError(error, t('adminCourses.toasts.categoryDeleteError')).message
+                        );
                     }
                 },
             });
         },
-        [requestConfirmation]
+        [requestConfirmation, t]
     );
 
     return {

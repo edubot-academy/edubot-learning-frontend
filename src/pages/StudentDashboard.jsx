@@ -2,6 +2,7 @@ import { useCallback, useContext, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import toast from 'react-hot-toast';
+import { useTranslation } from 'react-i18next';
 import { NAV_ITEMS } from '@features/student-dashboard/utils/studentDashboard.constants.js';
 import {
     isOfflineOrLiveCourse,
@@ -17,6 +18,7 @@ import { useDashboardKeyboardNavigation } from '../components/ui/dashboard/useDa
 
 
 const StudentDashboard = () => {
+    const { t } = useTranslation();
     const { user } = useContext(AuthContext);
     const navigate = useNavigate();
     const studentId = user?.id;
@@ -131,7 +133,7 @@ const StudentDashboard = () => {
 
     const handleOpenCourse = useCallback(async (courseId) => {
         if (!courseId) {
-            toast.error('Курс табылган жок');
+            toast.error(t('studentDashboard.toasts.courseNotFound'));
             return;
         }
 
@@ -140,11 +142,11 @@ const StudentDashboard = () => {
             navigate(`/courses/${courseId}`);
         } catch (error) {
             console.error('Failed to open course:', error);
-            toast.error('Курсту ачууда ката кетти');
+            toast.error(t('studentDashboard.toasts.openCourseError'));
         } finally {
             setOpeningCourseId(null);
         }
-    }, [navigate]);
+    }, [navigate, t]);
 
     const resolvedTab = activeTab;
     const isTabDataLoaded = loadedTabs[resolvedTab] || false;

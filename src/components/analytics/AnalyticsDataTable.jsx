@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
+import { useTranslation } from 'react-i18next';
 
 const AnalyticsDataTable = ({
   title,
@@ -8,14 +9,16 @@ const AnalyticsDataTable = ({
   data = [],
   loading = false,
   error = false,
-  emptyMessage = 'No data available',
+  emptyMessage = '',
   searchable = false,
   pagination = false,
   pageSize = 10,
   className = '',
 }) => {
+  const { t } = useTranslation();
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+  const resolvedEmptyMessage = emptyMessage || t('analytics.common.noData');
 
   const filteredData = React.useMemo(() => {
     if (!searchTerm || !searchable) return data;
@@ -81,10 +84,10 @@ const AnalyticsDataTable = ({
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
           <h3 className="text-lg font-medium text-red-900 dark:text-red-100 mb-2">
-            Error loading data
+            {t('analytics.common.dataLoadError')}
           </h3>
           <p className="text-sm text-red-700 dark:text-red-300">
-            {subtitle || 'Unable to load table data. Please try again.'}
+            {subtitle || t('analytics.common.tableLoadError')}
           </p>
         </div>
       </div>
@@ -115,7 +118,7 @@ const AnalyticsDataTable = ({
               <div className="relative">
                 <input
                   type="text"
-                  placeholder="Search..."
+                  placeholder={t('common.search')}
                   value={searchTerm}
                   onChange={(e) => {
                     setSearchTerm(e.target.value);
@@ -159,7 +162,7 @@ const AnalyticsDataTable = ({
                     <svg className="w-12 h-12 mx-auto mb-4 text-edubot-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
                     </svg>
-                    <p>{emptyMessage}</p>
+                    <p>{resolvedEmptyMessage}</p>
                   </div>
                 </td>
               </tr>
@@ -185,7 +188,11 @@ const AnalyticsDataTable = ({
         <div className="relative px-6 py-4 border-t border-edubot-line/70 dark:border-slate-700">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="text-sm text-edubot-muted dark:text-slate-300">
-              Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, filteredData.length)} of {filteredData.length} results
+              {t('analytics.common.paginationSummary', {
+                start: ((currentPage - 1) * pageSize) + 1,
+                end: Math.min(currentPage * pageSize, filteredData.length),
+                total: filteredData.length,
+              })}
             </div>
             <div className="flex gap-2">
               <button
@@ -193,7 +200,7 @@ const AnalyticsDataTable = ({
                 disabled={currentPage === 1}
                 className="dashboard-button-secondary disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Previous
+                {t('analytics.common.previous')}
               </button>
               
               {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
@@ -219,7 +226,7 @@ const AnalyticsDataTable = ({
                 disabled={currentPage === totalPages}
                 className="dashboard-button-secondary disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Next
+                {t('analytics.common.next')}
               </button>
             </div>
           </div>

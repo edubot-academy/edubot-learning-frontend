@@ -1,4 +1,5 @@
 import PropTypes from 'prop-types';
+import { useTranslation } from 'react-i18next';
 
 const AnalyticsSummaryCard = ({
   title,
@@ -11,6 +12,8 @@ const AnalyticsSummaryCard = ({
   error = false,
   className = '',
 }) => {
+  const { t } = useTranslation();
+
   // Touch-friendly color classes with enhanced mobile styling
   const colorClasses = {
     blue: {
@@ -77,8 +80,8 @@ const AnalyticsSummaryCard = ({
             </svg>
           </div>
         </div>
-        <div className="text-red-600 dark:text-red-400 font-medium">Error loading data</div>
-        <div className="text-sm text-red-500 dark:text-red-500 mt-1">Please try again</div>
+        <div className="text-red-600 dark:text-red-400 font-medium">{t('analytics.common.dataLoadError')}</div>
+        <div className="text-sm text-red-500 dark:text-red-500 mt-1">{t('analytics.common.tryAgain')}</div>
       </div>
     );
   }

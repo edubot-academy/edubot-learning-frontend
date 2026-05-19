@@ -1,4 +1,5 @@
 import PropTypes from 'prop-types';
+import { useTranslation } from 'react-i18next';
 
 const AnalyticsSection = ({
   title,
@@ -11,6 +12,8 @@ const AnalyticsSection = ({
   headerClassName = '',
   contentClassName = '',
 }) => {
+  const { t } = useTranslation();
+
   if (loading) {
     return (
       <div className={`overflow-hidden rounded-3xl border border-edubot-line/80 bg-white/90 shadow-edubot-card dark:border-slate-700 dark:bg-slate-950 ${className}`}>
@@ -38,17 +41,17 @@ const AnalyticsSection = ({
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-lg font-semibold text-red-900 dark:text-red-100">
-                Error loading section
+                {t('analytics.common.sectionLoadError')}
               </h3>
               <p className="text-sm text-red-700 dark:text-red-300 mt-1">
-                {subtitle || 'Unable to load data. Please try again.'}
+                {subtitle || t('analytics.common.sectionLoadErrorDescription')}
               </p>
             </div>
             <button
               onClick={() => window.location.reload()}
               className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
             >
-              Retry
+              {t('analytics.common.retry')}
             </button>
           </div>
         </div>

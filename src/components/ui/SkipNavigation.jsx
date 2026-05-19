@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 
 const SkipNavigation = () => {
+    const { t } = useTranslation();
     const [isFocused, setIsFocused] = useState(false);
 
     useEffect(() => {
@@ -55,29 +57,29 @@ const SkipNavigation = () => {
         <div 
             className="fixed top-0 left-0 z-[9999] bg-gray-900 text-white p-4 shadow-lg"
             role="navigation"
-            aria-label="Skip navigation links"
+            aria-label={t('a11y.skipNavigation.label')}
         >
             <div className="flex flex-col space-y-2">
                 <button
                     onClick={handleSkipToMain}
                     className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded text-white font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                    aria-label="Негизги мазмунга өтүү"
+                    aria-label={t('a11y.skipNavigation.main')}
                 >
-                    Негизги мазмунга өтүү (Alt + M)
+                    {t('a11y.skipNavigation.mainWithShortcut')}
                 </button>
                 <button
                     onClick={handleSkipToNavigation}
                     className="px-4 py-2 bg-green-600 hover:bg-green-700 rounded text-white font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-green-400"
-                    aria-label="Навигацияга өтүү"
+                    aria-label={t('a11y.skipNavigation.navigation')}
                 >
-                    Навигацияга өтүү (Alt + N)
+                    {t('a11y.skipNavigation.navigationWithShortcut')}
                 </button>
                 <button
                     onClick={handleSkipToSearch}
                     className="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded text-white font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-purple-400"
-                    aria-label="Издөөгө өтүү"
+                    aria-label={t('a11y.skipNavigation.search')}
                 >
-                    Издөөгө өтүү (Alt + S)
+                    {t('a11y.skipNavigation.searchWithShortcut')}
                 </button>
             </div>
         </div>

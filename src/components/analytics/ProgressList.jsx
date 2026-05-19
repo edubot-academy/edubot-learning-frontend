@@ -1,12 +1,16 @@
 import PropTypes from 'prop-types';
+import { useTranslation } from 'react-i18next';
 
 const ProgressList = ({
   items = [],
   loading = false,
   error = false,
-  emptyMessage = 'No data available',
+  emptyMessage = '',
   className = '',
 }) => {
+  const { t } = useTranslation();
+  const resolvedEmptyMessage = emptyMessage || t('analytics.common.noData');
+
   if (loading) {
     return (
       <div className={`space-y-3 ${className}`}>
@@ -29,7 +33,7 @@ const ProgressList = ({
         <svg className="w-12 h-12 mx-auto mb-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
-        <p className="text-gray-500 dark:text-gray-400">Error loading data</p>
+        <p className="text-gray-500 dark:text-gray-400">{t('analytics.common.dataLoadError')}</p>
       </div>
     );
   }
@@ -40,7 +44,7 @@ const ProgressList = ({
         <svg className="w-12 h-12 mx-auto mb-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
         </svg>
-        <p className="text-edubot-muted dark:text-slate-400">{emptyMessage}</p>
+        <p className="text-edubot-muted dark:text-slate-400">{resolvedEmptyMessage}</p>
       </div>
     );
   }

@@ -1,4 +1,7 @@
+import { useTranslation } from 'react-i18next';
+
 const ProgressIndicator = ({ value = 0, max = 100, size = 'sm', color = 'orange', showLabel = true }) => {
+    const { t } = useTranslation();
     const sizes = {
         sm: 'h-1',
         md: 'h-2',
@@ -20,7 +23,7 @@ const ProgressIndicator = ({ value = 0, max = 100, size = 'sm', color = 'orange'
             {showLabel && (
                 <div className="flex justify-between items-center mb-1">
                     <span className="text-xs text-slate-600 dark:text-slate-400 font-medium">
-                        Прогресс
+                        {t('common.progress')}
                     </span>
                     <span className="text-xs text-slate-600 dark:text-slate-400 font-medium">
                         {Math.round(percentage)}%

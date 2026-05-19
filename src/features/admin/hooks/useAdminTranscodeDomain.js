@@ -1,12 +1,15 @@
 import { useCallback, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
+import { useTranslation } from 'react-i18next';
 import {
     bulkTranscodeLessonHls,
     getTranscodeStatus,
     transcodeLessonHls,
 } from '@services/api';
+import { parseApiError } from '@shared/api/error';
 
 export const useAdminTranscodeDomain = ({ loadCoursesAndCategories }) => {
+    const { t } = useTranslation();
     const [transcodeCourseId, setTranscodeCourseId] = useState('');
     const [transcodeSectionId, setTranscodeSectionId] = useState('');
     const [transcodeLessonId, setTranscodeLessonId] = useState('');
@@ -16,7 +19,7 @@ export const useAdminTranscodeDomain = ({ loadCoursesAndCategories }) => {
 
     const handleTranscode = useCallback(async () => {
         if (!transcodeCourseId || !transcodeSectionId || !transcodeLessonId) {
-            toast.error('Бардык ID полярын толтуруңуз');
+            toast.error(t('adminCourses.transcode.toasts.fillAllIds'));
             return;
         }
 
@@ -27,7 +30,7 @@ export const useAdminTranscodeDomain = ({ loadCoursesAndCategories }) => {
                 sectionId: Number(transcodeSectionId),
                 lessonId: Number(transcodeLessonId),
             });
-            toast.success('Транскоддоо ийгиликтүү башталды');
+            toast.success(t('adminCourses.transcode.toasts.started'));
             setActiveTranscodes((prev) => [
                 ...prev,
                 {
@@ -41,16 +44,16 @@ export const useAdminTranscodeDomain = ({ loadCoursesAndCategories }) => {
             setTranscodeCourseId('');
             setTranscodeSectionId('');
             setTranscodeLessonId('');
-        } catch {
-            toast.error('Транскоддоодо ката кетти');
+        } catch (error) {
+            toast.error(parseApiError(error, t('adminCourses.transcode.toasts.startError')).message);
         } finally {
             setTranscodeLoading(false);
         }
-    }, [transcodeCourseId, transcodeLessonId, transcodeSectionId]);
+    }, [t, transcodeCourseId, transcodeLessonId, transcodeSectionId]);
 
     const handleBulkTranscode = useCallback(async () => {
         if (!transcodeCourseId || !transcodeSectionId) {
-            toast.error('Course жана Section ID толтуруңуз');
+            toast.error(t('adminCourses.transcode.toasts.fillCourseSection'));
             return;
         }
 
@@ -68,7 +71,12 @@ export const useAdminTranscodeDomain = ({ loadCoursesAndCategories }) => {
                 sectionId: Number(transcodeSectionId),
                 lessonIds: lessonIds.length ? lessonIds : undefined,
             });
-            toast.success(`Топтук транскоддоо башталды: ${result.started}/${result.total}`);
+            toast.success(
+                t('adminCourses.transcode.toasts.bulkStarted', {
+                    started: result.started,
+                    total: result.total,
+                })
+            );
             const startedLessons = result.results
                 .filter((item) => item.status === 'started')
                 .map((item) => ({
@@ -80,12 +88,12 @@ export const useAdminTranscodeDomain = ({ loadCoursesAndCategories }) => {
                 }));
             setActiveTranscodes((prev) => [...prev, ...startedLessons]);
             setTranscodeLessonIds('');
-        } catch {
-            toast.error('Топтук транскоддоодо ката кетти');
+        } catch (error) {
+            toast.error(parseApiError(error, t('adminCourses.transcode.toasts.bulkError')).message);
         } finally {
             setTranscodeLoading(false);
         }
-    }, [transcodeCourseId, transcodeLessonIds, transcodeSectionId]);
+    }, [t, transcodeCourseId, transcodeLessonIds, transcodeSectionId]);
 
     useEffect(() => {
         if (activeTranscodes.length === 0) return undefined;
@@ -119,11 +127,19 @@ export const useAdminTranscodeDomain = ({ loadCoursesAndCategories }) => {
             let shouldRefreshCourses = false;
             updates.forEach((update) => {
                 if (update.status === 'ready' && !update.notified) {
-                    toast.success(`Lesson ${update.lessonId} transcode complete`);
+                    toast.success(
+                        t('adminCourses.transcode.toasts.lessonComplete', {
+                            id: update.lessonId,
+                        })
+                    );
                     update.notified = true;
                     shouldRefreshCourses = true;
                 } else if (update.status === 'failed' && !update.notified) {
-                    toast.error(`Lesson ${update.lessonId} transcode failed`);
+                    toast.error(
+                        t('adminCourses.transcode.toasts.lessonFailed', {
+                            id: update.lessonId,
+                        })
+                    );
                     update.notified = true;
                 }
             });
@@ -136,7 +152,7 @@ export const useAdminTranscodeDomain = ({ loadCoursesAndCategories }) => {
         }, 10000);
 
         return () => clearInterval(interval);
-    }, [activeTranscodes, loadCoursesAndCategories]);
+    }, [activeTranscodes, loadCoursesAndCategories, t]);
 
     return {
         handleBulkTranscode,
