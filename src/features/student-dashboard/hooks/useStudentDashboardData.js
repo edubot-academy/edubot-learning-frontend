@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
+import { useTranslation } from 'react-i18next';
 import {
     fetchStudentAccessState,
     fetchStudentCertificates,
@@ -11,6 +12,7 @@ import {
     fetchStudentTasks,
     fetchStudentUpcomingSessions,
 } from '@services/api';
+import { parseApiError } from '@shared/api/error';
 import { toItems } from '../utils/studentDashboard.helpers.js';
 
 const INITIAL_LOADED_TABS = {
@@ -39,6 +41,7 @@ export const useStudentDashboardData = ({
     profileLoading,
     studentId,
 }) => {
+    const { t } = useTranslation();
     const studentFilters = useMemo(
         () => ({
             courseId: filterCourseId || undefined,
@@ -83,17 +86,22 @@ export const useStudentDashboardData = ({
                 setSummary(summaryResult.value || null);
             } else {
                 console.error('Failed to load overview summary', summaryResult.reason);
-                toast.error('Кыскача маалымат жүктөлгөн жок');
+                toast.error(
+                    parseApiError(
+                        summaryResult.reason,
+                        t('studentDashboard.data.toasts.overviewLoadError')
+                    ).message
+                );
             }
         } catch (error) {
             console.error('Failed to load overview', error);
-            toast.error('Кыскача маалымат жүктөлгөн жок');
+            toast.error(parseApiError(error, t('studentDashboard.data.toasts.overviewLoadError')).message);
         } finally {
             setAccessLoaded(true);
             setTabLoading(null);
             setLoadedTabs((prev) => ({ ...prev, overview: true }));
         }
-    }, [studentId, studentFilters]);
+    }, [studentId, studentFilters, t]);
 
     const loadCourses = useCallback(async () => {
         if (!studentId) return;
@@ -103,12 +111,12 @@ export const useStudentDashboardData = ({
             setCourses(Array.isArray(coursesRes?.items) ? coursesRes.items : coursesRes || []);
         } catch (error) {
             console.error('Failed to load courses', error);
-            toast.error('Курстарды жүктөө мүмкүн болбоду');
+            toast.error(parseApiError(error, t('studentDashboard.data.toasts.coursesLoadError')).message);
         } finally {
             setTabLoading(null);
             setLoadedTabs((prev) => ({ ...prev, 'my-courses': true }));
         }
-    }, [studentId]);
+    }, [studentId, t]);
 
     const loadSchedule = useCallback(async () => {
         if (!studentId) return;
@@ -126,12 +134,12 @@ export const useStudentDashboardData = ({
             );
         } catch (error) {
             console.error('Failed to load schedule', error);
-            toast.error('Жүгүртмө жүктөлгөн жок');
+            toast.error(parseApiError(error, t('studentDashboard.data.toasts.scheduleLoadError')).message);
         } finally {
             setTabLoading(null);
             setLoadedTabs((prev) => ({ ...prev, schedule: true }));
         }
-    }, [studentId, studentFilters]);
+    }, [studentId, studentFilters, t]);
 
     const loadTasks = useCallback(async ({ silent = false } = {}) => {
         if (!studentId) return;
@@ -144,7 +152,7 @@ export const useStudentDashboardData = ({
         } catch (error) {
             console.error('Failed to load tasks', error);
             if (!silent) {
-                toast.error('Тапшырмаларды жүктөө мүмкүн болбоду');
+                toast.error(parseApiError(error, t('studentDashboard.data.toasts.tasksLoadError')).message);
             }
         } finally {
             if (!silent) {
@@ -152,7 +160,7 @@ export const useStudentDashboardData = ({
             }
             setLoadedTabs((prev) => ({ ...prev, tasks: true }));
         }
-    }, [studentId, studentFilters]);
+    }, [studentId, studentFilters, t]);
 
     const loadResources = useCallback(async () => {
         if (!studentId) return;
@@ -162,12 +170,12 @@ export const useStudentDashboardData = ({
             setResources(Array.isArray(resourcesRes?.items) ? resourcesRes.items : resourcesRes || []);
         } catch (error) {
             console.error('Failed to load student resources', error);
-            toast.error('Ресурстарды жүктөө мүмкүн болбоду');
+            toast.error(parseApiError(error, t('studentDashboard.data.toasts.resourcesLoadError')).message);
         } finally {
             setTabLoading(null);
             setLoadedTabs((prev) => ({ ...prev, resources: true }));
         }
-    }, [studentId, studentFilters]);
+    }, [studentId, studentFilters, t]);
 
     const loadProgress = useCallback(async () => {
         if (!studentId) return;
@@ -185,12 +193,12 @@ export const useStudentDashboardData = ({
             );
         } catch (error) {
             console.error('Failed to load progress', error);
-            toast.error('Прогресс маалыматтары жүктөлгөн жок');
+            toast.error(parseApiError(error, t('studentDashboard.data.toasts.progressLoadError')).message);
         } finally {
             setTabLoading(null);
             setLoadedTabs((prev) => ({ ...prev, progress: true }));
         }
-    }, [studentId]);
+    }, [studentId, t]);
 
     const loadCertificates = useCallback(async () => {
         if (!studentId) return;
@@ -204,12 +212,12 @@ export const useStudentDashboardData = ({
             );
         } catch (error) {
             console.error('Failed to load certificates', error);
-            toast.error('Сертификаттар жүктөлгөн жок');
+            toast.error(parseApiError(error, t('studentDashboard.data.toasts.certificatesLoadError')).message);
         } finally {
             setTabLoading(null);
             setLoadedTabs((prev) => ({ ...prev, certificates: true }));
         }
-    }, [studentId]);
+    }, [studentId, t]);
 
     useEffect(() => {
         if (!studentId) return;

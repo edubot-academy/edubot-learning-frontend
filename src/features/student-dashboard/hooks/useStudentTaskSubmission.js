@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react';
 import toast from 'react-hot-toast';
+import { useTranslation } from 'react-i18next';
 import {
     submitSessionHomework,
     submitStudentActivity,
@@ -11,8 +12,10 @@ import {
     getTaskKey,
     resolveSessionHomeworkIds,
 } from '../utils/studentDashboard.helpers.js';
+import { parseApiError } from '@shared/api/error';
 
 export const useStudentTaskSubmission = ({ onRefreshTasks }) => {
+    const { t } = useTranslation();
     const [submittingTaskState, setSubmittingTaskState] = useState(null);
 
     const handleSubmitHomework = useCallback(async (task, submission) => {
@@ -20,7 +23,7 @@ export const useStudentTaskSubmission = ({ onRefreshTasks }) => {
             const sessionId = Number(task.sessionId);
             const activityId = Number(task.id || task.activityId);
             if (!sessionId || !activityId) {
-                toast.error('Бул иш үчүн submit жеткиликтүү эмес.');
+                toast.error(t('studentDashboard.tasks.toasts.activitySubmitUnavailable'));
                 return false;
             }
 
@@ -39,7 +42,7 @@ export const useStudentTaskSubmission = ({ onRefreshTasks }) => {
                     const file = submission?.file instanceof File ? submission.file : null;
                     const removeAttachment = Boolean(submission?.removeAttachment);
                     if (!text && !link && !file) {
-                        toast.error('Жооп, шилтеме же файл кошуңуз.');
+                        toast.error(t('studentDashboard.tasks.toasts.addAnswerLinkOrFile'));
                         return false;
                     }
 
@@ -58,12 +61,10 @@ export const useStudentTaskSubmission = ({ onRefreshTasks }) => {
                 }
 
                 await onRefreshTasks({ silent: true });
-                toast.success('Иш ийгиликтүү жөнөтүлдү.');
+                toast.success(t('studentDashboard.tasks.toasts.activitySubmitted'));
                 return true;
             } catch (error) {
-                const rawMessage = error?.response?.data?.message || 'Ишти жөнөтүү катасы';
-                const message = Array.isArray(rawMessage) ? rawMessage.join(', ') : rawMessage;
-                toast.error(message);
+                toast.error(parseApiError(error, t('studentDashboard.tasks.toasts.activitySubmitError')).message);
                 return false;
             } finally {
                 setSubmittingTaskState(null);
@@ -72,7 +73,7 @@ export const useStudentTaskSubmission = ({ onRefreshTasks }) => {
 
         const { sessionId, homeworkId } = resolveSessionHomeworkIds(task);
         if (!sessionId || !homeworkId) {
-            toast.error('Бул тапшырма үчүн submit жеткиликтүү эмес.');
+            toast.error(t('studentDashboard.tasks.toasts.homeworkSubmitUnavailable'));
             return false;
         }
 
@@ -82,7 +83,7 @@ export const useStudentTaskSubmission = ({ onRefreshTasks }) => {
         const file = submission?.file instanceof File ? submission.file : null;
         const removeAttachment = Boolean(submission?.removeAttachment);
         if (!text && !link && !file) {
-            toast.error('Жооп, шилтеме же файл кошуңуз.');
+            toast.error(t('studentDashboard.tasks.toasts.addAnswerLinkOrFile'));
             return false;
         }
 
@@ -101,16 +102,15 @@ export const useStudentTaskSubmission = ({ onRefreshTasks }) => {
             });
 
             await onRefreshTasks({ silent: true });
-            toast.success('Тапшырма ийгиликтүү жөнөтүлдү.');
+            toast.success(t('studentDashboard.tasks.toasts.homeworkSubmitted'));
             return true;
         } catch (error) {
             console.error('Failed to submit session homework', error);
-            const rawMessage = error?.response?.data?.message || 'Тапшырманы жөнөтүү катасы';
-            const message = Array.isArray(rawMessage) ? rawMessage.join(', ') : rawMessage;
+            const message = parseApiError(error, t('studentDashboard.tasks.toasts.homeworkSubmitError')).message;
             const normalizedMessage = String(message || '').toLowerCase();
 
             if (normalizedMessage.includes('unsupported homework attachment type')) {
-                toast.error('Файл түрү колдоого алынбайт. PDF же Word колдонуңуз.');
+                toast.error(t('studentDashboard.tasks.toasts.unsupportedAttachment'));
                 return false;
             }
 
@@ -119,7 +119,7 @@ export const useStudentTaskSubmission = ({ onRefreshTasks }) => {
                 normalizedMessage.includes('file size') ||
                 normalizedMessage.includes('larger than')
             ) {
-                toast.error('Файл өтө чоң. Максималдуу көлөм 20 MB.');
+                toast.error(t('studentDashboard.tasks.toasts.fileTooLarge'));
                 return false;
             }
 
@@ -128,7 +128,7 @@ export const useStudentTaskSubmission = ({ onRefreshTasks }) => {
         } finally {
             setSubmittingTaskState(null);
         }
-    }, [onRefreshTasks]);
+    }, [onRefreshTasks, t]);
 
     return {
         handleSubmitHomework,

@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import PropTypes from 'prop-types';
+import { useTranslation } from 'react-i18next';
 import {
     FiCalendar,
     FiClock,
@@ -23,7 +24,6 @@ import {
     resolveCourseType,
     isOnlineLiveOffering,
     isStudentJoinWindowOpen,
-    courseTypeLabel,
     formatCountdown,
     formatSessionDate,
     getStudentLiveRefreshInterval,
@@ -31,7 +31,17 @@ import {
     resolveRecordings,
 } from '../../utils/studentDashboard.helpers.js';
 
+const COURSE_TYPE_LABEL_KEYS = {
+    video: 'studentDashboard.schedule.courseTypes.video',
+    offline: 'studentDashboard.schedule.courseTypes.offline',
+    online_live: 'studentDashboard.schedule.courseTypes.onlineLive',
+};
+
+const getCourseTypeLabel = (type, t) =>
+    t(COURSE_TYPE_LABEL_KEYS[type] || 'studentDashboard.schedule.courseTypes.video');
+
 const ScheduleTab = ({ offerings, recordings }) => {
+    const { i18n, t } = useTranslation();
     const [nowMs, setNowMs] = useState(Date.now());
     const [selectedLiveId, setSelectedLiveId] = useState('');
     const [query, setQuery] = useState('');
@@ -73,14 +83,25 @@ const ScheduleTab = ({ offerings, recordings }) => {
         [offerings, nowMs]
     );
 
-    const getSessionTitle = (item) =>
-        item.sessionTitle ||
-        item.title ||
-        (Number.isFinite(Number(item.sessionIndex)) ? `Сессия ${Number(item.sessionIndex) + 1}` : 'Сессия');
+    const getSessionTitle = useCallback(
+        (item) =>
+            item.sessionTitle ||
+            item.title ||
+            (Number.isFinite(Number(item.sessionIndex))
+                ? t('studentDashboard.schedule.fallbacks.sessionNumber', {
+                      number: Number(item.sessionIndex) + 1,
+                  })
+                : t('studentDashboard.schedule.fallbacks.session')),
+        [t]
+    );
 
-    const getCourseTitle = (item) => item.courseTitle || item.course?.title || 'Курс';
+    const getCourseTitle = useCallback(
+        (item) =>
+            item.courseTitle || item.course?.title || t('studentDashboard.schedule.fallbacks.course'),
+        [t]
+    );
 
-    const getGroupTitle = (item) => item.groupName || item.group?.name || '';
+    const getGroupTitle = useCallback((item) => item.groupName || item.group?.name || '', []);
 
     useEffect(() => {
         if (selectedLiveId) return;
@@ -106,7 +127,7 @@ const ScheduleTab = ({ offerings, recordings }) => {
                 .filter(Boolean)
                 .some((value) => String(value).toLowerCase().includes(normalizedQuery));
         });
-    }, [query, scheduleItems, typeFilter]);
+    }, [getCourseTitle, getGroupTitle, getSessionTitle, query, scheduleItems, typeFilter]);
 
     useEffect(() => {
         if (!filteredItems.length) {
@@ -167,15 +188,15 @@ const ScheduleTab = ({ offerings, recordings }) => {
         return (
             <DashboardWorkspaceHero
                 className="dashboard-panel"
-                    eyebrow="Schedule"
-                    title="Жүгүртмө"
-                    description="Жакынкы сабактар, live терезелер жана жазуулар ушул жерде көрсөтүлөт."
+                    eyebrow={t('studentDashboard.schedule.eyebrow')}
+                    title={t('studentDashboard.schedule.title')}
+                    description={t('studentDashboard.schedule.emptyHeroDescription')}
                 >
                 <div className="p-6">
                     <StudentPanelEmpty
                         icon={FiCalendar}
-                        title="Жакынкы класстар табылган жок"
-                        description="Сессиялар пайда болгондо, алар бул жерде топтолуп көрүнөт."
+                        title={t('studentDashboard.schedule.empty.title')}
+                        description={t('studentDashboard.schedule.empty.description')}
                     />
                 </div>
             </DashboardWorkspaceHero>
@@ -186,15 +207,15 @@ const ScheduleTab = ({ offerings, recordings }) => {
         <div className="space-y-6">
             <DashboardWorkspaceHero
                 className="dashboard-panel"
-                    eyebrow="Schedule"
-                    title="Жүгүртмө жана live сессиялар"
-                    description="Кийинки сабактарды, кошулуу мүмкүнчүлүгүн жана жазууларды бир экрандан көрүңүз."
+                    eyebrow={t('studentDashboard.schedule.eyebrow')}
+                    title={t('studentDashboard.schedule.heroTitle')}
+                    description={t('studentDashboard.schedule.description')}
                     metrics={
                         <>
-                            <DashboardMetricCard label="Жалпы" value={stats.total} icon={FiCalendar} />
-                            <DashboardMetricCard label="Upcoming" value={stats.upcoming} icon={FiClock} tone="blue" />
-                            <DashboardMetricCard label="Live" value={stats.live} icon={FiRadio} tone="green" />
-                            <DashboardMetricCard label="Offline" value={stats.offline} icon={FiMapPin} tone="amber" />
+                            <DashboardMetricCard label={t('studentDashboard.schedule.metrics.total')} value={stats.total} icon={FiCalendar} />
+                            <DashboardMetricCard label={t('studentDashboard.schedule.metrics.upcoming')} value={stats.upcoming} icon={FiClock} tone="blue" />
+                            <DashboardMetricCard label={t('studentDashboard.schedule.metrics.live')} value={stats.live} icon={FiRadio} tone="green" />
+                            <DashboardMetricCard label={t('studentDashboard.schedule.metrics.offline')} value={stats.offline} icon={FiMapPin} tone="amber" />
                         </>
                     }
                 >
@@ -204,7 +225,7 @@ const ScheduleTab = ({ offerings, recordings }) => {
                         <input
                             value={query}
                             onChange={(e) => setQuery(e.target.value)}
-                            placeholder="Курс, мугалим же жайгашкан жер боюнча издөө"
+                            placeholder={t('studentDashboard.schedule.searchPlaceholder')}
                             className="dashboard-field dashboard-field-icon"
                         />
                     </label>
@@ -216,9 +237,9 @@ const ScheduleTab = ({ offerings, recordings }) => {
                             onChange={(e) => setTypeFilter(e.target.value)}
                             className="dashboard-field dashboard-field-icon dashboard-select"
                         >
-                            <option value="all">Бардык типтер</option>
-                            <option value="offline">Оффлайн</option>
-                            <option value="online_live">Онлайн түз эфир</option>
+                            <option value="all">{t('studentDashboard.schedule.filters.allTypes')}</option>
+                            <option value="offline">{t('studentDashboard.schedule.courseTypes.offline')}</option>
+                            <option value="online_live">{t('studentDashboard.schedule.courseTypes.onlineLive')}</option>
                         </select>
                     </label>
                 </DashboardFilterBar>
@@ -238,11 +259,11 @@ const ScheduleTab = ({ offerings, recordings }) => {
                                                     {getSessionTitle(item)}
                                                 </p>
                                                 <StatusBadge tone="default">
-                                                    {courseTypeLabel(type)}
+                                                    {getCourseTypeLabel(type, t)}
                                                 </StatusBadge>
                                                 {isPast ? (
                                                     <StatusBadge tone="default">
-                                                        Өтүп кетти
+                                                        {t('studentDashboard.schedule.statuses.past')}
                                                     </StatusBadge>
                                                 ) : null}
                                             </div>
@@ -250,7 +271,10 @@ const ScheduleTab = ({ offerings, recordings }) => {
                                             <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-sm text-edubot-muted dark:text-slate-400">
                                                 <span className="inline-flex items-center gap-2">
                                                     <FiCalendar className="h-4 w-4" />
-                                                    {formatSessionDate(item.startAt)}
+                                                    {formatSessionDate(item.startAt, {
+                                                        language: i18n.language,
+                                                        fallback: t('studentDashboard.schedule.fallbacks.unknownTime'),
+                                                    })}
                                                 </span>
                                                 <span>{getCourseTitle(item)}</span>
                                                 {getGroupTitle(item) ? <span>{getGroupTitle(item)}</span> : null}
@@ -261,12 +285,16 @@ const ScheduleTab = ({ offerings, recordings }) => {
                                                 {type === 'offline' ? (
                                                     <span className="inline-flex items-center gap-2">
                                                         <FiMapPin className="h-4 w-4" />
-                                                        {item.location || item.room || 'Класс али дайындала элек'}
+                                                        {item.location ||
+                                                            item.room ||
+                                                            t('studentDashboard.schedule.fallbacks.classroom')}
                                                     </span>
                                                 ) : (
                                                     <span className="inline-flex items-center gap-2">
                                                         <FiVideo className="h-4 w-4" />
-                                                        Жазуулар: {itemRecordings.length}
+                                                        {t('studentDashboard.schedule.recordings.count', {
+                                                            count: itemRecordings.length,
+                                                        })}
                                                     </span>
                                                 )}
                                             </div>
@@ -277,7 +305,7 @@ const ScheduleTab = ({ offerings, recordings }) => {
                                                 <div className="space-y-3">
                                                     <div className="rounded-2xl border border-edubot-line bg-white px-4 py-3 dark:border-slate-700 dark:bg-slate-900">
                                                         <div className="text-xs font-medium uppercase tracking-[0.14em] text-edubot-muted dark:text-slate-400">
-                                                            Башталышына
+                                                            {t('studentDashboard.schedule.live.startsIn')}
                                                         </div>
                                                         <div className="mt-2 text-xl font-semibold text-edubot-ink dark:text-white">
                                                             {item.startAt
@@ -298,11 +326,11 @@ const ScheduleTab = ({ offerings, recordings }) => {
                                                                 className="dashboard-button-primary w-full"
                                                             >
                                                                 <FiPlayCircle className="h-4 w-4" />
-                                                                Сабакка кошулуу
+                                                                {t('studentDashboard.schedule.actions.joinLesson')}
                                                             </a>
                                                         ) : (
                                                             <div className="rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300">
-                                                                Кошулуу шилтемеси 10 мүнөт мурун ачылат
+                                                                {t('studentDashboard.schedule.live.joinOpensSoon')}
                                                             </div>
                                                         )}
 
@@ -311,13 +339,13 @@ const ScheduleTab = ({ offerings, recordings }) => {
                                                             onClick={() => setSelectedLiveId(String(item.id))}
                                                             className="dashboard-button-secondary"
                                                         >
-                                                            Түз эфир панели
+                                                            {t('studentDashboard.schedule.actions.livePanel')}
                                                         </button>
                                                     </div>
                                                 </div>
                                             ) : (
                                                 <div className="rounded-2xl border border-edubot-line bg-white px-4 py-3 text-sm text-edubot-muted dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
-                                                    Offline сессия. Келүү убактысын жана жайгашкан жерди алдын ала текшериңиз.
+                                                    {t('studentDashboard.schedule.offlineNotice')}
                                                 </div>
                                             )}
                                         </div>
@@ -327,8 +355,8 @@ const ScheduleTab = ({ offerings, recordings }) => {
                         ) : (
                             <StudentPanelEmpty
                                 icon={FiSearch}
-                                title="Сессия табылган жок"
-                                description="Издөө же фильтрди өзгөртүп көрүңүз."
+                                title={t('studentDashboard.schedule.empty.noResultTitle')}
+                                description={t('studentDashboard.schedule.empty.noResultDescription')}
                             />
                         )}
                     </div>
@@ -336,14 +364,14 @@ const ScheduleTab = ({ offerings, recordings }) => {
                     <div className="space-y-4">
                         {selectedLive && resolveCourseType(selectedLive) === 'online_live' ? (
                             <DashboardInsetPanel
-                                title="Түз эфир сабак барагы"
+                                title={t('studentDashboard.schedule.live.panelTitle')}
                                 description={getCourseTitle(selectedLive)}
                             >
                                 <div className="space-y-4">
                                     <div className="rounded-panel bg-edubot-hero p-5 text-white shadow-edubot-glow">
                                         <div className="flex items-center justify-between gap-3">
                                             <div>
-                                                <p className="dashboard-pill">Live Session</p>
+                                                <p className="dashboard-pill">{t('studentDashboard.schedule.live.sessionPill')}</p>
                                                 <p className="mt-4 text-lg font-semibold">
                                                     {getSessionTitle(selectedLive)}
                                                 </p>
@@ -356,7 +384,7 @@ const ScheduleTab = ({ offerings, recordings }) => {
                                             <FiRadio className="h-6 w-6 text-edubot-soft" />
                                         </div>
                                         <div className="mt-4 text-sm text-white/80">
-                                            Калган убакыт:{' '}
+                                            {t('studentDashboard.schedule.live.remainingTime')}{' '}
                                             <span className="font-semibold text-white">
                                                 {selectedLive.startAt
                                                     ? formatCountdown(
@@ -376,7 +404,7 @@ const ScheduleTab = ({ offerings, recordings }) => {
                                             className="dashboard-button-primary w-full"
                                         >
                                             <FiPlayCircle className="h-4 w-4" />
-                                            Сабакка кошулуу
+                                            {t('studentDashboard.schedule.actions.joinLesson')}
                                         </a>
                                     ) : (
                                         <button
@@ -384,13 +412,13 @@ const ScheduleTab = ({ offerings, recordings }) => {
                                             disabled
                                             className="dashboard-button-secondary w-full cursor-not-allowed opacity-60"
                                         >
-                                            Сабакка кошулуу
+                                            {t('studentDashboard.schedule.actions.joinLesson')}
                                         </button>
                                     )}
 
                                     <div className="space-y-2">
                                         <p className="font-medium text-edubot-ink dark:text-white">
-                                            Жазуулар
+                                            {t('studentDashboard.schedule.recordings.title')}
                                         </p>
                                         {selectedRecordings.length ? (
                                             selectedRecordings.map((rec) => (
@@ -401,12 +429,12 @@ const ScheduleTab = ({ offerings, recordings }) => {
                                                     rel="noopener noreferrer"
                                                     className="block rounded-2xl border border-edubot-line/70 bg-white/80 px-4 py-3 text-sm font-medium text-edubot-ink transition hover:border-edubot-orange hover:text-edubot-orange dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
                                                 >
-                                                    {rec.title || 'Жазуу'}
+                                                    {rec.title || t('studentDashboard.schedule.recordings.fallback')}
                                                 </a>
                                             ))
                                         ) : (
                                             <div className="rounded-2xl border border-edubot-line/70 bg-white/80 px-4 py-3 text-sm text-edubot-muted dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400">
-                                                Азырынча жазуу жок.
+                                                {t('studentDashboard.schedule.recordings.empty')}
                                             </div>
                                         )}
                                     </div>
@@ -414,11 +442,11 @@ const ScheduleTab = ({ offerings, recordings }) => {
                             </DashboardInsetPanel>
                         ) : (
                             <DashboardInsetPanel
-                                title="Түз эфир фокусу"
-                                description="Онлайн түз эфир сессияны тандасаңыз, бул жерден join жана recording башкарылат."
+                                title={t('studentDashboard.schedule.live.focusTitle')}
+                                description={t('studentDashboard.schedule.live.focusDescription')}
                             >
                                 <div className="text-sm text-edubot-muted dark:text-slate-400">
-                                    Азырынча тандалган live сессия жок.
+                                    {t('studentDashboard.schedule.live.noSelection')}
                                 </div>
                             </DashboardInsetPanel>
                         )}

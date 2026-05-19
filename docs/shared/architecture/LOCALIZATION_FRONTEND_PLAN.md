@@ -48,6 +48,7 @@ Partially addressed:
 - API error parsing now prefers stable backend error codes for known high-frequency errors while preserving backend message fallback.
 - Admin/company management surfaces have been expanded beyond locale controls: company list/detail/settings/members/courses, platform tenant detail, admin shell, admin stats, users, companies, contacts, AI prompts, skills, pending courses, courses/categories/enrollment/transcode, certificate admin actions, and notification center/widget now read common UI copy from translation resources.
 - Shared reusable surfaces have localized fallback copy: analytics cards/charts/tables/progress states, media/video fallback states, skip navigation, setup account, generic progress label, and student dashboard course-opening toasts.
+- Student dashboard localization has started beyond shell toasts: dashboard shell navigation, workspace labels, header subtitle, access empty state, profile workspace/account/security/notification settings, profile validation, profile load-save toasts, load-error toasts, overview/progress fallbacks, and learning-access state messages now read from translation resources. The courses tab now reads hero, filter, metric, course-card, next-step, quick-access, empty-state, and course-type/mode copy from translation resources. The schedule tab now reads hero, filter, metric, session-card, live-panel, recording, empty-state, and fallback copy from translation resources. The certificates tab now reads status, metric, registry, action, date, fallback, and empty-state copy from translation resources. The progress tab now reads hero, metric, course-card, lesson/quiz status, certificate readiness, session-format, advanced analytics, and empty-state copy from translation resources. The instructor chat workflow now reads chat list labels, modal copy, relative time labels, validation toasts, and chat/file error fallbacks from translation resources. Task submission validation, success, attachment, and fallback error toasts are also localized, and the task workspace now reads status labels, filters, metrics, review/submission summaries, quiz states, draft helpers, attachment preview copy, and empty/unavailable states from translation resources. The resources tab now reads hero, filter, metric, material, recording, activity, preview, and open-error copy from translation resources.
 
 Remaining gaps:
 
@@ -181,7 +182,7 @@ Recommended order:
 3. Public marketing and catalog pages. Done for home, courses, course details, about, and contact.
 4. Platform admin tenant/company settings. Mostly done for current company and tenant-management surfaces.
 5. Admin operations. Partially done for stats, users, companies, contacts, AI prompts, skills, pending courses, courses/categories/enrollment/transcode, certificates, and notifications.
-6. Student dashboard and learning flows. Started for course-opening toasts; remaining student tabs/chat/tasks/resources still need coverage.
+6. Student dashboard and learning flows. Started for shell navigation/workspace labels, profile workspace/settings/toasts, load-error/access-state messaging, course-opening toasts, courses tab UI, schedule tab UI, certificates tab UI, progress tab UI, instructor chat, task submission/toast and task workspace UI, and resources tab UI; remaining student tabs and deeper learning-flow copy still need coverage.
 7. Course/player flows beyond public course details. Started for shared video fallback states; course builder and review/comment flows still need coverage.
 8. Attendance, homework, certificates, and reporting. Admin certificate toasts are partly done; attendance/group-session/homework surfaces still need coverage.
 9. Remaining low-traffic admin and edge-case screens.
@@ -245,7 +246,7 @@ Recommended smoke QA before deploy:
 
 Known release caveats:
 
-- Admin/internal dashboard localization is incomplete. Remaining high-volume gaps include instructor dashboard sections/modals, attendance, group-session workspace, student chat/tasks/resources, course builder validation/curriculum flows, ratings/comments, and internal leaderboard.
+- Admin/internal dashboard localization is incomplete. Remaining high-volume gaps include instructor dashboard sections/modals, attendance, group-session workspace, student task UI, course builder validation/curriculum flows, ratings/comments, and internal leaderboard.
 - Translation files are still monolithic and should be split by namespace later.
 - Build currently reports the existing large main chunk warning.
 

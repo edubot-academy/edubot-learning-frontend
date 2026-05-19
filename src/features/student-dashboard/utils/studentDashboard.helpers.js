@@ -66,11 +66,11 @@ const formatCountdown = (targetMs, nowMs) => {
     ).padStart(2, '0')}`;
 };
 
-const formatSessionDate = (isoValue) => {
-    if (!isoValue) return 'Белгисиз убакыт';
+const formatSessionDate = (isoValue, { language = 'ru-RU', fallback = 'Белгисиз убакыт' } = {}) => {
+    if (!isoValue) return fallback;
     const date = new Date(isoValue);
-    if (Number.isNaN(date.getTime())) return 'Белгисиз убакыт';
-    return date.toLocaleString('ru-RU', {
+    if (Number.isNaN(date.getTime())) return fallback;
+    return date.toLocaleString(language, {
         day: '2-digit',
         month: 'short',
         hour: '2-digit',

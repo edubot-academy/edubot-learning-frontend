@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import PropTypes from 'prop-types';
+import { useTranslation } from 'react-i18next';
 import StudentAnalyticsPage from '../../../../pages/StudentAnalytics';
 import {
     FiAward,
@@ -22,7 +23,6 @@ import StudentMiniStat from '../shared/StudentMiniStat.jsx';
 import StudentPanelEmpty from '../shared/StudentPanelEmpty.jsx';
 import { downloadCourseCertificatePdf } from '../../../courses/api.js';
 import {
-    courseTypeLabel,
     resolveCourseType,
 } from '../../utils/studentDashboard.helpers.js';
 
@@ -41,38 +41,47 @@ const getProgressTone = (value) => {
     return 'amber';
 };
 
-const getProgressLabel = (value) => {
-    if (value >= 100) return 'Аяктады';
-    if (value >= 80) return 'Финишке жакын';
-    if (value >= 40) return 'Туруктуу жүрүүдө';
-    return 'Көңүл буруу керек';
+const COURSE_TYPE_LABEL_KEYS = {
+    video: 'studentDashboard.progress.courseTypes.video',
+    offline: 'studentDashboard.progress.courseTypes.offline',
+    online_live: 'studentDashboard.progress.courseTypes.onlineLive',
+};
+
+const getCourseTypeLabel = (type, t) =>
+    t(COURSE_TYPE_LABEL_KEYS[type] || 'studentDashboard.progress.courseTypes.video');
+
+const getProgressLabel = (value, t) => {
+    if (value >= 100) return t('studentDashboard.progress.progressLabels.completed');
+    if (value >= 80) return t('studentDashboard.progress.progressLabels.nearFinish');
+    if (value >= 40) return t('studentDashboard.progress.progressLabels.steady');
+    return t('studentDashboard.progress.progressLabels.needsAttention');
 };
 
 const getCertificateBadge = (status) => {
     if (status === 'issued') {
         return {
-            label: 'Сертификат даяр',
+            labelKey: 'studentDashboard.progress.certificateBadges.ready',
             className:
                 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300',
         };
     }
     if (status === 'pending_approval') {
         return {
-            label: 'Кароодо',
+            labelKey: 'studentDashboard.progress.certificateBadges.pending',
             className:
                 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300',
         };
     }
     if (status === 'rejected') {
         return {
-            label: 'Четке кагылды',
+            labelKey: 'studentDashboard.progress.certificateBadges.rejected',
             className:
                 'border-red-200 bg-red-50 text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300',
         };
     }
     if (status === 'revoked') {
         return {
-            label: 'Жокко чыгарылды',
+            labelKey: 'studentDashboard.progress.certificateBadges.revoked',
             className:
                 'border-slate-200 bg-slate-100 text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300',
         };
@@ -80,11 +89,11 @@ const getCertificateBadge = (status) => {
     return null;
 };
 
-const getLessonKindLabel = (kind) => {
-    if (kind === 'quiz') return 'Квиз';
-    if (kind === 'article') return 'Макала';
-    if (kind === 'code') return 'Код';
-    return 'Видео';
+const getLessonKindLabel = (kind, t) => {
+    if (kind === 'quiz') return t('studentDashboard.progress.lessonKinds.quiz');
+    if (kind === 'article') return t('studentDashboard.progress.lessonKinds.article');
+    if (kind === 'code') return t('studentDashboard.progress.lessonKinds.code');
+    return t('studentDashboard.progress.lessonKinds.video');
 };
 
 const ProgressTab = ({
@@ -94,6 +103,7 @@ const ProgressTab = ({
     attendanceEnabled,
     courseId,
 }) => {
+    const { t } = useTranslation();
     const [expandedCourseId, setExpandedCourseId] = useState('');
 
     if (!items.length) {
@@ -101,15 +111,15 @@ const ProgressTab = ({
             <div className="space-y-6">
                 <section className="dashboard-panel overflow-hidden">
                     <DashboardSectionHeader
-                        eyebrow="Student Progress"
-                        title="Прогресс жана сертификаттар"
-                        description="Окуу темпи, жетишкендиктер жана кийинки кадамдар ушул жерде көрсөтүлөт."
+                        eyebrow={t('studentDashboard.progress.eyebrow')}
+                        title={t('studentDashboard.progress.title')}
+                        description={t('studentDashboard.progress.emptyHeroDescription')}
                     />
                     <div className="p-6">
                         <StudentPanelEmpty
                             icon={FiTrendingUp}
-                            title="Азырынча катталган курстар жок"
-                            description="Курс кошулганда, бул жерден прогрессти, улантуу чекитин жана сертификат абалын көрөсүз."
+                            title={t('studentDashboard.progress.empty.title')}
+                            description={t('studentDashboard.progress.empty.description')}
                         />
                     </div>
                 </section>
@@ -142,48 +152,47 @@ const ProgressTab = ({
         <div className="space-y-6">
             <section className="dashboard-panel overflow-hidden">
                 <DashboardSectionHeader
-                    eyebrow="Student Progress"
-                    title="Прогресс жана сертификаттар"
-                    description="Чыныгы курс прогрессин, улантуу чекитин жана окуу форматына жараша негизги көрсөткүчтөрдү бул жерден көрүңүз."
+                    eyebrow={t('studentDashboard.progress.eyebrow')}
+                    title={t('studentDashboard.progress.title')}
+                    description={t('studentDashboard.progress.description')}
                     metrics={
                         <>
-                            <DashboardMetricCard label="Орточо прогресс" value={`${averageProgress}%`} icon={FiTrendingUp} tone={getProgressTone(averageProgress)} />
-                            <DashboardMetricCard label="Активдүү курстар" value={totalCourses} icon={FiBookOpen} />
-                            <DashboardMetricCard label="Бүткөн курстар" value={completedCourses} icon={FiAward} tone="blue" />
-                            <DashboardMetricCard label="Сертификат" value={certificateCount} icon={FiAward} tone="green" />
+                            <DashboardMetricCard label={t('studentDashboard.progress.metrics.averageProgress')} value={`${averageProgress}%`} icon={FiTrendingUp} tone={getProgressTone(averageProgress)} />
+                            <DashboardMetricCard label={t('studentDashboard.progress.metrics.activeCourses')} value={totalCourses} icon={FiBookOpen} />
+                            <DashboardMetricCard label={t('studentDashboard.progress.metrics.completedCourses')} value={completedCourses} icon={FiAward} tone="blue" />
+                            <DashboardMetricCard label={t('studentDashboard.progress.metrics.certificates')} value={certificateCount} icon={FiAward} tone="green" />
                         </>
                     }
                 />
 
                 <div className="grid gap-4 p-6 xl:grid-cols-[minmax(0,1.35fr),minmax(0,0.65fr)]">
                     <div className="rounded-panel bg-edubot-hero p-6 text-white shadow-edubot-glow">
-                        <p className="dashboard-pill">Learning Progress</p>
+                        <p className="dashboard-pill">{t('studentDashboard.progress.hero.pill')}</p>
                         <div className="mt-4 grid gap-5 lg:grid-cols-[auto,1fr] lg:items-center">
                             <div className="flex h-32 w-32 items-center justify-center rounded-full border border-white/15 bg-white/10 text-center shadow-lg backdrop-blur-sm">
                                 <div>
                                     <div className="text-3xl font-bold">{averageProgress}%</div>
                                     <div className="mt-1 text-xs uppercase tracking-[0.18em] text-white/70">
-                                        жалпы прогресс
+                                        {t('studentDashboard.progress.hero.totalProgress')}
                                     </div>
                                 </div>
                             </div>
 
                             <div>
-                                <h3 className="text-2xl font-semibold">Азыркы окуу фокусу</h3>
+                                <h3 className="text-2xl font-semibold">{t('studentDashboard.progress.hero.focusTitle')}</h3>
                                 <p className="mt-2 text-sm leading-6 text-white/80">
-                                    Азыр эң чоң өсүү мүмкүнчүлүгү{' '}
-                                    <span className="font-semibold text-white">
-                                        {courseToFocus.courseTitle}
-                                    </span>{' '}
-                                    курсунда. Бул жерде {courseToFocus.lessonsCompleted}/
-                                    {courseToFocus.lessonsTotal || '—'} сабак бүтүп, жалпы прогресс{' '}
-                                    {courseToFocus.progressPercent}% болуп турат.
+                                    {t('studentDashboard.progress.hero.focusDescription', {
+                                        course: courseToFocus.courseTitle,
+                                        completed: courseToFocus.lessonsCompleted,
+                                        total: courseToFocus.lessonsTotal || '—',
+                                        progress: courseToFocus.progressPercent,
+                                    })}
                                 </p>
 
                                 <div className="mt-4 grid gap-3 sm:grid-cols-3">
-                                    <StudentHeroPill label="Курстар" value={totalCourses} />
-                                    <StudentHeroPill label="Бүткөн сабак" value={`${totalCompletedLessons}/${totalLessons || '—'}`} />
-                                    <StudentHeroPill label="Сертификат" value={certificateCount} />
+                                    <StudentHeroPill label={t('studentDashboard.progress.hero.courses')} value={totalCourses} />
+                                    <StudentHeroPill label={t('studentDashboard.progress.hero.completedLessons')} value={`${totalCompletedLessons}/${totalLessons || '—'}`} />
+                                    <StudentHeroPill label={t('studentDashboard.progress.hero.certificates')} value={certificateCount} />
                                 </div>
                             </div>
                         </div>
@@ -191,23 +200,23 @@ const ProgressTab = ({
 
                     <div className="grid gap-4">
                         <DashboardInsetPanel
-                            title="Окуу форматтары"
-                            description="Кайсы түрдөгү курстарга катышып жатканыңыз."
+                            title={t('studentDashboard.progress.formats.title')}
+                            description={t('studentDashboard.progress.formats.description')}
                         >
                             <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
                                 <StudentMiniStat
-                                    label="Видео курстар"
+                                    label={t('studentDashboard.progress.formats.videoCourses')}
                                     value={videoCourseCount}
                                     tone="blue"
                                 />
                                 <StudentMiniStat
-                                    label="Сессия курстары"
+                                    label={t('studentDashboard.progress.formats.sessionCourses')}
                                     value={deliveryCourseCount}
                                     tone="default"
                                 />
                                 <StudentMiniStat
-                                    label="Катышуу"
-                                    value={attendanceEnabled ? `${attendanceStats.rate}%` : 'Эсептелбейт'}
+                                    label={t('studentDashboard.progress.formats.attendance')}
+                                    value={attendanceEnabled ? `${attendanceStats.rate}%` : t('studentDashboard.progress.formats.notCalculated')}
                                     tone={attendanceEnabled && attendanceStats.rate >= 85 ? 'green' : 'amber'}
                                 />
                             </div>
@@ -243,12 +252,21 @@ const ProgressTab = ({
                                                         {item.courseTitle}
                                                     </h3>
                                                     <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-edubot-muted dark:text-slate-300">
-                                                        <span>{item.lessonsCompleted}/{item.lessonsTotal || '—'} сабак</span>
-                                                        <span>{remainingLessons} калган</span>
-                                                        <span>{getProgressLabel(item.progressPercent)}</span>
+                                                        <span>
+                                                            {t('studentDashboard.progress.courseCard.lessonCount', {
+                                                                completed: item.lessonsCompleted,
+                                                                total: item.lessonsTotal || '—',
+                                                            })}
+                                                        </span>
+                                                        <span>
+                                                            {t('studentDashboard.progress.courseCard.remaining', {
+                                                                count: remainingLessons,
+                                                            })}
+                                                        </span>
+                                                        <span>{getProgressLabel(item.progressPercent, t)}</span>
                                                         {courseTypeMap.get(String(item.courseId)) ? (
                                                             <span className="rounded-full border border-edubot-line bg-white px-3 py-1 text-[11px] font-semibold text-edubot-ink dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200">
-                                                                {courseTypeLabel(courseTypeMap.get(String(item.courseId)))}
+                                                                {getCourseTypeLabel(courseTypeMap.get(String(item.courseId)), t)}
                                                             </span>
                                                         ) : null}
                                                     </div>
@@ -258,7 +276,7 @@ const ProgressTab = ({
                                             <div className="mt-5">
                                                 <div className="mb-2 flex items-center justify-between gap-3 text-sm">
                                                     <span className="font-medium text-edubot-ink dark:text-white">
-                                                        Прогресс
+                                                        {t('studentDashboard.progress.progress')}
                                                     </span>
                                                     <span className="font-semibold text-edubot-orange">
                                                         {item.progressPercent}%
@@ -286,16 +304,16 @@ const ProgressTab = ({
 
                                         <div className="w-full xl:w-[22rem]">
                                             <DashboardInsetPanel
-                                                title="Кийинки аракет"
+                                                title={t('studentDashboard.progress.nextAction.title')}
                                                 description={
                                                     item.resumeLesson
-                                                        ? 'Акыркы токтогон жерден улантыңыз.'
-                                                        : 'Курс кыймылын улантуу үчүн кийинки сабакты тандаңыз.'
+                                                        ? t('studentDashboard.progress.nextAction.resumeDescription')
+                                                        : t('studentDashboard.progress.nextAction.pickLessonDescription')
                                                 }
                                                 action={
                                                     certificateBadge ? (
                                                         <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${certificateBadge.className}`}>
-                                                            {certificateBadge.label}
+                                                            {t(certificateBadge.labelKey)}
                                                         </span>
                                                     ) : null
                                                 }
@@ -312,7 +330,9 @@ const ProgressTab = ({
                                                         >
                                                             <FiPlay className="shrink-0" />
                                                             <span className="truncate">
-                                                                Улантуу: {item.resumeLesson.lessonTitle}
+                                                                {t('studentDashboard.progress.actions.continueLesson', {
+                                                                    lesson: item.resumeLesson.lessonTitle,
+                                                                })}
                                                                 {item.resumeLesson.lastVideoTime
                                                                     ? ` (${formatTime(item.resumeLesson.lastVideoTime)})`
                                                                     : ''}
@@ -320,7 +340,7 @@ const ProgressTab = ({
                                                         </Link>
                                                     ) : (
                                                         <div className="rounded-2xl border border-dashed border-edubot-line/80 bg-slate-50 px-4 py-3 text-sm text-edubot-muted dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-400">
-                                                            Улантуучу сабак азырынча табылган жок.
+                                                            {t('studentDashboard.progress.nextAction.noResumeLesson')}
                                                         </div>
                                                     )}
                                                     {item.certificateStatus === 'issued' && item.certificateDownloadUrl ? (
@@ -336,14 +356,14 @@ const ProgressTab = ({
                                                                 className="dashboard-button-secondary w-full justify-center"
                                                             >
                                                                 <FiAward className="shrink-0" />
-                                                                PDF жүктөө
+                                                                {t('studentDashboard.progress.actions.downloadPdf')}
                                                             </button>
                                                             {item.certificateVerificationUrl ? (
                                                                 <a
                                                                     href={item.certificateVerificationUrl}
                                                                     className="dashboard-button-secondary w-full justify-center"
                                                                 >
-                                                                    Текшерүү
+                                                                    {t('studentDashboard.progress.actions.verify')}
                                                                 </a>
                                                             ) : null}
                                                         </div>
@@ -355,17 +375,17 @@ const ProgressTab = ({
 
                                     <div className="mt-4 grid gap-3 sm:grid-cols-3">
                                         <StudentMiniStat
-                                            label="Бүткөн"
+                                            label={t('studentDashboard.progress.stats.completed')}
                                             value={item.lessonsCompleted}
                                             tone="green"
                                         />
                                         <StudentMiniStat
-                                            label="Калды"
+                                            label={t('studentDashboard.progress.stats.remaining')}
                                             value={remainingLessons}
                                             tone="amber"
                                         />
                                         <StudentMiniStat
-                                            label="Секция"
+                                            label={t('studentDashboard.progress.stats.sections')}
                                             value={item.sections.length}
                                             tone="blue"
                                         />
@@ -373,7 +393,7 @@ const ProgressTab = ({
 
                                     <div className="mt-5 flex items-center justify-between gap-3 border-t border-edubot-line/70 pt-4 dark:border-slate-700">
                                         <div className="text-sm text-edubot-muted dark:text-slate-400">
-                                            Секциялар жана сабак деталдары
+                                            {t('studentDashboard.progress.sections.title')}
                                         </div>
                                         <button
                                             type="button"
@@ -385,7 +405,9 @@ const ProgressTab = ({
                                             className="dashboard-button-secondary inline-flex items-center gap-2"
                                         >
                                             {isExpanded ? <FiChevronUp className="h-4 w-4" /> : <FiChevronDown className="h-4 w-4" />}
-                                            {isExpanded ? 'Жашыруу' : 'Кеңейтүү'}
+                                            {isExpanded
+                                                ? t('studentDashboard.progress.actions.hide')
+                                                : t('studentDashboard.progress.actions.expand')}
                                         </button>
                                     </div>
                                 </div>
@@ -409,8 +431,10 @@ const ProgressTab = ({
                                                                         {section.sectionTitle}
                                                                     </p>
                                                                     <p className="mt-1 text-sm text-edubot-muted dark:text-slate-400">
-                                                                        {completedInSection}/{section.lessons.length} сабак
-                                                                        бүттү
+                                                                        {t('studentDashboard.progress.sections.completedCount', {
+                                                                            completed: completedInSection,
+                                                                            total: section.lessons.length,
+                                                                        })}
                                                                     </p>
                                                                 </div>
                                                                 <span className="rounded-full border border-edubot-line bg-white px-3 py-1 text-xs font-semibold text-edubot-ink dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200">
@@ -432,13 +456,13 @@ const ProgressTab = ({
                                                                     const quizBadge = isQuiz
                                                                         ? lesson.quizPassed === true
                                                                             ? {
-                                                                                  label: 'Квиз өттү',
+                                                                                  labelKey: 'studentDashboard.progress.quiz.passed',
                                                                                   className:
                                                                                       'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300',
                                                                               }
                                                                             : lesson.quizPassed === false
                                                                               ? {
-                                                                                    label: 'Квиз өтпөдү',
+                                                                                    labelKey: 'studentDashboard.progress.quiz.failed',
                                                                                     className:
                                                                                         'bg-red-100 text-red-700 dark:bg-red-500/10 dark:text-red-300',
                                                                                 }
@@ -466,13 +490,13 @@ const ProgressTab = ({
                                                                                             {lesson.lessonTitle}
                                                                                         </p>
                                                                                         <span className="rounded-full bg-edubot-surfaceAlt px-2.5 py-1 text-[11px] font-semibold uppercase text-edubot-ink dark:bg-slate-800 dark:text-slate-200">
-                                                                                            {getLessonKindLabel(lesson.kind)}
+                                                                                            {getLessonKindLabel(lesson.kind, t)}
                                                                                         </span>
                                                                                         {quizBadge ? (
                                                                                             <span
                                                                                                 className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${quizBadge.className}`}
                                                                                             >
-                                                                                                {quizBadge.label}
+                                                                                                {t(quizBadge.labelKey)}
                                                                                                 {typeof lesson.quizScore ===
                                                                                                 'number'
                                                                                                     ? ` (${lesson.quizScore}%)`
@@ -483,10 +507,9 @@ const ProgressTab = ({
                                                                                     {!lesson.completed &&
                                                                                     lesson.lastVideoTime ? (
                                                                                         <p className="mt-1 text-xs text-edubot-muted dark:text-slate-400">
-                                                                                            Акыркы убакыт:{' '}
-                                                                                            {formatTime(
-                                                                                                lesson.lastVideoTime
-                                                                                            )}
+                                                                                            {t('studentDashboard.progress.lesson.lastTime', {
+                                                                                                time: formatTime(lesson.lastVideoTime),
+                                                                                            })}
                                                                                         </p>
                                                                                     ) : null}
                                                                                 </div>
@@ -494,8 +517,8 @@ const ProgressTab = ({
 
                                                                             <span className="text-xs font-medium text-edubot-muted dark:text-slate-400">
                                                                                 {lesson.completed
-                                                                                    ? 'Бүткөн'
-                                                                                    : 'Жүрүштө'}
+                                                                                    ? t('studentDashboard.progress.lesson.completed')
+                                                                                    : t('studentDashboard.progress.lesson.inProgress')}
                                                                             </span>
                                                                         </div>
                                                                     );
@@ -507,7 +530,7 @@ const ProgressTab = ({
                                             </div>
                                         ) : (
                                             <div className="dashboard-panel-muted p-8 text-center text-sm text-edubot-muted dark:text-slate-400">
-                                                Бул курс боюнча сабактар табылган жок.
+                                                {t('studentDashboard.progress.empty.noLessons')}
                                             </div>
                                         )}
                                     </div>
@@ -519,8 +542,8 @@ const ProgressTab = ({
 
                 <div className="space-y-4">
                     <DashboardInsetPanel
-                        title="Сертификат даярдыгы"
-                        description="Кайсы курстар финишке жакындап калганын байкаңыз."
+                        title={t('studentDashboard.progress.certificateReadiness.title')}
+                        description={t('studentDashboard.progress.certificateReadiness.description')}
                     >
                         <div className="space-y-2">
                             {items.map((item, index) => (
@@ -533,7 +556,9 @@ const ProgressTab = ({
                                             {item.courseTitle}
                                         </p>
                                         <p className="mt-1 text-xs text-edubot-muted dark:text-slate-400">
-                                            {item.progressPercent}% бүткөн
+                                            {t('studentDashboard.progress.certificateReadiness.percentComplete', {
+                                                progress: item.progressPercent,
+                                            })}
                                         </p>
                                     </div>
                                     <span
@@ -548,12 +573,12 @@ const ProgressTab = ({
                                         }`}
                                     >
                                         {item.certificateStatus === 'issued'
-                                            ? 'Даяр'
+                                            ? t('studentDashboard.progress.certificateReadiness.ready')
                                             : item.certificateStatus === 'pending_approval'
-                                                ? 'Кароодо'
+                                                ? t('studentDashboard.progress.certificateReadiness.pending')
                                                 : item.certificateStatus === 'rejected'
-                                                    ? 'Четке кагылды'
-                                                    : 'Даяр эмес'}
+                                                    ? t('studentDashboard.progress.certificateReadiness.rejected')
+                                                    : t('studentDashboard.progress.certificateReadiness.notReady')}
                                     </span>
                                 </div>
                             ))}
@@ -561,26 +586,26 @@ const ProgressTab = ({
                     </DashboardInsetPanel>
 
                     <DashboardInsetPanel
-                        title="Сессия форматындагы окуу"
-                        description="Оффлайн жана live курстар үчүн прогресс кошумча логистика менен коштолот."
+                        title={t('studentDashboard.progress.sessionFormats.title')}
+                        description={t('studentDashboard.progress.sessionFormats.description')}
                     >
                         <div className="space-y-3 text-sm leading-6 text-edubot-muted dark:text-slate-300">
                             <div className="rounded-2xl border border-edubot-line/70 bg-white/80 px-4 py-3 dark:border-slate-700 dark:bg-slate-900">
                                 <div className="flex items-center gap-2 font-semibold text-edubot-ink dark:text-white">
                                     <FiRadio className="h-4 w-4" />
-                                    Онлайн түз эфир
+                                    {t('studentDashboard.progress.sessionFormats.onlineLive')}
                                 </div>
                                 <p className="mt-2">
-                                    Бул форматта прогресс менен кошо join убактысы, сессиялар жана жазуулар маанилүү.
+                                    {t('studentDashboard.progress.sessionFormats.onlineLiveDescription')}
                                 </p>
                             </div>
                             <div className="rounded-2xl border border-edubot-line/70 bg-white/80 px-4 py-3 dark:border-slate-700 dark:bg-slate-900">
                                 <div className="flex items-center gap-2 font-semibold text-edubot-ink dark:text-white">
                                     <FiMapPin className="h-4 w-4" />
-                                    Оффлайн
+                                    {t('studentDashboard.progress.sessionFormats.offline')}
                                 </div>
                                 <p className="mt-2">
-                                    Оффлайн окууда сабакка катышуу, жайгашкан жер жана сессия ресурстары өзүнчө маанилүү бөлүк.
+                                    {t('studentDashboard.progress.sessionFormats.offlineDescription')}
                                 </p>
                             </div>
                         </div>
@@ -590,9 +615,9 @@ const ProgressTab = ({
 
             <section className="dashboard-panel overflow-hidden">
                 <DashboardSectionHeader
-                    eyebrow="Advanced Progress"
-                    title="Активдүүлүк тарыхы жана тренддер"
-                    description="Курс активдүүлүгүңүздү жана акыркы окуу кыймылын тереңирээк көрүү үчүн ушул блокту колдонуңуз."
+                    eyebrow={t('studentDashboard.progress.advanced.eyebrow')}
+                    title={t('studentDashboard.progress.advanced.title')}
+                    description={t('studentDashboard.progress.advanced.description')}
                 />
                 <div className="p-6">
                     <StudentAnalyticsPage

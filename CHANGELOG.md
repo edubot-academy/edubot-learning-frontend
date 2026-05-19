@@ -4,6 +4,33 @@ Version bumps are classified by delivery scale; see `VERSIONING.md`.
 
 ## Unreleased
 
+### Changed
+
+- Localized the student dashboard instructor chat workflow, including chat list labels, new-chat modal copy, relative time labels, validation toasts, and chat/file error fallbacks for `ky`, `ru`, and `en`.
+- Localized student dashboard shell navigation, workspace group labels, menu actions, header subtitle, access empty state, and profile notification setting labels for `ky`, `ru`, and `en`.
+- Localized student dashboard load-error toasts, overview fallback names, progress section/course fallbacks, and learning-access state messaging for `ky`, `ru`, and `en`.
+- Localized the student courses tab hero, filters, metrics, course cards, next-step panels, quick-access hints, empty states, and course-type/mode labels for `ky`, `ru`, and `en`.
+- Localized the student schedule tab hero, filters, metrics, session cards, live-session panel, recording labels, empty states, and schedule fallbacks for `ky`, `ru`, and `en`.
+- Localized the student certificates tab statuses, metrics, registry copy, course fallback, PDF/download actions, verification action, dates, and empty state for `ky`, `ru`, and `en`.
+- Localized student profile workspace copy, account/security form labels, notification settings, profile validation, and profile/notification load-save toasts for `ky`, `ru`, and `en`.
+- Localized the student progress tab hero, metrics, progress labels, course cards, next-action panels, lesson/quiz statuses, certificate readiness, session-format guidance, advanced analytics heading, and empty states for `ky`, `ru`, and `en`.
+- Localized student task submission validation, success, attachment, and fallback error toasts for `ky`, `ru`, and `en`.
+- Localized the student task workspace UI, including status labels, filters, metrics, review/submission summaries, quiz states, draft helpers, attachment preview copy, and unavailable/empty states for `ky`, `ru`, and `en`.
+- Localized student resource tab hero, filters, metrics, material/recording panels, activity context, preview states, and open-error toasts for `ky`, `ru`, and `en`.
+
+### Fixed
+
+- Hardened student instructor chat list normalization so chat selection and newly created chat lookup do not crash when chat/course APIs return wrapped response objects instead of raw arrays.
+- Fixed student chat attachment forwarding so `ChatWorkspace` passes file type and file data to the send handler in the expected order.
+- Fixed localized student course, schedule, and resource session dates so unknown-time fallbacks and date formatting follow the active language.
+
+### Verification
+
+- `npm test -- --run src/i18n/resources.spec.js src/i18n/locale.spec.js`
+- `npm run lint`
+- `git diff --check`
+- `npm run build`
+
 ---
 
 ## [1.13.3] - 2026-05-19

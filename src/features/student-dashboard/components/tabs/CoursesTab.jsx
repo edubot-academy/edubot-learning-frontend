@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import PropTypes from 'prop-types';
+import { useTranslation } from 'react-i18next';
 import {
     FiBookOpen,
     FiCalendar,
@@ -22,7 +23,6 @@ import StudentPanelEmpty from '../shared/StudentPanelEmpty.jsx';
 import {
     resolveInstructorName,
     resolveCourseType,
-    courseTypeLabel,
     formatSessionDate,
     resolveRecordings,
 } from '../../utils/studentDashboard.helpers.js';
@@ -34,14 +34,24 @@ const getProgressTone = (value) => {
     return 'amber';
 };
 
-const getCourseModeLabel = (item) => {
-    if (item.courseType === 'video') return 'Өз алдынча';
+const COURSE_TYPE_LABEL_KEYS = {
+    video: 'studentDashboard.courses.courseTypes.video',
+    offline: 'studentDashboard.courses.courseTypes.offline',
+    online_live: 'studentDashboard.courses.courseTypes.onlineLive',
+};
+
+const getCourseTypeLabel = (type, t) =>
+    t(COURSE_TYPE_LABEL_KEYS[type] || 'studentDashboard.courses.courseTypes.video');
+
+const getCourseModeLabel = (item, t) => {
+    if (item.courseType === 'video') return t('studentDashboard.courses.courseModes.selfPaced');
     if (item.groupName) return item.groupName;
-    if (item.courseType === 'offline') return 'Оффлайн топ';
-    return 'Түз эфир тобу';
+    if (item.courseType === 'offline') return t('studentDashboard.courses.courseModes.offlineGroup');
+    return t('studentDashboard.courses.courseModes.liveGroup');
 };
 
 const CoursesTab = ({ courses, offeringsByCourse }) => {
+    const { i18n, t } = useTranslation();
     const [query, setQuery] = useState('');
     const [typeFilter, setTypeFilter] = useState('all');
 
@@ -117,15 +127,15 @@ const CoursesTab = ({ courses, offeringsByCourse }) => {
         return (
             <section className="dashboard-panel overflow-hidden">
                 <DashboardSectionHeader
-                    eyebrow="My Courses"
-                    title="Менин курстарым"
-                    description="Бул жерде активдүү курстар, кийинки сессиялар жана окуу темпи көрүнөт."
+                    eyebrow={t('studentDashboard.courses.eyebrow')}
+                    title={t('studentDashboard.courses.title')}
+                    description={t('studentDashboard.courses.emptyHeroDescription')}
                 />
                 <div className="p-6">
                     <StudentPanelEmpty
                         icon={FiFolder}
-                        title="Сизде активдүү курстар жок"
-                        description="Жаңы курс кошулганда, бул жерде окуу жол картасыңыз көрүнөт."
+                        title={t('studentDashboard.courses.empty.title')}
+                        description={t('studentDashboard.courses.empty.description')}
                     />
                 </div>
             </section>
@@ -136,26 +146,26 @@ const CoursesTab = ({ courses, offeringsByCourse }) => {
         <div className="space-y-6">
             <section className="dashboard-panel overflow-hidden">
                 <DashboardSectionHeader
-                    eyebrow="My Courses"
-                    title="Менин курстарым"
-                    description="Курс прогрессин, мугалимди, кийинки сабакты жана жазууларды бир экрандан башкарыңыз."
+                    eyebrow={t('studentDashboard.courses.eyebrow')}
+                    title={t('studentDashboard.courses.title')}
+                    description={t('studentDashboard.courses.description')}
                     metrics={
                         <>
-                            <DashboardMetricCard label="Курстар" value={stats.total} icon={FiBookOpen} />
+                            <DashboardMetricCard label={t('studentDashboard.courses.metrics.courses')} value={stats.total} icon={FiBookOpen} />
                             <DashboardMetricCard
-                                label="Орточо прогресс"
+                                label={t('studentDashboard.courses.metrics.averageProgress')}
                                 value={`${stats.averageProgress}%`}
                                 icon={FiPlayCircle}
                                 tone={getProgressTone(stats.averageProgress)}
                             />
                             <DashboardMetricCard
-                                label="Live"
+                                label={t('studentDashboard.courses.metrics.live')}
                                 value={stats.liveCourses}
                                 icon={FiVideo}
                                 tone="blue"
                             />
                             <DashboardMetricCard
-                                label="Offline"
+                                label={t('studentDashboard.courses.metrics.offline')}
                                 value={stats.offlineCourses}
                                 icon={FiMapPin}
                                 tone="amber"
@@ -170,7 +180,7 @@ const CoursesTab = ({ courses, offeringsByCourse }) => {
                         <input
                             value={query}
                             onChange={(e) => setQuery(e.target.value)}
-                            placeholder="Курс же мугалим боюнча издөө"
+                            placeholder={t('studentDashboard.courses.searchPlaceholder')}
                             className="dashboard-field dashboard-field-icon"
                         />
                     </label>
@@ -182,10 +192,10 @@ const CoursesTab = ({ courses, offeringsByCourse }) => {
                             onChange={(e) => setTypeFilter(e.target.value)}
                             className="dashboard-field dashboard-field-icon dashboard-select"
                         >
-                            <option value="all">Бардык типтер</option>
-                            <option value="video">Видео</option>
-                            <option value="offline">Оффлайн</option>
-                            <option value="online_live">Онлайн түз эфир</option>
+                            <option value="all">{t('studentDashboard.courses.filters.allTypes')}</option>
+                            <option value="video">{t('studentDashboard.courses.courseTypes.video')}</option>
+                            <option value="offline">{t('studentDashboard.courses.courseTypes.offline')}</option>
+                            <option value="online_live">{t('studentDashboard.courses.courseTypes.onlineLive')}</option>
                         </select>
                     </label>
                 </div>
@@ -203,8 +213,8 @@ const CoursesTab = ({ courses, offeringsByCourse }) => {
                                     groupId: item.course.groupId || item.groupName ? resolvedGroupId : undefined,
                                 });
                             const primaryActionLabel = isVideoCourse
-                                ? 'Курсту ачуу'
-                                : 'Расписаниени ачуу';
+                                ? t('studentDashboard.courses.actions.openCourse')
+                                : t('studentDashboard.courses.actions.openSchedule');
 
                             return (
                                 <article
@@ -220,16 +230,16 @@ const CoursesTab = ({ courses, offeringsByCourse }) => {
                                             />
                                         ) : (
                                             <div className="flex h-full w-full items-center justify-center bg-edubot-surfaceAlt text-sm font-semibold text-edubot-muted dark:bg-slate-800 dark:text-slate-300">
-                                                Курс сүрөтү жок
+                                                {t('studentDashboard.courses.noImage')}
                                             </div>
                                         )}
                                         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
                                         <div className="absolute left-5 right-5 top-5 flex items-start justify-between gap-3">
                                             <span className="rounded-full border border-white/15 bg-black/25 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-white backdrop-blur-sm">
-                                                {courseTypeLabel(item.courseType)}
+                                                {getCourseTypeLabel(item.courseType, t)}
                                             </span>
                                             <span className="rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-semibold text-white backdrop-blur-sm">
-                                                {isVideoCourse ? `${item.progressValue}%` : courseTypeLabel(item.courseType)}
+                                                {isVideoCourse ? `${item.progressValue}%` : getCourseTypeLabel(item.courseType, t)}
                                             </span>
                                         </div>
                                         <div className="absolute bottom-5 left-5 right-5">
@@ -246,7 +256,7 @@ const CoursesTab = ({ courses, offeringsByCourse }) => {
                                                 <>
                                                     <div className="mb-2 flex items-center justify-between gap-3 text-sm">
                                                         <span className="font-medium text-edubot-ink dark:text-white">
-                                                            Прогресс
+                                                            {t('studentDashboard.courses.progress')}
                                                         </span>
                                                         <span className="font-semibold text-edubot-orange">
                                                             {item.progressValue}%
@@ -267,28 +277,35 @@ const CoursesTab = ({ courses, offeringsByCourse }) => {
                                                 </>
                                             ) : (
                                                 <div className="rounded-2xl border border-edubot-line/70 bg-edubot-surfaceAlt/70 px-4 py-3 text-sm text-edubot-muted dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-300">
-                                                    Бул курс график менен өтөт. Негизги маалыматтар расписание жана катышуу бөлүмдөрүндө көрсөтүлөт.
+                                                    {t('studentDashboard.courses.scheduledCourseNotice')}
                                                 </div>
                                             )}
                                         </div>
 
                                         <div className="grid gap-3 sm:grid-cols-3">
-                                            <StudentMiniStat label="Сабактар" value={item.lessonsLabel} />
+                                            <StudentMiniStat label={t('studentDashboard.courses.stats.lessons')} value={item.lessonsLabel} />
                                             <StudentMiniStat
-                                                label={item.courseType === 'video' ? 'Формат' : 'Топ'}
-                                                value={getCourseModeLabel(item)}
+                                                label={item.courseType === 'video'
+                                                    ? t('studentDashboard.courses.stats.format')
+                                                    : t('studentDashboard.courses.stats.group')}
+                                                value={getCourseModeLabel(item, t)}
                                                 tone={item.courseType === 'video' ? 'amber' : 'blue'}
                                             />
                                             <StudentMiniStat
-                                                label={item.courseType === 'video' ? 'Кийинки абал' : 'Алдыдагы'}
+                                                label={item.courseType === 'video'
+                                                    ? t('studentDashboard.courses.stats.nextStatus')
+                                                    : t('studentDashboard.courses.stats.upcoming')}
                                                 value={
                                                     item.courseType === 'video'
                                                         ? item.course.nextLesson?.title
-                                                            ? 'Улантуу'
-                                                            : 'Аяктады'
+                                                            ? t('studentDashboard.courses.statuses.continue')
+                                                            : t('studentDashboard.courses.statuses.completed')
                                                         : item.nextSession
-                                                            ? formatSessionDate(item.nextSession.startAt)
-                                                            : 'Күтүүдө'
+                                                            ? formatSessionDate(item.nextSession.startAt, {
+                                                                  language: i18n.language,
+                                                                  fallback: t('studentDashboard.courses.fallbacks.unknownTime'),
+                                                              })
+                                                            : t('studentDashboard.courses.statuses.pending')
                                                 }
                                                 tone="green"
                                             />
@@ -296,11 +313,11 @@ const CoursesTab = ({ courses, offeringsByCourse }) => {
 
                                         <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr),minmax(0,0.8fr)]">
                                             <DashboardInsetPanel
-                                                title="Кийинки кадам"
+                                                title={t('studentDashboard.courses.nextStep.title')}
                                                 description={
                                                     item.courseType === 'video'
-                                                        ? 'Кийинки видео сабак же уланта турган жериңиз.'
-                                                        : 'Жакынкы сессия же топ боюнча маалымат.'
+                                                        ? t('studentDashboard.courses.nextStep.videoDescription')
+                                                        : t('studentDashboard.courses.nextStep.groupDescription')
                                                 }
                                             >
                                                 {item.courseType === 'video' ? (
@@ -311,42 +328,49 @@ const CoursesTab = ({ courses, offeringsByCourse }) => {
                                                                 {item.course.nextLesson.title}
                                                             </div>
                                                             <div className="text-edubot-muted dark:text-slate-400">
-                                                                Видео курс өз темпиңизде өтүлөт. Курсту ачып, окууну улантыңыз.
+                                                                {t('studentDashboard.courses.nextStep.selfPacedHint')}
                                                             </div>
                                                             <div className="text-edubot-muted dark:text-slate-400">
-                                                                Мугалим: {item.instructor}
+                                                                {t('studentDashboard.courses.nextStep.instructor', {
+                                                                    instructor: item.instructor,
+                                                                })}
                                                             </div>
                                                         </div>
                                                     ) : (
                                                         <div className="text-sm text-edubot-muted dark:text-slate-400">
-                                                            Бул видео курстун бардык сабактары аяктаган окшойт.
+                                                            {t('studentDashboard.courses.nextStep.videoCompleted')}
                                                         </div>
                                                     )
                                                 ) : item.nextSession ? (
                                                     <div className="space-y-2 text-sm">
                                                         <div className="inline-flex items-center gap-2 text-edubot-ink dark:text-white">
                                                             <FiCalendar className="h-4 w-4 text-edubot-orange" />
-                                                            {formatSessionDate(item.nextSession.startAt)}
+                                                            {formatSessionDate(item.nextSession.startAt, {
+                                                                language: i18n.language,
+                                                                fallback: t('studentDashboard.courses.fallbacks.unknownTime'),
+                                                            })}
                                                         </div>
                                                         <div className="text-edubot-muted dark:text-slate-400">
                                                             {item.courseType === 'offline'
-                                                                ? `Жайгашкан жери: ${
-                                                                      item.nextSession.location ||
-                                                                      item.nextSession.room ||
-                                                                      'Класс али дайындала элек'
-                                                                  }`
-                                                                : 'Онлайн түз эфир сабагы күтүп турат'}
+                                                                ? t('studentDashboard.courses.nextStep.location', {
+                                                                      location:
+                                                                          item.nextSession.location ||
+                                                                          item.nextSession.room ||
+                                                                          t('studentDashboard.courses.nextStep.noClassroom'),
+                                                                  })
+                                                                : t('studentDashboard.courses.nextStep.liveWaiting')}
                                                         </div>
                                                         <div className="text-edubot-muted dark:text-slate-400">
-                                                            Мугалим:{' '}
-                                                            {resolveInstructorName(item.nextSession || item.course)}
+                                                            {t('studentDashboard.courses.nextStep.instructor', {
+                                                                instructor: resolveInstructorName(item.nextSession || item.course),
+                                                            })}
                                                         </div>
                                                     </div>
                                                 ) : item.course.offering?.scheduleNote ? (
                                                     <div className="space-y-2 text-sm">
                                                         <div className="inline-flex items-center gap-2 text-edubot-ink dark:text-white">
                                                             <FiClock className="h-4 w-4 text-edubot-orange" />
-                                                            График такталып жатат
+                                                            {t('studentDashboard.courses.nextStep.schedulePending')}
                                                         </div>
                                                         <div className="text-edubot-muted dark:text-slate-400">
                                                             {item.course.offering.scheduleNote}
@@ -355,15 +379,15 @@ const CoursesTab = ({ courses, offeringsByCourse }) => {
                                                 ) : (
                                                     <div className="text-sm text-edubot-muted dark:text-slate-400">
                                                         {item.courseType === 'video'
-                                                            ? 'Курсту ачып, кийинки сабакты улантыңыз.'
-                                                            : 'Жакынкы сессия азырынча дайындалган жок.'}
+                                                            ? t('studentDashboard.courses.nextStep.openCourseHint')
+                                                            : t('studentDashboard.courses.nextStep.noUpcomingSession')}
                                                     </div>
                                                 )}
                                             </DashboardInsetPanel>
 
                                             <DashboardInsetPanel
-                                                title="Ыкчам кирүү"
-                                                description="Курсту ачып, окууну улантыңыз."
+                                                title={t('studentDashboard.courses.quickAccess.title')}
+                                                description={t('studentDashboard.courses.quickAccess.description')}
                                             >
                                                 <div className="space-y-3">
                                                     <Link
@@ -375,10 +399,10 @@ const CoursesTab = ({ courses, offeringsByCourse }) => {
                                                     </Link>
                                                     <div className="text-xs text-edubot-muted dark:text-slate-400">
                                                         {item.courseType === 'online_live'
-                                                            ? 'Түз эфир сабактары үчүн расписание жана жазуулар бөлүмүн колдонуңуз.'
+                                                            ? t('studentDashboard.courses.quickAccess.liveHint')
                                                             : item.courseType === 'offline'
-                                                              ? 'Оффлайн сабактар үчүн расписание жана катышуу бөлүмүн ачыңыз.'
-                                                              : 'Видео сабактарды токтогон жериңизден уланта аласыз.'}
+                                                              ? t('studentDashboard.courses.quickAccess.offlineHint')
+                                                              : t('studentDashboard.courses.quickAccess.videoHint')}
                                                     </div>
                                                 </div>
                                             </DashboardInsetPanel>
@@ -390,8 +414,8 @@ const CoursesTab = ({ courses, offeringsByCourse }) => {
                     ) : (
                         <StudentPanelEmpty
                             icon={FiSearch}
-                            title="Курс табылган жок"
-                            description="Издөө сөзүн же фильтрди өзгөртүп көрүңүз."
+                            title={t('studentDashboard.courses.empty.noResultTitle')}
+                            description={t('studentDashboard.courses.empty.noResultDescription')}
                             className="xl:col-span-2"
                         />
                     )}

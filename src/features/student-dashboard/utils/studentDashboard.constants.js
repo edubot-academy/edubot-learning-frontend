@@ -17,8 +17,8 @@ import { applyWorkspaceGroups } from '@shared/utils/workspaceGroups';
 export const STUDENT_WORKSPACE_GROUPS = Object.freeze({
     LEARNING: Object.freeze({
         id: 'learning',
-        label: 'Окуу workspace',
-        description: 'Курстар, сабак жүгүртмөсү жана окуу материалдары боюнча негизги аракеттер.',
+        labelKey: 'studentDashboard.shell.workspaceGroups.learning.label',
+        descriptionKey: 'studentDashboard.shell.workspaceGroups.learning.description',
         tabs: Object.freeze([
             STUDENT_DASHBOARD_TABS.OVERVIEW,
             STUDENT_DASHBOARD_TABS.MY_COURSES,
@@ -28,8 +28,8 @@ export const STUDENT_WORKSPACE_GROUPS = Object.freeze({
     }),
     PROGRESS: Object.freeze({
         id: 'progress',
-        label: 'Аткаруу жана прогресс',
-        description: 'Тапшырмалар, прогресс, сертификаттар жана рейтинг мониторинги.',
+        labelKey: 'studentDashboard.shell.workspaceGroups.progress.label',
+        descriptionKey: 'studentDashboard.shell.workspaceGroups.progress.description',
         tabs: Object.freeze([
             STUDENT_DASHBOARD_TABS.TASKS,
             STUDENT_DASHBOARD_TABS.PROGRESS,
@@ -39,8 +39,8 @@ export const STUDENT_WORKSPACE_GROUPS = Object.freeze({
     }),
     SUPPORT: Object.freeze({
         id: 'support',
-        label: 'Байланыш жана орнотуулар',
-        description: 'Чат, профиль жана билдирүү жөндөөлөрү үчүн жеке workspace.',
+        labelKey: 'studentDashboard.shell.workspaceGroups.support.label',
+        descriptionKey: 'studentDashboard.shell.workspaceGroups.support.description',
         tabs: Object.freeze([
             STUDENT_DASHBOARD_TABS.CHAT,
             STUDENT_DASHBOARD_TABS.PROFILE,
@@ -58,21 +58,21 @@ export const STUDENT_WORKSPACE_GROUP_BY_ID = Object.freeze(
 
 const RAW_NAV_ITEMS = [
     // Primary Navigation - Core Learning Activities
-    { id: STUDENT_DASHBOARD_TABS.OVERVIEW, label: 'Кыскача', icon: FiHome, category: 'primary', priority: 1 },
-    { id: STUDENT_DASHBOARD_TABS.MY_COURSES, label: 'Курстарым', icon: FiBookOpen, category: 'primary', priority: 2 },
-    { id: STUDENT_DASHBOARD_TABS.SCHEDULE, label: 'Жүгүртмө', icon: FiCalendar, category: 'primary', priority: 3 },
-    { id: STUDENT_DASHBOARD_TABS.RESOURCES, label: 'Ресурстар', icon: FiFolder, category: 'primary', priority: 4 },
-    { id: STUDENT_DASHBOARD_TABS.TASKS, label: 'Тапшырмалар', icon: FiPlay, category: 'primary', priority: 5 },
-    { id: STUDENT_DASHBOARD_TABS.PROGRESS, label: 'Прогресс', icon: FiBarChart2, category: 'primary', priority: 6 },
-    { id: STUDENT_DASHBOARD_TABS.CERTIFICATES, label: 'Сертификаттар', icon: FiAward, category: 'primary', priority: 7 },
+    { id: STUDENT_DASHBOARD_TABS.OVERVIEW, labelKey: 'studentDashboard.shell.nav.overview', icon: FiHome, category: 'primary', priority: 1 },
+    { id: STUDENT_DASHBOARD_TABS.MY_COURSES, labelKey: 'studentDashboard.shell.nav.myCourses', icon: FiBookOpen, category: 'primary', priority: 2 },
+    { id: STUDENT_DASHBOARD_TABS.SCHEDULE, labelKey: 'studentDashboard.shell.nav.schedule', icon: FiCalendar, category: 'primary', priority: 3 },
+    { id: STUDENT_DASHBOARD_TABS.RESOURCES, labelKey: 'studentDashboard.shell.nav.resources', icon: FiFolder, category: 'primary', priority: 4 },
+    { id: STUDENT_DASHBOARD_TABS.TASKS, labelKey: 'studentDashboard.shell.nav.tasks', icon: FiPlay, category: 'primary', priority: 5 },
+    { id: STUDENT_DASHBOARD_TABS.PROGRESS, labelKey: 'studentDashboard.shell.nav.progress', icon: FiBarChart2, category: 'primary', priority: 6 },
+    { id: STUDENT_DASHBOARD_TABS.CERTIFICATES, labelKey: 'studentDashboard.shell.nav.certificates', icon: FiAward, category: 'primary', priority: 7 },
 
     // Secondary Navigation - Learning Management
-    { id: STUDENT_DASHBOARD_TABS.CHAT, label: 'Чат', icon: FiMessageCircle, category: 'secondary', priority: 2 },
-    { id: STUDENT_DASHBOARD_TABS.LEADERBOARD, label: 'Рейтинг', icon: FiCheckCircle, category: 'secondary', priority: 3 },
+    { id: STUDENT_DASHBOARD_TABS.CHAT, labelKey: 'studentDashboard.shell.nav.chat', icon: FiMessageCircle, category: 'secondary', priority: 2 },
+    { id: STUDENT_DASHBOARD_TABS.LEADERBOARD, labelKey: 'studentDashboard.shell.nav.leaderboard', icon: FiCheckCircle, category: 'secondary', priority: 3 },
 
     // Administrative - Settings & Communication
-    { id: STUDENT_DASHBOARD_TABS.PROFILE, label: 'Профиль', icon: FiUser, category: 'admin', priority: 1 },
-    { id: STUDENT_DASHBOARD_TABS.NOTIFICATIONS, label: 'Билдирүүлөр', icon: FiBell, category: 'admin', priority: 2 },
+    { id: STUDENT_DASHBOARD_TABS.PROFILE, labelKey: 'studentDashboard.shell.nav.profile', icon: FiUser, category: 'admin', priority: 1 },
+    { id: STUDENT_DASHBOARD_TABS.NOTIFICATIONS, labelKey: 'studentDashboard.shell.nav.notifications', icon: FiBell, category: 'admin', priority: 2 },
 ];
 
 export const NAV_ITEMS = applyWorkspaceGroups(RAW_NAV_ITEMS, STUDENT_WORKSPACE_GROUPS);
@@ -87,24 +87,24 @@ export const DEFAULT_NOTIFICATION_SETTINGS = {
 
 export const NOTIFICATION_LABELS = {
     lessonReminders: {
-        label: 'Сабак эскертмелери',
-        description: 'Сабак башталар алдында эскертүү алыңыз.',
+        labelKey: 'studentDashboard.profile.notifications.lessonReminders.label',
+        descriptionKey: 'studentDashboard.profile.notifications.lessonReminders.description',
     },
     announcementEmails: {
-        label: 'Курс боюнча жаңылыктар',
-        description: 'Жаңы модулдар жана маанилүү окуу жаңылыктары email аркылуу жетет.',
+        labelKey: 'studentDashboard.profile.notifications.announcementEmails.label',
+        descriptionKey: 'studentDashboard.profile.notifications.announcementEmails.description',
     },
     taskUpdates: {
-        label: 'Тапшырма эскертмелери',
-        description: 'Тапшырмалардын мөөнөтү жакындаганда эскертүү алыңыз.',
+        labelKey: 'studentDashboard.profile.notifications.taskUpdates.label',
+        descriptionKey: 'studentDashboard.profile.notifications.taskUpdates.description',
     },
     smsAlerts: {
-        label: 'SMS эскертүүлөр',
-        description: 'Маанилүү окуялар боюнча SMS кабыл алыңыз.',
+        labelKey: 'studentDashboard.profile.notifications.smsAlerts.label',
+        descriptionKey: 'studentDashboard.profile.notifications.smsAlerts.description',
     },
     pushNotifications: {
-        label: 'Калтырылган сабак эскертмелери',
-        description: 'Калтырылган сабактар боюнча дароо билдирүү алыңыз.',
+        labelKey: 'studentDashboard.profile.notifications.pushNotifications.label',
+        descriptionKey: 'studentDashboard.profile.notifications.pushNotifications.description',
     },
 };
 

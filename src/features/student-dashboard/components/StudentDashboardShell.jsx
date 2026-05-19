@@ -1,4 +1,5 @@
 import PropTypes from 'prop-types';
+import { useTranslation } from 'react-i18next';
 import FloatingActionButton from '@components/ui/FloatingActionButton';
 import NotificationsTab from '@features/notifications/components/NotificationsTab';
 import StudentEmptyState from './shared/StudentEmptyState.jsx';
@@ -72,6 +73,7 @@ const StudentDashboardShell = ({
     tasks,
     user,
 }) => {
+    const { t } = useTranslation();
     const renderTabContent = () => {
         switch (activeTab) {
             case 'my-courses':
@@ -169,11 +171,15 @@ const StudentDashboardShell = ({
         return renderTabContent();
     };
 
-    const dashboardNavItems = navItems.map((item) => ({
-        ...item,
-        isActive: item.id === activeTab,
-        onSelect: handleDashboardNavSelect,
-    }));
+    const dashboardNavItems = navItems.map((item) => {
+        const label = item.labelKey ? t(item.labelKey) : item.label;
+        return {
+            ...item,
+            label,
+            isActive: item.id === activeTab,
+            onSelect: handleDashboardNavSelect,
+        };
+    });
     const activeNavItem = dashboardNavItems.find((item) => item.id === activeTab);
     const activeWorkspaceGroup = STUDENT_WORKSPACE_GROUP_BY_ID[activeNavItem?.workspaceGroup];
     const relatedWorkspaceTabs = activeWorkspaceGroup
@@ -182,7 +188,9 @@ const StudentDashboardShell = ({
 
     const headerActions = [
         {
-            label: sidebarOpen ? 'Менюну жашыруу' : 'Менюну көрсөтүү',
+            label: sidebarOpen
+                ? t('studentDashboard.shell.actions.hideMenu')
+                : t('studentDashboard.shell.actions.showMenu'),
             onClick: () => setSidebarOpen((prev) => !prev),
             variant: 'secondary',
         },
@@ -195,7 +203,7 @@ const StudentDashboardShell = ({
                 email: user?.email || profileData?.email || '',
             }}
             role="student"
-            subtitle="Чыгармачыл окуу жолуңузду көзөмөлдөңүз"
+            subtitle={t('studentDashboard.shell.subtitle')}
             actions={headerActions}
         />
     );
@@ -223,13 +231,13 @@ const StudentDashboardShell = ({
                     <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                         <div>
                             <p className="text-xs font-semibold uppercase tracking-wide text-edubot-muted dark:text-slate-400">
-                                Студент бөлүмү
+                                {t('studentDashboard.shell.workspaceSection')}
                             </p>
                             <h2 className="mt-1 text-base font-semibold text-edubot-ink dark:text-white">
-                                {activeWorkspaceGroup.label}
+                                {t(activeWorkspaceGroup.labelKey)}
                             </h2>
                             <p className="mt-1 text-sm text-edubot-muted dark:text-slate-400">
-                                {activeWorkspaceGroup.description}
+                                {t(activeWorkspaceGroup.descriptionKey)}
                             </p>
                         </div>
                         <div className="flex flex-wrap gap-2">

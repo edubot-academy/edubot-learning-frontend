@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { DEFAULT_NOTIFICATION_SETTINGS } from '../utils/studentDashboard.constants.js';
 import {
     isOfflineOrLiveCourse,
@@ -19,6 +20,7 @@ export const useStudentDashboardViewModel = ({
     summary,
     user,
 }) => {
+    const { t } = useTranslation();
     const groupOptions = useMemo(() => {
         const groups = [];
         offerings.forEach((item) => {
@@ -43,10 +45,10 @@ export const useStudentDashboardViewModel = ({
     const overviewStudent = useMemo(
         () => ({
             id: user?.id || null,
-            name: summary?.name || user?.fullName || 'Студент',
+            name: summary?.name || user?.fullName || t('studentDashboard.data.fallbacks.student'),
             lastLesson: summary?.lastLesson || null,
         }),
-        [summary, user]
+        [summary, t, user]
     );
 
     const overviewStats = useMemo(
@@ -136,33 +138,33 @@ export const useStudentDashboardViewModel = ({
         if (accessStateError) {
             return {
                 state: 'unknown',
-                title: 'Окуу мүмкүнчүлүгүн текшерүү мүмкүн болбоду',
-                description: 'Курстар же сабактар көрүнбөй калса, баракты жаңыртып көрүңүз же колдоо кызматына кайрылыңыз.',
+                title: t('studentDashboard.data.access.unknownTitle'),
+                description: t('studentDashboard.data.access.unknownDescription'),
             };
         }
 
         if (!accessLoaded) {
             return {
                 state: 'unloaded',
-                title: 'Окуу мүмкүнчүлүгү текшерилип жатат',
-                description: 'Курстар, сабактар жана прогресс жүктөлгөндөн кийин жеткиликтүүлүк так көрсөтүлөт.',
+                title: t('studentDashboard.data.access.unloadedTitle'),
+                description: t('studentDashboard.data.access.unloadedDescription'),
             };
         }
 
         if (!hasActiveStudentAccess) {
             return {
                 state: 'gated',
-                title: 'Окуу мүмкүнчүлүгү азырынча активдүү эмес',
-                description: 'Сизде активдүү курс же пландагы сабак жок. Төлөм ырасталгандан же каттоо иштетилгенден кийин окуу материалдары ачылат.',
+                title: t('studentDashboard.data.access.gatedTitle'),
+                description: t('studentDashboard.data.access.gatedDescription'),
             };
         }
 
         return {
             state: 'active',
-            title: 'Окуу мүмкүнчүлүгү активдүү',
-            description: 'Активдүү курстарыңыз жана окуу материалдарыңыз жеткиликтүү.',
+            title: t('studentDashboard.data.access.activeTitle'),
+            description: t('studentDashboard.data.access.activeDescription'),
         };
-    }, [accessLoaded, accessStateError, hasActiveStudentAccess]);
+    }, [accessLoaded, accessStateError, hasActiveStudentAccess, t]);
 
     const offeringsByCourse = useMemo(() => {
         const map = new Map();
@@ -188,7 +190,7 @@ export const useStudentDashboardViewModel = ({
                 if (!sectionsMap.has(sectionKey)) {
                     sectionsMap.set(sectionKey, {
                         sectionId: lesson.sectionId,
-                        sectionTitle: lesson.sectionTitle || 'Секция',
+                        sectionTitle: lesson.sectionTitle || t('studentDashboard.data.fallbacks.section'),
                         sectionOrder: lesson.sectionOrder ?? 0,
                         lessons: [],
                     });
@@ -239,7 +241,7 @@ export const useStudentDashboardViewModel = ({
                 );
             return {
                 courseId: item.courseId,
-                courseTitle: item.courseTitle || item.course || 'Course',
+                courseTitle: item.courseTitle || item.course || t('studentDashboard.data.fallbacks.course'),
                 lessonsCompleted: completedLessons,
                 lessonsTotal: totalLessons,
                 progressPercent,
@@ -258,7 +260,7 @@ export const useStudentDashboardViewModel = ({
                 certificateVerificationUrl: certificate?.verificationUrl || null,
             };
         });
-    }, [progress, certificates]);
+    }, [progress, certificates, t]);
 
     const mergedNotificationSettings = useMemo(
         () => ({

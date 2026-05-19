@@ -1,15 +1,18 @@
 import { useCallback, useState } from 'react';
 import toast from 'react-hot-toast';
+import { useTranslation } from 'react-i18next';
 import {
     fetchStudentNotificationSettings,
     fetchUserProfile,
     updateStudentNotificationSettings,
     updateUserProfile,
 } from '@services/api';
+import { parseApiError } from '@shared/api/error';
 import { normalizeUserAvatar } from '@shared/utils/avatar';
 import { DEFAULT_NOTIFICATION_SETTINGS } from '../utils/studentDashboard.constants.js';
 
 export const useStudentProfileSettings = ({ studentId }) => {
+    const { t } = useTranslation();
     const [notificationSettings, setNotificationSettings] = useState(null);
     const [profileData, setProfileData] = useState(null);
     const [profileLoaded, setProfileLoaded] = useState(false);
@@ -30,13 +33,13 @@ export const useStudentProfileSettings = ({ studentId }) => {
             });
         } catch (error) {
             console.error('Failed to load notification settings', error);
-            toast.error('Эскертмелерди жүктөө мүмкүн болбоду');
+            toast.error(parseApiError(error, t('studentDashboard.profile.toasts.notificationsLoadError')).message);
             setNotificationSettings((prev) => prev ?? DEFAULT_NOTIFICATION_SETTINGS);
         } finally {
             setNotificationLoading(false);
             setNotificationsLoaded(true);
         }
-    }, [studentId]);
+    }, [studentId, t]);
 
     const loadProfileData = useCallback(async () => {
         if (!studentId) return;
@@ -46,13 +49,13 @@ export const useStudentProfileSettings = ({ studentId }) => {
             setProfileData(data || null);
         } catch (error) {
             console.error('Failed to load profile data', error);
-            toast.error('Профиль маалыматы жүктөлгөн жок');
+            toast.error(parseApiError(error, t('studentDashboard.profile.toasts.profileLoadError')).message);
             setProfileData(null);
         } finally {
             setProfileLoading(false);
             setProfileLoaded(true);
         }
-    }, [studentId]);
+    }, [studentId, t]);
 
     const handleNotificationChange = useCallback((key, value) => {
         setNotificationSettings((prev) => ({
@@ -75,33 +78,31 @@ export const useStudentProfileSettings = ({ studentId }) => {
                 ...DEFAULT_NOTIFICATION_SETTINGS,
                 ...(updated || {}),
             });
-            toast.success('Эскертмелер сакталды');
+            toast.success(t('studentDashboard.profile.toasts.notificationsSaved'));
         } catch (error) {
             console.error('Failed to save notifications', error);
-            toast.error('Эскертмелерди сактоо мүмкүн болбоду');
+            toast.error(parseApiError(error, t('studentDashboard.profile.toasts.notificationsSaveError')).message);
         } finally {
             setSavingNotifications(false);
         }
-    }, [studentId, notificationSettings]);
+    }, [studentId, notificationSettings, t]);
 
     const handleSaveProfile = useCallback(
         async ({ fullName, phoneNumber, avatarFile, newPassword, confirmPassword }) => {
             if (!studentId) return false;
 
             if (newPassword && newPassword !== confirmPassword) {
-                toast.error('Жаңы сырсөздөр дал келбейт.');
+                toast.error(t('studentDashboard.profile.validation.passwordMismatch'));
                 return false;
             }
             if (newPassword && newPassword.length < 6) {
-                toast.error('Сырсөз кеминде 6 белги болушу керек.');
+                toast.error(t('studentDashboard.profile.validation.passwordTooShort'));
                 return false;
             }
             if (phoneNumber) {
                 const digitsOnly = String(phoneNumber).replace(/\D/g, '');
                 if (digitsOnly.length < 10 || !/^\+\d{10,15}$/.test(String(phoneNumber))) {
-                    toast.error(
-                        'Телефон номери эл аралык форматта болсун. Мисалы: +996700123456'
-                    );
+                    toast.error(t('studentDashboard.profile.validation.phoneInternational'));
                     return false;
                 }
             }
@@ -141,19 +142,17 @@ export const useStudentProfileSettings = ({ studentId }) => {
                     // Profile is already persisted on the backend; local cache sync is best effort.
                 }
 
-                toast.success('Профиль ийгиликтүү жаңыртылды');
+                toast.success(t('studentDashboard.profile.toasts.profileSaved'));
                 return true;
             } catch (error) {
                 console.error('Failed to update profile', error);
-                const rawMessage = error?.response?.data?.message || 'Профилди сактоо мүмкүн болбоду';
-                const message = Array.isArray(rawMessage) ? rawMessage.join(', ') : rawMessage;
-                toast.error(message);
+                toast.error(parseApiError(error, t('studentDashboard.profile.toasts.profileSaveError')).message);
                 return false;
             } finally {
                 setSavingProfile(false);
             }
         },
-        [studentId]
+        [studentId, t]
     );
 
     return {

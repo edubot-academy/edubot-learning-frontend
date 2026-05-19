@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import PropTypes from 'prop-types';
+import { useTranslation } from 'react-i18next';
 import {
     FiCalendar,
     FiDownload,
@@ -27,7 +28,6 @@ import StudentPanelEmpty from '../shared/StudentPanelEmpty.jsx';
 import BasicModal from '@shared/ui/BasicModal';
 import { toast } from 'react-hot-toast';
 import {
-    courseTypeLabel,
     formatSessionDate,
 } from '../../utils/studentDashboard.helpers.js';
 import {
@@ -35,46 +35,47 @@ import {
     fetchStudentSessionMaterialMeta,
     fetchStudentSessionRecordingMeta,
 } from '../../../student/api.js';
+import { parseApiError } from '@shared/api/error';
 
 const MATERIAL_TYPE_META = {
     video: {
-        label: 'Видео',
+        labelKey: 'studentDashboard.resources.materialTypes.video',
         icon: FiVideo,
     },
     image: {
-        label: 'Сүрөт',
+        labelKey: 'studentDashboard.resources.materialTypes.image',
         icon: FiImage,
     },
     file: {
-        label: 'Файл',
+        labelKey: 'studentDashboard.resources.materialTypes.file',
         icon: FiFileText,
     },
     link: {
-        label: 'Шилтеме',
+        labelKey: 'studentDashboard.resources.materialTypes.link',
         icon: FiDownload,
     },
 };
 
 const ACTIVITY_TYPE_META = {
-    discussion: { label: 'Талкуу', icon: FiMessageSquare },
-    exercise: { label: 'Көнүгүү', icon: FiEdit3 },
-    quiz: { label: 'Квиз', icon: FiFileText },
-    group_work: { label: 'Топтук иш', icon: FiUsers },
+    discussion: { labelKey: 'studentDashboard.resources.activityTypes.discussion', icon: FiMessageSquare },
+    exercise: { labelKey: 'studentDashboard.resources.activityTypes.exercise', icon: FiEdit3 },
+    quiz: { labelKey: 'studentDashboard.resources.activityTypes.quiz', icon: FiFileText },
+    group_work: { labelKey: 'studentDashboard.resources.activityTypes.groupWork', icon: FiUsers },
 };
 
 const ACTIVITY_STATUS_META = {
     planned: {
-        label: 'Пландалды',
+        labelKey: 'studentDashboard.resources.activityStatuses.planned',
         className:
             'border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-500/30 dark:bg-sky-500/10 dark:text-sky-300',
     },
     active: {
-        label: 'Жүрүп жатат',
+        labelKey: 'studentDashboard.resources.activityStatuses.active',
         className:
             'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300',
     },
     done: {
-        label: 'Аяктады',
+        labelKey: 'studentDashboard.resources.activityStatuses.done',
         className:
             'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300',
     },
@@ -91,6 +92,7 @@ const detectPreviewKind = (contentType = '', fallbackType = 'link') => {
 };
 
 const ResourcesTab = ({ items, onOpenTasks }) => {
+    const { i18n, t } = useTranslation();
     const [query, setQuery] = useState('');
     const [typeFilter, setTypeFilter] = useState('all');
     const [selectedSessionId, setSelectedSessionId] = useState('');
@@ -176,10 +178,10 @@ const ResourcesTab = ({ items, onOpenTasks }) => {
             });
         } catch (error) {
             console.error('Failed to preview student material', error);
-            toast.error('Материалды ачуу мүмкүн болбоду');
+            toast.error(parseApiError(error, t('studentDashboard.resources.toasts.openMaterialError')).message);
             closePreview();
         }
-    }, [closePreview]);
+    }, [closePreview, t]);
 
     const openRecordingPreview = useCallback(async (sessionId, title, directUrl = '') => {
         try {
@@ -214,9 +216,9 @@ const ResourcesTab = ({ items, onOpenTasks }) => {
                 });
                 return;
             }
-            toast.error('Жазууну ачуу мүмкүн болбоду');
+            toast.error(parseApiError(error, t('studentDashboard.resources.toasts.openRecordingError')).message);
         }
-    }, []);
+    }, [t]);
 
     const resourceView = useMemo(
         () =>
@@ -311,24 +313,44 @@ const ResourcesTab = ({ items, onOpenTasks }) => {
         () =>
             filteredItems.map((item) => ({
                 value: String(item.sessionId),
-                label: `${item.sessionTitle} • ${formatSessionDate(item.startsAt)}`,
+                label: `${item.sessionTitle} • ${formatSessionDate(item.startsAt, {
+                    language: i18n.language,
+                    fallback: t('studentDashboard.resources.fallbacks.unknownTime'),
+                })}`,
             })),
-        [filteredItems]
+        [filteredItems, i18n.language, t]
+    );
+
+    const getCourseTypeLabel = useCallback(
+        (type) => {
+            if (type === 'offline') return t('studentDashboard.resources.courseTypes.offline');
+            if (type === 'online_live') return t('studentDashboard.resources.courseTypes.onlineLive');
+            return t('studentDashboard.resources.courseTypes.video');
+        },
+        [t]
+    );
+
+    const recordingTitle = useCallback(
+        (sessionTitle) =>
+            t('studentDashboard.resources.recordingTitle', {
+                title: sessionTitle,
+            }),
+        [t]
     );
 
     if (!resourceView.length) {
         return (
             <DashboardWorkspaceHero
                 className="dashboard-panel"
-                eyebrow="Student Resources"
-                title="Ресурстар"
-                description="Сессия материалдары, жазуулар жана live join маалыматтары ушул жерге чогулат."
+                eyebrow={t('studentDashboard.resources.eyebrow')}
+                title={t('studentDashboard.resources.title')}
+                description={t('studentDashboard.resources.emptyHeroDescription')}
             >
                 <div className="p-6">
                     <StudentPanelEmpty
                         icon={FiFolder}
-                        title="Азырынча ресурс жок"
-                        description="Материалдар же жазуулар кошулганда, алар бул жерде көрүнөт."
+                        title={t('studentDashboard.resources.empty.title')}
+                        description={t('studentDashboard.resources.empty.description')}
                     />
                 </div>
             </DashboardWorkspaceHero>
@@ -339,15 +361,15 @@ const ResourcesTab = ({ items, onOpenTasks }) => {
         <div className="space-y-6">
             <DashboardWorkspaceHero
                 className="dashboard-panel"
-                eyebrow="Student Resources"
-                title="Сессия ресурстары"
-                description="Мугалим бөлүшкөн материалдарды, сабак жазууларын жана кошулуу маалыматтарын бир жерден табыңыз."
+                eyebrow={t('studentDashboard.resources.eyebrow')}
+                title={t('studentDashboard.resources.sessionTitle')}
+                description={t('studentDashboard.resources.description')}
                 metrics={
                     <>
-                        <DashboardMetricCard label="Сессиялар" value={stats.sessions} icon={FiCalendar} />
-                        <DashboardMetricCard label="Материалдар" value={stats.materials} icon={FiFolder} tone="blue" />
-                        <DashboardMetricCard label="Жазуулар" value={stats.recordings} icon={FiVideo} tone="green" />
-                        <DashboardMetricCard label="Live" value={stats.live} icon={FiRadio} tone="amber" />
+                        <DashboardMetricCard label={t('studentDashboard.resources.metrics.sessions')} value={stats.sessions} icon={FiCalendar} />
+                        <DashboardMetricCard label={t('studentDashboard.resources.metrics.materials')} value={stats.materials} icon={FiFolder} tone="blue" />
+                        <DashboardMetricCard label={t('studentDashboard.resources.metrics.recordings')} value={stats.recordings} icon={FiVideo} tone="green" />
+                        <DashboardMetricCard label={t('studentDashboard.resources.metrics.live')} value={stats.live} icon={FiRadio} tone="amber" />
                     </>
                 }
             >
@@ -357,7 +379,7 @@ const ResourcesTab = ({ items, onOpenTasks }) => {
                         <input
                             value={query}
                             onChange={(e) => setQuery(e.target.value)}
-                            placeholder="Сессия, курс же материал боюнча издөө"
+                            placeholder={t('studentDashboard.resources.searchPlaceholder')}
                             className="dashboard-field dashboard-field-icon"
                         />
                     </label>
@@ -369,9 +391,9 @@ const ResourcesTab = ({ items, onOpenTasks }) => {
                             onChange={(e) => setTypeFilter(e.target.value)}
                             className="dashboard-field dashboard-field-icon dashboard-select"
                         >
-                            <option value="all">Бардык типтер</option>
-                            <option value="offline">Оффлайн</option>
-                            <option value="online_live">Онлайн түз эфир</option>
+                            <option value="all">{t('studentDashboard.resources.filters.allTypes')}</option>
+                            <option value="offline">{t('studentDashboard.resources.courseTypes.offline')}</option>
+                            <option value="online_live">{t('studentDashboard.resources.courseTypes.onlineLive')}</option>
                         </select>
                     </label>
                 </DashboardFilterBar>
@@ -380,8 +402,8 @@ const ResourcesTab = ({ items, onOpenTasks }) => {
                     {filteredItems.length && selectedItem ? (
                         <>
                             <DashboardInsetPanel
-                                title="Сессияны тандаңыз"
-                                description="Бир сессияны тандап, анын материалдарын жана жазууларын көрүңүз."
+                                title={t('studentDashboard.resources.selectSession.title')}
+                                description={t('studentDashboard.resources.selectSession.description')}
                             >
                                 <div className="space-y-3">
                                     <select
@@ -425,19 +447,22 @@ const ResourcesTab = ({ items, onOpenTasks }) => {
                                                 {selectedItem.sessionTitle}
                                             </h3>
                                             <StatusBadge tone="default">
-                                                {courseTypeLabel(selectedItem.courseType)}
+                                                {getCourseTypeLabel(selectedItem.courseType)}
                                             </StatusBadge>
                                             {selectedItem.status === 'completed' ? (
-                                                <StatusBadge tone="default">Жабылды</StatusBadge>
+                                                <StatusBadge tone="default">{t('studentDashboard.resources.statuses.completed')}</StatusBadge>
                                             ) : null}
                                         </div>
 
                                         <div className="flex flex-wrap gap-x-4 gap-y-2 text-sm text-edubot-muted dark:text-slate-400">
                                             <span className="inline-flex items-center gap-2">
                                                 <FiCalendar className="h-4 w-4" />
-                                                {formatSessionDate(selectedItem.startsAt)}
+                                                {formatSessionDate(selectedItem.startsAt, {
+                                                    language: i18n.language,
+                                                    fallback: t('studentDashboard.resources.fallbacks.unknownTime'),
+                                                })}
                                             </span>
-                                            <span>{selectedItem.courseTitle || 'Курс'}</span>
+                                            <span>{selectedItem.courseTitle || t('studentDashboard.resources.fallbacks.course')}</span>
                                             {selectedItem.groupName ? <span>{selectedItem.groupName}</span> : null}
                                             {selectedItem.instructorName ? <span>{selectedItem.instructorName}</span> : null}
                                             {selectedItem.hasLocation ? (
@@ -451,8 +476,8 @@ const ResourcesTab = ({ items, onOpenTasks }) => {
 
                                     <div className="w-full xl:w-[16rem]">
                                         <DashboardInsetPanel
-                                            title="Тез аракеттер"
-                                            description="Бул сессияга тиешелүү негизги шилтемелер."
+                                            title={t('studentDashboard.resources.quickActions.title')}
+                                            description={t('studentDashboard.resources.quickActions.description')}
                                         >
                                             <div className="space-y-3">
                                                 {selectedItem.liveJoinUrl ? (
@@ -463,7 +488,7 @@ const ResourcesTab = ({ items, onOpenTasks }) => {
                                                         className="dashboard-button-primary w-full"
                                                     >
                                                         <FiPlayCircle className="h-4 w-4" />
-                                                        Сабакка кошулуу
+                                                        {t('studentDashboard.resources.actions.joinLesson')}
                                                     </a>
                                                 ) : null}
                                                 {selectedItem.recordingUrl ? (
@@ -472,19 +497,19 @@ const ResourcesTab = ({ items, onOpenTasks }) => {
                                                         onClick={() =>
                                                             openRecordingPreview(
                                                                 selectedItem.sessionId,
-                                                                `${selectedItem.sessionTitle} — Жазуу`,
+                                                                recordingTitle(selectedItem.sessionTitle),
                                                                 selectedItem.recordingUrl
                                                             )
                                                         }
                                                         className="dashboard-button-secondary w-full"
                                                     >
                                                         <FiVideo className="h-4 w-4" />
-                                                        Жазууну көрүү
+                                                        {t('studentDashboard.resources.actions.viewRecording')}
                                                     </button>
                                                 ) : null}
                                                 {!selectedItem.liveJoinUrl && !selectedItem.recordingUrl ? (
                                                     <div className="text-sm text-edubot-muted dark:text-slate-400">
-                                                        Азырынча түз аракет жок.
+                                                        {t('studentDashboard.resources.quickActions.empty')}
                                                     </div>
                                                 ) : null}
                                             </div>
@@ -494,11 +519,13 @@ const ResourcesTab = ({ items, onOpenTasks }) => {
 
                                 <div className="mt-5 grid gap-4 xl:grid-cols-[minmax(0,1fr),minmax(0,1fr)]">
                                     <DashboardInsetPanel
-                                        title="Материалдар"
+                                        title={t('studentDashboard.resources.materials.title')}
                                         description={
                                             selectedItem.materials.length
-                                                ? `${selectedItem.materials.length} материал жеткиликтүү`
-                                                : 'Бул сессияга материал азырынча кошулган эмес'
+                                                ? t('studentDashboard.resources.materials.available', {
+                                                      count: selectedItem.materials.length,
+                                                  })
+                                                : t('studentDashboard.resources.materials.emptyDescription')
                                         }
                                     >
                                         {selectedItem.materials.length ? (
@@ -532,7 +559,7 @@ const ResourcesTab = ({ items, onOpenTasks }) => {
                                                                         {material.title}
                                                                     </span>
                                                                     <span className="block text-xs text-edubot-muted dark:text-slate-400">
-                                                                        {meta.label}
+                                                                        {t(meta.labelKey)}
                                                                     </span>
                                                                 </span>
                                                             </span>
@@ -547,14 +574,14 @@ const ResourcesTab = ({ items, onOpenTasks }) => {
                                             </div>
                                         ) : (
                                             <div className="text-sm text-edubot-muted dark:text-slate-400">
-                                                Бул сессия үчүн материал азырынча жок.
+                                                {t('studentDashboard.resources.materials.empty')}
                                             </div>
                                         )}
                                     </DashboardInsetPanel>
 
                                     <DashboardInsetPanel
-                                        title="Жазуу жана контекст"
-                                        description="Жазуулар жана логистикалык маалымат."
+                                        title={t('studentDashboard.resources.recordingContext.title')}
+                                        description={t('studentDashboard.resources.recordingContext.description')}
                                     >
                                         <div className="space-y-3 text-sm">
                                             {selectedItem.recordingUrl ? (
@@ -563,7 +590,7 @@ const ResourcesTab = ({ items, onOpenTasks }) => {
                                                     onClick={() =>
                                                         openRecordingPreview(
                                                             selectedItem.sessionId,
-                                                            `${selectedItem.sessionTitle} — Жазуу`,
+                                                            recordingTitle(selectedItem.sessionTitle),
                                                             selectedItem.recordingUrl
                                                         )
                                                     }
@@ -571,23 +598,23 @@ const ResourcesTab = ({ items, onOpenTasks }) => {
                                                 >
                                                     <span className="inline-flex items-center gap-3">
                                                         <FiVideo className="h-4 w-4" />
-                                                        Сабактын жазуусу
+                                                        {t('studentDashboard.resources.recordingContext.lessonRecording')}
                                                     </span>
                                                     <FiPlayCircle className="h-4 w-4" />
                                                 </button>
                                             ) : (
                                                 <div className="rounded-2xl border border-edubot-line/70 bg-white/80 px-4 py-3 text-edubot-muted dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400">
-                                                    Жазуу азырынча жок.
+                                                    {t('studentDashboard.resources.recordingContext.noRecording')}
                                                 </div>
                                             )}
 
                                             {selectedItem.courseType === 'offline' ? (
                                                 <div className="rounded-2xl border border-edubot-line/70 bg-white/80 px-4 py-3 text-edubot-muted dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
                                                     <div className="font-medium text-edubot-ink dark:text-white">
-                                                        Оффлайн жолугушуу
+                                                        {t('studentDashboard.resources.recordingContext.offlineMeeting')}
                                                     </div>
                                                     <div className="mt-1">
-                                                        {selectedItem.location || 'Жайгашкан жер али көрсөтүлгөн эмес.'}
+                                                        {selectedItem.location || t('studentDashboard.resources.recordingContext.noLocation')}
                                                     </div>
                                                 </div>
                                             ) : null}
@@ -596,13 +623,13 @@ const ResourcesTab = ({ items, onOpenTasks }) => {
                                 </div>
 
                                 <DashboardInsetPanel
-                                    title="Сессиядагы иштер"
-                                    description="Мугалим ушул сессия үчүн белгилеген иштер. Контекст бул жерде көрүнөт, аткаруу болсо `Тапшырмалар` бөлүмүндө жүрөт."
+                                    title={t('studentDashboard.resources.activities.title')}
+                                    description={t('studentDashboard.resources.activities.description')}
                                 >
                                     {Array.isArray(selectedItem.activities) && selectedItem.activities.length ? (
                                         <div className="mt-4 space-y-3">
                                             <div className="rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-800 dark:border-sky-500/30 dark:bg-sky-500/10 dark:text-sky-200">
-                                                Бул бөлүмдө сессия иштери көрүнөт. Аткарыла турган quiz жана башка иштер `Тапшырмалар` бөлүмүндө ачылат.
+                                                {t('studentDashboard.resources.activities.notice')}
                                             </div>
                                             {selectedItem.activities.map((activity, index) => {
                                                 const typeMeta = ACTIVITY_TYPE_META[activity.type] || ACTIVITY_TYPE_META.discussion;
@@ -633,10 +660,12 @@ const ResourcesTab = ({ items, onOpenTasks }) => {
                                                                     <div className="mt-3 rounded-2xl border border-edubot-line/70 bg-edubot-surface/60 p-3 dark:border-slate-700 dark:bg-slate-950/50">
                                                                         <div className="flex flex-wrap items-center gap-2">
                                                                             <span className="rounded-full border border-edubot-line/80 bg-white px-3 py-1 text-xs font-semibold text-edubot-muted dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300">
-                                                                                {activity.questions.length} суроо
+                                                                                {t('studentDashboard.resources.activities.questionCount', {
+                                                                                    count: activity.questions.length,
+                                                                                })}
                                                                             </span>
                                                                             <span className="rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300">
-                                                                                Жооптор `Тапшырмалар` бөлүмүндө ачылат
+                                                                                {t('studentDashboard.resources.activities.answersInTasks')}
                                                                             </span>
                                                                         </div>
                                                                         <div className="mt-3 space-y-2">
@@ -645,13 +674,15 @@ const ResourcesTab = ({ items, onOpenTasks }) => {
                                                                                     key={`${selectedItem.sessionId}-activity-${index}-question-${question.id || questionIndex}`}
                                                                                     className="rounded-xl border border-edubot-line/60 bg-white/80 px-3 py-2 text-sm text-edubot-ink dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200"
                                                                                 >
-                                                                                    <span className="font-semibold">Суроо #{questionIndex + 1}:</span>{' '}
+                                                                                    <span className="font-semibold">{t('studentDashboard.resources.activities.questionLabel', { number: questionIndex + 1 })}:</span>{' '}
                                                                                     {question.prompt}
                                                                                 </div>
                                                                             ))}
                                                                             {activity.questions.length > 3 ? (
                                                                                 <div className="text-xs text-edubot-muted dark:text-slate-400">
-                                                                                    Дагы {activity.questions.length - 3} суроо бар. Толук аткаруу үчүн `Тапшырмалар` бөлүмүнө өтүңүз.
+                                                                                    {t('studentDashboard.resources.activities.moreQuestions', {
+                                                                                        count: activity.questions.length - 3,
+                                                                                    })}
                                                                                 </div>
                                                                             ) : null}
                                                                         </div>
@@ -661,30 +692,30 @@ const ResourcesTab = ({ items, onOpenTasks }) => {
                                                                 {isActionable ? (
                                                                     <div className="mt-3 flex flex-wrap items-center gap-3">
                                                                         <div className="text-sm text-edubot-muted dark:text-slate-400">
-                                                                            Бул ишти аткаруу үчүн `Тапшырмалар` бөлүмүнө өтүңүз.
+                                                                            {t('studentDashboard.resources.activities.openInTasksHint')}
                                                                         </div>
                                                                         <button
                                                                             type="button"
                                                                             onClick={onOpenTasks}
                                                                             className="inline-flex items-center rounded-full border border-edubot-orange/30 bg-edubot-orange/10 px-3 py-1.5 text-sm font-semibold text-edubot-orange transition hover:border-edubot-orange hover:bg-edubot-orange/15 dark:border-edubot-orange/40 dark:bg-edubot-orange/15"
                                                                         >
-                                                                            Тапшырмалардан ачуу
+                                                                            {t('studentDashboard.resources.actions.openTasks')}
                                                                         </button>
                                                                     </div>
                                                                 ) : null}
 
                                                                 {isClosed ? (
                                                                     <div className="mt-3 text-sm text-edubot-muted dark:text-slate-400">
-                                                                        Бул иш жабык. Эгер жообуңуз же натыйжаңыз болсо, ал `Тапшырмалар` бөлүмүндө көрүнөт.
+                                                                        {t('studentDashboard.resources.activities.closedHint')}
                                                                     </div>
                                                                 ) : null}
                                                             </div>
                                                             <div className="flex flex-wrap gap-2">
                                                                 <span className="rounded-full border border-edubot-orange/30 bg-edubot-orange/10 px-3 py-1 text-xs font-semibold text-edubot-orange dark:border-edubot-orange/40 dark:bg-edubot-orange/15">
-                                                                    {typeMeta.label}
+                                                                    {t(typeMeta.labelKey)}
                                                                 </span>
                                                                 <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${statusMeta.className}`}>
-                                                                    {statusMeta.label}
+                                                                    {t(statusMeta.labelKey)}
                                                                 </span>
                                                             </div>
                                                         </div>
@@ -694,7 +725,7 @@ const ResourcesTab = ({ items, onOpenTasks }) => {
                                         </div>
                                     ) : (
                                         <div className="mt-4 rounded-2xl border border-dashed border-edubot-line/70 px-4 py-6 text-sm text-edubot-muted dark:border-slate-700 dark:text-slate-400">
-                                            Бул сессия үчүн өзүнчө иштер азырынча кошулган эмес.
+                                            {t('studentDashboard.resources.activities.empty')}
                                         </div>
                                     )}
                                 </DashboardInsetPanel>
@@ -703,8 +734,8 @@ const ResourcesTab = ({ items, onOpenTasks }) => {
                     ) : (
                         <StudentPanelEmpty
                             icon={FiSearch}
-                            title="Ресурс табылган жок"
-                            description="Издөө же фильтрди өзгөртүп көрүңүз."
+                            title={t('studentDashboard.resources.empty.noResultTitle')}
+                            description={t('studentDashboard.resources.empty.noResultDescription')}
                         />
                     )}
                 </div>
@@ -713,16 +744,16 @@ const ResourcesTab = ({ items, onOpenTasks }) => {
             <BasicModal
                 isOpen={previewState.open}
                 onClose={closePreview}
-                title={previewState.title || 'Ресурс'}
+                title={previewState.title || t('studentDashboard.resources.fallbacks.resource')}
                 size="2xl"
             >
                 {previewState.loading ? (
                     <div className="flex min-h-[16rem] items-center justify-center text-sm text-edubot-muted dark:text-slate-400">
-                        Жүктөлүүдө...
+                        {t('common.loading')}...
                     </div>
                 ) : !previewState.objectUrl ? (
                     <div className="flex min-h-[16rem] items-center justify-center text-sm text-edubot-muted dark:text-slate-400">
-                        Алдын ала көрүү жеткиликтүү эмес.
+                        {t('studentDashboard.resources.preview.unavailable')}
                     </div>
                 ) : previewState.kind === 'video' ? (
                     <div className="flex justify-center">
@@ -732,7 +763,7 @@ const ResourcesTab = ({ items, onOpenTasks }) => {
                             className="max-h-[70vh] w-full rounded-2xl bg-black"
                             src={previewState.objectUrl}
                         >
-                            Сиздин браузер видеону колдобойт.
+                            {t('studentDashboard.resources.preview.videoUnsupported')}
                         </video>
                     </div>
                 ) : previewState.kind === 'image' ? (
@@ -762,7 +793,7 @@ const ResourcesTab = ({ items, onOpenTasks }) => {
                 ) : (
                     <div className="space-y-4 text-center">
                         <p className="text-sm text-edubot-muted dark:text-slate-400">
-                            Бул файлды браузерде түз көрүү жеткиликтүү эмес.
+                            {t('studentDashboard.resources.preview.directViewUnavailable')}
                         </p>
                         <a
                             href={previewState.objectUrl}
@@ -770,7 +801,7 @@ const ResourcesTab = ({ items, onOpenTasks }) => {
                             className="dashboard-button-primary inline-flex"
                         >
                             <FiDownload className="h-4 w-4" />
-                            Жүктөп алуу
+                            {t('studentDashboard.resources.actions.download')}
                         </a>
                     </div>
                 )}

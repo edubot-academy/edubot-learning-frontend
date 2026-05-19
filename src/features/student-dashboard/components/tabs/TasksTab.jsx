@@ -24,11 +24,13 @@ import {
 } from '../../../../components/ui/dashboard';
 import BasicModal from '@shared/ui/BasicModal';
 import { toast } from 'react-hot-toast';
+import { useTranslation } from 'react-i18next';
 import { getTaskKey, resolveSessionHomeworkIds } from '../../utils/studentDashboard.helpers.js';
 import {
     fetchStudentActivitySubmissionAttachmentPreview,
     fetchStudentHomeworkSubmissionAttachmentPreview,
 } from '../../../student/api.js';
+import { parseApiError } from '@shared/api/error';
 
 const MAX_HOMEWORK_FILE_SIZE_BYTES = 20 * 1024 * 1024;
 const ALLOWED_HOMEWORK_FILE_EXTENSIONS = new Set(['pdf', 'doc', 'docx']);
@@ -36,49 +38,49 @@ const ALLOWED_ACTIVITY_FILE_EXTENSIONS = new Set(['pdf', 'doc', 'docx']);
 
 const STATUS_META = {
     overdue: {
-        label: 'Мөөнөт өттү',
+        labelKey: 'studentDashboard.tasks.statuses.overdue',
         badgeClass:
             'border-red-200 bg-red-50 text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300',
         accentClass: 'border-red-300/90 dark:border-red-500/40',
         icon: FiAlertCircle,
     },
     pending: {
-        label: 'Күтүүдө',
+        labelKey: 'studentDashboard.tasks.statuses.pending',
         badgeClass:
             'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300',
         accentClass: 'border-amber-200/90 dark:border-amber-500/30',
         icon: FiClock,
     },
     submitted: {
-        label: 'Жөнөтүлдү',
+        labelKey: 'studentDashboard.tasks.statuses.submitted',
         badgeClass:
             'border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-500/30 dark:bg-sky-500/10 dark:text-sky-300',
         accentClass: 'border-sky-200/90 dark:border-sky-500/30',
         icon: FiSend,
     },
     needs_revision: {
-        label: 'Оңдотуу керек',
+        labelKey: 'studentDashboard.tasks.statuses.needsRevision',
         badgeClass:
             'border-orange-200 bg-orange-50 text-orange-700 dark:border-orange-500/30 dark:bg-orange-500/10 dark:text-orange-300',
         accentClass: 'border-orange-200/90 dark:border-orange-500/30',
         icon: FiEdit3,
     },
     rejected: {
-        label: 'Кайтарылды',
+        labelKey: 'studentDashboard.tasks.statuses.rejected',
         badgeClass:
             'border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-300',
         accentClass: 'border-rose-200/90 dark:border-rose-500/30',
         icon: FiAlertCircle,
     },
     completed: {
-        label: 'Бекитилди',
+        labelKey: 'studentDashboard.tasks.statuses.completed',
         badgeClass:
             'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300',
         accentClass: 'border-emerald-200/90 dark:border-emerald-500/30',
         icon: FiCheckCircle,
     },
     unavailable: {
-        label: 'Туташкан эмес',
+        labelKey: 'studentDashboard.tasks.statuses.unavailable',
         badgeClass:
             'border-slate-200 bg-slate-50 text-slate-600 dark:border-slate-700 dark:bg-slate-800/70 dark:text-slate-300',
         accentClass: 'border-slate-200/90 dark:border-slate-700',
@@ -86,11 +88,11 @@ const STATUS_META = {
     },
 };
 
-const ACTIVITY_TYPE_LABEL = {
-    discussion: 'Талкуу',
-    exercise: 'Көнүгүү',
-    quiz: 'Квиз',
-    group_work: 'Топтук иш',
+const ACTIVITY_TYPE_LABEL_KEY = {
+    discussion: 'studentDashboard.tasks.activityTypes.discussion',
+    exercise: 'studentDashboard.tasks.activityTypes.exercise',
+    quiz: 'studentDashboard.tasks.activityTypes.quiz',
+    group_work: 'studentDashboard.tasks.activityTypes.groupWork',
 };
 
 const ACTIVITY_TYPE_META = {
@@ -125,20 +127,20 @@ const ACTIVITY_TYPE_META = {
 };
 
 const ACTIVITY_REVIEW_STATUS_LABEL = {
-    submitted: 'Текшерилип жатат',
-    approved: 'Бекитилди',
-    needs_revision: 'Оңдотуу керек',
-    rejected: 'Кайтарылды',
+    submitted: 'studentDashboard.tasks.reviewStatuses.submitted',
+    approved: 'studentDashboard.tasks.reviewStatuses.approved',
+    needs_revision: 'studentDashboard.tasks.reviewStatuses.needsRevision',
+    rejected: 'studentDashboard.tasks.reviewStatuses.rejected',
 };
 
-const formatTaskDate = (task = {}) => {
+const formatTaskDate = (task = {}, t, language) => {
     const raw = task.dueAt || task.deadline || task.due || task.submittedAt;
-    if (!raw) return 'Мөөнөт көрсөтүлгөн эмес';
+    if (!raw) return t('studentDashboard.tasks.fallbacks.noDueDate');
 
     const parsed = new Date(raw);
     if (Number.isNaN(parsed.getTime())) return String(raw);
 
-    return parsed.toLocaleString('ru-RU', {
+    return parsed.toLocaleString(language || undefined, {
         day: '2-digit',
         month: 'short',
         year: 'numeric',
@@ -147,28 +149,28 @@ const formatTaskDate = (task = {}) => {
     });
 };
 
-const formatSubmissionType = (submission = {}) => {
-    if (submission.attachmentUrl) return 'Файл же шилтеме тиркелген';
-    if (submission.answerText) return 'Текст жооп';
-    return 'Жооп берилген';
+const formatSubmissionType = (submission = {}, t) => {
+    if (submission.attachmentUrl) return t('studentDashboard.tasks.submissionTypes.attachment');
+    if (submission.answerText) return t('studentDashboard.tasks.submissionTypes.text');
+    return t('studentDashboard.tasks.submissionTypes.answer');
 };
 
-const formatSubmissionThreadLabel = (message = {}) => {
-    if (message.authorRole === 'student') return 'Сиз';
-    if (message.kind === 'review') return 'Мугалим';
-    return 'Жооп';
+const formatSubmissionThreadLabel = (message = {}, t) => {
+    if (message.authorRole === 'student') return t('studentDashboard.tasks.thread.student');
+    if (message.kind === 'review') return t('studentDashboard.tasks.thread.teacher');
+    return t('studentDashboard.tasks.thread.answer');
 };
 
-const getTaskCourse = (task = {}) => task.courseTitle || task.course || 'Белгисиз курс';
+const getTaskCourse = (task = {}, t) => task.courseTitle || task.course || t('studentDashboard.tasks.fallbacks.course');
 
-const getTaskTitle = (task = {}) => task.title || task.name || 'Тапшырма';
+const getTaskTitle = (task = {}, t) => task.title || task.name || t('studentDashboard.tasks.fallbacks.taskTitle');
 
-const getTaskDescription = (task = {}) =>
+const getTaskDescription = (task = {}, t) =>
     task.description ||
     task.instructions ||
     task.prompt ||
     task.text ||
-    'Тапшырма сүрөттөмөсү азырынча берилген эмес.';
+    t('studentDashboard.tasks.fallbacks.description');
 
 const formatBytes = (value) => {
     if (!Number.isFinite(value) || value <= 0) return '0 B';
@@ -182,7 +184,7 @@ const formatBytes = (value) => {
     return `${size.toFixed(size >= 10 || index === 0 ? 0 : 1)} ${units[index]}`;
 };
 
-const validateSubmissionFile = (file, task = {}) => {
+const validateSubmissionFile = (file, task = {}, t) => {
     if (!(file instanceof File)) return { valid: true };
 
     const extension = file.name.split('.').pop()?.toLowerCase() || '';
@@ -192,15 +194,17 @@ const validateSubmissionFile = (file, task = {}) => {
         return {
             valid: false,
             message: isActivityAttachment
-                ? 'Активдүүлүк үчүн PDF же Word файлын тандаңыз.'
-                : 'Тапшырма үчүн PDF же Word файлын тандаңыз.',
+                ? t('studentDashboard.tasks.validation.activityFileType')
+                : t('studentDashboard.tasks.validation.homeworkFileType'),
         };
     }
 
     if (file.size > MAX_HOMEWORK_FILE_SIZE_BYTES) {
         return {
             valid: false,
-            message: `Файл өтө чоң. Максималдуу көлөм ${formatBytes(MAX_HOMEWORK_FILE_SIZE_BYTES)}.`,
+            message: t('studentDashboard.tasks.validation.fileTooLarge', {
+                size: formatBytes(MAX_HOMEWORK_FILE_SIZE_BYTES),
+            }),
         };
     }
 
@@ -250,6 +254,7 @@ const detectPreviewKind = (contentType = '') => {
 };
 
 const TasksTab = ({ tasks, onSubmitHomework, submittingTaskState }) => {
+    const { i18n, t } = useTranslation();
     const [drafts, setDrafts] = useState({});
     const [statusFilter, setStatusFilter] = useState('all');
     const [courseFilter, setCourseFilter] = useState('all');
@@ -319,11 +324,11 @@ const TasksTab = ({ tasks, onSubmitHomework, submittingTaskState }) => {
                 });
             } catch (error) {
                 console.error('Failed to preview homework attachment', error);
-                toast.error('Тиркемени ачуу мүмкүн болбоду');
+                toast.error(parseApiError(error, t('studentDashboard.tasks.toasts.openAttachmentError')).message);
                 closePreview();
             }
         },
-        [closePreview]
+        [closePreview, t]
     );
 
     const taskView = useMemo(
@@ -332,9 +337,9 @@ const TasksTab = ({ tasks, onSubmitHomework, submittingTaskState }) => {
                 const key = getTaskKey(task);
                 const status = getNormalizedStatus(task);
                 const meta = STATUS_META[status];
-                const course = getTaskCourse(task);
-                const title = getTaskTitle(task);
-                const description = getTaskDescription(task);
+                const course = getTaskCourse(task, t);
+                const title = getTaskTitle(task, t);
+                const description = getTaskDescription(task, t);
                 const ids = resolveSessionHomeworkIds(task);
 
                 return {
@@ -349,7 +354,7 @@ const TasksTab = ({ tasks, onSubmitHomework, submittingTaskState }) => {
                     course,
                     title,
                     description,
-                    dateLabel: formatTaskDate(task),
+                    dateLabel: formatTaskDate(task, t, i18n.language),
                     canSubmit:
                         task.kind === 'activity'
                             ? task.activityStatus === 'active'
@@ -357,7 +362,7 @@ const TasksTab = ({ tasks, onSubmitHomework, submittingTaskState }) => {
                     isDone: status === 'completed' || status === 'submitted',
                 };
             }),
-        [tasks]
+        [i18n.language, tasks, t]
     );
 
     const courseOptions = useMemo(
@@ -417,7 +422,7 @@ const TasksTab = ({ tasks, onSubmitHomework, submittingTaskState }) => {
 
     const handleFileChange = (taskKey, task, file) => {
         const nextFile = file || null;
-        const validation = validateSubmissionFile(nextFile, task);
+        const validation = validateSubmissionFile(nextFile, task, t);
 
         if (!validation.valid) {
             updateDraft(taskKey, 'file', null);
@@ -447,38 +452,38 @@ const TasksTab = ({ tasks, onSubmitHomework, submittingTaskState }) => {
         <div className="space-y-6">
             <DashboardWorkspaceHero
                 className="dashboard-panel"
-                eyebrow="Student Tasks"
-                title="Тапшырмалар иш мейкиндиги"
-                description="Тапшырмалардын абалын көрүңүз, мөөнөттөрдү байкаңыз жана жоопторду ушул эле жерден жөнөтүңүз."
+                eyebrow={t('studentDashboard.tasks.eyebrow')}
+                title={t('studentDashboard.tasks.title')}
+                description={t('studentDashboard.tasks.description')}
                 metrics={(
                     <>
-                            <DashboardMetricCard label="Жалпы" value={stats.total} icon={FiBookOpen} />
+                            <DashboardMetricCard label={t('studentDashboard.tasks.metrics.total')} value={stats.total} icon={FiBookOpen} />
                             <DashboardMetricCard
-                                label="Күтүүдө"
+                                label={t('studentDashboard.tasks.metrics.pending')}
                                 value={stats.pending}
                                 tone="amber"
                                 icon={FiClock}
                             />
                             <DashboardMetricCard
-                                label="Мөөнөт өттү"
+                                label={t('studentDashboard.tasks.metrics.overdue')}
                                 value={stats.overdue}
                                 tone="red"
                                 icon={FiAlertCircle}
                             />
                             <DashboardMetricCard
-                                label="Оңдотуу керек"
+                                label={t('studentDashboard.tasks.metrics.needsRevision')}
                                 value={stats.needsRevision}
                                 tone="amber"
                                 icon={FiEdit3}
                             />
                             <DashboardMetricCard
-                                label="Текшерилип жатат"
+                                label={t('studentDashboard.tasks.metrics.submitted')}
                                 value={stats.submitted}
                                 tone="blue"
                                 icon={FiSend}
                             />
                             <DashboardMetricCard
-                                label="Бекитилди"
+                                label={t('studentDashboard.tasks.metrics.approved')}
                                 value={stats.approved}
                                 tone="green"
                                 icon={FiCheckCircle}
@@ -492,7 +497,7 @@ const TasksTab = ({ tasks, onSubmitHomework, submittingTaskState }) => {
                         <input
                             value={query}
                             onChange={(e) => setQuery(e.target.value)}
-                            placeholder="Тапшырма же курс боюнча издөө"
+                            placeholder={t('studentDashboard.tasks.searchPlaceholder')}
                             className="dashboard-field dashboard-field-icon"
                         />
                     </label>
@@ -504,15 +509,15 @@ const TasksTab = ({ tasks, onSubmitHomework, submittingTaskState }) => {
                             onChange={(e) => setStatusFilter(e.target.value)}
                             className="dashboard-field dashboard-field-icon dashboard-select"
                         >
-                            <option value="attention">Иш-аракет керек</option>
-                            <option value="all">Бардык статустар</option>
-                            <option value="pending">Күтүүдө</option>
-                            <option value="submitted">Жөнөтүлгөн</option>
-                            <option value="needs_revision">Оңдотуу керек</option>
-                            <option value="completed">Жабылган</option>
-                            <option value="rejected">Кайтарылды</option>
-                            <option value="overdue">Мөөнөт өттү</option>
-                            <option value="unavailable">Туташкан эмес</option>
+                            <option value="attention">{t('studentDashboard.tasks.filters.attention')}</option>
+                            <option value="all">{t('studentDashboard.tasks.filters.allStatuses')}</option>
+                            <option value="pending">{t('studentDashboard.tasks.statuses.pending')}</option>
+                            <option value="submitted">{t('studentDashboard.tasks.filters.submitted')}</option>
+                            <option value="needs_revision">{t('studentDashboard.tasks.statuses.needsRevision')}</option>
+                            <option value="completed">{t('studentDashboard.tasks.filters.closed')}</option>
+                            <option value="rejected">{t('studentDashboard.tasks.statuses.rejected')}</option>
+                            <option value="overdue">{t('studentDashboard.tasks.statuses.overdue')}</option>
+                            <option value="unavailable">{t('studentDashboard.tasks.statuses.unavailable')}</option>
                         </select>
                     </label>
 
@@ -521,7 +526,7 @@ const TasksTab = ({ tasks, onSubmitHomework, submittingTaskState }) => {
                         onChange={(e) => setCourseFilter(e.target.value)}
                         className="dashboard-field dashboard-select"
                     >
-                        <option value="all">Бардык курстар</option>
+                        <option value="all">{t('studentDashboard.tasks.filters.allCourses')}</option>
                         {courseOptions.map((course) => (
                             <option key={course} value={course}>
                                 {course}
@@ -595,7 +600,7 @@ const TasksTab = ({ tasks, onSubmitHomework, submittingTaskState }) => {
                                                         </h3>
                                                         <StatusBadge tone={item.meta.tone || 'default'} className="gap-1">
                                                             <StatusIcon className="h-3.5 w-3.5" />
-                                                            {item.meta.label}
+                                                            {t(item.meta.labelKey)}
                                                         </StatusBadge>
                                                     </div>
 
@@ -609,7 +614,10 @@ const TasksTab = ({ tasks, onSubmitHomework, submittingTaskState }) => {
                                                                 item.activityMeta?.badgeClass
                                                             }`}>
                                                                 <ActivityIcon className="h-3.5 w-3.5" />
-                                                                {ACTIVITY_TYPE_LABEL[item.task.activityType] || 'Иш'}
+                                                                {t(
+                                                                    ACTIVITY_TYPE_LABEL_KEY[item.task.activityType] ||
+                                                                        'studentDashboard.tasks.activityTypes.work'
+                                                                )}
                                                             </span>
                                                         ) : null}
                                                         <span className="inline-flex items-center gap-2">
@@ -628,16 +636,18 @@ const TasksTab = ({ tasks, onSubmitHomework, submittingTaskState }) => {
                                                 <div className="rounded-2xl border border-edubot-line/70 bg-edubot-surfaceAlt/60 p-4 text-sm dark:border-slate-700 dark:bg-slate-800/70">
                                                     <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
                                                         <span className="font-semibold text-edubot-ink dark:text-white">
-                                                            Учурдагы жыйынтык
+                                                            {t('studentDashboard.tasks.review.currentResult')}
                                                         </span>
                                                         {reviewScore !== null && reviewScore !== undefined ? (
                                                             <span className="font-semibold text-edubot-ink dark:text-white">
-                                                                Баа: {reviewScore}
+                                                                {t('studentDashboard.tasks.review.score', { score: reviewScore })}
                                                             </span>
                                                         ) : null}
                                                         {reviewedAt ? (
                                                             <span className="text-edubot-muted dark:text-slate-400">
-                                                                Текшерилген: {formatTaskDate({ submittedAt: reviewedAt })}
+                                                                {t('studentDashboard.tasks.review.reviewedAt', {
+                                                                    date: formatTaskDate({ submittedAt: reviewedAt }, t, i18n.language),
+                                                                })}
                                                             </span>
                                                         ) : null}
                                                     </div>
@@ -653,15 +663,15 @@ const TasksTab = ({ tasks, onSubmitHomework, submittingTaskState }) => {
                                                 <div className="rounded-2xl border border-edubot-line/70 bg-white/80 p-4 text-sm dark:border-slate-700 dark:bg-slate-900/70">
                                                     <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
                                                         <span className="font-semibold text-edubot-ink dark:text-white">
-                                                            Акыркы жооп
+                                                            {t('studentDashboard.tasks.submission.latest')}
                                                         </span>
                                                         {submittedAt ? (
                                                             <span className="text-edubot-muted dark:text-slate-400">
-                                                                {formatTaskDate({ submittedAt })}
+                                                                {formatTaskDate({ submittedAt }, t, i18n.language)}
                                                             </span>
                                                         ) : null}
                                                         <span className="text-edubot-muted dark:text-slate-400">
-                                                            {formatSubmissionType(item.task.mySubmission)}
+                                                            {formatSubmissionType(item.task.mySubmission, t)}
                                                         </span>
                                                     </div>
 
@@ -680,13 +690,15 @@ const TasksTab = ({ tasks, onSubmitHomework, submittingTaskState }) => {
                                                                     openAttachmentPreview(
                                                                         item.task.kind === 'activity' ? 'activity' : 'homework',
                                                                         Number(item.task.id || item.task.homeworkId),
-                                                                        `${item.title} — Тиркеме`
+                                                                        t('studentDashboard.tasks.preview.attachmentTitle', {
+                                                                            title: item.title,
+                                                                        })
                                                                     );
                                                                 }}
                                                                 className="inline-flex items-center gap-2 rounded-xl border border-edubot-line px-3 py-2 font-medium text-edubot-ink transition hover:border-edubot-orange hover:text-edubot-orange dark:border-slate-700 dark:text-slate-200"
                                                             >
                                                                 <FiPaperclip className="h-4 w-4" />
-                                                                Тиркемени ачуу
+                                                                {t('studentDashboard.tasks.actions.openAttachment')}
                                                             </a>
                                                             {canResubmit ? (
                                                                 <button
@@ -694,7 +706,7 @@ const TasksTab = ({ tasks, onSubmitHomework, submittingTaskState }) => {
                                                                     onClick={() => clearAttachmentDraft(item.key)}
                                                                     className="ml-3 inline-flex items-center gap-2 rounded-xl border border-edubot-line px-3 py-2 text-sm font-medium text-edubot-muted transition hover:border-rose-300 hover:text-rose-500 dark:border-slate-700 dark:text-slate-300"
                                                                 >
-                                                                    Тиркемени алып салуу
+                                                                    {t('studentDashboard.tasks.actions.removeAttachment')}
                                                                 </button>
                                                             ) : null}
                                                         </div>
@@ -703,7 +715,7 @@ const TasksTab = ({ tasks, onSubmitHomework, submittingTaskState }) => {
                                                     {historyThread.length ? (
                                                         <div className="mt-4 space-y-3 border-t border-edubot-line/70 pt-4 dark:border-slate-700">
                                                             <div className="text-xs font-semibold uppercase tracking-[0.18em] text-edubot-muted dark:text-slate-400">
-                                                                Мурунку алмашуулар
+                                                                {t('studentDashboard.tasks.thread.previousExchanges')}
                                                             </div>
                                                             {historyThread.map((message) => {
                                                                 const isInstructor = message.authorRole !== 'student';
@@ -718,21 +730,23 @@ const TasksTab = ({ tasks, onSubmitHomework, submittingTaskState }) => {
                                                                     >
                                                                         <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs">
                                                                             <span className="font-semibold text-edubot-ink dark:text-white">
-                                                                                {formatSubmissionThreadLabel(message)}
+                                                                                {formatSubmissionThreadLabel(message, t)}
                                                                             </span>
                                                                             {message.createdAt ? (
                                                                                 <span className="text-edubot-muted dark:text-slate-400">
-                                                                                    {formatTaskDate({ submittedAt: message.createdAt })}
+                                                                                    {formatTaskDate({ submittedAt: message.createdAt }, t, i18n.language)}
                                                                                 </span>
                                                                             ) : null}
                                                                             {message.status && message.authorRole !== 'student' ? (
                                                                                 <span className="text-edubot-muted dark:text-slate-400">
-                                                                                    {ACTIVITY_REVIEW_STATUS_LABEL[message.status] || message.status}
+                                                                                    {ACTIVITY_REVIEW_STATUS_LABEL[message.status]
+                                                                                        ? t(ACTIVITY_REVIEW_STATUS_LABEL[message.status])
+                                                                                        : message.status}
                                                                                 </span>
                                                                             ) : null}
                                                                             {message.score !== null && message.score !== undefined ? (
                                                                                 <span className="font-semibold text-edubot-ink dark:text-white">
-                                                                                    Баа: {message.score}
+                                                                                    {t('studentDashboard.tasks.review.score', { score: message.score })}
                                                                                 </span>
                                                                             ) : null}
                                                                         </div>
@@ -750,7 +764,7 @@ const TasksTab = ({ tasks, onSubmitHomework, submittingTaskState }) => {
                                                                                     className="inline-flex items-center gap-2 rounded-xl border border-edubot-line px-3 py-2 font-medium text-edubot-ink transition hover:border-edubot-orange hover:text-edubot-orange dark:border-slate-700 dark:text-slate-200"
                                                                                 >
                                                                                     <FiPaperclip className="h-4 w-4" />
-                                                                                    Тиркемени ачуу
+                                                                                    {t('studentDashboard.tasks.actions.openAttachment')}
                                                                                 </a>
                                                                             </div>
                                                                         ) : null}
@@ -769,19 +783,21 @@ const TasksTab = ({ tasks, onSubmitHomework, submittingTaskState }) => {
                                                     <div className="flex flex-wrap items-start justify-between gap-3">
                                                         <div>
                                                             <div className="font-semibold text-edubot-ink dark:text-white">
-                                                                {item.task.myAttempt.passed ? 'Квиз ийгиликтүү тапшырылды' : 'Квиз аяктады'}
+                                                                {item.task.myAttempt.passed
+                                                                    ? t('studentDashboard.tasks.quiz.passedTitle')
+                                                                    : t('studentDashboard.tasks.quiz.completedTitle')}
                                                             </div>
                                                             <div className="mt-1 text-sm text-edubot-muted dark:text-slate-300">
                                                                 {item.task.myAttempt.passed
-                                                                    ? 'Жыйынтык жакшы. Бул квиз жабылды.'
+                                                                    ? t('studentDashboard.tasks.quiz.passedDescription')
                                                                     : item.task.activityStatus === 'active'
-                                                                        ? 'Жыйынтык жетишсиз. Кайра аракет кылсаңыз болот.'
-                                                                        : 'Квиз жабылды. Жыйынтык ушул бойдон сакталды.'}
+                                                                        ? t('studentDashboard.tasks.quiz.retryDescription')
+                                                                        : t('studentDashboard.tasks.quiz.closedDescription')}
                                                             </div>
                                                         </div>
                                                         <div className="rounded-2xl border border-white/70 bg-white/70 px-4 py-3 text-right shadow-sm dark:border-slate-700 dark:bg-slate-950/50">
                                                             <div className="text-xs font-semibold uppercase tracking-[0.18em] text-edubot-muted dark:text-slate-400">
-                                                                Натыйжа
+                                                                {t('studentDashboard.tasks.quiz.result')}
                                                             </div>
                                                             <div className="mt-1 text-2xl font-semibold text-edubot-ink dark:text-white">
                                                                 {Math.round(Number(item.task.myAttempt.score) || 0)}%
@@ -789,13 +805,17 @@ const TasksTab = ({ tasks, onSubmitHomework, submittingTaskState }) => {
                                                             <div className={`mt-1 text-xs font-semibold ${
                                                                 item.task.myAttempt.passed ? 'text-emerald-700 dark:text-emerald-300' : 'text-amber-700 dark:text-amber-300'
                                                             }`}>
-                                                                {item.task.myAttempt.passed ? 'Өттү' : 'Өткөн жок'}
+                                                                {item.task.myAttempt.passed
+                                                                    ? t('studentDashboard.tasks.quiz.passed')
+                                                                    : t('studentDashboard.tasks.quiz.failed')}
                                                             </div>
                                                         </div>
                                                     </div>
                                                     {submittedAt ? (
                                                         <div className="mt-3 text-xs text-edubot-muted dark:text-slate-400">
-                                                            Тапшырылган убакыт: {formatTaskDate({ submittedAt })}
+                                                            {t('studentDashboard.tasks.submission.submittedAt', {
+                                                                date: formatTaskDate({ submittedAt }, t, i18n.language),
+                                                            })}
                                                         </div>
                                                     ) : null}
                                                 </div>
@@ -810,24 +830,24 @@ const TasksTab = ({ tasks, onSubmitHomework, submittingTaskState }) => {
                                                             <p className="text-sm font-semibold text-edubot-ink dark:text-white">
                                                                 {isQuizTask
                                                                     ? hasQuizAttempt
-                                                                        ? 'Квизди кайра тапшыруу'
-                                                                        : 'Квизди баштоо'
+                                                                        ? t('studentDashboard.tasks.submitPanel.retakeQuizTitle')
+                                                                        : t('studentDashboard.tasks.submitPanel.startQuizTitle')
                                                                     : canResubmit
-                                                                        ? 'Жоопту кайра жөнөтүү'
+                                                                        ? t('studentDashboard.tasks.submitPanel.resubmitTitle')
                                                                         : item.status === 'submitted'
-                                                                            ? 'Жаңыртуу керек болсо кайра жөнөтүңүз'
-                                                                            : 'Жооп жөнөтүү'}
+                                                                            ? t('studentDashboard.tasks.submitPanel.updateTitle')
+                                                                            : t('studentDashboard.tasks.submitPanel.submitTitle')}
                                                             </p>
                                                             <p className="mt-1 text-xs leading-5 text-edubot-muted dark:text-slate-400">
                                                                 {isQuizTask
                                                                     ? hasQuizAttempt
-                                                                        ? 'Мурунку жыйынтык жаңыланып, акыркы аракет сакталат.'
-                                                                        : 'Суроолорго жооп берип, квизди ошол замат жөнөтүңүз.'
+                                                                        ? t('studentDashboard.tasks.submitPanel.retakeQuizDescription')
+                                                                        : t('studentDashboard.tasks.submitPanel.startQuizDescription')
                                                                     : canResubmit
-                                                                        ? 'Мугалимдин пикирин эске алып, жаңыртылган жоопту жибериңиз.'
+                                                                        ? t('studentDashboard.tasks.submitPanel.resubmitDescription')
                                                                         : item.status === 'submitted'
-                                                                            ? 'Тапшырма текшерилип жатат. Зарыл болсо жоопту жаңыртып кайра жибере аласыз.'
-                                                                            : 'Текст, шилтеме же файл кошуп тапшырыңыз.'}
+                                                                            ? t('studentDashboard.tasks.submitPanel.updateDescription')
+                                                                            : t('studentDashboard.tasks.submitPanel.submitDescription')}
                                                             </p>
                                                         </div>
                                                         <button
@@ -839,7 +859,13 @@ const TasksTab = ({ tasks, onSubmitHomework, submittingTaskState }) => {
                                                             }
                                                             className="rounded-xl border border-edubot-line px-3 py-2 text-xs font-semibold text-edubot-ink transition hover:border-edubot-orange hover:text-edubot-orange dark:border-slate-700 dark:text-slate-200"
                                                         >
-                                                            {isExpanded ? 'Жыйуу' : isQuizTask ? (hasQuizAttempt ? 'Кайра ачуу' : 'Баштоо') : 'Жооп берүү'}
+                                                            {isExpanded
+                                                                ? t('studentDashboard.tasks.actions.collapse')
+                                                                : isQuizTask
+                                                                    ? hasQuizAttempt
+                                                                        ? t('studentDashboard.tasks.actions.reopen')
+                                                                        : t('studentDashboard.tasks.actions.start')
+                                                                    : t('studentDashboard.tasks.actions.answer')}
                                                         </button>
                                                     </div>
 
@@ -901,7 +927,7 @@ const TasksTab = ({ tasks, onSubmitHomework, submittingTaskState }) => {
                                                                             updateDraft(item.key, 'text', e.target.value)
                                                                         }
                                                                         rows={4}
-                                                                        placeholder="Жооп жазыңыз"
+                                                                        placeholder={t('studentDashboard.tasks.fields.answerPlaceholder')}
                                                                         className="dashboard-field"
                                                                     />
                                                                     <label className="relative block">
@@ -911,17 +937,19 @@ const TasksTab = ({ tasks, onSubmitHomework, submittingTaskState }) => {
                                                                             onChange={(e) =>
                                                                                 updateDraft(item.key, 'link', e.target.value)
                                                                             }
-                                                                            placeholder="Шилтеме кошуу"
+                                                                            placeholder={t('studentDashboard.tasks.fields.linkPlaceholder')}
                                                                             className="dashboard-field dashboard-field-icon"
                                                                         />
                                                                     </label>
                                                                     <label className="flex cursor-pointer items-center justify-between gap-3 rounded-2xl border border-dashed border-edubot-line px-4 py-3 text-sm text-edubot-muted transition hover:border-edubot-orange hover:text-edubot-orange dark:border-slate-700 dark:text-slate-300">
                                                                         <span className="inline-flex items-center gap-2">
                                                                             <FiPaperclip className="h-4 w-4" />
-                                                                            {draft.file?.name || 'PDF же Word кошуу'}
+                                                                            {draft.file?.name || t('studentDashboard.tasks.fields.filePlaceholder')}
                                                                         </span>
                                                                         <span className="text-xs font-semibold">
-                                                                            {draft.file ? 'Алмаштыруу' : 'Файл тандоо'}
+                                                                            {draft.file
+                                                                                ? t('studentDashboard.tasks.actions.replaceFile')
+                                                                                : t('studentDashboard.tasks.actions.chooseFile')}
                                                                         </span>
                                                                         <input
                                                                             type="file"
@@ -961,29 +989,29 @@ const TasksTab = ({ tasks, onSubmitHomework, submittingTaskState }) => {
                                                             >
                                                                 {isSubmitting
                                                                     ? isUploading
-                                                                        ? 'Тиркеме жүктөлүп жатат. Баракты жаппаңыз.'
-                                                                        : 'Жооп жөнөтүлүп жатат. Натыйжа ушул тапшырманын жанында жаңыртылат.'
+                                                                        ? t('studentDashboard.tasks.draftStatus.uploading')
+                                                                        : t('studentDashboard.tasks.draftStatus.submitting')
                                                                     : hasDraftWork
-                                                                        ? 'Сакталбаган жооп бар. Жөнөтүү баскычы басылмайынча мугалимге көрүнбөйт.'
-                                                                        : 'Жооп даярдала элек. Текст, шилтеме, файл же квиз жообун кошуңуз.'}
+                                                                        ? t('studentDashboard.tasks.draftStatus.unsaved')
+                                                                        : t('studentDashboard.tasks.draftStatus.empty')}
                                                             </div>
                                                             <div className="flex items-center justify-between gap-3">
                                                                 <div className="text-xs text-edubot-muted dark:text-slate-400">
                                                                     <p>
                                                                         {isQuizTask
                                                                             ? hasQuizAttempt
-                                                                                ? 'Жоопторду жаңыртып, квизди кайра тапшырыңыз.'
-                                                                                : 'Ар бир суроого жооп берип, квизди жөнөтүңүз.'
-                                                                            : 'Жооп, шилтеме же файлдын кеминде бири талап кылынат.'}
+                                                                                ? t('studentDashboard.tasks.help.retakeQuiz')
+                                                                                : t('studentDashboard.tasks.help.startQuiz')
+                                                                            : t('studentDashboard.tasks.help.answerRequired')}
                                                                     </p>
                                                                     {isUploading ? (
                                                                         <p className="mt-1 text-edubot-orange dark:text-edubot-soft">
-                                                                            {item.task.kind === 'activity' ? 'Файл жүктөлүүдө...' : 'Файл жүктөлүүдө...'}
+                                                                            {t('studentDashboard.tasks.actions.uploadingFile')}
                                                                         </p>
                                                                     ) : null}
                                                                     {isSubmitting && !isUploading ? (
                                                                         <p className="mt-1 text-edubot-orange dark:text-edubot-soft">
-                                                                            Тапшырма жөнөтүлүүдө...
+                                                                            {t('studentDashboard.tasks.actions.submittingTask')}
                                                                         </p>
                                                                     ) : null}
                                                                 </div>
@@ -995,38 +1023,37 @@ const TasksTab = ({ tasks, onSubmitHomework, submittingTaskState }) => {
                                                                 >
                                                                     <FiSend className="h-4 w-4" />
                                                                     {isUploading
-                                                                        ? 'Файл жүктөлүүдө...'
+                                                                        ? t('studentDashboard.tasks.actions.uploadingFile')
                                                                         : isSubmitting
-                                                                            ? 'Жөнөтүлүүдө...'
+                                                                            ? t('studentDashboard.tasks.actions.submitting')
                                                                             : isQuizTask
                                                                                 ? hasQuizAttempt
-                                                                                    ? 'Кайра тапшыруу'
-                                                                                    : 'Квизди баштоо'
-                                                                                : 'Жөнөтүү'}
+                                                                                    ? t('studentDashboard.tasks.actions.retake')
+                                                                                    : t('studentDashboard.tasks.actions.startQuiz')
+                                                                                : t('studentDashboard.tasks.actions.submit')}
                                                                 </button>
                                                             </div>
                                                         </div>
                                                     ) : (
                                                         <div className="mt-4 flex items-center gap-2 text-xs text-edubot-muted dark:text-slate-400">
                                                             <FiExternalLink className="h-4 w-4" />
-                                                            {isQuizTask
-                                                                ? hasQuizAttempt
-                                                                    ? 'Басып, квизди кайра тапшырыңыз'
-                                                                    : 'Басып, квизди баштаңыз'
-                                                                : canResubmit
-                                                                ? 'Басып, оңдолгон жоопту кайра жөнөтүңүз'
-                                                                : 'Басып, тапшырманы тез тапшырыңыз'}
+                                                                {isQuizTask
+                                                                    ? hasQuizAttempt
+                                                                        ? t('studentDashboard.tasks.closedHints.retakeQuiz')
+                                                                        : t('studentDashboard.tasks.closedHints.startQuiz')
+                                                                    : canResubmit
+                                                                ? t('studentDashboard.tasks.closedHints.resubmit')
+                                                                : t('studentDashboard.tasks.closedHints.submit')}
                                                         </div>
                                                     )}
                                                 </div>
                                             ) : (
                                                 <div className="dashboard-panel-muted p-4">
                                                     <p className="text-sm font-semibold text-edubot-ink dark:text-white">
-                                                        Submit туташкан эмес
+                                                        {t('studentDashboard.tasks.unavailable.title')}
                                                     </p>
                                                     <p className="mt-2 text-sm leading-6 text-edubot-muted dark:text-slate-400">
-                                                        Бул тапшырма үчүн API аркылуу түз жөнөтүү азырынча
-                                                        жеткиликтүү эмес.
+                                                        {t('studentDashboard.tasks.unavailable.description')}
                                                     </p>
                                                 </div>
                                             )}
@@ -1041,10 +1068,10 @@ const TasksTab = ({ tasks, onSubmitHomework, submittingTaskState }) => {
                                 <FiSearch className="h-6 w-6" />
                             </div>
                             <h3 className="mt-4 text-lg font-semibold text-edubot-ink dark:text-white">
-                                Натыйжа табылган жок
+                                {t('studentDashboard.tasks.empty.noResultTitle')}
                             </h3>
                             <p className="mt-2 text-sm text-edubot-muted dark:text-slate-400">
-                                Фильтрлерди өзгөртүп көрүңүз же издөө талаасын тазалаңыз.
+                                {t('studentDashboard.tasks.empty.noResultDescription')}
                             </p>
                         </div>
                     )}
@@ -1054,16 +1081,16 @@ const TasksTab = ({ tasks, onSubmitHomework, submittingTaskState }) => {
             <BasicModal
                 isOpen={previewState.open}
                 onClose={closePreview}
-                title={previewState.title || 'Тиркеме'}
+                title={previewState.title || t('studentDashboard.tasks.preview.attachment')}
                 size="2xl"
             >
                 {previewState.loading ? (
                     <div className="flex min-h-[16rem] items-center justify-center text-sm text-edubot-muted dark:text-slate-400">
-                        Жүктөлүүдө...
+                        {t('common.loading')}...
                     </div>
                 ) : !previewState.objectUrl ? (
                     <div className="flex min-h-[16rem] items-center justify-center text-sm text-edubot-muted dark:text-slate-400">
-                        Алдын ала көрүү жеткиликтүү эмес.
+                        {t('studentDashboard.tasks.preview.unavailable')}
                     </div>
                 ) : previewState.kind === 'image' ? (
                     <div className="flex justify-center">
@@ -1092,7 +1119,7 @@ const TasksTab = ({ tasks, onSubmitHomework, submittingTaskState }) => {
                 ) : (
                     <div className="space-y-4 text-center">
                         <p className="text-sm text-edubot-muted dark:text-slate-400">
-                            Бул файлды браузерде түз көрүү жеткиликтүү эмес.
+                            {t('studentDashboard.tasks.preview.directViewUnavailable')}
                         </p>
                         <a
                             href={previewState.objectUrl}
@@ -1100,7 +1127,7 @@ const TasksTab = ({ tasks, onSubmitHomework, submittingTaskState }) => {
                             className="dashboard-button-primary inline-flex"
                         >
                             <FiPaperclip className="h-4 w-4" />
-                            Жүктөп алуу
+                            {t('studentDashboard.tasks.actions.download')}
                         </a>
                     </div>
                 )}

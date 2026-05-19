@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
+import { useTranslation } from 'react-i18next';
 import PhoneInput from '@shared/ui/forms/PhoneInput';
 import {
     DashboardInsetPanel,
@@ -20,6 +21,7 @@ const ProfileTab = ({
     onSaveNotifications,
     savingNotifications,
 }) => {
+    const { t } = useTranslation();
     const [isEditingProfile, setIsEditingProfile] = useState(false);
     const [formData, setFormData] = useState({
         fullName: student?.name || '',
@@ -103,14 +105,14 @@ const ProfileTab = ({
     return (
         <div className="space-y-6">
             <DashboardSectionHeader
-                eyebrow="Profile workspace"
-                title="Профиль"
-                description="Аккаунт маалыматыңызды жаңыртып, кайсы каналдар боюнча эскертме алууну көзөмөлдөңүз."
+                eyebrow={t('studentDashboard.profile.eyebrow')}
+                title={t('studentDashboard.profile.title')}
+                description={t('studentDashboard.profile.description')}
             />
 
             <div className="grid gap-4 md:grid-cols-3">
                 <DashboardMetricCard
-                    label="Аты-жөнү"
+                    label={t('studentDashboard.profile.fields.fullName')}
                     value={formData.fullName || '—'}
                     icon={FiUser}
                 />
@@ -121,7 +123,7 @@ const ProfileTab = ({
                     tone="blue"
                 />
                 <DashboardMetricCard
-                    label="Телефон"
+                    label={t('studentDashboard.profile.fields.phone')}
                     value={formData.phoneNumber || '—'}
                     icon={FiPhone}
                     tone="green"
@@ -130,8 +132,8 @@ const ProfileTab = ({
 
             <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
                 <DashboardInsetPanel
-                    title="Аккаунт маалыматы"
-                    description="Жеке маалымат жана байланыш маалыматтары."
+                    title={t('studentDashboard.profile.account.title')}
+                    description={t('studentDashboard.profile.account.description')}
                     action={
                         !isEditingProfile ? (
                             <button
@@ -140,7 +142,7 @@ const ProfileTab = ({
                                 className="dashboard-button-secondary"
                             >
                                 <FiUser className="h-4 w-4" />
-                                Өзгөртүү
+                                {t('studentDashboard.profile.actions.edit')}
                             </button>
                         ) : null
                     }
@@ -162,10 +164,10 @@ const ProfileTab = ({
                                     </div>
                                     <div className="space-y-2">
                                         <p className="text-sm font-medium text-edubot-ink dark:text-slate-200">
-                                            Профиль сүрөтү
+                                            {t('studentDashboard.profile.account.profilePhoto')}
                                         </p>
                                         <label className="dashboard-button-secondary inline-flex cursor-pointer items-center justify-center self-start whitespace-nowrap">
-                                            Аватар жүктөө
+                                            {t('studentDashboard.profile.actions.uploadAvatar')}
                                             <input
                                                 type="file"
                                                 accept="image/*"
@@ -175,7 +177,9 @@ const ProfileTab = ({
                                         </label>
                                         {formData.avatar ? (
                                             <p className="text-xs text-edubot-muted dark:text-slate-400">
-                                                Тандалды: {formData.avatar.name}
+                                                {t('studentDashboard.profile.account.selectedFile', {
+                                                    file: formData.avatar.name,
+                                                })}
                                             </p>
                                         ) : null}
                                     </div>
@@ -183,7 +187,7 @@ const ProfileTab = ({
 
                                 <div>
                                     <label className="text-sm font-medium text-edubot-muted dark:text-slate-400">
-                                        Аты-жөнү
+                                        {t('studentDashboard.profile.fields.fullName')}
                                     </label>
                                     <input
                                         type="text"
@@ -211,8 +215,8 @@ const ProfileTab = ({
                                             onChange={(value) =>
                                                 setFormData((prev) => ({ ...prev, phoneNumber: value }))
                                             }
-                                            label="Телефон"
-                                            helperText="Эл аралык форматта киргизсеңиз болот, мисалы +996..."
+                                            label={t('studentDashboard.profile.fields.phone')}
+                                            helperText={t('studentDashboard.profile.fields.phoneHelper')}
                                             className="dashboard-field"
                                         />
                                     </div>
@@ -226,7 +230,9 @@ const ProfileTab = ({
                                         className="dashboard-button-primary"
                                     >
                                         <FiSave className="h-4 w-4" />
-                                        {savingProfile ? 'Сакталууда...' : 'Профилди сактоо'}
+                                        {savingProfile
+                                            ? t('studentDashboard.profile.actions.saving')
+                                            : t('studentDashboard.profile.actions.saveProfile')}
                                     </button>
                                     <button
                                         type="button"
@@ -237,7 +243,7 @@ const ProfileTab = ({
                                         disabled={savingProfile}
                                         className="dashboard-button-secondary"
                                     >
-                                        Жокко чыгаруу
+                                        {t('studentDashboard.profile.actions.cancel')}
                                     </button>
                                 </div>
                             </>
@@ -257,14 +263,14 @@ const ProfileTab = ({
                                     </div>
                                     <div>
                                         <p className="mt-1 text-sm text-edubot-muted dark:text-slate-400">
-                                            Аккаунтта көрүнгөн негизги маалымат жана байланыш каналдары.
+                                            {t('studentDashboard.profile.account.visibleInfo')}
                                         </p>
                                     </div>
                                 </div>
 
                                 <div>
                                     <p className="text-sm font-medium text-edubot-muted dark:text-slate-400">
-                                        Аты-жөнү
+                                        {t('studentDashboard.profile.fields.fullName')}
                                     </p>
                                     <p className="mt-2 text-base font-semibold text-edubot-ink dark:text-white">
                                         {formData.fullName || '—'}
@@ -282,7 +288,7 @@ const ProfileTab = ({
 
                                 <div>
                                     <p className="text-sm font-medium text-edubot-muted dark:text-slate-400">
-                                        Телефон
+                                        {t('studentDashboard.profile.fields.phone')}
                                     </p>
                                     <p className="mt-2 text-base font-semibold text-edubot-ink dark:text-white">
                                         {formData.phoneNumber || '—'}
@@ -294,13 +300,13 @@ const ProfileTab = ({
                 </DashboardInsetPanel>
 
                 <DashboardInsetPanel
-                    title="Коопсуздук"
-                    description="Сырсөздү жеке маалыматтан бөлөк жаңыртыңыз."
+                    title={t('studentDashboard.profile.security.title')}
+                    description={t('studentDashboard.profile.security.description')}
                 >
                     <div className="mt-4 grid gap-4 sm:grid-cols-2">
                         <div>
                             <label htmlFor="student-security-password" className="text-sm font-medium text-edubot-muted dark:text-slate-400">
-                                Жаңы сырсөз
+                                {t('studentDashboard.profile.security.newPassword')}
                             </label>
                             <input
                                 id="student-security-password"
@@ -313,12 +319,12 @@ const ProfileTab = ({
                                     }))
                                 }
                                 className="dashboard-field mt-1"
-                                placeholder="Кеминде 6 белги"
+                                placeholder={t('studentDashboard.profile.security.passwordPlaceholder')}
                             />
                         </div>
                         <div>
                             <label htmlFor="student-security-password-confirm" className="text-sm font-medium text-edubot-muted dark:text-slate-400">
-                                Сырсөздү кайталоо
+                                {t('studentDashboard.profile.security.confirmPassword')}
                             </label>
                             <input
                                 id="student-security-password-confirm"
@@ -331,7 +337,7 @@ const ProfileTab = ({
                                     }))
                                 }
                                 className="dashboard-field mt-1"
-                                placeholder="Сырсөздү дагы бир жолу киргизиңиз"
+                                placeholder={t('studentDashboard.profile.security.confirmPasswordPlaceholder')}
                             />
                         </div>
                     </div>
@@ -344,7 +350,9 @@ const ProfileTab = ({
                             className="dashboard-button-primary"
                         >
                             <FiLock className="h-4 w-4" />
-                            {savingProfile ? 'Сакталууда...' : 'Сырсөздү жаңыртуу'}
+                            {savingProfile
+                                ? t('studentDashboard.profile.actions.saving')
+                                : t('studentDashboard.profile.actions.updatePassword')}
                         </button>
                         <button
                             type="button"
@@ -352,21 +360,23 @@ const ProfileTab = ({
                             disabled={!hasPasswordChanges || savingProfile}
                             className="dashboard-button-secondary"
                         >
-                            Тазалоо
+                            {t('studentDashboard.profile.actions.clear')}
                         </button>
                     </div>
                 </DashboardInsetPanel>
 
                 <DashboardInsetPanel
-                    title="Эскертме жөндөөлөрү"
-                    description="Эскертмелер азырынча профиль ичинде калат; каналдар көбөйсө өз алдынча workspace болуп бөлүнөт."
+                    title={t('studentDashboard.profile.notificationSettings.title')}
+                    description={t('studentDashboard.profile.notificationSettings.description')}
                 >
                     <div className="mt-4 space-y-3">
                         {notificationEntries.length ? (
                             notificationEntries.map(([key, value]) => {
                                 const meta = NOTIFICATION_LABELS[key] || {};
-                                const label = meta.label || formatNotificationLabel(key);
-                                const description = meta.description || '';
+                                const label = meta.labelKey
+                                    ? t(meta.labelKey)
+                                    : formatNotificationLabel(key);
+                                const description = meta.descriptionKey ? t(meta.descriptionKey) : '';
                                 const inputId = `notification-${key}`;
                                 return (
                                     <div
@@ -398,7 +408,9 @@ const ProfileTab = ({
                                             />
                                             <div className="h-6 w-11 rounded-full bg-slate-200 transition-colors peer-checked:bg-edubot-orange dark:bg-slate-700" />
                                             <span className="ml-3 text-sm text-edubot-muted dark:text-slate-400">
-                                                {value ? 'Күйгүзүлгөн' : 'Өчүрүлгөн'}
+                                                {value
+                                                    ? t('studentDashboard.profile.notificationSettings.on')
+                                                    : t('studentDashboard.profile.notificationSettings.off')}
                                             </span>
                                         </label>
                                     </div>
@@ -406,8 +418,8 @@ const ProfileTab = ({
                             })
                         ) : (
                             <EmptyState
-                                title="Эскертме параметрлери табылган жок"
-                                subtitle="Бул аккаунт үчүн эскертме жөндөөлөрү жүктөлгөн жок."
+                                title={t('studentDashboard.profile.notificationSettings.emptyTitle')}
+                                subtitle={t('studentDashboard.profile.notificationSettings.emptySubtitle')}
                                 icon={<FiBell className="h-8 w-8 text-edubot-orange" />}
                                 className="py-8"
                             />
@@ -422,7 +434,9 @@ const ProfileTab = ({
                             className="dashboard-button-primary"
                         >
                             <FiLock className="h-4 w-4" />
-                            {savingNotifications ? 'Сакталууда...' : 'Эскертмелерди сактоо'}
+                            {savingNotifications
+                                ? t('studentDashboard.profile.actions.saving')
+                                : t('studentDashboard.profile.actions.saveNotifications')}
                         </button>
                     </div>
                 </DashboardInsetPanel>

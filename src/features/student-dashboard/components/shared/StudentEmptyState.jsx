@@ -1,47 +1,54 @@
 import { Link } from 'react-router-dom';
 import PropTypes from 'prop-types';
+import { useTranslation } from 'react-i18next';
 import { FiAlertCircle, FiBookOpen, FiUser } from 'react-icons/fi';
 import { getDashboardPath } from '@shared/utils/navigation';
 
-const StudentEmptyState = ({ accessState }) => (
-    <div className="dashboard-panel relative overflow-hidden px-8 py-12 text-center">
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(241,126,34,0.12),transparent_42%)]" />
-        <div className="relative mx-auto max-w-4xl space-y-6">
-            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full border border-amber-200 bg-amber-50 text-amber-700 shadow-[0_18px_40px_-30px_rgba(217,119,6,0.55)] dark:border-amber-500/25 dark:bg-amber-500/10 dark:text-amber-200">
-                <FiAlertCircle className="h-9 w-9" />
-            </div>
+const StudentEmptyState = ({ accessState }) => {
+    const { t } = useTranslation();
+    const title = accessState?.title || t('studentDashboard.empty.accessTitle');
+    const description = accessState?.description || t('studentDashboard.empty.accessDescription');
 
-            <div className="space-y-3">
-                <p className="text-sm font-semibold uppercase tracking-[0.24em] text-edubot-orange">
-                    Student access
-                </p>
-                <h2 className="text-3xl font-semibold tracking-tight text-edubot-ink dark:text-white sm:text-4xl">
-                    {accessState.title}
-                </h2>
-                <p className="mx-auto max-w-3xl text-base leading-8 text-edubot-muted dark:text-slate-300 sm:text-lg">
-                    {accessState.description}
-                </p>
-            </div>
+    return (
+        <div className="dashboard-panel relative overflow-hidden px-8 py-12 text-center">
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(241,126,34,0.12),transparent_42%)]" />
+            <div className="relative mx-auto max-w-4xl space-y-6">
+                <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full border border-amber-200 bg-amber-50 text-amber-700 shadow-[0_18px_40px_-30px_rgba(217,119,6,0.55)] dark:border-amber-500/25 dark:bg-amber-500/10 dark:text-amber-200">
+                    <FiAlertCircle className="h-9 w-9" />
+                </div>
 
-            <div className="flex flex-wrap items-center justify-center gap-3">
-                <Link
-                    to="/catalog"
-                    className="dashboard-button-primary inline-flex min-w-[220px] justify-center"
-                >
-                    <FiBookOpen className="h-4 w-4" />
-                    Видео курстарды көрүү
-                </Link>
-                <Link
-                    to={getDashboardPath('student', 'profile')}
-                    className="dashboard-button-secondary inline-flex min-w-[220px] justify-center"
-                >
-                    <FiUser className="h-4 w-4" />
-                    Профилди ачуу
-                </Link>
+                <div className="space-y-3">
+                    <p className="text-sm font-semibold uppercase tracking-[0.24em] text-edubot-orange">
+                        {t('studentDashboard.empty.accessEyebrow')}
+                    </p>
+                    <h2 className="text-3xl font-semibold tracking-tight text-edubot-ink dark:text-white sm:text-4xl">
+                        {title}
+                    </h2>
+                    <p className="mx-auto max-w-3xl text-base leading-8 text-edubot-muted dark:text-slate-300 sm:text-lg">
+                        {description}
+                    </p>
+                </div>
+
+                <div className="flex flex-wrap items-center justify-center gap-3">
+                    <Link
+                        to="/catalog"
+                        className="dashboard-button-primary inline-flex min-w-[220px] justify-center"
+                    >
+                        <FiBookOpen className="h-4 w-4" />
+                        {t('studentDashboard.empty.actions.viewVideoCourses')}
+                    </Link>
+                    <Link
+                        to={getDashboardPath('student', 'profile')}
+                        className="dashboard-button-secondary inline-flex min-w-[220px] justify-center"
+                    >
+                        <FiUser className="h-4 w-4" />
+                        {t('studentDashboard.empty.actions.openProfile')}
+                    </Link>
+                </div>
             </div>
         </div>
-    </div>
-);
+    );
+};
 
 StudentEmptyState.propTypes = {
     accessState: PropTypes.shape({
@@ -51,10 +58,7 @@ StudentEmptyState.propTypes = {
 };
 
 StudentEmptyState.defaultProps = {
-    accessState: {
-        title: 'Окуу мүмкүнчүлүгү азырынча активдүү эмес',
-        description: 'Сизде азырынча активдүү курс жок. Төлөм ырасталгандан же каттоо иштетилгенден кийин бул жерде курстарыңыз, сабактарыңыз жана прогрессиңиз көрүнөт.',
-    },
+    accessState: null,
 };
 
 export default StudentEmptyState;

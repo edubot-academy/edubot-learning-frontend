@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import PropTypes from 'prop-types';
+import { useTranslation } from 'react-i18next';
 import { FiAward, FiCheckCircle, FiClock, FiDownload, FiExternalLink } from 'react-icons/fi';
 import {
     DashboardInsetPanel,
@@ -9,12 +10,12 @@ import {
 import StudentPanelEmpty from '../shared/StudentPanelEmpty.jsx';
 import { downloadCourseCertificatePdf } from '../../../courses/api.js';
 
-const formatDate = (value) => {
+const formatDate = (value, language) => {
     if (!value) return '—';
     const date = new Date(value);
     return Number.isNaN(date.getTime())
         ? '—'
-        : date.toLocaleDateString('ky-KG', {
+        : date.toLocaleDateString(language || undefined, {
               day: '2-digit',
               month: 'short',
               year: 'numeric',
@@ -24,40 +25,41 @@ const formatDate = (value) => {
 const getStatusMeta = (status) => {
     if (status === 'issued') {
         return {
-            label: 'Берилди',
+            labelKey: 'studentDashboard.certificates.statuses.issued',
             className:
                 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300',
         };
     }
     if (status === 'pending_approval') {
         return {
-            label: 'Кароодо',
+            labelKey: 'studentDashboard.certificates.statuses.pending',
             className:
                 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300',
         };
     }
     if (status === 'revoked') {
         return {
-            label: 'Жокко чыгарылды',
+            labelKey: 'studentDashboard.certificates.statuses.revoked',
             className:
                 'border-slate-200 bg-slate-100 text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300',
         };
     }
     if (status === 'rejected') {
         return {
-            label: 'Четке кагылды',
+            labelKey: 'studentDashboard.certificates.statuses.rejected',
             className:
                 'border-red-200 bg-red-50 text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300',
         };
     }
     return {
-        label: 'Белгисиз',
+        labelKey: 'studentDashboard.certificates.statuses.unknown',
         className:
             'border-slate-200 bg-slate-50 text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300',
     };
 };
 
 const CertificatesTab = ({ certificates }) => {
+    const { i18n, t } = useTranslation();
     const [downloadingKey, setDownloadingKey] = useState(null);
     const issuedCount = certificates.filter((item) => item.status === 'issued').length;
     const pendingCount = certificates.filter((item) => item.status === 'pending_approval').length;
@@ -80,8 +82,8 @@ const CertificatesTab = ({ certificates }) => {
         return (
             <StudentPanelEmpty
                 icon={FiAward}
-                title="Сертификаттар азырынча жок"
-                description="Инструктор сертификат бергенден кийин ал ушул жерде көрүнөт. Берилген сертификатты PDF катары жүктөп же текшерүү шилтемесин ача аласыз."
+                title={t('studentDashboard.certificates.empty.title')}
+                description={t('studentDashboard.certificates.empty.description')}
             />
         );
     }
@@ -89,20 +91,20 @@ const CertificatesTab = ({ certificates }) => {
     return (
         <div className="space-y-6">
             <DashboardSectionHeader
-                eyebrow="Сертификаттар"
-                title="Сертификаттар"
-                description="Берилген жана кароодо турган сертификаттарыңыз бир жерде көрсөтүлөт."
+                eyebrow={t('studentDashboard.certificates.eyebrow')}
+                title={t('studentDashboard.certificates.title')}
+                description={t('studentDashboard.certificates.description')}
             />
 
             <div className="grid gap-3 md:grid-cols-3">
-                <DashboardMetricCard label="Жалпы" value={certificates.length} icon={FiAward} />
-                <DashboardMetricCard label="Берилди" value={issuedCount} icon={FiCheckCircle} tone="green" />
-                <DashboardMetricCard label="Кароодо" value={pendingCount} icon={FiClock} tone="amber" />
+                <DashboardMetricCard label={t('studentDashboard.certificates.metrics.total')} value={certificates.length} icon={FiAward} />
+                <DashboardMetricCard label={t('studentDashboard.certificates.metrics.issued')} value={issuedCount} icon={FiCheckCircle} tone="green" />
+                <DashboardMetricCard label={t('studentDashboard.certificates.metrics.pending')} value={pendingCount} icon={FiClock} tone="amber" />
             </div>
 
             <DashboardInsetPanel
-                title="Сертификат реестри"
-                description="PDF жүктөө же коомдук текшерүү барагын ачуу үчүн сертификатты тандаңыз."
+                title={t('studentDashboard.certificates.registry.title')}
+                description={t('studentDashboard.certificates.registry.description')}
             >
                 <div className="mt-4 grid gap-4 lg:grid-cols-2">
                     {certificates.map((certificate) => {
@@ -118,16 +120,16 @@ const CertificatesTab = ({ certificates }) => {
                                 <div className="flex flex-wrap items-start justify-between gap-3">
                                     <div className="min-w-0">
                                         <p className="text-base font-semibold text-edubot-ink dark:text-white">
-                                            {certificate.courseTitle || 'Курс сертификаты'}
+                                            {certificate.courseTitle || t('studentDashboard.certificates.fallbackCourseTitle')}
                                         </p>
                                         <p className="mt-1 text-sm text-edubot-muted dark:text-slate-400">
-                                            {certificate.publicId || '—'} · {formatDate(certificate.issuedAt)}
+                                            {certificate.publicId || '—'} · {formatDate(certificate.issuedAt, i18n.language)}
                                         </p>
                                     </div>
                                     <span
                                         className={`rounded-full border px-3 py-1 text-xs font-semibold ${statusMeta.className}`}
                                     >
-                                        {statusMeta.label}
+                                        {t(statusMeta.labelKey)}
                                     </span>
                                 </div>
 
@@ -140,7 +142,9 @@ const CertificatesTab = ({ certificates }) => {
                                             className="dashboard-button-primary"
                                         >
                                             <FiDownload className="h-4 w-4" />
-                                            {isDownloading ? 'Жүктөлүүдө...' : 'PDF жүктөө'}
+                                            {isDownloading
+                                                ? t('studentDashboard.certificates.actions.downloading')
+                                                : t('studentDashboard.certificates.actions.downloadPdf')}
                                         </button>
                                     ) : null}
                                     {certificate.verificationUrl ? (
@@ -151,7 +155,7 @@ const CertificatesTab = ({ certificates }) => {
                                             className="dashboard-button-secondary"
                                         >
                                             <FiExternalLink className="h-4 w-4" />
-                                            Текшерүү
+                                            {t('studentDashboard.certificates.actions.verify')}
                                         </a>
                                     ) : null}
                                 </div>
