@@ -1,0 +1,1078 @@
+export const publicResources = {
+    public: {
+        home: {
+            topCoursesLoadError: "We could not load top courses.",
+            topCoursesUnavailableTitle: "Courses are not shown right now",
+            openCatalog: "Open catalog",
+            topCoursesEmptyTitle: "No top courses yet",
+            topCoursesEmptySubtitle: "You can see all available video courses in the catalog.",
+            coursesCatalog: "Course catalog",
+            topCoursesTitle: "Top courses",
+            topCoursesSubtitleWithCount: "Students often choose these {{count}} video courses. You can find the right path in the full catalog.",
+            topCoursesSubtitleEmpty: "The most selected video courses will appear here. The full catalog is always available.",
+            viewAll: "View all",
+            hero: {
+                aria: "EduBot main offers",
+                alt: {
+                    primaryStudent: "EduBot learner using online courses",
+                    learningBackground: "Digital learning background",
+                    workspaceBackground: "Learning workspace background",
+                    discountStudent: "Student using EduBot annual plan"
+                },
+                slides: [
+                    {
+                        title: "Learn, grow, and succeed with Edubot Learning.",
+                        description: "Build programming and coding skills through interactive lessons."
+                    },
+                    {
+                        title: "Our courses help you understand how the digital world works.",
+                        description: "We teach step by step from beginner to advanced level. Your new profession is closer than you think."
+                    },
+                    {
+                        title: "Entrepreneurship and an investment in the future",
+                        description: "Get the knowledge IT specialists need."
+                    }
+                ],
+                learnMore: "Learn more",
+                startLesson: "Start learning now",
+                mentorLessons: "Online lessons from experienced mentors",
+                usersToDate: "Users to date",
+                yearlyPlanTitle: "Buy an annual plan and get 50% off all courses.",
+                yearlyPlanBody: "Build programming and coding skills through interactive lessons.",
+                discountNote: "An unprecedented discount.",
+                slideButton: "Go to slide {{count}}"
+            },
+            benefits: {
+                eyebrow: "Why EduBot",
+                title: "Learning should be clear, practical, and measurable",
+                body: "From choosing courses to tracking progress, the main learning steps come together in one place.",
+                items: [
+                    {
+                        title: "Interactive learning",
+                        description: "Strengthen each topic through practical tasks, quizzes, and instant feedback."
+                    },
+                    {
+                        title: "100+ courses",
+                        description: "Selected learning paths for programming, digital skills, and career growth."
+                    },
+                    {
+                        title: "Experienced instructors",
+                        description: "Learn from practicing specialists and clarify anything that is unclear."
+                    }
+                ]
+            },
+            apply: {
+                imageAlt: "EduBot learner",
+                pace: "Your learning pace is always visible",
+                eyebrow: "Next step",
+                title: "Start learning today and keep progress in one place",
+                body: "Explore courses and choose the right path. After signing in, lessons, quizzes, and certificates continue in your personal dashboard.",
+                proofPoints: [
+                    "Start video courses at your own pace",
+                    "Progress, quizzes, and certificates stay in one account",
+                    "Contact the team directly when you have questions"
+                ],
+                viewCourses: "View courses",
+                signInStart: "Sign in and start learning",
+                getAdvice: "Get advice"
+            },
+            faq: {
+                title: "FAQ",
+                intro: "We collected answers to frequently asked questions here.",
+                items: [
+                    {
+                        q: "How can I enroll in a course?",
+                        a: "Create an account, choose a course, and click the enrollment button."
+                    },
+                    {
+                        q: "What courses does Edubot offer?",
+                        a: "We offer courses in IT, design, marketing, languages, and other areas."
+                    },
+                    {
+                        q: "How do I get a certificate after completing a course?",
+                        a: "After successfully completing a course and passing the test, you receive a certificate in your dashboard."
+                    },
+                    {
+                        q: "How can I contact support if I have questions?",
+                        a: "You can write to {{email}} or contact {{phone}}."
+                    }
+                ]
+            },
+            feedback: {
+                title: "What our learners say",
+                subtitle: "Here you can see feedback from students who completed our online lessons."
+            },
+            instructors: {
+                loadError: "Failed to load instructors",
+                title: "Top instructors",
+                subtitle: "Instructors students rate highly, selected by rating and learning experience.",
+                viewCourses: "View courses",
+                unavailableTitle: "Instructors are not shown right now",
+                openCourses: "Open courses",
+                emptyTitle: "No top instructors yet",
+                emptySubtitle: "This section updates when new ratings and instructors are added.",
+                coursesCatalog: "Course catalog"
+            },
+            leaderboard: {
+                defaultStudent: "Student",
+                progress: "{{count}}% progress",
+                streak: "{{count}} day streak",
+                quizzes: "{{count}} quiz",
+                lessons: "{{count}} lesson",
+                eyebrow: "Best this week",
+                title: "This week’s leaders",
+                subtitle: "The most active students, steady progress, and quiz wins.",
+                viewFull: "View full ranking",
+                fallbackTitle: "Ranking notice",
+                fallbackBody: "This week’s best learners have not loaded yet. Placeholder students are not shown.",
+                empty: "Leaderboard data is not available yet."
+            }
+        },
+        leaderboard: {
+            defaultStudent: "Student",
+            studentOfWeek: "Student of the week",
+            progress: "{{count}}% progress",
+            quizzes: "{{count}} quiz",
+            lessons: "{{count}} lesson",
+            emptyNotEnoughData: "There is not enough data yet.",
+            tabs: {
+                overview: "Overview",
+                weekly: "Weekly ranking",
+                skills: "Skills"
+            },
+            tracks: {
+                all: {
+                    label: "All",
+                    helper: "Overall ranking"
+                },
+                video: {
+                    label: "Video courses",
+                    helper: "Self-paced learning"
+                },
+                live: {
+                    label: "Live and offline",
+                    helper: "Session learning"
+                }
+            },
+            publicTrustPoints: [
+                "The ranking is built from lessons, quizzes, XP, and steady participation signals.",
+                "This public page shows weekly leaders, strong growth, and key learning wins.",
+                "Your personal rank and nearby competitors appear after sign-in."
+            ],
+            rank: {
+                top: "Top",
+                yourRank: "Your rank: #{{rank}}",
+                calculating: "Your rank is being calculated",
+                leader: "Leader",
+                notYet: "Not yet",
+                soon: "Soon",
+                none: "None",
+                pending: "Pending",
+                youSuffix: " · You"
+            },
+            units: {
+                dayStreak: "{{count}} day streak",
+                players: "{{count}} player",
+                days: "{{count}} day"
+            },
+            hero: {
+                levelLabel: "Momentum",
+                defaultTitle: "Your playing field",
+                rankedDescription: "You are currently ranked #{{rank}}. Earn {{xp}} more XP to move closer to the next place.",
+                unrankedDescription: "A few more actions can put you on the leaderboard. Current reserve: {{xp}} XP.",
+                nextActionWithGap: "1 lesson + 1 quiz for {{xp}} XP",
+                nextActionReady: "Keep your streak and unlock a new badge",
+                nextActionHintWithGap: "Fastest path: finish one lesson, then take the quiz right away.",
+                nextActionHintReady: "Study today to strengthen your consistency signal.",
+                nextJump: "Next jump",
+                ready: "Ready",
+                closerToLeader: "Closer to {{name}}",
+                newWin: "Get a new win",
+                visibility: "Visibility",
+                weeklyMomentum: "Weekly momentum",
+                nextStep: "What to do next"
+            },
+            near: {
+                eyebrow: "Nearby ranks",
+                title: "Closest competitors",
+                description: "See who you need to pass to reach the next rank.",
+                targetGap: "You need {{xp}} more XP to pass {{name}}.",
+                noGap: "When nearby ranks appear, the gap will be shown here.",
+                xpLeft: "{{xp}} XP left",
+                yourPoint: "Your point",
+                empty: "No nearby ranks were found yet. Enter the ranking first."
+            },
+            skills: {
+                myProgressTitle: "My skill progress",
+                myProgressDescription: "This block shows personal mastery progress. Ranking stays separate below.",
+                mastery: "{{count}}% mastery",
+                lessonRatio: "{{completed}}/{{total}} lessons",
+                recentActivity: "Recent activity exists",
+                startNew: "Start new",
+                noPersonalProgress: "No personal skill progress yet. This area fills after you complete the first lessons.",
+                fallbackSkill: "Skill {{id}}",
+                catalogUnavailable: "The skills catalog is unavailable right now.",
+                pendingTitle: "Skills pending",
+                noExtraData: "There is no extra skill data to show in this section yet."
+            },
+            rarity: {
+                common: "Core",
+                rare: "Rare",
+                epic: "Epic",
+                legendary: "Legendary"
+            },
+            achievements: {
+                title: "Achievements",
+                subtitle: "Visible awards",
+                fallbackItems: [
+                    {
+                        title: "First step"
+                    },
+                    {
+                        title: "Fast start"
+                    },
+                    {
+                        title: "Quiz spark"
+                    }
+                ],
+                defaultDescription: "A special moment that shows your steady growth and activity.",
+                locked: "Preparing",
+                unlocked: "Unlocked",
+                progressSignal: "This achievement reflects your learning progress.",
+                studentOfWeekDescription: "{{name}} moved ahead this week with {{xp}} XP.",
+                rankWinner: "Winner in place {{rank}}",
+                rankWinnerDescription: "{{name}} holds a strong position on the weekly board.",
+                nextRankGap: "Earn {{xp}} more XP to reach the next rank.",
+                rankStable: "Your board position is getting stronger.",
+                growthDescription: "This achievement shows your growth and activity."
+            },
+            publicHighlights: {
+                leaders: "{{names}} are leading this week.",
+                studentOfWeek: "{{name}} moved ahead with steady growth.",
+                progress: "Achievements make learning progress clear and easy to understand."
+            },
+            metrics: {
+                thisWeek: "This week",
+                new: "New",
+                activeStudent: "Active student",
+                totalXp: "Total XP",
+                lessonsClosed: "{{count}} lessons closed",
+                growthCalculating: "Growth is being calculated",
+                visibleWin: "Visible win",
+                myRank: "My rank",
+                thisWeekXp: "XP this week",
+                weeklyXp: "Weekly XP",
+                streak: "Streak",
+                nextGoal: "Next goal",
+                weeklyBoard: "Weekly board",
+                nextRank: "Next rank"
+            },
+            snapshotLabel: "{{track}} board",
+            snapshot: {
+                strongStreak: "Strong streak: {{count}} days",
+                newBadge: "New badge: {{title}}",
+                visibleInBoard: "You are visible in {{label}}",
+                noRank: "No exact rank found yet"
+            },
+            rankDelta: "{{value}} rank change",
+            strongestSkill: "Strongest skill: {{name}}",
+            errors: {
+                loadTitle: "Loading error",
+                load: "Could not load ranking data. Try again in a moment.",
+                serviceUnavailable: "Leaderboard service is temporarily unavailable"
+            },
+            trackSwitcherLabel: "Choose leaderboard track",
+            fallbackTitle: "Ranking notice",
+            serviceIssueBodyShort: "Real ranking data is not available right now, so some blocks may be empty.",
+            serviceIssueBody: "Real ranking data is not available right now. Placeholder leaders are not shown, and some blocks may be empty.",
+            weekly: {
+                title: "Weekly leaders",
+                trackLeaders: "{{track}} leaders",
+                description: "The most active students for {{helper}} over the last 7 days."
+            },
+            publicPanel: {
+                eyebrow: "Public ranking",
+                title: "Public table",
+                description: "This page shows active students in self-paced courses. The table is short, clear, and easy for comparing learning pace."
+            },
+            overview: {
+                topThisWeek: "This week’s front-runners",
+                topThisWeekDescription: "Students who stand out through steady study, completed lessons, and strong pace.",
+                highlights: "Highlights",
+                highlightsDescription: "Achievements show learning pace and consistency.",
+                trackTopTen: "{{track}} top 10",
+                trackTopTenDescription: "See who is active this week and which ranks you are close to.",
+                footerSummary: "Weekly leaders and nearby ranks",
+                openDashboard: "Open in dashboard",
+                moreActivityNeeded: "More real learning activity needs to be collected for ranking to work better."
+            },
+            header: {
+                publicEyebrow: "Public Ranking",
+                studentEyebrow: "Student Ranking",
+                publicTitle: "Public ranking",
+                studentTitle: "Ranking",
+                publicDescription: "Weekly activity, leaders, and visible achievements from video courses.",
+                studentDescription: "See your rank this week, nearby students, and how much is left to move ahead."
+            },
+            explainer: {
+                publicTitle: "What the ranking shows",
+                studentTitle: "This week’s status",
+                publicDescription: "Selected track: {{track}}. This public view explains weekly student learning activity.",
+                studentDescription: "Selected track: {{track}}. This section shows where you rank and who you are close to."
+            },
+            improvement: {
+                title: "How ranking improves",
+                description: "This is not only competition. Finishing lessons, steady study, and weekly activity raise position.",
+                pointLessons: "Your position rises as you finish lessons and return consistently.",
+                pointTracks: "Switching the selected track separates video and session-based learning rankings.",
+                publicPoint: "Sign in to see your personal rank, goal, and nearby positions.",
+                studentPoint: "Main goal: pass nearby students and keep your personal pace."
+            },
+            emptyBoardTitle: "The ranking is filling up",
+            emptyBoardBody: "There is not enough activity for this track yet. The table starts filling after the first lessons are completed.",
+            weeklyView: {
+                eyebrow: "Weekly view",
+                title: "Nearby ranks and board",
+                description: "The main view keeps the weekly leaders, nearby students, and supporting signals.",
+                currentChange: "Current change: {{value}} places."
+            },
+            tabListLabel: "Ranking views",
+            embedded: {
+                currentRank: "You are currently in {{rank}} place",
+                passTarget: "You need {{gap}} more to pass {{name}}.",
+                enterBoardHint: "Complete lessons and quizzes to enter the ranking first.",
+                leaders: "Leaders",
+                change: "Change",
+                trackPanelTitle: "Which ranking are you viewing?",
+                trackPanelDescription: "Ranking is separated by learning format.",
+                weeklyBoardEyebrow: "Weekly Board",
+                weeklyBoardTitle: "This week’s board",
+                weeklyBoardDescription: "Review leaders and the ranks closest to you at a glance.",
+                activeStudentsDescription: "Active students this week.",
+                growthPanelTitle: "How to grow faster",
+                growthPanelDescription: "Next steps that give more progress with less effort.",
+                fallbackGrowthSteps: [
+                    {
+                        title: "Finish 1 lesson",
+                        detail: "Directly affects ranking."
+                    },
+                    {
+                        title: "Pass 1 quiz",
+                        detail: "Weekly XP grows faster."
+                    },
+                    {
+                        title: "Keep your streak",
+                        detail: "Returning consistently matters."
+                    }
+                ],
+                stepLabel: "Step {{count}}",
+                actionHelps: "This action helps your ranking.",
+                strengthsTitle: "Your strengths",
+                strengthsDescription: "See which skills show strong personal growth.",
+                growthPoint: "Growth point",
+                positiveSignal: "A positive signal of your personal growth.",
+                growth: "Growth",
+                achievementsSubtitle: "Visible learning moments and your strengths.",
+                fastGrowthTitle: "Fast growth",
+                fastGrowthDescription: "Students who completed the most lessons in a short time.",
+                fastGrowthBackendGap: "This block is currently calculated across the whole platform. The server needs to be extended for this filter."
+            },
+            challenge: {
+                title: "Nearby goals",
+                subtitle: "Steps that give the most growth with the least effort",
+                fallbackItems: [
+                    {
+                        title: "Complete 1 lesson",
+                        detail: "Minimum +20 XP",
+                        actionKind: "course"
+                    },
+                    {
+                        title: "Pass 1 quiz",
+                        detail: "Fastest impact on ranking",
+                        actionKind: "progress"
+                    },
+                    {
+                        title: "Keep the streak",
+                        detail: "Return tomorrow to study",
+                        actionKind: "continue"
+                    }
+                ],
+                bestStep: "Most useful step",
+                reward: "Reward: {{reward}}",
+                availableNow: "Available now",
+                actions: {
+                    open: "Open",
+                    progress: "Open progress",
+                    course: "Go to courses",
+                    continue: "Continue learning",
+                    leaderboard: "Return to ranking"
+                },
+                keywords: {
+                    progress: [
+                        "quiz",
+                        "test"
+                    ],
+                    course: [
+                        "lesson",
+                        "course"
+                    ],
+                    continue: [
+                        "streak",
+                        "tomorrow",
+                        "continue"
+                    ]
+                },
+                badges: {
+                    skill: "Skill",
+                    continue: "Streak",
+                    progress: "Progress",
+                    course: "Course",
+                    leaderboard: "Ranking"
+                }
+            },
+            skillSpotlight: {
+                title: "Skill focus",
+                subtitle: "Shows who leads each direction and where your next growth point is.",
+                directionCount: "{{count}} direction",
+                featured: "Selected direction",
+                personalPercent: "You: {{count}}%",
+                personalPending: "Personal progress pending",
+                noLeader: "No leader found yet",
+                beFirst: "Be the first in this direction",
+                noPersonalStats: "Personal stats are not available yet",
+                empty: "Skill data has not loaded yet.",
+                hints: {
+                    complete: "The foundation is solid in this direction. Now focus on climbing the ranking.",
+                    xpGap: "Earn {{xp}} more XP to get closer to the leader.",
+                    remainingProgress: "Master {{count}}% more to strengthen this direction.",
+                    ready: "You are ready for the next big step in this direction.",
+                    start: "Complete the first lesson in this direction to unlock personal progress."
+                }
+            },
+            spotlight: {
+                eyebrow: "Week core",
+                title: "Ranking is more than a list",
+                description: "This area shows students who study consistently, complete quizzes, and grow quickly. You can join this list too.",
+                openCourses: "Open courses",
+                startNow: "Start now",
+                waitingLeader: "New leader pending",
+                waitingLeaderDescription: "Make the first big jump and try to appear here.",
+                growing: "Growing",
+                whyJoin: "Why join?",
+                whyJoinDescription: "Learning becomes more engaging and growth becomes clearer.",
+                benefitsCount: "3 benefits",
+                fallbackMetrics: [
+                    {
+                        label: "This week",
+                        value: "10+",
+                        helper: "Active student"
+                    },
+                    {
+                        label: "Wins",
+                        value: "3",
+                        helper: "Unlocked moments"
+                    },
+                    {
+                        label: "Growth",
+                        value: "120 XP",
+                        helper: "Weekly momentum"
+                    }
+                ],
+                fallbackHighlights: [
+                    "Steady learning during the week",
+                    "Strong quiz results",
+                    "Achievement that shows growth"
+                ],
+                benefits: {
+                    growth: {
+                        title: "See growth immediately",
+                        detail: "Every lesson, quiz, and activity affects your ranking."
+                    },
+                    momentum: {
+                        title: "Keep your pace",
+                        detail: "Streaks, points, and nearby competitors help you continue learning."
+                    },
+                    wins: {
+                        title: "Wins stay visible",
+                        detail: "Achievements show learning progress clearly and motivatingly."
+                    }
+                }
+            }
+        },
+        favourites: {
+            eyebrow: "Learning list",
+            title: "Saved courses",
+            description: "Keep interesting courses here so you can compare them, return later, and continue when you are ready.",
+            savedCount: "Saved",
+            visibleCount: "Showing",
+            nextStep: "Next step",
+            nextStepWithItems: "Open a course and continue learning",
+            nextStepEmpty: "Save a course from the catalog",
+            browseCourses: "Browse courses",
+            loadingAria: "Saved courses are loading",
+            accessTitle: "Access saved courses",
+            accessSignupSubtitle: "Create an account to save video courses and return to them later.",
+            accessLoginSubtitle: "Log in to view the courses saved to your account.",
+            loadErrorTitle: "Saved courses did not load",
+            retry: "Try again",
+            searchLabel: "Search saved courses",
+            searchPlaceholder: "Course or instructor name",
+            sortLabel: "Sort",
+            sortOptions: {
+                recent: "Recently saved",
+                title: "By title",
+                price: "By price"
+            },
+            findMoreCourses: "Find more courses",
+            savedCoursesTitle: "Courses saved for learning",
+            visibleSummary: "Showing {{visible}} / {{total}} courses",
+            refresh: "Refresh",
+            emptyTitle: "No saved courses yet",
+            emptySubtitle: "Open the catalog and save courses you want to compare or study later.",
+            noSearchResultsTitle: "No saved courses found",
+            noSearchResultsSubtitle: "Try another course name, instructor name, or clear the search.",
+            clearSearch: "Clear search",
+            courseFallback: "Course {{id}}",
+            instructorFallback: "Instructor not specified"
+        },
+        cart: {
+            priceUnavailable: "Price not specified",
+            priceWithCurrency: "{{amount}} KGS",
+            emptyTitle: "Your cart is empty",
+            emptySubtitle: "Choose self-paced video courses from the catalog and add them to your cart.",
+            browseCourses: "Browse courses",
+            pageTitle: "My cart",
+            clearAll: "Clear all",
+            openCourseAria: "Open {{title}} course",
+            openDetailsAria: "Open details for {{title}} course",
+            noImage: "No image",
+            instructorLabel: "Instructor:",
+            instructorFallback: "Instructor",
+            durationHours: "{{count}} hours",
+            removeAria: "Remove {{title}} course from cart",
+            remove: "Remove",
+            summaryTitle: "Order summary",
+            totalCourses: "Total courses:",
+            totalAmount: "Total:",
+            checkout: "Checkout",
+            payment: {
+                successTitle: "Payment successful",
+                companyName: "LLC \"EduBot\"",
+                taxId: "TIN 030123456789",
+                reference: "Payment reference: {{reference}}",
+                amount: "Amount: {{amount}} {{currency}}",
+                note: "Note: {{note}}",
+                thanks: "Thank you!",
+                done: "Done",
+                emptyCartError: "Cart is empty",
+                fallbackError: "Payment failed. Try again.",
+                title: "Card payment",
+                cardAlt: "Accepted cards",
+                cardType: "Credit / debit cards",
+                amountDue: "Amount due:",
+                payerPhonePlaceholder: "Payer phone (optional)",
+                processing: "Processing...",
+                submit: "Buy",
+                consent: "By clicking the payment button, you agree to the offer terms and personal data processing."
+            }
+        },
+        authRequiredModal: {
+            title: "Registration required",
+            heading: "Log in or sign up",
+            actions: {
+                favourite: "add to favourites",
+                cart: "continue the cart request",
+                default: "complete this action"
+            },
+            favouriteBody: "Log in or create an account to add this course to favourites.",
+            cartBody: "Log in or create an account to continue the cart request. Your cart and this action will be saved.",
+            defaultBody: "Registration is required to {{action}}.",
+            stay: "Stay on page"
+        },
+        courses: {
+            badge: "Video catalog",
+            title: "Our courses",
+            intro: "The public catalog shows self-paced video courses you can buy and study independently. Live online and offline courses are assigned through a company or administrator.",
+            loadingCount: "Loading courses...",
+            videoCourseCount: "{{count}} video course",
+            hiddenAssignedCount: "{{count}} assigned course hidden",
+            sortLabel: "Sort",
+            activeSort: "Active sort: {{label}}",
+            clearSort: "Clear",
+            loadErrorTitle: "Courses did not load",
+            loadError: "We could not load courses. Try again in a moment.",
+            retry: "Try again",
+            loadingAria: "Courses are loading",
+            showMore: "Show more courses",
+            emptyTitle: "No courses found",
+            emptySubtitle: "There are no public video courses yet. Live online and offline courses may be assigned by an administrator.",
+            sortOptions: {
+                recommended: "Recommended",
+                rating: "By rating",
+                "price-low": "Price: low to high",
+                "price-high": "Price: high to low"
+            }
+        },
+        contact: {
+            title: "Contact us",
+            intro: "Have questions or not sure which course to start with? We are ready to help. Fill out the form and our team will contact you soon.",
+            responseTime: "Response time: usually within 1 business day.",
+            privacy: "Your information is used only for contact.",
+            fields: {
+                name: "Your name",
+                email: "Email",
+                phone: "Phone number",
+                message: "Message"
+            },
+            phoneHelper: "Use international format. Example: +996700123456.",
+            submit: "Send",
+            submitting: "Sending...",
+            success: "Message sent successfully!",
+            fallbackError: "Message was not sent. Check the information and try again.",
+            validation: {
+                name: "Your name must be at least 2 characters.",
+                email: "Enter a valid email address.",
+                phone: "Use international phone format. Example: +996700123456.",
+                message: "Message cannot be empty."
+            },
+            afterTitle: "What happens after you send a message?",
+            supportSteps: [
+                "We read your question and route it to the right specialist.",
+                "We prepare a clear answer about courses, pricing, or the platform.",
+                "If needed, we discuss the next step by Telegram or email."
+            ],
+            methodsTitle: "Other ways to contact us",
+            methodsSubtitle: "You can also reach us through the channel that works best for you.",
+            methods: {
+                instagram: "Courses, updates, and community posts.",
+                telegram: "Quick questions and short learning consultations.",
+                email: "Detailed requests and partnership communication.",
+                hours: "We respond during Bishkek business hours.",
+                emailLabel: "Email",
+                hoursLabel: "Working hours"
+            },
+            locationTitle: "Address",
+            openMap: "Open map",
+            fallbackMapTitle: "Map fallback",
+            fallbackMapNotice: "2GIS map did not load. Google map is being used.",
+            mapAria: "EduBot 2GIS location",
+            mapFallbackPrefix: "If the map does not open,",
+            mapFallbackLink: "open the address in 2GIS"
+        },
+        auth: {
+            login: {
+                sideTitle: "Return to learning",
+                imageAlt: "EduBot Learning sign-in illustration",
+                coursesCardTitle: "Courses",
+                coursesCardText: "lessons and materials",
+                secureCardTitle: "Secure",
+                secureCardText: "personal learning dashboard",
+                benefits: [
+                    "Your purchased courses and lesson progress are saved.",
+                    "Mentor messages and assignments open in one place.",
+                    "The right learning or admin dashboard opens for your role."
+                ],
+                badge: "Account login",
+                title: "Welcome back",
+                intro: "Sign in to access your learning dashboard, purchased courses, and messages.",
+                emailLabel: "Email",
+                passwordLabel: "Password",
+                forgotPassword: "Forgot password?",
+                submit: "Log in",
+                submitting: "Logging in...",
+                noAccount: "No account?",
+                signup: "Sign up",
+                crmOnly: "Accounts are created through CRM. Use login or password recovery.",
+                validation: {
+                    emailRequired: "Enter your email address.",
+                    emailInvalid: "Enter a valid email address.",
+                    passwordRequired: "Enter your password.",
+                    form: "Enter a valid email and password to log in.",
+                    invalidCredentials: "Email or password is incorrect. Try again."
+                }
+            },
+            forgotPassword: {
+                eyebrow: "Account access",
+                title: "Recover password",
+                description: "Receive a code by email or WhatsApp and set a new password.",
+                close: "Close recovery dialog",
+                methodLabel: "Code delivery method",
+                methodPlaceholder: "Select method",
+                emailLabel: "Email address",
+                whatsappLabel: "WhatsApp number",
+                selectedChannel: "selected channel",
+                otpSent: "The code was sent through {{channel}}.",
+                otpPlaceholder: "OTP code",
+                newPasswordPlaceholder: "New password",
+                confirmPasswordPlaceholder: "Repeat password",
+                methods: {
+                    emailHint: "Enter the email address linked to your account.",
+                    whatsappHint: "Enter the phone number with country code."
+                },
+                actions: {
+                    sending: "Sending...",
+                    sendOtp: "Send OTP",
+                    resetting: "Resetting...",
+                    resetPassword: "Update password",
+                    backToLogin: "Return to login"
+                },
+                validation: {
+                    methodRequired: "Select a recovery method.",
+                    identifierRequired: "Enter where the code should be sent.",
+                    emailInvalid: "Enter a valid email address.",
+                    whatsappInvalid: "WhatsApp number must contain 9-16 digits.",
+                    otpInvalid: "OTP code must contain 4-8 digits.",
+                    passwordTooShort: "New password must be at least 8 characters.",
+                    passwordMismatch: "Passwords do not match."
+                },
+                errors: {
+                    sendOtp: "OTP was not sent. Check the information and try again.",
+                    resetPassword: "Password was not updated. Check the code and try again."
+                },
+                success: {
+                    title: "Password was updated successfully.",
+                    description: "You can now sign in with the new password."
+                }
+            },
+            postLogin: {
+                courseFallback: "Course {{id}}",
+                favouriteAdded: "Course was added to favourites.",
+                cartAdded: "Course was added to cart."
+            },
+            signup: {
+                sideTitle: "Create a learning account",
+                imageAlt: "EduBot Learning sign-up illustration",
+                sideIntro: "Sign up to buy and study self-paced video courses. Company and live courses are assigned by an administrator.",
+                steps: [
+                    {
+                        title: "Create an account",
+                        description: "Your learning profile opens with personal data and a secure password."
+                    },
+                    {
+                        title: "Buy a course",
+                        description: "Add self-paced video courses and start learning right away."
+                    },
+                    {
+                        title: "Keep learning",
+                        description: "Lesson progress, materials, and messages stay in one place."
+                    }
+                ],
+                badge: "New account",
+                title: "Sign up",
+                intro: "After submitting the form, your account opens and you go to your dashboard.",
+                fields: {
+                    lastName: "Last name",
+                    firstName: "First name",
+                    email: "Email",
+                    phone: "Phone number",
+                    password: "Create a password",
+                    repeatPassword: "Repeat password"
+                },
+                phoneHelper: "Optional. International format: +996700123456.",
+                passwordRulesLabel: "Password requirements",
+                passwordRules: {
+                    length: "At least 8 characters",
+                    lowercase: "Lowercase letter",
+                    uppercase: "Uppercase letter",
+                    number: "Number",
+                    specialChar: "Special character"
+                },
+                submit: "Sign up",
+                haveAccount: "Already have an account?",
+                login: "Log in",
+                errorFallback: "Something went wrong. Try again.",
+                validation: {
+                    lastName: "Enter your last name.",
+                    firstName: "Enter your first name.",
+                    email: "Enter a valid email address.",
+                    password: "Password must meet all requirements.",
+                    repeatPassword: "Passwords do not match.",
+                    phone: "Use international phone format. Example: +996700123456.",
+                    form: "Fix the highlighted fields to sign up."
+                }
+            }
+        },
+        about: {
+            imageAlt: "EduBot team working together",
+            heroEyebrow: "About us",
+            heroTitle: "EduBot Learning makes practical digital education accessible",
+            heroBody: "We are an online platform that helps learners study IT, design, and digital skills at their own pace. Our goal is to bring learning closer to real work through clear content, practical tasks, and mentor support.",
+            metricsTitle: "The numbers we believe in",
+            metricsBody: "These numbers show not only platform scale, but also our goal of delivering practical outcomes for learners.",
+            metrics: [
+                "Learners build new skills through the platform",
+                "Practical lessons and learning materials",
+                "Learning topics across IT and digital fields"
+            ],
+            visionImageAlt: "EduBot learning and work environment",
+            visionEyebrow: "Our vision",
+            visionTitle: "Learning should move quickly from theory to action",
+            visionBody1: "EduBot Learning does not just give information. We connect the learning path with practice, assignments, feedback, and real projects.",
+            visionBody2: "This approach helps learners understand a new profession, strengthen skills, and build a market-ready portfolio.",
+            principlesTitle: "Our principles",
+            principlesBody: "Every section respects learner time and serves clear, safe, and practical education.",
+            principles: [
+                {
+                    title: "Practical content",
+                    body: "Courses explain theory briefly and focus most of the time on tasks, examples, and skill practice."
+                },
+                {
+                    title: "Reliable learning path",
+                    body: "Learners should understand where to start, what comes next, and what outcome they are moving toward."
+                },
+                {
+                    title: "Outcome focus",
+                    body: "Our goal is education that helps learners use a new skill at work, in study, or in a personal project."
+                }
+            ]
+        },
+        courseDetails: {
+            loadingFailedTitle: "Course did not load",
+            retry: "Try again",
+            backToCourses: "Back to courses",
+            notFoundTitle: "Course not found",
+            notFoundBody: "This course may have been deleted, hidden, or the link may be incorrect.",
+            viewCourses: "View courses",
+            modeLabelEnrolled: "Learning mode",
+            modeLabelProspect: "Preview mode",
+            titleEnrolled: "Active learning mode",
+            titleProspect: "Course preview mode",
+            descriptionEnrolled: "This page focuses video, assignments, progress, and instructor communication around continuing the course.",
+            descriptionProspect: "This page shows the program, instructor, and reviews to support your enrollment decision.",
+            pickNextLesson: "Choose the next lesson",
+            lessonCount: "{{count}} lesson",
+            assistantAccess: "Lesson content and the AI assistant open based on enrollment status.",
+            courseInfo: "Course information",
+            currentLesson: "Current lesson",
+            program: "Program",
+            availability: "Availability",
+            context: "Context",
+            openInstructorChat: "Open instructor chat",
+            closeInstructorChat: "Close instructor chat",
+            instructorChat: "Instructor chat",
+            tabs: {
+                program: "Course program",
+                assistant: "Edu AI Assistant"
+            },
+            assistant: {
+                unavailableTenant: "EDU AI assistant is disabled for this tenant.",
+                enrollmentRequired: "Enroll in the course to use the assistant.",
+                unavailableCourse: "EDU AI assistant is disabled for this course."
+            },
+            runtime: {
+                errors: {
+                    courseLoad: "Course could not load.",
+                    quizLoad: "Quiz was not loaded.",
+                    quizSubmit: "Quiz could not be submitted.",
+                    answerAtLeastOne: "Answer at least one question.",
+                    answerAll: "Answer all questions.",
+                    challengeLoad: "Code challenge was not loaded.",
+                    challengeSubmit: "Code challenge was not checked."
+                },
+                access: {
+                    quizLoad: "Active course access is required to open the quiz.",
+                    quizSubmit: "Active course access is required to submit the quiz.",
+                    challengeLoad: "Active course access is required to open the code task.",
+                    challengeSubmit: "Active course access is required to submit the code task.",
+                    markArticleComplete: "Active course access is required to mark this lesson.",
+                    videoProgressSave: "Active course access is required to save video progress.",
+                    completeLesson: "Active course access is required to complete the lesson.",
+                    courseProgress: "Active course access is required to view course progress.",
+                    lastViewedLesson: "Active course access is required to load the last viewed lesson.",
+                    resumeVideo: "Active course access is required to resume the video.",
+                    resumeLesson: "Active course access is required to continue this lesson.",
+                    lessonProgressChange: "Active course access is required to change lesson progress."
+                },
+                quiz: {
+                    passed: "Congratulations! Quiz submitted successfully.",
+                    failed: "Try again.",
+                    failedWithScore: "Try again. You scored {{score}}%."
+                },
+                challenge: {
+                    passed: "All tests passed.",
+                    failed: "Some tests failed."
+                }
+            }
+        },
+        courseShared: {
+            course: "Course",
+            video: "Video",
+            offline: "Offline",
+            onlineLive: "Live online",
+            live: "Live",
+            unknownInstructor: "Unknown instructor",
+            notSpecified: "Not specified",
+            price: "Price",
+            priceUnavailable: "Price not specified",
+            currencyKgs: "{{amount}} KGS",
+            lessonCount: "{{count}} lesson",
+            lectureCount: "{{count}} lecture",
+            sectionCount: "{{count}} section",
+            reviewCount: "{{count}} review",
+            ratingAria: "Rating {{rating}} out of 5",
+            viewCourseDetails: "View details for {{title}} course",
+            removeFavourite: "Remove from favourites",
+            addFavourite: "Add to favourites",
+            selfServeAvailability: "Video course: buy and learn independently",
+            assignedAvailability: "Assigned through a company or administrator",
+            assigned: "Assigned",
+            inCart: "In cart",
+            addToCart: "Add to cart",
+            contact: "Contact",
+            adminAssignedAria: "{{title}} course is assigned by an administrator",
+            inCartAria: "{{title}} is in cart",
+            addToCartAria: "Add {{title}} to cart",
+            addedToCartTitle: "Added successfully",
+            addedToCartBody: "Course {{title}} was added to cart",
+            continueShopping: "Continue shopping",
+            goToCart: "Go to cart",
+            addedToFavouritesTitle: "Added to favourites successfully",
+            continueViewing: "Continue viewing",
+            goToFavourites: "Go to favourites",
+            previewVideoAria: "Watch course preview video",
+            access: "Access",
+            paidAccess: "Payment required",
+            freeAccess: "Free",
+            videoCourseNote: "Add this video course to cart and start when it works for you.",
+            assignedCourseNote: "This course is not open for public purchase. Contact the team for access.",
+            courseDescription: {
+                newRelease: "New release",
+                lastUpdated: "Last updated: {{date}}",
+                created: "Created {{date}}",
+                defaultLanguage: "Kyrgyz",
+                empty: "Course information will be added soon..."
+            },
+            instructorInfo: {
+                fallbackName: "Instructor",
+                fallbackBio: "Instructor information has not been added yet.",
+                topInstructor: "Top instructor",
+                experience: "{{count}}+ years of experience",
+                courses: "{{count}} course",
+                students: "{{count}}+ student",
+                openProfile: "Open {{label}} profile"
+            },
+            content: {
+                learningTitle: "Learning program",
+                prospectTitle: "Course program",
+                learningDescription: "{{sections}} section • {{lessons}} lecture • {{duration}}. Open lessons and mark progress.",
+                prospectDescription: "{{sections}} section • {{lessons}} lecture • {{duration}}. Review topics and preview lessons before enrolling.",
+                searchPlaceholder: "Search lectures...",
+                activeLecture: "Active lecture",
+                completed: "Completed",
+                availableLecture: "Available lecture",
+                previewNotice: "Lessons marked for preview are available now. The rest open after enrollment.",
+                searchEmpty: "No results for \"{{query}}\"",
+                resourcesDownloadTitle: "Download resources",
+                resources: "Resources",
+                download: "Download",
+                previewOpen: "Preview available",
+                afterEnrollment: "After enrollment",
+                progress: "Progress: {{completed}}/{{total}} lecture",
+                videoLessonAlt: "Video lesson"
+            },
+            sidebar: {
+                title: "Course content",
+                preview: "Preview",
+                previewTitle: "Open lesson",
+                locked: "Locked",
+                lockedTitle: "Course enrollment is required"
+            },
+            lessonKinds: {
+                quiz: "Quiz",
+                code: "Code task"
+            },
+            article: {
+                locked: "Enroll in the course to read this article.",
+                lockedAria: "Content is locked",
+                contentAria: "Article content",
+                empty: "Article text has not been added yet.",
+                emptyAria: "Content is missing",
+                downloadResourceAria: "Download {{fileName}} file in {{type}} format",
+                resourceTypeAria: "{{type}} format"
+            },
+            videoControls: {
+                previousLesson: "Previous lesson",
+                nextLesson: "Next lesson"
+            },
+            feedback: {
+                previous: "Previous review",
+                next: "Next review"
+            },
+            preview: {
+                loadError: "Preview video is not available right now.",
+                loading: "Video is loading",
+                errorTitle: "Video did not open",
+                noVideo: "There is no preview video for this lesson",
+                empty: "No preview lessons yet."
+            },
+            reviewSummary: {
+                fallbackStudent: "Student",
+                count: "({{count}}) reviews",
+                viewAll: "View all",
+                starLabel: "{{count}} stars",
+                starRatingAria: "{{count}} star rating",
+                averageRatingAria: "Average rating {{rating}} out of 5",
+                latestTitle: "Latest reviews",
+                loading: "Loading...",
+                reviewRatingAria: "{{rating}} out of 5",
+                empty: "No written reviews are shown for this course yet."
+            },
+            feedbackSection: {
+                loadingAria: "Reviews are loading",
+                unavailableTitle: "Reviews are not available right now",
+                loadError: "We could not load reviews.",
+                emptyTitle: "No reviews yet",
+                emptyDescription: "This section updates when students add new reviews."
+            },
+            authRequired: {
+                title: "Add to cart",
+                description: "Sign in or create an account to add the course to cart.",
+                close: "Close",
+                noticeLabel: "Notice:",
+                notice: "You can review courses saved in your cart later.",
+                createAccount: "Create account",
+                login: "Sign in",
+                later: "Later"
+            },
+            contactModal: {
+                title: "Contact",
+                subtitle: "The team will clarify course access, pricing, and next steps.",
+                requestFailed: "Request was not sent. Check the information and try again.",
+                cartRequest: "Cart request:",
+                total: "Total: {{price}}",
+                courseRequestLine: "Course: {{title}}",
+                priceLine: "Price: {{price}}",
+                lessonsLine: "Lesson count: {{count}}",
+                userMessage: "User message: {{message}}",
+                validation: {
+                    name: "Your name must be at least 2 characters.",
+                    email: "Enter a valid email address.",
+                    phone: "Use international phone format. Example: +996700123456."
+                },
+                cartSubject: "Cart request ({{count}} course)",
+                courseSubject: "Course request: {{title}}",
+                success: "Request sent successfully",
+                summaryCart: "Cart: {{count}} course",
+                summaryCourse: "Course: {{title}}",
+                noCourseSelected: "No course selected",
+                courses: "Courses:",
+                lessons: "Lesson count:",
+                moreCourses: "{{count}} more course",
+                quickContact: "Need a quick response: {{phone}} or {{telegram}}",
+                fullName: "Full name *",
+                fullNamePlaceholder: "Your full name",
+                phone: "Phone number *",
+                phoneHelp: "International format: +996700123456",
+                email: "Email *",
+                emailPlaceholder: "example@mail.com",
+                message: "Question or note",
+                messagePlaceholder: "Your questions about this course...",
+                messageHelp: "Optionally add a question for the team or a preferred time.",
+                submittingStatus: "Sending request...",
+                cancel: "Cancel",
+                submit: "Send",
+                submitting: "Sending..."
+            }
+        }
+    }
+};

@@ -499,6 +499,15 @@ Acceptance criteria:
 
 Priority: Medium.
 
+Status: Complete.
+
+Progress:
+
+- Split each locale into ownership modules under `src/i18n/locales/{locale}/`.
+- Kept the public runtime contract unchanged: resources still merge back into `resources[locale].translation`, and existing translation keys do not need caller changes.
+- Current ownership modules: `shared`, `public`, `dashboard`, `admin`, `instructor`, `student`, `courses`, `attendance`, `certificates`, and `integrations`.
+- Key parity tests continue to validate the merged locale resource tree across `ky`, `ru`, and `en`.
+
 Problem:
 
 - `src/i18n/locales/en.js`, `src/i18n/locales/ky.js`, and `src/i18n/locales/ru.js` are over 5,700 lines each.
@@ -510,6 +519,19 @@ Tasks:
 - Move resources incrementally without changing translation keys used by components unless there is a planned migration.
 - Keep key parity tests working across all namespaces.
 - Document where new feature keys should be added.
+
+New key placement:
+
+- Shared primitives, global navigation, reusable utility copy, and cross-feature UI helpers: `shared`.
+- Public marketing/catalog/auth/course-detail pages under the existing `public.*` key tree: `public`.
+- Dashboard shell, dashboard states, assistant dashboard, and shared dashboard UI: `dashboard`.
+- Platform admin, analytics, users, AI prompts, contacts, skills, pending courses, admin course/certificate workflows: `admin`.
+- Instructor dashboard, homework, chat, course/student/group workspaces: `instructor`.
+- Student dashboard workspaces and student-facing learning panels: `student`.
+- Course builder/runtime helpers outside `public.courseDetails`: `courses`.
+- Attendance, group sessions, and internal leaderboard workflows: `attendance`.
+- Shared certificate verification/download and admin certificate management: `certificates`.
+- Integration tab and company management surfaces: `integrations`.
 
 Acceptance criteria:
 

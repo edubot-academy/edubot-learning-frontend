@@ -6,6 +6,22 @@ Version bumps are classified by delivery scale; see `VERSIONING.md`.
 
 ---
 
+## [1.13.10] - 2026-05-21
+
+### Changed
+
+- Split monolithic locale resources into ownership modules for shared, public, dashboard, admin, instructor, student, courses, attendance, certificates, and integrations while preserving existing translation keys.
+
+### Verification
+
+- `npm test`
+- `npm run lint`
+- `npm run audit:localization -- --fail-on-findings`
+- `git diff --check -- CHANGELOG.md docs/shared/architecture/LOCALIZATION_FRONTEND_PLAN.md package.json package-lock.json src/i18n/locales`
+- `npm run build`
+
+---
+
 ## [1.13.9] - 2026-05-21
 
 ### Changed
